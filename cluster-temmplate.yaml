@@ -1,0 +1,20 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: hello-osc
+    namespace: default
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  loadBalancerName: Today
+  loadBalancerRegion: eu-west-1
