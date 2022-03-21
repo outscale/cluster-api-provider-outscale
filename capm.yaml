@@ -11,6 +11,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
+  labels:
+    cluster.x-k8s.io/v1alpha3: v1alpha3
+    cluster.x-k8s.io/v1beta1: v1beta1
   name: oscclusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -75,6 +78,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
+  labels:
+    cluster.x-k8s.io/v1alpha3: v1alpha3
+    cluster.x-k8s.io/v1beta1: v1beta1
   name: oscmachines.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -227,6 +233,34 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  - clusters/status
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -375,6 +409,19 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: OSC_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: access_key
+              name: cluster-api-provider-outscale
+              optional: true
+        - name: OSC_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret_key
+              name: cluster-api-provider-outscale
+              optional: true
         image: 042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/controller:test4
         livenessProbe:
           httpGet:

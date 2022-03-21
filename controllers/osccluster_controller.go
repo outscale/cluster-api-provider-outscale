@@ -23,11 +23,13 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"time"
+        "os"
 	//      "k8s.io/apimachinery/pkg/runtime"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
+        "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/service" 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -68,6 +70,8 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}
 	log.Info("Still WAIT !!!!")
+        log.Info("Create info", "env", os.Environ())
+
 	cluster, err := util.GetOwnerCluster(ctx, r.Client, oscCluster.ObjectMeta)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -102,9 +106,19 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
         log.Info("Create loadBalancer", "loadBalancerName", osccluster.Spec.LoadBalancerName, "loadBalancerRegion", osccluster.Spec.LoadBalancerRegion)
-	controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-	osccluster.Status.Ready = true
-	return reconcile.Result{}, nil
+//	controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+//	osccluster.Status.Ready = true
+//	return reconcile.Result{}, nil
+	return r.reconcile(ctx, clusterScope)
+}
+
+func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+    clusterScope.Info("Reconcile OscCluster")
+    osccluster := clusterScope.OscCluster
+    networksvc := service.NewService(ctx, clusterScope)
+    clusterScope.Info("Get Network", "network", networksvc) 
+    controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+    return reconcile.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
