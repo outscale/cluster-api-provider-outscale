@@ -18,10 +18,16 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+func oscReplaceName(name string) string {
+    replacer := strings.NewReplacer(".","-","/","-","_","-")
+    return replacer.Replace(name)
+}
 
 // OscClusterSpec defines the desired state of OscCluster
 type OscClusterSpec struct {
