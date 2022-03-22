@@ -24,7 +24,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-func oscReplaceName(name string) string {
+func OscReplaceName(name string) string {
     replacer := strings.NewReplacer(".","-","/","-","_","-")
     return replacer.Replace(name)
 }

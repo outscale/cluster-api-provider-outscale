@@ -7,12 +7,12 @@ import (
     osc "github.com/outscale/osc-sdk-go/v2"
 )
 
-type OscApiClient struct {
+type OscClient struct {
    auth context.Context
    api *osc.APIClient
 }
 
-func newOscApiClient() (*OscApiClient, error) {
+func newOscClient() (*OscClient, error) {
     accessKey := os.Getenv("OSC_ACCESS_KEY")
     if accessKey == "" {
         return nil, errors.New("env var accessKey is required")
@@ -21,12 +21,12 @@ func newOscApiClient() (*OscApiClient, error) {
     if secretKey == "" {
         return nil, errors.New("env var secretKey is required")
     }
-    oscApiClient := &OscApiClient{
+    oscClient := &OscClient{
     			api: osc.NewAPIClient(osc.NewConfiguration()),
                         auth: context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 				AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 				SecretKey: os.Getenv("OSC_SECRET_KEY"),
                         }),
     }
-    return oscApiClient, nil
+    return oscClient, nil
 }
