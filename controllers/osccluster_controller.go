@@ -26,6 +26,7 @@ import (
         "os"
 	//      "k8s.io/apimachinery/pkg/runtime"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
+        "github.com/outscale-vbr/cluster-api-provider-outscale.git/util/reconciler"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,9 +57,10 @@ type OscClusterReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	_ = log.FromContext(ctx)
-	ctx = context.Background()
+	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
+	defer cancel()
 	log := ctrl.LoggerFrom(ctx)
 	oscCluster := &infrastructurev1beta1.OscCluster{}
 
@@ -66,9 +68,11 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	if err := r.Get(ctx, req.NamespacedName, oscCluster); err != nil {
 		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
+    			log.Info("object was not found")
+			return ctrl.Result{}, nil
 		}
-	}
+          	return ctrl.Result{}, err
+        }
 	log.Info("Still WAIT !!!!")
         log.Info("Create info", "env", os.Environ())
 
@@ -97,27 +101,58 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	if err != nil {
 		return reconcile.Result{}, errors.Errorf("failed to create scope: %+v", err)
 	}
+	defer func() {
+		if err := clusterScope.Close(); err != nil && reterr == nil {
+			reterr = err
+		}
+	}()
 	osccluster := clusterScope.OscCluster
-
-	// Handle deleted clusters
 	if !osccluster.DeletionTimestamp.IsZero() {
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-		return reconcile.Result{}, nil
+		return r.reconcileDelete(ctx, clusterScope)
 	}
 
         log.Info("Create loadBalancer", "loadBalancerName", osccluster.Spec.LoadBalancerName, "loadBalancerRegion", osccluster.Spec.LoadBalancerRegion)
-//	controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-//	osccluster.Status.Ready = true
-//	return reconcile.Result{}, nil
 	return r.reconcile(ctx, clusterScope)
 }
+
 
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
     clusterScope.Info("Reconcile OscCluster")
     osccluster := clusterScope.OscCluster
-    networksvc := service.NewService(ctx, clusterScope)
-    clusterScope.Info("Get Network", "network", networksvc) 
+    servicesvc := service.NewService(ctx, clusterScope)
+    clusterScope.Info("Get Service", "service", servicesvc)
+    loadbalancer, err := servicesvc.GetLoadBalancer(osccluster.Spec)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if loadbalancer == nil {
+    	_, err := servicesvc.CreateLoadBalancer(osccluster.Spec)
+	    if err != nil {
+        	return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    	}
+    }
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+    return reconcile.Result{}, nil
+}
+
+func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+    clusterScope.Info("Reconcile OscCluster")
+    osccluster := clusterScope.OscCluster
+    servicesvc := service.NewService(ctx, clusterScope)
+    clusterScope.Info("Get Service", "service", servicesvc)
+    loadbalancer, err := servicesvc.GetLoadBalancer(osccluster.Spec)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if loadbalancer == nil {
+        controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+        return reconcile.Result{}, nil
+    }
+    err = servicesvc.DeleteLoadBalancer(osccluster.Spec)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not delete load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    }
+    controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     return reconcile.Result{}, nil
 }
 

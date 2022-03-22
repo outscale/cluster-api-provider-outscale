@@ -16,5 +16,5 @@ metadata:
   name: hello-osc
   namespace: default
 spec:
-  loadBalancerName: Today
-  loadBalancerRegion: eu-west-1
+  loadBalancerName: OscSdkExample-7
+  loadBalancerRegion: eu-west-2a
