@@ -6,6 +6,7 @@ import(
     "github.com/pkg/errors"
     osc "github.com/outscale/osc-sdk-go/v2"
     "fmt"
+    "strconv"
 )
 
 func ValidateLoadBalancerName(loadBalancerName string) (bool) {
@@ -18,7 +19,43 @@ func ValidateLoadBalancerRegionName(loadBalancerRegionName string) (bool) {
    return isValidate(loadBalancerRegionName)
 }
 
-func (s *Service) GetName(spec infrastructurev1beta1.OscClusterSpec) (string, error) {
+func (s *Service) ValidatePort(port int32) (int32, error) {
+   isValidatePort := regexp.MustCompile(`^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$`).MatchString
+   if isValidatePort(strconv.Itoa(int(port))) {
+       return port, nil
+   } else {
+       return port, errors.New("Invalid Port")
+   }
+}
+
+func (s *Service) ValidateInterval(interval int32) (int32, error) {
+   isValidateInterval := regexp.MustCompile(`^([5-9]|[1-9][0-9]{1}|[1-5][0-9]{2}|600)$`).MatchString
+   if isValidateInterval(strconv.Itoa(int(interval))) {
+       return interval, nil
+   } else {
+       return interval, errors.New("Invalid Interval")
+   }
+}
+
+func (s *Service) ValidateThreshold(threshold int32) (int32, error) {
+   isValidateThreshold := regexp.MustCompile(`^([1-9]|10)$`).MatchString
+   if isValidateThreshold(strconv.Itoa(int(threshold))) {
+       return threshold, nil
+   } else {
+       return threshold, errors.New("Invalid Interval")
+   }
+}
+
+func (s *Service) ValidateTimeout(timeout int32) (int32, error) {
+   isValidateTimeout := regexp.MustCompile(`^([2-9]|[1-5][0-9]|60)$`).MatchString
+   if isValidateTimeout(strconv.Itoa(int(timeout))) {
+       return timeout, nil
+   } else {
+       return timeout, errors.New("Invalid Timeout")
+   }
+}
+
+func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
     var name string
     var clusterName string
     switch {
@@ -35,11 +72,12 @@ func (s *Service) GetName(spec infrastructurev1beta1.OscClusterSpec) (string, er
     }
 }
 
-func (s *Service) GetRegionName(spec infrastructurev1beta1.OscClusterSpec) (string, error) {
+
+func (s *Service) GetRegionName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
     var name string
     switch {
-    case spec.LoadBalancerRegion != "":
-        name = spec.LoadBalancerRegion
+    case spec.SubregionName != "":
+        name = spec.SubregionName
     default:
         name = s.scope.Region()
     }
@@ -50,7 +88,69 @@ func (s *Service) GetRegionName(spec infrastructurev1beta1.OscClusterSpec) (stri
     }
 }
 
-func (s *Service) GetLoadBalancer(spec infrastructurev1beta1.OscClusterSpec) (*osc.LoadBalancer, error) {
+func (s *Service) ValidateProtocol(protocol string) (string, error) {
+    switch {
+    case protocol == "HTTP" || protocol == "TCP":
+        return protocol, nil
+    case protocol == "SSL" || protocol == "HTTPS":
+        return protocol, errors.New("Ssl certificat is required")
+    default:
+        return protocol, errors.New("Invalid protocol")
+    }
+}
+
+func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+    loadBalancerName, err := s.GetName(spec)
+    if err != nil {
+       return nil, err
+    }
+    CheckInterval, err := s.ValidateInterval(spec.HealthCheck.CheckInterval)
+    if err != nil {
+        return nil, err
+    }
+    HealthyThreshold, err := s.ValidateThreshold(spec.HealthCheck.HealthyThreshold)
+    if err != nil {
+        return nil, err
+    }
+    Port, err := s.ValidatePort(spec.HealthCheck.Port)
+    if err != nil {
+        return nil, err
+    }
+    Protocol, err := s.ValidateProtocol(spec.HealthCheck.Protocol)
+    if err != nil {
+        return nil, err
+    }
+    Timeout, err := s.ValidateTimeout(spec.HealthCheck.Timeout)
+    if err != nil {
+        return nil, err
+    }
+    UnhealthyThreshold, err := s.ValidateThreshold(spec.HealthCheck.UnhealthyThreshold)
+    if err != nil {
+        return nil, err
+    }
+    healthCheck := osc.HealthCheck{
+        CheckInterval: CheckInterval,
+        HealthyThreshold: HealthyThreshold,
+        Port: Port,
+        Protocol: Protocol,
+        Timeout: Timeout,
+        UnhealthyThreshold: UnhealthyThreshold,
+    } 
+    updateLoadBalancerRequest := osc.UpdateLoadBalancerRequest{
+        LoadBalancerName: loadBalancerName,
+        HealthCheck: &healthCheck,
+    }
+    OscApiClient := s.scope.Api()
+    OscAuthClient := s.scope.Auth()
+    updateLoadBalancerResponse, httpRes, err := OscApiClient.LoadBalancerApi.UpdateLoadBalancer(OscAuthClient).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()    
+    if err != nil {
+        fmt.Sprintf("Error with http result %s", httpRes.Status)
+        return nil, err
+    }
+    return updateLoadBalancerResponse.LoadBalancer, nil
+}
+
+func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
     loadBalancerName, err := s.GetName(spec)
     if err != nil {
         return nil, err
@@ -76,20 +176,37 @@ func (s *Service) GetLoadBalancer(spec infrastructurev1beta1.OscClusterSpec) (*o
     }
 } 
 
-func (s *Service) CreateLoadBalancer(spec infrastructurev1beta1.OscClusterSpec) (*osc.LoadBalancer, error) {
+func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
     loadBalancerName, err := s.GetName(spec)   
     if err != nil {
         return nil, err
     }
-    loadBalancerRegionName, err := s.GetRegionName(spec)
+    SubregionName, err := s.GetRegionName(spec)
     if err != nil {
         return nil, err
     }
-    fmt.Sprintf("LoadBalancer %s in region %s\n", loadBalancerName, loadBalancerRegionName)
+    BackendPort, err := s.ValidatePort(spec.Listener.BackendPort)
+    if err != nil {
+        return nil, err
+    }
+    LoadBalancerPort, err := s.ValidatePort(spec.Listener.LoadBalancerPort)
+    if err != nil {
+        return nil, err
+    }
+    BackendProtocol, err := s.ValidateProtocol(spec.Listener.BackendProtocol)
+    if err != nil {
+        return nil, err
+    }
+    LoadBalancerProtocol, err := s.ValidateProtocol(spec.Listener.LoadBalancerProtocol)
+    if err != nil {
+        return nil, err
+    }
+    fmt.Sprintf("LoadBalancer %s in region %s\n", loadBalancerName, SubregionName)
     first_listener := osc.ListenerForCreation{
-	BackendPort:          80,
-	LoadBalancerPort:     80,
-	LoadBalancerProtocol: "TCP",
+	BackendPort:          BackendPort,
+        BackendProtocol:      &BackendProtocol,
+	LoadBalancerPort:     LoadBalancerPort,
+	LoadBalancerProtocol: LoadBalancerProtocol,
     }
     first_tag := osc.ResourceTag{
         Key: "project",
@@ -98,7 +215,7 @@ func (s *Service) CreateLoadBalancer(spec infrastructurev1beta1.OscClusterSpec) 
     loadBalancerRequest := osc.CreateLoadBalancerRequest{
 	LoadBalancerName: loadBalancerName,
 	Listeners:        []osc.ListenerForCreation{first_listener},
-	SubregionNames:   &[]string{loadBalancerRegionName},
+	SubregionNames:   &[]string{SubregionName},
                
         Tags: &[]osc.ResourceTag{first_tag},
     }
@@ -112,7 +229,7 @@ func (s *Service) CreateLoadBalancer(spec infrastructurev1beta1.OscClusterSpec) 
     return loadBalancerResponse.LoadBalancer, nil
 }
 
-func (s *Service) DeleteLoadBalancer(spec infrastructurev1beta1.OscClusterSpec) (error) {
+func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (error) {
     loadBalancerName, err := s.GetName(spec)
     if err != nil {
         return err

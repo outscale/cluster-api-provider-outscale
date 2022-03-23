@@ -16,5 +16,7 @@ metadata:
   name: hello-osc
   namespace: default
 spec:
-  loadBalancerName: OscSdkExample-7
-  loadBalancerRegion: eu-west-2a
+  network:
+    Loadbalancer:
+      loadbalancername: OscSdkExample-7
+      subregionname: eu-west-2a

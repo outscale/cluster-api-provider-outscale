@@ -88,7 +88,7 @@ func (s *ClusterScope) Namespace() string {
 	return s.Cluster.GetNamespace()
 }
 func (s *ClusterScope) Region() string {
-        return s.OscCluster.Spec.LoadBalancerRegion
+        return s.OscCluster.Spec.Network.LoadBalancer.SubregionName 
 }
 func (s *ClusterScope) UID() string {
 	return string(s.Cluster.UID)
@@ -98,4 +98,7 @@ func (s *ClusterScope) Auth() context.Context {
 }
 func (s *ClusterScope) Api() *osc.APIClient {
         return s.OscClient.api
+}
+func (s *ClusterScope) LoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
+	return &s.OscCluster.Spec.Network.LoadBalancer
 }

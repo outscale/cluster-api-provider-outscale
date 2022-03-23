@@ -110,8 +110,9 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	if !osccluster.DeletionTimestamp.IsZero() {
 		return r.reconcileDelete(ctx, clusterScope)
 	}
-
-        log.Info("Create loadBalancer", "loadBalancerName", osccluster.Spec.LoadBalancerName, "loadBalancerRegion", osccluster.Spec.LoadBalancerRegion)
+        loadBalancerSpec := clusterScope.LoadBalancer()
+        loadBalancerSpec.SetDefaultValue()
+        log.Info("Create loadBalancer", "loadBalancerName", loadBalancerSpec.LoadBalancerName, "SubregionName", loadBalancerSpec.SubregionName)
 	return r.reconcile(ctx, clusterScope)
 }
 
@@ -121,15 +122,21 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     osccluster := clusterScope.OscCluster
     servicesvc := service.NewService(ctx, clusterScope)
     clusterScope.Info("Get Service", "service", servicesvc)
-    loadbalancer, err := servicesvc.GetLoadBalancer(osccluster.Spec)
+    loadBalancerSpec := clusterScope.LoadBalancer()
+    loadBalancerSpec.SetDefaultValue()
+    loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
     if err != nil {
         return reconcile.Result{}, err
     }
     if loadbalancer == nil {
-    	_, err := servicesvc.CreateLoadBalancer(osccluster.Spec)
-	    if err != nil {
-        	return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    	_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec)
+	if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
     	}
+        _, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not configure healthcheck for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        } 
     }
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     return reconcile.Result{}, nil
@@ -140,7 +147,9 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     osccluster := clusterScope.OscCluster
     servicesvc := service.NewService(ctx, clusterScope)
     clusterScope.Info("Get Service", "service", servicesvc)
-    loadbalancer, err := servicesvc.GetLoadBalancer(osccluster.Spec)
+    loadBalancerSpec := clusterScope.LoadBalancer()
+    loadBalancerSpec.SetDefaultValue()
+    loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
     if err != nil {
         return reconcile.Result{}, err
     }
@@ -148,7 +157,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
         controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
         return reconcile.Result{}, nil
     }
-    err = servicesvc.DeleteLoadBalancer(osccluster.Spec)
+    err = servicesvc.DeleteLoadBalancer(loadBalancerSpec)
     if err != nil {
         return reconcile.Result{}, errors.Wrapf(err, "Can not delete load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
     }
