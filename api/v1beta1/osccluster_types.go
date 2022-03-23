@@ -28,11 +28,9 @@ func OscReplaceName(name string) string {
     replacer := strings.NewReplacer(".","-","/","-","_","-")
     return replacer.Replace(name)
 }
-
 // OscClusterSpec defines the desired state of OscCluster
 type OscClusterSpec struct {
-	LoadBalancerName   string `json:"loadBalancerName"`
-	LoadBalancerRegion string `json:"loadBalancerRegion"`
+	Network OscNetwork `json:"network,omitempty"`
 }
 
 // OscClusterStatus defines the observed state of OscCluster
