@@ -81,11 +81,39 @@ spec:
                       subregionname:
                         type: string
                     type: object
+                  net:
+                    properties:
+                      ipRange:
+                        type: string
+                    type: object
+                  subnet:
+                    properties:
+                      ipSubnetRange:
+                        type: string
+                    type: object
                 type: object
             type: object
           status:
             description: OscClusterStatus defines the observed state of OscCluster
             properties:
+              network:
+                properties:
+                  LoadbalancerRef:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                  netref:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                  subnetref:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                type: object
               ready:
                 type: boolean
             required:

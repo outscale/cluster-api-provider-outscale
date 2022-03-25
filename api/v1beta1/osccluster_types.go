@@ -36,6 +36,7 @@ type OscClusterSpec struct {
 // OscClusterStatus defines the observed state of OscCluster
 type OscClusterStatus struct {
 	Ready bool `json:"ready"`
+        Network OscNetworkResource `json:"network,omitempty"`
 }
 
 //+kubebuilder:object:root=true

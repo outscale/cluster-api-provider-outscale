@@ -2,6 +2,8 @@ package v1beta1
 
 type OscNetwork struct {
     LoadBalancer OscLoadBalancer `json:"Loadbalancer,omitempty"`
+    Net OscNet `json:"net,omitempty"`   
+    Subnet OscSubnet `json:"subnet,omitempty"` 
 }
 
 type OscLoadBalancer struct {
@@ -27,6 +29,25 @@ type OscLoadBalancerHealthCheck struct {
     UnhealthyThreshold int32 `json:"unhealthythreshold,omitempty"`
 }
 
+type OscNet struct {
+    IpRange string `json:"ipRange,omitempty"`
+}
+
+type OscSubnet struct {
+    IpSubnetRange string `json:"ipSubnetRange,omitempty"`
+}
+
+
+type OscResourceReference struct {
+    ResourceID string `json:"resourceId,omitempty"`
+}
+
+type OscNetworkResource struct {
+    LoadbalancerRef OscResourceReference `json:"LoadbalancerRef,omitempty"`
+    NetRef OscResourceReference `json:"netref,omitempty"`
+    SubnetRef OscResourceReference `json:"subnetref,omitempty"`
+}
+
 var (
     DefaultLoadBalancerName string = "OscClusterApi-1"
     DefaultSubregionName string = "eu-west-2a"
@@ -40,7 +61,21 @@ var (
     DefaultTimeout int32 = 5
     DefaultProtocol string = "TCP"
     DefaultPort int32 = 6443
+    DefaultIpRange string = "172.19.95.128/25"
+    DefaultIpSubnetRange string = "172.19.95.192/27"
 )
+
+func (net *OscNet) SetDefaultValue() {
+    if net.IpRange == "" {
+        net.IpRange = DefaultIpRange
+    } 
+}
+
+func (sub *OscSubnet) SetDefaultValue() {
+    if sub.IpSubnetRange == "" {
+        sub.IpSubnetRange = DefaultIpSubnetRange
+    }
+}
 
 func (lb *OscLoadBalancer) SetDefaultValue() {
     if lb.LoadBalancerName == "" {

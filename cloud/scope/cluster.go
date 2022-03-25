@@ -102,3 +102,19 @@ func (s *ClusterScope) Api() *osc.APIClient {
 func (s *ClusterScope) LoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
 	return &s.OscCluster.Spec.Network.LoadBalancer
 }
+func (s *ClusterScope) Net() *infrastructurev1beta1.OscNet {
+        return &s.OscCluster.Spec.Network.Net
+}
+func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceReference {
+        return &s.OscCluster.Status.Network.NetRef
+}
+func (s *ClusterScope) Subnet() *infrastructurev1beta1.OscSubnet {
+        return &s.OscCluster.Spec.Network.Subnet
+}
+func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceReference {
+        return &s.OscCluster.Status.Network.SubnetRef
+}
+func (s *ClusterScope) SetReady() {
+	s.OscCluster.Status.Ready = true
+}
+
