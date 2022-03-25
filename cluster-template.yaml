@@ -20,3 +20,7 @@ spec:
     Loadbalancer:
       loadbalancername: OscSdkExample-7
       subregionname: eu-west-2a
+    net:
+      ipRange: "172.19.95.128/25"
+    subnet:
+      ipSubnetRange: "172.19.95.192/27"

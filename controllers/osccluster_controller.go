@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
         "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/service" 
+        "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -138,7 +139,42 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
             return reconcile.Result{}, errors.Wrapf(err, "Can not configure healthcheck for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
         } 
     }
+    netsvc := net.NewService(ctx, clusterScope)
+    clusterScope.Info("Get net", "net", netsvc)
+    netSpec := clusterScope.Net()
+    netSpec.SetDefaultValue()
+    netRef := clusterScope.NetRef()
+    var netIds = []string{netRef.ResourceID}
+    net, err := netsvc.GetNet(netIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if net == nil {
+        net, err = netsvc.CreateNet(netSpec)
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+    }
+    clusterScope.Info("Info net", "net", net)
+    netRef.ResourceID = *net.NetId
+    subnetSpec := clusterScope.Subnet()
+    subnetSpec.SetDefaultValue()
+    subnetRef := clusterScope.SubnetRef()   
+    var subnetIds = []string{subnetRef.ResourceID}
+    subnet, err := netsvc.GetSubnet(subnetIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if subnet == nil {
+        subnet, err = netsvc.CreateSubnet(subnetSpec, netRef.ResourceID)
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+    }
+    subnetRef.ResourceID = *subnet.SubnetId
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+    clusterScope.Info("Set OscCluster status to ready")
+    clusterScope.SetReady()
     return reconcile.Result{}, nil
 }
 
@@ -147,8 +183,10 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     osccluster := clusterScope.OscCluster
     servicesvc := service.NewService(ctx, clusterScope)
     clusterScope.Info("Get Service", "service", servicesvc)
+    netRef := clusterScope.NetRef()
     loadBalancerSpec := clusterScope.LoadBalancer()
     loadBalancerSpec.SetDefaultValue()
+    var netIds = []string{netRef.ResourceID}
     loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
     if err != nil {
         return reconcile.Result{}, err
@@ -161,6 +199,39 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     if err != nil {
         return reconcile.Result{}, errors.Wrapf(err, "Can not delete load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
     }
+    netsvc := net.NewService(ctx, clusterScope)
+    clusterScope.Info("Get Net", "net", netsvc)
+    netSpec := clusterScope.Net()
+    netSpec.SetDefaultValue()
+    net, err := netsvc.GetNet(netIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if net == nil {
+        controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+        return reconcile.Result{}, nil
+    }
+    err = netsvc.DeleteNet(netRef.ResourceID)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not delete net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    }
+    subnetSpec := clusterScope.Subnet()
+    subnetSpec.SetDefaultValue()
+    subnetRef := clusterScope.SubnetRef()
+    var subnetIds = []string{subnetRef.ResourceID}
+    subnet, err := netsvc.GetSubnet(subnetIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if subnet == nil {
+        controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+        return reconcile.Result{}, nil
+    }
+    err = netsvc.DeleteSubnet(subnetRef.ResourceID)
+    if err != nil {
+         return reconcile.Result{}, errors.Wrapf(err, "Can not delete subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+
+    } 
     controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     return reconcile.Result{}, nil
 }

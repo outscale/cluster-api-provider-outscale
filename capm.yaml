@@ -44,17 +44,85 @@ spec:
           spec:
             description: OscClusterSpec defines the desired state of OscCluster
             properties:
-              loadBalancerName:
-                type: string
-              loadBalancerRegion:
-                type: string
-            required:
-            - loadBalancerName
-            - loadBalancerRegion
+              network:
+                properties:
+                  Loadbalancer:
+                    properties:
+                      healthCheck:
+                        properties:
+                          checkinterval:
+                            format: int32
+                            type: integer
+                          healthythreshold:
+                            format: int32
+                            type: integer
+                          port:
+                            format: int32
+                            type: integer
+                          protocol:
+                            type: string
+                          timeout:
+                            format: int32
+                            type: integer
+                          unhealthythreshold:
+                            format: int32
+                            type: integer
+                        required:
+                        - protocol
+                        type: object
+                      listener:
+                        properties:
+                          backendport:
+                            format: int32
+                            type: integer
+                          backendprotocol:
+                            type: string
+                          loadbalancerport:
+                            format: int32
+                            type: integer
+                          loadbalancerprotocol:
+                            type: string
+                        required:
+                        - loadbalancerprotocol
+                        type: object
+                      loadbalancername:
+                        type: string
+                      subregionname:
+                        type: string
+                    type: object
+                  net:
+                    properties:
+                      ipRange:
+                        type: string
+                    type: object
+                  subnet:
+                    properties:
+                      ipSubnetRange:
+                        type: string
+                    type: object
+                type: object
             type: object
           status:
             description: OscClusterStatus defines the observed state of OscCluster
             properties:
+              network:
+                properties:
+                  LoadbalancerRef:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                  netref:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                  subnetref:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                type: object
               ready:
                 type: boolean
             required:
