@@ -5,6 +5,7 @@ type OscNetwork struct {
     Net OscNet `json:"net,omitempty"`   
     Subnet OscSubnet `json:"subnet,omitempty"` 
     InternetService OscInternetService `json:"internetService,omitempty"`
+    RouteTables []OscRouteTable `json:routeTable,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -40,10 +41,20 @@ type OscSubnet struct {
     IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 }
 
+type OscRouteTable struct {
+    Name string `json:"name,omitempty"`
+    Routes []OscRoute `json:"routes,omitempty"`
+}
+
+type OscRoute struct {
+    Target string `json:"target,omitempty"`
+    Destination string `json:"destination,omitempty"`
+}
 
 type OscResourceReference struct {
     ResourceID string `json:"resourceId,omitempty"`
 }
+
 
 type OscNetworkResource struct {
     LoadbalancerRef OscResourceReference `json:"LoadbalancerRef,omitempty"`
@@ -67,6 +78,9 @@ var (
     DefaultPort int32 = 6443
     DefaultIpRange string = "172.19.95.128/25"
     DefaultIpSubnetRange string = "172.19.95.192/27"
+    DefaultTarget = "cluster-api-igw"
+    DefaultDestination = "0.0.0.0/0"
+    DefaultRouteTableName = "cluster-api-routetable"
 )
 
 func (net *OscNet) SetDefaultValue() {
@@ -80,6 +94,36 @@ func (sub *OscSubnet) SetDefaultValue() {
         sub.IpSubnetRange = DefaultIpSubnetRange
     }
 }
+
+func (network *OscNetwork) SetDefaultValue() {
+    if len(network.RouteTables) == 0 {
+        route := OscRoute{
+            Target: DefaultTarget,
+            Destination: DefaultDestination,
+        } 
+        routetable := OscRouteTable{
+            Name: DefaultRouteTableName,
+            Routes: []OscRoute{route},
+        }       
+        var routetables []OscRouteTable = network.RouteTables
+        routetables = append(routetables, routetable)
+    }    
+
+}
+
+
+func (routetable *OscRouteTable) SetDefaultValue() {
+    if len(routetable.Routes) == 0 {
+        route := OscRoute{
+            Target: DefaultTarget,
+            Destination: DefaultDestination,
+        }
+        var routes []OscRoute = routetable.Routes
+        routes = append(routes,route)        
+    }  
+}
+
+
 
 func (lb *OscLoadBalancer) SetDefaultValue() {
     if lb.LoadBalancerName == "" {

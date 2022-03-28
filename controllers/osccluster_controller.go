@@ -123,6 +123,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     osccluster := clusterScope.OscCluster
     servicesvc := service.NewService(ctx, clusterScope)
     clusterScope.Info("Get Service", "service", servicesvc)
+
     clusterScope.Info("Create Loadbalancer")
     loadBalancerSpec := clusterScope.LoadBalancer()
     loadBalancerSpec.SetDefaultValue()
@@ -142,6 +143,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     netsvc := net.NewService(ctx, clusterScope)
     clusterScope.Info("Get net", "net", netsvc)
+
     clusterScope.Info("Create Net")
     netSpec := clusterScope.Net()
     netSpec.SetDefaultValue()
@@ -159,6 +161,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     clusterScope.Info("Info net", "net", net)
     netRef.ResourceID = *net.NetId
+
     clusterScope.Info("Create Subnet")
     subnetSpec := clusterScope.Subnet()
     subnetSpec.SetDefaultValue()
@@ -175,6 +178,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
         }
     }
     subnetRef.ResourceID = *subnet.SubnetId
+
+
     clusterScope.Info("Create InternetGateway")
     internetServiceSpec := clusterScope.InternetService()
     internetServiceRef := clusterScope.InternetServiceRef()
@@ -194,6 +199,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
         }
     }
     internetServiceRef.ResourceID = *internetService.InternetServiceId
+
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     clusterScope.Info("Set OscCluster status to ready")
     clusterScope.SetReady()

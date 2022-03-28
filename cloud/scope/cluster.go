@@ -111,6 +111,22 @@ func (s *ClusterScope) LoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
 func (s *ClusterScope) Net() *infrastructurev1beta1.OscNet {
         return &s.OscCluster.Spec.Network.Net
 }
+func (s *ClusterScope) Network() *infrastructurev1beta1.OscNetwork {
+	return &s.OscCluster.Spec.Network
+}
+func (s *ClusterScope) RouteTables() *[]infrastructurev1beta1.OscRouteTable {
+	return &s.OscCluster.Spec.Network.RouteTables
+}
+func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
+	routeTables := s.OscCluster.Spec.Network.RouteTables
+        for _, routeTable := range routeTables {
+            if routeTable.Name == Name {
+                return &routeTable.Routes               
+            }
+        }
+        return &routeTables[0].Routes
+}
+               
 func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceReference {
         return &s.OscCluster.Status.Network.NetRef
 }
