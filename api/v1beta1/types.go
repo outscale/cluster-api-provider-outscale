@@ -4,6 +4,7 @@ type OscNetwork struct {
     LoadBalancer OscLoadBalancer `json:"Loadbalancer,omitempty"`
     Net OscNet `json:"net,omitempty"`   
     Subnet OscSubnet `json:"subnet,omitempty"` 
+    InternetService OscInternetService `json:"internetService,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -33,6 +34,8 @@ type OscNet struct {
     IpRange string `json:"ipRange,omitempty"`
 }
 
+type OscInternetService struct {}
+
 type OscSubnet struct {
     IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 }
@@ -46,6 +49,7 @@ type OscNetworkResource struct {
     LoadbalancerRef OscResourceReference `json:"LoadbalancerRef,omitempty"`
     NetRef OscResourceReference `json:"netref,omitempty"`
     SubnetRef OscResourceReference `json:"subnetref,omitempty"`
+    InternetServiceRef OscResourceReference `json:"internetserviceref,omitempty"`
 }
 
 var (

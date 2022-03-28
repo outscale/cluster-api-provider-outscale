@@ -3,6 +3,7 @@ package net
 import(
     infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
     osc "github.com/outscale/osc-sdk-go/v2"
+    tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
     "fmt"
     "github.com/pkg/errors"
     "strings"
@@ -38,6 +39,12 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet) (*osc.Net, error
     OscApiClient := s.scope.Api()
     OscAuthClient := s.scope.Auth()
     netResponse, httpRes, err := OscApiClient.NetApi.CreateNet(OscAuthClient).CreateNetRequest(netRequest).Execute()    
+    if err != nil {
+        fmt.Sprintf("Error with http result %s", httpRes.Status)
+        return nil, err
+    }
+    resourceIds := []string{*netResponse.Net.NetId}
+    err = tag.AddTag("Name", "cluster-api-net", resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
