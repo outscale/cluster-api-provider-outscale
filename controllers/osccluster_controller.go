@@ -123,6 +123,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     osccluster := clusterScope.OscCluster
     servicesvc := service.NewService(ctx, clusterScope)
     clusterScope.Info("Get Service", "service", servicesvc)
+    clusterScope.Info("Create Loadbalancer")
     loadBalancerSpec := clusterScope.LoadBalancer()
     loadBalancerSpec.SetDefaultValue()
     loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
@@ -141,6 +142,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     netsvc := net.NewService(ctx, clusterScope)
     clusterScope.Info("Get net", "net", netsvc)
+    clusterScope.Info("Create Net")
     netSpec := clusterScope.Net()
     netSpec.SetDefaultValue()
     netRef := clusterScope.NetRef()
@@ -157,6 +159,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     clusterScope.Info("Info net", "net", net)
     netRef.ResourceID = *net.NetId
+    clusterScope.Info("Create Subnet")
     subnetSpec := clusterScope.Subnet()
     subnetSpec.SetDefaultValue()
     subnetRef := clusterScope.SubnetRef()   
@@ -172,6 +175,25 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
         }
     }
     subnetRef.ResourceID = *subnet.SubnetId
+    clusterScope.Info("Create InternetGateway")
+    internetServiceSpec := clusterScope.InternetService()
+    internetServiceRef := clusterScope.InternetServiceRef()
+    var internetServiceIds = []string{internetServiceRef.ResourceID}
+    internetService, err := netsvc.GetInternetService(internetServiceIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if internetService == nil {
+        internetService, err = netsvc.CreateInternetService(internetServiceSpec)
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not create internetservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+        err = netsvc.LinkInternetService(*internetService.InternetServiceId, netRef.ResourceID)
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not link internetService with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+    }
+    internetServiceRef.ResourceID = *internetService.InternetServiceId
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     clusterScope.Info("Set OscCluster status to ready")
     clusterScope.SetReady()
@@ -184,6 +206,8 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     servicesvc := service.NewService(ctx, clusterScope)
     clusterScope.Info("Get Service", "service", servicesvc)
     netRef := clusterScope.NetRef()
+
+    clusterScope.Info("Delete LoadBalancer")
     loadBalancerSpec := clusterScope.LoadBalancer()
     loadBalancerSpec.SetDefaultValue()
     var netIds = []string{netRef.ResourceID}
@@ -201,22 +225,26 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     }
     netsvc := net.NewService(ctx, clusterScope)
     clusterScope.Info("Get Net", "net", netsvc)
-    netSpec := clusterScope.Net()
-    netSpec.SetDefaultValue()
-    net, err := netsvc.GetNet(netIds)
+    clusterScope.Info("Delete internetService")
+    internetServiceRef := clusterScope.InternetServiceRef()
+    var internetServiceIds = []string{internetServiceRef.ResourceID}
+    internetservice, err := netsvc.GetInternetService(internetServiceIds)
     if err != nil {
         return reconcile.Result{}, err
     }
-    if net == nil {
+    if internetservice == nil {
         controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
         return reconcile.Result{}, nil
     }
-    err = netsvc.DeleteNet(netRef.ResourceID)
+    err = netsvc.UnlinkInternetService(internetServiceRef.ResourceID,  netRef.ResourceID)
     if err != nil {
-        return reconcile.Result{}, errors.Wrapf(err, "Can not delete net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+         return reconcile.Result{}, errors.Wrapf(err, "Can not unlink internetService and net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
     }
-    subnetSpec := clusterScope.Subnet()
-    subnetSpec.SetDefaultValue()
+    err = netsvc.DeleteInternetService(internetServiceRef.ResourceID)
+    if err != nil {
+         return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    }         
+    clusterScope.Info("Delete subnet")
     subnetRef := clusterScope.SubnetRef()
     var subnetIds = []string{subnetRef.ResourceID}
     subnet, err := netsvc.GetSubnet(subnetIds)
@@ -230,8 +258,21 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     err = netsvc.DeleteSubnet(subnetRef.ResourceID)
     if err != nil {
          return reconcile.Result{}, errors.Wrapf(err, "Can not delete subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    }
 
-    } 
+    clusterScope.Info("Delete net")
+    net, err := netsvc.GetNet(netIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if net == nil {
+        controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+        return reconcile.Result{}, nil
+    }
+    err = netsvc.DeleteNet(netRef.ResourceID)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not delete net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    }
     controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     return reconcile.Result{}, nil
 }

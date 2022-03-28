@@ -3,6 +3,7 @@ package net
 import(
     infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
     osc "github.com/outscale/osc-sdk-go/v2"
+    tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
     "fmt"
     
 )
@@ -16,6 +17,12 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
     OscApiClient := s.scope.Api()
     OscAuthClient := s.scope.Auth()
     subnetResponse, httpRes, err := OscApiClient.SubnetApi.CreateSubnet(OscAuthClient).CreateSubnetRequest(subnetRequest).Execute()    
+    if err != nil {
+        fmt.Sprintf("Error with http result %s", httpRes.Status)
+        return nil, err
+    }
+    resourceIds := []string{*subnetResponse.Subnet.SubnetId}
+    err = tag.AddTag("Name", "cluster-api-subnet", resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err

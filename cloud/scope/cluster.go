@@ -99,6 +99,12 @@ func (s *ClusterScope) Auth() context.Context {
 func (s *ClusterScope) Api() *osc.APIClient {
         return s.OscClient.api
 }
+func (s *ClusterScope) InternetService() *infrastructurev1beta1.OscInternetService {
+        return &s.OscCluster.Spec.Network.InternetService
+}
+func (s *ClusterScope) InternetServiceRef() *infrastructurev1beta1.OscResourceReference {
+        return &s.OscCluster.Status.Network.InternetServiceRef
+}
 func (s *ClusterScope) LoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
 	return &s.OscCluster.Spec.Network.LoadBalancer
 }
@@ -114,6 +120,7 @@ func (s *ClusterScope) Subnet() *infrastructurev1beta1.OscSubnet {
 func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceReference {
         return &s.OscCluster.Status.Network.SubnetRef
 }
+
 func (s *ClusterScope) SetReady() {
 	s.OscCluster.Status.Ready = true
 }

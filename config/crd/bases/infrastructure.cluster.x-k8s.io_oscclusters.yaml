@@ -81,6 +81,8 @@ spec:
                       subregionname:
                         type: string
                     type: object
+                  internetService:
+                    type: object
                   net:
                     properties:
                       ipRange:
@@ -99,6 +101,11 @@ spec:
               network:
                 properties:
                   LoadbalancerRef:
+                    properties:
+                      resourceId:
+                        type: string
+                    type: object
+                  internetserviceref:
                     properties:
                       resourceId:
                         type: string
