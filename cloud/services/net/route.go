@@ -7,7 +7,7 @@ import(
     "fmt"
 )
 
-func (s *Service) CreateRouteTable(spec *infrastructurev1beta1.OscRouteTable, netId string) (*osc.RouteTable, error) {
+func (s *Service) CreateRouteTable(spec *infrastructurev1beta1.OscRouteTable, netId string, tagValue string) (*osc.RouteTable, error) {
     routeTableRequest  := osc.CreateRouteTableRequest{
         NetId: netId,
     }
@@ -19,7 +19,7 @@ func (s *Service) CreateRouteTable(spec *infrastructurev1beta1.OscRouteTable, ne
         return nil, err
     } 
     resourceIds := []string{*routeTableResponse.RouteTable.RouteTableId}
-    err = tag.AddTag("Name", "cluster-api-routetable", resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
@@ -39,11 +39,10 @@ func (s *Service) DeleteRouteTable(routeTableId string) (error) {
     return nil
 }
 
-func (s *Service) GetRouteTable(tagValue string, netId []string) (*osc.RouteTable, error) {
+func (s *Service) GetRouteTable(routeTableId []string) (*osc.RouteTable, error) {
     readRouteTableRequest := osc.ReadRouteTablesRequest{
         Filters: &osc.FiltersRouteTable{
-            NetIds: &netId,
-            TagValues: &[]string{tagValue},
+            RouteTableIds: &routeTableId,
         },
     }
     OscApiClient := s.scope.Api()

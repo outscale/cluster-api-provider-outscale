@@ -8,7 +8,7 @@ import(
     
 )
 
-func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, tagValue string) (*osc.Subnet, error) {
     IpSubnetRange := spec.IpSubnetRange
     subnetRequest := osc.CreateSubnetRequest{
         IpRange: IpSubnetRange,
@@ -22,7 +22,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
         return nil, err
     }
     resourceIds := []string{*subnetResponse.Subnet.SubnetId}
-    err = tag.AddTag("Name", "cluster-api-subnet", resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err

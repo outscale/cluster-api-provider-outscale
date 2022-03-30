@@ -28,7 +28,7 @@ func ValidateCidr(cidr string) (string, error){
     return cidr, nil
 }
 
-func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet) (*osc.Net, error) {
+func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, tagValue string) (*osc.Net, error) {
     IpRange, err := ValidateCidr(spec.IpRange)
     if err != nil {
         return nil, err
@@ -44,7 +44,7 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet) (*osc.Net, error
         return nil, err
     }
     resourceIds := []string{*netResponse.Net.NetId}
-    err = tag.AddTag("Name", "cluster-api-net", resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err

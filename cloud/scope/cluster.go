@@ -102,7 +102,7 @@ func (s *ClusterScope) Api() *osc.APIClient {
 func (s *ClusterScope) InternetService() *infrastructurev1beta1.OscInternetService {
         return &s.OscCluster.Spec.Network.InternetService
 }
-func (s *ClusterScope) InternetServiceRef() *infrastructurev1beta1.OscResourceReference {
+func (s *ClusterScope) InternetServiceRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.InternetServiceRef
 }
 func (s *ClusterScope) LoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
@@ -117,6 +117,10 @@ func (s *ClusterScope) Network() *infrastructurev1beta1.OscNetwork {
 func (s *ClusterScope) RouteTables() *[]infrastructurev1beta1.OscRouteTable {
 	return &s.OscCluster.Spec.Network.RouteTables
 }
+func (s *ClusterScope) RouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &s.OscCluster.Status.Network.RouteTablesRef
+}
+
 func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
 	routeTables := s.OscCluster.Spec.Network.RouteTables
         for _, routeTable := range routeTables {
@@ -127,13 +131,13 @@ func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
         return &routeTables[0].Routes
 }
                
-func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceReference {
+func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.NetRef
 }
 func (s *ClusterScope) Subnet() *infrastructurev1beta1.OscSubnet {
         return &s.OscCluster.Spec.Network.Subnet
 }
-func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceReference {
+func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.SubnetRef
 }
 
