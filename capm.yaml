@@ -97,6 +97,26 @@ spec:
                       ipRange:
                         type: string
                     type: object
+                  routeTables:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        routes:
+                          items:
+                            properties:
+                              destination:
+                                type: string
+                              name:
+                                type: string
+                              targetName:
+                                type: string
+                              targetType:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
                   subnet:
                     properties:
                       ipSubnetRange:
@@ -111,23 +131,38 @@ spec:
                 properties:
                   LoadbalancerRef:
                     properties:
-                      resourceId:
-                        type: string
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                   internetserviceref:
                     properties:
-                      resourceId:
-                        type: string
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                   netref:
                     properties:
-                      resourceId:
-                        type: string
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  routetableref:
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                   subnetref:
                     properties:
-                      resourceId:
-                        type: string
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                 type: object
               ready:

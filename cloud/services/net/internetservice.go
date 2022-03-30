@@ -9,7 +9,7 @@ import(
     
 )
 
-func (s *Service) CreateInternetService(spec *infrastructurev1beta1.OscInternetService) (*osc.InternetService, error) {
+func (s *Service) CreateInternetService(spec *infrastructurev1beta1.OscInternetService, tagValue string) (*osc.InternetService, error) {
     internetServiceRequest := osc.CreateInternetServiceRequest{}
     OscApiClient := s.scope.Api()
     OscAuthClient := s.scope.Auth()
@@ -19,7 +19,7 @@ func (s *Service) CreateInternetService(spec *infrastructurev1beta1.OscInternetS
         return nil, err
     }
     resourceIds := []string{*internetServiceResponse.InternetService.InternetServiceId}
-    err = tag.AddTag("Name", "cluster-api-igw", resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err

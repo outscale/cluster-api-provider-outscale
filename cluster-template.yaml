@@ -24,3 +24,10 @@ spec:
       ipRange: "172.19.95.128/25"
     subnet:
       ipSubnetRange: "172.19.95.192/27"
+    routeTables:
+      - name: cluster-api-routetable
+        routes:
+          - name: cluster-api-route
+            targetName: cluster-api-igw
+            targetType: igw     
+            destination: "0.0.0.0/0"

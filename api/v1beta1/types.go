@@ -5,7 +5,7 @@ type OscNetwork struct {
     Net OscNet `json:"net,omitempty"`   
     Subnet OscSubnet `json:"subnet,omitempty"` 
     InternetService OscInternetService `json:"internetService,omitempty"`
-    RouteTables []OscRouteTable `json:routeTable,omitempty"`
+    RouteTables []OscRouteTable `json:"routeTables,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -47,20 +47,22 @@ type OscRouteTable struct {
 }
 
 type OscRoute struct {
-    Target string `json:"target,omitempty"`
+    Name string `json:"name,omitempty"`
+    TargetName string `json:"targetName,omitempty"` 
+    TargetType string `json:"targetType,omitempty"`
     Destination string `json:"destination,omitempty"`
 }
 
-type OscResourceReference struct {
-    ResourceID string `json:"resourceId,omitempty"`
+type OscResourceMapReference struct {
+    ResourceMap map[string]string `json:"resourceMap,omitempty"`
 }
 
-
 type OscNetworkResource struct {
-    LoadbalancerRef OscResourceReference `json:"LoadbalancerRef,omitempty"`
-    NetRef OscResourceReference `json:"netref,omitempty"`
-    SubnetRef OscResourceReference `json:"subnetref,omitempty"`
-    InternetServiceRef OscResourceReference `json:"internetserviceref,omitempty"`
+    LoadbalancerRef OscResourceMapReference `json:"LoadbalancerRef,omitempty"`
+    NetRef OscResourceMapReference `json:"netref,omitempty"`
+    SubnetRef OscResourceMapReference `json:"subnetref,omitempty"`
+    InternetServiceRef OscResourceMapReference `json:"internetserviceref,omitempty"`
+    RouteTablesRef OscResourceMapReference `json:"routetableref,omitempty"`
 }
 
 var (
@@ -78,9 +80,11 @@ var (
     DefaultPort int32 = 6443
     DefaultIpRange string = "172.19.95.128/25"
     DefaultIpSubnetRange string = "172.19.95.192/27"
-    DefaultTarget = "cluster-api-igw"
+    DefaultTargetName = "cluster-api-igw"
+    DefaultTargetType = "igw"
     DefaultDestination = "0.0.0.0/0"
     DefaultRouteTableName = "cluster-api-routetable"
+    DefaultRouteName = "cluster-api-route"
 )
 
 func (net *OscNet) SetDefaultValue() {
@@ -98,7 +102,9 @@ func (sub *OscSubnet) SetDefaultValue() {
 func (network *OscNetwork) SetDefaultValue() {
     if len(network.RouteTables) == 0 {
         route := OscRoute{
-            Target: DefaultTarget,
+            Name: DefaultRouteName,
+            TargetName: DefaultTargetName,
+            TargetType: DefaultTargetType,
             Destination: DefaultDestination,
         } 
         routetable := OscRouteTable{
@@ -115,7 +121,9 @@ func (network *OscNetwork) SetDefaultValue() {
 func (routetable *OscRouteTable) SetDefaultValue() {
     if len(routetable.Routes) == 0 {
         route := OscRoute{
-            Target: DefaultTarget,
+            Name: DefaultRouteName,
+            TargetName: DefaultTargetName,
+            TargetType: DefaultTargetType,
             Destination: DefaultDestination,
         }
         var routes []OscRoute = routetable.Routes
