@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"time"
         "os"
+        "fmt"
 	//      "k8s.io/apimachinery/pkg/runtime"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
         "github.com/outscale-vbr/cluster-api-provider-outscale.git/util/reconciler"
@@ -117,6 +118,48 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return r.reconcile(ctx, clusterScope)
 }
 
+func GetResourceId(resourceName string, resourceType string, clusterScope *scope.ClusterScope) (string, error) {
+    switch {
+    case resourceType == "net":
+        netRef := clusterScope.NetRef()
+        if netId, ok := netRef.ResourceMap[resourceName]; ok {
+            return netId, nil
+        } else {
+            return "", fmt.Errorf("%s is not exist", resourceName)
+        }      
+    case resourceType == "subnet":
+        subnetRef := clusterScope.SubnetRef()
+        if subnetId, ok := subnetRef.ResourceMap[resourceName]; ok {
+            return subnetId, nil
+        } else {
+            return "", fmt.Errorf("%s is not exist", resourceName)
+        }
+    case resourceType == "gateway":
+        internetServiceRef := clusterScope.InternetServiceRef()
+        if internetServiceId, ok := internetServiceRef.ResourceMap[resourceName]; ok {
+            return internetServiceId, nil
+        } else {
+            return "", fmt.Errorf("%s is not exist", resourceName)
+        }
+    case resourceType == "route-table":
+        routeTableRef := clusterScope.RouteTablesRef()
+        if routeTableId, ok := routeTableRef.ResourceMap[resourceName]; ok {
+            return routeTableId, nil
+        } else {
+            return "", fmt.Errorf("%s is not exist", resourceName)
+        }
+    case resourceType == "route":  
+        routeRef := clusterScope.RouteRef()
+        if routeId, ok := routeRef.ResourceMap[resourceName]; ok {
+            return routeId, nil
+        } else {
+            return "", fmt.Errorf("%s is not exist", resourceName)
+        }
+    default:
+        return "", fmt.Errorf("%s does not exist", resourceType)
+    }
+}        
+
 
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
     clusterScope.Info("Reconcile OscCluster")
@@ -154,7 +197,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     var netIds = []string{netRef.ResourceMap[netName]}
     net, err := netsvc.GetNet(netIds)
-    clusterScope.Info("### len net ###", "net", len(netRef.ResourceMap))
+    clusterScope.Info("### len nets ###", "net", len(netRef.ResourceMap))
     clusterScope.Info("### Get net ###", "net", net)
     clusterScope.Info("### Get netIds ###", "net", netIds)
     if err != nil {
@@ -162,8 +205,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     if net == nil {
         clusterScope.Info("### Empty Net ###")
-        netRef.ResourceMap[netName] = "init"
-        clusterScope.Info("### content net ###", "net", netRef.ResourceMap)
         net, err = netsvc.CreateNet(netSpec, netName)
         if err != nil {
             return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
@@ -193,8 +234,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     if subnet == nil {
         clusterScope.Info("### Empty Subnet ###") 
-        subnetRef.ResourceMap[subnetName] = "init"
-        clusterScope.Info("### content subnet ###", "subnet", subnetRef.ResourceMap)
         subnet, err = netsvc.CreateSubnet(subnetSpec, netRef.ResourceMap[netName], subnetName)
         if err != nil {
             return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
@@ -220,8 +259,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     }
     if internetService == nil {
         clusterScope.Info("### Empty internetService ###")
-        internetServiceRef.ResourceMap[internetServiceName] = "init"
-        clusterScope.Info("### content internetService ###", "internetservice", internetServiceRef.ResourceMap)
         internetService, err = netsvc.CreateInternetService(internetServiceSpec, internetServiceName)
         if err != nil {
             return reconcile.Result{}, errors.Wrapf(err, "Can not create internetservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
@@ -238,12 +275,18 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     clusterScope.Info("Create RouteTable")
     routeTablesSpec := clusterScope.RouteTables()
     routeTablesRef := clusterScope.RouteTablesRef()
+    routeRef := clusterScope.RouteRef()
+    linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
     var routeTableIds []string
+    var resourceIds []string
     for _, routeTableSpec := range *routeTablesSpec {
-        routeTableName := routeTableSpec.Name + clusterScope.UID()
+        routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
         routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}    
         if len(routeTablesRef.ResourceMap) == 0 {
             routeTablesRef.ResourceMap = make(map[string]string)
+        }
+        if len(linkRouteTablesRef.ResourceMap) == 0 {
+            linkRouteTablesRef.ResourceMap = make(map[string]string)
         }
         routeTable, err := netsvc.GetRouteTable(routeTableIds)
         clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
@@ -253,14 +296,46 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
         }
         if routeTable == nil {
             clusterScope.Info("### Empty routeTable ###")
-            routeTablesRef.ResourceMap[routeTableName] = "init"
-            clusterScope.Info("### content routeTable ###", "routeTable", routeTablesRef.ResourceMap)
             routeTable, err = netsvc.CreateRouteTable(&routeTableSpec, netRef.ResourceMap[netName], routeTableName)
             if err != nil {
-                return reconcile.Result{}, errors.Wrapf(err, "Can not create internetservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+                return reconcile.Result{}, errors.Wrapf(err, "Can not create routetable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+            }
+            linkRouteTableId, err := netsvc.LinkRouteTable(*routeTable.RouteTableId, subnetRef.ResourceMap[subnetName])
+            if err != nil {
+                return reconcile.Result{}, errors.Wrapf(err, "Can not link routetable with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
             }
             routeTablesRef.ResourceMap[routeTableName] = *routeTable.RouteTableId
+            linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
             clusterScope.Info("### content update routeTable ###", "routeTable", routeTablesRef.ResourceMap)
+
+            clusterScope.Info("check route")
+            if len(routeRef.ResourceMap) == 0 {
+                routeRef.ResourceMap = make(map[string]string)
+            }
+            routesSpec := clusterScope.Route(routeTableName)
+            for _, routeSpec := range *routesSpec {
+                resourceName := routeSpec.TargetName + "-" + clusterScope.UID()
+                resourceType := routeSpec.TargetType
+                routeName := routeSpec.Name + "-" + clusterScope.UID()
+                resourceId, err := GetResourceId(resourceName, resourceType, clusterScope)
+                if err != nil {
+                    return reconcile.Result{}, err
+                }
+                resourceIds = []string{resourceId}
+                destinationIpRange := routeSpec.Destination
+                routeTableFromRoute, err := netsvc.GetRouteTableFromRoute(routeTableIds, resourceIds, resourceType)
+                if err != nil {
+                    return reconcile.Result{}, err
+                }
+                if routeTableFromRoute == nil {
+                    routeTableFromRoute, err = netsvc.CreateRoute(destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
+                    if err != nil {
+                        return reconcile.Result{}, errors.Wrapf(err, "Can not create route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+                    }
+                }
+                routeRef.ResourceMap[routeName] = *routeTableFromRoute.RouteTableId
+
+            }     
         }
     }
 
@@ -300,12 +375,16 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     clusterScope.Info("Delete RouteTable")
     routeTablesSpec := clusterScope.RouteTables()
     routeTablesRef := clusterScope.RouteTablesRef()
+    linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
     var routeTableIds []string
+    var resourceIds []string
     for _, routeTableSpec := range *routeTablesSpec {
         routeTableSpec.SetDefaultValue()
-        routeTableName := routeTableSpec.Name + clusterScope.UID()
+        routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
         routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}
+        clusterScope.Info("### content delete routeTable ###", "routeTable", routeTablesRef.ResourceMap)
         routetable, err := netsvc.GetRouteTable(routeTableIds)
+        clusterScope.Info("### delete routeTable ###", "routeTable", routetable)
         if err != nil {
             return reconcile.Result{}, err
         }
@@ -313,11 +392,50 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
             controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
             return reconcile.Result{}, nil
         }
+        clusterScope.Info("Remove Route")
+        routesSpec := clusterScope.Route(routeTableName)
+        for _, routeSpec := range *routesSpec {
+            resourceName := routeSpec.TargetName + "-" + clusterScope.UID()
+            resourceType := routeSpec.TargetType
+            routeName := routeSpec.Name + "-" + clusterScope.UID()
+            resourceId, err := GetResourceId(resourceName, resourceType, clusterScope)
+            if err != nil {
+                return reconcile.Result{}, err
+            }
+            routeTableId, err := GetResourceId(routeName, "route", clusterScope)
+            if err != nil {
+                return reconcile.Result{}, err
+            }
+            resourceIds = []string{resourceId}
+            destinationIpRange := routeSpec.Destination
+            routeTableFromRoute, err := netsvc.GetRouteTableFromRoute(routeTableIds, resourceIds, resourceType)
+            if err != nil {
+                return reconcile.Result{}, err
+            }
+            if routeTableFromRoute == nil {
+                controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+                return reconcile.Result{}, nil                 
+            }
+            clusterScope.Info("Delete Route")
+            err = netsvc.DeleteRoute(destinationIpRange, routeTableId)
+            if err != nil {
+                return reconcile.Result{}, errors.Wrapf(err, "Can not delete route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+            }
+        }
+        clusterScope.Info("Unlink Routetable")
+        
+        err = netsvc.UnlinkRouteTable(linkRouteTablesRef.ResourceMap[routeTableName])
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not delete routeTable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+        clusterScope.Info("Delete RouteTable")
+
         err = netsvc.DeleteRouteTable(routeTablesRef.ResourceMap[routeTableName])
         if err != nil {
             return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
         }
     }
+
     clusterScope.Info("Delete internetService")
     internetServiceRef := clusterScope.InternetServiceRef()
     internetServiceName := "cluster-api-internetservice-" + clusterScope.UID()

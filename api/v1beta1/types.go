@@ -63,6 +63,8 @@ type OscNetworkResource struct {
     SubnetRef OscResourceMapReference `json:"subnetref,omitempty"`
     InternetServiceRef OscResourceMapReference `json:"internetserviceref,omitempty"`
     RouteTablesRef OscResourceMapReference `json:"routetableref,omitempty"`
+    LinkRouteTableRef OscResourceMapReference `json:"linkroutetableref,omitempty"`
+    RouteRef OscResourceMapReference `json:"routeref,omitempty"`
 }
 
 var (

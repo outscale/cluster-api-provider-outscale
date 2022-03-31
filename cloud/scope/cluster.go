@@ -120,7 +120,12 @@ func (s *ClusterScope) RouteTables() *[]infrastructurev1beta1.OscRouteTable {
 func (s *ClusterScope) RouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.RouteTablesRef
 }
-
+func (s *ClusterScope) RouteRef() *infrastructurev1beta1.OscResourceMapReference {
+        return &s.OscCluster.Status.Network.RouteRef
+}
+func (s ClusterScope) LinkRouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
+        return &s.OscCluster.Status.Network.LinkRouteTableRef
+}
 func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
 	routeTables := s.OscCluster.Spec.Network.RouteTables
         for _, routeTable := range routeTables {
