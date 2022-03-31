@@ -272,6 +272,38 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
     }
 
+    clusterScope.Info("Create PublicIp")
+    var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+    networkSpec := clusterScope.Network()
+    if networkSpec.PublicIps == nil {
+        networkSpec.SetPublicIpDefaultValue()
+        publicIpsSpec = &networkSpec.PublicIps
+    } else {
+        publicIpsSpec = clusterScope.PublicIp()
+    }
+    publicIpRef := clusterScope.PublicIpRef()
+    var publicIpsId []string
+    for _, publicIpSpec := range *publicIpsSpec {
+        publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+        publicIpsId = []string{publicIpRef.ResourceMap[publicIpName]}
+        if len(publicIpRef.ResourceMap) == 0 {
+            publicIpRef.ResourceMap = make(map[string]string)
+        }
+        publicIp, err := netsvc.GetPublicIp(publicIpsId)
+        if err !=nil {
+            return reconcile.Result{}, err
+        }
+        if publicIp == nil {
+            publicIp, err = netsvc.CreatePublicIp(&publicIpSpec, publicIpName)
+            if err != nil {
+                return reconcile.Result{}, errors.Wrapf(err, "Can not create publicIp for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+            }
+        }
+        publicIpRef.ResourceMap[publicIpName] = *publicIp.PublicIpId
+        clusterScope.Info("### content update publicIpName ###", "publicip", publicIpRef.ResourceMap)
+    } 
+
+
     clusterScope.Info("Create RouteTable")
     routeTablesSpec := clusterScope.RouteTables()
     routeTablesRef := clusterScope.RouteTablesRef()
@@ -339,6 +371,37 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
         }
     }
 
+    clusterScope.Info("Create NatService")
+    natServiceSpec := clusterScope.NatService()
+    natServiceRef := clusterScope.NatServiceRef()
+    natServiceSpec.SetDefaultValue() 
+    natServiceName := natServiceSpec.Name + clusterScope.UID()
+    if len(natServiceRef.ResourceMap) == 0{
+        natServiceRef.ResourceMap = make(map[string]string)
+    }
+    var natServiceIds = []string{natServiceRef.ResourceMap[natServiceName]}
+    natService, err := netsvc.GetNatService(natServiceIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
+
+    if natService == nil {
+        clusterScope.Info("### Empty NatService ###")
+        clusterScope.Info("### Request Info ###", "natService", natServiceSpec.PublicIpName)
+        clusterScope.Info("### Request Info ###", "natService", publicIpRef.ResourceMap[publicIpName])
+        clusterScope.Info("### Request Info ###", "natService", subnetRef.ResourceMap[subnetName])
+        clusterScope.Info("### Request Info ###", "natService", subnetName)
+        clusterScope.Info("### Request Info ###", "natService", natServiceName)
+
+        natService, err = netsvc.CreateNatService(natServiceSpec, publicIpRef.ResourceMap[publicIpName], subnetRef.ResourceMap[subnetName], natServiceName)
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not create natservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+        natServiceRef.ResourceMap[natServiceName] = *natService.NatServiceId
+        clusterScope.Info("### content update natService ###", "natservice", natServiceRef.ResourceMap)
+    }
+
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
     clusterScope.Info("Set OscCluster status to ready")
     clusterScope.SetReady()
@@ -371,6 +434,49 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     }
     netsvc := net.NewService(ctx, clusterScope)
     clusterScope.Info("Get Net", "net", netsvc)
+
+    clusterScope.Info("Delete natService")
+    natServiceSpec := clusterScope.NatService()
+    natServiceRef := clusterScope.NatServiceRef()
+    natServiceName :=  natServiceSpec.Name + clusterScope.UID()
+    var natServiceIds = []string{natServiceRef.ResourceMap[natServiceName]}
+    natservice, err := netsvc.GetNatService(natServiceIds)
+    if err != nil {
+        return reconcile.Result{}, err
+    }
+    if natservice == nil {
+        controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+        return reconcile.Result{}, nil
+    }
+    err = netsvc.DeleteNatService(natServiceRef.ResourceMap[natServiceName])
+    if err != nil {
+         return reconcile.Result{}, errors.Wrapf(err, "Can not delete natService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+    }
+    
+    clusterScope.Info("Delete PublicIp")
+    var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+    networkSpec := clusterScope.Network()
+    if networkSpec.PublicIps == nil {
+        networkSpec.SetPublicIpDefaultValue()
+        publicIpsSpec = &networkSpec.PublicIps
+    } else {
+        publicIpsSpec = clusterScope.PublicIp()
+    }
+    publicIpRef := clusterScope.PublicIpRef()
+    var publicIpsId []string
+    for _, publicIpSpec := range *publicIpsSpec {
+        publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+        publicIpsId = []string{publicIpRef.ResourceMap[publicIpName]}
+        publicIp, err := netsvc.GetPublicIp(publicIpsId)
+        if err != nil {
+            return reconcile.Result{}, err
+        }
+        if publicIp == nil {
+            controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+            return reconcile.Result{}, nil
+        }       
+     }
+
 
     clusterScope.Info("Delete RouteTable")
     routeTablesSpec := clusterScope.RouteTables()
@@ -456,8 +562,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
     if err != nil {
          return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
     }
-
-
+ 
     clusterScope.Info("Delete subnet")
     subnetRef := clusterScope.SubnetRef()
     subnetName := "cluster-api-subnet-" + clusterScope.UID()

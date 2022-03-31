@@ -24,6 +24,12 @@ spec:
       ipRange: "172.19.95.128/25"
     subnet:
       ipSubnetRange: "172.19.95.192/27"
+    publicips:
+      - name: cluster-api-publicip
+    natservice:
+      name: cluster-api-natservice
+      publicipname: cluster-api-publicip
+      subnetname: cluster-api-subnet
     routeTables:
       - name: cluster-api-routetable
         routes:

@@ -92,11 +92,27 @@ spec:
                     type: object
                   internetService:
                     type: object
+                  natService:
+                    properties:
+                      name:
+                        type: string
+                      publicipname:
+                        type: string
+                      subnetname:
+                        type: string
+                    type: object
                   net:
                     properties:
                       ipRange:
                         type: string
                     type: object
+                  publicips:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                    type: array
                   routeTables:
                     items:
                       properties:
@@ -150,7 +166,21 @@ spec:
                           type: string
                         type: object
                     type: object
+                  natref:
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   netref:
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  publicipref:
                     properties:
                       resourceMap:
                         additionalProperties:
