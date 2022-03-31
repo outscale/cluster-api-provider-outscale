@@ -105,6 +105,12 @@ func (s *ClusterScope) InternetService() *infrastructurev1beta1.OscInternetServi
 func (s *ClusterScope) InternetServiceRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.InternetServiceRef
 }
+func (s *ClusterScope) NatService() *infrastructurev1beta1.OscNatService{
+ 	return &s.OscCluster.Spec.Network.NatService
+}
+func (s *ClusterScope) NatServiceRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &s.OscCluster.Status.Network.NatServiceRef
+}
 func (s *ClusterScope) LoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
 	return &s.OscCluster.Spec.Network.LoadBalancer
 }
@@ -123,6 +129,9 @@ func (s *ClusterScope) RouteTablesRef() *infrastructurev1beta1.OscResourceMapRef
 func (s *ClusterScope) RouteRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.RouteRef
 }
+func (s *ClusterScope) PublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &s.OscCluster.Status.Network.PublicIpRef
+}
 func (s ClusterScope) LinkRouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.LinkRouteTableRef
 }
@@ -134,6 +143,9 @@ func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
             }
         }
         return &routeTables[0].Routes
+}
+func (s *ClusterScope) PublicIp() *[]infrastructurev1beta1.OscPublicIp {
+        return &s.OscCluster.Spec.Network.PublicIps
 }
                
 func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceMapReference {

@@ -5,7 +5,9 @@ type OscNetwork struct {
     Net OscNet `json:"net,omitempty"`   
     Subnet OscSubnet `json:"subnet,omitempty"` 
     InternetService OscInternetService `json:"internetService,omitempty"`
+    NatService OscNatService `json:"natService,omitempty"`
     RouteTables []OscRouteTable `json:"routeTables,omitempty"`
+    PublicIps []OscPublicIp `json:"publicips,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -41,9 +43,19 @@ type OscSubnet struct {
     IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 }
 
+type OscNatService struct {
+    Name string `json:"name,omitempty"` 
+    PublicIpName string `json:"publicipname,omitempty"`
+    SubnetName string `json:"subnetname,omitempty"`
+}
+
 type OscRouteTable struct {
     Name string `json:"name,omitempty"`
     Routes []OscRoute `json:"routes,omitempty"`
+}
+
+type OscPublicIp struct {
+    Name string `json:"name,omitempty"`
 }
 
 type OscRoute struct {
@@ -65,6 +77,8 @@ type OscNetworkResource struct {
     RouteTablesRef OscResourceMapReference `json:"routetableref,omitempty"`
     LinkRouteTableRef OscResourceMapReference `json:"linkroutetableref,omitempty"`
     RouteRef OscResourceMapReference `json:"routeref,omitempty"`
+    PublicIpRef OscResourceMapReference `json:"publicipref,omitempty"`
+    NatServiceRef OscResourceMapReference `json:"natref,omitempty"`
 }
 
 var (
@@ -87,6 +101,9 @@ var (
     DefaultDestination = "0.0.0.0/0"
     DefaultRouteTableName = "cluster-api-routetable"
     DefaultRouteName = "cluster-api-route"
+    DefaultPublicIpName = "cluster-api-publicip"
+    DefaultNatServiceName = "cluster-api-natservice"
+    DefaultSubnetName = "cluster-api-subnet"
 )
 
 func (net *OscNet) SetDefaultValue() {
@@ -101,7 +118,19 @@ func (sub *OscSubnet) SetDefaultValue() {
     }
 }
 
-func (network *OscNetwork) SetDefaultValue() {
+func (nat *OscNatService) SetDefaultValue() {
+    if nat.Name == "" {
+        nat.Name = DefaultNatServiceName
+    }
+    if nat.PublicIpName == "" {
+        nat.PublicIpName = DefaultPublicIpName
+    } 
+    if nat.SubnetName == "" {
+        nat.SubnetName = DefaultSubnetName
+    }
+}
+
+func (network *OscNetwork) SetRouteTableDefaultValue() {
     if len(network.RouteTables) == 0 {
         route := OscRoute{
             Name: DefaultRouteName,
@@ -119,7 +148,6 @@ func (network *OscNetwork) SetDefaultValue() {
 
 }
 
-
 func (routetable *OscRouteTable) SetDefaultValue() {
     if len(routetable.Routes) == 0 {
         route := OscRoute{
@@ -133,7 +161,15 @@ func (routetable *OscRouteTable) SetDefaultValue() {
     }  
 }
 
-
+func (network *OscNetwork) SetPublicIpDefaultValue() {
+    if len(network.PublicIps) == 0 {
+        publicip := OscPublicIp {
+            Name: DefaultPublicIpName,       
+        }
+        var publicips []OscPublicIp = network.PublicIps
+        publicips = append(publicips,publicip)
+    }
+}
 
 func (lb *OscLoadBalancer) SetDefaultValue() {
     if lb.LoadBalancerName == "" {
