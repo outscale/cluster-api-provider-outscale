@@ -91,6 +91,9 @@ spec:
                         type: string
                     type: object
                   internetService:
+                    properties:
+                      name:
+                        type: string
                     type: object
                   natService:
                     properties:
@@ -104,6 +107,8 @@ spec:
                   net:
                     properties:
                       ipRange:
+                        type: string
+                      name:
                         type: string
                     type: object
                   publicips:
@@ -136,6 +141,8 @@ spec:
                   subnet:
                     properties:
                       ipSubnetRange:
+                        type: string
+                      name:
                         type: string
                     type: object
                 type: object

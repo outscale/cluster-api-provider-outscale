@@ -1,14 +1,13 @@
 package net  
 
 import(
-    infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
     osc "github.com/outscale/osc-sdk-go/v2"
     tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
     "fmt"
     "github.com/pkg/errors"
 )
 
-func (s *Service) CreateRouteTable(spec *infrastructurev1beta1.OscRouteTable, netId string, tagValue string) (*osc.RouteTable, error) {
+func (s *Service) CreateRouteTable(netId string, tagValue string) (*osc.RouteTable, error) {
     routeTableRequest  := osc.CreateRouteTableRequest{
         NetId: netId,
     }
@@ -18,9 +17,13 @@ func (s *Service) CreateRouteTable(spec *infrastructurev1beta1.OscRouteTable, ne
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
+    }
+    routeTableName, err := tag.ValidateTagNameValue(tagValue)
+    if err != nil {
+        return nil, err
     } 
     resourceIds := []string{*routeTableResponse.RouteTable.RouteTableId}
-    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", routeTableName, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
@@ -30,16 +33,21 @@ func (s *Service) CreateRouteTable(spec *infrastructurev1beta1.OscRouteTable, ne
 
 func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
     var routeRequest osc.CreateRouteRequest
+    valideDestinationIpRange, err := ValidateCidr(destinationIpRange)
+    if err != nil {
+        return nil, err
+    }
+
     switch {
     case resourceType == "gateway": 
         routeRequest = osc.CreateRouteRequest{
-            DestinationIpRange: destinationIpRange,
+            DestinationIpRange: valideDestinationIpRange,
             RouteTableId: routeTableId,
             GatewayId: &resourceId,
         }
     case resourceType == "nat":
         routeRequest = osc.CreateRouteRequest{
-            DestinationIpRange: destinationIpRange,
+            DestinationIpRange: valideDestinationIpRange,
             RouteTableId: routeTableId,
             NatServiceId: &resourceId,
         }
