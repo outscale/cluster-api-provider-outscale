@@ -21,7 +21,7 @@ func ValidateCidr(cidr string) (string, error){
     if net.ParseIP(ip) == nil {
         return cidr, errors.New("Invalid Cidr Ip")        
     }
-    isValidatePrefix := regexp.MustCompile(`^([1-9]|[1-2][0-9]|3[0-1]|32)$`).MatchString
+    isValidatePrefix := regexp.MustCompile(`^([0-9]|[1-2][0-9]|3[0-1]|32)$`).MatchString
     if !isValidatePrefix(prefix) {
         return cidr, errors.New("Invalid Cidr Prefix")
     }
@@ -43,8 +43,12 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, tagValue string)
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
     }
+    netName,err := tag.ValidateTagNameValue(tagValue)
+    if err != nil {
+        return nil, err
+    }
     resourceIds := []string{*netResponse.Net.NetId}
-    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", netName, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err

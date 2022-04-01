@@ -34,12 +34,16 @@ type OscLoadBalancerHealthCheck struct {
 }
 
 type OscNet struct {
+    Name string `json:"name,omitempty"`
     IpRange string `json:"ipRange,omitempty"`
 }
 
-type OscInternetService struct {}
+type OscInternetService struct {
+    Name string `json:"name,omitempty"`
+}
 
 type OscSubnet struct {
+    Name string `json:"name,omitempty"`
     IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 }
 
@@ -104,17 +108,31 @@ var (
     DefaultPublicIpName = "cluster-api-publicip"
     DefaultNatServiceName = "cluster-api-natservice"
     DefaultSubnetName = "cluster-api-subnet"
+    DefaultNetName = "cluster-api-net"
+    DefaultInternetServiceName = "cluster-api-internetservice"
 )
 
 func (net *OscNet) SetDefaultValue() {
     if net.IpRange == "" {
         net.IpRange = DefaultIpRange
+    }
+    if net.Name == "" {
+        net.Name = DefaultNetName
     } 
+}
+
+func (igw *OscInternetService) SetDefaultValue() {
+    if igw.Name == "" {
+        igw.Name = DefaultInternetServiceName   
+    }
 }
 
 func (sub *OscSubnet) SetDefaultValue() {
     if sub.IpSubnetRange == "" {
         sub.IpSubnetRange = DefaultIpSubnetRange
+    }
+    if sub.Name == "" {
+        sub.Name = DefaultSubnetName
     }
 }
 

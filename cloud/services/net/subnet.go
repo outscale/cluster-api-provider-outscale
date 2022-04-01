@@ -9,10 +9,17 @@ import(
 )
 
 func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, tagValue string) (*osc.Subnet, error) {
-    IpSubnetRange := spec.IpSubnetRange
+    IpSubnetRange, err := ValidateCidr(spec.IpSubnetRange)
+    if err != nil {
+        return nil, err
+    }
     subnetRequest := osc.CreateSubnetRequest{
         IpRange: IpSubnetRange,
         NetId: netId,
+    }
+    subnetName, err := tag.ValidateTagNameValue(tagValue)
+    if err != nil {
+        return nil, err
     }
     OscApiClient := s.scope.Api()
     OscAuthClient := s.scope.Auth()
@@ -22,7 +29,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
         return nil, err
     }
     resourceIds := []string{*subnetResponse.Subnet.SubnetId}
-    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", subnetName, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err

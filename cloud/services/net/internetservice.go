@@ -1,7 +1,6 @@
 package net
 
 import(
-    infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
     osc "github.com/outscale/osc-sdk-go/v2"
     tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 
@@ -9,7 +8,7 @@ import(
     
 )
 
-func (s *Service) CreateInternetService(spec *infrastructurev1beta1.OscInternetService, tagValue string) (*osc.InternetService, error) {
+func (s *Service) CreateInternetService(tagValue string) (*osc.InternetService, error) {
     internetServiceRequest := osc.CreateInternetServiceRequest{}
     OscApiClient := s.scope.Api()
     OscAuthClient := s.scope.Auth()
@@ -18,8 +17,13 @@ func (s *Service) CreateInternetService(spec *infrastructurev1beta1.OscInternetS
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
     }
+    internetServiceName, err := tag.ValidateTagNameValue(tagValue)
+    if err != nil {
+        return nil, err
+    }
+
     resourceIds := []string{*internetServiceResponse.InternetService.InternetServiceId}
-    err = tag.AddTag("Name", tagValue, resourceIds, OscApiClient, OscAuthClient)
+    err = tag.AddTag("Name", internetServiceName, resourceIds, OscApiClient, OscAuthClient)
     if err != nil {
         fmt.Sprintf("Error with http result %s", httpRes.Status)
         return nil, err
