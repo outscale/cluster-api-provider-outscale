@@ -1,13 +1,13 @@
 package v1beta1
 
 type OscNetwork struct {
-    LoadBalancer OscLoadBalancer `json:"Loadbalancer,omitempty"`
+    LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty"`
     Net OscNet `json:"net,omitempty"`   
     Subnet OscSubnet `json:"subnet,omitempty"` 
     InternetService OscInternetService `json:"internetService,omitempty"`
     NatService OscNatService `json:"natService,omitempty"`
     RouteTables []OscRouteTable `json:"routeTables,omitempty"`
-    PublicIps []OscPublicIp `json:"publicips,omitempty"`
+    PublicIps []OscPublicIp `json:"publicIps,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -55,6 +55,7 @@ type OscNatService struct {
 
 type OscRouteTable struct {
     Name string `json:"name,omitempty"`
+    SubnetName string `json:"subnetname,omitempty"`
     Routes []OscRoute `json:"routes,omitempty"`
 }
 
@@ -158,6 +159,7 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
         } 
         routetable := OscRouteTable{
             Name: DefaultRouteTableName,
+            SubnetName: DefaultSubnetName,
             Routes: []OscRoute{route},
         }       
         var routetables []OscRouteTable = network.RouteTables

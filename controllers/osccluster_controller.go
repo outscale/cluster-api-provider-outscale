@@ -307,7 +307,7 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
         } else {
 	    return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
         }
-    case resourceType == "subnet": 
+    case resourceType == "natSubnet": 
         clusterScope.Info("check match subnet with nat service")
         natServiceSpec := clusterScope.NatService()
         natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
@@ -320,8 +320,24 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
             return nil 
         } else {
             return fmt.Errorf("%s subnet does not exist in natService", natSubnetName)
+        }
+   case resourceType == "routeTableSubnet":
+        clusterScope.Info("check match subnet with route table service")
+        routeTablesSpec := clusterScope.RouteTables()
+        resourceNameList = resourceNameList[:0]
+        for _, routeTableSpec := range *routeTablesSpec {
+            routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
+            routeTableSubnetName := routeTableSpec.SubnetName + "-" + clusterScope.UID()
+            resourceNameList = append(resourceNameList, routeTableName)
+            checkOscAssociate := CheckAssociate(routeTableSubnetName, resourceNameList)
+            if checkOscAssociate {
+                return nil
+            } else {
+                return fmt.Errorf("%s subnet dooes not exist in routeTable", routeTableSubnetName)
+            }
         } 
     }  
+    
     return nil
 }
  
@@ -601,19 +617,17 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
         return reconcile.Result{}, err
     }
    
-    subnetSpec := clusterScope.Subnet()
-    subnetSpec.SetDefaultValue()
-    subnetName := subnetSpec.Name + "-" + clusterScope.UID()
-    subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
-    if err != nil {
-        return reconcile.Result{}, err
-    }
-
     var routeTableIds []string
     var resourceIds []string
     for _, routeTableSpec := range *routeTablesSpec {
         routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
-        routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}    
+        routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}   
+        subnetName := routeTableSpec.SubnetName + "-" + clusterScope.UID()
+        subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
+        if err != nil {
+            return reconcile.Result{}, err
+        }
+
         if len(routeTablesRef.ResourceMap) == 0 {
             routeTablesRef.ResourceMap = make(map[string]string)
         }
@@ -741,14 +755,21 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     if duplicateResourcePublicIpErr != nil {
          return reconcile.Result{}, duplicateResourcePublicIpErr
     }
+
     CheckOscAssociatePublicIpErr := CheckOscAssociateResourceName("public-ip", clusterScope)
     if CheckOscAssociatePublicIpErr != nil {
         return reconcile.Result{}, CheckOscAssociatePublicIpErr
     }
-    CheckOscAssociateSubnetErr := CheckOscAssociateResourceName("subnet", clusterScope)
-    if CheckOscAssociateSubnetErr != nil {
-        return reconcile.Result{}, CheckOscAssociateSubnetErr
+
+    CheckOscAssociateRouteTableSubnetErr := CheckOscAssociateResourceName("routeTableSubnet", clusterScope)
+    if CheckOscAssociateRouteTableSubnetErr != nil {
+        return reconcile.Result{}, CheckOscAssociateRouteTableSubnetErr
     }
+   
+    CheckOscAssociateNatSubnetErr := CheckOscAssociateResourceName("natSubnet", clusterScope)
+    if CheckOscAssociateNatSubnetErr != nil {
+        return reconcile.Result{}, CheckOscAssociateNatSubnetErr
+    } 
     netName, err := CheckFormatParameters("net", clusterScope)
     if err != nil {
         return reconcile.Result{}, errors.Wrapf(err, "Can not create net %s for OscCluster %s/%s", netName, osccluster.Namespace, osccluster.Name)   
