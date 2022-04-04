@@ -175,6 +175,130 @@ func GetResourceId(resourceName string, resourceType string, clusterScope *scope
     }
 }        
 
+func CheckAssociate(resourceName string, firstResourceNameArray []string) (bool) {
+    for i:=0; i < len(firstResourceNameArray); i++ {
+        if firstResourceNameArray[i] == resourceName {
+            return true
+        }
+    }
+    return false
+}
+
+
+func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.ClusterScope) (error) {
+    var resourceNameList []string
+    switch {
+    case resourceType == "public-ip": 
+        clusterScope.Info("check match public ip with nat service")
+        natServiceSpec := clusterScope.NatService()
+        natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
+        var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+        networkSpec := clusterScope.Network()
+        if networkSpec.PublicIps == nil {
+            networkSpec.SetPublicIpDefaultValue()
+            publicIpsSpec = &networkSpec.PublicIps
+        } else {
+            publicIpsSpec = clusterScope.PublicIp()
+        } 
+        for _, publicIpSpec := range *publicIpsSpec {
+            resourceNameList = append(resourceNameList, publicIpSpec.Name)
+        }
+        checkOscAssociate := CheckAssociate(natPublicIpName, resourceNameList)
+        if checkOscAssociate {
+            return nil
+        } else {
+	    return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
+        }
+    case resourceType == "subnet": 
+        clusterScope.Info("check match subnet with nat service")
+        natServiceSpec := clusterScope.NatService()
+        natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
+        subnetSpec := clusterScope.Subnet()
+        subnetSpec.SetDefaultValue()
+        subnetName := subnetSpec.Name + "-" + clusterScope.UID()
+        resourceNameList = append(resourceNameList, subnetName)
+        checkOscAssociate := CheckAssociate(natSubnetName, resourceNameList)
+        if checkOscAssociate {
+            return nil 
+        } else {
+            return fmt.Errorf("%s subnet does not exist in natService", natSubnetName)
+        } 
+    }  
+    return nil
+}
+ 
+func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope) (error) {
+    var resourceNameList []string
+    switch {
+    case resourceType == "route-table":
+        clusterScope.Info("check unique routetable")
+        routeTablesSpec := clusterScope.RouteTables()
+        for _, routeTableSpec := range  *routeTablesSpec {
+            resourceNameList = append(resourceNameList, routeTableSpec.Name)
+        }
+        duplicateResourceErr := AlertDuplicate(resourceNameList)
+        if duplicateResourceErr != nil {
+            return duplicateResourceErr
+        } else {
+            return nil
+        }
+        return nil
+    case resourceType == "route":
+        clusterScope.Info("check unique route")
+        routeTablesSpec :=  clusterScope.RouteTables()
+        for _, routeTableSpec := range *routeTablesSpec {
+            routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
+            routesSpec := clusterScope.Route(routeTableName)
+            for _, routeSpec := range *routesSpec{
+                resourceNameList = append(resourceNameList, routeSpec.Name)
+            }
+        } 
+        duplicateResourceErr := AlertDuplicate(resourceNameList)
+        if duplicateResourceErr != nil {
+            return duplicateResourceErr
+        } else {
+            return nil
+        }
+        return nil
+    case resourceType == "public-ip":
+        clusterScope.Info("Check unique name publicIp")
+        var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+        networkSpec := clusterScope.Network()
+        if networkSpec.PublicIps == nil {
+            networkSpec.SetPublicIpDefaultValue()
+            publicIpsSpec = &networkSpec.PublicIps
+        } else {
+            publicIpsSpec = clusterScope.PublicIp()
+        }
+        for _, publicIpSpec := range *publicIpsSpec {
+            resourceNameList = append(resourceNameList, publicIpSpec.Name)
+        }
+        duplicateResourceErr := AlertDuplicate(resourceNameList)
+        if duplicateResourceErr != nil {
+            return duplicateResourceErr
+        } else {
+            return nil
+        }
+        return nil
+    default:
+        return nil
+    }
+
+    return nil    
+}
+
+func AlertDuplicate(nameArray []string) (error) {
+    checkMap := make(map[string]bool, 0)
+    for i := 0; i < len(nameArray); i++ {
+	if checkMap[nameArray[i]] == true {
+            return fmt.Errorf("%s already exist", nameArray[i])           
+        } else {
+            checkMap[nameArray[i]] = true
+        }
+    }
+    return nil
+}
+
 func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
     servicesvc := service.NewService(ctx, clusterScope)
     osccluster := clusterScope.OscCluster
@@ -505,6 +629,28 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     osccluster := clusterScope.OscCluster
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 
+    duplicateResourceRouteTableErr := CheckOscDuplicateName("route-table", clusterScope)
+    if duplicateResourceRouteTableErr  != nil {
+        return reconcile.Result{}, duplicateResourceRouteTableErr
+    }
+
+    duplicateResourceRouteErr := CheckOscDuplicateName("route", clusterScope)
+    if duplicateResourceRouteErr != nil {
+        return reconcile.Result{}, duplicateResourceRouteErr
+    }
+
+    duplicateResourcePublicIpErr := CheckOscDuplicateName("public-ip", clusterScope)
+    if duplicateResourcePublicIpErr != nil {
+        return reconcile.Result{}, duplicateResourcePublicIpErr
+    }
+    CheckOscAssociatePublicIpErr := CheckOscAssociateResourceName("public-ip", clusterScope)
+    if CheckOscAssociatePublicIpErr != nil {
+       return reconcile.Result{}, CheckOscAssociatePublicIpErr
+    }
+    CheckOscAssociateSubnetErr := CheckOscAssociateResourceName("subnet", clusterScope)
+    if CheckOscAssociateSubnetErr != nil {
+       return reconcile.Result{}, CheckOscAssociateSubnetErr
+    }
 //    servicesvc := service.NewService(ctx, clusterScope)
     reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
     if err != nil {
