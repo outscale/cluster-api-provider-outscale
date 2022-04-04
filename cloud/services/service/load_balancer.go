@@ -208,16 +208,10 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	LoadBalancerPort:     LoadBalancerPort,
 	LoadBalancerProtocol: LoadBalancerProtocol,
     }
-    first_tag := osc.ResourceTag{
-        Key: "project",
-        Value: "cluster-api",
-    }
     loadBalancerRequest := osc.CreateLoadBalancerRequest{
 	LoadBalancerName: loadBalancerName,
 	Listeners:        []osc.ListenerForCreation{first_listener},
 	SubregionNames:   &[]string{SubregionName},
-               
-        Tags: &[]osc.ResourceTag{first_tag},
     }
     OscApiClient := s.scope.Api()
     OscAuthClient := s.scope.Auth()
