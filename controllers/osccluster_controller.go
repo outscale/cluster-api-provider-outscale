@@ -37,6 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+        tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+
 )
 
 // OscClusterReconciler reconciles a OscCluster object
@@ -169,7 +171,7 @@ func GetResourceId(resourceName string, resourceType string, clusterScope *scope
         } else {
             return "", fmt.Errorf("%s is not exist", resourceName)
         }
-
+    
     default:
         return "", fmt.Errorf("%s does not exist", resourceType)
     }
@@ -184,6 +186,101 @@ func CheckAssociate(resourceName string, firstResourceNameArray []string) (bool)
     return false
 }
 
+func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope) (string, error) {
+   // var resourceNameList []string
+    switch {
+    case resourceType == "net":
+        clusterScope.Info("Check Net name parameters")
+        netSpec := clusterScope.Net()
+        netSpec.SetDefaultValue()
+        netName := netSpec.Name + "-" + clusterScope.UID()
+        netTagName, err := tag.ValidateTagNameValue(netName)
+        if err != nil {
+            return netTagName, err
+        }    
+        clusterScope.Info("Check Net IpRange parameters")
+        netIpRange := netSpec.IpRange
+        _, err = net.ValidateCidr(netIpRange)
+        if err != nil {
+            return netTagName, err
+        }
+    case resourceType == "subnet":
+        clusterScope.Info("Check Subnet name parameters")
+        subnetSpec := clusterScope.Subnet()
+        subnetSpec.SetDefaultValue()
+        subnetName := subnetSpec.Name + clusterScope.UID() 
+        subnetTagName, err := tag.ValidateTagNameValue(subnetName)
+        if err != nil {
+            return subnetTagName, err
+        }
+        clusterScope.Info("Check subnet IpRange parameters")
+        subnetIpRange := subnetSpec.IpSubnetRange
+        _, err = net.ValidateCidr(subnetIpRange)
+        if err != nil {
+            return subnetTagName, err
+        }
+    case resourceType == "internet-service":
+        clusterScope.Info("Check Internet Service parameters")
+        internetServiceSpec := clusterScope.InternetService()
+        internetServiceSpec.SetDefaultValue()
+        internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
+        internetServiceTagName, err := tag.ValidateTagNameValue(internetServiceName)
+        if err != nil {
+            return internetServiceTagName, err
+        }
+    case resourceType == "public-ip":
+        clusterScope.Info("Check Public Ip parameters")
+        var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+        networkSpec := clusterScope.Network()
+        if networkSpec.PublicIps == nil {
+            networkSpec.SetPublicIpDefaultValue()
+            publicIpsSpec = &networkSpec.PublicIps
+        } else {
+            publicIpsSpec = clusterScope.PublicIp()
+        }
+        for _, publicIpSpec := range *publicIpsSpec { 
+            publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+            publicIpTagName, err := tag.ValidateTagNameValue(publicIpName)
+            if err != nil {
+                 return publicIpTagName, err
+            }
+        }   
+    case resourceType == "route-table":
+        clusterScope.Info("Check Route table parameters")
+        routeTablesSpec := clusterScope.RouteTables()
+        for _, routeTableSpec := range *routeTablesSpec {
+            routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
+            routeTableTagName, err := tag.ValidateTagNameValue(routeTableName)
+            if err != nil {
+                return routeTableTagName, err
+            } 
+        }  
+      
+    case resourceType == "route":
+        clusterScope.Info("Check Route parameters")
+        routeTablesSpec := clusterScope.RouteTables()
+        for _, routeTableSpec := range *routeTablesSpec {
+            routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
+            routesSpec := clusterScope.Route(routeTableName)
+            for _, routeSpec := range *routesSpec{
+                routeName := routeSpec.Name + "-" + clusterScope.UID()
+                routeTagName, err := tag.ValidateTagNameValue(routeName)
+                if err != nil {
+                    return routeTagName, err
+                }
+                clusterScope.Info("Check route destination IpRange parameters")
+                destinationIpRange := routeSpec.Destination
+                _, err = net.ValidateCidr(destinationIpRange)
+                if err != nil {
+                    return routeTagName, err
+                } 
+            }
+        }
+    }
+
+       
+    return "", nil
+}
 
 func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.ClusterScope) (error) {
     var resourceNameList []string
@@ -201,7 +298,8 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
             publicIpsSpec = clusterScope.PublicIp()
         } 
         for _, publicIpSpec := range *publicIpsSpec {
-            resourceNameList = append(resourceNameList, publicIpSpec.Name)
+            publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+            resourceNameList = append(resourceNameList, publicIpName)
         }
         checkOscAssociate := CheckAssociate(natPublicIpName, resourceNameList)
         if checkOscAssociate {
@@ -631,27 +729,55 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
     duplicateResourceRouteTableErr := CheckOscDuplicateName("route-table", clusterScope)
     if duplicateResourceRouteTableErr  != nil {
-        return reconcile.Result{}, duplicateResourceRouteTableErr
+         return reconcile.Result{}, duplicateResourceRouteTableErr
     }
 
     duplicateResourceRouteErr := CheckOscDuplicateName("route", clusterScope)
     if duplicateResourceRouteErr != nil {
-        return reconcile.Result{}, duplicateResourceRouteErr
+         return reconcile.Result{}, duplicateResourceRouteErr
     }
 
     duplicateResourcePublicIpErr := CheckOscDuplicateName("public-ip", clusterScope)
     if duplicateResourcePublicIpErr != nil {
-        return reconcile.Result{}, duplicateResourcePublicIpErr
+         return reconcile.Result{}, duplicateResourcePublicIpErr
     }
     CheckOscAssociatePublicIpErr := CheckOscAssociateResourceName("public-ip", clusterScope)
     if CheckOscAssociatePublicIpErr != nil {
-       return reconcile.Result{}, CheckOscAssociatePublicIpErr
+        return reconcile.Result{}, CheckOscAssociatePublicIpErr
     }
     CheckOscAssociateSubnetErr := CheckOscAssociateResourceName("subnet", clusterScope)
     if CheckOscAssociateSubnetErr != nil {
-       return reconcile.Result{}, CheckOscAssociateSubnetErr
+        return reconcile.Result{}, CheckOscAssociateSubnetErr
     }
-//    servicesvc := service.NewService(ctx, clusterScope)
+    netName, err := CheckFormatParameters("net", clusterScope)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not create net %s for OscCluster %s/%s", netName, osccluster.Namespace, osccluster.Name)   
+    }
+    subnetName, err := CheckFormatParameters("subnet", clusterScope)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet %s for OscCluster %s/%s", subnetName, osccluster.Namespace, osccluster.Name)
+    }
+
+    internetServiceName, err := CheckFormatParameters("internet-service", clusterScope)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not create internetService %s for OscCluster %s/%s", internetServiceName, osccluster.Namespace, osccluster.Name)
+    } 
+
+    publicIpName, err := CheckFormatParameters("public-ip", clusterScope)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not create internetService %s for OscCluster %s/%s", publicIpName, osccluster.Namespace, osccluster.Name)
+    }
+
+    routeTableName, err := CheckFormatParameters("route-table", clusterScope)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not create routeTable %s for OscCluster %s/%s", routeTableName, osccluster.Namespace, osccluster.Name)
+    }
+
+    routeName, err := CheckFormatParameters("route", clusterScope)
+    if err != nil {
+        return reconcile.Result{}, errors.Wrapf(err, "Can not create route %s for OscCluster %s/%s", routeName, osccluster.Namespace, osccluster.Name)
+    }
+
     reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
     if err != nil {
         return reconcileLoadBalancer, err
