@@ -37,7 +37,12 @@ spec:
             properties:
               network:
                 properties:
-                  Loadbalancer:
+                  internetService:
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  loadBalancer:
                     properties:
                       healthCheck:
                         properties:
@@ -81,11 +86,6 @@ spec:
                       subregionname:
                         type: string
                     type: object
-                  internetService:
-                    properties:
-                      name:
-                        type: string
-                    type: object
                   natService:
                     properties:
                       name:
@@ -102,7 +102,7 @@ spec:
                       name:
                         type: string
                     type: object
-                  publicips:
+                  publicIps:
                     items:
                       properties:
                         name:
@@ -127,6 +127,8 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        subnetname:
+                          type: string
                       type: object
                     type: array
                   subnet:

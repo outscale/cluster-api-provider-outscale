@@ -17,7 +17,7 @@ metadata:
   namespace: default
 spec:
   network:
-    Loadbalancer:
+    loadBalancer:
       loadbalancername: OscSdkExample-7
       subregionname: eu-west-2a
     net:
@@ -26,7 +26,7 @@ spec:
     subnet:
       name: cluster-api-subnet
       ipSubnetRange: "172.19.95.192/27"
-    publicips:
+    publicIps:
       - name: cluster-api-publicip
     internetService:
       name: cluster-api-internetservice
@@ -36,6 +36,7 @@ spec:
       subnetname: cluster-api-subnet
     routeTables:
       - name: cluster-api-routetable
+        subnetname: cluster-api-subnet
         routes:
           - name: cluster-api-route
             targetName: cluster-api-internetservice
