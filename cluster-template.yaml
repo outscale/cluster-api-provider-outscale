@@ -23,9 +23,9 @@ spec:
     net:
       name: cluster-api-net
       ipRange: "172.19.95.128/25"
-    subnet:
-      name: cluster-api-subnet
-      ipSubnetRange: "172.19.95.192/27"
+    subnets:
+      - name: cluster-api-subnet
+        ipSubnetRange: "172.19.95.192/27"
     publicIps:
       - name: cluster-api-publicip
     internetService:

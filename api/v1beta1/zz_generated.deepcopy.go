@@ -302,7 +302,11 @@ func (in *OscNetwork) DeepCopyInto(out *OscNetwork) {
 	*out = *in
 	out.LoadBalancer = in.LoadBalancer
 	out.Net = in.Net
-	out.Subnet = in.Subnet
+	if in.Subnets != nil {
+		in, out := &in.Subnets, &out.Subnets
+		*out = make([]OscSubnet, len(*in))
+		copy(*out, *in)
+	}
 	out.InternetService = in.InternetService
 	out.NatService = in.NatService
 	if in.RouteTables != nil {

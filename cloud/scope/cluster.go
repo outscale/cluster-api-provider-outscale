@@ -151,8 +151,8 @@ func (s *ClusterScope) PublicIp() *[]infrastructurev1beta1.OscPublicIp {
 func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.NetRef
 }
-func (s *ClusterScope) Subnet() *infrastructurev1beta1.OscSubnet {
-        return &s.OscCluster.Spec.Network.Subnet
+func (s *ClusterScope) Subnet() *[]infrastructurev1beta1.OscSubnet {
+        return &s.OscCluster.Spec.Network.Subnets
 }
 func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.SubnetRef
