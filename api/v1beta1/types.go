@@ -3,7 +3,7 @@ package v1beta1
 type OscNetwork struct {
     LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty"`
     Net OscNet `json:"net,omitempty"`   
-    Subnet OscSubnet `json:"subnet,omitempty"` 
+    Subnets []OscSubnet `json:"subnets,omitempty"` 
     InternetService OscInternetService `json:"internetService,omitempty"`
     NatService OscNatService `json:"natService,omitempty"`
     RouteTables []OscRouteTable `json:"routeTables,omitempty"`
@@ -188,6 +188,17 @@ func (network *OscNetwork) SetPublicIpDefaultValue() {
         }
         var publicips []OscPublicIp = network.PublicIps
         publicips = append(publicips,publicip)
+    }
+}
+
+func (network *OscNetwork) SetSubnetDefaultValue() {
+    if len(network.Subnets) == 0 {
+        subnet := OscSubnet{
+            Name: DefaultSubnetName,
+            IpSubnetRange: DefaultIpSubnetRange,
+        }
+        var subnets []OscSubnet = network.Subnets
+        subnets = append(subnets, subnet)
     }
 }
 
