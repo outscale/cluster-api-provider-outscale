@@ -208,15 +208,15 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
         }
     case resourceType == "subnet":
         clusterScope.Info("Check subnet name parameters")
-        var subnetsSpec *[]infrastructurev1beta1.OscSubnet
+        var subnetsSpec []*infrastructurev1beta1.OscSubnet
         networkSpec := clusterScope.Network()
         if networkSpec.Subnets == nil {
             networkSpec.SetSubnetDefaultValue()
-            subnetsSpec = &networkSpec.Subnets
+            subnetsSpec = networkSpec.Subnets
         } else {
             subnetsSpec = clusterScope.Subnet()
         }
-        for _, subnetSpec := range *subnetsSpec {
+        for _, subnetSpec := range subnetsSpec {
             subnetName := subnetSpec.Name + "-" + clusterScope.UID()
             subnetTagName, err := tag.ValidateTagNameValue(subnetName)
             if err != nil {
@@ -234,15 +234,15 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
         }
     case resourceType == "public-ip":
         clusterScope.Info("Check Public Ip parameters")
-        var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+        var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
         networkSpec := clusterScope.Network()
         if networkSpec.PublicIps == nil {
             networkSpec.SetPublicIpDefaultValue()
-            publicIpsSpec = &networkSpec.PublicIps
+            publicIpsSpec = networkSpec.PublicIps
         } else {
             publicIpsSpec = clusterScope.PublicIp()
         }
-        for _, publicIpSpec := range *publicIpsSpec { 
+        for _, publicIpSpec := range publicIpsSpec { 
             publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
             publicIpTagName, err := tag.ValidateTagNameValue(publicIpName)
             if err != nil {
@@ -252,7 +252,7 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
     case resourceType == "route-table":
         clusterScope.Info("Check Route table parameters")
         routeTablesSpec := clusterScope.RouteTables()
-        for _, routeTableSpec := range *routeTablesSpec {
+        for _, routeTableSpec := range routeTablesSpec {
             routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
             routeTableTagName, err := tag.ValidateTagNameValue(routeTableName)
             if err != nil {
@@ -263,7 +263,7 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
     case resourceType == "route":
         clusterScope.Info("Check Route parameters")
         routeTablesSpec := clusterScope.RouteTables()
-        for _, routeTableSpec := range *routeTablesSpec {
+        for _, routeTableSpec := range routeTablesSpec {
             routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
             routesSpec := clusterScope.Route(routeTableName)
             for _, routeSpec := range *routesSpec{
@@ -292,16 +292,17 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
     case resourceType == "public-ip": 
         clusterScope.Info("check match public ip with nat service")
         natServiceSpec := clusterScope.NatService()
+        natServiceSpec.SetDefaultValue()
         natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
-        var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+        var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
         networkSpec := clusterScope.Network()
         if networkSpec.PublicIps == nil {
             networkSpec.SetPublicIpDefaultValue()
-            publicIpsSpec = &networkSpec.PublicIps
+            publicIpsSpec = networkSpec.PublicIps
         } else {
             publicIpsSpec = clusterScope.PublicIp()
-        } 
-        for _, publicIpSpec := range *publicIpsSpec {
+        }
+        for _, publicIpSpec := range publicIpsSpec {
             publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
             resourceNameList = append(resourceNameList, publicIpName)
         }
@@ -314,16 +315,17 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
     case resourceType == "natSubnet": 
         clusterScope.Info("check match subnet with nat service")
         natServiceSpec := clusterScope.NatService()
+        natServiceSpec.SetDefaultValue()
         natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
-        var subnetsSpec  *[]infrastructurev1beta1.OscSubnet
+        var subnetsSpec  []*infrastructurev1beta1.OscSubnet
         networkSpec := clusterScope.Network()
         if networkSpec.Subnets == nil {
             networkSpec.SetSubnetDefaultValue()
-            subnetsSpec = &networkSpec.Subnets
+            subnetsSpec = networkSpec.Subnets
         } else {
             subnetsSpec = clusterScope.Subnet()
         }
-        for _, subnetSpec := range *subnetsSpec {
+        for _, subnetSpec := range subnetsSpec {
             subnetName := subnetSpec.Name + "-" + clusterScope.UID()
             resourceNameList = append(resourceNameList, subnetName)
         }
@@ -337,19 +339,19 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
         clusterScope.Info("check match subnet with route table service")
         routeTablesSpec := clusterScope.RouteTables()
         resourceNameList = resourceNameList[:0]
-        var subnetsSpec *[]infrastructurev1beta1.OscSubnet
+        var subnetsSpec []*infrastructurev1beta1.OscSubnet
         networkSpec := clusterScope.Network()
         if networkSpec.Subnets == nil {
             networkSpec.SetSubnetDefaultValue()
-            subnetsSpec = &networkSpec.Subnets
+            subnetsSpec = networkSpec.Subnets
         } else {
             subnetsSpec = clusterScope.Subnet()
         }
-        for _, subnetSpec := range *subnetsSpec {
+        for _, subnetSpec := range subnetsSpec {
             subnetName := subnetSpec.Name + "-" + clusterScope.UID()
             resourceNameList = append(resourceNameList, subnetName)
         }
-        for _, routeTableSpec := range *routeTablesSpec {
+        for _, routeTableSpec := range routeTablesSpec {
             routeTableSubnetName := routeTableSpec.SubnetName + "-" + clusterScope.UID()
             checkOscAssociate := CheckAssociate(routeTableSubnetName, resourceNameList)
             if checkOscAssociate {
@@ -369,7 +371,7 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
     case resourceType == "route-table":
         clusterScope.Info("check unique routetable")
         routeTablesSpec := clusterScope.RouteTables()
-        for _, routeTableSpec := range  *routeTablesSpec {
+        for _, routeTableSpec := range  routeTablesSpec {
             resourceNameList = append(resourceNameList, routeTableSpec.Name)
         }
         duplicateResourceErr := AlertDuplicate(resourceNameList)
@@ -382,7 +384,7 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
     case resourceType == "route":
         clusterScope.Info("check unique route")
         routeTablesSpec :=  clusterScope.RouteTables()
-        for _, routeTableSpec := range *routeTablesSpec {
+        for _, routeTableSpec := range routeTablesSpec {
             routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
             routesSpec := clusterScope.Route(routeTableName)
             for _, routeSpec := range *routesSpec{
@@ -398,15 +400,15 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
         return nil
     case resourceType == "public-ip":
         clusterScope.Info("Check unique name publicIp")
-        var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+        var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
         networkSpec := clusterScope.Network()
         if networkSpec.PublicIps == nil {
             networkSpec.SetPublicIpDefaultValue()
-            publicIpsSpec = &networkSpec.PublicIps
+            publicIpsSpec = networkSpec.PublicIps
         } else {
             publicIpsSpec = clusterScope.PublicIp()
         }
-        for _, publicIpSpec := range *publicIpsSpec {
+        for _, publicIpSpec := range publicIpsSpec {
             resourceNameList = append(resourceNameList, publicIpSpec.Name)
         }
         duplicateResourceErr := AlertDuplicate(resourceNameList)
@@ -418,15 +420,15 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
         return nil
     case resourceType == "subnet":
         clusterScope.Info("Check unique subnet")
-        var subnetsSpec *[]infrastructurev1beta1.OscSubnet
+        var subnetsSpec []*infrastructurev1beta1.OscSubnet
         networkSpec := clusterScope.Network()
         if networkSpec.Subnets == nil {
             networkSpec.SetSubnetDefaultValue()
-            subnetsSpec = &networkSpec.Subnets
+            subnetsSpec = networkSpec.Subnets
         } else {
             subnetsSpec = clusterScope.Subnet()
         }
-        for _, subnetSpec := range *subnetsSpec {
+        for _, subnetSpec := range subnetsSpec {
             resourceNameList = append(resourceNameList, subnetSpec.Name)
         }
         duplicateResourceErr := AlertDuplicate(resourceNameList)
@@ -491,11 +493,11 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
     netSpec.SetDefaultValue()
     netRef := clusterScope.NetRef()
     netName := netSpec.Name + "-" + clusterScope.UID()
-    if (netSpec.ResourceId) != "" {
-        netRef.ResourceMap[netName] = netSpec.ResourceId
-    } 
     if len(netRef.ResourceMap) == 0 {
         netRef.ResourceMap = make(map[string]string)
+    }
+    if (netSpec.ResourceId != "" ) {
+        netRef.ResourceMap[netName] = netSpec.ResourceId
     }
     var netIds = []string{netRef.ResourceMap[netName]}
     net, err := netsvc.GetNet(netIds)
@@ -512,6 +514,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
             return reconcile.Result{}, errors.Wrapf(err, "Can not create net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
         }
         netRef.ResourceMap[netName] = *net.NetId
+        netSpec.ResourceId =  *net.NetId
         clusterScope.Info("### content updatee net ###", "net", netRef.ResourceMap)
 
     }
@@ -535,24 +538,24 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
     if err != nil {
         return reconcile.Result{}, err
     }    
-    var subnetsSpec *[]infrastructurev1beta1.OscSubnet
+    var subnetsSpec []*infrastructurev1beta1.OscSubnet
     networkSpec := clusterScope.Network()
     if networkSpec.Subnets == nil {
         networkSpec.SetSubnetDefaultValue()
-        subnetsSpec = &networkSpec.Subnets
+        subnetsSpec = networkSpec.Subnets
     } else {
         subnetsSpec = clusterScope.Subnet()
     }
     subnetRef := clusterScope.SubnetRef()
     var subnetIds [] string
-    for _, subnetSpec := range *subnetsSpec {
+    for _, subnetSpec := range subnetsSpec {
         subnetName := subnetSpec.Name + "-" + clusterScope.UID()
         subnetIds = []string{subnetRef.ResourceMap[subnetName]}
-        if (subnetSpec.ResourceId != "" ) {
-            subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
-        }
         if len(subnetRef.ResourceMap) == 0 {
             subnetRef.ResourceMap = make(map[string]string)
+        }
+        if (subnetSpec.ResourceId != "" ) {
+            subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
         }
         subnet, err := netsvc.GetSubnet(subnetIds)
         clusterScope.Info("### len subnet ###", "subnet", len(subnetRef.ResourceMap))
@@ -563,7 +566,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
         }
         if subnet == nil {
             clusterScope.Info("### Empty Subnet ###")
-            subnet, err = netsvc.CreateSubnet(&subnetSpec, netId, subnetName)
+            subnet, err = netsvc.CreateSubnet(subnetSpec, netId, subnetName)
             if err != nil {
                 return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
             }
@@ -572,7 +575,6 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
             subnetSpec.ResourceId = *subnet.SubnetId
             clusterScope.Info("### content update subnet ###", "subnet", subnetRef.ResourceMap)
         }
-
     }
     return reconcile.Result{}, nil
 }
@@ -594,11 +596,11 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
     if err != nil {
         return reconcile.Result{}, err
     }
-    if internetServiceSpec.ResourceId != "" {
-        internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId  
-    }
     if len(internetServiceRef.ResourceMap) == 0 {
         internetServiceRef.ResourceMap = make(map[string]string)
+    }
+    if (internetServiceSpec.ResourceId != "") {
+        internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId 
     }
     var internetServiceIds = []string{internetServiceRef.ResourceMap[internetServiceName]}
     internetService, err := netsvc.GetInternetService(internetServiceIds)
@@ -631,17 +633,17 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
     osccluster := clusterScope.OscCluster
 
     clusterScope.Info("Create PublicIp")
-    var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+    var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
     networkSpec := clusterScope.Network()
     if networkSpec.PublicIps == nil {
         networkSpec.SetPublicIpDefaultValue()
-        publicIpsSpec = &networkSpec.PublicIps
+        publicIpsSpec = networkSpec.PublicIps
     } else {
         publicIpsSpec = clusterScope.PublicIp()
     }
     publicIpRef := clusterScope.PublicIpRef()
     var publicIpsId []string
-    for _, publicIpSpec := range *publicIpsSpec {
+    for _, publicIpSpec := range publicIpsSpec {
         publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
         publicIpsId = []string{publicIpRef.ResourceMap[publicIpName]}
         if publicIpSpec.ResourceId != "" {
@@ -688,7 +690,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
    
     var routeTableIds []string
     var resourceIds []string
-    for _, routeTableSpec := range *routeTablesSpec {
+    for _, routeTableSpec := range routeTablesSpec {
         routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
         routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}   
         subnetName := routeTableSpec.SubnetName + "-" + clusterScope.UID()
@@ -703,6 +705,10 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
         if len(linkRouteTablesRef.ResourceMap) == 0 {
             linkRouteTablesRef.ResourceMap = make(map[string]string)
         }
+        if (routeTableSpec.ResourceId != "") {
+            routeTablesRef.ResourceMap[routeTableName] =  routeTableSpec.ResourceId
+        }
+
         routeTable, err := netsvc.GetRouteTable(routeTableIds)
         clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
         clusterScope.Info("### Get routeTableIds ###", "routeTable",  routeTableIds)
@@ -720,19 +726,23 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
                 return reconcile.Result{}, errors.Wrapf(err, "Can not link routetable with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
             }
             routeTablesRef.ResourceMap[routeTableName] = *routeTable.RouteTableId
+            routeTableSpec.ResourceId = *routeTable.RouteTableId
             linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
             clusterScope.Info("### content update routeTable ###", "routeTable", routeTablesRef.ResourceMap)
 
             clusterScope.Info("check route")
 
-            if len(routeRef.ResourceMap) == 0 {
-                routeRef.ResourceMap = make(map[string]string)
-            }
             routesSpec := clusterScope.Route(routeTableName)
             for _, routeSpec := range *routesSpec {
                 resourceName := routeSpec.TargetName + "-" + clusterScope.UID()
                 resourceType := routeSpec.TargetType
                 routeName := routeSpec.Name + "-" + clusterScope.UID()
+                if len(routeRef.ResourceMap) == 0 {
+                    routeRef.ResourceMap = make(map[string]string)
+                }
+                if (routeSpec.ResourceId != "") {
+                    routeRef.ResourceMap[routeName] = routeSpec.ResourceId
+                }
                 resourceId, err := GetResourceId(resourceName, resourceType, clusterScope)
                 if err != nil {
                     return reconcile.Result{}, err
@@ -750,7 +760,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
                     }
                 }
                 routeRef.ResourceMap[routeName] = *routeTableFromRoute.RouteTableId
-
+                routeSpec.ResourceId = *routeTableFromRoute.RouteTableId
             }     
         }
     }
@@ -779,12 +789,12 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
     if err != nil {
         return reconcile.Result{}, err
     }
-    if natServiceSpec.ResourceId != "" {
-        natServiceRef.ResourceMap[natServiceName] =  natServiceSpec.ResourceId 
-    }
     if len(natServiceRef.ResourceMap) == 0{
         natServiceRef.ResourceMap = make(map[string]string)
     }
+    if natServiceSpec.ResourceId != "" {
+        natServiceRef.ResourceMap[natServiceName] =  natServiceSpec.ResourceId
+    }  
     var natServiceIds = []string{natServiceRef.ResourceMap[natServiceName]}
     natService, err := netsvc.GetNatService(natServiceIds)
     if err != nil {
@@ -992,17 +1002,17 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
     netsvc := net.NewService(ctx, clusterScope)
 
     clusterScope.Info("Delete PublicIp")
-    var publicIpsSpec *[]infrastructurev1beta1.OscPublicIp
+    var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
     networkSpec := clusterScope.Network()
     if networkSpec.PublicIps == nil {
         networkSpec.SetPublicIpDefaultValue()
-        publicIpsSpec = &networkSpec.PublicIps
+        publicIpsSpec = networkSpec.PublicIps
     } else {
         publicIpsSpec = clusterScope.PublicIp()
     }
     publicIpRef := clusterScope.PublicIpRef()
     var publicIpsId []string
-    for _, publicIpSpec := range *publicIpsSpec {
+    for _, publicIpSpec := range publicIpsSpec {
         publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
         publicIpsId = []string{publicIpRef.ResourceMap[publicIpName]}
         publicIp, err := netsvc.GetPublicIp(publicIpsId)
@@ -1013,6 +1023,12 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
             controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
             return reconcile.Result{}, nil
         }
+        clusterScope.Info("Remove publicip")
+        err = netsvc.DeletePublicIp(publicIpRef.ResourceMap[publicIpName])
+        if err != nil {
+            return reconcile.Result{}, errors.Wrapf(err, "Can not delete publicIp for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+        }
+ 
      }
      return reconcile.Result{}, nil
 }
@@ -1026,7 +1042,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
     linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
     var routeTableIds []string
     var resourceIds []string
-    for _, routeTableSpec := range *routeTablesSpec {
+    for _, routeTableSpec := range routeTablesSpec {
         routeTableSpec.SetDefaultValue()
         routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
         routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}
@@ -1132,17 +1148,17 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 
     clusterScope.Info("Delete subnet")
 
-    var subnetsSpec *[]infrastructurev1beta1.OscSubnet
+    var subnetsSpec []*infrastructurev1beta1.OscSubnet
     networkSpec := clusterScope.Network()
     if networkSpec.Subnets == nil {
         networkSpec.SetSubnetDefaultValue()
-        subnetsSpec = &networkSpec.Subnets
+        subnetsSpec = networkSpec.Subnets
     } else {
         subnetsSpec = clusterScope.Subnet()
     }
     subnetRef := clusterScope.SubnetRef()
     var subnetIds []string
-    for _, subnetSpec := range *subnetsSpec{
+    for _, subnetSpec := range subnetsSpec{
         subnetName := subnetSpec.Name + "-" + clusterScope.UID()
         subnetIds = []string{subnetRef.ResourceMap[subnetName]}
         subnet, err := netsvc.GetSubnet(subnetIds)

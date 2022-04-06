@@ -122,8 +122,8 @@ func (s *ClusterScope) Net() *infrastructurev1beta1.OscNet {
 func (s *ClusterScope) Network() *infrastructurev1beta1.OscNetwork {
 	return &s.OscCluster.Spec.Network
 }
-func (s *ClusterScope) RouteTables() *[]infrastructurev1beta1.OscRouteTable {
-	return &s.OscCluster.Spec.Network.RouteTables
+func (s *ClusterScope) RouteTables() []*infrastructurev1beta1.OscRouteTable {
+	return s.OscCluster.Spec.Network.RouteTables
 }
 func (s *ClusterScope) RouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.RouteTablesRef
@@ -146,15 +146,15 @@ func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
         }
         return &routeTables[0].Routes
 }
-func (s *ClusterScope) PublicIp() *[]infrastructurev1beta1.OscPublicIp {
-        return &s.OscCluster.Spec.Network.PublicIps
+func (s *ClusterScope) PublicIp() []*infrastructurev1beta1.OscPublicIp {
+        return s.OscCluster.Spec.Network.PublicIps
 }
                
 func (s *ClusterScope) NetRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.NetRef
 }
-func (s *ClusterScope) Subnet() *[]infrastructurev1beta1.OscSubnet {
-        return &s.OscCluster.Spec.Network.Subnets
+func (s *ClusterScope) Subnet() []*infrastructurev1beta1.OscSubnet {
+        return s.OscCluster.Spec.Network.Subnets
 }
 func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceMapReference {
         return &s.OscCluster.Status.Network.SubnetRef
