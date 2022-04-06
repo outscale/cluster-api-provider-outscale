@@ -11,6 +11,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/cluster-api/util/conditions"
+        "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud"
 )
 
 type ClusterScopeParams struct {
@@ -161,4 +163,38 @@ func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceMapReferenc
 func (s *ClusterScope) SetReady() {
 	s.OscCluster.Status.Ready = true
 }
+func (s *ClusterScope) InfraCluster() cloud.ClusterObject {
+    return s.OscCluster
+}
 
+func (s *ClusterScope) ClusterObj() cloud.ClusterObject {
+    return s.Cluster
+}
+
+func (s *ClusterScope) PatchObject() error {
+    setConditions := []clusterv1.ConditionType{
+        infrastructurev1beta1.NetReadyCondition,
+        infrastructurev1beta1.SubnetsReadyCondition,
+        infrastructurev1beta1.LoadBalancerReadyCondition}
+    setConditions = append(setConditions,
+        infrastructurev1beta1.InternetServicesReadyCondition,
+        infrastructurev1beta1.NatServicesReadyCondition,
+        infrastructurev1beta1.RouteTablesReadyCondition)
+    conditions.SetSummary(s.OscCluster,
+        conditions.WithConditions(setConditions...),
+        conditions.WithStepCounterIf(s.OscCluster.ObjectMeta.DeletionTimestamp.IsZero()),
+        conditions.WithStepCounter(),
+    )
+    return s.patchHelper.Patch(
+            context.TODO(),
+            s.OscCluster,
+            patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
+                clusterv1.ReadyCondition,
+                infrastructurev1beta1.NetReadyCondition,
+                infrastructurev1beta1.SubnetsReadyCondition,
+                infrastructurev1beta1.InternetServicesReadyCondition,
+                infrastructurev1beta1.NatServicesReadyCondition,
+                infrastructurev1beta1.LoadBalancerReadyCondition,
+            }})
+}    
+    

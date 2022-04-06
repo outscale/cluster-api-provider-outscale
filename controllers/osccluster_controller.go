@@ -38,6 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
         tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	"sigs.k8s.io/cluster-api/util/conditions"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 )
 
@@ -474,6 +476,7 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
             return reconcile.Result{}, errors.Wrapf(err, "Can not configure healthcheck for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
         }
     }
+    clusterScope.Info("Waiting on Dns Name")
     return reconcile.Result{}, nil
 
 }
@@ -488,6 +491,9 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
     netSpec.SetDefaultValue()
     netRef := clusterScope.NetRef()
     netName := netSpec.Name + "-" + clusterScope.UID()
+    if (netSpec.ResourceId) != "" {
+        netRef.ResourceMap[netName] = netSpec.ResourceId
+    } 
     if len(netRef.ResourceMap) == 0 {
         netRef.ResourceMap = make(map[string]string)
     }
@@ -510,6 +516,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 
     }
     netRef.ResourceMap[netName] = *net.NetId
+    netSpec.ResourceId = *net.NetId
     clusterScope.Info("Info net", "net", net)
     return reconcile.Result{}, nil
 }
@@ -541,6 +548,9 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
     for _, subnetSpec := range *subnetsSpec {
         subnetName := subnetSpec.Name + "-" + clusterScope.UID()
         subnetIds = []string{subnetRef.ResourceMap[subnetName]}
+        if (subnetSpec.ResourceId != "" ) {
+            subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
+        }
         if len(subnetRef.ResourceMap) == 0 {
             subnetRef.ResourceMap = make(map[string]string)
         }
@@ -559,6 +569,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
             }
             clusterScope.Info("### Get subnet ###", "subnet", subnet)
             subnetRef.ResourceMap[subnetName] = *subnet.SubnetId
+            subnetSpec.ResourceId = *subnet.SubnetId
             clusterScope.Info("### content update subnet ###", "subnet", subnetRef.ResourceMap)
         }
 
@@ -583,7 +594,9 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
     if err != nil {
         return reconcile.Result{}, err
     }
-
+    if internetServiceSpec.ResourceId != "" {
+        internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId  
+    }
     if len(internetServiceRef.ResourceMap) == 0 {
         internetServiceRef.ResourceMap = make(map[string]string)
     }
@@ -606,6 +619,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
             return reconcile.Result{}, errors.Wrapf(err, "Can not link internetService with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
         }
         internetServiceRef.ResourceMap[internetServiceName] = *internetService.InternetServiceId
+        internetServiceSpec.ResourceId = *internetService.InternetServiceId
         clusterScope.Info("### content update internetService ###", "internetservice", internetServiceRef.ResourceMap)
 
     }
@@ -630,6 +644,9 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
     for _, publicIpSpec := range *publicIpsSpec {
         publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
         publicIpsId = []string{publicIpRef.ResourceMap[publicIpName]}
+        if publicIpSpec.ResourceId != "" {
+            publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
+        }
         if len(publicIpRef.ResourceMap) == 0 {
             publicIpRef.ResourceMap = make(map[string]string)
         }
@@ -644,6 +661,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
             }
         }
         publicIpRef.ResourceMap[publicIpName] = *publicIp.PublicIpId
+        publicIpSpec.ResourceId = *publicIp.PublicIpId 
         clusterScope.Info("### content update publicIpName ###", "publicip", publicIpRef.ResourceMap)
     }
     return reconcile.Result{}, nil
@@ -706,6 +724,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
             clusterScope.Info("### content update routeTable ###", "routeTable", routeTablesRef.ResourceMap)
 
             clusterScope.Info("check route")
+
             if len(routeRef.ResourceMap) == 0 {
                 routeRef.ResourceMap = make(map[string]string)
             }
@@ -760,7 +779,9 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
     if err != nil {
         return reconcile.Result{}, err
     }
-
+    if natServiceSpec.ResourceId != "" {
+        natServiceRef.ResourceMap[natServiceName] =  natServiceSpec.ResourceId 
+    }
     if len(natServiceRef.ResourceMap) == 0{
         natServiceRef.ResourceMap = make(map[string]string)
     }
@@ -783,6 +804,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
             return reconcile.Result{}, errors.Wrapf(err, "Can not create natservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
         }
         natServiceRef.ResourceMap[natServiceName] = *natService.NatServiceId
+        natServiceSpec.ResourceId =  *natService.NatServiceId
         clusterScope.Info("### content update natService ###", "natservice", natServiceRef.ResourceMap)
     }
     return reconcile.Result{}, nil
@@ -791,6 +813,9 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     clusterScope.Info("Reconcile OscCluster")
     osccluster := clusterScope.OscCluster
     controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+    if err := clusterScope.PatchObject(); err != nil {
+        return reconcile.Result{}, err
+    }
 
     duplicateResourceRouteTableErr := CheckOscDuplicateName("route-table", clusterScope)
     if duplicateResourceRouteTableErr  != nil {
@@ -805,6 +830,11 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
     duplicateResourcePublicIpErr := CheckOscDuplicateName("public-ip", clusterScope)
     if duplicateResourcePublicIpErr != nil {
          return reconcile.Result{}, duplicateResourcePublicIpErr
+    }
+
+    duplicateResourceSubnetErr := CheckOscDuplicateName("subnet", clusterScope)
+    if duplicateResourceSubnetErr != nil {
+        return reconcile.Result{}, duplicateResourceSubnetErr
     }
 
     CheckOscAssociatePublicIpErr := CheckOscAssociateResourceName("public-ip", clusterScope)
@@ -852,40 +882,59 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
     reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile load balancer")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
         return reconcileLoadBalancer, err
     }
-
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
     reconcileNet, err := reconcileNet(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile net")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.NetReadyCondition, infrastructurev1beta1.NetReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
         return reconcileNet, err
     }
-    
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
+
     reconcileSubnet, err := reconcileSubnet(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile subnet")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.SubnetsReadyCondition, infrastructurev1beta1.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
         return reconcileSubnet, err
     }
-
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition) 
+    
 
     reconcileInternetService, err := reconcileInternetService(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile internetService")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
         return reconcileInternetService, err
     }
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)    
 
     reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile publicIp")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.PublicIpsReadyCondition, infrastructurev1beta1.PublicIpsFailedReason, clusterv1.ConditionSeverityWarning, err.Error())       
         return reconcilePublicIp, err
     }
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
 
     reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile routeTable")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
         return reconcileRouteTable, err
     }
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)    
 
     reconcileNatService, err := reconcileNatService(ctx, clusterScope)
     if err != nil {
+        clusterScope.Error(err, "failed to reconcile natservice")
+        conditions.MarkFalse(osccluster, infrastructurev1beta1.NatServicesReadyCondition, infrastructurev1beta1.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
         return reconcileNatService, nil
     }
-
+    conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
     clusterScope.Info("Set OscCluster status to ready")
     clusterScope.SetReady()
     return reconcile.Result{}, nil
