@@ -109,8 +109,8 @@ var (
     DefaultPort int32 = 6443
     DefaultIpRange string = "172.19.95.128/25"
     DefaultIpSubnetRange string = "172.19.95.192/27"
-    DefaultTargetName = "cluster-api-igw"
-    DefaultTargetType = "igw"
+    DefaultTargetName = "cluster-api-internetservice"
+    DefaultTargetType = "gateway"
     DefaultDestination = "0.0.0.0/0"
     DefaultRouteTableName = "cluster-api-routetable"
     DefaultRouteName = "cluster-api-route"

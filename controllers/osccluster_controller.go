@@ -251,7 +251,14 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
         }   
     case resourceType == "route-table":
         clusterScope.Info("Check Route table parameters")
-        routeTablesSpec := clusterScope.RouteTables()
+        var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+        networkSpec := clusterScope.Network()
+        if networkSpec.RouteTables == nil {
+            networkSpec.SetRouteTableDefaultValue()
+            routeTablesSpec = networkSpec.RouteTables
+        } else {
+            routeTablesSpec = clusterScope.RouteTables()
+        }
         for _, routeTableSpec := range routeTablesSpec {
             routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
             routeTableTagName, err := tag.ValidateTagNameValue(routeTableName)
@@ -262,7 +269,14 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
       
     case resourceType == "route":
         clusterScope.Info("Check Route parameters")
-        routeTablesSpec := clusterScope.RouteTables()
+        var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+        networkSpec := clusterScope.Network()
+        if networkSpec.RouteTables == nil {
+            networkSpec.SetRouteTableDefaultValue()
+            routeTablesSpec = networkSpec.RouteTables
+        } else {
+            routeTablesSpec = clusterScope.RouteTables()
+        }
         for _, routeTableSpec := range routeTablesSpec {
             routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
             routesSpec := clusterScope.Route(routeTableName)
@@ -337,10 +351,16 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
         }
    case resourceType == "routeTableSubnet":
         clusterScope.Info("check match subnet with route table service")
-        routeTablesSpec := clusterScope.RouteTables()
+        var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+        networkSpec := clusterScope.Network()
+        if networkSpec.RouteTables == nil {
+            networkSpec.SetRouteTableDefaultValue()
+            routeTablesSpec = networkSpec.RouteTables
+        } else {
+            routeTablesSpec = clusterScope.RouteTables()
+        }
         resourceNameList = resourceNameList[:0]
         var subnetsSpec []*infrastructurev1beta1.OscSubnet
-        networkSpec := clusterScope.Network()
         if networkSpec.Subnets == nil {
             networkSpec.SetSubnetDefaultValue()
             subnetsSpec = networkSpec.Subnets
@@ -370,7 +390,14 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
     switch {
     case resourceType == "route-table":
         clusterScope.Info("check unique routetable")
-        routeTablesSpec := clusterScope.RouteTables()
+        var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+        networkSpec := clusterScope.Network()
+        if networkSpec.RouteTables == nil {
+            networkSpec.SetRouteTableDefaultValue()
+            routeTablesSpec = networkSpec.RouteTables
+        } else {
+            routeTablesSpec = clusterScope.RouteTables()
+        }
         for _, routeTableSpec := range  routeTablesSpec {
             resourceNameList = append(resourceNameList, routeTableSpec.Name)
         }
@@ -674,7 +701,14 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
     osccluster := clusterScope.OscCluster
 
     clusterScope.Info("Create RouteTable")
-    routeTablesSpec := clusterScope.RouteTables()
+    var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+    networkSpec := clusterScope.Network()
+    if networkSpec.RouteTables == nil {
+        networkSpec.SetRouteTableDefaultValue()
+        routeTablesSpec = networkSpec.RouteTables
+    } else {
+        routeTablesSpec = clusterScope.RouteTables()
+    }
     routeTablesRef := clusterScope.RouteTablesRef()
     routeRef := clusterScope.RouteRef()
     linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
@@ -1037,7 +1071,14 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
     netsvc := net.NewService(ctx, clusterScope)
 
     clusterScope.Info("Delete RouteTable")
-    routeTablesSpec := clusterScope.RouteTables()
+    var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+    networkSpec := clusterScope.Network()
+    if networkSpec.RouteTables == nil {
+        networkSpec.SetRouteTableDefaultValue()
+        routeTablesSpec = networkSpec.RouteTables
+    } else {
+        routeTablesSpec = clusterScope.RouteTables()
+    }
     routeTablesRef := clusterScope.RouteTablesRef()
     linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
     var routeTableIds []string
