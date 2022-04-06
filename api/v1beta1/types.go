@@ -36,31 +36,38 @@ type OscLoadBalancerHealthCheck struct {
 type OscNet struct {
     Name string `json:"name,omitempty"`
     IpRange string `json:"ipRange,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscInternetService struct {
     Name string `json:"name,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscSubnet struct {
     Name string `json:"name,omitempty"`
     IpSubnetRange string `json:"ipSubnetRange,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscNatService struct {
     Name string `json:"name,omitempty"` 
     PublicIpName string `json:"publicipname,omitempty"`
     SubnetName string `json:"subnetname,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscRouteTable struct {
     Name string `json:"name,omitempty"`
     SubnetName string `json:"subnetname,omitempty"`
     Routes []OscRoute `json:"routes,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
+
 }
 
 type OscPublicIp struct {
     Name string `json:"name,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscRoute struct {
@@ -68,6 +75,7 @@ type OscRoute struct {
     TargetName string `json:"targetName,omitempty"` 
     TargetType string `json:"targetType,omitempty"`
     Destination string `json:"destination,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscResourceMapReference struct {

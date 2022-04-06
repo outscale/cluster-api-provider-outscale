@@ -19,6 +19,7 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+        clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -37,6 +38,7 @@ type OscClusterSpec struct {
 type OscClusterStatus struct {
 	Ready bool `json:"ready"`
         Network OscNetworkResource `json:"network,omitempty"`
+        Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -60,6 +62,16 @@ type OscClusterList struct {
 	Items           []OscCluster `json:"items"`
 }
 
+func (r *OscCluster) GetConditions() clusterv1.Conditions {
+    return r.Status.Conditions
+}
+
+func (r *OscCluster) SetConditions(conditions clusterv1.Conditions) {
+    r.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&OscCluster{}, &OscClusterList{})
 }
+
+
