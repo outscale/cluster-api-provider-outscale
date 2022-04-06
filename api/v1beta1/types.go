@@ -3,11 +3,11 @@ package v1beta1
 type OscNetwork struct {
     LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty"`
     Net OscNet `json:"net,omitempty"`   
-    Subnets []OscSubnet `json:"subnets,omitempty"` 
+    Subnets []*OscSubnet `json:"subnets,omitempty"` 
     InternetService OscInternetService `json:"internetService,omitempty"`
     NatService OscNatService `json:"natService,omitempty"`
-    RouteTables []OscRouteTable `json:"routeTables,omitempty"`
-    PublicIps []OscPublicIp `json:"publicIps,omitempty"`
+    RouteTables []*OscRouteTable `json:"routeTables,omitempty"`
+    PublicIps []*OscPublicIp `json:"publicIps,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -170,8 +170,9 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
             SubnetName: DefaultSubnetName,
             Routes: []OscRoute{route},
         }       
-        var routetables []OscRouteTable = network.RouteTables
-        routetables = append(routetables, routetable)
+        var routetables []*OscRouteTable = network.RouteTables
+        routetables = append(routetables, &routetable)
+        network.RouteTables = routetables
     }    
 
 }
@@ -194,8 +195,9 @@ func (network *OscNetwork) SetPublicIpDefaultValue() {
         publicip := OscPublicIp {
             Name: DefaultPublicIpName,       
         }
-        var publicips []OscPublicIp = network.PublicIps
-        publicips = append(publicips,publicip)
+        var publicips []*OscPublicIp = network.PublicIps
+        publicips = append(publicips,&publicip)
+        network.PublicIps = publicips
     }
 }
 
@@ -205,11 +207,12 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
             Name: DefaultSubnetName,
             IpSubnetRange: DefaultIpSubnetRange,
         }
-        var subnets []OscSubnet = network.Subnets
-        subnets = append(subnets, subnet)
+        var subnets []*OscSubnet = network.Subnets
+        subnets = append(subnets, &subnet)
+        network.Subnets = subnets
     }
+    
 }
-
 func (lb *OscLoadBalancer) SetDefaultValue() {
     if lb.LoadBalancerName == "" {
         lb.LoadBalancerName = DefaultLoadBalancerName

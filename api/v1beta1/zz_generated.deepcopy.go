@@ -312,22 +312,38 @@ func (in *OscNetwork) DeepCopyInto(out *OscNetwork) {
 	out.Net = in.Net
 	if in.Subnets != nil {
 		in, out := &in.Subnets, &out.Subnets
-		*out = make([]OscSubnet, len(*in))
-		copy(*out, *in)
+		*out = make([]*OscSubnet, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(OscSubnet)
+				**out = **in
+			}
+		}
 	}
 	out.InternetService = in.InternetService
 	out.NatService = in.NatService
 	if in.RouteTables != nil {
 		in, out := &in.RouteTables, &out.RouteTables
-		*out = make([]OscRouteTable, len(*in))
+		*out = make([]*OscRouteTable, len(*in))
 		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(OscRouteTable)
+				(*in).DeepCopyInto(*out)
+			}
 		}
 	}
 	if in.PublicIps != nil {
 		in, out := &in.PublicIps, &out.PublicIps
-		*out = make([]OscPublicIp, len(*in))
-		copy(*out, *in)
+		*out = make([]*OscPublicIp, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(OscPublicIp)
+				**out = **in
+			}
+		}
 	}
 }
 
