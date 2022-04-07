@@ -484,6 +484,15 @@ func AlertDuplicate(nameArray []string) (error) {
     return nil
 }
 
+func contains(slice []string, item string) bool {
+    for _, val := range slice {
+        if val == item {
+            return true
+        }
+    }
+    return false
+}
+ 
 func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
     servicesvc := service.NewService(ctx, clusterScope)
     osccluster := clusterScope.OscCluster
@@ -562,6 +571,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
     netSpec.SetDefaultValue()
     netName := netSpec.Name + "-" + clusterScope.UID()
     netId, err := GetResourceId(netName, "net", clusterScope)
+    netIds := []string{netId}
     if err != nil {
         return reconcile.Result{}, err
     }    
@@ -577,23 +587,23 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
     var subnetIds [] string
     for _, subnetSpec := range subnetsSpec {
         subnetName := subnetSpec.Name + "-" + clusterScope.UID()
-        subnetIds = []string{subnetRef.ResourceMap[subnetName]}
+        subnetId := subnetRef.ResourceMap[subnetName]
         if len(subnetRef.ResourceMap) == 0 {
             subnetRef.ResourceMap = make(map[string]string)
         }
         if (subnetSpec.ResourceId != "" ) {
             subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
         }
-        subnet, err := netsvc.GetSubnet(subnetIds)
-        clusterScope.Info("### len subnet ###", "subnet", len(subnetRef.ResourceMap))
-        clusterScope.Info("### Get subnet ###", "subnet", subnet)
-        clusterScope.Info("### Get subnetIds ###", "subnet", subnetIds)
+        subnetIds, err = netsvc.GetSubnetIdsFromNetIds(netIds)
         if err != nil {
             return reconcile.Result{}, err
         }
-        if subnet == nil {
+        clusterScope.Info("### len subnet ###", "subnet", len(subnetRef.ResourceMap))
+        clusterScope.Info("### Get subnetIds ###", "subnet", subnetIds)
+        
+        if !contains(subnetIds, subnetId) {
             clusterScope.Info("### Empty Subnet ###")
-            subnet, err = netsvc.CreateSubnet(subnetSpec, netId, subnetName)
+            subnet, err := netsvc.CreateSubnet(subnetSpec, netId, subnetName)
             if err != nil {
                 return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
             }
@@ -721,12 +731,14 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
     if err != nil {
         return reconcile.Result{}, err
     }
+    netIds := []string{netId}
    
-    var routeTableIds []string
+    //var routeTableIds []string
     var resourceIds []string
     for _, routeTableSpec := range routeTablesSpec {
         routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
-        routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}   
+     //   routeTableIds = []string{routeTablesRef.ResourceMap[routeTableName]}   
+        routeTableId := routeTablesRef.ResourceMap[routeTableName]
         subnetName := routeTableSpec.SubnetName + "-" + clusterScope.UID()
         subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
         if err != nil {
@@ -743,15 +755,19 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
             routeTablesRef.ResourceMap[routeTableName] =  routeTableSpec.ResourceId
         }
 
-        routeTable, err := netsvc.GetRouteTable(routeTableIds)
-        clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
+      //  routeTable, err := netsvc.GetRouteTable(routeTableIds)
+        routeTableIds, err := netsvc.GetRouteTableIdsFromNetIds(netIds)
         clusterScope.Info("### Get routeTableIds ###", "routeTable",  routeTableIds)
         if err != nil {
             return reconcile.Result{}, err
         }
-        if routeTable == nil {
+     //   if err != nil {
+     //       return reconcile.Result{}, err
+     //   }
+     //   if routeTable == nil {
+        if !contains(routeTableIds, routeTableId) {
             clusterScope.Info("### Empty routeTable ###")
-            routeTable, err = netsvc.CreateRouteTable( netId, routeTableName)
+            routeTable, err := netsvc.CreateRouteTable( netId, routeTableName)
             if err != nil {
                 return reconcile.Result{}, errors.Wrapf(err, "Can not create routetable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
             }
