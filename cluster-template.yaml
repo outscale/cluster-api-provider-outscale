@@ -10,6 +10,7 @@ spec:
     name: hello-osc
     namespace: default
 ---
+
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
@@ -26,8 +27,6 @@ spec:
     subnets:
       - name: cluster-api-subnet
         ipSubnetRange: "172.19.95.192/27"
-      - name: cluster-api
-        ipSubnetRange: "172.19.95.128/27"
     publicIps:
       - name: cluster-api-publicip
     internetService:
@@ -40,7 +39,7 @@ spec:
       - name: cluster-api-routetable
         subnetname: cluster-api-subnet
         routes:
-          - name: cluster-api-route
+          - name: cluster-api-routes
             targetName: cluster-api-internetservice
             targetType: gateway 
             destination: "0.0.0.0/0"

@@ -65,3 +65,27 @@ func (s *Service) GetPublicIp(publicIpId []string) (*osc.PublicIp, error) {
 		return &publicip[0], nil
 	}
 }
+
+func (s *Service) ValidatePublicIpIds(publicIpId []string) ([]string, error) {
+	readPublicIpRequest := osc.ReadPublicIpsRequest{
+		Filters: &osc.FiltersPublicIp{
+			PublicIpIds: &publicIpId,
+		},
+	}
+	OscApiClient := s.scope.Api()
+	OscAuthClient := s.scope.Auth()
+	readPublicIp, httpRes, err := OscApiClient.PublicIpApi.ReadPublicIps(OscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+	if err != nil {
+		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+	var publicipIds []string
+	publicips := *readPublicIp.PublicIps
+	if len(publicips) != 0 {
+		for _, publicip := range publicips {
+			publicipId := *publicip.PublicIpId
+			publicipIds = append(publicipIds, publicipId)
+		}
+	}
+	return publicipIds, nil
+}
