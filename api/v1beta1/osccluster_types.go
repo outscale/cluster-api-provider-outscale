@@ -17,18 +17,20 @@ limitations under the License.
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
-        clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 func OscReplaceName(name string) string {
-    replacer := strings.NewReplacer(".","-","/","-","_","-")
-    return replacer.Replace(name)
+	replacer := strings.NewReplacer(".", "-", "/", "-", "_", "-")
+	return replacer.Replace(name)
 }
+
 // OscClusterSpec defines the desired state of OscCluster
 type OscClusterSpec struct {
 	Network OscNetwork `json:"network,omitempty"`
@@ -36,9 +38,9 @@ type OscClusterSpec struct {
 
 // OscClusterStatus defines the observed state of OscCluster
 type OscClusterStatus struct {
-	Ready bool `json:"ready"`
-        Network OscNetworkResource `json:"network,omitempty"`
-        Conditions clusterv1.Conditions `json:"conditions,omitempty"`
+	Ready      bool                 `json:"ready"`
+	Network    OscNetworkResource   `json:"network,omitempty"`
+	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -63,15 +65,13 @@ type OscClusterList struct {
 }
 
 func (r *OscCluster) GetConditions() clusterv1.Conditions {
-    return r.Status.Conditions
+	return r.Status.Conditions
 }
 
 func (r *OscCluster) SetConditions(conditions clusterv1.Conditions) {
-    r.Status.Conditions = conditions
+	r.Status.Conditions = conditions
 }
 
 func init() {
 	SchemeBuilder.Register(&OscCluster{}, &OscClusterList{})
 }
-
-
