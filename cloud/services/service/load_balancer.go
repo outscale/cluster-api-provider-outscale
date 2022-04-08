@@ -16,10 +16,10 @@ func ValidateLoadBalancerName(loadBalancerName string) bool {
 	return isValidate(loadBalancerName)
 }
 
-// ValidateLoadBalancerRegionName check that the loadBalancerRegionName is a valide subregion name
-func ValidateLoadBalancerRegionName(loadBalancerRegionName string) bool {
+// ValidateLoadBalancerSubRegionName check that the loadBalancerRegionName is a valide subregion name
+func ValidateLoadBalancerSubRegionName(loadBalancerSubRegionName string) bool {
 	isValidate := regexp.MustCompile(`^((?:[a-zA-Z]+-){2,3}[1-3-a-c]{2})$`).MatchString
-	return isValidate(loadBalancerRegionName)
+	return isValidate(loadBalancerSubRegionName)
 }
 
 // ValidatePort check that the  port is a valide port
@@ -89,7 +89,7 @@ func (s *Service) GetRegionName(spec *infrastructurev1beta1.OscLoadBalancer) (st
 	default:
 		name = s.scope.Region()
 	}
-	if ValidateLoadBalancerRegionName(name) {
+	if ValidateLoadBalancerSubRegionName(name) {
 		return name, nil
 	} else {
 		return "", errors.New("Invalid Region Name")

@@ -8,7 +8,7 @@ import (
 )
 
 // CreateNatService create the nat in the public subnet of the net
-func (s *Service) CreateNatService(publicIpId string, subnetId string, tagValue string) (*osc.NatService, error) {
+func (s *Service) CreateNatService(publicIpId string, subnetId string, natServiceName string) (*osc.NatService, error) {
 	natServiceRequest := osc.CreateNatServiceRequest{
 		PublicIpId: publicIpId,
 		SubnetId:   subnetId,
@@ -18,10 +18,6 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, tagValue 
 	natServiceResponse, httpRes, err := OscApiClient.NatServiceApi.CreateNatService(OscAuthClient).CreateNatServiceRequest(natServiceRequest).Execute()
 	if err != nil {
 		fmt.Sprintf("Error with http result %s", httpRes.Status)
-		return nil, err
-	}
-	natServiceName, err := tag.ValidateTagNameValue(tagValue)
-	if err != nil {
 		return nil, err
 	}
 	resourceIds := []string{*natServiceResponse.NatService.NatServiceId}

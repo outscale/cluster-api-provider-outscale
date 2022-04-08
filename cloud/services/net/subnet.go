@@ -9,7 +9,7 @@ import (
 )
 
 // CreateSubnet create the subnet associate to the net
-func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, tagValue string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error) {
 	IpSubnetRange, err := ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
@@ -17,10 +17,6 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 	subnetRequest := osc.CreateSubnetRequest{
 		IpRange: IpSubnetRange,
 		NetId:   netId,
-	}
-	subnetName, err := tag.ValidateTagNameValue(tagValue)
-	if err != nil {
-		return nil, err
 	}
 	OscApiClient := s.scope.Api()
 	OscAuthClient := s.scope.Auth()
