@@ -64,10 +64,12 @@ type OscClusterList struct {
 	Items           []OscCluster `json:"items"`
 }
 
+// GetConditions returns status of the state of the cluster resource.
 func (r *OscCluster) GetConditions() clusterv1.Conditions {
 	return r.Status.Conditions
 }
 
+// SetConditions set status of the state of the cluster resource from clusterv1.Conditions.
 func (r *OscCluster) SetConditions(conditions clusterv1.Conditions) {
 	r.Status.Conditions = conditions
 }

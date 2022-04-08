@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ValidateCidr check that the cidr string is a valide CIDR
 func ValidateCidr(cidr string) (string, error) {
 	if !strings.Contains(cidr, "/") {
 		return cidr, errors.New("Invalid Not A CIDR")
@@ -29,6 +30,7 @@ func ValidateCidr(cidr string) (string, error) {
 	return cidr, nil
 }
 
+// CreateNet create the net from spec (in order to retrieve ip range)
 func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, tagValue string) (*osc.Net, error) {
 	IpRange, err := ValidateCidr(spec.IpRange)
 	if err != nil {
@@ -57,6 +59,7 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, tagValue string)
 	return netResponse.Net, nil
 }
 
+// DeleteNet delete the net
 func (s *Service) DeleteNet(netId string) error {
 	deleteNetRequest := osc.DeleteNetRequest{NetId: netId}
 	OscApiClient := s.scope.Api()
@@ -69,6 +72,7 @@ func (s *Service) DeleteNet(netId string) error {
 	return nil
 }
 
+// GetNet retrieve the net object using the net id
 func (s *Service) GetNet(netId []string) (*osc.Net, error) {
 	readNetsRequest := osc.ReadNetsRequest{
 		Filters: &osc.FiltersNet{

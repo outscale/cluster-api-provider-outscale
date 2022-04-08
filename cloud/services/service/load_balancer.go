@@ -10,16 +10,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
 func ValidateLoadBalancerName(loadBalancerName string) bool {
 	isValidate := regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
 	return isValidate(loadBalancerName)
 }
 
+// ValidateLoadBalancerRegionName check that the loadBalancerRegionName is a valide subregion name
 func ValidateLoadBalancerRegionName(loadBalancerRegionName string) bool {
 	isValidate := regexp.MustCompile(`^((?:[a-zA-Z]+-){2,3}[1-3-a-c]{2})$`).MatchString
 	return isValidate(loadBalancerRegionName)
 }
 
+// ValidatePort check that the  port is a valide port
 func (s *Service) ValidatePort(port int32) (int32, error) {
 	isValidatePort := regexp.MustCompile(`^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$`).MatchString
 	if isValidatePort(strconv.Itoa(int(port))) {
@@ -29,6 +32,7 @@ func (s *Service) ValidatePort(port int32) (int32, error) {
 	}
 }
 
+// ValidateInterval check that the interval is a valide time of second 
 func (s *Service) ValidateInterval(interval int32) (int32, error) {
 	isValidateInterval := regexp.MustCompile(`^([5-9]|[1-9][0-9]{1}|[1-5][0-9]{2}|600)$`).MatchString
 	if isValidateInterval(strconv.Itoa(int(interval))) {
@@ -38,6 +42,7 @@ func (s *Service) ValidateInterval(interval int32) (int32, error) {
 	}
 }
 
+// ValidateThreshold check that the threshold is a valide number of ping
 func (s *Service) ValidateThreshold(threshold int32) (int32, error) {
 	isValidateThreshold := regexp.MustCompile(`^([1-9]|10)$`).MatchString
 	if isValidateThreshold(strconv.Itoa(int(threshold))) {
@@ -47,6 +52,7 @@ func (s *Service) ValidateThreshold(threshold int32) (int32, error) {
 	}
 }
 
+// ValidateTimeout check that the timeoout is a valide maximum time of second
 func (s *Service) ValidateTimeout(timeout int32) (int32, error) {
 	isValidateTimeout := regexp.MustCompile(`^([2-9]|[1-5][0-9]|60)$`).MatchString
 	if isValidateTimeout(strconv.Itoa(int(timeout))) {
@@ -56,6 +62,7 @@ func (s *Service) ValidateTimeout(timeout int32) (int32, error) {
 	}
 }
 
+// GetName return the name of the loadBalancer
 func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
 	var name string
 	var clusterName string
@@ -73,6 +80,7 @@ func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, 
 	}
 }
 
+// GetRegionName return the subregion name of the loadBalancer 
 func (s *Service) GetRegionName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
 	var name string
 	switch {
@@ -88,6 +96,7 @@ func (s *Service) GetRegionName(spec *infrastructurev1beta1.OscLoadBalancer) (st
 	}
 }
 
+// ValidateProtocol check that the protocol string is a valide protocol
 func (s *Service) ValidateProtocol(protocol string) (string, error) {
 	switch {
 	case protocol == "HTTP" || protocol == "TCP":
@@ -99,6 +108,7 @@ func (s *Service) ValidateProtocol(protocol string) (string, error) {
 	}
 }
 
+// ConfigureHealthCheck update loadBalancer to configure healthCheck
 func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	loadBalancerName, err := s.GetName(spec)
 	if err != nil {
@@ -150,6 +160,7 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 	return updateLoadBalancerResponse.LoadBalancer, nil
 }
 
+// GetLoadBalancer retrieve loadBalancer object from spec
 func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	loadBalancerName, err := s.GetName(spec)
 	if err != nil {
@@ -176,6 +187,7 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 	}
 }
 
+// CreateLoadBalancer create the load balancer
 func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	loadBalancerName, err := s.GetName(spec)
 	if err != nil {
@@ -223,6 +235,7 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	return loadBalancerResponse.LoadBalancer, nil
 }
 
+// DeleteLoadBalancer delete the loadbalancer
 func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) error {
 	loadBalancerName, err := s.GetName(spec)
 	if err != nil {

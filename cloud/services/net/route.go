@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CreateRouteTable create the routetable associated with the net
 func (s *Service) CreateRouteTable(netId string, tagValue string) (*osc.RouteTable, error) {
 	routeTableRequest := osc.CreateRouteTableRequest{
 		NetId: netId,
@@ -32,6 +33,7 @@ func (s *Service) CreateRouteTable(netId string, tagValue string) (*osc.RouteTab
 	return routeTableResponse.RouteTable, nil
 }
 
+// CreateRoute create the route associated with the routetable and the net
 func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
 	valideDestinationIpRange, err := ValidateCidr(destinationIpRange)
@@ -65,6 +67,7 @@ func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, re
 	return routeResponse.RouteTable, nil
 }
 
+// DeleteRouteTable delete the route table
 func (s *Service) DeleteRouteTable(routeTableId string) error {
 	deleteRouteTableRequest := osc.DeleteRouteTableRequest{RouteTableId: routeTableId}
 	OscApiClient := s.scope.Api()
@@ -77,6 +80,7 @@ func (s *Service) DeleteRouteTable(routeTableId string) error {
 	return nil
 }
 
+// DeleteRoute delete the route associated with the routetable
 func (s *Service) DeleteRoute(destinationIpRange string, routeTableId string) error {
 	deleteRouteRequest := osc.DeleteRouteRequest{
 		DestinationIpRange: destinationIpRange,
@@ -92,6 +96,7 @@ func (s *Service) DeleteRoute(destinationIpRange string, routeTableId string) er
 	return nil
 }
 
+// GetRouteTable retrieve routetable object from the route table id
 func (s *Service) GetRouteTable(routeTableId []string) (*osc.RouteTable, error) {
 	readRouteTableRequest := osc.ReadRouteTablesRequest{
 		Filters: &osc.FiltersRouteTable{
@@ -115,6 +120,7 @@ func (s *Service) GetRouteTable(routeTableId []string) (*osc.RouteTable, error) 
 	}
 }
 
+// GetRouteTableFromRoute  retrieve the routetable object which the route are associated with  from the route table id, the resourceId and resourcetyp (gateway | nat-service)
 func (s *Service) GetRouteTableFromRoute(routeTableId []string, resourceId []string, resourceType string) (*osc.RouteTable, error) {
 	var readRouteRequest osc.ReadRouteTablesRequest
 	switch {
@@ -151,7 +157,7 @@ func (s *Service) GetRouteTableFromRoute(routeTableId []string, resourceId []str
 		return &routetable[0], nil
 	}
 }
-
+// LinkRouteTable associate the routetable with the subnet
 func (s *Service) LinkRouteTable(routeTableId string, subnetId string) (string, error) {
 	linkRouteTableRequest := osc.LinkRouteTableRequest{
 		RouteTableId: routeTableId,
@@ -167,6 +173,7 @@ func (s *Service) LinkRouteTable(routeTableId string, subnetId string) (string, 
 	return *linkRouteTableResponse.LinkRouteTableId, nil
 }
 
+// UnlinkRouteTable diassociate the subnet from the routetable
 func (s *Service) UnlinkRouteTable(linkRouteTableId string) error {
 	unlinkRouteTableRequest := osc.UnlinkRouteTableRequest{
 		LinkRouteTableId: linkRouteTableId,
@@ -181,6 +188,7 @@ func (s *Service) UnlinkRouteTable(linkRouteTableId string) error {
 	return nil
 }
 
+// GetRouteTableIdsFromNetIds return the routeTable id resource that exist from the net id
 func (s *Service) GetRouteTableIdsFromNetIds(netIds []string) ([]string, error) {
 	readRouteTableRequest := osc.ReadRouteTablesRequest{
 		Filters: &osc.FiltersRouteTable{

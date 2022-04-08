@@ -7,6 +7,7 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
+//CreatePublicIp retrieve a publicip associated with you account
 func (s *Service) CreatePublicIp(tagValue string) (*osc.PublicIp, error) {
 	publicIpRequest := osc.CreatePublicIpRequest{}
 	OscApiClient := s.scope.Api()
@@ -29,6 +30,7 @@ func (s *Service) CreatePublicIp(tagValue string) (*osc.PublicIp, error) {
 	return publicIpResponse.PublicIp, nil
 }
 
+// DeletePublicIp release the public ip
 func (s *Service) DeletePublicIp(publicIpId string) error {
 	deletePublicIpRequest := osc.DeletePublicIpRequest{
 		PublicIpId: &publicIpId,
@@ -43,6 +45,7 @@ func (s *Service) DeletePublicIp(publicIpId string) error {
 	return nil
 }
 
+// GetPublicIp get a public ip object using a public ip id
 func (s *Service) GetPublicIp(publicIpId []string) (*osc.PublicIp, error) {
 	readPublicIpRequest := osc.ReadPublicIpsRequest{
 		Filters: &osc.FiltersPublicIp{
@@ -66,6 +69,7 @@ func (s *Service) GetPublicIp(publicIpId []string) (*osc.PublicIp, error) {
 	}
 }
 
+// ValidatePublicIpIds validate the list of id by checking each public ip resource and return only  public ip resource id that currently exist.
 func (s *Service) ValidatePublicIpIds(publicIpId []string) ([]string, error) {
 	readPublicIpRequest := osc.ReadPublicIpsRequest{
 		Filters: &osc.FiltersPublicIp{

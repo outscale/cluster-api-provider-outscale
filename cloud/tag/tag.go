@@ -7,6 +7,8 @@ import(
     "context"
     "fmt"
 )
+
+// AddTag add a tag to a resource
 func AddTag(tagKey string, tagValue string, resourceIds []string, api *osc.APIClient, auth context.Context) (error) {
     tag := osc.ResourceTag{
         Key: tagKey,
@@ -24,6 +26,7 @@ func AddTag(tagKey string, tagValue string, resourceIds []string, api *osc.APICl
     return nil      
 }
 
+// ValidateTagNameValue check that tag name value is a valide name
 func ValidateTagNameValue(tagValue string) (string, error) {
    isValidateTagNameValue := regexp.MustCompile(`^[0-9A-Za-z\-]{0,255}$`).MatchString
    if isValidateTagNameValue(tagValue) {
