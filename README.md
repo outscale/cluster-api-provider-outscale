@@ -35,6 +35,9 @@ Please look at [Deployment](https://github.com/outscale-vbr/cluster-api-provider
 # To start developping Outscale Cluster Api
 Please look at [Development](https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/docs/develop.md)
 
+# Contribution
+Please look at [Contribution](https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/CONTRIBUTION.md)
+
 # License
 
 > Copyright Outscale SAS

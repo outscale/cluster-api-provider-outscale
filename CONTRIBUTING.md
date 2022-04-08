@@ -14,5 +14,6 @@ Please provide at least those informations:
 
 # Fix Bug or add a feature
 
-Feel free to fix a bug by opening a Pull Requets in this Github Repository
-For a feature contribution, feel free to opne a pull Requests if you discusss with us about it beforehand.
+Feel free to fix a bug by opening a Pull Requests in this Github Repository.
+
+For a feature contribution, feel free to open a Pull Requests if you discusss with us about it beforehand.
