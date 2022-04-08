@@ -19,6 +19,7 @@ cd cluster-api-provider-outscale
 ```
 
 ## User Credentials configuration 
+This step wil deploy user credential secret 
 ```
 export OSC_ACCESS_KEY=my-osc-access-key
 export OSC_SECRET_KEY=my-osc-secret-key
@@ -39,7 +40,7 @@ NAME      TYPE                             DATA   AGE
 regcred   kubernetes.io/dockerconfigjson   1      52s
 ```
 
-If you want to change it with another name, you change change it in *cluster-api-provider-outscale/config/default*:
+If you want to change it with another name, you change it in *cluster-api-provider-outscale/config/default*:
 ```
       value: [{ name: regcred }]
 ```
@@ -95,14 +96,14 @@ kubectl apply -f example/cluster-template.yaml
 
 ##  Delete cluster
 
-You can delete your cluster 
+This step will delete your cluster 
 ```
 kubectl delete -f example/cluster-template.yaml
 ```
 
 ## Delète Cluster Api Outscale controller manager
 
-You will delete the outscale controller manager
+This step  will delete the outscale controller manager
 ```
 IMG=my-registry/controller:my-tag make undeploy
 ```

@@ -6,11 +6,11 @@ Kubernetes-native declarative infrastructure for Outscale
 
 The Cluster API is used to create, manage and configure cluster using a declarative Kubernetes-style APIs.
 
-The Cluster API allow you to deploy kubernetes across multiple cloud provider. The cluster api provider outscale allow you a outscale deployment of kubernetes.
+The Cluster API allows you to deploy kubernetes across multiple cloud provider. The cluster api provider outscale allow you a outscale deployment of kubernetes.
 
 ## Project Status
  
-Thee project is work-in-progres,  in an Alpha state.
+Thee project is Work in Progress,  in an Alpha state.
 
 
 ## Compatibility with Cluster API and Kubernetes Versions
@@ -27,7 +27,7 @@ The provider version has currently been tested with the following version of kub
 
 # Features
 
-- Cluster infrastructure Outscale controller [cluster-infrastructure-provider] (https://cluster-api.sigs.k8s.io/developer/providers/cluster-infrastructure.html#cluster-infrastructure-provider-specification)
+- Cluster infrastructure Outscale controller (https://cluster-api.sigs.k8s.io/developer/providers/cluster-infrastructure.html#cluster-infrastructure-provider-specification)
 
 # To start using Outscale Cluster Api
 Please look at [Deployment](https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/docs/deploy.md)

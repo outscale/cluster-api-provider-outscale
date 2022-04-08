@@ -39,7 +39,7 @@ NAME      TYPE                             DATA   AGE
 regcred   kubernetes.io/dockerconfigjson   1      52s
 ```
 
-If you want to change it with another name, you change change it in *cluster-api-provider-outscale/config/default/kustomization.yaml*:
+If you want to change it with another name, you change it in *cluster-api-provider-outscale/config/default/kustomization.yaml*:
 ```
       value: [{ name: regcred }]
 ```
@@ -72,7 +72,7 @@ NAME                                                              READY   STATUS
 cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Running   0          22s
 ```
 ##  Watch controller log
-You can watch controller log:
+this step will watch controller log:
 ```
 kubectl logs -f cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f  -n cluster-api-provider-outscale-system  -c manager
 ```
@@ -80,7 +80,7 @@ kubectl logs -f cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f 
 ## Create your cluster
 
 This step will create your infrastructure cluster. It create vpc, net, sg, routetables, eip, nat.
-You can change parameter from cluster-template.yaml if you need:
+You can change parameter from cluster-template.yaml (please look at [contribution][contribution] if you need:
 ```
 kubectl apply -f example/cluster-template.yaml
 ```
@@ -90,14 +90,14 @@ kubectl apply -f example/cluster-template.yaml
 
 ##  Delete cluster
 
-You can delete your cluster cluster with:
+This step will delete your cluster cluster with:
 ```
 kubectl delete -f example/cluster-template.yaml
 ```
 
 ## Delete Cluster API Outscale controller manager
 
-You can delete the Cluster Api Outscale controller manager with:
+This step will delete the Cluster Api Outscale controller manager with:
 ```
 IMG=my-registry/controller:my-tag make undeploy
 ```
@@ -112,4 +112,4 @@ IMG=my-registry/controller:my-tag make undeploy
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
-
+[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/doc/config.md
