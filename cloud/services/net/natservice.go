@@ -7,6 +7,7 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
+// CreateNatService create the nat in the public subnet of the net 
 func (s *Service) CreateNatService(publicIpId string, subnetId string, tagValue string) (*osc.NatService, error) {
 	natServiceRequest := osc.CreateNatServiceRequest{
 		PublicIpId: publicIpId,
@@ -32,6 +33,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, tagValue 
 	return natServiceResponse.NatService, nil
 }
 
+// DeleteNatService  delete the nat
 func (s *Service) DeleteNatService(natServiceId string) error {
 	deleteNatServiceRequest := osc.DeleteNatServiceRequest{NatServiceId: natServiceId}
 	OscApiClient := s.scope.Api()
@@ -44,6 +46,7 @@ func (s *Service) DeleteNatService(natServiceId string) error {
 	return nil
 }
 
+// GetNatService retrieve nat service object using nat service id
 func (s *Service) GetNatService(natServiceId []string) (*osc.NatService, error) {
 	readNatServiceRequest := osc.ReadNatServicesRequest{
 		Filters: &osc.FiltersNatService{

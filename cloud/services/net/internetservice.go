@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// CreateInternetService launch the internet service
 func (s *Service) CreateInternetService(tagValue string) (*osc.InternetService, error) {
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
 	OscApiClient := s.scope.Api()
@@ -30,6 +31,7 @@ func (s *Service) CreateInternetService(tagValue string) (*osc.InternetService, 
 	return internetServiceResponse.InternetService, nil
 }
 
+// DeleteInternetService delete the internet service
 func (s *Service) DeleteInternetService(internetServiceId string) error {
 	deleteInternetServiceRequest := osc.DeleteInternetServiceRequest{InternetServiceId: internetServiceId}
 	OscApiClient := s.scope.Api()
@@ -42,6 +44,7 @@ func (s *Service) DeleteInternetService(internetServiceId string) error {
 	return nil
 }
 
+// LinkInternetService attach the internet service to the net 
 func (s *Service) LinkInternetService(internetServiceId string, netId string) error {
 	linkInternetServiceRequest := osc.LinkInternetServiceRequest{
 		InternetServiceId: internetServiceId,
@@ -57,6 +60,7 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 	return nil
 }
 
+//UnlinkInternetService detach the internet service from the net
 func (s *Service) UnlinkInternetService(internetServiceId string, netId string) error {
 	unlinkInternetServiceRequest := osc.UnlinkInternetServiceRequest{
 		InternetServiceId: internetServiceId,
@@ -72,6 +76,7 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 	return nil
 }
 
+// GetInternetService retrieve internet service object using internet service id
 func (s *Service) GetInternetService(internetServiceId []string) (*osc.InternetService, error) {
 	readInternetServiceRequest := osc.ReadInternetServicesRequest{
 		Filters: &osc.FiltersInternetService{

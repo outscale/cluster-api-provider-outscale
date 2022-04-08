@@ -8,11 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// OscClient contains input client to use outscale api
 type OscClient struct {
 	auth context.Context
 	api  *osc.APIClient
 }
 
+// newOscClient return OscLient using secret credentials
 func newOscClient() (*OscClient, error) {
 	accessKey := os.Getenv("OSC_ACCESS_KEY")
 	if accessKey == "" {

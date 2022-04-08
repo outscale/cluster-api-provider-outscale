@@ -123,6 +123,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return r.reconcile(ctx, clusterScope)
 }
 
+// GetResourceId return the resourceId from the resourceMap base on resourceName (tag name + cluster object uid) and resourceType (net, subnet, gateway, route, route-table, public-ip)
 func GetResourceId(resourceName string, resourceType string, clusterScope *scope.ClusterScope) (string, error) {
 	switch {
 	case resourceType == "net":
@@ -180,6 +181,7 @@ func GetResourceId(resourceName string, resourceType string, clusterScope *scope
 	}
 }
 
+// CheckAssociate return if the resourcename is an item of firstResourceNameArray
 func CheckAssociate(resourceName string, firstResourceNameArray []string) bool {
 	for i := 0; i < len(firstResourceNameArray); i++ {
 		if firstResourceNameArray[i] == resourceName {
@@ -189,8 +191,8 @@ func CheckAssociate(resourceName string, firstResourceNameArray []string) bool {
 	return false
 }
 
+// CheckFormatParameters check every resource (net, subnet, ...) parameters format (Tag format, cidr format, ..)
 func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope) (string, error) {
-	// var resourceNameList []string
 	switch {
 	case resourceType == "net":
 		clusterScope.Info("Check Net name parameters ")
@@ -300,6 +302,7 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
 	return "", nil
 }
 
+// CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
 func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	switch {
@@ -385,6 +388,7 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
 	return nil
 }
 
+// CheckOscDuplicateName check that there are not the same name for resource with the same kind of resourceType (route-table, subnet, ..).
 func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	switch {
@@ -472,6 +476,7 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
 	return nil
 }
 
+// AlertDuplicate alert if item is present more than once in array
 func AlertDuplicate(nameArray []string) error {
 	checkMap := make(map[string]bool, 0)
 	for i := 0; i < len(nameArray); i++ {
@@ -484,6 +489,7 @@ func AlertDuplicate(nameArray []string) error {
 	return nil
 }
 
+// contains check if item is present in slice
 func contains(slice []string, item string) bool {
 	for _, val := range slice {
 		if val == item {
@@ -493,6 +499,7 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
+// ReconcileLoadBalancer reconciles the loadBalancer of the cluster.
 func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	servicesvc := service.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -519,6 +526,7 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 }
 
+// ReconcileNet reconcile the Net of the cluster.
 func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 
 	netsvc := net.NewService(ctx, clusterScope)
@@ -560,6 +568,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 	return reconcile.Result{}, nil
 }
 
+// ReconcileSubnet reconcile the subnet of the cluster.
 func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -615,6 +624,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
 	return reconcile.Result{}, nil
 }
 
+// ReconcileInternetService reconcile the InternetService of the cluster.
 func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -664,6 +674,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	return reconcile.Result{}, nil
 }
 
+// ReconcilePublicIp reconcile the PublicIp of the cluster.
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -711,6 +722,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 	return reconcile.Result{}, nil
 }
 
+// ReconcileRouteTable reconcile the RouteTable and the Route of the cluster.
 func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -816,6 +828,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 	return reconcile.Result{}, nil
 }
 
+// ReconcileNatService reconcile the NatService of the cluster.
 func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -999,6 +1012,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	return reconcile.Result{}, nil
 }
 
+// ReconcileDeleteLoadBalancer reconcile the destruction of the LoadBalancer of the cluster.
+
 func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	servicesvc := service.NewService(ctx, clusterScope)
@@ -1021,6 +1036,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	return reconcile.Result{}, nil
 }
 
+// ReconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
 func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
@@ -1046,6 +1062,7 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 	return reconcile.Result{}, err
 }
 
+// ReconcileDeletePublicIp reconcile the destruction of the PublicIp of the cluster.
 func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
@@ -1088,6 +1105,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	return reconcile.Result{}, nil
 }
 
+// ReconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
 func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
@@ -1176,6 +1194,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 	return reconcile.Result{}, nil
 }
 
+// ReconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
 func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
@@ -1216,6 +1235,7 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	return reconcile.Result{}, nil
 }
 
+// ReconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
 func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
@@ -1259,6 +1279,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	return reconcile.Result{}, nil
 }
 
+// ReconcileDeleteNet reconcile the destruction of the Net of the cluster.
 func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)

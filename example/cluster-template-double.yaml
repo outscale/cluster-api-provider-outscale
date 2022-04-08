@@ -1,0 +1,53 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: hello-osc
+    namespace: default
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  network:
+    loadBalancer:
+      loadbalancername: OscSdkExample-8
+      subregionname: eu-west-2a
+    net:
+      name: cluster-api-net
+      ipRange: "172.19.95.128/25"
+    subnets:
+      - name: cluster-api-subnet
+        ipSubnetRange: "172.19.95.192/27"
+      - name: cluster-api-sub
+        ipSubnetRange: "172.19.95.128/27"
+    publicIps:
+      - name: cluster-api-publicip
+    internetService:
+      name: cluster-api-internetservice
+    natService:
+      name: cluster-api-natservice
+      publicipname: cluster-api-publicip
+      subnetname: cluster-api-subnet
+    routeTables:
+      - name: cluster-api-routetable
+        subnetname: cluster-api-subnet
+        routes:
+          - name: cluster-api-routes
+            targetName: cluster-api-internetservice
+            targetType: gateway 
+            destination: "0.0.0.0/0"
+      - name: cluster-api-rt
+        subnetname: cluster-api-sub
+        routes:
+          - name: cluster-api-r
+            targetName: cluster-api-internetservice
+            targetType: gateway
+            destination: "0.0.0.0/0"

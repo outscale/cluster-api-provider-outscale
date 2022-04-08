@@ -8,6 +8,7 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
+// CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, tagValue string) (*osc.Subnet, error) {
 	IpSubnetRange, err := ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
@@ -37,6 +38,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 	return subnetResponse.Subnet, nil
 }
 
+// DeleteSubnet delete the subnet
 func (s *Service) DeleteSubnet(subnetId string) error {
 	deleteSubnetRequest := osc.DeleteSubnetRequest{SubnetId: subnetId}
 	OscApiClient := s.scope.Api()
@@ -49,6 +51,7 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 	return nil
 }
 
+// GetSubnet retrieve Subnet object from subnet Id
 func (s *Service) GetSubnet(subnetId []string) (*osc.Subnet, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
@@ -72,6 +75,7 @@ func (s *Service) GetSubnet(subnetId []string) (*osc.Subnet, error) {
 	}
 }
 
+// GetSubnetIdsFromNetIds return subnet id resource which eist from the net id
 func (s *Service) GetSubnetIdsFromNetIds(netIds []string) ([]string, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
