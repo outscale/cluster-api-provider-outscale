@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	DefaultLoopTimeout = 90 * time.Minute
+	DefaultLoopTimeout    = 90 * time.Minute
 	DefaultMappingTimeout = 60 * time.Second
 )
 

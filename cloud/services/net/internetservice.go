@@ -44,7 +44,7 @@ func (s *Service) DeleteInternetService(internetServiceId string) error {
 	return nil
 }
 
-// LinkInternetService attach the internet service to the net 
+// LinkInternetService attach the internet service to the net
 func (s *Service) LinkInternetService(internetServiceId string, netId string) error {
 	linkInternetServiceRequest := osc.LinkInternetServiceRequest{
 		InternetServiceId: internetServiceId,

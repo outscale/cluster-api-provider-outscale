@@ -38,119 +38,167 @@ spec:
               network:
                 properties:
                   internetService:
+                    description: The Internet Service configuration
                     properties:
                       name:
+                        description: The tag name associated with the Subnet
                         type: string
                       resourceId:
+                        description: the Internet Service response
                         type: string
                     type: object
                   loadBalancer:
+                    description: The Load Balancer configuration
                     properties:
                       healthCheck:
+                        description: The healthCheck configuration  of the Load Balancer
                         properties:
                           checkinterval:
+                            description: the time in second between two pings
                             format: int32
                             type: integer
                           healthythreshold:
+                            description: the consecutive number of pings which are
+                              sucessful to consider the vm healthy
                             format: int32
                             type: integer
                           port:
+                            description: the HealthCheck port number
                             format: int32
                             type: integer
                           protocol:
+                            description: The HealthCheck protocol ('HTTP'|'TCP')
                             type: string
                           timeout:
+                            description: the Timeout to consider VM unhealthy
                             format: int32
                             type: integer
                           unhealthythreshold:
+                            description: the consecutive number of pings which are
+                              failed to consider the vm unhealthy
                             format: int32
                             type: integer
-                        required:
-                        - protocol
                         type: object
                       listener:
+                        description: The listener configuration of the Load Balancer
                         properties:
                           backendport:
+                            description: The port on which the backend vm will listen
                             format: int32
                             type: integer
                           backendprotocol:
+                            description: The protocol ('HTTP'|'TCP') to route the
+                              traffic to the backend vm
                             type: string
                           loadbalancerport:
+                            description: The port on which the loadbalancer will listen
                             format: int32
                             type: integer
                           loadbalancerprotocol:
+                            description: the routing protocol ('HTTP'|'TCP')
                             type: string
-                        required:
-                        - loadbalancerprotocol
                         type: object
                       loadbalancername:
+                        description: The Load Balancer unique name
                         type: string
                       subregionname:
+                        description: The SubRegion Name where the Load Balancer will
+                          be created
                         type: string
                     type: object
                   natService:
+                    description: The Nat Service configuration
                     properties:
                       name:
+                        description: The tag name associated with the Nat Service
                         type: string
                       publicipname:
+                        description: The Public Ip tag name associated wtih a Public
+                          Ip
                         type: string
                       resourceId:
+                        description: The Nat Service Id response
                         type: string
                       subnetname:
+                        description: The subnet tag name associated with a Subnet
                         type: string
                     type: object
                   net:
+                    description: The Net configuration
                     properties:
                       ipRange:
+                        description: Net Ip range with CIDR notation
                         type: string
                       name:
+                        description: Name Tag associated with the Net
                         type: string
                       resourceId:
+                        description: The Net Id response
                         type: string
                     type: object
                   publicIps:
+                    description: The Public Ip configuration
                     items:
                       properties:
                         name:
+                          description: The tag name associated with the Public Ip
                           type: string
                         resourceId:
+                          description: The Public Ip Id response
                           type: string
                       type: object
                     type: array
                   routeTables:
+                    description: The Route Table configuration
                     items:
                       properties:
                         name:
+                          description: The tag name associated with the Route Table
                           type: string
                         resourceId:
+                          description: The Route Table Id response
                           type: string
                         routes:
+                          description: The Route configuration
                           items:
                             properties:
                               destination:
+                                description: the destination match Ip range with CIDR
+                                  notation
                                 type: string
                               name:
+                                description: The tag name associated with the Route
                                 type: string
                               resourceId:
+                                description: The Route Id response
                                 type: string
                               targetName:
+                                description: The tag name associated with the target
+                                  resource type
                                 type: string
                               targetType:
+                                description: The target resource type which can be
+                                  Internet Service (gateway) or Nat Service (nat-service)
                                 type: string
                             type: object
                           type: array
                         subnetname:
+                          description: The subnet tag name associated with a Subnet
                           type: string
                       type: object
                     type: array
                   subnets:
+                    description: The Subnet configuration
                     items:
                       properties:
                         ipSubnetRange:
+                          description: Subnet Ip range with CIDR notation
                           type: string
                         name:
+                          description: The tag name associated with the Subnet
                           type: string
                         resourceId:
+                          description: The Subnet Id response
                           type: string
                       type: object
                     type: array
@@ -208,6 +256,8 @@ spec:
               network:
                 properties:
                   LoadbalancerRef:
+                    description: Map between LoadbalancerId  and LoadbalancerName
+                      (Load Balancer tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -215,6 +265,8 @@ spec:
                         type: object
                     type: object
                   internetserviceref:
+                    description: Map between InternetServiceId  and InternetServiceName
+                      (Internet Service tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -222,6 +274,8 @@ spec:
                         type: object
                     type: object
                   linkroutetableref:
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -229,6 +283,8 @@ spec:
                         type: object
                     type: object
                   natref:
+                    description: Map between NatServiceId  and NatServiceName (Nat
+                      Service tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -236,6 +292,8 @@ spec:
                         type: object
                     type: object
                   netref:
+                    description: Map between NetId  and NetName (Net tag Name with
+                      cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -243,6 +301,8 @@ spec:
                         type: object
                     type: object
                   publicipref:
+                    description: Map between PublicIpId  and PublicIpName (Public
+                      IP tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -250,6 +310,8 @@ spec:
                         type: object
                     type: object
                   routeref:
+                    description: Map between RouteId  and RouteName (Route tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -257,6 +319,8 @@ spec:
                         type: object
                     type: object
                   routetableref:
+                    description: Map between RouteTablesId  and RouteTablesName (Route
+                      Tables tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -264,6 +328,8 @@ spec:
                         type: object
                     type: object
                   subnetref:
+                    description: Map between SubnetId  and SubnetName (Subnet tag
+                      Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:

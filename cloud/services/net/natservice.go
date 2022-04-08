@@ -7,7 +7,7 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
-// CreateNatService create the nat in the public subnet of the net 
+// CreateNatService create the nat in the public subnet of the net
 func (s *Service) CreateNatService(publicIpId string, subnetId string, tagValue string) (*osc.NatService, error) {
 	natServiceRequest := osc.CreateNatServiceRequest{
 		PublicIpId: publicIpId,

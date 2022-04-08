@@ -157,6 +157,7 @@ func (s *Service) GetRouteTableFromRoute(routeTableId []string, resourceId []str
 		return &routetable[0], nil
 	}
 }
+
 // LinkRouteTable associate the routetable with the subnet
 func (s *Service) LinkRouteTable(routeTableId string, subnetId string) (string, error) {
 	linkRouteTableRequest := osc.LinkRouteTableRequest{
