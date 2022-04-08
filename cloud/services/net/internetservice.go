@@ -8,17 +8,13 @@ import (
 )
 
 // CreateInternetService launch the internet service
-func (s *Service) CreateInternetService(tagValue string) (*osc.InternetService, error) {
+func (s *Service) CreateInternetService(internetServiceName string) (*osc.InternetService, error) {
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
 	OscApiClient := s.scope.Api()
 	OscAuthClient := s.scope.Auth()
 	internetServiceResponse, httpRes, err := OscApiClient.InternetServiceApi.CreateInternetService(OscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
 	if err != nil {
 		fmt.Sprintf("Error with http result %s", httpRes.Status)
-		return nil, err
-	}
-	internetServiceName, err := tag.ValidateTagNameValue(tagValue)
-	if err != nil {
 		return nil, err
 	}
 

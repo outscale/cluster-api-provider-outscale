@@ -31,7 +31,7 @@ func ValidateCidr(cidr string) (string, error) {
 }
 
 // CreateNet create the net from spec (in order to retrieve ip range)
-func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, tagValue string) (*osc.Net, error) {
+func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error) {
 	IpRange, err := ValidateCidr(spec.IpRange)
 	if err != nil {
 		return nil, err
@@ -44,10 +44,6 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, tagValue string)
 	netResponse, httpRes, err := OscApiClient.NetApi.CreateNet(OscAuthClient).CreateNetRequest(netRequest).Execute()
 	if err != nil {
 		fmt.Sprintf("Error with http result %s", httpRes.Status)
-		return nil, err
-	}
-	netName, err := tag.ValidateTagNameValue(tagValue)
-	if err != nil {
 		return nil, err
 	}
 	resourceIds := []string{*netResponse.Net.NetId}
