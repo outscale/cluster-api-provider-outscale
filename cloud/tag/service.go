@@ -11,7 +11,6 @@ type Service struct {
 	ctx   context.Context
 }
 
-
 // NewService return a service which is based on outscale api client
 func NewService(ctx context.Context, scope *scope.ClusterScope) *Service {
 	return &Service{

@@ -32,7 +32,7 @@ func (s *Service) ValidatePort(port int32) (int32, error) {
 	}
 }
 
-// ValidateInterval check that the interval is a valide time of second 
+// ValidateInterval check that the interval is a valide time of second
 func (s *Service) ValidateInterval(interval int32) (int32, error) {
 	isValidateInterval := regexp.MustCompile(`^([5-9]|[1-9][0-9]{1}|[1-5][0-9]{2}|600)$`).MatchString
 	if isValidateInterval(strconv.Itoa(int(interval))) {
@@ -80,7 +80,7 @@ func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, 
 	}
 }
 
-// GetRegionName return the subregion name of the loadBalancer 
+// GetRegionName return the subregion name of the loadBalancer
 func (s *Service) GetRegionName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
 	var name string
 	switch {

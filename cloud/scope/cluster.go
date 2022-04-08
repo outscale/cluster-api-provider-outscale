@@ -166,7 +166,7 @@ func (s *ClusterScope) RouteRef() *infrastructurev1beta1.OscResourceMapReference
 	return &s.OscCluster.Status.Network.RouteRef
 }
 
-// PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id) 
+// PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id)
 func (s *ClusterScope) PublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.PublicIpRef
 }
