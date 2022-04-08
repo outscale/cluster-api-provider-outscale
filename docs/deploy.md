@@ -11,6 +11,13 @@
 - Registry secret [registry-secret][registry-secret]
 # Configuration
 
+## Clone
+
+```
+git clone https://github.com/outscale-vbr/cluster-api-provider-outscale
+cd cluster-api-provider-outscale
+```
+
 ## User Credentials configuration 
 ```
 export OSC_ACCESS_KEY=my-osc-access-key
@@ -24,7 +31,7 @@ cat config/secret.yaml | \
 
 ## Registry credentials configuration
 
-By default, if you use a private registry with credential, registry credential must be call regcred and must be deployed in cluster-api-provider-outscale-system namespace.
+By default, if you use a private registry with credentials, registry credentials must be named regcred and must be deployed in cluster-api-provider-outscale-system namespace.
 
 ```
 kubectl get secret regcred  -n cluster-api-provider-outscale-system 
@@ -32,7 +39,7 @@ NAME      TYPE                             DATA   AGE
 regcred   kubernetes.io/dockerconfigjson   1      52s
 ```
 
-If you want to change it with another name, you change change it in *cluster-api-provider-outscale/config/default*:
+If you want to change it with another name, you change change it in *cluster-api-provider-outscale/config/default/kustomization.yaml*:
 ```
       value: [{ name: regcred }]
 ```
@@ -46,10 +53,14 @@ IMG=my-registry/controller:my-tag make docker-build
 IMG=my-registry/controller:my-tag make docker-push
 ```
 
-# Deploying Outscale controller manager
+# Deploying Cluster Api
 
-# deploy Outscale controller manager
-This step will deploy the Outscale controller manager (currently compose of only of the cluster controller)
+Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
+
+# Deploying  Cluster API Provider Outscale
+
+# Deploy Cluster API Outscale controller manager
+This step will deploy the Outscale  Cluster API controller manager (currently compose of only of the Cluster Infrastructure Provider controller)
 ```
 IMG=my-registry/controller:my-tag make deploy
 ```
@@ -68,25 +79,25 @@ kubectl logs -f cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f 
 
 ## Create your cluster
 
-This step will create your infrastructure cluster. It create vpc, net, sg, routetables,  eip, nat.
+This step will create your infrastructure cluster. It create vpc, net, sg, routetables, eip, nat.
 You can change parameter from cluster-template.yaml if you need:
 ```
 kubectl apply -f example/cluster-template.yaml
 ```
 
 
-## CleanUp
+# CleanUp
 
 ##  Delete cluster
 
-You can delete your cluster cluster
+You can delete your cluster cluster with:
 ```
 kubectl delete -f example/cluster-template.yaml
 ```
 
-## Delète Outscale controller manager
+## Delete Cluster API Outscale controller manager
 
-You will delete the outscale controller manager
+You can delete the Cluster Api Outscale controller manager with:
 ```
 IMG=my-registry/controller:my-tag make undeploy
 ```
@@ -100,3 +111,5 @@ IMG=my-registry/controller:my-tag make undeploy
 [osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
+[cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
+

@@ -11,6 +11,13 @@
 - Registry secret [registry-secret][registry-secret]
 # Configuration
 
+## Clone
+
+```
+git clone https://github.com/outscale-vbr/cluster-api-provider-outscale
+cd cluster-api-provider-outscale
+```
+
 ## User Credentials configuration 
 ```
 export OSC_ACCESS_KEY=my-osc-access-key
@@ -39,9 +46,14 @@ If you want to change it with another name, you change change it in *cluster-api
 
 
 # Build and  deploy
+# Deploying Cluster Api
+
+Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
+
 ##  Build, Push and Deploy
 This step will build and push image to your public or private registry and deploy it.
-Launch tilt at  the project's root folder.
+
+Please launch tilt at the project's root folder.
 ```
 [root@cidev-admin cluster-api-provider-outscale]# tilt up
 Tilt started on http://localhost:10350/
@@ -52,7 +64,7 @@ v0.25.3, built 2022-03-04
 (t) to open legacy terminal mode (--legacy=true)
 (ctrl-c) to exit
 ```
-Watch docker build and controller log in your web browser. 
+You can track your docker build and controller log in your web browser. 
 
 ## Check your cluster is deployed
 ```
@@ -64,13 +76,16 @@ cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Runnin
 # Devellop
 
 ## Using tiltfile
-Choose your favorite editor to devellop.
-With the current tiltfile, each time yu change a file, it build docker image, push into the registry and deploy it with kustomize.
+
+Choose your favorite editor to develop.
+
+With the current tiltfile, each time you change a file, it build docker image, push into the registry and deploy it with kustomize.
 
 ## Create your cluster
 
-This step will create your infrastructure cluster. It create vpc, net, sg, routetables,  eip, nat.
-You can change parameter from cluster-template.yaml if you need:
+This step will create your infrastructure cluster. It create vpc, net, sg, routetables, eip, nat.
+
+You can change parameter from cluster-template.yaml (please look at [configuration][configuration]) if you need:
 ```
 kubectl apply -f example/cluster-template.yaml
 ```
@@ -80,12 +95,12 @@ kubectl apply -f example/cluster-template.yaml
 
 ##  Delete cluster
 
-You can delete your cluster cluster
+You can delete your cluster 
 ```
 kubectl delete -f example/cluster-template.yaml
 ```
 
-## Delète Outscale controller manager
+## Delète Cluster Api Outscale controller manager
 
 You will delete the outscale controller manager
 ```
@@ -101,3 +116,5 @@ IMG=my-registry/controller:my-tag make undeploy
 [osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
+[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/doc/config.md
+
