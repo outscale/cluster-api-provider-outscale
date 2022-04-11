@@ -30,6 +30,11 @@ const (
 )
 
 const (
+    SecurityGroupReadyCondition clusterv1.ConditionType = "SecurityGroupsReady"
+    SecurityGroupReconciliationFailedReason             = "SecurityGroupReconciliationFailed"
+)
+
+const (
 	LoadBalancerReadyCondition clusterv1.ConditionType = "LoadBalancerReady"
 	LoadBalancerFailedReason                           = "LoadBalancerFailed"
 )

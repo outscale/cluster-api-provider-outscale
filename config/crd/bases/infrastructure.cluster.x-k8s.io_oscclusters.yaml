@@ -187,6 +187,38 @@ spec:
                           type: string
                       type: object
                     type: array
+                  securityGroups:
+                    items:
+                      properties:
+                        description:
+                          type: string
+                        name:
+                          type: string
+                        resourceId:
+                          type: string
+                        securityGroupRules:
+                          items:
+                            properties:
+                              flow:
+                                type: string
+                              fromPortRange:
+                                format: int32
+                                type: integer
+                              ipProtocol:
+                                type: string
+                              ipRange:
+                                type: string
+                              name:
+                                type: string
+                              resourceId:
+                                type: string
+                              toPortRange:
+                                format: int32
+                                type: integer
+                            type: object
+                          type: array
+                      type: object
+                    type: array
                   subnets:
                     description: The Subnet configuration
                     items:
@@ -301,8 +333,8 @@ spec:
                         type: object
                     type: object
                   publicipref:
-                    description: Map between PublicIpId  and PublicIpName (Public
-                      IP tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -321,6 +353,24 @@ spec:
                   routetableref:
                     description: Map between RouteTablesId  and RouteTablesName (Route
                       Tables tag Name with cluster UID)
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  securitygroupref:
+                    description: Map between PublicIpId  and PublicIpName (Public
+                      IP tag Name with cluster UID)
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  securitygroupruleref:
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
