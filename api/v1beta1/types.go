@@ -142,11 +142,10 @@ type OscRouteTable struct {
 }
 
 type OscSecurityGroup struct {
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-        SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
-        ResourceId string `json:"resourceId,omitempty"`
-        
+	Name               string                 `json:"name,omitempty"`
+	Description        string                 `json:"description,omitempty"`
+	SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
+	ResourceId         string                 `json:"resourceId,omitempty"`
 }
 
 type OscPublicIp struct {
@@ -177,13 +176,13 @@ type OscRoute struct {
 }
 
 type OscSecurityGroupRule struct {
-    Name string `json:"name,omitempty"`
-    Flow string `json:"flow,omitempty"`  
-    IpProtocol string `json:"ipProtocol,omitempty"`
-    IpRange string `json:"ipRange,omitempty"`
-    FromPortRange int32 `json:"fromPortRange,omitempty"` 
-    ToPortRange int32 `json:"toPortRange,omitempty"`
-    ResourceId string `json:"resourceId,omitempty"`
+	Name          string `json:"name,omitempty"`
+	Flow          string `json:"flow,omitempty"`
+	IpProtocol    string `json:"ipProtocol,omitempty"`
+	IpRange       string `json:"ipRange,omitempty"`
+	FromPortRange int32  `json:"fromPortRange,omitempty"`
+	ToPortRange   int32  `json:"toPortRange,omitempty"`
+	ResourceId    string `json:"resourceId,omitempty"`
 }
 
 // Map between resourceId and resourceName (tag Name with cluster UID)
@@ -206,47 +205,46 @@ type OscNetworkResource struct {
 	// Map between RouteId  and RouteName (Route tag Name with cluster UID)
 	RouteRef OscResourceMapReference `json:"routeref,omitempty"`
 	// Map between PublicIpId  and PublicIpName (Public IP tag Name with cluster UID)
-	SecurityGroupsRef OscResourceMapReference `json:"securitygroupref,omitempty"`
-        SecurityGroupRuleRef OscResourceMapReference `json:"securitygroupruleref,omitempty"`
-	PublicIpRef        OscResourceMapReference `json:"publicipref,omitempty"`
+	SecurityGroupsRef    OscResourceMapReference `json:"securitygroupref,omitempty"`
+	SecurityGroupRuleRef OscResourceMapReference `json:"securitygroupruleref,omitempty"`
+	PublicIpRef          OscResourceMapReference `json:"publicipref,omitempty"`
 	// Map between NatServiceId  and NatServiceName (Nat Service tag Name with cluster UID)
 	NatServiceRef OscResourceMapReference `json:"natref,omitempty"`
 }
 
 var (
-	DefaultLoadBalancerName     string = "OscClusterApi-1"
-	DefaultSubregionName        string = "eu-west-2a"
-	DefaultBackendPort          int32  = 6443
-	DefaultBackendProtocol      string = "TCP"
-	DefaultLoadBalancerPort     int32  = 6443
-	DefaultLoadBalancerProtocol string = "TCP"
-	DefaultCheckInterval        int32  = 30
-	DefaultHealthyThreshold     int32  = 10
-	DefaultUnhealthyThreshold   int32  = 2
-	DefaultTimeout              int32  = 5
-	DefaultProtocol             string = "TCP"
-	DefaultPort                 int32  = 6443
-	DefaultIpRange              string = "172.19.95.128/25"
-	DefaultIpSubnetRange        string = "172.19.95.192/27"
-	DefaultTargetName           string = "cluster-api-internetservice"
-	DefaultTargetType           string = "gateway"
-	DefaultDestination          string = "0.0.0.0/0"
-	DefaultRouteTableName       string = "cluster-api-routetable"
-	DefaultRouteName            string = "cluster-api-route"
-	DefaultPublicIpName         string = "cluster-api-publicip"
-	DefaultNatServiceName       string = "cluster-api-natservice"
-	DefaultSubnetName           string = "cluster-api-subnet"
-	DefaultNetName              string = "cluster-api-net"
-	DefaultInternetServiceName  string = "cluster-api-internetservice"
-	DefaultSecurityGroupName    string = "cluster-api-securitygroup"
-	DefaultDescription          string = "Security Group with cluster-api"
-        DefaultSecurityGroupRuleName string = "cluster-api-securitygrouprule"
-        DefaultFlow                 string = "Inbound"
-        DefaultIpProtocol           string = "tcp"
-        DefaultRuleIpRange          string = "46.231.147.5"
-        DefaultFromPortRange        int32  = 6443
-        DefaultToPortRange          int32  = 6443
-     
+	DefaultLoadBalancerName      string = "OscClusterApi-1"
+	DefaultSubregionName         string = "eu-west-2a"
+	DefaultBackendPort           int32  = 6443
+	DefaultBackendProtocol       string = "TCP"
+	DefaultLoadBalancerPort      int32  = 6443
+	DefaultLoadBalancerProtocol  string = "TCP"
+	DefaultCheckInterval         int32  = 30
+	DefaultHealthyThreshold      int32  = 10
+	DefaultUnhealthyThreshold    int32  = 2
+	DefaultTimeout               int32  = 5
+	DefaultProtocol              string = "TCP"
+	DefaultPort                  int32  = 6443
+	DefaultIpRange               string = "172.19.95.128/25"
+	DefaultIpSubnetRange         string = "172.19.95.192/27"
+	DefaultTargetName            string = "cluster-api-internetservice"
+	DefaultTargetType            string = "gateway"
+	DefaultDestination           string = "0.0.0.0/0"
+	DefaultRouteTableName        string = "cluster-api-routetable"
+	DefaultRouteName             string = "cluster-api-route"
+	DefaultPublicIpName          string = "cluster-api-publicip"
+	DefaultNatServiceName        string = "cluster-api-natservice"
+	DefaultSubnetName            string = "cluster-api-subnet"
+	DefaultNetName               string = "cluster-api-net"
+	DefaultInternetServiceName   string = "cluster-api-internetservice"
+	DefaultSecurityGroupName     string = "cluster-api-securitygroup"
+	DefaultDescription           string = "Security Group with cluster-api"
+	DefaultSecurityGroupRuleName string = "cluster-api-securitygrouprule"
+	DefaultFlow                  string = "Inbound"
+	DefaultIpProtocol            string = "tcp"
+	DefaultRuleIpRange           string = "46.231.147.5"
+	DefaultFromPortRange         int32  = 6443
+	DefaultToPortRange           int32  = 6443
 )
 
 // SetDefaultValue set the Net default values
@@ -312,18 +310,18 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 
 func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 	if len(network.SecurityGroups) == 0 {
-                securitygrouprule := OscSecurityGroupRule {
-                    Name: DefaultSecurityGroupRuleName,
-                    Flow: DefaultFlow,
-                    IpProtocol: DefaultIpProtocol,
-                    IpRange: DefaultIpRange,
-                    FromPortRange: DefaultFromPortRange,
-                    ToPortRange: DefaultToPortRange,
-                }
+		securitygrouprule := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleName,
+			Flow:          DefaultFlow,
+			IpProtocol:    DefaultIpProtocol,
+			IpRange:       DefaultIpRange,
+			FromPortRange: DefaultFromPortRange,
+			ToPortRange:   DefaultToPortRange,
+		}
 		securitygroup := OscSecurityGroup{
-			Name:        DefaultSecurityGroupName,
-			Description: DefaultDescription,
-                        SecurityGroupRules: []OscSecurityGroupRule{securitygrouprule}, 
+			Name:               DefaultSecurityGroupName,
+			Description:        DefaultDescription,
+			SecurityGroupRules: []OscSecurityGroupRule{securitygrouprule},
 		}
 		var securitygroups []*OscSecurityGroup = network.SecurityGroups
 		securitygroups = append(securitygroups, &securitygroup)
