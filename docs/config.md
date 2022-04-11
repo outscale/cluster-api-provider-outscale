@@ -53,20 +53,21 @@ spec:
 
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
-| `backendport`| `OscClusterApi-1` | false | The port on which the backend vm will listen
-| `backendprotocol` | `eu-west-2a` | false | The protocol ('HTTP'|'TCP') to route the traffic to the backend vm
-| `loadbalancerport` | `` | false | The port on which the loadbalancer will listen
-| `loadbalancerprotocol` | `` | false | the routing protocol ('HTTP'|'TCP')
+| `backendport`| `6443` | false | The port on which the backend vm will listen
+| `backendprotocol` | `TCP` | false | The protocol ('HTTP'|'TCP') to route the traffic to the backend vm
+| `loadbalancerport` | `6443` | false | The port on which the loadbalancer will listen
+| `loadbalancerprotocol` | `TCP` | false | the routing protocol ('HTTP'|'TCP')
 
 #### HealthCheck
 
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
-| `checkinterval`| `OscClusterApi-1` | false | the time in second between two pings
-| `healthythreshold` | `eu-west-2a` | false | the consecutive number of pings which are sucessful to consider the vm healthy
-| `port` | `` | false |  the HealthCheck port number
-| `protocol` | `` | false | The HealthCheck protocol ('HTTP'|'TCP')
-| `timeout` | `` | false | the Timeout to consider VM unhealthy
+| `checkinterval`| `30` | false | the time in second between two pings
+| `healthythreshold` | `10` | false | the consecutive number of pings which are sucessful to consider the vm healthy
+| `unhealthythreshold` | `5` | false | the consecutive number of pings which are failed to consider the vm unhealthy
+| `port` | `6443` | false |  the HealthCheck port number
+| `protocol` | `TCP` | false | The HealthCheck protocol ('HTTP'|'TCP')
+| `timeout` | `5` | false | the Timeout to consider VM unhealthy
 
 ### Net
 
@@ -74,7 +75,6 @@ spec:
 | --- | --- | --- | ---
 | `name`| `cluster-api-net` | false | the tag name associated with the Net
 | `ipRange` | `172.19.95.128/25` | false | Net Ip range with CIDR notation
-
 
 ### Subnet
 

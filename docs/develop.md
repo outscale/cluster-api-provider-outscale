@@ -32,7 +32,7 @@ cat config/secret.yaml | \
 
 ## Registry credentials configuration
 
-By default, if you use a private registry with credential, registry credential must be call regcred and must be deployed in cluster-api-provider-outscale-system namespace.
+By default, if you use a private registry with credentials, registry credentials secret must be call regcred and must be deployed in cluster-api-provider-outscale-system namespace.
 
 ```
 kubectl get secret regcred  -n cluster-api-provider-outscale-system 
@@ -117,5 +117,5 @@ IMG=my-registry/controller:my-tag make undeploy
 [osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
-[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/doc/config.md
+[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/docs/config.md
 
