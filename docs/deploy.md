@@ -80,7 +80,7 @@ kubectl logs -f cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f 
 ## Create your cluster
 
 This step will create your infrastructure cluster. It create vpc, net, sg, routetables, eip, nat.
-You can change parameter from cluster-template.yaml (please look at [contribution][contribution] if you need:
+You can change parameter from cluster-template.yaml (please look at [configuration][configuration]) if you need:
 ```
 kubectl apply -f example/cluster-template.yaml
 ```
@@ -112,4 +112,5 @@ IMG=my-registry/controller:my-tag make undeploy
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
-[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/doc/config.md
+[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/docs/config.md
+
