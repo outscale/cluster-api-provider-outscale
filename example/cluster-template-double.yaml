@@ -48,6 +48,7 @@ spec:
         subnetname: cluster-api-sub
         routes:
           - name: cluster-api-r
-            targetName: cluster-api-internetservice
-            targetType: gateway
+            targetName: cluster-api-natservice
+            targetType: nat
             destination: "0.0.0.0/0"
+
