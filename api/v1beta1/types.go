@@ -19,6 +19,9 @@ type OscNetwork struct {
 	// The Route Table configuration
 	// +optional
 	RouteTables []*OscRouteTable `json:"routeTables,omitempty"`
+
+	SecurityGroups []*OscSecurityGroup `json:"securityGroups,omitempty"`
+
 	// The Public Ip configuration
 	// +optional
 	PublicIps []*OscPublicIp `json:"publicIps,omitempty"`
@@ -76,10 +79,10 @@ type OscLoadBalancerHealthCheck struct {
 }
 
 type OscNet struct {
-	// Name Tag associated with the Net
+	// the tag name associate with the Net
 	// +optional
 	Name string `json:"name,omitempty"`
-	// Net Ip range with CIDR notation
+	// the net ip range with CIDR notation
 	// +optional
 	IpRange string `json:"ipRange,omitempty"`
 	// The Net Id response
@@ -88,7 +91,7 @@ type OscNet struct {
 }
 
 type OscInternetService struct {
-	// The tag name associated with the Subnet
+	// The tag name associate with the Subnet
 	// +optional
 	Name string `json:"name,omitempty"`
 	// the Internet Service response
@@ -97,7 +100,7 @@ type OscInternetService struct {
 }
 
 type OscSubnet struct {
-	// The tag name associated with the Subnet
+	// The tag name associate with the Subnet
 	// +optional
 	Name string `json:"name,omitempty"`
 	// Subnet Ip range with CIDR notation
@@ -109,13 +112,13 @@ type OscSubnet struct {
 }
 
 type OscNatService struct {
-	// The tag name associated with the Nat Service
+	// The tag name associate with the Nat Service
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The Public Ip tag name associated wtih a Public Ip
 	// +optional
 	PublicIpName string `json:"publicipname,omitempty"`
-	// The subnet tag name associated with a Subnet
+	// The subnet tag name associate with a Subnet
 	// +optional
 	SubnetName string `json:"subnetname,omitempty"`
 	// The Nat Service Id response
@@ -124,10 +127,10 @@ type OscNatService struct {
 }
 
 type OscRouteTable struct {
-	// The tag name associated with the Route Table
+	// The tag name associate with the Route Table
 	// +optional
 	Name string `json:"name,omitempty"`
-	// The subnet tag name associated with a Subnet
+	// The subnet tag name associate with a Subnet
 	// +optional
 	SubnetName string `json:"subnetname,omitempty"`
 	// The Route configuration
@@ -138,8 +141,16 @@ type OscRouteTable struct {
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
+type OscSecurityGroup struct {
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+        SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
+        ResourceId string `json:"resourceId,omitempty"`
+        
+}
+
 type OscPublicIp struct {
-	// The tag name associated with the Public Ip
+	// The tag name associate with the Public Ip
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The Public Ip Id response
@@ -148,10 +159,10 @@ type OscPublicIp struct {
 }
 
 type OscRoute struct {
-	// The tag name associated with the Route
+	// The tag name associate with the Route
 	// +optional
 	Name string `json:"name,omitempty"`
-	// The tag name associated with the target resource type
+	// The tag name associate with the target resource type
 	// +optional
 	TargetName string `json:"targetName,omitempty"`
 	// The target resource type which can be Internet Service (gateway) or Nat Service (nat-service)
@@ -163,6 +174,16 @@ type OscRoute struct {
 	// The Route Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+}
+
+type OscSecurityGroupRule struct {
+    Name string `json:"name,omitempty"`
+    Flow string `json:"flow,omitempty"`  
+    IpProtocol string `json:"ipProtocol,omitempty"`
+    IpRange string `json:"ipRange,omitempty"`
+    FromPortRange int32 `json:"fromPortRange,omitempty"` 
+    ToPortRange int32 `json:"toPortRange,omitempty"`
+    ResourceId string `json:"resourceId,omitempty"`
 }
 
 // Map between resourceId and resourceName (tag Name with cluster UID)
@@ -185,7 +206,9 @@ type OscNetworkResource struct {
 	// Map between RouteId  and RouteName (Route tag Name with cluster UID)
 	RouteRef OscResourceMapReference `json:"routeref,omitempty"`
 	// Map between PublicIpId  and PublicIpName (Public IP tag Name with cluster UID)
-	PublicIpRef OscResourceMapReference `json:"publicipref,omitempty"`
+	SecurityGroupsRef OscResourceMapReference `json:"securitygroupref,omitempty"`
+        SecurityGroupRuleRef OscResourceMapReference `json:"securitygroupruleref,omitempty"`
+	PublicIpRef        OscResourceMapReference `json:"publicipref,omitempty"`
 	// Map between NatServiceId  and NatServiceName (Nat Service tag Name with cluster UID)
 	NatServiceRef OscResourceMapReference `json:"natref,omitempty"`
 }
@@ -215,6 +238,15 @@ var (
 	DefaultSubnetName           string = "cluster-api-subnet"
 	DefaultNetName              string = "cluster-api-net"
 	DefaultInternetServiceName  string = "cluster-api-internetservice"
+	DefaultSecurityGroupName    string = "cluster-api-securitygroup"
+	DefaultDescription          string = "Security Group with cluster-api"
+        DefaultSecurityGroupRuleName string = "cluster-api-securitygrouprule"
+        DefaultFlow                 string = "Inbound"
+        DefaultIpProtocol           string = "tcp"
+        DefaultRuleIpRange          string = "46.231.147.5"
+        DefaultFromPortRange        int32  = 6443
+        DefaultToPortRange          int32  = 6443
+     
 )
 
 // SetDefaultValue set the Net default values
@@ -276,6 +308,27 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 		network.RouteTables = routetables
 	}
 
+}
+
+func (network *OscNetwork) SetSecurityGroupDefaultValue() {
+	if len(network.SecurityGroups) == 0 {
+                securitygrouprule := OscSecurityGroupRule {
+                    Name: DefaultSecurityGroupRuleName,
+                    Flow: DefaultFlow,
+                    IpProtocol: DefaultIpProtocol,
+                    IpRange: DefaultIpRange,
+                    FromPortRange: DefaultFromPortRange,
+                    ToPortRange: DefaultToPortRange,
+                }
+		securitygroup := OscSecurityGroup{
+			Name:        DefaultSecurityGroupName,
+			Description: DefaultDescription,
+                        SecurityGroupRules: []OscSecurityGroupRule{securitygrouprule}, 
+		}
+		var securitygroups []*OscSecurityGroup = network.SecurityGroups
+		securitygroups = append(securitygroups, &securitygroup)
+		network.SecurityGroups = securitygroups
+	}
 }
 
 // SetDefaultValue set the Route Table default values from routetable configuration

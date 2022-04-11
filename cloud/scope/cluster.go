@@ -156,14 +156,26 @@ func (s *ClusterScope) RouteTables() []*infrastructurev1beta1.OscRouteTable {
 	return s.OscCluster.Spec.Network.RouteTables
 }
 
+func (s *ClusterScope) SecurityGroups() []*infrastructurev1beta1.OscSecurityGroup {
+	return s.OscCluster.Spec.Network.SecurityGroups
+}
+
 // RouteTablesRef get the status of routeTable (a Map with tag name with cluster uid associate with resource response id)
 func (s *ClusterScope) RouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.RouteTablesRef
 }
 
+func (s *ClusterScope) SecurityGroupsRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &s.OscCluster.Status.Network.SecurityGroupsRef
+}
+
 // RouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id)
 func (s *ClusterScope) RouteRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.RouteRef
+}
+
+func (s *ClusterScope) SecurityGroupRuleRef() *infrastructurev1beta1.OscResourceMapReference {
+    return &s.OscCluster.Status.Network.SecurityGroupRuleRef
 }
 
 // PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id)
@@ -185,6 +197,16 @@ func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
 		}
 	}
 	return &routeTables[0].Routes
+}
+
+func (s *ClusterScope) SecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
+    securityGroups := s.OscCluster.Spec.Network.SecurityGroups
+    for _, securityGroup := range securityGroups {
+        if securityGroup.Name == Name {
+            return &securityGroup.SecurityGroupRules
+        }
+    }
+    return &securityGroups[0].SecurityGroupRules
 }
 
 // PublicIp return the public ip of the cluster

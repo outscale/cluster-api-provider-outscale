@@ -43,3 +43,13 @@ spec:
             targetName: cluster-api-internetservice
             targetType: gateway 
             destination: "0.0.0.0/0"
+    securityGroups:
+      - name: cluster-api-securitygroups
+        description: Security Group with cluster-api   
+        securityGroupRules:
+          - name: cluste-api-securitygrouprule
+            flow: Inbound
+            ipProtocol: tcp
+            ipRange: "46.231.147.5/32"
+            fromPortRange: 22
+            toPortRange: 22 
