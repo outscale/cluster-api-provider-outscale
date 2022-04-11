@@ -183,7 +183,7 @@ func GetResourceId(resourceName string, resourceType string, clusterScope *scope
 		} else {
 			return "", fmt.Errorf("%s is not exist", resourceName)
 		}
-	case resourceType == "nat-service":
+	case resourceType == "nat":
 		natServiceRef := clusterScope.NatServiceRef()
 		if natServiceId, ok := natServiceRef.ResourceMap[resourceName]; ok {
 			return natServiceId, nil
@@ -494,6 +494,26 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
 			return nil
 		}
 		return nil
+	case resourceType == "security-group":
+		clusterScope.Info("check unique securityGroup")
+		var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
+		networkSpec := clusterScope.Network()
+		if networkSpec.SecurityGroups == nil {
+			networkSpec.SetSecurityGroupDefaultValue()
+			securityGroupsSpec = networkSpec.SecurityGroups
+		} else {
+			securityGroupsSpec = clusterScope.SecurityGroups()
+		}
+		for _, securityGroupSpec := range securityGroupsSpec {
+			resourceNameList = append(resourceNameList, securityGroupSpec.Name)
+		}
+		duplicateResourceErr := AlertDuplicate(resourceNameList)
+		if duplicateResourceErr != nil {
+			return duplicateResourceErr
+		} else {
+			return nil
+		}
+
 	case resourceType == "route":
 		clusterScope.Info("check unique route")
 		routeTablesSpec := clusterScope.RouteTables()
@@ -510,6 +530,21 @@ func CheckOscDuplicateName(resourceType string, clusterScope *scope.ClusterScope
 			}
 		}
 		return nil
+	case resourceType == "security-group-rule":
+		clusterScope.Info("check unique security group rule")
+		securityGroupsSpec := clusterScope.SecurityGroups()
+		for _, securityGroupSpec := range securityGroupsSpec {
+			securityGroupRulesSpec := clusterScope.SecurityGroupRule(securityGroupSpec.Name)
+			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+				resourceNameList = append(resourceNameList, securityGroupRuleSpec.Name)
+			}
+			duplicateResourceErr := AlertDuplicate(resourceNameList)
+			if duplicateResourceErr != nil {
+				return duplicateResourceErr
+			} else {
+				return nil
+			}
+		}
 	case resourceType == "public-ip":
 		clusterScope.Info("Check unique name publicIp")
 		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
@@ -946,8 +981,25 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 		if routeTableSpec.ResourceId != "" {
 			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
 		}
-
+		var natRouteTable bool = false
 		if !contains(routeTableIds, routeTableId) {
+			clusterScope.Info("check Nat RouteTable")
+			routesSpec := clusterScope.Route(routeTableSpec.Name)
+
+			for _, routeSpec := range *routesSpec {
+				resourceType := routeSpec.TargetType
+				if resourceType == "nat" {
+					natServiceRef := clusterScope.NatServiceRef()
+					clusterScope.Info("### Get Nat ###", "Nat", natServiceRef.ResourceMap)
+					if len(natServiceRef.ResourceMap) == 0 {
+						natRouteTable = true
+					}
+				}
+			}
+			if natRouteTable {
+				continue
+			}
+
 			routeTable, err := securitysvc.CreateRouteTable(netId, routeTableName)
 			if err != nil {
 				return reconcile.Result{}, errors.Wrapf(err, "Can not create routetable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
@@ -962,7 +1014,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 			linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
 
 			clusterScope.Info("check route")
-			routesSpec := clusterScope.Route(routeTableSpec.Name)
+			//			routesSpec := clusterScope.Route(routeTableSpec.Name)
 			for _, routeSpec := range *routesSpec {
 				resourceName := routeSpec.TargetName + "-" + clusterScope.UID()
 				resourceType := routeSpec.TargetType
@@ -973,6 +1025,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 				if routeSpec.ResourceId != "" {
 					routeRef.ResourceMap[routeName] = routeSpec.ResourceId
 				}
+
 				resourceId, err := GetResourceId(resourceName, resourceType, clusterScope)
 				if err != nil {
 					return reconcile.Result{}, err
@@ -985,6 +1038,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 					return reconcile.Result{}, err
 				}
 				if routeTableFromRoute == nil {
+					clusterScope.Info("### Create Route ###", "Route", resourceId)
 					routeTableFromRoute, err = securitysvc.CreateRoute(destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
 					if err != nil {
 						return reconcile.Result{}, errors.Wrapf(err, "Can not create route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
@@ -1059,9 +1113,19 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, duplicateResourceRouteTableErr
 	}
 
+	duplicateResourceSecurityGroupErr := CheckOscDuplicateName("security-group", clusterScope)
+	if duplicateResourceSecurityGroupErr != nil {
+		return reconcile.Result{}, duplicateResourceSecurityGroupErr
+	}
+
 	duplicateResourceRouteErr := CheckOscDuplicateName("route", clusterScope)
 	if duplicateResourceRouteErr != nil {
 		return reconcile.Result{}, duplicateResourceRouteErr
+	}
+
+	duplicateResourceSecurityGroupRuleErr := CheckOscDuplicateName("security-group-rule", clusterScope)
+	if duplicateResourceSecurityGroupRuleErr != nil {
+		return reconcile.Result{}, duplicateResourceSecurityGroupRuleErr
 	}
 
 	duplicateResourcePublicIpErr := CheckOscDuplicateName("public-ip", clusterScope)
@@ -1141,11 +1205,11 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
 
-	reconcileSubnet, err := reconcileSubnet(ctx, clusterScope)
+	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile subnet")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SubnetsReadyCondition, infrastructurev1beta1.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileSubnet, err
+		return reconcileSubnets, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition)
 
@@ -1165,19 +1229,19 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
 
-	reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope)
+	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile routeTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileRouteTable, err
+		return reconcileRouteTables, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
-	reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope)
+	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile securityGroup")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileSecurityGroup, err
+		return reconcileSecurityGroups, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
@@ -1188,6 +1252,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcileNatService, nil
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
+
+	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope)
+	if err != nil {
+		clusterScope.Error(err, "failed to reconcile NatRouteTable")
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileNatRouteTable, err
+	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
 	clusterScope.Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
@@ -1393,6 +1465,8 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		routeTableSpec.SetDefaultValue()
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
+		clusterScope.Info("### delete routeTable Id ###", "routeTable", routeTableId)
+
 		if !contains(routeTableIds, routeTableId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
@@ -1423,6 +1497,8 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 				return reconcile.Result{}, nil
 			}
 			clusterScope.Info("Delete Route")
+			clusterScope.Info("### delete destinationIpRange###", "routeTable", destinationIpRange)
+
 			err = securitysvc.DeleteRoute(destinationIpRange, routeTableId)
 			if err != nil {
 				return reconcile.Result{}, errors.Wrapf(err, "Can not delete route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
