@@ -23,7 +23,7 @@ func ValidateLoadBalancerSubRegionName(loadBalancerSubRegionName string) bool {
 }
 
 // ValidatePort check that the  port is a valide port
-func (s *Service) ValidatePort(port int32) (int32, error) {
+func  ValidatePort(port int32) (int32, error) {
 	isValidatePort := regexp.MustCompile(`^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$`).MatchString
 	if isValidatePort(strconv.Itoa(int(port))) {
 		return port, nil
@@ -122,7 +122,7 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 	if err != nil {
 		return nil, err
 	}
-	Port, err := s.ValidatePort(spec.HealthCheck.Port)
+	Port, err := ValidatePort(spec.HealthCheck.Port)
 	if err != nil {
 		return nil, err
 	}
@@ -197,11 +197,11 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	if err != nil {
 		return nil, err
 	}
-	BackendPort, err := s.ValidatePort(spec.Listener.BackendPort)
+	BackendPort, err := ValidatePort(spec.Listener.BackendPort)
 	if err != nil {
 		return nil, err
 	}
-	LoadBalancerPort, err := s.ValidatePort(spec.Listener.LoadBalancerPort)
+	LoadBalancerPort, err := ValidatePort(spec.Listener.LoadBalancerPort)
 	if err != nil {
 		return nil, err
 	}

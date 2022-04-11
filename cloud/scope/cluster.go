@@ -175,7 +175,7 @@ func (s *ClusterScope) RouteRef() *infrastructurev1beta1.OscResourceMapReference
 }
 
 func (s *ClusterScope) SecurityGroupRuleRef() *infrastructurev1beta1.OscResourceMapReference {
-    return &s.OscCluster.Status.Network.SecurityGroupRuleRef
+	return &s.OscCluster.Status.Network.SecurityGroupRuleRef
 }
 
 // PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id)
@@ -200,13 +200,13 @@ func (s *ClusterScope) Route(Name string) *[]infrastructurev1beta1.OscRoute {
 }
 
 func (s *ClusterScope) SecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
-    securityGroups := s.OscCluster.Spec.Network.SecurityGroups
-    for _, securityGroup := range securityGroups {
-        if securityGroup.Name == Name {
-            return &securityGroup.SecurityGroupRules
-        }
-    }
-    return &securityGroups[0].SecurityGroupRules
+	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
+	for _, securityGroup := range securityGroups {
+		if securityGroup.Name == Name {
+			return &securityGroup.SecurityGroupRules
+		}
+	}
+	return &securityGroups[0].SecurityGroupRules
 }
 
 // PublicIp return the public ip of the cluster
