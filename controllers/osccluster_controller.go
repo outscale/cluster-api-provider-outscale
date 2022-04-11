@@ -209,6 +209,20 @@ func CheckAssociate(resourceName string, firstResourceNameArray []string) bool {
 // CheckFormatParameters check every resource (net, subnet, ...) parameters format (Tag format, cidr format, ..)
 func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope) (string, error) {
 	switch {
+	case resourceType == "loadbalancer":
+		clusterScope.Info("Check LoadBalancer name parameters")
+		loadBalancerSpec := clusterScope.LoadBalancer()
+		loadBalancerSpec.SetDefaultValue()
+		loadBalancerName := loadBalancerSpec.LoadBalancerName
+		validLoadBalancerName := service.ValidateLoadBalancerName(loadBalancerName)
+		if !validLoadBalancerName {
+			return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer name", loadBalancerName)
+		}
+		loadBalancerSubregionName := loadBalancerSpec.SubregionName
+		validLoadBalancerSubregionName := service.ValidateLoadBalancerSubRegionName(loadBalancerSubregionName)
+		if !validLoadBalancerSubregionName {
+			return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer subregion", loadBalancerName)
+		}
 	case resourceType == "net":
 		clusterScope.Info("Check Net name parameters ")
 		netSpec := clusterScope.Net()
@@ -1152,6 +1166,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if CheckOscAssociateNatSubnetErr != nil {
 		return reconcile.Result{}, CheckOscAssociateNatSubnetErr
 	}
+
 	netName, err := CheckFormatParameters("net", clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create net %s for OscCluster %s/%s", netName, osccluster.Namespace, osccluster.Name)
@@ -1190,13 +1205,10 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create security group rule %s for OscCluster %s/%s", securityGroupRuleName, osccluster.Namespace, osccluster.Name)
 	}
-	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
+	reconcileLoadBalancerName, err := CheckFormatParameters("loadbalancer", clusterScope)
 	if err != nil {
-		clusterScope.Error(err, "failed to reconcile load balancer")
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileLoadBalancer, err
+		return reconcile.Result{}, errors.Wrapf(err, "Can not create loadBalancer %s for OscCluster %s/%s", reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 	reconcileNet, err := reconcileNet(ctx, clusterScope)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile net")
@@ -1244,6 +1256,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcileSecurityGroups, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
+
+	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
+	if err != nil {
+		clusterScope.Error(err, "failed to reconcile load balancer")
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileLoadBalancer, err
+	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 
 	reconcileNatService, err := reconcileNatService(ctx, clusterScope)
 	if err != nil {
@@ -1635,6 +1655,7 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (
 func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	clusterScope.Info("Reconcile OscCluster")
 	osccluster := clusterScope.OscCluster
+
 	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope)
 	if err != nil {
 		return reconcileDeleteLoadBalancer, err
