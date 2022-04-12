@@ -96,11 +96,6 @@ func (s *ClusterScope) Namespace() string {
 	return s.Cluster.GetNamespace()
 }
 
-// Region return the region of the cluster
-func (s *ClusterScope) Region() string {
-	return s.OscCluster.Spec.Network.LoadBalancer.SubregionName
-}
-
 // UID return the uid of the cluster
 func (s *ClusterScope) UID() string {
 	return string(s.Cluster.UID)
@@ -227,6 +222,10 @@ func (s *ClusterScope) Subnet() []*infrastructurev1beta1.OscSubnet {
 // SubnetRef get the subnet (a Map with tag name with cluster uid associate with resource response id)
 func (s *ClusterScope) SubnetRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.SubnetRef
+}
+
+func (s *ClusterScope) SetControlPlaneEndpoint(apiEndpoint clusterv1.APIEndpoint) {
+	s.OscCluster.Spec.ControlPlaneEndpoint = apiEndpoint
 }
 
 // SetReady set the ready status of the cluster

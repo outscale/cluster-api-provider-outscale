@@ -16,19 +16,22 @@ func ValidateLoadBalancerName(loadBalancerName string) bool {
 	return isValidate(loadBalancerName)
 }
 
-// ValidateLoadBalancerSubRegionName check that the loadBalancerRegionName is a valide subregion name
-func ValidateLoadBalancerSubRegionName(loadBalancerSubRegionName string) bool {
-	isValidate := regexp.MustCompile(`^((?:[a-zA-Z]+-){2,3}[1-3-a-c]{2})$`).MatchString
-	return isValidate(loadBalancerSubRegionName)
-}
-
 // ValidatePort check that the  port is a valide port
-func  ValidatePort(port int32) (int32, error) {
+func ValidatePort(port int32) (int32, error) {
 	isValidatePort := regexp.MustCompile(`^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$`).MatchString
 	if isValidatePort(strconv.Itoa(int(port))) {
 		return port, nil
 	} else {
 		return port, errors.New("Invalid Port")
+	}
+}
+
+func ValidateLoadBalancerType(loadBalancerType string) bool {
+	switch {
+	case loadBalancerType == "internet-facing" || loadBalancerType == "internal":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -77,22 +80,6 @@ func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, 
 		return name, nil
 	} else {
 		return "", errors.New("Invalid Name")
-	}
-}
-
-// GetRegionName return the subregion name of the loadBalancer
-func (s *Service) GetRegionName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
-	var name string
-	switch {
-	case spec.SubregionName != "":
-		name = spec.SubregionName
-	default:
-		name = s.scope.Region()
-	}
-	if ValidateLoadBalancerSubRegionName(name) {
-		return name, nil
-	} else {
-		return "", errors.New("Invalid Region Name")
 	}
 }
 
@@ -188,15 +175,14 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 }
 
 // CreateLoadBalancer create the load balancer
-func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
 	loadBalancerName, err := s.GetName(spec)
 	if err != nil {
 		return nil, err
 	}
-	SubregionName, err := s.GetRegionName(spec)
-	if err != nil {
-		return nil, err
-	}
+
+	loadBalancerType := spec.LoadBalancerType
+
 	BackendPort, err := ValidatePort(spec.Listener.BackendPort)
 	if err != nil {
 		return nil, err
@@ -213,17 +199,19 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	if err != nil {
 		return nil, err
 	}
-	fmt.Sprintf("LoadBalancer %s in region %s\n", loadBalancerName, SubregionName)
 	first_listener := osc.ListenerForCreation{
 		BackendPort:          BackendPort,
 		BackendProtocol:      &BackendProtocol,
 		LoadBalancerPort:     LoadBalancerPort,
 		LoadBalancerProtocol: LoadBalancerProtocol,
 	}
+
 	loadBalancerRequest := osc.CreateLoadBalancerRequest{
 		LoadBalancerName: loadBalancerName,
+		LoadBalancerType: &loadBalancerType,
 		Listeners:        []osc.ListenerForCreation{first_listener},
-		SubregionNames:   &[]string{SubregionName},
+		SecurityGroups:   &[]string{securityGroupId},
+		Subnets:          &[]string{subnetId},
 	}
 	OscApiClient := s.scope.Api()
 	OscAuthClient := s.scope.Auth()

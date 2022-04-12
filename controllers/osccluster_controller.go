@@ -120,7 +120,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 	loadBalancerSpec := clusterScope.LoadBalancer()
 	loadBalancerSpec.SetDefaultValue()
-	log.Info("Create loadBalancer", "loadBalancerName", loadBalancerSpec.LoadBalancerName, "SubregionName", loadBalancerSpec.SubregionName)
+	log.Info("Create loadBalancer", "loadBalancerName", loadBalancerSpec.LoadBalancerName)
 	return r.reconcile(ctx, clusterScope)
 }
 
@@ -218,11 +218,12 @@ func CheckFormatParameters(resourceType string, clusterScope *scope.ClusterScope
 		if !validLoadBalancerName {
 			return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer name", loadBalancerName)
 		}
-		loadBalancerSubregionName := loadBalancerSpec.SubregionName
-		validLoadBalancerSubregionName := service.ValidateLoadBalancerSubRegionName(loadBalancerSubregionName)
-		if !validLoadBalancerSubregionName {
-			return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer subregion", loadBalancerName)
+		loadBalancerType := loadBalancerSpec.LoadBalancerType
+		validLoadBalancerType := service.ValidateLoadBalancerType(loadBalancerType)
+		if !validLoadBalancerType {
+			return loadBalancerName, fmt.Errorf("%s is and invalid loadbalancer type", loadBalancerType)
 		}
+
 	case resourceType == "net":
 		clusterScope.Info("Check Net name parameters ")
 		netSpec := clusterScope.Net()
@@ -448,6 +449,55 @@ func CheckOscAssociateResourceName(resourceType string, clusterScope *scope.Clus
 		} else {
 			return fmt.Errorf("%s subnet does not exist in natService", natSubnetName)
 		}
+	case resourceType == "loadBalancerSubnet":
+		clusterScope.Info("check match subnet with loadBalancer")
+		loadBalancerSpec := clusterScope.LoadBalancer()
+		loadBalancerSpec.SetDefaultValue()
+		loadBalancerName := loadBalancerSpec.LoadBalancerName
+		loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.UID()
+		var subnetsSpec []*infrastructurev1beta1.OscSubnet
+		networkSpec := clusterScope.Network()
+		if networkSpec.Subnets == nil {
+			networkSpec.SetSubnetDefaultValue()
+			subnetsSpec = networkSpec.Subnets
+		} else {
+			subnetsSpec = clusterScope.Subnet()
+		}
+		for _, subnetSpec := range subnetsSpec {
+			subnetName := subnetSpec.Name + "-" + clusterScope.UID()
+			resourceNameList = append(resourceNameList, subnetName)
+		}
+		checkOscAssociate := CheckAssociate(loadBalancerSubnetName, resourceNameList)
+		if checkOscAssociate {
+			return nil
+		} else {
+			return fmt.Errorf("%s subnet does not exist in loadBalancer", loadBalancerName)
+		}
+	case resourceType == "loadBalancerSecurityGroup":
+		clusterScope.Info("check match securityGroup with loadBalancer")
+		loadBalancerSpec := clusterScope.LoadBalancer()
+		loadBalancerSpec.SetDefaultValue()
+		loadBalancerName := loadBalancerSpec.LoadBalancerName
+		loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.UID()
+		var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
+		networkSpec := clusterScope.Network()
+		if networkSpec.SecurityGroups == nil {
+			networkSpec.SetSecurityGroupDefaultValue()
+			securityGroupsSpec = networkSpec.SecurityGroups
+		} else {
+			securityGroupsSpec = clusterScope.SecurityGroups()
+		}
+		for _, securityGroupSpec := range securityGroupsSpec {
+			securityGroupName := securityGroupSpec.Name + "-" + clusterScope.UID()
+			resourceNameList = append(resourceNameList, securityGroupName)
+		}
+		checkOscAssociate := CheckAssociate(loadBalancerSecurityGroupName, resourceNameList)
+		if checkOscAssociate {
+			return nil
+		} else {
+			return fmt.Errorf("%s securityGroup does not exist in loadBalancer", loadBalancerName)
+		}
+
 	case resourceType == "routeTableSubnet":
 		clusterScope.Info("check match subnet with route table service")
 		var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
@@ -641,16 +691,36 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.UID()
+	subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.UID()
+	securityGroupId, err := GetResourceId(securityGroupName, "security-group", clusterScope)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	if loadbalancer == nil {
-		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec)
+		clusterScope.Info("### Get lb subnetId ###", "subnet", subnetId)
+		clusterScope.Info("### Get lb  sgId ###", "sg", securityGroupId)
+
+		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
 		}
-		_, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
+		loadbalancer, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
 		if err != nil {
 			return reconcile.Result{}, errors.Wrapf(err, "Can not configure healthcheck for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
 		}
+
 	}
+	controlPlaneEndpoint := *loadbalancer.DnsName
+	controlPlanePort := loadBalancerSpec.Listener.LoadBalancerPort
+	clusterScope.SetControlPlaneEndpoint(clusterv1.APIEndpoint{
+		Host: controlPlaneEndpoint,
+		Port: controlPlanePort,
+	})
 	clusterScope.Info("Waiting on Dns Name")
 	return reconcile.Result{}, nil
 
@@ -1167,6 +1237,16 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, CheckOscAssociateNatSubnetErr
 	}
 
+	CheckOscAssociateLoadBalancerSubnetErr := CheckOscAssociateResourceName("loadBalancerSubnet", clusterScope)
+	if CheckOscAssociateLoadBalancerSubnetErr != nil {
+		return reconcile.Result{}, CheckOscAssociateLoadBalancerSubnetErr
+	}
+
+	CheckOscAssociateLoadBalancerSecurityGroupErr := CheckOscAssociateResourceName("loadBalancerSecurityGroup", clusterScope)
+	if CheckOscAssociateLoadBalancerSecurityGroupErr != nil {
+		return reconcile.Result{}, CheckOscAssociateLoadBalancerSecurityGroupErr
+	}
+
 	netName, err := CheckFormatParameters("net", clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create net %s for OscCluster %s/%s", netName, osccluster.Namespace, osccluster.Name)
@@ -1307,7 +1387,9 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not delete load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
 	}
-	return reconcile.Result{}, nil
+	clusterScope.Info("Wait LoadBalancer Delete")
+	time.Sleep(15 * time.Second)
+	return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
 }
 
 // ReconcileDeleteNatService reconcile the destruction of the NatService of the cluster.

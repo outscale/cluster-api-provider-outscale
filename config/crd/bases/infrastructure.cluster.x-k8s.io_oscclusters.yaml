@@ -35,13 +35,27 @@ spec:
           spec:
             description: OscClusterSpec defines the desired state of OscCluster
             properties:
+              controlPlaneEndpoint:
+                description: APIEndpoint represents a reachable Kubernetes API endpoint.
+                properties:
+                  host:
+                    description: The hostname on which the API server is serving.
+                    type: string
+                  port:
+                    description: The port on which the API server is serving.
+                    format: int32
+                    type: integer
+                required:
+                - host
+                - port
+                type: object
               network:
                 properties:
                   internetService:
                     description: The Internet Service configuration
                     properties:
                       name:
-                        description: The tag name associated with the Subnet
+                        description: The tag name associate with the Subnet
                         type: string
                       resourceId:
                         description: the Internet Service response
@@ -80,7 +94,6 @@ spec:
                             type: integer
                         type: object
                       listener:
-                        description: The listener configuration of the Load Balancer
                         properties:
                           backendport:
                             description: The port on which the backend vm will listen
@@ -101,16 +114,18 @@ spec:
                       loadbalancername:
                         description: The Load Balancer unique name
                         type: string
-                      subregionname:
-                        description: The SubRegion Name where the Load Balancer will
-                          be created
+                      loadbalancertype:
+                        type: string
+                      securitygroupname:
+                        type: string
+                      subnetname:
                         type: string
                     type: object
                   natService:
                     description: The Nat Service configuration
                     properties:
                       name:
-                        description: The tag name associated with the Nat Service
+                        description: The tag name associate with the Nat Service
                         type: string
                       publicipname:
                         description: The Public Ip tag name associated wtih a Public
@@ -120,17 +135,17 @@ spec:
                         description: The Nat Service Id response
                         type: string
                       subnetname:
-                        description: The subnet tag name associated with a Subnet
+                        description: The subnet tag name associate with a Subnet
                         type: string
                     type: object
                   net:
                     description: The Net configuration
                     properties:
                       ipRange:
-                        description: Net Ip range with CIDR notation
+                        description: the net ip range with CIDR notation
                         type: string
                       name:
-                        description: Name Tag associated with the Net
+                        description: the tag name associate with the Net
                         type: string
                       resourceId:
                         description: The Net Id response
@@ -141,7 +156,7 @@ spec:
                     items:
                       properties:
                         name:
-                          description: The tag name associated with the Public Ip
+                          description: The tag name associate with the Public Ip
                           type: string
                         resourceId:
                           description: The Public Ip Id response
@@ -153,7 +168,7 @@ spec:
                     items:
                       properties:
                         name:
-                          description: The tag name associated with the Route Table
+                          description: The tag name associate with the Route Table
                           type: string
                         resourceId:
                           description: The Route Table Id response
@@ -167,13 +182,13 @@ spec:
                                   notation
                                 type: string
                               name:
-                                description: The tag name associated with the Route
+                                description: The tag name associate with the Route
                                 type: string
                               resourceId:
                                 description: The Route Id response
                                 type: string
                               targetName:
-                                description: The tag name associated with the target
+                                description: The tag name associate with the target
                                   resource type
                                 type: string
                               targetType:
@@ -183,7 +198,7 @@ spec:
                             type: object
                           type: array
                         subnetname:
-                          description: The subnet tag name associated with a Subnet
+                          description: The subnet tag name associate with a Subnet
                           type: string
                       type: object
                     type: array
@@ -227,7 +242,7 @@ spec:
                           description: Subnet Ip range with CIDR notation
                           type: string
                         name:
-                          description: The tag name associated with the Subnet
+                          description: The tag name associate with the Subnet
                           type: string
                         resourceId:
                           description: The Subnet Id response
