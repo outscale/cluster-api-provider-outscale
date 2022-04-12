@@ -9,6 +9,7 @@
     - You can use a rke cluster with [osc-rke][osc-rke].
 - Container registry to store container image
 - Registry secret [registry-secret][registry-secret]
+
 # Configuration
 
 ## Clone
@@ -74,7 +75,7 @@ NAME                                                              READY   STATUS
 cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Running   0          22s
 ```
 
-# Devellop
+# Develop
 
 ## Using tiltfile
 
@@ -101,7 +102,7 @@ This step will delete your cluster
 kubectl delete -f example/cluster-template.yaml
 ```
 
-## Delète Cluster Api Outscale controller manager
+## Delete Cluster Api Outscale controller manager
 
 This step  will delete the outscale controller manager
 ```
@@ -117,5 +118,5 @@ IMG=my-registry/controller:my-tag make undeploy
 [osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
-[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/docs/config.md
+[configuration]: config.md
 
