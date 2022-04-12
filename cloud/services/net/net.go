@@ -17,14 +17,16 @@ func ValidateCidr(cidr string) (string, error) {
 	if !strings.Contains(cidr, "/") {
 		return cidr, errors.New("Invalid Not A CIDR")
 	}
-	cidr_split := strings.Split(cidr, "/")
-	ip := cidr_split[0]
-	prefix := cidr_split[1]
-	if net.ParseIP(ip) == nil {
+        ipAddr, _, err := net.ParseCIDR(cidr)
+        if err != nil {
+		return cidr, errors.New("Invalid Cidr Ip")
+        }
+        ipPrefix := strings.ReplaceAll(cidr, ipAddr.String() + "/", "")
+	if net.ParseIP(ipAddr.String()) == nil {
 		return cidr, errors.New("Invalid Cidr Ip")
 	}
 	isValidatePrefix := regexp.MustCompile(`^([0-9]|[1-2][0-9]|3[0-1]|32)$`).MatchString
-	if !isValidatePrefix(prefix) {
+	if !isValidatePrefix(ipPrefix) {
 		return cidr, errors.New("Invalid Cidr Prefix")
 	}
 	return cidr, nil
@@ -32,24 +34,24 @@ func ValidateCidr(cidr string) (string, error) {
 
 // CreateNet create the net from spec (in order to retrieve ip range)
 func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error) {
-	IpRange, err := ValidateCidr(spec.IpRange)
+	ipRange, err := ValidateCidr(spec.IpRange)
 	if err != nil {
 		return nil, err
 	}
 	netRequest := osc.CreateNetRequest{
-		IpRange: IpRange,
+		IpRange: ipRange,
 	}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	netResponse, httpRes, err := OscApiClient.NetApi.CreateNet(OscAuthClient).CreateNetRequest(netRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	netResponse, httpRes, err := oscApiClient.NetApi.CreateNet(oscAuthClient).CreateNetRequest(netRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	resourceIds := []string{*netResponse.Net.NetId}
-	err = tag.AddTag("Name", netName, resourceIds, OscApiClient, OscAuthClient)
+	err = tag.AddTag("Name", netName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	return netResponse.Net, nil
@@ -58,36 +60,34 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) 
 // DeleteNet delete the net
 func (s *Service) DeleteNet(netId string) error {
 	deleteNetRequest := osc.DeleteNetRequest{NetId: netId}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	_, httpRes, err := OscApiClient.NetApi.DeleteNet(OscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	_, httpRes, err := oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
 	}
 	return nil
 }
 
 // GetNet retrieve the net object using the net id
-func (s *Service) GetNet(netId []string) (*osc.Net, error) {
+func (s *Service) GetNet(netIds []string) (*osc.Net, error) {
 	readNetsRequest := osc.ReadNetsRequest{
 		Filters: &osc.FiltersNet{
-			NetIds: &netId,
+			NetIds: &netIds,
 		},
 	}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	readNetsResponse, httpRes, err := OscApiClient.NetApi.ReadNets(OscAuthClient).ReadNetsRequest(readNetsRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	readNetsResponse, httpRes, err := oscApiClient.NetApi.ReadNets(oscAuthClient).ReadNetsRequest(readNetsRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	var net []osc.Net
 	nets := *readNetsResponse.Nets
 	if len(nets) == 0 {
 		return nil, nil
 	} else {
-		net = append(net, nets...)
-		return &net[0], nil
+		return &nets[0], nil
 	}
 }

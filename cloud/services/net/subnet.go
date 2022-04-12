@@ -18,17 +18,17 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		IpRange: IpSubnetRange,
 		NetId:   netId,
 	}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	subnetResponse, httpRes, err := OscApiClient.SubnetApi.CreateSubnet(OscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	subnetResponse, httpRes, err := oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	resourceIds := []string{*subnetResponse.Subnet.SubnetId}
-	err = tag.AddTag("Name", subnetName, resourceIds, OscApiClient, OscAuthClient)
+	err = tag.AddTag("Name", subnetName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	return subnetResponse.Subnet, nil
@@ -37,37 +37,35 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 // DeleteSubnet delete the subnet
 func (s *Service) DeleteSubnet(subnetId string) error {
 	deleteSubnetRequest := osc.DeleteSubnetRequest{SubnetId: subnetId}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	_, httpRes, err := OscApiClient.SubnetApi.DeleteSubnet(OscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	_, httpRes, err := oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
 	}
 	return nil
 }
 
 // GetSubnet retrieve Subnet object from subnet Id
-func (s *Service) GetSubnet(subnetId []string) (*osc.Subnet, error) {
+func (s *Service) GetSubnet(subnetIds []string) (*osc.Subnet, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
-			SubnetIds: &subnetId,
+			SubnetIds: &subnetIds,
 		},
 	}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	readSubnetsResponse, httpRes, err := OscApiClient.SubnetApi.ReadSubnets(OscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	var subnet []osc.Subnet
 	subnets := *readSubnetsResponse.Subnets
 	if len(subnets) == 0 {
 		return nil, nil
 	} else {
-		subnet = append(subnet, subnets...)
-		return &subnet[0], nil
+		return &subnets[0], nil
 	}
 }
 
@@ -78,11 +76,11 @@ func (s *Service) GetSubnetIdsFromNetIds(netIds []string) ([]string, error) {
 			NetIds: &netIds,
 		},
 	}
-	OscApiClient := s.scope.Api()
-	OscAuthClient := s.scope.Auth()
-	readSubnetsResponse, httpRes, err := OscApiClient.SubnetApi.ReadSubnets(OscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+	oscApiClient := s.scope.Api()
+	oscAuthClient := s.scope.Auth()
+	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	var subnetIds []string
