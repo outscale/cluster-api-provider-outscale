@@ -57,7 +57,7 @@ IMG=my-registry/controller:my-tag make docker-push
 
 Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
 
-# Deploying  Cluster API Provider Outscale
+# Deploying Cluster API Provider Outscale
 
 # Deploy Cluster API Outscale controller manager
 This step will deploy the Outscale  Cluster API controller manager (currently compose of only of the Cluster Infrastructure Provider controller)
@@ -112,5 +112,5 @@ IMG=my-registry/controller:my-tag make undeploy
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
-[configuration]: https://github.com/outscale-vbr/cluster-api-provider-outscale/blob/cluster/docs/config.md
+[configuration]: config.md
 

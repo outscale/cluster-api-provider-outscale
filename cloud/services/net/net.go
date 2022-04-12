@@ -3,9 +3,8 @@ package net
 import (
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
-
+	"strconv"
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -25,10 +24,13 @@ func ValidateCidr(cidr string) (string, error) {
 	if net.ParseIP(ipAddr.String()) == nil {
 		return cidr, errors.New("Invalid Cidr Ip")
 	}
-	isValidatePrefix := regexp.MustCompile(`^([0-9]|[1-2][0-9]|3[0-1]|32)$`).MatchString
-	if !isValidatePrefix(ipPrefix) {
-		return cidr, errors.New("Invalid Cidr Prefix")
-	}
+        ipPrefixLength, err := strconv.Atoi(ipPrefix)
+        if err != nil {
+		return cidr, err
+        }
+        if ipPrefixLength > 0 && ipPrefixLength < 33 {
+        	return cidr, errors.New("Invalid cidr Prefix")
+        }
 	return cidr, nil
 }
 
