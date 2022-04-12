@@ -1,4 +1,4 @@
-package v1beta1
+package v0beta1
 
 type OscNetwork struct {
 	// The Load Balancer configuration
@@ -30,13 +30,11 @@ type OscNetwork struct {
 type OscLoadBalancer struct {
 	// The Load Balancer unique name
 	// +optional
-	LoadBalancerName string `json:"loadbalancername,omitempty"`
-	// The SubRegion Name where the Load Balancer will be created
-	// +optional
-	SubregionName string `json:"subregionname,omitempty"`
-	// The listener configuration of the Load Balancer
-	// +optional
-	Listener OscLoadBalancerListener `json:"listener,omitempty"`
+	LoadBalancerName  string                  `json:"loadbalancername,omitempty"`
+	LoadBalancerType  string                  `json:"loadbalancertype,omitempty"`
+	SubnetName        string                  `json:"subnetname,omitempty"`
+	SecurityGroupName string                  `json:"securitygroupname,omitempty"`
+	Listener          OscLoadBalancerListener `json:"listener,omitempty"`
 	// The healthCheck configuration  of the Load Balancer
 	// +optional
 	HealthCheck OscLoadBalancerHealthCheck `json:"healthCheck,omitempty"`
@@ -214,7 +212,7 @@ type OscNetworkResource struct {
 
 var (
 	DefaultLoadBalancerName      string = "OscClusterApi-1"
-	DefaultSubregionName         string = "eu-west-2a"
+	DefaultLoadBalancerType      string = "internet-facing"
 	DefaultBackendPort           int32  = 6443
 	DefaultBackendProtocol       string = "TCP"
 	DefaultLoadBalancerPort      int32  = 6443
@@ -374,8 +372,14 @@ func (lb *OscLoadBalancer) SetDefaultValue() {
 	if lb.LoadBalancerName == "" {
 		lb.LoadBalancerName = DefaultLoadBalancerName
 	}
-	if lb.SubregionName == "" {
-		lb.SubregionName = DefaultSubregionName
+	if lb.LoadBalancerType == "" {
+		lb.LoadBalancerType = DefaultLoadBalancerType
+	}
+	if lb.SubnetName == "" {
+		lb.SubnetName = DefaultSubnetName
+	}
+	if lb.SecurityGroupName == "" {
+		lb.SecurityGroupName = DefaultSecurityGroupName
 	}
 	if lb.Listener.BackendPort == 0 {
 		lb.Listener.BackendPort = DefaultBackendPort

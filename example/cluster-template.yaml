@@ -10,7 +10,6 @@ spec:
     name: hello-osc
     namespace: default
 ---
-
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
@@ -20,7 +19,9 @@ spec:
   network:
     loadBalancer:
       loadbalancername: OscSdkExample-7
-      subregionname: eu-west-2a
+      loadbalancertype: internet-facing
+      subnetname: cluster-api-subnet
+      securitygroupname: cluster-api-securitygroups
     net:
       name: cluster-api-net
       ipRange: "172.19.95.128/25"

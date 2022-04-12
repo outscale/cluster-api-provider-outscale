@@ -23,9 +23,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 func OscReplaceName(name string) string {
 	replacer := strings.NewReplacer(".", "-", "/", "-", "_", "-")
 	return replacer.Replace(name)
@@ -33,7 +30,8 @@ func OscReplaceName(name string) string {
 
 // OscClusterSpec defines the desired state of OscCluster
 type OscClusterSpec struct {
-	Network OscNetwork `json:"network,omitempty"`
+	Network              OscNetwork            `json:"network,omitempty"`
+	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
 }
 
 // OscClusterStatus defines the observed state of OscCluster
