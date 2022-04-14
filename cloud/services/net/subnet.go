@@ -48,10 +48,10 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 }
 
 // GetSubnet retrieve Subnet object from subnet Id
-func (s *Service) GetSubnet(subnetIds []string) (*osc.Subnet, error) {
+func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
-			SubnetIds: &subnetIds,
+			SubnetIds: &[]string{subnetId},
 		},
 	}
 	oscApiClient := s.scope.Api()
@@ -70,10 +70,10 @@ func (s *Service) GetSubnet(subnetIds []string) (*osc.Subnet, error) {
 }
 
 // GetSubnetIdsFromNetIds return subnet id resource which eist from the net id
-func (s *Service) GetSubnetIdsFromNetIds(netIds []string) ([]string, error) {
+func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
-			NetIds: &netIds,
+			NetIds: &[]string{netId},
 		},
 	}
 	oscApiClient := s.scope.Api()
