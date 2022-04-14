@@ -73,10 +73,10 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 }
 
 // GetInternetService retrieve internet service object using internet service id
-func (s *Service) GetInternetService(internetServiceIds []string) (*osc.InternetService, error) {
+func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetService, error) {
 	readInternetServiceRequest := osc.ReadInternetServicesRequest{
 		Filters: &osc.FiltersInternetService{
-			InternetServiceIds: &internetServiceIds,
+			InternetServiceIds: &[]string{internetServiceId},
 		},
 	}
 	oscApiClient := s.scope.Api()

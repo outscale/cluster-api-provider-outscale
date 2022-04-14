@@ -63,10 +63,10 @@ func (s *Service) DeleteNet(netId string) error {
 }
 
 // GetNet retrieve the net object using the net id
-func (s *Service) GetNet(netIds []string) (*osc.Net, error) {
+func (s *Service) GetNet(netId string) (*osc.Net, error) {
 	readNetsRequest := osc.ReadNetsRequest{
 		Filters: &osc.FiltersNet{
-			NetIds: &netIds,
+			NetIds: &[]string{netId},
 		},
 	}
 	oscApiClient := s.scope.Api()

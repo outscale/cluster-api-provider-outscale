@@ -43,10 +43,10 @@ func (s *Service) DeleteNatService(natServiceId string) error {
 }
 
 // GetNatService retrieve nat service object using nat service id
-func (s *Service) GetNatService(natServiceIds []string) (*osc.NatService, error) {
+func (s *Service) GetNatService(natServiceId string) (*osc.NatService, error) {
 	readNatServiceRequest := osc.ReadNatServicesRequest{
 		Filters: &osc.FiltersNatService{
-			NatServiceIds: &natServiceIds,
+			NatServiceIds: &[]string{natServiceId},
 		},
 	}
 	oscApiClient := s.scope.Api()
