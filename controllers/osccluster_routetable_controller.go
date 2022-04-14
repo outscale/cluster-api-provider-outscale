@@ -9,7 +9,6 @@ import (
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -205,7 +204,7 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 		clusterScope.Info("### Create Route ###", "Route", resourceId)
 		routeTableFromRoute, err = securitysvc.CreateRoute(destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not create route for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 	}
 	routeRef.ResourceMap[routeName] = *routeTableFromRoute.RouteTableId
@@ -257,7 +256,7 @@ func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope,
 
 	err = securitysvc.DeleteRoute(destinationIpRange, routeTableId)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not delete route for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 	}
 	return reconcile.Result{}, nil
 
@@ -332,11 +331,11 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 
 			routeTable, err := securitysvc.CreateRouteTable(netId, routeTableName)
 			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create routetable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+				return reconcile.Result{}, fmt.Errorf("%w: Can not create routetable for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 			}
 			linkRouteTableId, err := securitysvc.LinkRouteTable(*routeTable.RouteTableId, subnetId)
 			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not link routetable with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+				return reconcile.Result{}, fmt.Errorf("%w: Can not link routetable with net for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 			}
 			clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
 			routeTablesRef.ResourceMap[routeTableName] = *routeTable.RouteTableId
@@ -406,13 +405,13 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 
 		err = securitysvc.UnlinkRouteTable(linkRouteTablesRef.ResourceMap[routeTableName])
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete routeTable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not delete routeTable for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 		clusterScope.Info("Delete RouteTable")
 
 		err = securitysvc.DeleteRouteTable(routeTablesRef.ResourceMap[routeTableName])
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not delete internetService for Osccluster %s/%s", err,  osccluster.Namespace, osccluster.Name)
 		}
 	}
 	return reconcile.Result{}, nil

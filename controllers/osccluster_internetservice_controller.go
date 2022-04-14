@@ -7,7 +7,6 @@ import (
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -68,11 +67,11 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	if internetService == nil {
 		internetService, err = netsvc.CreateInternetService(internetServiceName)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create internetservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not create internetservice for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 		err = netsvc.LinkInternetService(*internetService.InternetServiceId, netId)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not link internetService with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not link internetService with net for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 		clusterScope.Info("### Get internetService ###", "internetservice", internetService)
 		internetServiceRef.ResourceMap[internetServiceName] = *internetService.InternetServiceId
@@ -114,11 +113,11 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	}
 	err = netsvc.UnlinkInternetService(internetServiceRef.ResourceMap[internetServiceName], netId)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not unlink internetService and net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not unlink internetService and net for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 	}
 	err = netsvc.DeleteInternetService(internetServiceRef.ResourceMap[internetServiceName])
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not delete internetService for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 	}
 	return reconcile.Result{}, nil
 }

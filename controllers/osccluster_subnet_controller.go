@@ -8,7 +8,6 @@ import (
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -109,7 +108,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
 		if !contains(subnetIds, subnetId) {
 			subnet, err := netsvc.CreateSubnet(subnetSpec, netId, subnetName)
 			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+				return reconcile.Result{}, fmt.Errorf("%w: Can not create subnet for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 			}
 			clusterScope.Info("### Get subnet ###", "subnet", subnet)
 			subnetRef.ResourceMap[subnetName] = *subnet.SubnetId
@@ -156,7 +155,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 		}
 		err = netsvc.DeleteSubnet(subnetRef.ResourceMap[subnetName])
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not delete subnet for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 	}
 	return reconcile.Result{}, nil

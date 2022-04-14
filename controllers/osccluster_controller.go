@@ -22,7 +22,6 @@ import (
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
-	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 
@@ -103,7 +102,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		OscCluster: oscCluster,
 	})
 	if err != nil {
-		return reconcile.Result{}, errors.Errorf("failed to create scope: %+v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to create scope: %+v", err)
 	}
 	defer func() {
 		if err := clusterScope.Close(); err != nil && reterr == nil {
@@ -219,45 +218,45 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	netName, err := CheckNetFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create net %s for OscCluster %s/%s", netName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create net %s for OscCluster %s/%s", err, netName, osccluster.Namespace, osccluster.Name)
 	}
 	subnetName, err := CheckSubnetFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet %s for OscCluster %s/%s", subnetName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create subnet %s for OscCluster %s/%s", err, subnetName, osccluster.Namespace, osccluster.Name)
 	}
 
 	internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create internetService %s for OscCluster %s/%s", internetServiceName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, osccluster.Namespace, osccluster.Name)
 	}
 
 	publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create internetService %s for OscCluster %s/%s", publicIpName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, publicIpName, osccluster.Namespace, osccluster.Name)
 	}
 
 	routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create routeTable %s for OscCluster %s/%s", routeTableName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create routeTable %s for OscCluster %s/%s", err, routeTableName, osccluster.Namespace, osccluster.Name)
 	}
 
 	securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create securityGroup %s for OscCluster %s/%s", securityGroupName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create securityGroup %s for OscCluster %s/%s", err, securityGroupName, osccluster.Namespace, osccluster.Name)
 	}
 
 	routeName, err := CheckRouteFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create route %s for OscCluster %s/%s", routeName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create route %s for OscCluster %s/%s", err, routeName, osccluster.Namespace, osccluster.Name)
 	}
 
 	securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create security group rule %s for OscCluster %s/%s", securityGroupRuleName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create security group rule %s for OscCluster %s/%s", err, securityGroupRuleName, osccluster.Namespace, osccluster.Name)
 	}
 	reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not create loadBalancer %s for OscCluster %s/%s", reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not create loadBalancer %s for OscCluster %s/%s", err, reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
 	}
 	reconcileNet, err := reconcileNet(ctx, clusterScope)
 	if err != nil {

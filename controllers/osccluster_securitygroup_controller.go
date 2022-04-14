@@ -10,7 +10,6 @@ import (
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/service"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -181,7 +180,7 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 		clusterScope.Info("### Create securityGroupRule")
 		securityGroupFromSecurityGroupRule, err = securitysvc.CreateSecurityGroupRule(securityGroupsRef.ResourceMap[securityGroupName], Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create  securityGroupRule for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not create  securityGroupRule for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 	}
 	securityGroupRuleRef.ResourceMap[securityGroupRuleName] = *securityGroupFromSecurityGroupRule.SecurityGroupId
@@ -230,7 +229,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if !contains(securityGroupIds, securityGroupId) {
 			securityGroup, err := securitysvc.CreateSecurityGroup(netId, securityGroupName, securityGroupDescription)
 			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create securitygroup for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+				return reconcile.Result{}, fmt.Errorf("%w: Can not create securitygroup for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 			}
 			clusterScope.Info("### Get securityGroup", "securityGroup", securityGroup)
 			securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
@@ -272,7 +271,7 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 	}
 	err = securitysvc.DeleteSecurityGroupRule(securityGroupsRef.ResourceMap[securityGroupName], Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete securityGroupRule for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not delete securityGroupRule for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 	}
 	return reconcile.Result{}, nil
 }
@@ -321,7 +320,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 		clusterScope.Info("Delete SecurityGroup")
 		err = securitysvc.DeleteSecurityGroup(securityGroupsRef.ResourceMap[securityGroupName])
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete securityGroup  for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not delete securityGroup  for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 	}
 	return reconcile.Result{}, nil
