@@ -3,96 +3,97 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-        infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
+
+	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
-        "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/security"
+	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // GetResourceId return the resourceId from the resourceMap base on resourceName (tag name + cluster object uid) and resourceType (net, subnet, gateway, route, route-table, public-ip)
 func GetPublicIpResourceId(resourceName string, resourceType string, clusterScope *scope.ClusterScope) (string, error) {
-		publicIpRef := clusterScope.PublicIpRef()
-		if publicIpId, ok := publicIpRef.ResourceMap[resourceName]; ok {
-			return publicIpId, nil
-		} else {
-			return "", fmt.Errorf("%s is not exist", resourceName)
-		}
+	publicIpRef := clusterScope.PublicIpRef()
+	if publicIpId, ok := publicIpRef.ResourceMap[resourceName]; ok {
+		return publicIpId, nil
+	} else {
+		return "", fmt.Errorf("%s is not exist", resourceName)
+	}
 }
 
 // CheckFormatParameters check every resource (net, subnet, ...) parameters format (Tag format, cidr format, ..)
 func CheckPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-		clusterScope.Info("Check Public Ip parameters")
-		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-		networkSpec := clusterScope.Network()
-		if networkSpec.PublicIps == nil {
-			networkSpec.SetPublicIpDefaultValue()
-			publicIpsSpec = networkSpec.PublicIps
-		} else {
-			publicIpsSpec = clusterScope.PublicIp()
+	clusterScope.Info("Check Public Ip parameters")
+	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	networkSpec := clusterScope.Network()
+	if networkSpec.PublicIps == nil {
+		networkSpec.SetPublicIpDefaultValue()
+		publicIpsSpec = networkSpec.PublicIps
+	} else {
+		publicIpsSpec = clusterScope.PublicIp()
+	}
+	for _, publicIpSpec := range publicIpsSpec {
+		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+		publicIpTagName, err := tag.ValidateTagNameValue(publicIpName)
+		if err != nil {
+			return publicIpTagName, err
 		}
-		for _, publicIpSpec := range publicIpsSpec {
-			publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-			publicIpTagName, err := tag.ValidateTagNameValue(publicIpName)
-			if err != nil {
-				return publicIpTagName, err
-			}
-		}
-		return "", nil
+	}
+	return "", nil
 }
 
 // CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
-func CheckPublicIpOscAssociateResourceName( clusterScope *scope.ClusterScope) error {
-		clusterScope.Info("check match public ip with nat service")
-         	var resourceNameList []string
-		natServiceSpec := clusterScope.NatService()
-		natServiceSpec.SetDefaultValue()
-		natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
-		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-		networkSpec := clusterScope.Network()
-		if networkSpec.PublicIps == nil {
-			networkSpec.SetPublicIpDefaultValue()
-			publicIpsSpec = networkSpec.PublicIps
-		} else {
-			publicIpsSpec = clusterScope.PublicIp()
-		}
-		for _, publicIpSpec := range publicIpsSpec {
-			publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-			resourceNameList = append(resourceNameList, publicIpName)
-		}
-		checkOscAssociate := CheckAssociate(natPublicIpName, resourceNameList)
-		if checkOscAssociate {
-			return nil
-		} else {
-			return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
-		}
+func CheckPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
+	clusterScope.Info("check match public ip with nat service")
+	var resourceNameList []string
+	natServiceSpec := clusterScope.NatService()
+	natServiceSpec.SetDefaultValue()
+	natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
+	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	networkSpec := clusterScope.Network()
+	if networkSpec.PublicIps == nil {
+		networkSpec.SetPublicIpDefaultValue()
+		publicIpsSpec = networkSpec.PublicIps
+	} else {
+		publicIpsSpec = clusterScope.PublicIp()
+	}
+	for _, publicIpSpec := range publicIpsSpec {
+		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+		resourceNameList = append(resourceNameList, publicIpName)
+	}
+	checkOscAssociate := CheckAssociate(natPublicIpName, resourceNameList)
+	if checkOscAssociate {
 		return nil
+	} else {
+		return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
+	}
+	return nil
 }
 
 // CheckOscDuplicateName check that there are not the same name for resource with the same kind of resourceType (route-table, subnet, ..).
 func CheckPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
-                clusterScope.Info("Check unique name publicIp")
-                var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-         	var resourceNameList []string
-                networkSpec := clusterScope.Network()
-                if networkSpec.PublicIps == nil {
-                        networkSpec.SetPublicIpDefaultValue()
-                        publicIpsSpec = networkSpec.PublicIps
-                } else {
-                        publicIpsSpec = clusterScope.PublicIp()
-                }
-                for _, publicIpSpec := range publicIpsSpec {
-                        resourceNameList = append(resourceNameList, publicIpSpec.Name)
-                }
-                duplicateResourceErr := AlertDuplicate(resourceNameList)
-                if duplicateResourceErr != nil {
-                        return duplicateResourceErr
-                } else {
-                        return nil
-                }
-                return nil
+	clusterScope.Info("Check unique name publicIp")
+	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	var resourceNameList []string
+	networkSpec := clusterScope.Network()
+	if networkSpec.PublicIps == nil {
+		networkSpec.SetPublicIpDefaultValue()
+		publicIpsSpec = networkSpec.PublicIps
+	} else {
+		publicIpsSpec = clusterScope.PublicIp()
+	}
+	for _, publicIpSpec := range publicIpsSpec {
+		resourceNameList = append(resourceNameList, publicIpSpec.Name)
+	}
+	duplicateResourceErr := AlertDuplicate(resourceNameList)
+	if duplicateResourceErr != nil {
+		return duplicateResourceErr
+	} else {
+		return nil
+	}
+	return nil
 }
 
 // ReconcilePublicIp reconcile the PublicIp of the cluster.
