@@ -7,7 +7,6 @@ import (
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -90,7 +89,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 
 		natService, err = netsvc.CreateNatService(publicIpId, subnetId, natServiceName)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create natservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not create natservice for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 		clusterScope.Info("### Get natService ###", "natservice", natService)
 		natServiceRef.ResourceMap[natServiceName] = *natService.NatServiceId
@@ -120,7 +119,7 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 	}
 	err = netsvc.DeleteNatService(natServiceRef.ResourceMap[natServiceName])
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete natService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not delete natService for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 	}
 	return reconcile.Result{}, err
 }

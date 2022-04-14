@@ -8,7 +8,6 @@ import (
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/service"
-	"github.com/pkg/errors"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -116,11 +115,11 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not create load balancer for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 		loadbalancer, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
 		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not configure healthcheck for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w: Can not configure healthcheck for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
 
 	}
@@ -154,7 +153,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 	err = servicesvc.DeleteLoadBalancer(loadBalancerSpec)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w: Can not delete load balancer for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 	}
 	clusterScope.Info("Wait LoadBalancer Delete")
 	time.Sleep(45 * time.Second)
