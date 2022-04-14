@@ -3,51 +3,51 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-        infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
+
+	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
-        "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
+	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // GetResourceId return the resourceId from the resourceMap base on resourceName (tag name + cluster object uid) and resourceType (net, subnet, gateway, route, route-table, public-ip)
-func GetNatResourceId(resourceName string,  clusterScope *scope.ClusterScope) (string, error) {
-		natServiceRef := clusterScope.NatServiceRef()
-		if natServiceId, ok := natServiceRef.ResourceMap[resourceName]; ok {
-			return natServiceId, nil
-		} else {
-			return "", fmt.Errorf("%s is not exist", resourceName)
-		}
+func GetNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+	natServiceRef := clusterScope.NatServiceRef()
+	if natServiceId, ok := natServiceRef.ResourceMap[resourceName]; ok {
+		return natServiceId, nil
+	} else {
+		return "", fmt.Errorf("%s is not exist", resourceName)
+	}
 }
-
 
 // CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
 func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
-		var resourceNameList []string
-		clusterScope.Info("check match subnet with nat service")
-		natServiceSpec := clusterScope.NatService()
-		natServiceSpec.SetDefaultValue()
-		natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
-		var subnetsSpec []*infrastructurev1beta1.OscSubnet
-		networkSpec := clusterScope.Network()
-		if networkSpec.Subnets == nil {
-			networkSpec.SetSubnetDefaultValue()
-			subnetsSpec = networkSpec.Subnets
-		} else {
-			subnetsSpec = clusterScope.Subnet()
-		}
-		for _, subnetSpec := range subnetsSpec {
-			subnetName := subnetSpec.Name + "-" + clusterScope.UID()
-			resourceNameList = append(resourceNameList, subnetName)
-		}
-		checkOscAssociate := CheckAssociate(natSubnetName, resourceNameList)
-		if checkOscAssociate {
-			return nil
-		} else {
-			return fmt.Errorf("%s subnet does not exist in natService", natSubnetName)
-		}
+	var resourceNameList []string
+	clusterScope.Info("check match subnet with nat service")
+	natServiceSpec := clusterScope.NatService()
+	natServiceSpec.SetDefaultValue()
+	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
+	var subnetsSpec []*infrastructurev1beta1.OscSubnet
+	networkSpec := clusterScope.Network()
+	if networkSpec.Subnets == nil {
+		networkSpec.SetSubnetDefaultValue()
+		subnetsSpec = networkSpec.Subnets
+	} else {
+		subnetsSpec = clusterScope.Subnet()
+	}
+	for _, subnetSpec := range subnetsSpec {
+		subnetName := subnetSpec.Name + "-" + clusterScope.UID()
+		resourceNameList = append(resourceNameList, subnetName)
+	}
+	checkOscAssociate := CheckAssociate(natSubnetName, resourceNameList)
+	if checkOscAssociate {
 		return nil
+	} else {
+		return fmt.Errorf("%s subnet does not exist in natService", natSubnetName)
+	}
+	return nil
 }
 
 // ReconcileNatService reconcile the NatService of the cluster.
@@ -99,7 +99,6 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 	return reconcile.Result{}, nil
 }
 
-
 // ReconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
 func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
@@ -125,5 +124,3 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 	}
 	return reconcile.Result{}, err
 }
-
-

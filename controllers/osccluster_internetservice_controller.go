@@ -3,35 +3,36 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
+
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // GetResourceId return the resourceId from the resourceMap base on resourceName (tag name + cluster object uid)
 func GetInternetServiceResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
-                internetServiceRef := clusterScope.InternetServiceRef()
-                if internetServiceId, ok := internetServiceRef.ResourceMap[resourceName]; ok {
-                        return internetServiceId, nil
-                } else {
-                        return "", fmt.Errorf("%s is not exist", resourceName)
-                }
+	internetServiceRef := clusterScope.InternetServiceRef()
+	if internetServiceId, ok := internetServiceRef.ResourceMap[resourceName]; ok {
+		return internetServiceId, nil
+	} else {
+		return "", fmt.Errorf("%s is not exist", resourceName)
+	}
 }
 
-// CheckFormatParameters check every resource (net, subnet, ...) parameters format 
-func CheckInternetServiceFormatParameters( clusterScope *scope.ClusterScope) (string, error) {
-		clusterScope.Info("Check Internet Service parameters")
-		internetServiceSpec := clusterScope.InternetService()
-		internetServiceSpec.SetDefaultValue()
-		internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
-		internetServiceTagName, err := tag.ValidateTagNameValue(internetServiceName)
-		if err != nil {
-			return internetServiceTagName, err
-		}
-	        return "", nil
+// CheckFormatParameters check every resource (net, subnet, ...) parameters format
+func CheckInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+	clusterScope.Info("Check Internet Service parameters")
+	internetServiceSpec := clusterScope.InternetService()
+	internetServiceSpec.SetDefaultValue()
+	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
+	internetServiceTagName, err := tag.ValidateTagNameValue(internetServiceName)
+	if err != nil {
+		return internetServiceTagName, err
+	}
+	return "", nil
 }
 
 // ReconcileInternetService reconcile the InternetService of the cluster.
@@ -121,4 +122,3 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	}
 	return reconcile.Result{}, nil
 }
-
