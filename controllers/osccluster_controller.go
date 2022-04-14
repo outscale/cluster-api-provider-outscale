@@ -679,511 +679,6 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-// ReconcileLoadBalancer reconciles the loadBalancer of the cluster.
-func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	servicesvc := service.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create Loadbalancer")
-	loadBalancerSpec := clusterScope.LoadBalancer()
-	loadBalancerSpec.SetDefaultValue()
-	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.UID()
-	subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.UID()
-	securityGroupId, err := GetResourceId(securityGroupName, "security-group", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if loadbalancer == nil {
-		clusterScope.Info("### Get lb subnetId ###", "subnet", subnetId)
-		clusterScope.Info("### Get lb  sgId ###", "sg", securityGroupId)
-
-		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-		loadbalancer, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not configure healthcheck for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-
-	}
-	controlPlaneEndpoint := *loadbalancer.DnsName
-	controlPlanePort := loadBalancerSpec.Listener.LoadBalancerPort
-	clusterScope.SetControlPlaneEndpoint(clusterv1.APIEndpoint{
-		Host: controlPlaneEndpoint,
-		Port: controlPlanePort,
-	})
-	clusterScope.Info("Waiting on Dns Name")
-	return reconcile.Result{}, nil
-
-}
-
-// ReconcileNet reconcile the Net of the cluster.
-func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-
-	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create Net")
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netRef := clusterScope.NetRef()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	if len(netRef.ResourceMap) == 0 {
-		netRef.ResourceMap = make(map[string]string)
-	}
-	if netSpec.ResourceId != "" {
-		netRef.ResourceMap[netName] = netSpec.ResourceId
-	}
-	var netIds = []string{netRef.ResourceMap[netName]}
-	clusterScope.Info("### Get netId ###", "net", netRef.ResourceMap)
-	net, err := netsvc.GetNet(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if net == nil {
-		net, err = netsvc.CreateNet(netSpec, netName)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-		clusterScope.Info("### Get net ###", "net", net)
-		netRef.ResourceMap[netName] = *net.NetId
-		netSpec.ResourceId = *net.NetId
-
-	}
-	netRef.ResourceMap[netName] = *net.NetId
-	netSpec.ResourceId = *net.NetId
-	clusterScope.Info("Info net", "net", net)
-	return reconcile.Result{}, nil
-}
-
-// ReconcileSubnet reconcile the subnet of the cluster.
-func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create Subnet")
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	netIds := []string{netId}
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.Network()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.Subnet()
-	}
-	subnetRef := clusterScope.SubnetRef()
-	clusterScope.Info("### Get subnetId ###", "subnet", subnetRef.ResourceMap)
-	var subnetIds []string
-	subnetIds, err = netsvc.GetSubnetIdsFromNetIds(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	for _, subnetSpec := range subnetsSpec {
-		subnetName := subnetSpec.Name + "-" + clusterScope.UID()
-		subnetId := subnetRef.ResourceMap[subnetName]
-		if len(subnetRef.ResourceMap) == 0 {
-			subnetRef.ResourceMap = make(map[string]string)
-		}
-		if subnetSpec.ResourceId != "" {
-			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
-		}
-		if !contains(subnetIds, subnetId) {
-			subnet, err := netsvc.CreateSubnet(subnetSpec, netId, subnetName)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-			clusterScope.Info("### Get subnet ###", "subnet", subnet)
-			subnetRef.ResourceMap[subnetName] = *subnet.SubnetId
-			subnetSpec.ResourceId = *subnet.SubnetId
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileInternetService reconcile the InternetService of the cluster.
-func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create InternetGateway")
-	internetServiceSpec := clusterScope.InternetService()
-	internetServiceSpec.SetDefaultValue()
-	internetServiceRef := clusterScope.InternetServiceRef()
-	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if len(internetServiceRef.ResourceMap) == 0 {
-		internetServiceRef.ResourceMap = make(map[string]string)
-	}
-	if internetServiceSpec.ResourceId != "" {
-		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
-	}
-	var internetServiceIds = []string{internetServiceRef.ResourceMap[internetServiceName]}
-	clusterScope.Info("### Get internetServiceId ###", "internetservice", internetServiceRef.ResourceMap)
-	internetService, err := netsvc.GetInternetService(internetServiceIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if internetService == nil {
-		internetService, err = netsvc.CreateInternetService(internetServiceName)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create internetservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-		err = netsvc.LinkInternetService(*internetService.InternetServiceId, netId)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not link internetService with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-		clusterScope.Info("### Get internetService ###", "internetservice", internetService)
-		internetServiceRef.ResourceMap[internetServiceName] = *internetService.InternetServiceId
-		internetServiceSpec.ResourceId = *internetService.InternetServiceId
-
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcilePublicIp reconcile the PublicIp of the cluster.
-func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	securitysvc := security.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create PublicIp")
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-	networkSpec := clusterScope.Network()
-	if networkSpec.PublicIps == nil {
-		networkSpec.SetPublicIpDefaultValue()
-		publicIpsSpec = networkSpec.PublicIps
-	} else {
-		publicIpsSpec = clusterScope.PublicIp()
-	}
-	publicIpRef := clusterScope.PublicIpRef()
-	var publicIpsId []string
-	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		publicIpsId = append(publicIpsId, publicIpId)
-	}
-	publicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpsId)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
-	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		clusterScope.Info("### Get publicIp Id ###", "publicip", publicIpRef.ResourceMap)
-		if publicIpSpec.ResourceId != "" {
-			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
-		}
-		if len(publicIpRef.ResourceMap) == 0 {
-			publicIpRef.ResourceMap = make(map[string]string)
-		}
-		if !contains(publicIpIds, publicIpId) {
-			publicIp, err := securitysvc.CreatePublicIp(publicIpName)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create publicIp for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-			clusterScope.Info("### Get publicIp  ###", "publicip", publicIp)
-			publicIpRef.ResourceMap[publicIpName] = *publicIp.PublicIpId
-			publicIpSpec.ResourceId = *publicIp.PublicIpId
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	securitysvc := security.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create SecurityGroup")
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
-	networkSpec := clusterScope.Network()
-	if networkSpec.SecurityGroups == nil {
-		networkSpec.SetSecurityGroupDefaultValue()
-		securityGroupsSpec = networkSpec.SecurityGroups
-	} else {
-		securityGroupsSpec = clusterScope.SecurityGroups()
-	}
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	netIds := []string{netId}
-	clusterScope.Info("### Get net Id ###", "net", netIds)
-
-	securityGroupIds, err := securitysvc.GetSecurityGroupIdsFromNetIds(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	securityGroupsRef := clusterScope.SecurityGroupsRef()
-	securityGroupRuleRef := clusterScope.SecurityGroupRuleRef()
-	for _, securityGroupSpec := range securityGroupsSpec {
-		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.UID()
-		securityGroupDescription := securityGroupSpec.Description
-		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		clusterScope.Info("### Get securityGroup Id ###", "securityGroup", securityGroupIds)
-		if len(securityGroupsRef.ResourceMap) == 0 {
-			securityGroupsRef.ResourceMap = make(map[string]string)
-		}
-		if securityGroupSpec.ResourceId != "" {
-			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
-		}
-		if !contains(securityGroupIds, securityGroupId) {
-			securityGroup, err := securitysvc.CreateSecurityGroup(netId, securityGroupName, securityGroupDescription)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create securitygroup for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-			clusterScope.Info("### Get securityGroup", "securityGroup", securityGroup)
-			securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
-			securityGroupSpec.ResourceId = *securityGroup.SecurityGroupId
-
-			clusterScope.Info("check securityGroupRule")
-			securityGroupRulesSpec := clusterScope.SecurityGroupRule(securityGroupSpec.Name)
-			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
-				securityGroupRuleName := securityGroupRuleSpec.Name + "-" + clusterScope.UID()
-				if len(securityGroupRuleRef.ResourceMap) == 0 {
-					securityGroupRuleRef.ResourceMap = make(map[string]string)
-				}
-				if securityGroupRuleSpec.ResourceId != "" {
-					securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupRuleSpec.ResourceId
-				}
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				Flow := securityGroupRuleSpec.Flow
-				IpProtocol := securityGroupRuleSpec.IpProtocol
-				IpProtocols := []string{IpProtocol}
-				IpRange := securityGroupRuleSpec.IpRange
-				IpRanges := []string{IpRange}
-				FromPortRange := securityGroupRuleSpec.FromPortRange
-				FromPortRanges := []int32{FromPortRange}
-				ToPortRange := securityGroupRuleSpec.ToPortRange
-				ToPortRanges := []int32{ToPortRange}
-				associateSecurityGroupIds := []string{securityGroupsRef.ResourceMap[securityGroupName]}
-
-				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupIds, Flow, IpProtocols, IpRanges, FromPortRanges, ToPortRanges)
-				clusterScope.Info("### Retrieve securityGroup", "securityGroup", securityGroupFromSecurityGroupRule)
-				clusterScope.Info("### Retrieve sg info", "securityGroup", associateSecurityGroupIds)
-				clusterScope.Info("### Retrieve sg info", "securityGroup", Flow)
-				clusterScope.Info("### Retrieve sg info", "securityGroup", IpProtocols)
-				clusterScope.Info("### Retrieve sg info", "securityGroup", IpRanges)
-				clusterScope.Info("### Retrieve sg info", "securityGroup", FromPortRanges)
-				clusterScope.Info("### Retrieve sg info", "securityGroup", ToPortRanges)
-
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				if securityGroupFromSecurityGroupRule == nil {
-					clusterScope.Info("### Create securityGroupRule")
-					securityGroupFromSecurityGroupRule, err = securitysvc.CreateSecurityGroupRule(securityGroupsRef.ResourceMap[securityGroupName], Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
-					if err != nil {
-						return reconcile.Result{}, errors.Wrapf(err, "Can not create  securityGroupRule for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-					}
-				}
-				securityGroupRuleRef.ResourceMap[securityGroupRuleName] = *securityGroupFromSecurityGroupRule.SecurityGroupId
-				securityGroupRuleSpec.ResourceId = *securityGroupFromSecurityGroupRule.SecurityGroupId
-			}
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileRouteTable reconcile the RouteTable and the Route of the cluster.
-func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	securitysvc := security.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create RouteTable")
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.Network()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.RouteTables()
-	}
-	routeTablesRef := clusterScope.RouteTablesRef()
-	routeRef := clusterScope.RouteRef()
-	linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	netIds := []string{netId}
-
-	var resourceIds []string
-	routeTableIds, err := securitysvc.GetRouteTableIdsFromNetIds(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	for _, routeTableSpec := range routeTablesSpec {
-		routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
-		routeTableId := routeTablesRef.ResourceMap[routeTableName]
-		clusterScope.Info("### Get routeTable Id ###", "routeTable", routeTablesRef.ResourceMap)
-		subnetName := routeTableSpec.SubnetName + "-" + clusterScope.UID()
-		subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		if len(routeTablesRef.ResourceMap) == 0 {
-			routeTablesRef.ResourceMap = make(map[string]string)
-		}
-		if len(linkRouteTablesRef.ResourceMap) == 0 {
-			linkRouteTablesRef.ResourceMap = make(map[string]string)
-		}
-		if routeTableSpec.ResourceId != "" {
-			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
-		}
-		var natRouteTable bool = false
-		if !contains(routeTableIds, routeTableId) {
-			clusterScope.Info("check Nat RouteTable")
-			routesSpec := clusterScope.Route(routeTableSpec.Name)
-
-			for _, routeSpec := range *routesSpec {
-				resourceType := routeSpec.TargetType
-				if resourceType == "nat" {
-					natServiceRef := clusterScope.NatServiceRef()
-					clusterScope.Info("### Get Nat ###", "Nat", natServiceRef.ResourceMap)
-					if len(natServiceRef.ResourceMap) == 0 {
-						natRouteTable = true
-					}
-				}
-			}
-			if natRouteTable {
-				continue
-			}
-
-			routeTable, err := securitysvc.CreateRouteTable(netId, routeTableName)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not create routetable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-			linkRouteTableId, err := securitysvc.LinkRouteTable(*routeTable.RouteTableId, subnetId)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not link routetable with net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-			clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
-			routeTablesRef.ResourceMap[routeTableName] = *routeTable.RouteTableId
-			routeTableSpec.ResourceId = *routeTable.RouteTableId
-			linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
-
-			clusterScope.Info("check route")
-			//			routesSpec := clusterScope.Route(routeTableSpec.Name)
-			for _, routeSpec := range *routesSpec {
-				resourceName := routeSpec.TargetName + "-" + clusterScope.UID()
-				resourceType := routeSpec.TargetType
-				routeName := routeSpec.Name + "-" + clusterScope.UID()
-				if len(routeRef.ResourceMap) == 0 {
-					routeRef.ResourceMap = make(map[string]string)
-				}
-				if routeSpec.ResourceId != "" {
-					routeRef.ResourceMap[routeName] = routeSpec.ResourceId
-				}
-
-				resourceId, err := GetResourceId(resourceName, resourceType, clusterScope)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				resourceIds = []string{resourceId}
-				destinationIpRange := routeSpec.Destination
-				associateRouteTableIds := []string{routeTablesRef.ResourceMap[routeTableName]}
-				routeTableFromRoute, err := securitysvc.GetRouteTableFromRoute(associateRouteTableIds, resourceIds, resourceType)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				if routeTableFromRoute == nil {
-					clusterScope.Info("### Create Route ###", "Route", resourceId)
-					routeTableFromRoute, err = securitysvc.CreateRoute(destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
-					if err != nil {
-						return reconcile.Result{}, errors.Wrapf(err, "Can not create route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-					}
-				}
-				routeRef.ResourceMap[routeName] = *routeTableFromRoute.RouteTableId
-				routeSpec.ResourceId = *routeTableFromRoute.RouteTableId
-			}
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileNatService reconcile the NatService of the cluster.
-func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Create NatService")
-	natServiceSpec := clusterScope.NatService()
-	natServiceRef := clusterScope.NatServiceRef()
-	natServiceSpec.SetDefaultValue()
-	natServiceName := natServiceSpec.Name + "-" + clusterScope.UID()
-
-	publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
-	publicIpId, err := GetResourceId(publicIpName, "public-ip", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	subnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
-
-	subnetId, err := GetResourceId(subnetName, "subnet", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if len(natServiceRef.ResourceMap) == 0 {
-		natServiceRef.ResourceMap = make(map[string]string)
-	}
-	if natServiceSpec.ResourceId != "" {
-		natServiceRef.ResourceMap[natServiceName] = natServiceSpec.ResourceId
-	}
-	var natServiceIds = []string{natServiceRef.ResourceMap[natServiceName]}
-	clusterScope.Info("### Get natService Id ###", "natservice", natServiceRef.ResourceMap)
-	natService, err := netsvc.GetNatService(natServiceIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if natService == nil {
-
-		natService, err = netsvc.CreateNatService(publicIpId, subnetId, natServiceName)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not create natservice for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-		clusterScope.Info("### Get natService ###", "natservice", natService)
-		natServiceRef.ResourceMap[natServiceName] = *natService.NatServiceId
-		natServiceSpec.ResourceId = *natService.NatServiceId
-	}
-	return reconcile.Result{}, nil
-}
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	clusterScope.Info("Reconcile OscCluster")
 	osccluster := clusterScope.OscCluster
@@ -1192,100 +687,100 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, err
 	}
 
-	duplicateResourceRouteTableErr := CheckOscDuplicateName("route-table", clusterScope)
+	duplicateResourceRouteTableErr := CheckRouteTableOscDuplicateName(clusterScope)
 	if duplicateResourceRouteTableErr != nil {
 		return reconcile.Result{}, duplicateResourceRouteTableErr
 	}
 
-	duplicateResourceSecurityGroupErr := CheckOscDuplicateName("security-group", clusterScope)
+	duplicateResourceSecurityGroupErr := CheckSecurityGroupOscDuplicateName(clusterScope)
 	if duplicateResourceSecurityGroupErr != nil {
 		return reconcile.Result{}, duplicateResourceSecurityGroupErr
 	}
 
-	duplicateResourceRouteErr := CheckOscDuplicateName("route", clusterScope)
+	duplicateResourceRouteErr := CheckRouteOscDuplicateName(clusterScope)
 	if duplicateResourceRouteErr != nil {
 		return reconcile.Result{}, duplicateResourceRouteErr
 	}
 
-	duplicateResourceSecurityGroupRuleErr := CheckOscDuplicateName("security-group-rule", clusterScope)
+	duplicateResourceSecurityGroupRuleErr := CheckSecurityGroupRuleOscDuplicateName(clusterScope)
 	if duplicateResourceSecurityGroupRuleErr != nil {
 		return reconcile.Result{}, duplicateResourceSecurityGroupRuleErr
 	}
 
-	duplicateResourcePublicIpErr := CheckOscDuplicateName("public-ip", clusterScope)
+	duplicateResourcePublicIpErr := CheckPublicIpOscDuplicateName(clusterScope)
 	if duplicateResourcePublicIpErr != nil {
 		return reconcile.Result{}, duplicateResourcePublicIpErr
 	}
 
-	duplicateResourceSubnetErr := CheckOscDuplicateName("subnet", clusterScope)
+	duplicateResourceSubnetErr := CheckSubnetOscDuplicateName(clusterScope)
 	if duplicateResourceSubnetErr != nil {
 		return reconcile.Result{}, duplicateResourceSubnetErr
 	}
 
-	CheckOscAssociatePublicIpErr := CheckOscAssociateResourceName("public-ip", clusterScope)
+	CheckOscAssociatePublicIpErr := CheckPublicIpOscAssociateResourceName(clusterScope)
 	if CheckOscAssociatePublicIpErr != nil {
 		return reconcile.Result{}, CheckOscAssociatePublicIpErr
 	}
 
-	CheckOscAssociateRouteTableSubnetErr := CheckOscAssociateResourceName("routeTableSubnet", clusterScope)
+	CheckOscAssociateRouteTableSubnetErr := CheckRouteTableSubnetOscAssociateResourceName(clusterScope)
 	if CheckOscAssociateRouteTableSubnetErr != nil {
 		return reconcile.Result{}, CheckOscAssociateRouteTableSubnetErr
 	}
 
-	CheckOscAssociateNatSubnetErr := CheckOscAssociateResourceName("natSubnet", clusterScope)
+	CheckOscAssociateNatSubnetErr := CheckNatSubnetOscAssociateResourceName(clusterScope)
 	if CheckOscAssociateNatSubnetErr != nil {
 		return reconcile.Result{}, CheckOscAssociateNatSubnetErr
 	}
 
-	CheckOscAssociateLoadBalancerSubnetErr := CheckOscAssociateResourceName("loadBalancerSubnet", clusterScope)
+	CheckOscAssociateLoadBalancerSubnetErr := CheckLoadBalancerSubnetOscAssociateResourceName(clusterScope)
 	if CheckOscAssociateLoadBalancerSubnetErr != nil {
 		return reconcile.Result{}, CheckOscAssociateLoadBalancerSubnetErr
 	}
 
-	CheckOscAssociateLoadBalancerSecurityGroupErr := CheckOscAssociateResourceName("loadBalancerSecurityGroup", clusterScope)
+	CheckOscAssociateLoadBalancerSecurityGroupErr := CheckLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope)
 	if CheckOscAssociateLoadBalancerSecurityGroupErr != nil {
 		return reconcile.Result{}, CheckOscAssociateLoadBalancerSecurityGroupErr
 	}
 
-	netName, err := CheckFormatParameters("net", clusterScope)
+	netName, err := CheckNetFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create net %s for OscCluster %s/%s", netName, osccluster.Namespace, osccluster.Name)
 	}
-	subnetName, err := CheckFormatParameters("subnet", clusterScope)
+	subnetName, err := CheckSubnetFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create subnet %s for OscCluster %s/%s", subnetName, osccluster.Namespace, osccluster.Name)
 	}
 
-	internetServiceName, err := CheckFormatParameters("internet-service", clusterScope)
+	internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create internetService %s for OscCluster %s/%s", internetServiceName, osccluster.Namespace, osccluster.Name)
 	}
 
-	publicIpName, err := CheckFormatParameters("public-ip", clusterScope)
+	publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create internetService %s for OscCluster %s/%s", publicIpName, osccluster.Namespace, osccluster.Name)
 	}
 
-	routeTableName, err := CheckFormatParameters("route-table", clusterScope)
+	routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create routeTable %s for OscCluster %s/%s", routeTableName, osccluster.Namespace, osccluster.Name)
 	}
 
-	securityGroupName, err := CheckFormatParameters("security-group", clusterScope)
+	securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create securityGroup %s for OscCluster %s/%s", securityGroupName, osccluster.Namespace, osccluster.Name)
 	}
 
-	routeName, err := CheckFormatParameters("route", clusterScope)
+	routeName, err := CheckRouteFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create route %s for OscCluster %s/%s", routeName, osccluster.Namespace, osccluster.Name)
 	}
 
-	securityGroupRuleName, err := CheckFormatParameters("security-group-rule", clusterScope)
+	securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create security group rule %s for OscCluster %s/%s", securityGroupRuleName, osccluster.Namespace, osccluster.Name)
 	}
-	reconcileLoadBalancerName, err := CheckFormatParameters("loadbalancer", clusterScope)
+	reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Can not create loadBalancer %s for OscCluster %s/%s", reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
 	}
@@ -1366,373 +861,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	return reconcile.Result{}, nil
 }
 
-// ReconcileDeleteLoadBalancer reconcile the destruction of the LoadBalancer of the cluster.
-
-func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	servicesvc := service.NewService(ctx, clusterScope)
-
-	clusterScope.Info("Delete LoadBalancer")
-	loadBalancerSpec := clusterScope.LoadBalancer()
-	loadBalancerSpec.SetDefaultValue()
-	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if loadbalancer == nil {
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-		return reconcile.Result{}, nil
-	}
-	err = servicesvc.DeleteLoadBalancer(loadBalancerSpec)
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete load balancer for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-	}
-	clusterScope.Info("Wait LoadBalancer Delete")
-	time.Sleep(15 * time.Second)
-	return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
-}
-
-// ReconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
-func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	netsvc := net.NewService(ctx, clusterScope)
-
-	clusterScope.Info("Delete natService")
-	natServiceSpec := clusterScope.NatService()
-	natServiceSpec.SetDefaultValue()
-	natServiceRef := clusterScope.NatServiceRef()
-	natServiceName := natServiceSpec.Name + "-" + clusterScope.UID()
-	var natServiceIds = []string{natServiceRef.ResourceMap[natServiceName]}
-	natservice, err := netsvc.GetNatService(natServiceIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if natservice == nil {
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-		return reconcile.Result{}, nil
-	}
-	err = netsvc.DeleteNatService(natServiceRef.ResourceMap[natServiceName])
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete natService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-	}
-	return reconcile.Result{}, err
-}
-
-// ReconcileDeletePublicIp reconcile the destruction of the PublicIp of the cluster.
-func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	securitysvc := security.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
-
-	clusterScope.Info("Delete PublicIp")
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-	networkSpec := clusterScope.Network()
-	if networkSpec.PublicIps == nil {
-		networkSpec.SetPublicIpDefaultValue()
-		publicIpsSpec = networkSpec.PublicIps
-	} else {
-		publicIpsSpec = clusterScope.PublicIp()
-	}
-	publicIpRef := clusterScope.PublicIpRef()
-	var publicIpsId []string
-	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		publicIpsId = append(publicIpsId, publicIpId)
-	}
-	publicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpsId)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
-	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		if !contains(publicIpIds, publicIpId) {
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-			return reconcile.Result{}, nil
-		}
-		clusterScope.Info("Remove publicip")
-		err = securitysvc.DeletePublicIp(publicIpRef.ResourceMap[publicIpName])
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete publicIp for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-
-	}
-	return reconcile.Result{}, nil
-}
-
-func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	securitysvc := security.NewService(ctx, clusterScope)
-
-	clusterScope.Info("Delete SecurityGroup")
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
-	networkSpec := clusterScope.Network()
-	if networkSpec.SecurityGroups == nil {
-		networkSpec.SetSecurityGroupDefaultValue()
-		securityGroupsSpec = networkSpec.SecurityGroups
-	} else {
-		securityGroupsSpec = clusterScope.SecurityGroups()
-	}
-	securityGroupsRef := clusterScope.SecurityGroupsRef()
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	netIds := []string{netId}
-	clusterScope.Info("### Get net Id ###", "net", netIds)
-	securityGroupIds, err := securitysvc.GetSecurityGroupIdsFromNetIds(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	for _, securityGroupSpec := range securityGroupsSpec {
-		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.UID()
-		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		if !contains(securityGroupIds, securityGroupId) {
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-			return reconcile.Result{}, nil
-		}
-		clusterScope.Info("Remove securityGroupRule")
-		securityGroupRulesSpec := clusterScope.SecurityGroupRule(securityGroupSpec.Name)
-		for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
-			Flow := securityGroupRuleSpec.Flow
-			IpProtocol := securityGroupRuleSpec.IpProtocol
-			IpProtocols := []string{IpProtocol}
-			IpRange := securityGroupRuleSpec.IpRange
-			IpRanges := []string{IpRange}
-			FromPortRange := securityGroupRuleSpec.FromPortRange
-			FromPortRanges := []int32{FromPortRange}
-			ToPortRange := securityGroupRuleSpec.ToPortRange
-			ToPortRanges := []int32{ToPortRange}
-			associateSecurityGroupIds := []string{securityGroupsRef.ResourceMap[securityGroupName]}
-			clusterScope.Info("Delete SecurityGroupRule")
-			securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupIds, Flow, IpProtocols, IpRanges, FromPortRanges, ToPortRanges)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			if securityGroupFromSecurityGroupRule == nil {
-				controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-				return reconcile.Result{}, nil
-			}
-			err = securitysvc.DeleteSecurityGroupRule(securityGroupsRef.ResourceMap[securityGroupName], Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not delete securityGroupRule for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-		}
-		clusterScope.Info("Delete SecurityGroup")
-		err = securitysvc.DeleteSecurityGroup(securityGroupsRef.ResourceMap[securityGroupName])
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete securityGroup  for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
-func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	securitysvc := security.NewService(ctx, clusterScope)
-
-	clusterScope.Info("Delete RouteTable")
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.Network()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.RouteTables()
-	}
-	routeTablesRef := clusterScope.RouteTablesRef()
-	linkRouteTablesRef := clusterScope.LinkRouteTablesRef()
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	netIds := []string{netId}
-
-	var resourceIds []string
-	routeTableIds, err := securitysvc.GetRouteTableIdsFromNetIds(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	for _, routeTableSpec := range routeTablesSpec {
-		routeTableSpec.SetDefaultValue()
-		routeTableName := routeTableSpec.Name + "-" + clusterScope.UID()
-		routeTableId := routeTablesRef.ResourceMap[routeTableName]
-		clusterScope.Info("### delete routeTable Id ###", "routeTable", routeTableId)
-
-		if !contains(routeTableIds, routeTableId) {
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-			return reconcile.Result{}, nil
-		}
-		clusterScope.Info("Remove Route")
-		routesSpec := clusterScope.Route(routeTableSpec.Name)
-		for _, routeSpec := range *routesSpec {
-			resourceName := routeSpec.TargetName + "-" + clusterScope.UID()
-			resourceType := routeSpec.TargetType
-			routeName := routeSpec.Name + "-" + clusterScope.UID()
-			resourceId, err := GetResourceId(resourceName, resourceType, clusterScope)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			routeTableId, err := GetResourceId(routeName, "route", clusterScope)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			resourceIds = []string{resourceId}
-			destinationIpRange := routeSpec.Destination
-			associateRouteTableIds := []string{routeTablesRef.ResourceMap[routeTableName]}
-			routeTableFromRoute, err := securitysvc.GetRouteTableFromRoute(associateRouteTableIds, resourceIds, resourceType)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			if routeTableFromRoute == nil {
-				controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-				return reconcile.Result{}, nil
-			}
-			clusterScope.Info("Delete Route")
-			clusterScope.Info("### delete destinationIpRange###", "routeTable", destinationIpRange)
-
-			err = securitysvc.DeleteRoute(destinationIpRange, routeTableId)
-			if err != nil {
-				return reconcile.Result{}, errors.Wrapf(err, "Can not delete route for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-			}
-		}
-		clusterScope.Info("Unlink Routetable")
-
-		err = securitysvc.UnlinkRouteTable(linkRouteTablesRef.ResourceMap[routeTableName])
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete routeTable for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-		clusterScope.Info("Delete RouteTable")
-
-		err = securitysvc.DeleteRouteTable(routeTablesRef.ResourceMap[routeTableName])
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
-func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	netsvc := net.NewService(ctx, clusterScope)
-
-	clusterScope.Info("Delete internetService")
-
-	internetServiceSpec := clusterScope.InternetService()
-	internetServiceSpec.SetDefaultValue()
-	internetServiceRef := clusterScope.InternetServiceRef()
-	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	var internetServiceIds = []string{internetServiceRef.ResourceMap[internetServiceName]}
-	internetservice, err := netsvc.GetInternetService(internetServiceIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if internetservice == nil {
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-		return reconcile.Result{}, nil
-	}
-	err = netsvc.UnlinkInternetService(internetServiceRef.ResourceMap[internetServiceName], netId)
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not unlink internetService and net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-	}
-	err = netsvc.DeleteInternetService(internetServiceRef.ResourceMap[internetServiceName])
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete internetService for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
-func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	netsvc := net.NewService(ctx, clusterScope)
-
-	clusterScope.Info("Delete subnet")
-
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.Network()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.Subnet()
-	}
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-
-	netId, err := GetResourceId(netName, "net", clusterScope)
-	netIds := []string{netId}
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	subnetRef := clusterScope.SubnetRef()
-	subnetIds, err := netsvc.GetSubnetIdsFromNetIds(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	for _, subnetSpec := range subnetsSpec {
-		subnetName := subnetSpec.Name + "-" + clusterScope.UID()
-		subnetId := subnetRef.ResourceMap[subnetName]
-		if !contains(subnetIds, subnetId) {
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-			return reconcile.Result{}, nil
-		}
-		err = netsvc.DeleteSubnet(subnetRef.ResourceMap[subnetName])
-		if err != nil {
-			return reconcile.Result{}, errors.Wrapf(err, "Can not delete subnet for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-		}
-	}
-	return reconcile.Result{}, nil
-}
-
-// ReconcileDeleteNet reconcile the destruction of the Net of the cluster.
-func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	netsvc := net.NewService(ctx, clusterScope)
-
-	netSpec := clusterScope.Net()
-	netSpec.SetDefaultValue()
-	netRef := clusterScope.NetRef()
-	netName := netSpec.Name + "-" + clusterScope.UID()
-	var netIds = []string{netRef.ResourceMap[netName]}
-
-	clusterScope.Info("Delete net")
-	net, err := netsvc.GetNet(netIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if net == nil {
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-		return reconcile.Result{}, nil
-	}
-	err = netsvc.DeleteNet(netRef.ResourceMap[netName])
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "Can not delete net for Osccluster %s/%s", osccluster.Namespace, osccluster.Name)
-	}
-	return reconcile.Result{}, nil
-}
 
 func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	clusterScope.Info("Reconcile OscCluster")

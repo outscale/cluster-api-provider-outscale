@@ -16,23 +16,13 @@ func ValidateCidr(cidr string) (string, error) {
 	if !strings.Contains(cidr, "/") {
 		return cidr, errors.New("Invalid Not A CIDR")
 	}
-        ipAddr, _, err := net.ParseCIDR(cidr)
-        if err != nil {
-		return cidr, errors.New("Invalid Cidr Ip")
-        }
-        ipPrefix := strings.ReplaceAll(cidr, ipAddr.String() + "/", "")
-	if net.ParseIP(ipAddr.String()) == nil {
-		return cidr, errors.New("Invalid Cidr Ip")
-	}
-        ipPrefixLength, err := strconv.Atoi(ipPrefix)
-        if err != nil {
+	_, _, err := net.ParseCIDR(cidr)
+	if err != nil {
 		return cidr, err
-        }
-        if ipPrefixLength > 0 && ipPrefixLength < 33 {
-        	return cidr, errors.New("Invalid cidr Prefix")
-        }
+	}
 	return cidr, nil
 }
+
 
 // CreateNet create the net from spec (in order to retrieve ip range)
 func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error) {
