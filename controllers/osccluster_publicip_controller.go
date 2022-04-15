@@ -94,11 +94,13 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 	publicIpsSpec = clusterScope.GetPublicIp()
         var publicIpId string
 	publicIpRef := clusterScope.GetPublicIpRef()
+        var publicIpIds []string
 	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId = publicIpRef.ResourceMap[publicIpName]
+//		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+		publicIpId = publicIpSpec.ResourceId
+                publicIpIds = append(publicIpIds, publicIpId)
 	}
-	publicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpId)
+	validPublicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpIds)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -107,13 +109,13 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
 		publicIpId := publicIpRef.ResourceMap[publicIpName]
 		clusterScope.Info("### Get publicIp Id ###", "publicip", publicIpRef.ResourceMap)
-		if publicIpSpec.ResourceId != "" {
-			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
-		}
 		if len(publicIpRef.ResourceMap) == 0 {
 			publicIpRef.ResourceMap = make(map[string]string)
 		}
-		if !Contains(publicIpIds, publicIpId) {
+                if publicIpSpec.ResourceId != "" {
+                        publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
+                }
+		if !Contains(validPublicIpIds, publicIpId) {
 			publicIp, err := securitysvc.CreatePublicIp(publicIpName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w: Can not create publicIp for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
@@ -140,26 +142,28 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	} else {
 		publicIpsSpec = clusterScope.GetPublicIp()
 	}
+	var publicIpIds []string
 	var publicIpId string
-	publicIpRef := clusterScope.GetPublicIpRef()
+//	publicIpRef := clusterScope.GetPublicIpRef()
 	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId = publicIpRef.ResourceMap[publicIpName]
+//		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+		publicIpId = publicIpSpec.ResourceId
+		publicIpIds = append(publicIpIds, publicIpId)
 	}
-	publicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpId)
+	validPublicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpIds)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
 	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
-		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		if !Contains(publicIpIds, publicIpId) {
+//		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
+		publicIpId := publicIpSpec.ResourceId
+		if !Contains(validPublicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
 		clusterScope.Info("Remove publicip")
-		err = securitysvc.DeletePublicIp(publicIpRef.ResourceMap[publicIpName])
+		err = securitysvc.DeletePublicIp(publicIpId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w: Can not delete publicIp for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
 		}
