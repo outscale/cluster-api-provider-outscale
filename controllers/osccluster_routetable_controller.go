@@ -58,13 +58,7 @@ func CheckRouteTableFormatParameters(clusterScope *scope.ClusterScope) (string, 
 func CheckRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Route parameters")
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.GetRouteTables()
-	}
+	routeTablesSpec = clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 		for _, routeSpec := range *routesSpec {
@@ -89,15 +83,10 @@ func CheckRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 	var resourceNameList []string
 	clusterScope.Info("check match subnet with route table service")
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.GetRouteTables()
-	}
+	routeTablesSpec = clusterScope.GetRouteTables()
 	resourceNameList = resourceNameList[:0]
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
+        networkSpec := clusterScope.GetNetwork()
 	if networkSpec.Subnets == nil {
 		networkSpec.SetSubnetDefaultValue()
 		subnetsSpec = networkSpec.Subnets
@@ -125,13 +114,7 @@ func CheckRouteTableOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("check unique routetable")
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.GetRouteTables()
-	}
+	routeTablesSpec = clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
 		resourceNameList = append(resourceNameList, routeTableSpec.Name)
 	}
@@ -269,13 +252,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 
 	clusterScope.Info("Create RouteTable")
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.GetRouteTables()
-	}
+	routeTablesSpec = clusterScope.GetRouteTables()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
 	linkRouteTablesRef := clusterScope.GetLinkRouteTablesRef()
 
@@ -311,7 +288,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
 		}
 		var natRouteTable bool = false
-		if !contains(routeTableIds, routeTableId) {
+		if !Contains(routeTableIds, routeTableId) {
 			clusterScope.Info("check Nat RouteTable")
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 
@@ -361,13 +338,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 
 	clusterScope.Info("Delete RouteTable")
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.RouteTables == nil {
-		networkSpec.SetRouteTableDefaultValue()
-		routeTablesSpec = networkSpec.RouteTables
-	} else {
-		routeTablesSpec = clusterScope.GetRouteTables()
-	}
+	routeTablesSpec = clusterScope.GetRouteTables()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
 	linkRouteTablesRef := clusterScope.GetLinkRouteTablesRef()
 
@@ -389,7 +360,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		clusterScope.Info("### delete routeTable Id ###", "routeTable", routeTableId)
 
-		if !contains(routeTableIds, routeTableId) {
+		if !Contains(routeTableIds, routeTableId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
