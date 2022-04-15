@@ -8,6 +8,7 @@ import (
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -21,6 +22,29 @@ func GetNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 	}
 }
 
+func CheckNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+	clusterScope.Info("Check Nat name parameters")
+	natServiceSpec := clusterScope.GetNatService()
+	natServiceSpec.SetDefaultValue()
+        natName := natServiceSpec.Name + "-" + clusterScope.UID()
+	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
+        natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
+	natTagName, err := tag.ValidateTagNameValue(natName)
+	if err != nil {
+		return natTagName, err
+	}
+	natSubnetTagName, err := tag.ValidateTagNameValue(natSubnetName)
+	if err != nil {
+		return natSubnetTagName, err
+	}
+	natPublicIpTagName, err := tag.ValidateTagNameValue(natPublicIpName)
+	if err != nil {
+		return natPublicIpTagName, err
+	}
+	return "", nil
+}
+
+	 			
 // CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
 func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
@@ -57,7 +81,6 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 	clusterScope.Info("Create NatService")
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceRef := clusterScope.GetNatServiceRef()
-	natServiceSpec.SetDefaultValue()
 	natServiceName := natServiceSpec.Name + "-" + clusterScope.UID()
 
 	publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
@@ -105,7 +128,6 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 
 	clusterScope.Info("Delete natService")
 	natServiceSpec := clusterScope.GetNatService()
-	natServiceSpec.SetDefaultValue()
 	natServiceRef := clusterScope.GetNatServiceRef()
 	natServiceName := natServiceSpec.Name + "-" + clusterScope.UID()
 	natServiceId := natServiceRef.ResourceMap[natServiceName]

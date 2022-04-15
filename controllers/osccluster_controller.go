@@ -119,10 +119,10 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return r.reconcile(ctx, clusterScope)
 }
 
-// CheckAssociate return if the resourcename is an item of firstResourceNameArray
-func CheckAssociate(resourceName string, firstResourceNameArray []string) bool {
-	for i := 0; i < len(firstResourceNameArray); i++ {
-		if firstResourceNameArray[i] == resourceName {
+// CheckAssociate return if the resourcename is an item of ResourceNames
+func CheckAssociate(resourceName string, ResourceNames []string) bool {
+	for i := 0; i < len(ResourceNames); i++ {
+		if ResourceNames[i] == resourceName {
 			return true
 		}
 	}
@@ -133,18 +133,18 @@ func CheckAssociate(resourceName string, firstResourceNameArray []string) bool {
 // AlertDuplicate alert if item is present more than once in array
 func AlertDuplicate(nameArray []string) error {
 	checkMap := make(map[string]bool, 0)
-	for i := 0; i < len(nameArray); i++ {
-		if checkMap[nameArray[i]] == true {
-			return fmt.Errorf("%s already exist", nameArray[i])
+	for _, name := range nameArray {
+		if checkMap[name] == true {
+			return fmt.Errorf("%s already exist", name)
 		} else {
-			checkMap[nameArray[i]] = true
+			checkMap[name] = true
 		}
 	}
 	return nil
 }
 
-// contains check if item is present in slice
-func contains(slice []string, item string) bool {
+// Contains check if item is present in slice
+func Contains(slice []string, item string) bool {
 	for _, val := range slice {
 		if val == item {
 			return true
@@ -160,6 +160,53 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if err := clusterScope.PatchObject(); err != nil {
 		return reconcile.Result{}, err
 	}
+        netName, err := CheckNetFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create net %s for OscCluster %s/%s", err, netName, osccluster.Namespace, osccluster.Name)
+        }
+        subnetName, err := CheckSubnetFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create subnet %s for OscCluster %s/%s", err, subnetName, osccluster.Namespace, osccluster.Name)
+        }
+
+        internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, osccluster.Namespace, osccluster.Name)
+        }
+
+        publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, publicIpName, osccluster.Namespace, osccluster.Name)
+        }
+
+	natName, err := CheckNatFormatParameters(clusterScope)
+	if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create natService %s for OscCluster %s/%s", err, natName, osccluster.Namespace, osccluster.Name)
+	}
+	
+        routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create routeTable %s for OscCluster %s/%s", err, routeTableName, osccluster.Namespace, osccluster.Name)
+        }
+
+        securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create securityGroup %s for OscCluster %s/%s", err, securityGroupName, osccluster.Namespace, osccluster.Name)
+        }
+
+        routeName, err := CheckRouteFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create route %s for OscCluster %s/%s", err, routeName, osccluster.Namespace, osccluster.Name)
+        }
+
+        securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create security group rule %s for OscCluster %s/%s", err, securityGroupRuleName, osccluster.Namespace, osccluster.Name)
+        }
+        reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
+        if err != nil {
+                return reconcile.Result{}, fmt.Errorf("%w: Can not create loadBalancer %s for OscCluster %s/%s", err, reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
+        }
 
 	duplicateResourceRouteTableErr := CheckRouteTableOscDuplicateName(clusterScope)
 	if duplicateResourceRouteTableErr != nil {
@@ -216,48 +263,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, CheckOscAssociateLoadBalancerSecurityGroupErr
 	}
 
-	netName, err := CheckNetFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create net %s for OscCluster %s/%s", err, netName, osccluster.Namespace, osccluster.Name)
-	}
-	subnetName, err := CheckSubnetFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create subnet %s for OscCluster %s/%s", err, subnetName, osccluster.Namespace, osccluster.Name)
-	}
-
-	internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, osccluster.Namespace, osccluster.Name)
-	}
-
-	publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, publicIpName, osccluster.Namespace, osccluster.Name)
-	}
-
-	routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create routeTable %s for OscCluster %s/%s", err, routeTableName, osccluster.Namespace, osccluster.Name)
-	}
-
-	securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create securityGroup %s for OscCluster %s/%s", err, securityGroupName, osccluster.Namespace, osccluster.Name)
-	}
-
-	routeName, err := CheckRouteFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create route %s for OscCluster %s/%s", err, routeName, osccluster.Namespace, osccluster.Name)
-	}
-
-	securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create security group rule %s for OscCluster %s/%s", err, securityGroupRuleName, osccluster.Namespace, osccluster.Name)
-	}
-	reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not create loadBalancer %s for OscCluster %s/%s", err, reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
-	}
 	reconcileNet, err := reconcileNet(ctx, clusterScope)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile net")

@@ -52,12 +52,7 @@ func CheckPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) err
 	natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.PublicIps == nil {
-		networkSpec.SetPublicIpDefaultValue()
-		publicIpsSpec = networkSpec.PublicIps
-	} else {
-		publicIpsSpec = clusterScope.GetPublicIp()
-	}
+	publicIpsSpec = networkSpec.PublicIps
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
 		resourceNameList = append(resourceNameList, publicIpName)
@@ -76,13 +71,7 @@ func CheckPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	clusterScope.Info("Check unique name publicIp")
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	var resourceNameList []string
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.PublicIps == nil {
-		networkSpec.SetPublicIpDefaultValue()
-		publicIpsSpec = networkSpec.PublicIps
-	} else {
-		publicIpsSpec = clusterScope.GetPublicIp()
-	}
+	publicIpsSpec = clusterScope.GetPublicIp()
 	for _, publicIpSpec := range publicIpsSpec {
 		resourceNameList = append(resourceNameList, publicIpSpec.Name)
 	}
@@ -102,13 +91,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 
 	clusterScope.Info("Create PublicIp")
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.PublicIps == nil {
-		networkSpec.SetPublicIpDefaultValue()
-		publicIpsSpec = networkSpec.PublicIps
-	} else {
-		publicIpsSpec = clusterScope.GetPublicIp()
-	}
+	publicIpsSpec = clusterScope.GetPublicIp()
         var publicIpId string
 	publicIpRef := clusterScope.GetPublicIpRef()
 	for _, publicIpSpec := range publicIpsSpec {
@@ -130,7 +113,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 		if len(publicIpRef.ResourceMap) == 0 {
 			publicIpRef.ResourceMap = make(map[string]string)
 		}
-		if !contains(publicIpIds, publicIpId) {
+		if !Contains(publicIpIds, publicIpId) {
 			publicIp, err := securitysvc.CreatePublicIp(publicIpName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w: Can not create publicIp for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
@@ -171,7 +154,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.UID()
 		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		if !contains(publicIpIds, publicIpId) {
+		if !Contains(publicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}

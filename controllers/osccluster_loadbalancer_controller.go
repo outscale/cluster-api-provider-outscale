@@ -18,7 +18,6 @@ func CheckLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 	var resourceNameList []string
 	clusterScope.Info("check match subnet with loadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.UID()
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
@@ -64,7 +63,6 @@ func CheckLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 	var resourceNameList []string
 	clusterScope.Info("check match securityGroup with loadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.UID()
 	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
@@ -94,7 +92,6 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 	clusterScope.Info("Create Loadbalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerSpec.SetDefaultValue()
 	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -142,7 +139,6 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 
 	clusterScope.Info("Delete LoadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerSpec.SetDefaultValue()
 	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, err

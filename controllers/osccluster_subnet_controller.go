@@ -49,13 +49,7 @@ func CheckSubnetOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("Check unique subnet")
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.GetSubnet()
-	}
+	subnetsSpec = clusterScope.GetSubnet()
 	for _, subnetSpec := range subnetsSpec {
 		resourceNameList = append(resourceNameList, subnetSpec.Name)
 	}
@@ -82,13 +76,8 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
 		return reconcile.Result{}, err
 	}
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.GetSubnet()
-	}
+	subnetsSpec = clusterScope.GetSubnet()
+	
 	subnetRef := clusterScope.GetSubnetRef()
 	clusterScope.Info("### Get subnetId ###", "subnet", subnetRef.ResourceMap)
 	var subnetIds []string
@@ -105,7 +94,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
 		if subnetSpec.ResourceId != "" {
 			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
 		}
-		if !contains(subnetIds, subnetId) {
+		if !Contains(subnetIds, subnetId) {
 			subnet, err := netsvc.CreateSubnet(subnetSpec, netId, subnetName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w: Can not create subnet for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
@@ -126,13 +115,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	clusterScope.Info("Delete subnet")
 
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.GetSubnet()
-	}
+	subnetsSpec = clusterScope.GetSubnet()
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.UID()
@@ -149,7 +132,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.UID()
 		subnetId := subnetRef.ResourceMap[subnetName]
-		if !contains(subnetIds, subnetId) {
+		if !Contains(subnetIds, subnetId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}

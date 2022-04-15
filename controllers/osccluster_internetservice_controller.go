@@ -41,7 +41,6 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 
 	clusterScope.Info("Create InternetGateway")
 	internetServiceSpec := clusterScope.GetInternetService()
-	internetServiceSpec.SetDefaultValue()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
 
@@ -89,7 +88,6 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	clusterScope.Info("Delete internetService")
 
 	internetServiceSpec := clusterScope.GetInternetService()
-	internetServiceSpec.SetDefaultValue()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.UID()
 
