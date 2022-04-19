@@ -125,7 +125,6 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		Host: controlPlaneEndpoint,
 		Port: controlPlanePort,
 	})
-	clusterScope.Info("Waiting on Dns Name")
 	return reconcile.Result{}, nil
 
 }
