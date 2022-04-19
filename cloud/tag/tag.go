@@ -20,7 +20,7 @@ func AddTag(tagKey string, tagValue string, resourceIds []string, api *osc.APICl
 	}
 	_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
 	if err != nil {
-		fmt.Sprintf("Error with http result %s", httpRes.Status)
+		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
 	}
 	return nil

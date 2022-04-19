@@ -4,7 +4,7 @@ There are a relationship between controller
 # Configuration
 
 ## cluster infrastructure controller OscCluster
-exemple:
+example:
 ```
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster

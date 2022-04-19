@@ -262,7 +262,7 @@ var (
 	DefaultSecurityGroupRuleName string = "cluster-api-securitygrouprule"
 	DefaultFlow                  string = "Inbound"
 	DefaultIpProtocol            string = "tcp"
-	DefaultRuleIpRange           string = "46.231.147.5"
+	DefaultRuleIpRange           string = "46.231.147.5/32"
 	DefaultFromPortRange         int32  = 6443
 	DefaultToPortRange           int32  = 6443
 )
@@ -377,16 +377,16 @@ func (network *OscNetwork) SetPublicIpDefaultValue() {
 	}
 }
 
-// SetSubnetDefaultValue set the Sunet default values from subnet configuration
+// SetSubnetDefaultValue set the Subnet default values from subnet configuration
 func (network *OscNetwork) SetSubnetDefaultValue() {
 	if len(network.Subnets) == 0 {
 		subnet := OscSubnet{
 			Name:          DefaultSubnetName,
 			IpSubnetRange: DefaultIpSubnetRange,
 		}
-		var subnets []*OscSubnet = network.Subnets
-		subnets = append(subnets, &subnet)
-		network.Subnets = subnets
+		network.Subnets = []*OscSubnet{
+			&subnet,
+		}
 	}
 
 }

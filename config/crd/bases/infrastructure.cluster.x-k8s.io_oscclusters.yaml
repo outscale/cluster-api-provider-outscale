@@ -206,28 +206,42 @@ spec:
                     items:
                       properties:
                         description:
+                          description: The description of the security group
                           type: string
                         name:
+                          description: The tag name associate with the security group
                           type: string
                         resourceId:
+                          description: The Security Group Id response
                           type: string
                         securityGroupRules:
+                          description: The Security Group Rules configuration
                           items:
                             properties:
                               flow:
+                                description: The flow of the security group (inbound
+                                  or outbound)
                                 type: string
                               fromPortRange:
+                                description: The beginning of the port range
                                 format: int32
                                 type: integer
                               ipProtocol:
+                                description: The ip protocol name (tcp, udp, icmp
+                                  or -1)
                                 type: string
                               ipRange:
+                                description: The ip range of the security group rule
                                 type: string
                               name:
+                                description: The tag name associate with the security
+                                  group
                                 type: string
                               resourceId:
+                                description: The security group rule id
                                 type: string
                               toPortRange:
+                                description: The end of the port range
                                 format: int32
                                 type: integer
                             type: object

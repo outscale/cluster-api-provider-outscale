@@ -78,7 +78,6 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 		netRef.ResourceMap[netName] = net.GetNetId()
 		netSpec.ResourceId = net.GetNetId()
 	}
-	clusterScope.Info("Info net", "net", net)
 	return reconcile.Result{}, nil
 }
 
