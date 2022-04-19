@@ -188,8 +188,8 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 			return reconcile.Result{}, fmt.Errorf("%w Can not create  securityGroupRule for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 	}
-	securityGroupRuleRef.ResourceMap[securityGroupRuleName] = *securityGroupFromSecurityGroupRule.SecurityGroupId
-	securityGroupRuleSpec.ResourceId = *securityGroupFromSecurityGroupRule.SecurityGroupId
+	securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupFromSecurityGroupRule.GetSecurityGroupId()
+	securityGroupRuleSpec.ResourceId = securityGroupFromSecurityGroupRule.GetSecurityGroupId()
 	return reconcile.Result{}, nil
 }
 
@@ -207,13 +207,8 @@ func DeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			buffer := new(strings.Builder)
 			_, err := io.Copy(buffer, httpRes.Body)
 			httpResBody := buffer.String()
-			//			httpResBodyWithoutSuffix := strings.TrimSuffix(httpResBody, "}")
-			//			httpResBodyJsonFormat := strings.TrimPrefix(httpResBodyWithoutSuffix, "{")
-			clusterScope.Info("Find info", "securitygroup", httpResBody)
 			httpResBodyData := []byte(httpResBody)
 			httpResBodyParsed, err := gabs.ParseJSON(httpResBodyData)
-			clusterScope.Info("Find error", "securitygroup", httpResBodyData)
-			clusterScope.Info("Find parse", "securitygroup", httpResBodyParsed)
 
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)

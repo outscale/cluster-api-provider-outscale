@@ -6,16 +6,17 @@ import (
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/pkg/errors"
 )
 
 // CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error) {
-	IpSubnetRange, err := ValidateCidr(spec.IpSubnetRange)
+	ipSubnetRange, err := ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
 	}
 	subnetRequest := osc.CreateSubnetRequest{
-		IpRange: IpSubnetRange,
+		IpRange: ipSubnetRange,
 		NetId:   netId,
 	}
 	oscApiClient := s.scope.GetApi()
@@ -31,7 +32,11 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return subnetResponse.Subnet, nil
+	subnet, ok := subnetResponse.GetSubnetOk()
+	if !ok {
+		return nil, errors.New("Can not create subnet")
+	}
+	return subnet, nil
 }
 
 // DeleteSubnet delete the subnet
@@ -61,11 +66,15 @@ func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	subnets := *readSubnetsResponse.Subnets
-	if len(subnets) == 0 {
+	subnets, ok := readSubnetsResponse.GetSubnetsOk()
+	if !ok {
+		return nil, errors.New("Can not get Subnets")
+	}
+	if len(*subnets) == 0 {
 		return nil, nil
 	} else {
-		return &subnets[0], nil
+		subnet := *subnets
+		return &subnet[0], nil
 	}
 }
 
@@ -84,11 +93,14 @@ func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
 		return nil, err
 	}
 	var subnetIds []string
-	subnets := *readSubnetsResponse.Subnets
-	if len(subnets) != 0 {
-		for _, subnet := range subnets {
-			subnetId := *subnet.SubnetId
-			subnetIds = append(subnetIds, subnetId)
+	subnets, ok := readSubnetsResponse.GetSubnetsOk()
+	if !ok {
+		return nil, errors.New("Can not get Subnets")
+	}
+	if len(*subnets) != 0 {
+		for _, subnet := range *subnets {
+			subnetId := subnet.SubnetId
+			subnetIds = append(subnetIds, *subnetId)
 		}
 	}
 	return subnetIds, nil
