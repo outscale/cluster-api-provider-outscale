@@ -74,8 +74,8 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 			return reconcile.Result{}, fmt.Errorf("%w Can not link internetService with net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 		clusterScope.Info("### Get internetService ###", "internetservice", internetService)
-		internetServiceRef.ResourceMap[internetServiceName] = *internetService.InternetServiceId
-		internetServiceSpec.ResourceId = *internetService.InternetServiceId
+		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
+		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
 
 	}
 	return reconcile.Result{}, nil

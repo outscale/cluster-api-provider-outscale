@@ -115,8 +115,8 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 			return reconcile.Result{}, fmt.Errorf("%w Can not create natservice for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 		clusterScope.Info("### Get natService ###", "natservice", natService)
-		natServiceRef.ResourceMap[natServiceName] = *natService.NatServiceId
-		natServiceSpec.ResourceId = *natService.NatServiceId
+		natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
+		natServiceSpec.ResourceId = natService.GetNatServiceId()
 	}
 	return reconcile.Result{}, nil
 }
@@ -128,8 +128,6 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 
 	clusterScope.Info("Delete natService")
 	natServiceSpec := clusterScope.GetNatService()
-	//	natServiceRef := clusterScope.GetNatServiceRef()
-	//	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 	natServiceId := natServiceSpec.ResourceId
 	natservice, err := netsvc.GetNatService(natServiceId)
 	if err != nil {

@@ -73,10 +73,10 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 		clusterScope.Info("### Get net ###", "net", net)
-		netRef.ResourceMap[netName] = *net.NetId
+		netRef.ResourceMap[netName] = net.GetNetId()
 		netSpec.ResourceId = *net.NetId
-		netRef.ResourceMap[netName] = *net.NetId
-		netSpec.ResourceId = *net.NetId
+		netRef.ResourceMap[netName] = net.GetNetId()
+		netSpec.ResourceId = net.GetNetId()
 	}
 	clusterScope.Info("Info net", "net", net)
 	return reconcile.Result{}, nil
@@ -89,8 +89,6 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
-//	netRef := clusterScope.GetNetRef()
-//	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	netId :=  netSpec.ResourceId 
 
 	clusterScope.Info("Delete net")

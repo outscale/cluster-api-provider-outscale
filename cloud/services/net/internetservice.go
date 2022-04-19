@@ -3,7 +3,7 @@ package net
 import (
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-
+	"github.com/pkg/errors"
 	"fmt"
 )
 
@@ -23,7 +23,11 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return internetServiceResponse.InternetService, nil
+	internetService, ok := internetServiceResponse.GetInternetServiceOk()
+	if !ok {
+		return nil, errors.New("Can not create internetService")
+	}
+	return internetService, nil
 }
 
 // DeleteInternetService delete the internet service
@@ -86,10 +90,14 @@ func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetSer
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	internetServices := *readInternetServiceResponse.InternetServices
-	if len(internetServices) == 0 {
+	internetServices, ok := readInternetServiceResponse.GetInternetServicesOk()
+	if !ok {
+		return nil, errors.New("Can not read internetService")
+	}
+	if len(*internetServices) == 0 {
 		return nil, nil
 	} else {
-		return &internetServices[0], nil
+		internetService := *internetServices
+		return &internetService[0], nil
 	}
 }

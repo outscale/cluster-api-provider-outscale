@@ -22,7 +22,11 @@ func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, se
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return securityGroupResponse.SecurityGroup, nil
+	securityGroup, ok := securityGroupResponse.GetSecurityGroupOk()
+	if !ok {
+		return nil, errors.New("Can not create securitygroup")
+	}
+	return securityGroup, nil
 }
 
 func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
@@ -41,7 +45,11 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return securityGroupRuleResponse.SecurityGroup, nil
+	securityGroupRule, ok := securityGroupRuleResponse.GetSecurityGroupOk()
+	if !ok {
+		return nil, errors.New("Can not get securityGroup")
+	}
+	return securityGroupRule, nil
 }
 
 func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) error {
@@ -88,11 +96,15 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	securitygroups := *readSecurityGroupsResponse.SecurityGroups
-	if len(securitygroups) == 0 {
+	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
+	if !ok {
+		return nil, errors.New("Can not get securityGroup")
+	}
+	if len(*securitygroups) == 0 {
 		return nil, nil
 	} else {
-		return &securitygroups[0], nil
+		securitygroup := *securitygroups
+		return &securitygroup[0], nil
 	}
 }
 
@@ -129,11 +141,15 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	securityGroups := *readSecurityGroupRuleResponse.SecurityGroups
-	if len(securityGroups) == 0 {
+	securityGroups, ok := readSecurityGroupRuleResponse.GetSecurityGroupsOk()
+	if !ok {
+		return nil, errors.New("Can not get securityGroup")
+	}
+	if len(*securityGroups) == 0 {
 		return nil, nil
 	} else {
-		return &securityGroups[0], nil
+		securityGroup := *securityGroups
+		return &securityGroup[0], nil
 	}
 }
 func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) {
@@ -150,10 +166,13 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) 
 		return nil, err
 	}
 	var securityGroupIds []string
-	securityGroups := *readSecurityGroupsResponse.SecurityGroups
-	if len(securityGroups) != 0 {
-		for _, securityGroup := range securityGroups {
-			securityGroupId := *securityGroup.SecurityGroupId
+	securityGroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
+	if !ok {
+		return nil, errors.New("Can not get securityGroup")
+	}
+	if len(*securityGroups) != 0 {
+		for _, securityGroup := range *securityGroups {
+			securityGroupId := securityGroup.GetSecurityGroupId()
 			securityGroupIds = append(securityGroupIds, securityGroupId)
 		}
 	}

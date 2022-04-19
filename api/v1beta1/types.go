@@ -1,4 +1,4 @@
-package v0beta1
+package v1beta1
 
 type OscNetwork struct {
 	// The Load Balancer configuration

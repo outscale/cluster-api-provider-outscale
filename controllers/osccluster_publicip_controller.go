@@ -96,7 +96,6 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 	publicIpRef := clusterScope.GetPublicIpRef()
 	var publicIpIds []string
 	for _, publicIpSpec := range publicIpsSpec {
-		//		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		publicIpId = publicIpSpec.ResourceId
 		publicIpIds = append(publicIpIds, publicIpId)
 	}
@@ -121,8 +120,8 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 			}
 			clusterScope.Info("### Get publicIp  ###", "publicip", publicIp)
-			publicIpRef.ResourceMap[publicIpName] = *publicIp.PublicIpId
-			publicIpSpec.ResourceId = *publicIp.PublicIpId
+			publicIpRef.ResourceMap[publicIpName] = publicIp.GetPublicIpId()
+			publicIpSpec.ResourceId = publicIp.GetPublicIpId()
 		}
 	}
 	return reconcile.Result{}, nil
@@ -144,9 +143,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	}
 	var publicIpIds []string
 	var publicIpId string
-	//	publicIpRef := clusterScope.GetPublicIpRef()
 	for _, publicIpSpec := range publicIpsSpec {
-		//		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		publicIpId = publicIpSpec.ResourceId
 		publicIpIds = append(publicIpIds, publicIpId)
 	}

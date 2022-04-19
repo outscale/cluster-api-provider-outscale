@@ -5,6 +5,8 @@ import (
 
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/pkg/errors"
+
 )
 
 // CreateNatService create the nat in the public subnet of the net
@@ -26,7 +28,11 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return natServiceResponse.NatService, nil
+	natService, ok := natServiceResponse.GetNatServiceOk()
+	if !ok {
+		return nil, errors.New("Can not create natSrvice")
+	}	
+	return natService, nil
 }
 
 // DeleteNatService  delete the nat
@@ -56,10 +62,14 @@ func (s *Service) GetNatService(natServiceId string) (*osc.NatService, error) {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	natServices := *readNatServiceResponse.NatServices
-	if len(natServices) == 0 {
+	natServices, ok := readNatServiceResponse.GetNatServicesOk()
+	if !ok {
+		return nil, errors.New("Can not get natService")
+	}
+	if len(*natServices) == 0 {
 		return nil, nil
 	} else {
-		return &natServices[0], nil
+		natService := *natServices
+		return &natService[0], nil
 	}
 }

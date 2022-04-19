@@ -46,7 +46,11 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) 
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return netResponse.Net, nil
+	net, ok := netResponse.GetNetOk()
+	if !ok {
+		return nil, errors.New("Can not create net")
+	}
+	return net, nil
 }
 
 // DeleteNet delete the net
@@ -76,10 +80,14 @@ func (s *Service) GetNet(netId string) (*osc.Net, error) {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	nets := *readNetsResponse.Nets
-	if len(nets) == 0 {
+	nets, ok := readNetsResponse.GetNetsOk()
+	if !ok {
+		return nil, errors.New("Can not get net")
+	}
+	if len(*nets) == 0 {
 		return nil, nil
-	} else {
-		return &nets[0], nil
+	} else {		
+		net := *nets
+		return &net[0], nil
 	}
 }

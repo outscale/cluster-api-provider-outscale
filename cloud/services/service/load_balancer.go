@@ -93,37 +93,37 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 	if err != nil {
 		return nil, err
 	}
-	CheckInterval, err := s.ValidateInterval(spec.HealthCheck.CheckInterval)
+	checkInterval, err := s.ValidateInterval(spec.HealthCheck.CheckInterval)
 	if err != nil {
 		return nil, err
 	}
-	HealthyThreshold, err := s.ValidateThreshold(spec.HealthCheck.HealthyThreshold)
+	healthyThreshold, err := s.ValidateThreshold(spec.HealthCheck.HealthyThreshold)
 	if err != nil {
 		return nil, err
 	}
-	Port, err := ValidatePort(spec.HealthCheck.Port)
+	port, err := ValidatePort(spec.HealthCheck.Port)
 	if err != nil {
 		return nil, err
 	}
-	Protocol, err := s.ValidateProtocol(spec.HealthCheck.Protocol)
+	protocol, err := s.ValidateProtocol(spec.HealthCheck.Protocol)
 	if err != nil {
 		return nil, err
 	}
-	Timeout, err := s.ValidateTimeout(spec.HealthCheck.Timeout)
+	timeout, err := s.ValidateTimeout(spec.HealthCheck.Timeout)
 	if err != nil {
 		return nil, err
 	}
-	UnhealthyThreshold, err := s.ValidateThreshold(spec.HealthCheck.UnhealthyThreshold)
+	unhealthyThreshold, err := s.ValidateThreshold(spec.HealthCheck.UnhealthyThreshold)
 	if err != nil {
 		return nil, err
 	}
 	healthCheck := osc.HealthCheck{
-		CheckInterval:      CheckInterval,
-		HealthyThreshold:   HealthyThreshold,
-		Port:               Port,
-		Protocol:           Protocol,
-		Timeout:            Timeout,
-		UnhealthyThreshold: UnhealthyThreshold,
+		CheckInterval:      checkInterval,
+		HealthyThreshold:   healthyThreshold,
+		Port:               port,
+		Protocol:           protocol,
+		Timeout:            timeout,
+		UnhealthyThreshold: unhealthyThreshold,
 	}
 	updateLoadBalancerRequest := osc.UpdateLoadBalancerRequest{
 		LoadBalancerName: loadBalancerName,
@@ -136,7 +136,11 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return updateLoadBalancerResponse.LoadBalancer, nil
+	loadBalancer, ok := updateLoadBalancerResponse.GetLoadBalancerOk()
+	if !ok {
+		return nil, errors.New("Can not update loadbalancer")
+	}
+	return loadBalancer, nil
 }
 
 // GetLoadBalancer retrieve loadBalancer object from spec
@@ -157,11 +161,14 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 		return nil, err
 	}
 	var lb []osc.LoadBalancer
-	loadBalancers := *readLoadBalancerResponse.LoadBalancers
-	if len(loadBalancers) == 0 {
+	loadBalancers, ok := readLoadBalancerResponse.GetLoadBalancersOk()
+	if !ok {
+		return nil, errors.New("Can not get loadbalancer")
+	}
+	if len(*loadBalancers) == 0 {
 		return nil, nil
 	} else {
-		lb = append(lb, loadBalancers...)
+		lb = append(lb, *loadBalancers...)
 		return &lb[0], nil
 	}
 }
@@ -175,27 +182,27 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 
 	loadBalancerType := spec.LoadBalancerType
 
-	BackendPort, err := ValidatePort(spec.Listener.BackendPort)
+	backendPort, err := ValidatePort(spec.Listener.BackendPort)
 	if err != nil {
 		return nil, err
 	}
-	LoadBalancerPort, err := ValidatePort(spec.Listener.LoadBalancerPort)
+	loadBalancerPort, err := ValidatePort(spec.Listener.LoadBalancerPort)
 	if err != nil {
 		return nil, err
 	}
-	BackendProtocol, err := s.ValidateProtocol(spec.Listener.BackendProtocol)
+	backendProtocol, err := s.ValidateProtocol(spec.Listener.BackendProtocol)
 	if err != nil {
 		return nil, err
 	}
-	LoadBalancerProtocol, err := s.ValidateProtocol(spec.Listener.LoadBalancerProtocol)
+	loadBalancerProtocol, err := s.ValidateProtocol(spec.Listener.LoadBalancerProtocol)
 	if err != nil {
 		return nil, err
 	}
 	first_listener := osc.ListenerForCreation{
-		BackendPort:          BackendPort,
-		BackendProtocol:      &BackendProtocol,
-		LoadBalancerPort:     LoadBalancerPort,
-		LoadBalancerProtocol: LoadBalancerProtocol,
+		BackendPort:          backendPort,
+		BackendProtocol:      &backendProtocol,
+		LoadBalancerPort:     loadBalancerPort,
+		LoadBalancerProtocol: loadBalancerProtocol,
 	}
 
 	loadBalancerRequest := osc.CreateLoadBalancerRequest{
@@ -212,7 +219,11 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	return loadBalancerResponse.LoadBalancer, nil
+	loadBalancer, ok := loadBalancerResponse.GetLoadBalancerOk()
+	if !ok {
+		return nil, errors.New("Can not create loadbalancer")
+	}
+	return loadBalancer, nil
 }
 
 // DeleteLoadBalancer delete the loadbalancer

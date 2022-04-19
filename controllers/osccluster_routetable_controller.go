@@ -190,8 +190,8 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 			return reconcile.Result{}, fmt.Errorf("%w Can not create route for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 	}
-	routeRef.ResourceMap[routeName] = *routeTableFromRoute.RouteTableId
-	routeSpec.ResourceId = *routeTableFromRoute.RouteTableId
+	routeRef.ResourceMap[routeName] = routeTableFromRoute.GetRouteTableId()
+	routeSpec.ResourceId = routeTableFromRoute.GetRouteTableId()
 	return reconcile.Result{}, nil
 
 }
@@ -315,8 +315,8 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) 
 				return reconcile.Result{}, fmt.Errorf("%w Can not link routetable with net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 			}
 			clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
-			routeTablesRef.ResourceMap[routeTableName] = *routeTable.RouteTableId
-			routeTableSpec.ResourceId = *routeTable.RouteTableId
+			routeTablesRef.ResourceMap[routeTableName] = routeTable.GetRouteTableId()
+			routeTableSpec.ResourceId = routeTable.GetRouteTableId()
 			linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
 
 			clusterScope.Info("check route")
