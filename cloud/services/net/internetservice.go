@@ -10,8 +10,8 @@ import (
 // CreateInternetService launch the internet service
 func (s *Service) CreateInternetService(internetServiceName string) (*osc.InternetService, error) {
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	internetServiceResponse, httpRes, err := oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -29,8 +29,8 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 // DeleteInternetService delete the internet service
 func (s *Service) DeleteInternetService(internetServiceId string) error {
 	deleteInternetServiceRequest := osc.DeleteInternetServiceRequest{InternetServiceId: internetServiceId}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -45,8 +45,8 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 		InternetServiceId: internetServiceId,
 		NetId:             netId,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -61,14 +61,14 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 		InternetServiceId: internetServiceId,
 		NetId:             netId,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
 	}
-        
+
 	return nil
 }
 
@@ -79,8 +79,8 @@ func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetSer
 			InternetServiceIds: &[]string{internetServiceId},
 		},
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	readInternetServiceResponse, httpRes, err := oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -88,7 +88,7 @@ func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetSer
 	}
 	internetServices := *readInternetServiceResponse.InternetServices
 	if len(internetServices) == 0 {
-		return nil, nil 
+		return nil, nil
 	} else {
 		return &internetServices[0], nil
 	}

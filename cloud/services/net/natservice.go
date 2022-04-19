@@ -13,8 +13,8 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 		PublicIpId: publicIpId,
 		SubnetId:   subnetId,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	natServiceResponse, httpRes, err := oscApiClient.NatServiceApi.CreateNatService(oscAuthClient).CreateNatServiceRequest(natServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -32,8 +32,8 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 // DeleteNatService  delete the nat
 func (s *Service) DeleteNatService(natServiceId string) error {
 	deleteNatServiceRequest := osc.DeleteNatServiceRequest{NatServiceId: natServiceId}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.NatServiceApi.DeleteNatService(oscAuthClient).DeleteNatServiceRequest(deleteNatServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -49,8 +49,8 @@ func (s *Service) GetNatService(natServiceId string) (*osc.NatService, error) {
 			NatServiceIds: &[]string{natServiceId},
 		},
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	readNatServiceResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServiceRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)

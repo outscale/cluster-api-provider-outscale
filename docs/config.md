@@ -38,6 +38,16 @@ spec:
             targetName: cluster-api-internetservice
             targetType: gateway 
             destination: "0.0.0.0/0"
+    securityGroups:
+      - name: cluster-api-securitygroups
+        description: Security Group with cluster-api   
+        securityGroupRules:
+          - name: cluste-api-securitygrouprule
+            flow: Inbound
+            ipProtocol: tcp
+            ipRange: "46.231.147.5/32"
+            fromPortRange: 22
+            toPortRange: 22 
 ```
 ### loadBalancer
 
@@ -124,3 +134,23 @@ spec:
 | `destination` | `0.0.0.0/0` | false |  the destination match Ip range with CIDR notation
 
 
+### securityGroup
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `name`| `cluster-api-securitygroup` | false | The tag name associate with the security group
+| `description` | `Security Group with cluster-api` | false | The description of the security group
+| `securityGroupRules` | `` | false | The securityGroupRules configuration
+
+
+
+### securityGroupRule
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `name`| `cluster-api-securitygrouprule` | false | The tag name associate with the security group
+| `flow` | `Inbound` | false | The flow of the security group (inbound or outbound)
+| `ipProtocol` | `tcp` | false |  The ip protocol name (tcp, udp, icmp or -1)
+| `ipRange` | `46.231.147.5/32` | false |  The ip range of the security group rule
+| `fromPortRange` | `6443` | false |  The beginning of the port range
+| `toPortRange` | `6443` | false |  The end of the port range

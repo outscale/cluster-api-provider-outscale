@@ -1,4 +1,4 @@
-package v1beta1
+package v0beta1
 
 import clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
@@ -30,8 +30,8 @@ const (
 )
 
 const (
-	SecurityGroupReadyCondition clusterv1.ConditionType = "SecurityGroupsReady"
-        SecurityGroupReconciliationFailedReason             = "SecurityGroupReconciliationFailed"
+	SecurityGroupReadyCondition             clusterv1.ConditionType = "SecurityGroupsReady"
+	SecurityGroupReconciliationFailedReason                         = "SecurityGroupReconciliationFailed"
 )
 
 const (

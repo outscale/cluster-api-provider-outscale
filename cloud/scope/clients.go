@@ -18,11 +18,11 @@ type OscClient struct {
 func newOscClient() (*OscClient, error) {
 	accessKey := os.Getenv("OSC_ACCESS_KEY")
 	if accessKey == "" {
-		return nil, errors.New("env var accessKey is required")
+		return nil, errors.New("environment variable OSC_ACCESS_KEY is required")
 	}
 	secretKey := os.Getenv("OSC_SECRET_KEY")
 	if secretKey == "" {
-		return nil, errors.New("env var secretKey is required")
+		return nil, errors.New("environment variable OSC_SECRET_KEY is required")
 	}
 	oscClient := &OscClient{
 		api: osc.NewAPIClient(osc.NewConfiguration()),

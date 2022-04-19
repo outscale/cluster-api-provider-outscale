@@ -129,7 +129,6 @@ func CheckAssociate(resourceName string, ResourceNames []string) bool {
 	return false
 }
 
-
 // AlertDuplicate alert if item is present more than once in array
 func AlertDuplicate(nameArray []string) error {
 	checkMap := make(map[string]bool, 0)
@@ -153,6 +152,7 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
+// reconcile reconcile the creation of the cluster
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	clusterScope.Info("Reconcile OscCluster")
 	osccluster := clusterScope.OscCluster
@@ -160,54 +160,56 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if err := clusterScope.PatchObject(); err != nil {
 		return reconcile.Result{}, err
 	}
-        netName, err := CheckNetFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create net %s for OscCluster %s/%s", err, netName, osccluster.Namespace, osccluster.Name)
-        }
-        subnetName, err := CheckSubnetFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create subnet %s for OscCluster %s/%s", err, subnetName, osccluster.Namespace, osccluster.Name)
-        }
+	// Check that every element of the cluster spec has the good format (CIDR, Tag, ...)
+	netName, err := CheckNetFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create net %s for OscCluster %s/%s", err, netName, osccluster.GetNamespace, osccluster.GetName)
+	}
+	subnetName, err := CheckSubnetFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create subnet %s for OscCluster %s/%s", err, subnetName, osccluster.GetNamespace, osccluster.GetName)
+	}
 
-        internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, osccluster.Namespace, osccluster.Name)
-        }
+	internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, osccluster.GetNamespace, osccluster.GetName)
+	}
 
-        publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create internetService %s for OscCluster %s/%s", err, publicIpName, osccluster.Namespace, osccluster.Name)
-        }
+	publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create internetService %s for OscCluster %s/%s", err, publicIpName, osccluster.GetNamespace, osccluster.GetName)
+	}
 
 	natName, err := CheckNatFormatParameters(clusterScope)
 	if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create natService %s for OscCluster %s/%s", err, natName, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w Can not create natService %s for OscCluster %s/%s", err, natName, osccluster.GetNamespace, osccluster.GetName)
 	}
-	
-        routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create routeTable %s for OscCluster %s/%s", err, routeTableName, osccluster.Namespace, osccluster.Name)
-        }
 
-        securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create securityGroup %s for OscCluster %s/%s", err, securityGroupName, osccluster.Namespace, osccluster.Name)
-        }
+	routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create routeTable %s for OscCluster %s/%s", err, routeTableName, osccluster.GetNamespace, osccluster.GetName)
+	}
 
-        routeName, err := CheckRouteFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create route %s for OscCluster %s/%s", err, routeName, osccluster.Namespace, osccluster.Name)
-        }
+	securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup %s for OscCluster %s/%s", err, securityGroupName, osccluster.GetNamespace, osccluster.GetName)
+	}
 
-        securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create security group rule %s for OscCluster %s/%s", err, securityGroupRuleName, osccluster.Namespace, osccluster.Name)
-        }
-        reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
-        if err != nil {
-                return reconcile.Result{}, fmt.Errorf("%w: Can not create loadBalancer %s for OscCluster %s/%s", err, reconcileLoadBalancerName, osccluster.Namespace, osccluster.Name)
-        }
+	routeName, err := CheckRouteFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create route %s for OscCluster %s/%s", err, routeName, osccluster.GetNamespace, osccluster.GetName)
+	}
 
+	securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create security group rule %s for OscCluster %s/%s", err, securityGroupRuleName, osccluster.GetNamespace, osccluster.GetName)
+	}
+	reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create loadBalancer %s for OscCluster %s/%s", err, reconcileLoadBalancerName, osccluster.GetNamespace, osccluster.GetName)
+	}
+
+	// Check that every element of the cluster spec has a unique tag name
 	duplicateResourceRouteTableErr := CheckRouteTableOscDuplicateName(clusterScope)
 	if duplicateResourceRouteTableErr != nil {
 		return reconcile.Result{}, duplicateResourceRouteTableErr
@@ -238,6 +240,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, duplicateResourceSubnetErr
 	}
 
+	// Check that every element of the cluster spec which has other element depencies has the same dependencies tag name
+
 	CheckOscAssociatePublicIpErr := CheckPublicIpOscAssociateResourceName(clusterScope)
 	if CheckOscAssociatePublicIpErr != nil {
 		return reconcile.Result{}, CheckOscAssociatePublicIpErr
@@ -262,6 +266,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if CheckOscAssociateLoadBalancerSecurityGroupErr != nil {
 		return reconcile.Result{}, CheckOscAssociateLoadBalancerSecurityGroupErr
 	}
+
+	// Reconcile each element of the cluster
 
 	reconcileNet, err := reconcileNet(ctx, clusterScope)
 	if err != nil {
@@ -295,14 +301,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
 
-	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope)
-	if err != nil {
-		clusterScope.Error(err, "failed to reconcile routeTable")
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileRouteTables, err
-	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
-
 	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile securityGroup")
@@ -311,13 +309,13 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
-	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
+	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope)
 	if err != nil {
-		clusterScope.Error(err, "failed to reconcile load balancer")
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileLoadBalancer, err
+		clusterScope.Error(err, "failed to reconcile routeTable")
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileRouteTables, err
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
 	reconcileNatService, err := reconcileNatService(ctx, clusterScope)
 	if err != nil {
@@ -335,15 +333,25 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
+	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
+	if err != nil {
+		clusterScope.Error(err, "failed to reconcile load balancer")
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileLoadBalancer, err
+	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
+
 	clusterScope.Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
 	return reconcile.Result{}, nil
 }
 
-
+// reconcileDelete reconcile the deletion of the cluster
 func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	clusterScope.Info("Reconcile OscCluster")
 	osccluster := clusterScope.OscCluster
+
+	// reconcile deletion of each element of the cluster
 
 	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope)
 	if err != nil {
