@@ -7,14 +7,13 @@ import (
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-        osc "github.com/outscale/osc-sdk-go/v2"
-
 )
 
-// GetResourceId return the resourceId from the resourceMap base on resourceName (tag name + cluster object uid) and resourceType (net, subnet, gateway, route, route-table, public-ip)
+// NatGetResourceId return the NatId from the resourceMap base on NatName (tag name + cluster object uid)
 func GetNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	natServiceRef := clusterScope.GetNatServiceRef()
 	if natServiceId, ok := natServiceRef.ResourceMap[resourceName]; ok {
@@ -28,9 +27,9 @@ func CheckNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	clusterScope.Info("Check Nat name parameters")
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceSpec.SetDefaultValue()
-        natName := natServiceSpec.Name + "-" + clusterScope.UID()
-	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
-        natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
+	natName := natServiceSpec.Name + "-" + clusterScope.GetUID()
+	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
+	natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
 	natTagName, err := tag.ValidateTagNameValue(natName)
 	if err != nil {
 		return natTagName, err
@@ -46,14 +45,13 @@ func CheckNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	return "", nil
 }
 
-	 			
-// CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
+// CheckNatSubnetOscAssociateResourceName check that Nat Subnet dependancies tag name in both resource configuration are the same.
 func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("check match subnet with nat service")
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceSpec.SetDefaultValue()
-	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
+	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.Subnets == nil {
@@ -63,7 +61,7 @@ func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 		subnetsSpec = clusterScope.GetSubnet()
 	}
 	for _, subnetSpec := range subnetsSpec {
-		subnetName := subnetSpec.Name + "-" + clusterScope.UID()
+		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
 	checkOscAssociate := CheckAssociate(natSubnetName, resourceNameList)
@@ -83,15 +81,15 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 	clusterScope.Info("Create NatService")
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceRef := clusterScope.GetNatServiceRef()
-	natServiceName := natServiceSpec.Name + "-" + clusterScope.UID()
+	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 	var natService *osc.NatService
-	publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.UID()
+	publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
 	publicIpId, err := GetPublicIpResourceId(publicIpName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	subnetName := natServiceSpec.SubnetName + "-" + clusterScope.UID()
+	subnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
 
 	subnetId, err := GetSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
@@ -109,12 +107,12 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 			return reconcile.Result{}, err
 		}
 	}
-	
+
 	if natService == nil || natServiceSpec.ResourceId == "" {
 
 		natService, err := netsvc.CreateNatService(publicIpId, subnetId, natServiceName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w: Can not create natservice for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w Can not create natservice for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 		clusterScope.Info("### Get natService ###", "natservice", natService)
 		natServiceRef.ResourceMap[natServiceName] = *natService.NatServiceId
@@ -130,8 +128,8 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 
 	clusterScope.Info("Delete natService")
 	natServiceSpec := clusterScope.GetNatService()
-//	natServiceRef := clusterScope.GetNatServiceRef()
-//	natServiceName := natServiceSpec.Name + "-" + clusterScope.UID()
+	//	natServiceRef := clusterScope.GetNatServiceRef()
+	//	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 	natServiceId := natServiceSpec.ResourceId
 	natservice, err := netsvc.GetNatService(natServiceId)
 	if err != nil {
@@ -143,7 +141,7 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 	}
 	err = netsvc.DeleteNatService(natServiceId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not delete natService for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 	}
 	return reconcile.Result{}, err
 }

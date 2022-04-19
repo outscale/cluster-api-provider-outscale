@@ -18,7 +18,7 @@ metadata:
 spec:
   network:
     loadBalancer:
-      loadbalancername: OscSdkExample-7
+      loadbalancername: OscSdkExample-6
       loadbalancertype: internet-facing
       subnetname: cluster-api-subnet
       securitygroupname: cluster-api-securitygroups

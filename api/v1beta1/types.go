@@ -1,4 +1,4 @@
-package v1beta1
+package v0beta1
 
 type OscNetwork struct {
 	// The Load Balancer configuration
@@ -140,10 +140,18 @@ type OscRouteTable struct {
 }
 
 type OscSecurityGroup struct {
-	Name               string                 `json:"name,omitempty"`
-	Description        string                 `json:"description,omitempty"`
+	// The tag name associate with the security group
+	// +optional
+	Name string `json:"name,omitempty"`
+	// The description of the security group
+	// +optional
+	Description string `json:"description,omitempty"`
+	// The Security Group Rules configuration
+	// +optional
 	SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
-	ResourceId         string                 `json:"resourceId,omitempty"`
+	// The Security Group Id response
+	// +optional
+	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscPublicIp struct {
@@ -174,13 +182,27 @@ type OscRoute struct {
 }
 
 type OscSecurityGroupRule struct {
-	Name          string `json:"name,omitempty"`
-	Flow          string `json:"flow,omitempty"`
-	IpProtocol    string `json:"ipProtocol,omitempty"`
-	IpRange       string `json:"ipRange,omitempty"`
-	FromPortRange int32  `json:"fromPortRange,omitempty"`
-	ToPortRange   int32  `json:"toPortRange,omitempty"`
-	ResourceId    string `json:"resourceId,omitempty"`
+	// The tag name associate with the security group
+	// +optional
+	Name string `json:"name,omitempty"`
+	// The flow of the security group (inbound or outbound)
+	// +optional
+	Flow string `json:"flow,omitempty"`
+	// The ip protocol name (tcp, udp, icmp or -1)
+	// +optional
+	IpProtocol string `json:"ipProtocol,omitempty"`
+	// The ip range of the security group rule
+	// +optional
+	IpRange string `json:"ipRange,omitempty"`
+	// The beginning of the port range
+	// +optional
+	FromPortRange int32 `json:"fromPortRange,omitempty"`
+	// The end of the port range
+	// +optional
+	ToPortRange int32 `json:"toPortRange,omitempty"`
+	// The security group rule id
+	// +optional
+	ResourceId string `json:"resourceId,omitempty"`
 }
 
 // Map between resourceId and resourceName (tag Name with cluster UID)
@@ -305,6 +327,8 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 	}
 
 }
+
+// SetSecurityGroupDefaultValue set the security group default value
 
 func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 	if len(network.SecurityGroups) == 0 {

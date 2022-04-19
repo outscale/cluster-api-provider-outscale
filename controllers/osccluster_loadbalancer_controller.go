@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
@@ -13,13 +12,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
+// CheckLoadBalancerSubneOscAssociateResourceName check that LoadBalancer Subnet dependancies tag name in both resource configuration are the same.
 func CheckLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("check match subnet with loadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
-	loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.UID()
+	loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.Subnets == nil {
@@ -29,7 +28,7 @@ func CheckLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 		subnetsSpec = clusterScope.GetSubnet()
 	}
 	for _, subnetSpec := range subnetsSpec {
-		subnetName := subnetSpec.Name + "-" + clusterScope.UID()
+		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
 	checkOscAssociate := CheckAssociate(loadBalancerSubnetName, resourceNameList)
@@ -40,7 +39,7 @@ func CheckLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 	}
 }
 
-// CheckFormatParameters check every resource (net, subnet, ...) parameters format (Tag format, cidr format, ..)
+// CheckLoadBalancerFormatParameters check LoadBalancer parameters format (Tag format, cidr format, ..)
 func CheckLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check LoadBalancer name parameters")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -58,13 +57,13 @@ func CheckLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string
 	return "", nil
 }
 
-// CheckOscAssociateResourceName check that resourceType dependancies tag name in both resource configuration are the same.
+// CheckLoadBalancerSecurityOscAssociateResourceName check that LoadBalancer SecurityGroup dependancies tag name in both resource configuration are the same.
 func CheckLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("check match securityGroup with loadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
-	loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.UID()
+	loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
 	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.SecurityGroups == nil {
@@ -74,7 +73,7 @@ func CheckLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 		securityGroupsSpec = clusterScope.GetSecurityGroups()
 	}
 	for _, securityGroupSpec := range securityGroupsSpec {
-		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.UID()
+		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, securityGroupName)
 	}
 	checkOscAssociate := CheckAssociate(loadBalancerSecurityGroupName, resourceNameList)
@@ -96,12 +95,12 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.UID()
+	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetId, err := GetSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.UID()
+	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
 	securityGroupId, err := GetSecurityGroupResourceId(securityGroupName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -112,11 +111,11 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w: Can not create load balancer for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w Can not create load balancer for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 		loadbalancer, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w: Can not configure healthcheck for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
+			return reconcile.Result{}, fmt.Errorf("%w Can not configure healthcheck for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 		}
 
 	}
@@ -149,9 +148,8 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 	err = servicesvc.DeleteLoadBalancer(loadBalancerSpec)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w: Can not delete load balancer for Osccluster %s/%s", err, osccluster.Namespace, osccluster.Name)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete load balancer for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
 	}
 	clusterScope.Info("Wait LoadBalancer Delete")
-	time.Sleep(45 * time.Second)
-	return reconcile.Result{RequeueAfter: 45 * time.Second}, nil
+	return reconcile.Result{}, nil
 }

@@ -18,8 +18,8 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		IpRange: IpSubnetRange,
 		NetId:   netId,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	subnetResponse, httpRes, err := oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -37,8 +37,8 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 // DeleteSubnet delete the subnet
 func (s *Service) DeleteSubnet(subnetId string) error {
 	deleteSubnetRequest := osc.DeleteSubnetRequest{SubnetId: subnetId}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -54,8 +54,8 @@ func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
 			SubnetIds: &[]string{subnetId},
 		},
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -76,8 +76,8 @@ func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
 			NetIds: &[]string{netId},
 		},
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)

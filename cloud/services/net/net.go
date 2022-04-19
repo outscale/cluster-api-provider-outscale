@@ -3,8 +3,9 @@ package net
 import (
 	"fmt"
 	"net"
-	"strings"
 	"strconv"
+	"strings"
+
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -23,7 +24,6 @@ func ValidateCidr(cidr string) (string, error) {
 	return cidr, nil
 }
 
-
 // CreateNet create the net from spec (in order to retrieve ip range)
 func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error) {
 	ipRange, err := ValidateCidr(spec.IpRange)
@@ -33,8 +33,8 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) 
 	netRequest := osc.CreateNetRequest{
 		IpRange: ipRange,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	netResponse, httpRes, err := oscApiClient.NetApi.CreateNet(oscAuthClient).CreateNetRequest(netRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -52,8 +52,8 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) 
 // DeleteNet delete the net
 func (s *Service) DeleteNet(netId string) error {
 	deleteNetRequest := osc.DeleteNetRequest{NetId: netId}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -69,8 +69,8 @@ func (s *Service) GetNet(netId string) (*osc.Net, error) {
 			NetIds: &[]string{netId},
 		},
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	readNetsResponse, httpRes, err := oscApiClient.NetApi.ReadNets(oscAuthClient).ReadNetsRequest(readNetsRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)

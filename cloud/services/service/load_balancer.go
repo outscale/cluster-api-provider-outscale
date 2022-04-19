@@ -17,11 +17,11 @@ func ValidateLoadBalancerName(loadBalancerName string) bool {
 
 // ValidatePort check that the  port is a valide port
 func ValidatePort(port int32) (int32, error) {
-        if port > 0 && port < 65536 {
-        	return port, nil
-        } else {
+	if port > 0 && port < 65536 {
+		return port, nil
+	} else {
 		return port, errors.New("Invalid Port")
-        }
+	}
 }
 
 func ValidateLoadBalancerType(loadBalancerType string) bool {
@@ -38,36 +38,36 @@ func (s *Service) ValidateInterval(interval int32) (int32, error) {
 		return interval, nil
 	} else {
 		return interval, errors.New("Invalid Interval")
-        }
+	}
 }
 
 // ValidateThreshold check that the threshold is a valide number of ping
 func (s *Service) ValidateThreshold(threshold int32) (int32, error) {
 	if threshold > 0 && threshold < 11 {
-        	return threshold, nil	
+		return threshold, nil
 	} else {
 		return threshold, errors.New("Invalid threshold")
-        }
+	}
 }
 
 // ValidateTimeout check that the timeoout is a valide maximum time of second
 func (s *Service) ValidateTimeout(timeout int32) (int32, error) {
-        if timeout > 1 && timeout < 61 {
+	if timeout > 1 && timeout < 61 {
 		return timeout, nil
 	} else {
 		return timeout, errors.New("Invalid Timeout")
-        }
+	}
 }
 
 // GetName return the name of the loadBalancer
 func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
 	var name string
 	var clusterName string
-	if spec.LoadBalancerName != ""{
+	if spec.LoadBalancerName != "" {
 		name = spec.LoadBalancerName
 	} else {
-		clusterName = infrastructurev1beta1.OscReplaceName(s.scope.Name())
-		name = clusterName + "-" + "apiserver" + "-" + s.scope.UID()
+		clusterName = infrastructurev1beta1.OscReplaceName(s.scope.GetName())
+		name = clusterName + "-" + "apiserver" + "-" + s.scope.GetUID()
 	}
 	if !ValidateLoadBalancerName(name) {
 		return "", errors.New("Invalid Name")
@@ -129,8 +129,8 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 		LoadBalancerName: loadBalancerName,
 		HealthCheck:      &healthCheck,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	updateLoadBalancerResponse, httpRes, err := oscApiClient.LoadBalancerApi.UpdateLoadBalancer(oscAuthClient).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -149,8 +149,8 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 		LoadBalancerNames: &[]string{loadBalancerName},
 	}
 	readLoadBalancerRequest := osc.ReadLoadBalancersRequest{Filters: &filterLoadBalancer}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	readLoadBalancerResponse, httpRes, err := oscApiClient.LoadBalancerApi.ReadLoadBalancers(oscAuthClient).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -205,8 +205,8 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 		SecurityGroups:   &[]string{securityGroupId},
 		Subnets:          &[]string{subnetId},
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	loadBalancerResponse, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancer(oscAuthClient).CreateLoadBalancerRequest(loadBalancerRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -224,8 +224,8 @@ func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	deleteLoadBalancerRequest := osc.DeleteLoadBalancerRequest{
 		LoadBalancerName: loadBalancerName,
 	}
-	oscApiClient := s.scope.Api()
-	oscAuthClient := s.scope.Auth()
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.LoadBalancerApi.DeleteLoadBalancer(oscAuthClient).DeleteLoadBalancerRequest(deleteLoadBalancerRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
