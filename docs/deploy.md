@@ -13,41 +13,26 @@
 
 ## Clone
 
+Please clone the project:
 ```
-git clone https://github.com/outscale-vbr/cluster-api-provider-outscale
-cd cluster-api-provider-outscale
+git clone https://github.com/outscale-dev/cluster-api-provider-outscale
 ```
 
 ## User Credentials configuration 
+Put your ak/sk in osc-secret.yaml and launch:
 ```
-export OSC_ACCESS_KEY=my-osc-access-key
-export OSC_SECRET_KEY=my-osc-secret-key
-cat config/secret.yaml | \
-    sed "s/secret_key: \"\"/secret_key: \"$OSC_SECRET_KEY\"/g" | \
-    sed "s/access_key: \"\"/access_key: \"$OSC_ACCESS_KEY\"/g" > osc-secret.yaml
-/usr/local/bin/kubectl delete -f osc-secret.yaml --namespace=cluster-api-provider-outscale-system 
-/usr/local/bin/kubectl apply -f osc-secret.yaml --namespace=cluster-api-provider-outscale-system 
+/usr/local/bin/kubectl apply -f osc-secret.yaml
 ```
 
 ## Registry credentials configuration
 
-By default, if you use a private registry with credentials, registry credentials must be named regcred and must be deployed in cluster-api-provider-outscale-system namespace.
+### Public Outscale dockerhub
 
-```
-kubectl get secret regcred  -n cluster-api-provider-outscale-system 
-NAME      TYPE                             DATA   AGE
-regcred   kubernetes.io/dockerconfigjson   1      52s
-```
-
-If you want to change it with another name, you change it in *cluster-api-provider-outscale/config/default/kustomization.yaml*:
-```
-      value: [{ name: regcred }]
-```
+You can either use outscale/cluster-api-provider-outscale latest image.
 
 
-# Build
-##  Build and push image
-This step will build and push image to your public or private registry
+###  Build and push own image
+Or you can build and push image to your public or private registry
 ```
 IMG=my-registry/controller:my-tag make docker-build
 IMG=my-registry/controller:my-tag make docker-push
