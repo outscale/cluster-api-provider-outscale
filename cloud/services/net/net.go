@@ -5,11 +5,20 @@ import (
 	"net"
 	"strings"
 
+	"errors"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"errors"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_net/net_mock.go -package mock_net -source ./net.go
+
+type OscNetInterface interface {
+	CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error)
+	DeleteNet(netId string) error
+	GetNet(netId string) (*osc.Net, error)
+}
 
 // ValidateCidr check that the cidr string is a valide CIDR
 func ValidateCidr(cidr string) (string, error) {
@@ -85,7 +94,7 @@ func (s *Service) GetNet(netId string) (*osc.Net, error) {
 	}
 	if len(*nets) == 0 {
 		return nil, nil
-	} else {		
+	} else {
 		net := *nets
 		return &net[0], nil
 	}

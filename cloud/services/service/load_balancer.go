@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"regexp"
 
+	"errors"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"errors"
 )
 
 const (
@@ -19,6 +20,14 @@ const (
 	minTimeout   = 1
 	maxTimeout   = 61
 )
+
+//go:generate ../../../bin/mockgen -destination mock_service/loadbalancer_mock.go -package mock_service -source ./load_balancer.go
+type OscLoadBalancerInterface interface {
+	ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
+	GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
+	CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
+	DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) error
+}
 
 // ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
 func ValidateLoadBalancerName(loadBalancerName string) bool {

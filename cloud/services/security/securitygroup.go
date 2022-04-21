@@ -5,9 +5,22 @@ import (
 	"net/http"
 	"regexp"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
+
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
+
+type OscSecurityGroupInterface interface {
+	CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error)
+	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
+	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) error
+	DeleteSecurityGroup(securityGroupId string) (error, *http.Response)
+	GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error)
+	GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
+	GetSecurityGroupIdsFromNetIds(netId string) ([]string, error)
+}
 
 func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error) {
 	securityGroupRequest := osc.CreateSecurityGroupRequest{

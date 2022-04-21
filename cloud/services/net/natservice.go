@@ -3,11 +3,19 @@ package net
 import (
 	"fmt"
 
-	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
 
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_net/natservice_mock.go -package mock_net -source ./natservice.go
+
+type OscNatServiceInterface interface {
+	CreateNatService(publicIpId string, subnetId string, natServiceName string) (*osc.NatService, error)
+	DeleteNatService(natServiceId string) error
+	GetNatService(natServiceId string) (*osc.NatService, error)
+}
 
 // CreateNatService create the nat in the public subnet of the net
 func (s *Service) CreateNatService(publicIpId string, subnetId string, natServiceName string) (*osc.NatService, error) {
@@ -31,7 +39,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 	natService, ok := natServiceResponse.GetNatServiceOk()
 	if !ok {
 		return nil, errors.New("Can not create natSrvice")
-	}	
+	}
 	return natService, nil
 }
 

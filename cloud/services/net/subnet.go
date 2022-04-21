@@ -3,11 +3,20 @@ package net
 import (
 	"fmt"
 
+	"errors"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"errors"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_net/subnet_mock.go -package mock_net -source ./subnet.go
+type OscSubnetInterface interface {
+	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error)
+	DeleteSubnet(subnetId string) error
+	GetSubnet(subnetId string) (*osc.Subnet, error)
+	GetSubnetIdsFromNetIds(netId string) ([]string, error)
+}
 
 // CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error) {

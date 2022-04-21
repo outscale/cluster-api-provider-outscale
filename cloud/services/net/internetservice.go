@@ -1,11 +1,21 @@
 package net
 
 import (
-	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
 	"fmt"
+
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_net/internetservice_mock.go -package mock_net -source ./internetservice.go
+type OscInternetServiceInterface interface {
+	CreateInternetService(internetServiceName string) (*osc.InternetService, error)
+	DeleteInternetService(internetServiceId string) error
+	LinkInternetService(internetServiceId string, netId string) error
+	UnlinkInternetService(internetServiceId string, netId string) error
+	GetInternetService(internetServiceId string) (*osc.InternetService, error)
+}
 
 // CreateInternetService launch the internet service
 func (s *Service) CreateInternetService(internetServiceName string) (*osc.InternetService, error) {
