@@ -14,26 +14,23 @@
 
 ## Clone
 
+Please clone the project
+
 ```
 git clone https://github.com/outscale-vbr/cluster-api-provider-outscale
-cd cluster-api-provider-outscale
 ```
 
 ## User Credentials configuration 
+
 This step wil deploy user credential secret 
+Put your credentials in osc-secret.yaml and apply:
 ```
-export OSC_ACCESS_KEY=my-osc-access-key
-export OSC_SECRET_KEY=my-osc-secret-key
-cat config/secret.yaml | \
-    sed "s/secret_key: \"\"/secret_key: \"$OSC_SECRET_KEY\"/g" | \
-    sed "s/access_key: \"\"/access_key: \"$OSC_ACCESS_KEY\"/g" > osc-secret.yaml
-/usr/local/bin/kubectl delete -f osc-secret.yaml --namespace=cluster-api-provider-outscale-system 
-/usr/local/bin/kubectl apply -f osc-secret.yaml --namespace=cluster-api-provider-outscale-system 
+/usr/local/bin/kubectl apply -f osc-secret.yaml
 ```
 
 ## Registry credentials configuration
 
-By default, if you use a private registry with credentials, registry credentials secret must be call regcred and must be deployed in cluster-api-provider-outscale-system namespace.
+By default, if you use a private registry (docker registry, harbor, dockerhub, quay.io, ....)  with credentials, registry credentials must be named regcred and must be deployed in cluster-api-provider-outscale-system namespace.
 
 ```
 kubectl get secret regcred  -n cluster-api-provider-outscale-system 
@@ -55,22 +52,28 @@ Please look at [cluster-api][cluster-api] section about deployment of cert-manag
 ##  Build, Push and Deploy
 This step will build and push image to your public or private registry and deploy it.
 
-Set those environment variable with your:
+### Environment variable
+
+Set those environment variable with yours:
 ```
 export K8S_CONTEXT=phandalin
-export CONTROLLER_IMAGE=042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/controller
+export CONTROLLER_IMAGE=my-registry/controller
 ```
-K8S_CONTEXT is your context in your kubeconfig file.
+	
+* K8S_CONTEXT is your context in your kubeconfig file.
+	
+* CONTROLLER_IMAGE is the project path where the image will be stored. Tilt will add a tag each time it build an new image.
 
-CONTROLLER_IMAGE is the project path where the image will be stored. Tilt will add a tag each time it build an image.
+### CAPM
 
 Please run to generate capm.yaml:
 ```
-IMG=042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/controller:latest make capm
+IMG=my-registry/controller:latest make capm
 ```
 
-IMG is the CONTROLLER_IMAGE with CONTROLLER_IMAGE_TAG. Tilt will change the tag each time it build an image.
+* IMG is the CONTROLLER_IMAGE with CONTROLLER_IMAGE_TAG. Tilt will change the tag each time it build an new image.
 
+### Tilt
 Please launch tilt at the project's root folder:
 ```
 [root@cidev-admin cluster-api-provider-outscale]# tilt up
@@ -134,6 +137,7 @@ IMG=my-registry/controller:my-tag make undeploy
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
 [osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
+[cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [configuration]: config.md
 
