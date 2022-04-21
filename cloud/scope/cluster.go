@@ -7,7 +7,8 @@ import (
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/pkg/errors"
+	"errors"
+        "fmt"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -41,7 +42,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	client, err := newOscClient()
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create Osc Client")
+		return nil, fmt.Errorf("%w failed to create Osc Client", err)
 	}
 
 	if params.OscClient == nil {
@@ -58,8 +59,8 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	helper, err := patch.NewHelper(params.OscCluster, params.Client)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to init patch helper")
-	}
+		return nil, fmt.Errorf("%w failed to init patch helper", err)
+	}	
 
 	return &ClusterScope{
 		Logger:      params.Logger,

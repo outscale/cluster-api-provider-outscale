@@ -18,18 +18,18 @@ metadata:
 spec:
   network:
     loadBalancer:
-      loadbalancername: OscSdkExample-8
+      loadbalancername: OscSdkExample-10
       loadbalancertype: internet-facing
       subnetname: cluster-api-subnet
       securitygroupname: cluster-api-securitygroups
     net:
       name: cluster-api-net
-      ipRange: "172.19.95.128/25"
+      ipRange: "10.0.0.0/16"
     subnets:
       - name: cluster-api-subnet
-        ipSubnetRange: "172.19.95.192/27"
+        ipSubnetRange: "10.0.0.0/24"
       - name: cluster-api-sub
-        ipSubnetRange: "172.19.95.128/27"
+        ipSubnetRange: "10.0.1.0/24"
     publicIps:
       - name: cluster-api-publicip
     internetService:
@@ -53,4 +53,21 @@ spec:
             targetName: cluster-api-natservice
             targetType: nat
             destination: "0.0.0.0/0"
-
+    securityGroups:
+      - name: cluster-api-securitygroups
+        description: Security Group with cluster-api   
+        securityGroupRules:
+          - name: cluste-api-securitygrouprule
+            flow: Inbound
+            ipProtocol: tcp
+# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            ipRange: "0.0.0.0/0"
+            fromPortRange: 6443
+            toPortRange: 6443
+          - name: cluste-api-securitygrouprule-http
+            flow: Inbound
+            ipProtocol: tcp
+# IpRange to authorize access to kubernetes endpoints (kube-apiserver), please change with a CIDR that best suits with your environment.
+            ipRange: "0.0.0.0/0"
+            fromPortRange: 80
+            toPortRange: 80

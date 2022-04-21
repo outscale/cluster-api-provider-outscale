@@ -24,10 +24,10 @@ spec:
       securitygroupname: cluster-api-securitygroups
     net:
       name: cluster-api-net
-      ipRange: "172.19.95.128/25"
+      ipRange: "10.0.0.0/16"
     subnets:
       - name: cluster-api-subnet
-        ipSubnetRange: "172.19.95.192/27"
+        ipSubnetRange: "10.0.0.0/24"
     publicIps:
       - name: cluster-api-publicip
     internetService:
@@ -51,6 +51,7 @@ spec:
           - name: cluste-api-securitygrouprule
             flow: Inbound
             ipProtocol: tcp
-            ipRange: "46.231.147.5/32"
-            fromPortRange: 22
-            toPortRange: 22 
+# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            ipRange: "0.0.0.0/0"
+            fromPortRange: 6443
+            toPortRange: 6443

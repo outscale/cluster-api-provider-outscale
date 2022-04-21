@@ -6,7 +6,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // CreateSubnet create the subnet associate to the net

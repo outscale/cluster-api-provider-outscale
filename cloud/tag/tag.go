@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/pkg/errors"
+	"errors"
 	"regexp"
 )
 

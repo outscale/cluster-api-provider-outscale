@@ -218,7 +218,7 @@ func DeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			var unexpectedErr bool = true
 
 			if httpResCode == "9029" && httpResType == "ResourceConflict" {
-				clusterScope.Info("LoadBalaancer is not deleting yet")
+				clusterScope.Info("LoadBalancer is not deleting yet")
 				unexpectedErr = false
 			}
 			if unexpectedErr {

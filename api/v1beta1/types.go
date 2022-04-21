@@ -253,8 +253,8 @@ var (
 	DefaultTimeout               int32  = 5
 	DefaultProtocol              string = "TCP"
 	DefaultPort                  int32  = 6443
-	DefaultIpRange               string = "10.0.0.0/25"
-	DefaultIpSubnetRange         string = "10.0.0.32/27"
+	DefaultIpRange               string = "10.0.0.0/16"
+	DefaultIpSubnetRange         string = "10.0.0.0/24"
 	DefaultTargetName            string = "cluster-api-internetservice"
 	DefaultTargetType            string = "gateway"
 	DefaultDestination           string = "0.0.0.0/0"
@@ -270,7 +270,7 @@ var (
 	DefaultSecurityGroupRuleName string = "cluster-api-securitygrouprule"
 	DefaultFlow                  string = "Inbound"
 	DefaultIpProtocol            string = "tcp"
-	DefaultRuleIpRange           string = "46.231.147.5/32"
+	DefaultRuleIpRange           string = "0.0.0.0/0"
 	DefaultFromPortRange         int32  = 6443
 	DefaultToPortRange           int32  = 6443
 )
