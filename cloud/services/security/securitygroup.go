@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/pkg/errors"
+	"errors"
 )
 
 func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error) {

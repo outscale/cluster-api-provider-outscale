@@ -3,13 +3,12 @@ package net
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // ValidateCidr check that the cidr string is a valide CIDR

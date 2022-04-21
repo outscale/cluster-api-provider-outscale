@@ -6,7 +6,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
