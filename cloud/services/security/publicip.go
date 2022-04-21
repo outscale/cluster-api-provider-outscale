@@ -3,10 +3,13 @@ package security
 import (
 	"fmt"
 
+	"errors"
+
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"errors"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
 
 //CreatePublicIp retrieve a publicip associated with you account
 func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {

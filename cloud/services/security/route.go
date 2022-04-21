@@ -10,6 +10,19 @@ import (
 	"errors"
 )
 
+//go:generate ../../../bin/mockgen -destination mock_security/route_mock.go -package mock_security -source ./route.go
+type OscRouteInterface interface {
+	CreateRouteTable(netId string, routeTableName string) (*osc.RouteTable, error)
+	CreateRoute(destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
+	DeleteRouteTable(routeTableId string) error
+	DeleteRoute(destinationIpRange string, routeTableId string) error
+	GetRouteTable(routeTableId []string) (*osc.RouteTable, error)
+	GetRouteTableFromRoute(routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
+	LinkRouteTable(routeTableId string, subnetId string) (string, error)
+	UnlinkRouteTable(linkRouteTableId string) error
+	GetRouteTableIdsFromNetIds(netId string) ([]string, error)
+}
+
 // CreateRouteTable create the routetable associated with the net
 func (s *Service) CreateRouteTable(netId string, routeTableName string) (*osc.RouteTable, error) {
 	routeTableRequest := osc.CreateRouteTableRequest{

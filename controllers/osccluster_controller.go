@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 	"time"
-
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+        "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 
@@ -43,6 +43,8 @@ type OscClusterReconciler struct {
 	client.Client
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
+	netSvc func(scope.ClusterScope) net.OscNetInterface
+	subnetSvc func(scope.ClusterScope) net.OscSubnetInterface
 }
 
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=get;list;watch;create;update;patch;delete
@@ -52,6 +54,20 @@ type OscClusterReconciler struct {
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
+
+func (r *OscClusterReconciler) getNetSvc(ctx context.Context, scope scope.ClusterScope) net.OscNetInterface {
+	if r.netSvc != nil {
+		return r.netSvc(scope)
+	}
+	return net.NewService(ctx, &scope)
+}
+
+func (r *OscClusterReconciler) getSubnetSvc(ctx context.Context, scope scope.ClusterScope) net.OscSubnetInterface {
+	if r.subnetSvc != nil {
+		return r.subnetSvc(scope)
+	}
+	return net.NewService(ctx, &scope)
+}
 
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	_ = log.FromContext(ctx)
@@ -246,8 +262,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 
 	// Reconcile each element of the cluster
-
-	reconcileNet, err := reconcileNet(ctx, clusterScope)
+	netsvc := r.getNetSvc(ctx, *clusterScope)
+	reconcileNet, err := reconcileNet(ctx, clusterScope, netsvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile net")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NetReadyCondition, infrastructurev1beta1.NetReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -255,7 +271,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
 
-	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope)
+	subnetsvc := r.getSubnetSvc(ctx, *clusterScope)
+	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope, subnetsvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile subnet")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SubnetsReadyCondition, infrastructurev1beta1.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -361,15 +378,17 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteInternetService, err
 	}
 
-	reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope)
+	subnetsvc := r.getSubnetSvc(ctx, *clusterScope)
+	reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, subnetsvc)
 	if err != nil {
 		return reconcileDeleteSubnet, err
 	}
-	reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope)
+
+	netsvc := r.getNetSvc(ctx, *clusterScope)
+	reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, netsvc)
 	if err != nil {
 		return reconcileDeleteNet, err
 	}
-
 	controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil
 }

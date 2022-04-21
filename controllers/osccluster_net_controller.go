@@ -42,9 +42,8 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 }
 
 // reconcileNet reconcile the Net of the cluster.
-func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-
-	netsvc := net.NewService(ctx, clusterScope)
+func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc net.OscNetInterface) (reconcile.Result, error) {
+//	netsvc := net.NewService(ctx, clusterScope)
 
 	clusterScope.Info("Create Net")
 	netSpec := clusterScope.GetNet()
@@ -80,9 +79,10 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 }
 
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
-func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc net.OscNetInterface ) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
-	netsvc := net.NewService(ctx, clusterScope)
+//	netsvc := r.getNetService(*clusterScope)
+//	netsvc := net.NewService(ctx, clusterScope)
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
