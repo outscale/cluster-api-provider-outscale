@@ -31,9 +31,17 @@ type OscLoadBalancer struct {
 	// The Load Balancer unique name
 	// +optional
 	LoadBalancerName  string                  `json:"loadbalancername,omitempty"`
+        // The Load Balancer Type internet-facing or internal
+        // +optional
 	LoadBalancerType  string                  `json:"loadbalancertype,omitempty"`
+        // The subnet tag name associate with a Subnet
+        // +optional
 	SubnetName        string                  `json:"subnetname,omitempty"`
+        // The security group tag name associate with a security group
+        // +optional
 	SecurityGroupName string                  `json:"securitygroupname,omitempty"`
+        // The Listener cofiguration of the loadBalancer
+        // +optional
 	Listener          OscLoadBalancerListener `json:"listener,omitempty"`
 	// The healthCheck configuration  of the Load Balancer
 	// +optional
@@ -245,8 +253,8 @@ var (
 	DefaultTimeout               int32  = 5
 	DefaultProtocol              string = "TCP"
 	DefaultPort                  int32  = 6443
-	DefaultIpRange               string = "172.19.95.128/25"
-	DefaultIpSubnetRange         string = "172.19.95.192/27"
+	DefaultIpRange               string = "10.0.0.0/25"
+	DefaultIpSubnetRange         string = "10.0.0.32/27"
 	DefaultTargetName            string = "cluster-api-internetservice"
 	DefaultTargetType            string = "gateway"
 	DefaultDestination           string = "0.0.0.0/0"
