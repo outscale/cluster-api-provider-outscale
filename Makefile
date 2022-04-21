@@ -107,6 +107,17 @@ else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -  
 endif
+
+.PHONY: capm
+capm: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+ifndef KUSTOMIZE
+	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
+	$(LOCAL_KUSTOMIZE) build config/default | envsubst > capm.yaml
+else
+	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | envsubst > capm.yaml
+endif
+
 .PHONY: deploy-dev
 deploy-dev: manifests deploy  ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 

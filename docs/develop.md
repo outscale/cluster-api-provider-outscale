@@ -55,7 +55,23 @@ Please look at [cluster-api][cluster-api] section about deployment of cert-manag
 ##  Build, Push and Deploy
 This step will build and push image to your public or private registry and deploy it.
 
-Please launch tilt at the project's root folder.
+Set those environment variable with your:
+```
+export K8S_CONTEXT=phandalin
+export CONTROLLER_IMAGE=042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/controller
+```
+K8S_CONTEXT is your context in your kubeconfig file.
+
+CONTROLLER_IMAGE is the project path where the image will be stored. Tilt will add a tag each time it build an image.
+
+Please run to generate capm.yaml:
+```
+IMG=042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/controller:latest make capm
+```
+
+IMG is the CONTROLLER_IMAGE with CONTROLLER_IMAGE_TAG. Tilt will change the tag each time it build an image.
+
+Please launch tilt at the project's root folder:
 ```
 [root@cidev-admin cluster-api-provider-outscale]# tilt up
 Tilt started on http://localhost:10350/
@@ -66,6 +82,7 @@ v0.25.3, built 2022-03-04
 (t) to open legacy terminal mode (--legacy=true)
 (ctrl-c) to exit
 ```
+
 You can track your docker build and controller log in your web browser. 
 
 ## Check your cluster is deployed

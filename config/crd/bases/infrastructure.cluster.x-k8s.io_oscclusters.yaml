@@ -94,6 +94,7 @@ spec:
                             type: integer
                         type: object
                       listener:
+                        description: The Listener cofiguration of the loadBalancer
                         properties:
                           backendport:
                             description: The port on which the backend vm will listen
@@ -115,10 +116,14 @@ spec:
                         description: The Load Balancer unique name
                         type: string
                       loadbalancertype:
+                        description: The Load Balancer Type internet-facing or internal
                         type: string
                       securitygroupname:
+                        description: The security group tag name associate with a
+                          security group
                         type: string
                       subnetname:
+                        description: The subnet tag name associate with a Subnet
                         type: string
                     type: object
                   natService:
