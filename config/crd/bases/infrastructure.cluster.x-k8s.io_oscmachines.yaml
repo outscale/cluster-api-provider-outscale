@@ -36,8 +36,6 @@ spec:
             description: OscMachineSpec defines the desired state of OscMachine
             properties:
               foo:
-                description: Foo is an example field of OscMachine. Edit oscmachine_types.go
-                  to remove/update
                 type: string
             type: object
           status:
