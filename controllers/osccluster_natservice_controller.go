@@ -76,7 +76,6 @@ func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 // ReconcileNatService reconcile the NatService of the cluster.
 func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
 
 	clusterScope.Info("Create NatService")
 	natServiceSpec := clusterScope.GetNatService()
@@ -112,7 +111,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 
 		natService, err := netsvc.CreateNatService(publicIpId, subnetId, natServiceName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create natservice for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not create natservice for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("### Get natService ###", "natservice", natService)
 		natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
@@ -139,7 +138,7 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 	}
 	err = netsvc.DeleteNatService(natServiceId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, err
 }

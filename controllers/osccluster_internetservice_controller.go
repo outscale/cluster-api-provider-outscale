@@ -38,7 +38,6 @@ func CheckInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (str
 // ReconcileInternetService reconcile the InternetService of the cluster.
 func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
 
 	clusterScope.Info("Create InternetGateway")
 	internetServiceSpec := clusterScope.GetInternetService()
@@ -67,11 +66,11 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	if internetService == nil || internetServiceSpec.ResourceId == "" {
 		internetService, err := netsvc.CreateInternetService(internetServiceName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create internetservice for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not create internetservice for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		err = netsvc.LinkInternetService(*internetService.InternetServiceId, netId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not link internetService with net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not link internetService with net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("### Get internetService ###", "internetservice", internetService)
 		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
@@ -110,11 +109,11 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	}
 	err = netsvc.UnlinkInternetService(internetServiceId, netId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not unlink internetService and net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+		return reconcile.Result{}, fmt.Errorf("%w Can not unlink internetService and net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	err = netsvc.DeleteInternetService(internetServiceId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete internetService for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete internetService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, nil
 }

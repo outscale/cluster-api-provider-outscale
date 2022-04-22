@@ -87,7 +87,6 @@ func CheckPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 // ReconcilePublicIp reconcile the PublicIp of the cluster.
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	securitysvc := security.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
 
 	clusterScope.Info("Create PublicIp")
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
@@ -117,7 +116,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 		if !Contains(validPublicIpIds, publicIpId) {
 			publicIp, err := securitysvc.CreatePublicIp(publicIpName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 			clusterScope.Info("### Get publicIp  ###", "publicip", publicIp)
 			publicIpRef.ResourceMap[publicIpName] = publicIp.GetPublicIpId()
@@ -162,7 +161,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 		clusterScope.Info("Remove publicip")
 		err = securitysvc.DeletePublicIp(publicIpId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 
 	}

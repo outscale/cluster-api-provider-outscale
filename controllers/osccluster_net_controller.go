@@ -7,53 +7,51 @@ import (
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-        osc "github.com/outscale/osc-sdk-go/v2"
-
 )
 
-// GetNetResourceId return the netId from the resourceMap base on resourceName (tag name + cluster object uid) 
+// GetNetResourceId return the netId from the resourceMap base on resourceName (tag name + cluster object uid)
 func GetNetResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
-                netRef := clusterScope.GetNetRef()
-                if netId, ok := netRef.ResourceMap[resourceName]; ok {
-                        return netId, nil
-                } else {
-                        return "", fmt.Errorf("%s is not exist", resourceName)
-                }
+	netRef := clusterScope.GetNetRef()
+	if netId, ok := netRef.ResourceMap[resourceName]; ok {
+		return netId, nil
+	} else {
+		return "", fmt.Errorf("%s is not exist", resourceName)
+	}
 }
 
 // CheckNetFormatParameters check net parameters format (Tag format, cidr format, ..)
 func CheckNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-		clusterScope.Info("Check Net name parameters ")
-		netSpec := clusterScope.GetNet()
-		netSpec.SetDefaultValue()
-		netName := netSpec.Name + "-" + clusterScope.GetUID()
-		netTagName, err := tag.ValidateTagNameValue(netName)
-		if err != nil {
-			return netTagName, err
-		}
-		clusterScope.Info("Check Net IpRange parameters")
-		netIpRange := netSpec.IpRange
-		_, err = net.ValidateCidr(netIpRange)
-		if err != nil {
-			return netTagName, err
-		}
-		return "", nil
+	clusterScope.Info("Check Net name parameters ")
+	netSpec := clusterScope.GetNet()
+	netSpec.SetDefaultValue()
+	netName := netSpec.Name + "-" + clusterScope.GetUID()
+	netTagName, err := tag.ValidateTagNameValue(netName)
+	if err != nil {
+		return netTagName, err
+	}
+	clusterScope.Info("Check Net IpRange parameters")
+	netIpRange := netSpec.IpRange
+	_, err = net.ValidateCidr(netIpRange)
+	if err != nil {
+		return netTagName, err
+	}
+	return "", nil
 }
 
 // ReconcileNet reconcile the Net of the cluster.
 func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 
 	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
 
 	clusterScope.Info("Create Net")
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netRef := clusterScope.GetNetRef()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-        var net *osc.Net
+	var net *osc.Net
 	var err error
 	if len(netRef.ResourceMap) == 0 {
 		netRef.ResourceMap = make(map[string]string)
@@ -70,7 +68,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 	if net == nil || netSpec.ResourceId == "" {
 		net, err := netsvc.CreateNet(netSpec, netName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("### Get net ###", "net", net)
 		netRef.ResourceMap[netName] = net.GetNetId()
@@ -88,7 +86,7 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
-	netId :=  netSpec.ResourceId 
+	netId := netSpec.ResourceId
 
 	clusterScope.Info("Delete net")
 	net, err := netsvc.GetNet(netId)
@@ -101,9 +99,7 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (
 	}
 	err = netsvc.DeleteNet(netId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete net for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, nil
 }
-
-
