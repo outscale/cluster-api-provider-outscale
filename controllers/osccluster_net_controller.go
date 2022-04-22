@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// GetNetResourceId return the netId from the resourceMap base on resourceName (tag name + cluster object uid)
-func GetNetResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getNetResourceId return the netId from the resourceMap base on resourceName (tag name + cluster object uid)
+func getNetResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	netRef := clusterScope.GetNetRef()
 	if netId, ok := netRef.ResourceMap[resourceName]; ok {
 		return netId, nil
@@ -22,8 +22,8 @@ func GetNetResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 	}
 }
 
-// CheckNetFormatParameters check net parameters format (Tag format, cidr format, ..)
-func CheckNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+// checkNetFormatParameters check net parameters format (Tag format, cidr format, ..)
+func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Net name parameters ")
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -41,7 +41,7 @@ func CheckNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	return "", nil
 }
 
-// ReconcileNet reconcile the Net of the cluster.
+// reconcileNet reconcile the Net of the cluster.
 func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 
 	netsvc := net.NewService(ctx, clusterScope)
@@ -79,7 +79,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconc
 	return reconcile.Result{}, nil
 }
 
-// ReconcileDeleteNet reconcile the destruction of the Net of the cluster.
+// reconcileDeleteNet reconcile the destruction of the Net of the cluster.
 func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)

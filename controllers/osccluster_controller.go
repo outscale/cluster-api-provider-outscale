@@ -107,18 +107,8 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return r.reconcile(ctx, clusterScope)
 }
 
-// CheckAssociate return if the resourcename is an item of ResourceNames
-func CheckAssociate(resourceName string, ResourceNames []string) bool {
-	for i := 0; i < len(ResourceNames); i++ {
-		if ResourceNames[i] == resourceName {
-			return true
-		}
-	}
-	return false
-}
-
-// AlertDuplicate alert if item is present more than once in array
-func AlertDuplicate(nameArray []string) error {
+// alertDuplicate alert if item is present more than once in array
+func alertDuplicate(nameArray []string) error {
 	checkMap := make(map[string]bool, 0)
 	for _, name := range nameArray {
 		if checkMap[name] == true {
@@ -130,8 +120,8 @@ func AlertDuplicate(nameArray []string) error {
 	return nil
 }
 
-// Contains check if item is present in slice
-func Contains(slice []string, item string) bool {
+// contains check if item is present in slice
+func contains(slice []string, item string) bool {
 	for _, val := range slice {
 		if val == item {
 			return true
@@ -149,110 +139,110 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, err
 	}
 	// Check that every element of the cluster spec has the good format (CIDR, Tag, ...)
-	netName, err := CheckNetFormatParameters(clusterScope)
+	netName, err := checkNetFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create net %s for OscCluster %s/%s", err, netName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
-	subnetName, err := CheckSubnetFormatParameters(clusterScope)
+	subnetName, err := checkSubnetFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create subnet %s for OscCluster %s/%s", err, subnetName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	internetServiceName, err := CheckInternetServiceFormatParameters(clusterScope)
+	internetServiceName, err := checkInternetServiceFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	publicIpName, err := CheckPublicIpFormatParameters(clusterScope)
+	publicIpName, err := checkPublicIpFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create internetService %s for OscCluster %s/%s", err, publicIpName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	natName, err := CheckNatFormatParameters(clusterScope)
+	natName, err := checkNatFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create natService %s for OscCluster %s/%s", err, natName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	routeTableName, err := CheckRouteTableFormatParameters(clusterScope)
+	routeTableName, err := checkRouteTableFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create routeTable %s for OscCluster %s/%s", err, routeTableName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	securityGroupName, err := CheckSecurityGroupFormatParameters(clusterScope)
+	securityGroupName, err := checkSecurityGroupFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup %s for OscCluster %s/%s", err, securityGroupName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	routeName, err := CheckRouteFormatParameters(clusterScope)
+	routeName, err := checkRouteFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create route %s for OscCluster %s/%s", err, routeName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	securityGroupRuleName, err := CheckSecurityGroupRuleFormatParameters(clusterScope)
+	securityGroupRuleName, err := checkSecurityGroupRuleFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create security group rule %s for OscCluster %s/%s", err, securityGroupRuleName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
-	reconcileLoadBalancerName, err := CheckLoadBalancerFormatParameters(clusterScope)
+	reconcileLoadBalancerName, err := checkLoadBalancerFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create loadBalancer %s for OscCluster %s/%s", err, reconcileLoadBalancerName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
 	// Check that every element of the cluster spec has a unique tag name
-	duplicateResourceRouteTableErr := CheckRouteTableOscDuplicateName(clusterScope)
+	duplicateResourceRouteTableErr := checkRouteTableOscDuplicateName(clusterScope)
 	if duplicateResourceRouteTableErr != nil {
 		return reconcile.Result{}, duplicateResourceRouteTableErr
 	}
 
-	duplicateResourceSecurityGroupErr := CheckSecurityGroupOscDuplicateName(clusterScope)
+	duplicateResourceSecurityGroupErr := checkSecurityGroupOscDuplicateName(clusterScope)
 	if duplicateResourceSecurityGroupErr != nil {
 		return reconcile.Result{}, duplicateResourceSecurityGroupErr
 	}
 
-	duplicateResourceRouteErr := CheckRouteOscDuplicateName(clusterScope)
+	duplicateResourceRouteErr := checkRouteOscDuplicateName(clusterScope)
 	if duplicateResourceRouteErr != nil {
 		return reconcile.Result{}, duplicateResourceRouteErr
 	}
 
-	duplicateResourceSecurityGroupRuleErr := CheckSecurityGroupRuleOscDuplicateName(clusterScope)
+	duplicateResourceSecurityGroupRuleErr := checkSecurityGroupRuleOscDuplicateName(clusterScope)
 	if duplicateResourceSecurityGroupRuleErr != nil {
 		return reconcile.Result{}, duplicateResourceSecurityGroupRuleErr
 	}
 
-	duplicateResourcePublicIpErr := CheckPublicIpOscDuplicateName(clusterScope)
+	duplicateResourcePublicIpErr := checkPublicIpOscDuplicateName(clusterScope)
 	if duplicateResourcePublicIpErr != nil {
 		return reconcile.Result{}, duplicateResourcePublicIpErr
 	}
 
-	duplicateResourceSubnetErr := CheckSubnetOscDuplicateName(clusterScope)
+	duplicateResourceSubnetErr := checkSubnetOscDuplicateName(clusterScope)
 	if duplicateResourceSubnetErr != nil {
 		return reconcile.Result{}, duplicateResourceSubnetErr
 	}
 
 	// Check that every element of the cluster spec which has other element depencies has the same dependencies tag name
 
-	CheckOscAssociatePublicIpErr := CheckPublicIpOscAssociateResourceName(clusterScope)
-	if CheckOscAssociatePublicIpErr != nil {
-		return reconcile.Result{}, CheckOscAssociatePublicIpErr
+	checkOscAssociatePublicIpErr := checkPublicIpOscAssociateResourceName(clusterScope)
+	if checkOscAssociatePublicIpErr != nil {
+		return reconcile.Result{}, checkOscAssociatePublicIpErr
 	}
 
-	CheckOscAssociateRouteTableSubnetErr := CheckRouteTableSubnetOscAssociateResourceName(clusterScope)
-	if CheckOscAssociateRouteTableSubnetErr != nil {
-		return reconcile.Result{}, CheckOscAssociateRouteTableSubnetErr
+	checkOscAssociateRouteTableSubnetErr := checkRouteTableSubnetOscAssociateResourceName(clusterScope)
+	if checkOscAssociateRouteTableSubnetErr != nil {
+		return reconcile.Result{}, checkOscAssociateRouteTableSubnetErr
 	}
 
-	CheckOscAssociateNatSubnetErr := CheckNatSubnetOscAssociateResourceName(clusterScope)
-	if CheckOscAssociateNatSubnetErr != nil {
-		return reconcile.Result{}, CheckOscAssociateNatSubnetErr
+	checkOscAssociateNatSubnetErr := checkNatSubnetOscAssociateResourceName(clusterScope)
+	if checkOscAssociateNatSubnetErr != nil {
+		return reconcile.Result{}, checkOscAssociateNatSubnetErr
 	}
 
-	CheckOscAssociateLoadBalancerSubnetErr := CheckLoadBalancerSubnetOscAssociateResourceName(clusterScope)
-	if CheckOscAssociateLoadBalancerSubnetErr != nil {
-		return reconcile.Result{}, CheckOscAssociateLoadBalancerSubnetErr
+	checkOscAssociateLoadBalancerSubnetErr := checkLoadBalancerSubnetOscAssociateResourceName(clusterScope)
+	if checkOscAssociateLoadBalancerSubnetErr != nil {
+		return reconcile.Result{}, checkOscAssociateLoadBalancerSubnetErr
 	}
 
-	CheckOscAssociateLoadBalancerSecurityGroupErr := CheckLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope)
-	if CheckOscAssociateLoadBalancerSecurityGroupErr != nil {
-		return reconcile.Result{}, CheckOscAssociateLoadBalancerSecurityGroupErr
+	checkOscAssociateLoadBalancerSecurityGroupErr := checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope)
+	if checkOscAssociateLoadBalancerSecurityGroupErr != nil {
+		return reconcile.Result{}, checkOscAssociateLoadBalancerSecurityGroupErr
 	}
 
 	// Reconcile each element of the cluster

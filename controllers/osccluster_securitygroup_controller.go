@@ -18,8 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// GetSecurityGroupResourceId return the SecurityGroupId from the resourceMap base on SecurityGroupName (tag name + cluster object uid)
-func GetSecurityGroupResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getSecurityGroupResourceId return the SecurityGroupId from the resourceMap base on SecurityGroupName (tag name + cluster object uid)
+func getSecurityGroupResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	securityGroupRef := clusterScope.GetSecurityGroupsRef()
 	if securityGroupId, ok := securityGroupRef.ResourceMap[resourceName]; ok {
 		return securityGroupId, nil
@@ -28,8 +28,8 @@ func GetSecurityGroupResourceId(resourceName string, clusterScope *scope.Cluster
 	}
 }
 
-// GetSecurityGroupRulesResourceId return the SecurityGroupId from the resourceMap base on SecurityGroupRuleName (tag name + cluster object uid)
-func GetSecurityGroupRulesResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getSecurityGroupRulesResourceId return the SecurityGroupId from the resourceMap base on SecurityGroupRuleName (tag name + cluster object uid)
+func getSecurityGroupRulesResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	securityGroupRuleRef := clusterScope.GetSecurityGroupRuleRef()
 	if securityGroupRuleId, ok := securityGroupRuleRef.ResourceMap[resourceName]; ok {
 		return securityGroupRuleId, nil
@@ -38,8 +38,8 @@ func GetSecurityGroupRulesResourceId(resourceName string, clusterScope *scope.Cl
 	}
 }
 
-// CheckSecurityGroupOscDuplicateName check that there are not the same name for securityGroup
-func CheckSecurityGroupOscDuplicateName(clusterScope *scope.ClusterScope) error {
+// checkSecurityGroupOscDuplicateName check that there are not the same name for securityGroup
+func checkSecurityGroupOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("check unique security group rule")
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
@@ -48,7 +48,7 @@ func CheckSecurityGroupOscDuplicateName(clusterScope *scope.ClusterScope) error 
 		for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
 			resourceNameList = append(resourceNameList, securityGroupRuleSpec.Name)
 		}
-		duplicateResourceErr := AlertDuplicate(resourceNameList)
+		duplicateResourceErr := alertDuplicate(resourceNameList)
 		if duplicateResourceErr != nil {
 			return duplicateResourceErr
 		} else {
@@ -58,8 +58,8 @@ func CheckSecurityGroupOscDuplicateName(clusterScope *scope.ClusterScope) error 
 	return nil
 }
 
-// CheckSecurityGroupRuleOscDuplicateName check that there are not the same name for securityGroupRule
-func CheckSecurityGroupRuleOscDuplicateName(clusterScope *scope.ClusterScope) error {
+// checkSecurityGroupRuleOscDuplicateName check that there are not the same name for securityGroupRule
+func checkSecurityGroupRuleOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	clusterScope.Info("check unique security group rule")
 	var resourceNameList []string
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
@@ -68,7 +68,7 @@ func CheckSecurityGroupRuleOscDuplicateName(clusterScope *scope.ClusterScope) er
 		for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
 			resourceNameList = append(resourceNameList, securityGroupRuleSpec.Name)
 		}
-		duplicateResourceErr := AlertDuplicate(resourceNameList)
+		duplicateResourceErr := alertDuplicate(resourceNameList)
 		if duplicateResourceErr != nil {
 			return duplicateResourceErr
 		} else {
@@ -78,8 +78,8 @@ func CheckSecurityGroupRuleOscDuplicateName(clusterScope *scope.ClusterScope) er
 	return nil
 }
 
-// CheckSecurityGroupFormatParameters check securityGroup parameters format (Tag format, cidr format, ..)
-func CheckSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+// checkSecurityGroupFormatParameters check securityGroup parameters format (Tag format, cidr format, ..)
+func checkSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check security group parameters")
 	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
@@ -104,8 +104,8 @@ func CheckSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (strin
 	return "", nil
 }
 
-// CheckFormatParameters check every securityGroupRule parameters format (Tag format, cidr format, ..)
-func CheckSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+// checkFormatParameters check every securityGroupRule parameters format (Tag format, cidr format, ..)
+func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check security Group rule parameters")
 	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
@@ -193,8 +193,8 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 	return reconcile.Result{}, nil
 }
 
-// reconcileSecurityGroupRule reconcile the deletion of securityGroup of the cluster.
-func DeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string) (reconcile.Result, error) {
+// deleteSecurityGroup reconcile the deletion of securityGroup of the cluster.
+func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string) (reconcile.Result, error) {
 	securitysvc := security.NewService(ctx, clusterScope)
 	clusterScope.Info("Check loadbalancer deletion")
 
@@ -255,7 +255,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := GetNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -276,7 +276,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if securityGroupSpec.ResourceId != "" {
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
 		}
-		if !Contains(securityGroupIds, securityGroupId) {
+		if !contains(securityGroupIds, securityGroupId) {
 			securityGroup, err := securitysvc.CreateSecurityGroup(netId, securityGroupName, securityGroupDescription)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create securitygroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
@@ -345,7 +345,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := GetNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -356,7 +356,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		if !Contains(securityGroupIds, securityGroupId) {
+		if !contains(securityGroupIds, securityGroupId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
@@ -369,7 +369,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 			}
 		}
 		clusterScope.Info("Delete SecurityGroup")
-		_, err := DeleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName])
+		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName])
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup  for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}

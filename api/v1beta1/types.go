@@ -30,19 +30,19 @@ type OscNetwork struct {
 type OscLoadBalancer struct {
 	// The Load Balancer unique name
 	// +optional
-	LoadBalancerName  string                  `json:"loadbalancername,omitempty"`
-        // The Load Balancer Type internet-facing or internal
-        // +optional
-	LoadBalancerType  string                  `json:"loadbalancertype,omitempty"`
-        // The subnet tag name associate with a Subnet
-        // +optional
-	SubnetName        string                  `json:"subnetname,omitempty"`
-        // The security group tag name associate with a security group
-        // +optional
-	SecurityGroupName string                  `json:"securitygroupname,omitempty"`
-        // The Listener cofiguration of the loadBalancer
-        // +optional
-	Listener          OscLoadBalancerListener `json:"listener,omitempty"`
+	LoadBalancerName string `json:"loadbalancername,omitempty"`
+	// The Load Balancer Type internet-facing or internal
+	// +optional
+	LoadBalancerType string `json:"loadbalancertype,omitempty"`
+	// The subnet tag name associate with a Subnet
+	// +optional
+	SubnetName string `json:"subnetname,omitempty"`
+	// The security group tag name associate with a security group
+	// +optional
+	SecurityGroupName string `json:"securitygroupname,omitempty"`
+	// The Listener cofiguration of the loadBalancer
+	// +optional
+	Listener OscLoadBalancerListener `json:"listener,omitempty"`
 	// The healthCheck configuration  of the Load Balancer
 	// +optional
 	HealthCheck OscLoadBalancerHealthCheck `json:"healthCheck,omitempty"`
@@ -324,14 +324,12 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 			TargetType:  DefaultTargetType,
 			Destination: DefaultDestination,
 		}
-		routetable := OscRouteTable{
+		routeTable := OscRouteTable{
 			Name:       DefaultRouteTableName,
 			SubnetName: DefaultSubnetName,
 			Routes:     []OscRoute{route},
 		}
-		var routetables []*OscRouteTable = network.RouteTables
-		routetables = append(routetables, &routetable)
-		network.RouteTables = routetables
+		network.RouteTables = append(network.RouteTables, &routeTable)
 	}
 
 }
@@ -340,7 +338,7 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 
 func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 	if len(network.SecurityGroups) == 0 {
-		securitygrouprule := OscSecurityGroupRule{
+		securityGroupRule := OscSecurityGroupRule{
 			Name:          DefaultSecurityGroupRuleName,
 			Flow:          DefaultFlow,
 			IpProtocol:    DefaultIpProtocol,
@@ -348,40 +346,22 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			FromPortRange: DefaultFromPortRange,
 			ToPortRange:   DefaultToPortRange,
 		}
-		securitygroup := OscSecurityGroup{
+		securityGroup := OscSecurityGroup{
 			Name:               DefaultSecurityGroupName,
 			Description:        DefaultDescription,
-			SecurityGroupRules: []OscSecurityGroupRule{securitygrouprule},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRule},
 		}
-		var securitygroups []*OscSecurityGroup = network.SecurityGroups
-		securitygroups = append(securitygroups, &securitygroup)
-		network.SecurityGroups = securitygroups
-	}
-}
-
-// SetDefaultValue set the Route Table default values from routetable configuration
-func (routetable *OscRouteTable) SetDefaultValue() {
-	if len(routetable.Routes) == 0 {
-		route := OscRoute{
-			Name:        DefaultRouteName,
-			TargetName:  DefaultTargetName,
-			TargetType:  DefaultTargetType,
-			Destination: DefaultDestination,
-		}
-		var routes []OscRoute = routetable.Routes
-		routes = append(routes, route)
+		network.SecurityGroups = append(network.SecurityGroups, &securityGroup)
 	}
 }
 
 // SetPublicIpDefaultDefaultValue set the Public Ip default values from publicip configuration
 func (network *OscNetwork) SetPublicIpDefaultValue() {
 	if len(network.PublicIps) == 0 {
-		publicip := OscPublicIp{
+		publicIp := OscPublicIp{
 			Name: DefaultPublicIpName,
 		}
-		var publicips []*OscPublicIp = network.PublicIps
-		publicips = append(publicips, &publicip)
-		network.PublicIps = publicips
+		network.PublicIps = append(network.PublicIps, &publicIp)
 	}
 }
 

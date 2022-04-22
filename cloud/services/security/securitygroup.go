@@ -108,27 +108,27 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 	}
 }
 
-func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error) {
+func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, flow string, ipProtocols string, ipRanges string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
 	switch {
-	case Flow == "Inbound":
+	case flow == "Inbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
 			Filters: &osc.FiltersSecurityGroup{
 				SecurityGroupIds:          &[]string{securityGroupId},
-				InboundRuleProtocols:      &[]string{IpProtocols},
-				InboundRuleIpRanges:       &[]string{IpRanges},
-				InboundRuleFromPortRanges: &[]int32{FromPortRanges},
-				InboundRuleToPortRanges:   &[]int32{ToPortRanges},
+				InboundRuleProtocols:      &[]string{ipProtocols},
+				InboundRuleIpRanges:       &[]string{ipRanges},
+				InboundRuleFromPortRanges: &[]int32{fromPortRanges},
+				InboundRuleToPortRanges:   &[]int32{toPortRanges},
 			},
 		}
-	case Flow == "Outbound":
+	case flow == "Outbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
 			Filters: &osc.FiltersSecurityGroup{
 				SecurityGroupIds:           &[]string{securityGroupId},
-				OutboundRuleProtocols:      &[]string{IpProtocols},
-				OutboundRuleIpRanges:       &[]string{IpRanges},
-				OutboundRuleFromPortRanges: &[]int32{FromPortRanges},
-				OutboundRuleToPortRanges:   &[]int32{ToPortRanges},
+				OutboundRuleProtocols:      &[]string{ipProtocols},
+				OutboundRuleIpRanges:       &[]string{ipRanges},
+				OutboundRuleFromPortRanges: &[]int32{fromPortRanges},
+				OutboundRuleToPortRanges:   &[]int32{toPortRanges},
 			},
 		}
 	default:

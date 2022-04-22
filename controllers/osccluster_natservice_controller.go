@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// NatGetResourceId return the NatId from the resourceMap base on NatName (tag name + cluster object uid)
-func GetNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// GetNatResourceId return the NatId from the resourceMap base on NatName (tag name + cluster object uid)
+func getNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	natServiceRef := clusterScope.GetNatServiceRef()
 	if natServiceId, ok := natServiceRef.ResourceMap[resourceName]; ok {
 		return natServiceId, nil
@@ -23,7 +23,7 @@ func GetNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 	}
 }
 
-func CheckNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+func checkNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Nat name parameters")
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceSpec.SetDefaultValue()
@@ -45,8 +45,8 @@ func CheckNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	return "", nil
 }
 
-// CheckNatSubnetOscAssociateResourceName check that Nat Subnet dependancies tag name in both resource configuration are the same.
-func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
+// checkNatSubnetOscAssociateResourceName check that Nat Subnet dependancies tag name in both resource configuration are the same.
+func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("check match subnet with nat service")
 	natServiceSpec := clusterScope.GetNatService()
@@ -64,16 +64,15 @@ func CheckNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	checkOscAssociate := CheckAssociate(natSubnetName, resourceNameList)
+	checkOscAssociate := contains(resourceNameList, natSubnetName)
 	if checkOscAssociate {
 		return nil
 	} else {
 		return fmt.Errorf("%s subnet does not exist in natService", natSubnetName)
 	}
-	return nil
 }
 
-// ReconcileNatService reconcile the NatService of the cluster.
+// reconcileNatService reconcile the NatService of the cluster.
 func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
 
@@ -83,14 +82,14 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 	var natService *osc.NatService
 	publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
-	publicIpId, err := GetPublicIpResourceId(publicIpName, clusterScope)
+	publicIpId, err := getPublicIpResourceId(publicIpName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	subnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
 
-	subnetId, err := GetSubnetResourceId(subnetName, clusterScope)
+	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -120,7 +119,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 	return reconcile.Result{}, nil
 }
 
-// ReconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
+// reconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
 func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
