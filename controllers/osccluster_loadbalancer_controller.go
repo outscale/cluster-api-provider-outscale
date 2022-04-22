@@ -87,7 +87,6 @@ func CheckLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 // ReconcileLoadBalancer reconciles the loadBalancer of the cluster.
 func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	servicesvc := service.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
 
 	clusterScope.Info("Create Loadbalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -111,11 +110,11 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create load balancer for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not create load balancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		loadbalancer, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not configure healthcheck for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not configure healthcheck for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 
 	}
@@ -147,7 +146,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 	err = servicesvc.DeleteLoadBalancer(loadBalancerSpec)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete load balancer for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete load balancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	clusterScope.Info("Wait LoadBalancer Delete")
 	return reconcile.Result{}, nil

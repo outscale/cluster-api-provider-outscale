@@ -64,7 +64,6 @@ func CheckSubnetOscDuplicateName(clusterScope *scope.ClusterScope) error {
 // ReconcileSubnet reconcile the subnet of the cluster.
 func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	netsvc := net.NewService(ctx, clusterScope)
-	osccluster := clusterScope.OscCluster
 
 	clusterScope.Info("Create Subnet")
 
@@ -97,7 +96,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope) (rec
 		if !Contains(subnetIds, subnetId) {
 			subnet, err := netsvc.CreateSubnet(subnetSpec, netId, subnetName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create subnet for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+				return reconcile.Result{}, fmt.Errorf("%w Can not create subnet for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 			clusterScope.Info("### Get subnet ###", "subnet", subnet)
 			subnetRef.ResourceMap[subnetName] = subnet.GetSubnetId()
@@ -138,7 +137,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 		}
 		err = netsvc.DeleteSubnet(subnetId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete subnet for Osccluster %s/%s", err, osccluster.GetNamespace, osccluster.GetName)
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete subnet for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 	}
 	return reconcile.Result{}, nil
