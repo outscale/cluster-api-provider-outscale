@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// GetInternetServiceResourceId return the InternetServiceId from the resourceMap base on resourceName (tag name + cluster object uid)
-func GetInternetServiceResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getInternetServiceResourceId return the InternetServiceId from the resourceMap base on resourceName (tag name + cluster object uid)
+func getInternetServiceResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	if internetServiceId, ok := internetServiceRef.ResourceMap[resourceName]; ok {
 		return internetServiceId, nil
@@ -22,8 +22,8 @@ func GetInternetServiceResourceId(resourceName string, clusterScope *scope.Clust
 	}
 }
 
-// CheckInternetServiceFormatParameters check InternetService parameters format
-func CheckInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+// checkInternetServiceFormatParameters check InternetService parameters format
+func checkInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Internet Service parameters")
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceSpec.SetDefaultValue()
@@ -47,7 +47,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := GetNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -80,7 +80,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	return reconcile.Result{}, nil
 }
 
-// ReconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
+// reconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
 func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	netsvc := net.NewService(ctx, clusterScope)
@@ -93,7 +93,7 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
-	netId, err := GetNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

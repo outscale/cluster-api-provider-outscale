@@ -195,7 +195,7 @@ func (s *ClusterScope) GetRoute(Name string) *[]infrastructurev1beta1.OscRoute {
 			return &routeTable.Routes
 		}
 	}
-	return &routeTables[0].Routes
+	return nil
 }
 
 // GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
@@ -206,7 +206,7 @@ func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta
 			return &securityGroup.SecurityGroupRules
 		}
 	}
-	return &securityGroups[0].SecurityGroupRules
+	return nil
 }
 
 // GetPublicIp return the public ip of the cluster

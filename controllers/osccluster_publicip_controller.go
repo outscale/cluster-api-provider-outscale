@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// GetPublicIpResourceId return the resourceId from the resourceMap base on PublicIpName (tag name + cluster object uid)
-func GetPublicIpResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getPublicIpResourceId return the resourceId from the resourceMap base on PublicIpName (tag name + cluster object uid)
+func getPublicIpResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	publicIpRef := clusterScope.GetPublicIpRef()
 	if publicIpId, ok := publicIpRef.ResourceMap[resourceName]; ok {
 		return publicIpId, nil
@@ -22,8 +22,8 @@ func GetPublicIpResourceId(resourceName string, clusterScope *scope.ClusterScope
 	}
 }
 
-// CheckPublicIpFormatParameters check PublicIp parameters format (Tag format, cidr format, ..)
-func CheckPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+// checkPublicIpFormatParameters check PublicIp parameters format (Tag format, cidr format, ..)
+func checkPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Public Ip parameters")
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	networkSpec := clusterScope.GetNetwork()
@@ -43,8 +43,8 @@ func CheckPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, er
 	return "", nil
 }
 
-// CheckPublicIpOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
-func CheckPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
+// checkPublicIpOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
+func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	clusterScope.Info("check match public ip with nat service")
 	var resourceNameList []string
 	natServiceSpec := clusterScope.GetNatService()
@@ -57,17 +57,16 @@ func CheckPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) err
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, publicIpName)
 	}
-	checkOscAssociate := CheckAssociate(natPublicIpName, resourceNameList)
+	checkOscAssociate := contains(resourceNameList, natPublicIpName)
 	if checkOscAssociate {
 		return nil
 	} else {
 		return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
 	}
-	return nil
 }
 
-// CheckPublicIpOscDuplicateName check that there are not the same name for PublicIp resource.
-func CheckPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
+// checkPublicIpOscDuplicateName check that there are not the same name for PublicIp resource.
+func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	clusterScope.Info("Check unique name publicIp")
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	var resourceNameList []string
@@ -75,16 +74,15 @@ func CheckPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	for _, publicIpSpec := range publicIpsSpec {
 		resourceNameList = append(resourceNameList, publicIpSpec.Name)
 	}
-	duplicateResourceErr := AlertDuplicate(resourceNameList)
+	duplicateResourceErr := alertDuplicate(resourceNameList)
 	if duplicateResourceErr != nil {
 		return duplicateResourceErr
 	} else {
 		return nil
 	}
-	return nil
 }
 
-// ReconcilePublicIp reconcile the PublicIp of the cluster.
+// reconcilePublicIp reconcile the PublicIp of the cluster.
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	securitysvc := security.NewService(ctx, clusterScope)
 
@@ -113,7 +111,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 		if publicIpSpec.ResourceId != "" {
 			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
 		}
-		if !Contains(validPublicIpIds, publicIpId) {
+		if !contains(validPublicIpIds, publicIpId) {
 			publicIp, err := securitysvc.CreatePublicIp(publicIpName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
@@ -126,7 +124,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (r
 	return reconcile.Result{}, nil
 }
 
-// ReconcileDeletePublicIp reconcile the destruction of the PublicIp of the cluster.
+// reconcileDeletePublicIp reconcile the destruction of the PublicIp of the cluster.
 func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	securitysvc := security.NewService(ctx, clusterScope)
 	osccluster := clusterScope.OscCluster
@@ -154,7 +152,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	for _, publicIpSpec := range publicIpsSpec {
 		//		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		publicIpId := publicIpSpec.ResourceId
-		if !Contains(validPublicIpIds, publicIpId) {
+		if !contains(validPublicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}

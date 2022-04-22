@@ -9,6 +9,17 @@ import (
 	"errors"
 )
 
+const (
+	minPort      = 0
+	maxPort      = 65536
+	minInterval  = 4
+	maxInterval  = 601
+	minThreshold = 0
+	maxThreshold = 11
+	minTimeout   = 1
+	maxTimeout   = 61
+)
+
 // ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
 func ValidateLoadBalancerName(loadBalancerName string) bool {
 	isValidate := regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
@@ -17,7 +28,7 @@ func ValidateLoadBalancerName(loadBalancerName string) bool {
 
 // ValidatePort check that the  port is a valide port
 func ValidatePort(port int32) (int32, error) {
-	if port > 0 && port < 65536 {
+	if port > minPort && port < maxPort {
 		return port, nil
 	} else {
 		return port, errors.New("Invalid Port")
@@ -34,7 +45,7 @@ func ValidateLoadBalancerType(loadBalancerType string) bool {
 
 // ValidateInterval check that the interval is a valide time of second
 func (s *Service) ValidateInterval(interval int32) (int32, error) {
-	if interval > 4 && interval < 601 {
+	if interval > minInterval && interval < maxInterval {
 		return interval, nil
 	} else {
 		return interval, errors.New("Invalid Interval")
@@ -43,7 +54,7 @@ func (s *Service) ValidateInterval(interval int32) (int32, error) {
 
 // ValidateThreshold check that the threshold is a valide number of ping
 func (s *Service) ValidateThreshold(threshold int32) (int32, error) {
-	if threshold > 0 && threshold < 11 {
+	if threshold > minThreshold && threshold < maxThreshold {
 		return threshold, nil
 	} else {
 		return threshold, errors.New("Invalid threshold")
@@ -52,7 +63,7 @@ func (s *Service) ValidateThreshold(threshold int32) (int32, error) {
 
 // ValidateTimeout check that the timeoout is a valide maximum time of second
 func (s *Service) ValidateTimeout(timeout int32) (int32, error) {
-	if timeout > 1 && timeout < 61 {
+	if timeout > minTimeout && timeout < maxTimeout {
 		return timeout, nil
 	} else {
 		return timeout, errors.New("Invalid Timeout")
