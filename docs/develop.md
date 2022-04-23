@@ -112,6 +112,23 @@ You can change parameter from cluster-template.yaml (please look at [configurati
 kubectl apply -f example/cluster-template.yaml
 ```
 
+# Test 
+
+## Generate Mock
+
+Please use if you make some changes(add, changes, delete ) in *cloud/services/net*, *cloud/services/service*, *cloud/services/security*:
+```
+make mock-generate
+```
+
+## Unit test
+Please use if you want to launch unit test:
+
+```
+make unit-test
+```
+
+Yòu can look at code coverage with covers.txt and covers.html
 
 # CleanUp
 

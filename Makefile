@@ -59,6 +59,11 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: unit-test
+unit-test: 
+	go test -v -coverprofile=covers.out  ./...
+	go tool cover -func=covers.out -o covers.txt
+	go tool cover -html=covers.out -o covers.html
 ## change vet
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
