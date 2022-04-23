@@ -70,7 +70,7 @@ func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, re
 			NatServiceId:       &resourceId,
 		}
 	default:
-		errors.New("Invalid Type")
+		return nil, errors.New("Invalid Type")
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
