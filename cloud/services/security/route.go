@@ -3,8 +3,8 @@ package security
 import (
 	"fmt"
 
-	net "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
-	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	net "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"errors"

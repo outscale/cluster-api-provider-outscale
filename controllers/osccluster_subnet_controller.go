@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
-	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
-	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/services/net"
-	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )

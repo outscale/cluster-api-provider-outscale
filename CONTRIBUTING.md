@@ -1,6 +1,6 @@
 # Opening an issue
 
-Feel free to open a [Github issue](https://github.com/outscale-vbr/cluster-api-provider-outscale/issues) and explain your problem.
+Feel free to open a [Github issue](https://github.com/outscale-dev/cluster-api-provider-outscale/issues) and explain your problem.
 
 Please provide at least those informations:
 - kubernetes version

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	infrastructurev1beta1 "github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1"
-	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud"
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
         "fmt"
