@@ -2,7 +2,7 @@ domain: cluster.x-k8s.io
 layout:
 - go.kubebuilder.io/v3
 projectName: cluster-api-provider-outscale
-repo: github.com/outscale-vbr/cluster-api-provider-outscale.git
+repo: github.com/outscale-dev/cluster-api-provider-outscale.git
 resources:
 - api:
     crdVersion: v1
@@ -11,7 +11,7 @@ resources:
   domain: cluster.x-k8s.io
   group: infrastructure
   kind: OscCluster
-  path: github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1
+  path: github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1
   version: v1beta1
 - api:
     crdVersion: v1
@@ -20,6 +20,6 @@ resources:
   domain: cluster.x-k8s.io
   group: infrastructure
   kind: OscMachine
-  path: github.com/outscale-vbr/cluster-api-provider-outscale.git/api/v1beta1
+  path: github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1
   version: v1beta1
 version: "3"

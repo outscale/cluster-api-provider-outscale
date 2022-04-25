@@ -3,7 +3,7 @@ package net
 import (
 	"context"
 
-	"github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 )
 
 // Service is a collection of interfaces

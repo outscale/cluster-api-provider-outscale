@@ -1,7 +1,7 @@
 package net
 
 import (
-	tag "github.com/outscale-vbr/cluster-api-provider-outscale.git/cloud/tag"
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
 	"fmt"
