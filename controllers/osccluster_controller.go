@@ -63,6 +63,16 @@ func (r *OscClusterReconciler) getSubnetSvc(ctx context.Context, scope scope.Clu
 	return net.NewService(ctx, &scope)
 }
 
+// getInternetServiceSvc retrieve internetServiceSvc
+func (r *OscClusterReconciler) getInternetServiceSvc(ctx context.Context, scope scope.ClusterScope) net.OscInternetServiceInterface {
+	return net.NewService(ctx, &scope)
+}
+
+// getRouteTableSvc retrieve routeTableSvc
+func (r *OscClusterReconciler) getRouteTableSvc(ctx context.Context, scope scope.ClusterScope) security.OscRouteTableInterface {
+	return security.NewService(ctx, &scope)
+}
+
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	_ = log.FromContext(ctx)
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
@@ -274,7 +284,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition)
 
-	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope)
+	internetservicesvc := r.getInternetServiceSvc(ctx, *clusterScope)
+	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetservicesvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile internetService")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -367,7 +378,9 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteSecurityGroup, err
 	}
 
-	reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope)
+	
+	internetservicesvc := r.getInternetServiceSvc(ctx, *clusterScope)
+	reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, internetservicesvc)
 	if err != nil {
 		return reconcileDeleteInternetService, err
 	}
