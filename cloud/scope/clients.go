@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 // OscClient contains input client to use outscale api

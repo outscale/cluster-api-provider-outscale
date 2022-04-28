@@ -59,6 +59,14 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: gofmt
+gofmt: ## Run gofmt
+	find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -w
+
+.PHONY: checkfmt
+checkfmt: ## check gofmt
+	./check-gofmt
+
 .PHONY: unit-test
 unit-test: 
 	go test -v -coverprofile=covers.out  ./...
