@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -euo pipefail
+set -x
+echo "Check with gofmt"
+
+change=$(find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -d 2>&1)
+if [[ -n ${change} ]]; then
+  echo "${change}"
+  echo "Please run make gofmt"
+  exit 1
+fi
+echo "Format is good"

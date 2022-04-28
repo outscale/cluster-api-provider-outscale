@@ -1,0 +1,8 @@
+capm.yaml
+LICENSE
+Makefile
+README.md
+osc-secret.yaml
+CONTRIBUTING.md
+example/*.yaml
+docs/*.md

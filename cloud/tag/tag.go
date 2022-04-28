@@ -2,10 +2,11 @@ package tag
 
 import (
 	"context"
-	"fmt"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"errors"
+	"fmt"
 	"regexp"
+
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 // AddTag add a tag to a resource
