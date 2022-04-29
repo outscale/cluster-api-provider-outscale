@@ -94,17 +94,17 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
-        netId, err := getNetResourceId(netName, clusterScope)
-        if err != nil {
-                return reconcile.Result{}, err
-        }
+	netId, err := getNetResourceId(netName, clusterScope)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	internetServiceId := internetServiceSpec.ResourceId
 	internetServiceName := internetServiceSpec.Name
-        internetService, err := internetservicesvc.GetInternetService(internetServiceId)
-        if err != nil {
-                return reconcile.Result{}, err
-        }
+	internetService, err := internetservicesvc.GetInternetService(internetServiceId)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	if internetService == nil {
 		clusterScope.Info("the desired internetservice does not exist anymore", "internetServiceName", internetServiceName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
