@@ -19,8 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"time"
@@ -309,7 +311,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
-	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope)
+	routetablesvc := r.getRouteTableSvc(ctx, *clusterScope)
+	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope, routetablesvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile routeTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -325,7 +328,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
 
-	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope)
+	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope, routetablesvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile NatRouteTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -368,7 +371,8 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeletePublicIp, err
 	}
 
-	reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope)
+	routetablesvc := r.getRouteTableSvc(ctx, *clusterScope)
+	reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, routetablesvc)
 	if err != nil {
 		return reconcileDeleteRouteTable, err
 	}
@@ -378,7 +382,6 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteSecurityGroup, err
 	}
 
-	
 	internetservicesvc := r.getInternetServiceSvc(ctx, *clusterScope)
 	reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, internetservicesvc)
 	if err != nil {

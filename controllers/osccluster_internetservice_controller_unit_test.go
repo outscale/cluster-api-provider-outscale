@@ -113,21 +113,21 @@ func TestCheckInternetServiceFormatParameters(t *testing.T) {
 			spec: defaultInternetServiceInitialize,
 			expCheckInternetServiceFormatParametersErr: nil,
 		},
-                {
-                        name: "check Bad Name  internetService",
-                        spec: infrastructurev1beta1.OscClusterSpec{
-                                Network: infrastructurev1beta1.OscNetwork{
-                                        Net: infrastructurev1beta1.OscNet{
-                                                Name:    "test-net",
-                                                IpRange: "10.0.0.0/16",
-                                        },
-                                        InternetService: infrastructurev1beta1.OscInternetService{
-                                                Name: "test-internetservice@test",
-                                        },
-                                },
-                        },
-                        expCheckInternetServiceFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
-                },
+		{
+			name: "check Bad Name  internetService",
+			spec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
+						Name:    "test-net",
+						IpRange: "10.0.0.0/16",
+					},
+					InternetService: infrastructurev1beta1.OscInternetService{
+						Name: "test-internetservice@test",
+					},
+				},
+			},
+			expCheckInternetServiceFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+		},
 	}
 	for _, istc := range internetServiceTestCases {
 		t.Run(istc.name, func(t *testing.T) {
@@ -148,7 +148,7 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
 		spec                           infrastructurev1beta1.OscClusterSpec
-		expNetFound 		       bool
+		expNetFound                    bool
 		expInternetServiceFound        bool
 		expCreateInternetServiceFound  bool
 		expCreateInternetServiceErr    error
@@ -239,7 +239,6 @@ func TestReconcileInternetServiceDelete(t *testing.T) {
 			expReconcileInternetServiceErr: nil,
 		},
 	}
-
 	for _, istc := range internetServiceTestCases {
 		t.Run(istc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscInternetServiceInterface := SetupWithInternetServiceMock(t, istc.name, istc.spec)
