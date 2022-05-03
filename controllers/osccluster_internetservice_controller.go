@@ -88,6 +88,7 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	clusterScope.Info("Delete internetService")
 
 	internetServiceSpec := clusterScope.GetInternetService()
+	internetServiceSpec.SetDefaultValue()
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()

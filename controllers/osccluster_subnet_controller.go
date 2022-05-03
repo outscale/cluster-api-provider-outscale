@@ -54,8 +54,7 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 func checkSubnetOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	clusterScope.Info("Check unique subnet")
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	subnetsSpec = clusterScope.GetSubnet()
+	subnetsSpec := clusterScope.GetSubnet()
 	for _, subnetSpec := range subnetsSpec {
 		resourceNameList = append(resourceNameList, subnetSpec.Name)
 	}
@@ -118,12 +117,17 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 
 	clusterScope.Info("Delete subnet")
 
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	subnetsSpec = clusterScope.GetSubnet()
+	subnetsSpec := clusterScope.GetSubnet()
 	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
+	networkSpec := clusterScope.GetNetwork()
+	if networkSpec.Subnets == nil {
+		networkSpec.SetSubnetDefaultValue()
+		subnetsSpec = networkSpec.Subnets
+	} else {
+		subnetsSpec = clusterScope.GetSubnet()
+	}
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err

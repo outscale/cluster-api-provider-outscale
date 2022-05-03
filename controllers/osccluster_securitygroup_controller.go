@@ -166,9 +166,6 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 	if len(securityGroupRuleRef.ResourceMap) == 0 {
 		securityGroupRuleRef.ResourceMap = make(map[string]string)
 	}
-	if securityGroupRuleSpec.ResourceId != "" {
-		securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupRuleSpec.ResourceId
-	}
 	Flow := securityGroupRuleSpec.Flow
 	IpProtocol := securityGroupRuleSpec.IpProtocol
 	IpRange := securityGroupRuleSpec.IpRange
@@ -189,7 +186,6 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 		}
 	}
 	securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupFromSecurityGroupRule.GetSecurityGroupId()
-	securityGroupRuleSpec.ResourceId = securityGroupFromSecurityGroupRule.GetSecurityGroupId()
 	return reconcile.Result{}, nil
 }
 

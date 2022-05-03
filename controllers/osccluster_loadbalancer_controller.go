@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -19,14 +18,7 @@ func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.GetSubnet()
-	}
+	subnetsSpec := clusterScope.GetSubnet()
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
@@ -64,14 +56,7 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.SecurityGroups == nil {
-		networkSpec.SetSecurityGroupDefaultValue()
-		securityGroupsSpec = networkSpec.SecurityGroups
-	} else {
-		securityGroupsSpec = clusterScope.GetSecurityGroups()
-	}
+	securityGroupsSpec := clusterScope.GetSecurityGroups()
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, securityGroupName)
@@ -136,6 +121,8 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 
 	clusterScope.Info("Delete LoadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
+	loadBalancerSpec.SetDefaultValue()
+
 	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, err
