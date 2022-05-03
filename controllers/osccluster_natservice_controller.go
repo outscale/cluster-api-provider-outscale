@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -52,14 +51,7 @@ func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceSpec.SetDefaultValue()
 	natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.Subnets == nil {
-		networkSpec.SetSubnetDefaultValue()
-		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.GetSubnet()
-	}
+	subnetsSpec := clusterScope.GetSubnet()
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
@@ -78,6 +70,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 
 	clusterScope.Info("Create NatService")
 	natServiceSpec := clusterScope.GetNatService()
+
 	natServiceRef := clusterScope.GetNatServiceRef()
 	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 	var natService *osc.NatService
@@ -126,6 +119,8 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 
 	clusterScope.Info("Delete natService")
 	natServiceSpec := clusterScope.GetNatService()
+	natServiceSpec.SetDefaultValue()
+
 	natServiceId := natServiceSpec.ResourceId
 	natservice, err := netsvc.GetNatService(natServiceId)
 	if err != nil {

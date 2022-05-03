@@ -68,9 +68,8 @@ func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) err
 // checkPublicIpOscDuplicateName check that there are not the same name for PublicIp resource.
 func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	clusterScope.Info("Check unique name publicIp")
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	var resourceNameList []string
-	publicIpsSpec = clusterScope.GetPublicIp()
+	publicIpsSpec := clusterScope.GetPublicIp()
 	for _, publicIpSpec := range publicIpsSpec {
 		resourceNameList = append(resourceNameList, publicIpSpec.Name)
 	}
@@ -150,7 +149,6 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	}
 	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
 	for _, publicIpSpec := range publicIpsSpec {
-		//		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		publicIpId := publicIpSpec.ResourceId
 		if !contains(validPublicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
