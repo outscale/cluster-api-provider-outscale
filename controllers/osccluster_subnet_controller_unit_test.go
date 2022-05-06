@@ -115,7 +115,7 @@ func TestGetSubnetResourceId(t *testing.T) {
 			name:                      "failed to get Subnet",
 			spec:                      defaultSubnetInitialize,
 			expSubnetFound:            false,
-			expGetSubnetResourceIdErr: fmt.Errorf("test-subnet-uid is not exist"),
+			expGetSubnetResourceIdErr: fmt.Errorf("test-subnet-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -479,7 +479,7 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 		{
 			name:                  "Net does not exist",
 			spec:                  defaultSubnetReconcile,
-			expReconcileSubnetErr: fmt.Errorf("test-net-uid is not exist"),
+			expReconcileSubnetErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -711,14 +711,14 @@ func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 		{
 			name:                        "Net does not exist",
 			spec:                        defaultSubnetReconcile,
-			expReconcileDeleteSubnetErr: fmt.Errorf("test-net-uid is not exist"),
+			expReconcileDeleteSubnetErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 		{
 			name: "check failed without net and subnet spec (retrieve default values cluster-api)",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteSubnetErr: fmt.Errorf("cluster-api-net-uid is not exist"),
+			expReconcileDeleteSubnetErr: fmt.Errorf("cluster-api-net-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {

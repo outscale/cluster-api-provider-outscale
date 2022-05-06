@@ -3,3 +3,92 @@
 
 // Package mock_security is a generated GoMock package.
 package mock_security
+
+import (
+	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	osc "github.com/outscale/osc-sdk-go/v2"
+)
+
+// MockOscPublicIpInterface is a mock of OscPublicIpInterface interface.
+type MockOscPublicIpInterface struct {
+	ctrl     *gomock.Controller
+	recorder *MockOscPublicIpInterfaceMockRecorder
+}
+
+// MockOscPublicIpInterfaceMockRecorder is the mock recorder for MockOscPublicIpInterface.
+type MockOscPublicIpInterfaceMockRecorder struct {
+	mock *MockOscPublicIpInterface
+}
+
+// NewMockOscPublicIpInterface creates a new mock instance.
+func NewMockOscPublicIpInterface(ctrl *gomock.Controller) *MockOscPublicIpInterface {
+	mock := &MockOscPublicIpInterface{ctrl: ctrl}
+	mock.recorder = &MockOscPublicIpInterfaceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockOscPublicIpInterface) EXPECT() *MockOscPublicIpInterfaceMockRecorder {
+	return m.recorder
+}
+
+// CreatePublicIp mocks base method.
+func (m *MockOscPublicIpInterface) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePublicIp", publicIpName)
+	ret0, _ := ret[0].(*osc.PublicIp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePublicIp indicates an expected call of CreatePublicIp.
+func (mr *MockOscPublicIpInterfaceMockRecorder) CreatePublicIp(publicIpName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CreatePublicIp), publicIpName)
+}
+
+// DeletePublicIp mocks base method.
+func (m *MockOscPublicIpInterface) DeletePublicIp(publicIpId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePublicIp", publicIpId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePublicIp indicates an expected call of DeletePublicIp.
+func (mr *MockOscPublicIpInterfaceMockRecorder) DeletePublicIp(publicIpId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).DeletePublicIp), publicIpId)
+}
+
+// GetPublicIp mocks base method.
+func (m *MockOscPublicIpInterface) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublicIp", publicIpId)
+	ret0, _ := ret[0].(*osc.PublicIp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPublicIp indicates an expected call of GetPublicIp.
+func (mr *MockOscPublicIpInterfaceMockRecorder) GetPublicIp(publicIpId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).GetPublicIp), publicIpId)
+}
+
+// ValidatePublicIpIds mocks base method.
+func (m *MockOscPublicIpInterface) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatePublicIpIds", publicIpIds)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValidatePublicIpIds indicates an expected call of ValidatePublicIpIds.
+func (mr *MockOscPublicIpInterfaceMockRecorder) ValidatePublicIpIds(publicIpIds interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatePublicIpIds", reflect.TypeOf((*MockOscPublicIpInterface)(nil).ValidatePublicIpIds), publicIpIds)
+}

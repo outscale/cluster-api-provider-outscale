@@ -93,7 +93,7 @@ func TestGetNetResourceId(t *testing.T) {
 			name:                   "can not get netId",
 			spec:                   defaultNetInitialize,
 			expNetFound:            false,
-			expGetNetResourceIdErr: fmt.Errorf("test-net-uid is not exist"),
+			expGetNetResourceIdErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 	for _, ntc := range netTestCases {

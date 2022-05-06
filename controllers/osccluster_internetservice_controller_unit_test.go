@@ -70,7 +70,7 @@ func TestGetInternetServiceResourceId(t *testing.T) {
 			name:                               "can not get InternetServiceId",
 			spec:                               defaultInternetServiceInitialize,
 			expInternetServiceFound:            false,
-			expGetInternetServiceResourceIdErr: fmt.Errorf("test-internetservice-uid is not exist"),
+			expGetInternetServiceResourceIdErr: fmt.Errorf("test-internetservice-uid does not exist"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -474,7 +474,7 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 		{
 			name:                           "net does not exist",
 			spec:                           defaultInternetServiceInitialize,
-			expReconcileInternetServiceErr: fmt.Errorf("test-net-uid is not exist"),
+			expReconcileInternetServiceErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -733,12 +733,12 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("cluster-api-net-uid is not exist"),
+			expReconcileDeleteInternetServiceErr: fmt.Errorf("cluster-api-net-uid does not exist"),
 		},
 		{
 			name:                                 "net does not exist",
 			spec:                                 defaultInternetServiceInitialize,
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("test-net-uid is not exist"),
+			expReconcileDeleteInternetServiceErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 

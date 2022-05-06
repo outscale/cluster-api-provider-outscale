@@ -24,7 +24,7 @@ func getSecurityGroupResourceId(resourceName string, clusterScope *scope.Cluster
 	if securityGroupId, ok := securityGroupRef.ResourceMap[resourceName]; ok {
 		return securityGroupId, nil
 	} else {
-		return "", fmt.Errorf("%s is not exist", resourceName)
+		return "", fmt.Errorf("%s does not exist", resourceName)
 	}
 }
 
@@ -34,7 +34,7 @@ func getSecurityGroupRulesResourceId(resourceName string, clusterScope *scope.Cl
 	if securityGroupRuleId, ok := securityGroupRuleRef.ResourceMap[resourceName]; ok {
 		return securityGroupRuleId, nil
 	} else {
-		return "", fmt.Errorf("%s is not exist", resourceName)
+		return "", fmt.Errorf("%s does not exist", resourceName)
 	}
 }
 
