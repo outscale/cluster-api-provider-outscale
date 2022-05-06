@@ -18,7 +18,7 @@ func getNetResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 	if netId, ok := netRef.ResourceMap[resourceName]; ok {
 		return netId, nil
 	} else {
-		return "", fmt.Errorf("%s is not exist", resourceName)
+		return "", fmt.Errorf("%s does not exist", resourceName)
 	}
 }
 
@@ -42,7 +42,7 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 }
 
 // reconcileNet reconcile the Net of the cluster.
-func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc net.OscNetInterface) (reconcile.Result, error) {
+func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface) (reconcile.Result, error) {
 	clusterScope.Info("Create Net")
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -58,7 +58,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc 
 		netId := netSpec.ResourceId
 		clusterScope.Info("Check if the desired net exist", "netName", netName)
 		clusterScope.Info("### Get netId ###", "net", netRef.ResourceMap)
-		net, err = netsvc.GetNet(netId)
+		net, err = netSvc.GetNet(netId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -66,7 +66,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc 
 	}
 	if net == nil || netSpec.ResourceId == "" {
 		clusterScope.Info("Create the desired net", "netName", netName)
-		net, err := netsvc.CreateNet(netSpec, netName)
+		net, err := netSvc.CreateNet(netSpec, netName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
@@ -80,7 +80,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc 
 }
 
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
-func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, netsvc net.OscNetInterface) (reconcile.Result, error) {
+func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 
 	netSpec := clusterScope.GetNet()
@@ -89,7 +89,7 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
 	clusterScope.Info("Delete net")
-	net, err := netsvc.GetNet(netId)
+	net, err := netSvc.GetNet(netId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -98,7 +98,7 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	err = netsvc.DeleteNet(netId)
+	err = netSvc.DeleteNet(netId)
 	if err != nil {
 		clusterScope.Info("Delete the desired net", "netName", netName)
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())

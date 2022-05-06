@@ -10,6 +10,12 @@ import (
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
+type OscPublicIpInterface interface {
+	CreatePublicIp(publicIpName string) (*osc.PublicIp, error)
+	DeletePublicIp(publicIpId string) error
+	GetPublicIp(publicIpId string) (*osc.PublicIp, error)
+	ValidatePublicIpIds(publicIpIds []string) ([]string, error)
+}
 
 //CreatePublicIp retrieve a publicip associated with you account
 func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {

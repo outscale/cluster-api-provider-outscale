@@ -286,7 +286,7 @@ func TestGetRouteTableResourceId(t *testing.T) {
 			name:                          "can not get RouteTableId",
 			spec:                          defaultRouteTableGatewayInitialize,
 			expRouteTablesFound:           false,
-			expGetRouteTableResourceIdErr: fmt.Errorf("test-routetable-uid is not exist"),
+			expGetRouteTableResourceIdErr: fmt.Errorf("test-routetable-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -332,7 +332,7 @@ func TestGetRouteResourceId(t *testing.T) {
 			name:                     "can not get RouteId",
 			spec:                     defaultRouteTableGatewayInitialize,
 			expRouteFound:            false,
-			expGetRouteResourceIdErr: fmt.Errorf("test-route-uid is not exist"),
+			expGetRouteResourceIdErr: fmt.Errorf("test-route-uid does not exist"),
 		},
 	}
 	for _, rtc := range routeTestCases {
@@ -1150,14 +1150,14 @@ func TestReconcileRouteResourceId(t *testing.T) {
 			spec:                    defaultRouteTableNatInitialize,
 			expInternetServiceFound: false,
 			expNatServiceFound:      false,
-			expReconcileRouteErr:    fmt.Errorf("test-natservice-uid is not exist"),
+			expReconcileRouteErr:    fmt.Errorf("test-natservice-uid does not exist"),
 		},
 		{
 			name:                    "internetService does not exist",
 			spec:                    defaultRouteTableGatewayInitialize,
 			expInternetServiceFound: false,
 			expNatServiceFound:      false,
-			expReconcileRouteErr:    fmt.Errorf("test-internetservice-uid is not exist"),
+			expReconcileRouteErr:    fmt.Errorf("test-internetservice-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1464,7 +1464,7 @@ func TestReconcileRouteTableGet(t *testing.T) {
 			expInternetServiceFound:          true,
 			expNatServiceFound:               false,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileRouteTableErr:        fmt.Errorf("test-subnet-uid is not exist"),
+			expReconcileRouteTableErr:        fmt.Errorf("test-subnet-uid does not exist"),
 		},
 		{
 			name:                             "create routetable with natservice (first time reconcile loop)",
@@ -1561,7 +1561,7 @@ func TestReconcileRouteTableResourceId(t *testing.T) {
 		{
 			name:                      "net does not exist",
 			spec:                      defaultRouteTableGatewayInitialize,
-			expReconcileRouteTableErr: fmt.Errorf("test-net-uid is not exist"),
+			expReconcileRouteTableErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1992,21 +1992,21 @@ func TestReconcileDeleteRouteResourceId(t *testing.T) {
 			spec:                       defaultRouteTableNatReconcile,
 			expInternetServiceFound:    false,
 			expNatServiceFound:         false,
-			expReconcileDeleteRouteErr: fmt.Errorf("test-natservice-uid is not exist"),
+			expReconcileDeleteRouteErr: fmt.Errorf("test-natservice-uid does not exist"),
 		},
 		{
 			name:                       "internetService does not exist",
 			spec:                       defaultRouteTableGatewayInitialize,
 			expInternetServiceFound:    false,
 			expNatServiceFound:         false,
-			expReconcileDeleteRouteErr: fmt.Errorf("test-internetservice-uid is not exist"),
+			expReconcileDeleteRouteErr: fmt.Errorf("test-internetservice-uid does not exist"),
 		},
 		{
 			name:                       "route does not exist",
 			spec:                       defaultRouteTableGatewayInitialize,
 			expInternetServiceFound:    true,
 			expNatServiceFound:         true,
-			expReconcileDeleteRouteErr: fmt.Errorf("test-route-uid is not exist"),
+			expReconcileDeleteRouteErr: fmt.Errorf("test-route-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -2693,13 +2693,13 @@ func TestReconcileDeleteRouteTableResourceId(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
 			expNetFound:                     false,
-			expReconcileDeleteRouteTableErr: fmt.Errorf("cluster-api-net-uid is not exist"),
+			expReconcileDeleteRouteTableErr: fmt.Errorf("cluster-api-net-uid does not exist"),
 		},
 		{
 			name:                            "net does not exist",
 			spec:                            defaultRouteTableNatReconcile,
 			expNetFound:                     false,
-			expReconcileDeleteRouteTableErr: fmt.Errorf("test-net-uid is not exist"),
+			expReconcileDeleteRouteTableErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
