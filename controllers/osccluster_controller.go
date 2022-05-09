@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
@@ -75,9 +74,14 @@ func (r *OscClusterReconciler) getRouteTableSvc(ctx context.Context, scope scope
 	return security.NewService(ctx, &scope)
 }
 
+// getNatServiceSvc retrieve natServiceSvc
+func (r *OscClusterReconciler) getNatServiceSvc(ctx context.Context, scope scope.ClusterScope) net.OscNatServiceInterface {
+	return net.NewService(ctx, &scope)
+}
+
 // getPublicIpSvc retrieve publicIpSvc
 func (r *OscClusterReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
-        return security.NewService(ctx, &scope)
+	return security.NewService(ctx, &scope)
 }
 
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -326,7 +330,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
-	reconcileNatService, err := reconcileNatService(ctx, clusterScope)
+	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
+	reconcileNatService, err := reconcileNatService(ctx, clusterScope, natServiceSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile natservice")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NatServicesReadyCondition, infrastructurev1beta1.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -367,7 +372,8 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteLoadBalancer, err
 	}
 
-	reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope)
+	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
+	reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, natServiceSvc)
 	if err != nil {
 		return reconcileDeleteNatService, err
 	}

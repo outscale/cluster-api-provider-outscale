@@ -18,7 +18,7 @@ func getNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 	if natServiceId, ok := natServiceRef.ResourceMap[resourceName]; ok {
 		return natServiceId, nil
 	} else {
-		return "", fmt.Errorf("%s is not exist", resourceName)
+		return "", fmt.Errorf("%s does not exist", resourceName)
 	}
 }
 
@@ -65,8 +65,7 @@ func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 }
 
 // reconcileNatService reconcile the NatService of the cluster.
-func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	netsvc := net.NewService(ctx, clusterScope)
+func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface) (reconcile.Result, error) {
 
 	clusterScope.Info("Create NatService")
 	natServiceSpec := clusterScope.GetNatService()
@@ -92,20 +91,21 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 	if natServiceSpec.ResourceId != "" {
 		natServiceRef.ResourceMap[natServiceName] = natServiceSpec.ResourceId
 		natServiceId := natServiceSpec.ResourceId
-		clusterScope.Info("### Get natService Id ###", "natservice", natServiceRef.ResourceMap)
-		natService, err = netsvc.GetNatService(natServiceId)
+		clusterScope.Info("Check if the desired natService exist")
+		clusterScope.Info("### Get natService Id ###", "natService", natServiceRef.ResourceMap)
+		natService, err = natServiceSvc.GetNatService(natServiceId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
 	if natService == nil || natServiceSpec.ResourceId == "" {
-
-		natService, err := netsvc.CreateNatService(publicIpId, subnetId, natServiceName)
+		clusterScope.Info("Create the desired natService", "natServiceName", natServiceName)
+		natService, err := natServiceSvc.CreateNatService(publicIpId, subnetId, natServiceName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create natservice for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w Can not create natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
-		clusterScope.Info("### Get natService ###", "natservice", natService)
+		clusterScope.Info("### Get natService ###", "natService", natService)
 		natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
 		natServiceSpec.ResourceId = natService.GetNatServiceId()
 	}
@@ -113,25 +113,27 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) 
 }
 
 // reconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
-func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
-	netsvc := net.NewService(ctx, clusterScope)
 
 	clusterScope.Info("Delete natService")
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceSpec.SetDefaultValue()
+	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 
 	natServiceId := natServiceSpec.ResourceId
-	natservice, err := netsvc.GetNatService(natServiceId)
+	natService, err := natServiceSvc.GetNatService(natServiceId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if natservice == nil {
+	if natService == nil {
+		clusterScope.Info("the desired natService does not exist anymore", "natServiceName", natServiceName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	err = netsvc.DeleteNatService(natServiceId)
+	err = natServiceSvc.DeleteNatService(natServiceId)
 	if err != nil {
+		clusterScope.Info("Delete the desired natService", "natServiceName", natServiceName)
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, err
