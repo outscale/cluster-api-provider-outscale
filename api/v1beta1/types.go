@@ -342,7 +342,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			Name:          DefaultSecurityGroupRuleName,
 			Flow:          DefaultFlow,
 			IpProtocol:    DefaultIpProtocol,
-			IpRange:       DefaultIpRange,
+			IpRange:       DefaultRuleIpRange,
 			FromPortRange: DefaultFromPortRange,
 			ToPortRange:   DefaultToPortRange,
 		}
