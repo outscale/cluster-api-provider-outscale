@@ -4,8 +4,10 @@ go 1.17
 
 require (
 	github.com/Jeffail/gabs v1.4.0
+	github.com/benbjohnson/clock v1.1.0
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/mock v1.6.0
+	github.com/jonboulle/clockwork v0.2.2
 	github.com/outscale/osc-sdk-go/v2 v2.8.0
 	github.com/stretchr/testify v1.7.0
 	k8s.io/apimachinery v0.23.0
