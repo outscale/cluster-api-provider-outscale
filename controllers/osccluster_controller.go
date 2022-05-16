@@ -19,11 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-        "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"time"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
@@ -43,8 +43,6 @@ type OscClusterReconciler struct {
 	client.Client
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
-	netSvc func(scope.ClusterScope) net.OscNetInterface
-	subnetSvc func(scope.ClusterScope) net.OscSubnetInterface
 }
 
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=get;list;watch;create;update;patch;delete
@@ -55,17 +53,13 @@ type OscClusterReconciler struct {
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
 
+// getNetSvc retrieve netSvc
 func (r *OscClusterReconciler) getNetSvc(ctx context.Context, scope scope.ClusterScope) net.OscNetInterface {
-	if r.netSvc != nil {
-		return r.netSvc(scope)
-	}
 	return net.NewService(ctx, &scope)
 }
 
+// getSubnetSvc retrieve subnetSvc
 func (r *OscClusterReconciler) getSubnetSvc(ctx context.Context, scope scope.ClusterScope) net.OscSubnetInterface {
-	if r.subnetSvc != nil {
-		return r.subnetSvc(scope)
-	}
 	return net.NewService(ctx, &scope)
 }
 
