@@ -6,6 +6,7 @@ import (
 
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"k8s.io/klog/v2/klogr"
 
 	"github.com/golang/mock/gomock"
@@ -17,6 +18,63 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
+var (
+	defaultNetInitialize = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:    "test-net",
+				IpRange: "10.0.0.0/16",
+			},
+		},
+	}
+
+	defaultNetReconcile = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:       "test-net",
+				IpRange:    "10.0.0.0/16",
+				ResourceId: "vpc-test-net-uid",
+			},
+		},
+	}
+)
+
+// Setup set osccluster and clusterScope
+func Setup(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope) {
+	t.Logf("Validate to %s", name)
+
+	oscCluster := infrastructurev1beta1.OscCluster{
+		Spec: spec,
+		ObjectMeta: metav1.ObjectMeta{
+			UID:       "uid",
+			Name:      "test-osc",
+			Namespace: "test-system",
+		},
+	}
+	log := klogr.New()
+	clusterScope = &scope.ClusterScope{
+		Logger: log,
+		Cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       "uid",
+				Name:      "test-osc",
+				Namespace: "test-system",
+			},
+		},
+		OscCluster: &oscCluster,
+	}
+	return clusterScope
+}
+
+// SetupWithNetMock set netMock with clusterScope and osccluster
+func SetupWithNetMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNetInterface *mock_net.MockOscNetInterface) {
+	clusterScope = Setup(t, name, spec)
+	mockCtrl := gomock.NewController(t)
+	mockOscNetInterface = mock_net.NewMockOscNetInterface(mockCtrl)
+	ctx = context.Background()
+	return clusterScope, ctx, mockOscNetInterface
+}
+
 // TestGetNetResourceId has several tests to cover the code of the function getNetResourceId
 func TestGetNetResourceId(t *testing.T) {
 	netTestCases := []struct {
@@ -26,53 +84,23 @@ func TestGetNetResourceId(t *testing.T) {
 		expGetNetResourceIdErr error
 	}{
 		{
-			name: "get NetId",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
-					},
-				},
-			},
+			name:                   "get NetId",
+			spec:                   defaultNetInitialize,
 			expNetFound:            true,
 			expGetNetResourceIdErr: nil,
 		},
 		{
-			name: "can not get netId",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
-					},
-				},
-			},
+			name:                   "can not get netId",
+			spec:                   defaultNetInitialize,
 			expNetFound:            false,
 			expGetNetResourceIdErr: fmt.Errorf("test-net-uid is not exist"),
 		},
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
+			clusterScope := Setup(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID: "uid",
-				},
-			}
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID: "uid",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
 			if ntc.expNetFound {
 				netRef := clusterScope.GetNetRef()
 				netRef.ResourceMap = make(map[string]string)
@@ -80,9 +108,9 @@ func TestGetNetResourceId(t *testing.T) {
 			}
 			netResourceId, err := getNetResourceId(netName, clusterScope)
 			if err != nil {
-				if err.Error() != ntc.expGetNetResourceIdErr.Error() {
-					t.Errorf("getNetResourceId() expected error = %s, received error = %s", ntc.expGetNetResourceIdErr, err.Error())
-				}
+				assert.Equal(t, ntc.expGetNetResourceIdErr, err, "getNetResourceId() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expGetNetResourceIdErr)
 			}
 			t.Logf("find netResourceId %s", netResourceId)
 		})
@@ -97,22 +125,15 @@ func TestCheckNetFormatParameters(t *testing.T) {
 		expCheckNetFormatParametersErr error
 	}{
 		{
-			name: "Check default value",
+			name: "check work without net spec (with default values)",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
 			expCheckNetFormatParametersErr: nil,
 		},
 		{
-			name: "check Net Format",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
-					},
-				},
-			},
+			name:                           "check Net Format",
+			spec:                           defaultNetInitialize,
 			expCheckNetFormatParametersErr: nil,
 		},
 		{
@@ -154,28 +175,12 @@ func TestCheckNetFormatParameters(t *testing.T) {
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID: "uid",
-				},
-			}
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID: "uid",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
+			clusterScope := Setup(t, ntc.name, ntc.spec)
 			netName, err := checkNetFormatParameters(clusterScope)
 			if err != nil {
-				if err.Error() != ntc.expCheckNetFormatParametersErr.Error() {
-					t.Errorf("checkNetFormatParameters() expected error = %s, received error %s", ntc.expCheckNetFormatParametersErr, err.Error())
-				}
+				assert.Equal(t, ntc.expCheckNetFormatParametersErr.Error(), err.Error(), "checkNetFormatParameters() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expCheckNetFormatParametersErr)
 			}
 			t.Logf("find netName %s\n", netName)
 		})
@@ -193,30 +198,16 @@ func TestReconcileNetCreate(t *testing.T) {
 		expReconcileNetErr error
 	}{
 		{
-			name: "create Net (first time reconcile loop)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
-					},
-				},
-			},
+			name:               "create Net (first time reconcile loop)",
+			spec:               defaultNetInitialize,
 			expNetFound:        false,
 			expCreateNetFound:  true,
 			expCreateNetErr:    nil,
 			expReconcileNetErr: nil,
 		},
 		{
-			name: "failed create Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
-					},
-				},
-			},
+			name:               "failed create Net",
+			spec:               defaultNetInitialize,
 			expNetFound:        false,
 			expCreateNetFound:  false,
 			expCreateNetErr:    fmt.Errorf("CreateNet generic error"),
@@ -225,9 +216,7 @@ func TestReconcileNetCreate(t *testing.T) {
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
-			mockCtrl := gomock.NewController(t)
-			mockOscNetInterface := mock_net.NewMockOscNetInterface(mockCtrl)
+			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
 			netId := "vpc-" + netName
@@ -236,7 +225,6 @@ func TestReconcileNetCreate(t *testing.T) {
 					NetId: &netId,
 				},
 			}
-			ctx := context.Background()
 			if ntc.expCreateNetFound {
 				mockOscNetInterface.
 					EXPECT().
@@ -248,32 +236,11 @@ func TestReconcileNetCreate(t *testing.T) {
 					CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
 					Return(nil, ntc.expCreateNetErr)
 			}
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID:       "uid",
-					Name:      "test-osc",
-					Namespace: "test-system",
-				},
-			}
-
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID:       "uid",
-						Name:      "test-osc",
-						Namespace: "test-system",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface)
 			if err != nil {
-				if err.Error() != ntc.expReconcileNetErr.Error() {
-					t.Errorf("reconcileNet() expected error = %s, received error = %s", ntc.expReconcileNetErr, err.Error())
-				}
+				assert.Equal(t, ntc.expReconcileNetErr.Error(), err.Error(), "reconcileNet() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expReconcileNetErr)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 
@@ -294,16 +261,8 @@ func TestReconcileNetGet(t *testing.T) {
 		expReconcileNetErr error
 	}{
 		{
-			name: "check Net exist (second time reconcile loop)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "10.0.0.0/16",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
+			name:               "check Net exist (second time reconcile loop)",
+			spec:               defaultNetReconcile,
 			expNetFound:        true,
 			expCreateNetFound:  false,
 			expCreateNetErr:    nil,
@@ -311,16 +270,8 @@ func TestReconcileNetGet(t *testing.T) {
 			expReconcileNetErr: nil,
 		},
 		{
-			name: "failed Get Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "10.0.0.0/16",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
+			name:               "failed Get Net",
+			spec:               defaultNetReconcile,
 			expNetFound:        false,
 			expCreateNetFound:  false,
 			expCreateNetErr:    nil,
@@ -330,9 +281,7 @@ func TestReconcileNetGet(t *testing.T) {
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
-			mockCtrl := gomock.NewController(t)
-			mockOscNetInterface := mock_net.NewMockOscNetInterface(mockCtrl)
+			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			net := osc.CreateNetResponse{
@@ -346,7 +295,6 @@ func TestReconcileNetGet(t *testing.T) {
 				},
 			}
 			readNet := *readNets.Nets
-			ctx := context.Background()
 			if ntc.expNetFound {
 				mockOscNetInterface.
 					EXPECT().
@@ -358,32 +306,11 @@ func TestReconcileNetGet(t *testing.T) {
 					GetNet(gomock.Eq(netId)).
 					Return(nil, ntc.expDescribeNetErr)
 			}
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID:       "uid",
-					Name:      "test-osc",
-					Namespace: "test-system",
-				},
-			}
-
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID:       "uid",
-						Name:      "test-osc",
-						Namespace: "test-system",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface)
 			if err != nil {
-				if err.Error() != ntc.expReconcileNetErr.Error() {
-					t.Errorf("reconcileNet() expected error = %s, received error = %s", ntc.expReconcileNetErr, err.Error())
-				}
+				assert.Equal(t, ntc.expReconcileNetErr, err, "reconcileNet() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expReconcileNetErr)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 
@@ -397,35 +324,21 @@ func TestReconcileNetResourceId(t *testing.T) {
 	netTestCases := []struct {
 		name               string
 		spec               infrastructurev1beta1.OscClusterSpec
-		expNetFound        bool
-		expCreateNetFound  bool
 		expCreateNetErr    error
 		expDescribeNetErr  error
-		 expReconcileNetErr error
+		expReconcileNetErr error
 	}{
 		{
-			name: "delete Net without cluster-api",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "10.0.0.0/16",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
-			expNetFound:        false,
-			expCreateNetFound:  true,
+			name:               "user delete net without cluster-api",
+			spec:               defaultNetReconcile,
 			expCreateNetErr:    nil,
 			expDescribeNetErr:  nil,
-			 expReconcileNetErr: nil,
+			expReconcileNetErr: nil,
 		},
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
-			mockCtrl := gomock.NewController(t)
-			mockOscNetInterface := mock_net.NewMockOscNetInterface(mockCtrl)
+			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
 			netId := "vpc-" + netName
@@ -434,61 +347,19 @@ func TestReconcileNetResourceId(t *testing.T) {
 					NetId: &netId,
 				},
 			}
-			readNets := osc.ReadNetsResponse{
-				Nets: &[]osc.Net{
-					*net.Net,
-				},
-			}
-			readNet := *readNets.Nets
-			ctx := context.Background()
-			if ntc.expCreateNetFound {
-				mockOscNetInterface.
-					EXPECT().
-					CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
-					Return(net.Net, ntc.expCreateNetErr)
-			} else {
-				mockOscNetInterface.
-					EXPECT().
-					CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
-					Return(nil, ntc.expCreateNetErr)
-			}
-			if ntc.expNetFound {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Eq(netId)).
-					Return(&readNet[0], ntc.expDescribeNetErr)
-			} else {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Eq(netId)).
-					Return(nil, ntc.expDescribeNetErr)
-			}
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID:       "uid",
-					Name:      "test-osc",
-					Namespace: "test-system",
-				},
-			}
-
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID:       "uid",
-						Name:      "test-osc",
-						Namespace: "test-system",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
+			mockOscNetInterface.
+				EXPECT().
+				GetNet(gomock.Eq(netId)).
+				Return(nil, ntc.expDescribeNetErr)
+			mockOscNetInterface.
+				EXPECT().
+				CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
+				Return(net.Net, ntc.expCreateNetErr)
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface)
 			if err != nil {
-				if err.Error() != ntc. expReconcileNetErr.Error() {
-					t.Errorf("reconcileNet() expected error = %s, received error = %s", ntc. expReconcileNetErr, err.Error())
-				}
+				assert.Equal(t, ntc.expReconcileNetErr, err, "reconcileNet() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expReconcileNetErr)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 
@@ -496,7 +367,6 @@ func TestReconcileNetResourceId(t *testing.T) {
 
 	}
 }
-
 
 // TestReconcileDeleteNetDelete has several tests to cover the code of the function reconcileDeleteNet
 func TestReconcileDeleteNetDelete(t *testing.T) {
@@ -509,32 +379,16 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 		expReconcileDeleteNetErr error
 	}{
 		{
-			name: "delete Net (first time reconcile loop)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "10.0.0.0/16",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
+			name:                     "delete Net (first time reconcile loop)",
+			spec:                     defaultNetReconcile,
 			expNetFound:              true,
 			expDeleteNetErr:          nil,
 			expDescribeNetErr:        nil,
 			expReconcileDeleteNetErr: nil,
 		},
 		{
-			name: "failed to delete Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "172.195.95.128/25",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
+			name:                     "failed to delete Net",
+			spec:                     defaultNetReconcile,
 			expNetFound:              true,
 			expDeleteNetErr:          fmt.Errorf("DeleteNet generic error"),
 			expDescribeNetErr:        nil,
@@ -543,9 +397,7 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
-			mockCtrl := gomock.NewController(t)
-			mockOscNetInterface := mock_net.NewMockOscNetInterface(mockCtrl)
+			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			net := osc.CreateNetResponse{
@@ -559,11 +411,6 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 				},
 			}
 			readNet := *readNets.Nets
-			ctx := context.Background()
-			mockOscNetInterface.
-				EXPECT().
-				DeleteNet(gomock.Eq(netId)).
-				Return(ntc.expDeleteNetErr)
 			if ntc.expNetFound {
 				mockOscNetInterface.
 					EXPECT().
@@ -575,31 +422,71 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 					GetNet(gomock.Eq(netId)).
 					Return(nil, ntc.expDescribeNetErr)
 			}
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID:       "uid",
-					Name:      "test-osc",
-					Namespace: "test-system",
-				},
-			}
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID:       "uid",
-						Name:      "test-osc",
-						Namespace: "test-system",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
+			mockOscNetInterface.
+				EXPECT().
+				DeleteNet(gomock.Eq(netId)).
+				Return(ntc.expDeleteNetErr)
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if err != nil {
-				if err.Error() != ntc.expReconcileDeleteNetErr.Error() {
-					t.Errorf("reconcileDeleteNet() expected error = %s, received error %s", ntc.expReconcileDeleteNetErr, err.Error())
-				}
+				assert.Equal(t, ntc.expReconcileDeleteNetErr.Error(), err.Error(), "reconcileDeleteNet() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expReconcileDeleteNetErr)
+			}
+			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
+
+		})
+
+	}
+}
+
+// TestReconcileDeleteNetDeleteWithoutSpec has several tests to cover the code of the function reconcileDeleteNet
+func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
+	netTestCases := []struct {
+		name                     string
+		spec                     infrastructurev1beta1.OscClusterSpec
+		expNetFound              bool
+		expDeleteNetErr          error
+		expDescribeNetErr        error
+		expReconcileDeleteNetErr error
+	}{
+		{
+			name:                     "delete net without spec (with default values)",
+			expNetFound:              true,
+			expDeleteNetErr:          nil,
+			expDescribeNetErr:        nil,
+			expReconcileDeleteNetErr: nil,
+		},
+	}
+	for _, ntc := range netTestCases {
+		t.Run(ntc.name, func(t *testing.T) {
+			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
+			netName := "cluster-api-net-uid"
+			netId := "vpc-" + netName
+			clusterScope.OscCluster.Spec.Network.Net.ResourceId = netId
+			net := osc.CreateNetResponse{
+				Net: &osc.Net{
+					NetId: &netId,
+				},
+			}
+			readNets := osc.ReadNetsResponse{
+				Nets: &[]osc.Net{
+					*net.Net,
+				},
+			}
+			readNet := *readNets.Nets
+			mockOscNetInterface.
+				EXPECT().
+				GetNet(gomock.Eq(netId)).
+				Return(&readNet[0], ntc.expDescribeNetErr)
+			mockOscNetInterface.
+				EXPECT().
+				DeleteNet(gomock.Eq(netId)).
+				Return(ntc.expDeleteNetErr)
+			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
+			if err != nil {
+				assert.Equal(t, ntc.expReconcileDeleteNetErr, err, "reconcileDeleteNet() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expReconcileDeleteNetErr)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
 
@@ -618,31 +505,15 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 		expReconcileDeleteNetErr error
 	}{
 		{
-			name: "Remove finalizer",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "10.0.0.0/16",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
+			name:                     "Remove finalizer",
+			spec:                     defaultNetReconcile,
 			expNetFound:              false,
 			expDescribeNetErr:        nil,
 			expReconcileDeleteNetErr: nil,
 		},
 		{
-			name: "failed to get Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:       "test-net",
-						IpRange:    "172.195.95.128/25",
-						ResourceId: "vpc-test-net-uid",
-					},
-				},
-			},
+			name:                     "failed to get Net",
+			spec:                     defaultNetReconcile,
 			expNetFound:              false,
 			expDescribeNetErr:        fmt.Errorf("GetNet generic error"),
 			expReconcileDeleteNetErr: fmt.Errorf("GetNet generic error"),
@@ -650,9 +521,7 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
-			t.Logf("Validate to %s", ntc.name)
-			mockCtrl := gomock.NewController(t)
-			mockOscNetInterface := mock_net.NewMockOscNetInterface(mockCtrl)
+			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			net := osc.CreateNetResponse{
@@ -666,7 +535,6 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 				},
 			}
 			readNet := *readNets.Nets
-			ctx := context.Background()
 			if ntc.expNetFound {
 				mockOscNetInterface.
 					EXPECT().
@@ -678,31 +546,11 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 					GetNet(gomock.Eq(netId)).
 					Return(nil, ntc.expDescribeNetErr)
 			}
-			oscCluster := infrastructurev1beta1.OscCluster{
-				Spec: ntc.spec,
-				ObjectMeta: metav1.ObjectMeta{
-					UID:       "uid",
-					Name:      "test-osc",
-					Namespace: "test-system",
-				},
-			}
-			log := klogr.New()
-			clusterScope := &scope.ClusterScope{
-				Logger: log,
-				Cluster: &clusterv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						UID:       "uid",
-						Name:      "test-osc",
-						Namespace: "test-system",
-					},
-				},
-				OscCluster: &oscCluster,
-			}
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if err != nil {
-				if err.Error() != ntc.expReconcileDeleteNetErr.Error() {
-					t.Errorf("reconcileDeleteNet() expected error = %s, received error %s", ntc.expReconcileDeleteNetErr, err.Error())
-				}
+				assert.Equal(t, ntc.expReconcileDeleteNetErr, err, "reconcileDeleteNet() should return the same error")
+			} else {
+				assert.Nil(t, ntc.expReconcileDeleteNetErr)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
 

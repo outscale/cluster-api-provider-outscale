@@ -119,6 +119,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 
 	subnetsSpec := clusterScope.GetSubnet()
 	netSpec := clusterScope.GetNet()
+	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
 	networkSpec := clusterScope.GetNetwork()
