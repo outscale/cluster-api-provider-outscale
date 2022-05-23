@@ -19,12 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	"time"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
@@ -71,9 +73,10 @@ func (r *OscClusterReconciler) getInternetServiceSvc(ctx context.Context, scope 
 
 // getRouteTableSvc retrieve routeTableSvc
 func (r *OscClusterReconciler) getRouteTableSvc(ctx context.Context, scope scope.ClusterScope) security.OscRouteTableInterface {
-        return security.NewService(ctx, &scope)
+	return security.NewService(ctx, &scope)
 }
 
+// getSecurityGroupSvc retrieve securityGroupSvc
 func (r *OscClusterReconciler) getSecurityGroupSvc(ctx context.Context, scope scope.ClusterScope) security.OscSecurityGroupInterface {
 	return security.NewService(ctx, &scope)
 }
@@ -86,6 +89,11 @@ func (r *OscClusterReconciler) getNatServiceSvc(ctx context.Context, scope scope
 // getPublicIpSvc retrieve publicIpSvc
 func (r *OscClusterReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
 	return security.NewService(ctx, &scope)
+}
+
+// getLoadBalancerSvc retrieve loadBalancerSvc
+func (r *OscClusterReconciler) getLoadBalancerSvc(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
+	return service.NewService(ctx, &scope)
 }
 
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -352,7 +360,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
-	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
+	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile load balancer")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -372,7 +381,8 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 
 	// reconcile deletion of each element of the cluster
 
-	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope)
+	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, loadBalancerSvc)
 	if err != nil {
 		return reconcileDeleteLoadBalancer, err
 	}
