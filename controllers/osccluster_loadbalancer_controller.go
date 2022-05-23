@@ -16,7 +16,6 @@ func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 	var resourceNameList []string
 	clusterScope.Info("check match subnet with loadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetsSpec := clusterScope.GetSubnet()
 	for _, subnetSpec := range subnetsSpec {
@@ -27,7 +26,7 @@ func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 	if checkOscAssociate {
 		return nil
 	} else {
-		return fmt.Errorf("%s subnet does not exist in loadBalancer", loadBalancerName)
+		return fmt.Errorf("%s subnet does not exist in loadBalancer", loadBalancerSubnetName)
 	}
 }
 
@@ -37,15 +36,78 @@ func checkLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
+
 	validLoadBalancerName := service.ValidateLoadBalancerName(loadBalancerName)
 	if !validLoadBalancerName {
 		return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer name", loadBalancerName)
 	}
+
 	loadBalancerType := loadBalancerSpec.LoadBalancerType
 	validLoadBalancerType := service.ValidateLoadBalancerType(loadBalancerType)
 	if !validLoadBalancerType {
-		return loadBalancerName, fmt.Errorf("%s is and invalid loadbalancer type", loadBalancerType)
+		return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer type", loadBalancerType)
 	}
+
+	loadBalancerBackendPort := loadBalancerSpec.Listener.BackendPort
+	_, err := service.ValidatePort(loadBalancerBackendPort)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer backend", loadBalancerBackendPort, err)
+	}
+
+	loadBalancerBackendProtocol := loadBalancerSpec.Listener.BackendProtocol
+	_, err = service.ValidateProtocol(loadBalancerBackendProtocol)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%s is an %w for loadBalancer backend", loadBalancerBackendProtocol, err)
+	}
+
+	loadBalancerPort := loadBalancerSpec.Listener.LoadBalancerPort
+	_, err = service.ValidatePort(loadBalancerPort)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerPort, err)
+	}
+
+	loadBalancerProtocol := loadBalancerSpec.Listener.LoadBalancerProtocol
+	_, err = service.ValidateProtocol(loadBalancerProtocol)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%s is an %w for loadBalancer", loadBalancerProtocol, err)
+	}
+
+	loadBalancerCheckInterval := loadBalancerSpec.HealthCheck.CheckInterval
+	_, err = service.ValidateInterval(loadBalancerCheckInterval)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerCheckInterval, err)
+	}
+
+	loadBalancerHealthyThreshold := loadBalancerSpec.HealthCheck.HealthyThreshold
+	_, err = service.ValidateThreshold(loadBalancerHealthyThreshold)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerHealthyThreshold, err)
+	}
+
+	loadBalancerHealthCheckPort := loadBalancerSpec.HealthCheck.Port
+	_, err = service.ValidatePort(loadBalancerHealthCheckPort)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerHealthCheckPort, err)
+	}
+
+	loadBalancerHealthCheckProtocol := loadBalancerSpec.HealthCheck.Protocol
+	_, err = service.ValidateProtocol(loadBalancerHealthCheckProtocol)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%s is an %w for loadBalancer", loadBalancerHealthCheckProtocol, err)
+	}
+
+	loadBalancerTimeout := loadBalancerSpec.HealthCheck.Timeout
+	_, err = service.ValidateTimeout(loadBalancerTimeout)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerTimeout, err)
+	}
+
+	loadBalancerUnhealthyThreshold := loadBalancerSpec.HealthCheck.UnhealthyThreshold
+	_, err = service.ValidateThreshold(loadBalancerUnhealthyThreshold)
+	if err != nil {
+		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerUnhealthyThreshold, err)
+	}
+
 	return "", nil
 }
 
@@ -54,7 +116,6 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 	var resourceNameList []string
 	clusterScope.Info("check match securityGroup with loadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
 	for _, securityGroupSpec := range securityGroupsSpec {
@@ -65,17 +126,18 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 	if checkOscAssociate {
 		return nil
 	} else {
-		return fmt.Errorf("%s securityGroup does not exist in loadBalancer", loadBalancerName)
+		return fmt.Errorf("%s securityGroup does not exist in loadBalancer", loadBalancerSecurityGroupName)
 	}
 }
 
 // reconcileLoadBalancer reconciles the loadBalancer of the cluster.
-func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	servicesvc := service.NewService(ctx, clusterScope)
+func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface) (reconcile.Result, error) {
 
 	clusterScope.Info("Create Loadbalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
+	loadBalancerName := loadBalancerSpec.LoadBalancerName
+	clusterScope.Info("Check if the desired loadbalancer exist", "loadBalancerName", loadBalancerName)
+	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -92,15 +154,17 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	if loadbalancer == nil {
 		clusterScope.Info("### Get lb subnetId ###", "subnet", subnetId)
 		clusterScope.Info("### Get lb  sgId ###", "sg", securityGroupId)
-
-		_, err := servicesvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
+		clusterScope.Info("Create the desired loadBalancer", "loadBalancerName", loadBalancerName)
+		_, err := loadBalancerSvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create load balancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w Can not create loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
-		loadbalancer, err = servicesvc.ConfigureHealthCheck(loadBalancerSpec)
+		clusterScope.Info("Configure the desired loadBalancer", "loadBalancerName", loadBalancerName)
+		loadbalancer, err = loadBalancerSvc.ConfigureHealthCheck(loadBalancerSpec)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not configure healthcheck for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
+		clusterScope.Info("### Get lb ###", "loadbalancer", loadbalancer)
 
 	}
 	controlPlaneEndpoint := *loadbalancer.DnsName
@@ -115,26 +179,27 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 // reconcileDeleteLoadBalancer reconcile the destruction of the LoadBalancer of the cluster.
 
-func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
-	servicesvc := service.NewService(ctx, clusterScope)
 
 	clusterScope.Info("Delete LoadBalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerSpec.SetDefaultValue()
+	loadBalancerName := loadBalancerSpec.LoadBalancerName
 
-	loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
+	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if loadbalancer == nil {
+		clusterScope.Info("the desired loadBalancer does not exist anymore", "loadBalancerName", loadBalancerName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	err = servicesvc.DeleteLoadBalancer(loadBalancerSpec)
+	err = loadBalancerSvc.DeleteLoadBalancer(loadBalancerSpec)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete load balancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		clusterScope.Info("Delete the desired loadBalancer", "loadBalancerName", loadBalancerName)
+		return reconcile.Result{}, fmt.Errorf("%w Can not delete loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
-	clusterScope.Info("Wait LoadBalancer Delete")
 	return reconcile.Result{}, nil
 }
