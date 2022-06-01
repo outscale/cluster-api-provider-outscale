@@ -91,7 +91,7 @@ func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 	}
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableSubnetName := routeTableSpec.SubnetName + "-" + clusterScope.GetUID()
-		checkOscAssociate := contains(resourceNameList, routeTableSubnetName)
+		checkOscAssociate := Contains(resourceNameList, routeTableSubnetName)
 		if checkOscAssociate {
 			return nil
 		} else {
@@ -257,7 +257,6 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 	}
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
-		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		clusterScope.Info("Check if the desired routeTable existin net", "routeTableName", routeTableName)
 		clusterScope.Info("### Get routeTable Id ###", "routeTable", routeTablesRef.ResourceMap)
 		subnetName := routeTableSpec.SubnetName + "-" + clusterScope.GetUID()
@@ -275,9 +274,10 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		if routeTableSpec.ResourceId != "" {
 			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
 		}
+		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		var natRouteTable bool = false
 
-		if !contains(routeTableIds, routeTableId) {
+		if !Contains(routeTableIds, routeTableId) {
 			clusterScope.Info("check Nat RouteTable")
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 
@@ -358,7 +358,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		clusterScope.Info("### delete routeTable Id ###", "routeTable", routeTableId)
 
-		if !contains(routeTableIds, routeTableId) {
+		if !Contains(routeTableIds, routeTableId) {
 			clusterScope.Info("the desired routeTable does no exist anymore", "routeTableName", routeTableName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil

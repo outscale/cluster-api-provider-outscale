@@ -264,7 +264,6 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupDescription := securityGroupSpec.Description
-		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 		clusterScope.Info("### Get securityGroup Id ###", "securityGroup", securityGroupIds)
 		if len(securityGroupsRef.ResourceMap) == 0 {
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -272,7 +271,8 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if securityGroupSpec.ResourceId != "" {
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
 		}
-		if !contains(securityGroupIds, securityGroupId) {
+		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
+		if !Contains(securityGroupIds, securityGroupId) {
 			securityGroup, err := securitysvc.CreateSecurityGroup(netId, securityGroupName, securityGroupDescription)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create securitygroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
@@ -352,7 +352,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		if !contains(securityGroupIds, securityGroupId) {
+		if !Contains(securityGroupIds, securityGroupId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}

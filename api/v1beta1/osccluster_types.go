@@ -36,7 +36,7 @@ type OscClusterSpec struct {
 
 // OscClusterStatus defines the observed state of OscCluster
 type OscClusterStatus struct {
-	Ready      bool                 `json:"ready"`
+	Ready      bool                 `json:"ready,omitempty"`
 	Network    OscNetworkResource   `json:"network,omitempty"`
 	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }

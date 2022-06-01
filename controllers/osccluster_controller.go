@@ -143,7 +143,7 @@ func alertDuplicate(nameArray []string) error {
 }
 
 // contains check if item is present in slice
-func contains(slice []string, item string) bool {
+func Contains(slice []string, item string) bool {
 	for _, val := range slice {
 		if val == item {
 			return true
@@ -266,7 +266,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if checkOscAssociateLoadBalancerSecurityGroupErr != nil {
 		return reconcile.Result{}, checkOscAssociateLoadBalancerSecurityGroupErr
 	}
-
+	clusterScope.Info("Set OscCluster status to not ready")
+	clusterScope.SetNotReady()
 	// Reconcile each element of the cluster
 	netsvc := r.getNetSvc(ctx, *clusterScope)
 	reconcileNet, err := reconcileNet(ctx, clusterScope, netsvc)
@@ -336,13 +337,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
-	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope)
-	if err != nil {
-		clusterScope.Error(err, "failed to reconcile load balancer")
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		return reconcileLoadBalancer, err
-	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
+	_, err = reconcileLoadBalancer(ctx, clusterScope)
 
 	clusterScope.Info("Set OscCluster status to ready")
 	clusterScope.SetReady()

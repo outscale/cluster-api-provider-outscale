@@ -56,7 +56,7 @@ func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	checkOscAssociate := contains(resourceNameList, natSubnetName)
+	checkOscAssociate := Contains(resourceNameList, natSubnetName)
 	if checkOscAssociate {
 		return nil
 	} else {
