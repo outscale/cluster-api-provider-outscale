@@ -1135,8 +1135,31 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 		expReconcileSecurityGroupErr     error
 	}{
 		{
-			name:                             "failed to create securityGroup",
-			spec:                             defaultSecurityGroupInitialize,
+			name: "failed to create securityGroup",
+			spec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
+						Name:    "test-net",
+						IpRange: "10.0.0.0/16",
+					},
+					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+						{
+							Name:        "test-securitygroup",
+							Description: "test securitygroup",
+							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+								{
+									Name:          "test-securitygrouprule",
+									Flow:          "Inbound",
+									IpProtocol:    "tcp",
+									IpRange:       "0.0.0.0/0",
+									FromPortRange: 6443,
+									ToPortRange:   6443,
+								},
+							},
+						},
+					},
+				},
+			},
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expCreateSecurityGroupErr:        fmt.Errorf("CreateSecurityGroup generic error"),
 			expReconcileSecurityGroupErr:     fmt.Errorf("CreateSecurityGroup generic error Can not create securityGroup for Osccluster test-system/test-osc"),

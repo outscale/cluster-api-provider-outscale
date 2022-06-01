@@ -234,6 +234,10 @@ func (s *ClusterScope) SetControlPlaneEndpoint(apiEndpoint clusterv1.APIEndpoint
 	s.OscCluster.Spec.ControlPlaneEndpoint = apiEndpoint
 }
 
+func (s *ClusterScope) SetNotReady() {
+	s.OscCluster.Status.Ready = false
+}
+
 // SetReady set the ready status of the cluster
 func (s *ClusterScope) SetReady() {
 	s.OscCluster.Status.Ready = true
