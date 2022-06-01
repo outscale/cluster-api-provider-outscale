@@ -22,7 +22,7 @@ func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	checkOscAssociate := contains(resourceNameList, loadBalancerSubnetName)
+	checkOscAssociate := Contains(resourceNameList, loadBalancerSubnetName)
 	if checkOscAssociate {
 		return nil
 	} else {
@@ -122,7 +122,7 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, securityGroupName)
 	}
-	checkOscAssociate := contains(resourceNameList, loadBalancerSecurityGroupName)
+	checkOscAssociate := Contains(resourceNameList, loadBalancerSecurityGroupName)
 	if checkOscAssociate {
 		return nil
 	} else {

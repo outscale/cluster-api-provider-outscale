@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
@@ -1592,8 +1593,38 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 		expReconcileRouteTableErr        error
 	}{
 		{
-			name:                             "failed to create routeTable",
-			spec:                             defaultRouteTableGatewayInitialize,
+			name: "failed to create routeTable",
+			spec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
+						Name:    "test-net",
+						IpRange: "10.0.0.0/16",
+					},
+					Subnets: []*infrastructurev1beta1.OscSubnet{
+						{
+							Name:          "test-subnet",
+							IpSubnetRange: "10.0.0.0/24",
+						},
+					},
+					InternetService: infrastructurev1beta1.OscInternetService{
+						Name: "test-internetservice",
+					},
+					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+						{
+							Name:       "test-routetable",
+							SubnetName: "test-subnet",
+							Routes: []infrastructurev1beta1.OscRoute{
+								{
+									Name:        "test-route",
+									TargetName:  "test-internetservice",
+									TargetType:  "gateway",
+									Destination: "0.0.0.0/0",
+								},
+							},
+						},
+					},
+				},
+			},
 			expCreateRouteTableErr:           fmt.Errorf("CreateRouteTable generic error"),
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReconcileRouteTableErr:        fmt.Errorf("CreateRouteTable generic error Can not create routetable for Osccluster test-system/test-osc"),

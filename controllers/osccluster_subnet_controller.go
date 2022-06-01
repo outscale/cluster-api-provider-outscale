@@ -97,7 +97,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		if subnetSpec.ResourceId != "" {
 			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
 		}
-		if !contains(subnetIds, subnetId) {
+		if !Contains(subnetIds, subnetId) {
 			clusterScope.Info("Create the desired subnet", "subnetName", subnetName)
 			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, subnetName)
 			if err != nil {
@@ -140,7 +140,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	for _, subnetSpec := range subnetsSpec {
 		subnetId := subnetSpec.ResourceId
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
-		if !contains(subnetIds, subnetId) {
+		if !Contains(subnetIds, subnetId) {
 			clusterScope.Info("the desired subnet does not exist anymore", "subnetName", subnetName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil

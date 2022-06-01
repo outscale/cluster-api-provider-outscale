@@ -254,17 +254,17 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
-		securityGroupDescription := securityGroupSpec.Description
-		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 		clusterScope.Info("Check if the desired securityGroup exist in net", "securityGroupName", securityGroupName)
-		clusterScope.Info("### get securityGroup Id ###", "securityGroup", securityGroupIds)
+		securityGroupDescription := securityGroupSpec.Description
+		clusterScope.Info("### Get securityGroup Id ###", "securityGroup", securityGroupIds)
 		if len(securityGroupsRef.ResourceMap) == 0 {
 			securityGroupsRef.ResourceMap = make(map[string]string)
 		}
 		if securityGroupSpec.ResourceId != "" {
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
 		}
-		if !contains(securityGroupIds, securityGroupId) {
+		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
+		if !Contains(securityGroupIds, securityGroupId) {
 			clusterScope.Info("Find securitygroup", "securityGroup", securityGroupId)
 			clusterScope.Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
 			securityGroup, err := securityGroupSvc.CreateSecurityGroup(netId, securityGroupName, securityGroupDescription)
@@ -352,7 +352,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		if !contains(securityGroupIds, securityGroupId) {
+		if !Contains(securityGroupIds, securityGroupId) {
 			clusterScope.Info("the desired securityGroup does not exist anymore", "securityGroupName", securityGroupName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
