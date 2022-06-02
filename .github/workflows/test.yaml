@@ -1,0 +1,68 @@
+name: test
+
+on:
+  push:
+    branches:    
+      - 'ain'
+  pull_request:
+    branches: [ main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+    - uses: actions/checkout@v3
+      with:
+        repository: 'outscale-vbr/osc-k8s-rke-cluster'
+        path: 'rke-cluster-for-cluster-api'
+        ref: add_volume_argument
+
+    - uses: azure/setup-kubectl@v2.0
+      with:
+        version: v1.22.7
+      id: install
+    - name: Deploy Cluster
+      uses: outscale-vbr/osc-k8s-rke-cluster/github_actions/deploy_cluster@add_volume_argument
+      with:
+        repository_folder: "./rke-cluster-for-cluster-api"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}
+        rke_version: "v1.3.9"
+        kubernetes_version: "v1.22.7-rancher1-2"
+        bastion_vm_type: "tinav5.c4r8p1"
+        bastion_volume_type: "standard"
+        bastion_volume_size: 15
+        control_plane_vm_type: "tinav5.c4r8p1"
+        control_plane_count: 1
+        control_plane_volume_type: "standard"
+        control_plane_volume_size: 15
+        worker_vm_type: "tinav5.c4r8p1"
+        worker_count: 2
+        worker_volume_type: "standard"
+        worker_volume_size: 15
+    - name: Wait Kubernetes control plane is up
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 60
+        max_attempts: 10
+        command: kubectl get --raw='/readyz?verbose'  
+    - name: Wait all infrastructure app are up and running
+      uses: jupyterhub/action-k8s-await-workloads@v1
+      with:
+        workloads: ""
+        namespace: "" 
+        timeout: 600
+        max-restarts: 0
+    - name: Destroy Cluster
+      uses: outscale-vbr/osc-k8s-rke-cluster/github_actions/destroy_cluster@add_volume_argument
+      if: ${{ always() }}
+      with:
+        repository_folder: "./rke-cluster-for-cluster-api"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}
