@@ -30,7 +30,7 @@ jobs:
       run: ls -la
       shell: bash
     - name: Deploy Cluster
-      uses: ./rke-cluster-for-cluster-api/osc-k8s-rke-cluster/github_actions/deploy_cluster/action.yml
+      uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/action.yml
       with:
         repository_folder: "./rke-cluster-for-cluster-api"
         rke_version: "v1.3.9"
@@ -63,7 +63,7 @@ jobs:
         timeout: 600
         max-restarts: 0
     - name: Destroy Cluster
-      uses: ./rke-cluster-for-cluster-api/osc-k8s-rke-cluster/github_actions/destroy_cluster/action.yml
+      uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/action.yml
       if: ${{ always() }}
       with:
         repository_folder: "./rke-cluster-for-cluster-api"
