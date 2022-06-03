@@ -23,6 +23,12 @@ jobs:
       with:
         version: v1.22.7
       id: install
+    - name: check content
+      run: ls -la ./rke-cluster-for-cluster-api/
+      shell: bash
+    - name: check file
+      run: ls -la
+      shell: bash
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/osc-k8s-rke-cluster/github_actions/deploy_cluster/action.yml
       with:
