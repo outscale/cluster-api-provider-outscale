@@ -23,10 +23,11 @@ jobs:
       with:
         version: v1.22.7
       id: install
-    - name: Deploy on cluster
-      run: |
-        mkdir rke-cluster-for-cluster-api/rke
-	echo "$KUBECONFIG" > ./rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+    - name: Create folder
+      run:  mkdir rke-cluster-for-cluster-api/rke
+      shell: bash
+    - name: create kubeconfig
+      run: echo "$KUBECONFIG" > ./rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
       shell: bash
       env:
         KUBECONFIG: ${{secrets.KUBECONFIG}}
