@@ -29,9 +29,6 @@ jobs:
       uses: outscale-vbr/osc-k8s-rke-cluster/github_actions/deploy_cluster@add_volume_argument
       with:
         repository_folder: "./rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
         rke_version: "v1.3.9"
         kubernetes_version: "v1.22.7-rancher1-2"
         bastion_vm_type: "tinav5.c4r8p1"
@@ -45,6 +42,7 @@ jobs:
         worker_count: 2
         worker_volume_type: "standard"
         worker_volume_size: 15
+      secrets: inherit
     - name: Wait Kubernetes control plane is up
       uses: nick-invision/retry@v2
       with:
