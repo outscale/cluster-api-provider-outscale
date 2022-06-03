@@ -23,7 +23,7 @@ jobs:
       with:
         version: v1.22.7
       id: install
-    - name: Current cluster
+    - name: Deploy on cluster
       run: |
         mkdir rke-cluster-for-cluster-api/rke
 	echo "$KUBECONFIG" > ./rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
