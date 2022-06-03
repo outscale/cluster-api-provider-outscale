@@ -34,7 +34,7 @@ jobs:
         kubernetes_version: "v1.22.7-rancher1-2"
         bastion_vm_type: "tinav5.c4r8p1"
         bastion_volume_type: "standard"
-        bastion_volume_size: 20
+        bastion_volume_size: 15
         control_plane_vm_type: "tinav5.c4r8p1"
         control_plane_count: 1
         control_plane_volume_type: "standard"
