@@ -73,6 +73,8 @@ unit-test:
 	go tool cover -func=covers.out -o covers.txt
 	go tool cover -html=covers.out -o covers.html
 
+.PHONY: unit-test
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
