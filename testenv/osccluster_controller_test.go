@@ -55,7 +55,7 @@ func deployOscInfraCluster(ctx context.Context, infraClusterSpec infrastructurev
 }
 
 func createCheckDeleteOscCluster(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec) {
-	secret, secretKey := deploySecret(ctx, "cluster-api-provider-outscale", "default")
+	secret, secretKey := deploySecret(ctx, "cluster-api-provider-outscale", "cluster-api-provider-outscale-system")
 	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, "cluster-api", "default")
 	capoCluster, capoClusterKey := deployCapoCluster(ctx, "cluster-api", "default")
 	waitOscInfraClusterToBeReady(ctx, oscInfraClusterKey)
