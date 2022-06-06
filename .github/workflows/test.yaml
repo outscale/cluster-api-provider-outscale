@@ -1,0 +1,63 @@
+name: test
+
+on:
+  push:
+    branches:    
+      - 'test-rke'
+  pull_request_target:
+    branches: [ test-rke ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+    - uses: actions/checkout@v3
+      with:
+        repository: 'outscale-vbr/osc-k8s-rke-cluster'
+        path: 'rke-cluster-for-cluster-api'
+        ref: add_volume_argument
+    - uses: azure/setup-kubectl@v2.0
+      with:
+        version: v1.22.7
+      id: install
+    - name: Create folder
+      run:  mkdir rke-cluster-for-cluster-api/rke
+      shell: bash
+    - name: create kubeconfig
+      run: echo "$KUBECONFIG" > ./rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+      shell: bash
+      env:
+        KUBECONFIG: ${{secrets.KUBECONFIG}}
+    - name: Wait Kubernetes control plane is up
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 60
+        max_attempts: 10
+        command: kubectl get --raw='/readyz?verbose'  
+      env:
+        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+    - name: Wait all infrastructure app are really up and running
+      uses: jupyterhub/action-k8s-await-workloads@v1
+      with:
+        workloads: ""
+        namespace: "" 
+        timeout: 600
+        max-restarts: -1
+      env:
+        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+    - name: Install kustomize
+      uses: imranismail/setup-kustomize@v1
+    - name: Deploy the main current stack
+      run: make deploy
+      env:
+        IMG: 042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/osc/cluster-api-outscale-controllers:eb9d665136919be43984672220a3516ae9bdcfeb
+        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+    - name: deploy
+      run: make testenv
+      env:
+         KUBECONFIG: ../rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
+         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
