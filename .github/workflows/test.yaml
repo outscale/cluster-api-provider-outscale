@@ -3,9 +3,9 @@ name: test
 on:
   push:
     branches:    
-      - 'test-rke'
+      - 'testenv'
   pull_request_target:
-    branches: [ test-rke ]
+    branches: [ testenv ]
 jobs:
   test:
     runs-on: ubuntu-latest
