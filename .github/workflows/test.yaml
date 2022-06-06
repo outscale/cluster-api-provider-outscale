@@ -55,7 +55,7 @@ jobs:
       env:
         IMG: 042b4721a38342028d65c28be2b30e64-157001637.eu-west-2.lbu.outscale.com:5000/controller:tilt-4e1dfc7d4906d63d
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: deploy
+    - name: Deploy and test
       run: make testenv
       env:
          KUBECONFIG: ../rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
