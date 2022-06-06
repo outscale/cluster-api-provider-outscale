@@ -73,6 +73,10 @@ unit-test:
 	go tool cover -func=covers.out -o covers.txt
 	go tool cover -html=covers.out -o covers.html
 
+.PHONY: testenv
+testenv:
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
+
 .PHONY: unit-test
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 .PHONY: test
