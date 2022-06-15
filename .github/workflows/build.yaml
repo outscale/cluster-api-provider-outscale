@@ -3,7 +3,9 @@ name: build
 on:
   pull_request:
     branches: [ main ]
-
+  push:
+    branches:
+      - 'main'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,8 +20,3 @@ jobs:
     - name: Lint
       run: make vet
       shell: bash
-    - name: unit-test
-      run: |
-        make unit-test
-        cat covers.txt
-      shell: bash     

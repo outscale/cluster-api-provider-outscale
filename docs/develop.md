@@ -49,6 +49,12 @@ If you want to change it with another name, you change it in *cluster-api-provid
 
 Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
 
+Or you can use this to deploy cluster-api with cert-manager:
+
+```
+make deploy-clusterapi
+```
+
 ##  Build, Push and Deploy
 This step will build and push image to your public or private registry and deploy it.
 
@@ -130,6 +136,13 @@ make unit-test
 
 Yòu can look at code coverage with covers.txt and covers.html
 
+## Functional test
+
+Please use if you want to launch functional test:
+```
+make testenv
+```
+
 # CleanUp
 
 ##  Delete cluster
@@ -144,6 +157,16 @@ kubectl delete -f example/cluster-template.yaml
 This step  will delete the outscale controller manager
 ```
 IMG=my-registry/controller:my-tag make undeploy
+```
+
+# Delete Cluster Api
+
+Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
+
+Or you can use this to undeploy cluster-api with cert-manager:
+
+```
+make deploy-clusterapi
 ```
 
 <!-- References -->

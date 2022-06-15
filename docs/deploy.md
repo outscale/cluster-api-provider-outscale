@@ -32,7 +32,9 @@ You can either use outscale/cluster-api-provider-outscale latest image.
 
 
 ###  Build and push own image
+
 Or you can build and push image to your public or private registry
+
 ```
 IMG=my-registry/controller:my-tag make docker-build
 IMG=my-registry/controller:my-tag make docker-push
@@ -41,6 +43,11 @@ IMG=my-registry/controller:my-tag make docker-push
 # Deploying Cluster Api
 
 Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
+
+Or you can use this to deploy cluster-api with cert-manager:
+```
+make deploy-clusterapi
+```
 
 # Deploying Cluster API Provider Outscale
 
@@ -85,6 +92,16 @@ kubectl delete -f example/cluster-template.yaml
 This step will delete the Cluster Api Outscale controller manager with:
 ```
 IMG=my-registry/controller:my-tag make undeploy
+```
+
+# Delete Cluster Api
+
+Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
+
+Or you can use this to undeploy cluster-api with cert-manager:
+
+```
+make deploy-clusterapi
 ```
 
 <!-- References -->
