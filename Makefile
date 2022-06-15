@@ -1,6 +1,14 @@
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+OSC_ACCESS_KEY ?= access
+OSC_SECRET_KEY ?= secret
+OSC_CLUSTER ?= cluster-api
+CLUSTER ?= cluster-api
+LOG_TAIL ?= -1
+CAPI_VERSION ?= v1.1.4
+CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system   
+CAPO_NAMESPACE ?= cluster-api-provider-outscale-system  
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
@@ -69,9 +77,13 @@ checkfmt: ## check gofmt
 
 .PHONY: unit-test
 unit-test: 
-	go test -v -coverprofile=covers.out  ./...
+	go test -v -coverprofile=covers.out  ./controllers
 	go tool cover -func=covers.out -o covers.txt
 	go tool cover -html=covers.out -o covers.html
+
+.PHONY: testenv
+testenv:
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
@@ -120,11 +132,34 @@ KUSTOMIZE := $(shell command -v kustomize 2> /dev/null)
 deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 ifndef KUSTOMIZE
 	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
-	$(LOCAL_KUSTOMIZE) build config/default | kubectl apply -f -
+	$(LOCAL_KUSTOMIZE) build config/default | envsubst | kubectl apply -f -
 else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -  
+	$(KUSTOMIZE) build config/default | envsubst | kubectl apply -f -  
 endif
+
+.PHONY: credential
+credential: ## Set Credentials
+	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f -
+	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} -n cluster-api-provider-outscale-system ||:
+
+.PHONY: logs-capo
+logs-capo: ## Get logs capo
+	kubectl logs -l  control-plane=controller-manager -n ${CAPO_NAMESPACE}  --tail=${LOG_TAIL}
+
+.PHONY: delete-capo
+delete-capo: ## Delete Cluster api Outscale cluster
+	kubectl delete cluster ${CLUSTER}
+	kubectl delete osccluster ${OSC_CLUSTER}
+
+.PHONY: force-delete-capo
+force-delete-capo: ## Force delete Cluster api Outscale cluster (Remove finalizers)
+	kubectl patch cluster ${CLUSTER} -p '{"metadata":{"finalizers":null}}' --type=merge
+	kubectl patch osccluster ${OSC_CLUSTER}  -p '{"metadata":{"finalizers":null}}' --type=merge
+
+.PHONY: logs-capi
+logs-capi: ## Get logs capi
+	kubectl logs -l  control-plane=controller-manager -n ${CAPI_NAMESPACE}  --tail=${LOG_TAIL}
 
 .PHONY: capm
 capm: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
@@ -140,30 +175,53 @@ endif
 deploy-dev: manifests deploy  ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-ifndef kUSTOMIZE
-	$(LOCAL_KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+undeploy: ## Undeploy controller to the K8s cluster specified in ~/.kube/config.
+ifndef KUSTOMIZE
+	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
+	$(LOCAL_KUSTOMIZE) build config/default | envsubst | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 else
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | envsubst | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 endif
+
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
+	mkdir -p $(shell pwd)/bin
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+
+LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
+.PHONY: install-clusterctl
+install-clusterctl: ## Download clusterctl locally if necessary.
+	mkdir -p $(shell pwd)/bin
+	wget -c https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterctl-linux-amd64	
+	mv $(shell pwd)/clusterctl-linux-amd64 $(shell pwd)/bin/clusterctl
+	chmod +x  $(LOCAL_CLUSTERCTL)
+
+.PHONY: deploy-clusterapi
+deploy-clusterapi: install-clusterctl ## Deploy clusterapi
+	$(LOCAL_CLUSTERCTL) init  --wait-providers -v 10
+
+.PHONY: undeploy-clusterapi
+undeploy-clusterapi:  ## undeploy clusterapi
+	$(LOCAL_CLUSTERCTL) delete --all --include-crd  --include-namespace -v 10
 
 LOCAL_KUSTOMIZE ?= $(shell pwd)/bin/kustomize
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
+	mkdir -p $(shell pwd)/bin
 	$(call go-get-tool,$(LOCAL_KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
+	mkdir -p $(shell pwd)/bin
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 MOCKGEN = $(shell pwd)/bin/mockgen
 .PHONY: mockgen
 mockgen: ## Download mockgen locally if necessary.
+	mkdir -p $(shell pwd)/bin
 	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
