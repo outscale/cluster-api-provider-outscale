@@ -85,6 +85,10 @@ unit-test:
 testenv:
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
+.PHONY: e2etest
+e2etest:
+	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=${PWD}/test/e2e/config/outscale-ci.yaml
+
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
