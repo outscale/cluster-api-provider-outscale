@@ -16,7 +16,7 @@ on:
 
 jobs:
   unit_test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
@@ -28,7 +28,7 @@ jobs:
         cat covers.txt
       shell: bash   
   testenv:
-    runs-on: 
+    runs-on: [self-hosted, linux, x64]
     needs: [unit_test]
     steps:
     - name: Checkout cluster-api-outscale
@@ -40,7 +40,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: 'outscale-dev/osc-k8s-rke-cluster'
-        path: "set-up-rke-cluster"
+        path: "rke-cluster-for-cluster-api"
         ref: master
     - name: Install kubectl
       uses: azure/setup-kubectl@v2.0
@@ -61,7 +61,7 @@ jobs:
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
       with:
-        repository_folder: "./rke-cluster-for-cluster-api"
+        repository_folder: "rke-cluster-for-cluster-api"
         rke_version: "v1.3.9"
         osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
