@@ -28,7 +28,7 @@ jobs:
         cat covers.txt
       shell: bash   
   testenv:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     needs: [unit_test]
     steps:
     - name: Checkout cluster-api-outscale
