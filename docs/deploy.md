@@ -77,6 +77,10 @@ You can change parameter from cluster-template.yaml (please look at [configurati
 kubectl apply -f example/cluster-template.yaml
 ```
 
+## Kubeadmconfig
+
+You can use https://cluster-api.sigs.k8s.io/tasks/kubeadm-bootstrap.html to custom the bootstrap config.
+Currently, we overwrite runc with containerd because of https://github.com/containerd/containerd/releases/tag/v1.6.0
 
 # CleanUp
 

@@ -41,7 +41,7 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 		}
 		clusterScope.Info("Check Subnet IpsubnetRange parameters")
 		subnetIpRange := subnetSpec.IpSubnetRange
-		_, err = net.ValidateCidr(subnetIpRange)
+		_, err = infrastructurev1beta1.ValidateCidr(subnetIpRange)
 		if err != nil {
 			return subnetTagName, err
 		}

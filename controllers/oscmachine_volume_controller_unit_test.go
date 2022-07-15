@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -14,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"testing"
 )
 
 var (
@@ -659,7 +660,6 @@ func TestReconcileVolumeGet(t *testing.T) {
 }
 
 // TestReconcileDeleteVolumeDelete has several tests to cover the code of the function reconcileDeleteVolume
-
 func TestReconcileDeleteVolumeDelete(t *testing.T) {
 	volumeTestCases := []struct {
 		name                            string
@@ -710,7 +710,6 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 			expReconcileDeleteVolumeErr:     fmt.Errorf("DeleteVolume generic error Can not delete volume for OscMachine test-system/test-osc"),
 		},
 	}
-
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
@@ -1064,29 +1063,29 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
 						Return(vtc.expCheckVolumeStateAvailableErr)
 				}
-			}
-			if vtc.expVolumeFound {
-				mockOscVolumeInterface.
-					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
-					Return(volumesIds, vtc.expValidateVolumeIdsErr)
-			} else {
-				if len(volumesIds) == 0 {
-					volumesIds = []string{""}
+				if vtc.expVolumeFound {
+					mockOscVolumeInterface.
+						EXPECT().
+						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						Return(volumesIds, vtc.expValidateVolumeIdsErr)
+				} else {
+					if len(volumesIds) == 0 {
+						volumesIds = []string{""}
+					}
+					mockOscVolumeInterface.
+						EXPECT().
+						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						Return(nil, vtc.expValidateVolumeIdsErr)
 				}
-				mockOscVolumeInterface.
-					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
-					Return(nil, vtc.expValidateVolumeIdsErr)
-			}
 
-			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
-			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVolumeErr)
+				reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
+				if err != nil {
+					assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
+				} else {
+					assert.Nil(t, vtc.expReconcileDeleteVolumeErr)
+				}
+				t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 			}
-			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
 	}
 }

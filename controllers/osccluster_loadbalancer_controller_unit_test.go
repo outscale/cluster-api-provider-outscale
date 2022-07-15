@@ -202,7 +202,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("test-loadbalancer@test is an invalid loadBalancer name"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("test-loadbalancer@test is an invalid loadBalancer name: Invalid Description"),
 		},
 		{
 			name: "check invalid type loadBalancer",
@@ -216,7 +216,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("internet is an invalid loadBalancer type"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("internet is an invalid loadBalancer type: Invalid LoadBalancerType"),
 		},
 		{
 			name: "check invalid backend port loadBalancer",

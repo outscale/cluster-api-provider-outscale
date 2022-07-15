@@ -210,7 +210,6 @@ var (
 				VmType:           "tinav4.c2r4p2",
 				ResourceId:       "i-test-vm-uid",
 				PublicIpName:     "test-publicip",
-
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
@@ -1263,6 +1262,48 @@ func TestReconcileVm(t *testing.T) {
 			expReconcileVmErr:                       nil,
 		},
 		{
+			name:                                    "create two vm (first time reconcile loop)",
+			clusterSpec:                             defaultVmClusterInitialize,
+			machineSpec:                             defaultMultiVmInitialize,
+			expCreateVmFound:                        true,
+			expLinkPublicIpFound:                    true,
+			expCreateInboundSecurityGroupRuleFound:  true,
+			expCreateOutboundSecurityGroupRuleFound: true,
+			expCreateVmErr:                          nil,
+			expCheckVmStateBootErr:                  nil,
+			expCheckVolumeStateAvailableErr:         nil,
+			expLinkVolumeErr:                        nil,
+			expCheckVolumeStateUseErr:               nil,
+			expCheckVmStateVolumeErr:                nil,
+			expLinkPublicIpErr:                      nil,
+			expCheckVmStatePublicIpErr:              nil,
+			expLinkLoadBalancerBackendMachineErr:    nil,
+			expCreateInboundSecurityGroupRuleErr:    nil,
+			expCreateOutboundSecurityGroupRuleErr:   nil,
+			expReconcileVmErr:                       nil,
+		},
+		{
+			name:                                    "user delete vm without cluster-api",
+			clusterSpec:                             defaultVmClusterInitialize,
+			machineSpec:                             defaultVmInitialize,
+			expCreateVmFound:                        true,
+			expLinkPublicIpFound:                    true,
+			expCreateInboundSecurityGroupRuleFound:  true,
+			expCreateOutboundSecurityGroupRuleFound: true,
+			expCreateVmErr:                          nil,
+			expCheckVmStateBootErr:                  nil,
+			expCheckVolumeStateAvailableErr:         nil,
+			expLinkVolumeErr:                        nil,
+			expCheckVolumeStateUseErr:               nil,
+			expCheckVmStateVolumeErr:                nil,
+			expLinkPublicIpErr:                      nil,
+			expCheckVmStatePublicIpErr:              nil,
+			expLinkLoadBalancerBackendMachineErr:    nil,
+			expCreateInboundSecurityGroupRuleErr:    nil,
+			expCreateOutboundSecurityGroupRuleErr:   nil,
+			expReconcileVmErr:                       nil,
+		},
+		{
 			name:                                    "failed to create outbound securityGroupRule",
 			clusterSpec:                             defaultVmClusterInitialize,
 			machineSpec:                             defaultVmInitialize,
@@ -1982,7 +2023,6 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 					LinkPublicIp(gomock.Eq(publicIpId), gomock.Eq(vmId)).
 					Return("", vtc.expLinkPublicIpErr)
 			}
-
 			if vtc.expCheckVmStatePublicIpFound {
 				mockOscVmInterface.
 					EXPECT().

@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -59,7 +60,7 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 
 		if volumeSpec.Iops != 0 {
 			volumeIops := volumeSpec.Iops
-			_, err = storage.ValidateIops(volumeIops)
+			_, err = infrastructurev1beta1.ValidateIops(volumeIops)
 			if err != nil {
 				return volumeTagName, err
 			}
@@ -67,18 +68,18 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 
 		volumeSize := volumeSpec.Size
 		machineScope.Info("Check volume info", "volumeSize", volumeSize)
-		_, err = storage.ValidateSize(volumeSize)
+		_, err = infrastructurev1beta1.ValidateSize(volumeSize)
 		if err != nil {
 			return volumeTagName, err
 		}
 
 		volumeSubregionName := volumeSpec.SubregionName
-		_, err = storage.ValidateSubregionName(volumeSubregionName)
+		_, err = infrastructurev1beta1.ValidateSubregionName(volumeSubregionName)
 		if err != nil {
 			return volumeTagName, err
 		}
 		volumeType := volumeSpec.VolumeType
-		_, err = storage.ValidateVolumeType(volumeType)
+		_, err = infrastructurev1beta1.ValidateVolumeType(volumeType)
 		if err != nil {
 			return volumeTagName, err
 		}

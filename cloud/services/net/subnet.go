@@ -20,7 +20,7 @@ type OscSubnetInterface interface {
 
 // CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error) {
-	ipSubnetRange, err := ValidateCidr(spec.IpSubnetRange)
+	ipSubnetRange, err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
 	}

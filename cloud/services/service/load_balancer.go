@@ -2,24 +2,12 @@ package service
 
 import (
 	"fmt"
-	"regexp"
 
 	"errors"
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"time"
-)
-
-const (
-	minPort      = 0
-	maxPort      = 65536
-	minInterval  = 4
-	maxInterval  = 601
-	minThreshold = 0
-	maxThreshold = 11
-	minTimeout   = 1
-	maxTimeout   = 61
 )
 
 //go:generate ../../../bin/mockgen -destination mock_service/loadbalancer_mock.go -package mock_service -source ./load_balancer.go
@@ -33,57 +21,6 @@ type OscLoadBalancerInterface interface {
 	CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
 }
 
-// ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
-func ValidateLoadBalancerName(loadBalancerName string) bool {
-	isValidate := regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
-	return isValidate(loadBalancerName)
-}
-
-// ValidatePort check that the  port is a valide port
-func ValidatePort(port int32) (int32, error) {
-	if port > minPort && port < maxPort {
-		return port, nil
-	} else {
-		return port, errors.New("Invalid Port")
-	}
-}
-
-// ValidateLoadBalancerType check that the  loadBalancerType is a valid
-func ValidateLoadBalancerType(loadBalancerType string) bool {
-	if loadBalancerType == "internet-facing" || loadBalancerType == "internal" {
-		return true
-	} else {
-		return false
-	}
-}
-
-// ValidateInterval check that the interval is a valide time of second
-func ValidateInterval(interval int32) (int32, error) {
-	if interval > minInterval && interval < maxInterval {
-		return interval, nil
-	} else {
-		return interval, errors.New("Invalid Interval")
-	}
-}
-
-// ValidateThreshold check that the threshold is a valide number of ping
-func ValidateThreshold(threshold int32) (int32, error) {
-	if threshold > minThreshold && threshold < maxThreshold {
-		return threshold, nil
-	} else {
-		return threshold, errors.New("Invalid threshold")
-	}
-}
-
-// ValidateTimeout check that the timeoout is a valide maximum time of second
-func ValidateTimeout(timeout int32) (int32, error) {
-	if timeout > minTimeout && timeout < maxTimeout {
-		return timeout, nil
-	} else {
-		return timeout, errors.New("Invalid Timeout")
-	}
-}
-
 // GetName return the name of the loadBalancer
 func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
 	var name string
@@ -94,8 +31,9 @@ func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, 
 		clusterName = infrastructurev1beta1.OscReplaceName(s.scope.GetName())
 		name = clusterName + "-" + "apiserver" + "-" + s.scope.GetUID()
 	}
-	if !ValidateLoadBalancerName(name) {
-		return "", errors.New("Invalid Name")
+	_, err := infrastructurev1beta1.ValidateLoadBalancerName(name)
+	if err != nil {
+		return "", err
 	}
 	return name, nil
 }

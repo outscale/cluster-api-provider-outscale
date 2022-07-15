@@ -2,8 +2,6 @@ package net
 
 import (
 	"fmt"
-	"net"
-	"strings"
 
 	"errors"
 
@@ -20,21 +18,9 @@ type OscNetInterface interface {
 	GetNet(netId string) (*osc.Net, error)
 }
 
-// ValidateCidr check that the cidr string is a valide CIDR
-func ValidateCidr(cidr string) (string, error) {
-	if !strings.Contains(cidr, "/") {
-		return cidr, errors.New("Invalid Not A CIDR")
-	}
-	_, _, err := net.ParseCIDR(cidr)
-	if err != nil {
-		return cidr, err
-	}
-	return cidr, nil
-}
-
 // CreateNet create the net from spec (in order to retrieve ip range)
 func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error) {
-	ipRange, err := ValidateCidr(spec.IpRange)
+	ipRange, err := infrastructurev1beta1.ValidateCidr(spec.IpRange)
 	if err != nil {
 		return nil, err
 	}
