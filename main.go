@@ -84,12 +84,22 @@ func main() {
 
 	if err = (&controllers.OscClusterReconciler{
 		Client:           mgr.GetClient(),
-		Recorder:         mgr.GetEventRecorderFor("osc-controller"),
+		Recorder:         mgr.GetEventRecorderFor("osccluster-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OscCluster")
 		os.Exit(1)
 	}
+
+	if err = (&controllers.OscMachineReconciler{
+		Client:           mgr.GetClient(),
+		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
+		ReconcileTimeout: reconcileTimeout,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OscMachine")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -75,7 +75,6 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 	}, input.WaitForClusterIntervals...)
 }
 
-
 // CapoClusterDeploymentSpec create infrastructure cluster using its generated config and wait infrastructure cluster to be provisionned
 func CapoClusterDeploymentSpec(ctx context.Context, inputGetter func() CapoClusterDeploymentSpecInput) {
 	var (

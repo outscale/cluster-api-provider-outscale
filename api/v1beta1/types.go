@@ -1,5 +1,12 @@
 package v1beta1
 
+type OscNode struct {
+	Vm      OscVm        `json:"vm,omitempty"`
+	Image   OscImage     `json:"image,omitempty"`
+	Volumes []*OscVolume `json:"volumes,omitempty"`
+	KeyPair OscKeypair   `json:"keypair,omitempty"`
+}
+
 type OscNetwork struct {
 	// The Load Balancer configuration
 	// +optional
@@ -240,7 +247,57 @@ type OscNetworkResource struct {
 	NatServiceRef OscResourceMapReference `json:"natref,omitempty"`
 }
 
+type OscNodeResource struct {
+	VolumeRef  OscResourceMapReference `json:"VolumeRef,omitempty"`
+	ImageRef   OscResourceMapReference `json:"ImageRef,omitempty"`
+	KeypairRef OscResourceMapReference `json:"KeypairRef,omitempty"`
+	VmRef      OscResourceMapReference `json:"VmRef,omitempty"`
+}
+
+type OscImage struct {
+	Name       string `json:"name,omitempty"`
+	ResourceId string `json:"resourceId,omitempty"`
+}
+
+type OscVolume struct {
+	Name          string `json:"name,omitempty"`
+	Iops          int32  `json:"iops,omitempty"`
+	Size          int32  `json:"size,omitempty"`
+	SubregionName string `json:"subregionName,omitempty"`
+	VolumeType    string `json:"volumeType,omitempty"`
+	ResourceId    string `json:"resourceId,omitempty"`
+}
+
+type OscKeypair struct {
+	Name       string `json:"name,omitempty"`
+	PublicKey  string `json:"publickey,omitempty"`
+	ResourceId string `json:"resourceId,omitempty"`
+}
+
+type OscVm struct {
+	Name               string `json:"name,omitempty"`
+	ImageId            string `json:"imageId,omitempty"`
+	KeypairName        string `json:"keypairnName,omitempty"`
+	PrivateIps         string `json:"privateIps,omitempty"`
+	SecurityGroupsName string `json:"securityGroupsName,omitempty"`
+	SubnetName         string `json:"subnetName,omitempty"`
+	ResourceId         string `json:"resourceId,omitempty"`
+}
+
+type VmState string
+
 var (
+	VmStatePending                      = VmState("pending")
+	VmStateRunning                      = VmState("running")
+	VmStateShuttingDown                 = VmState("shutting-down")
+	VmStateTerminated                   = VmState("terminated")
+	VmStateStopping                     = VmState("stopping")
+	VmStateStopped                      = VmState("stopped")
+	DefaultVolumeName            string = "cluster-api-volume"
+	DefaultVolumeIops            int32  = 1000
+	DefaultVolumeSize            int32  = 30
+	DefaultVolumeSubregionName   string = "eu-west-2b"
+	DefaultVolumeType            string = "gp2"
 	DefaultLoadBalancerName      string = "OscClusterApi-1"
 	DefaultLoadBalancerType      string = "internet-facing"
 	DefaultBackendPort           int32  = 6443
@@ -282,6 +339,20 @@ func (net *OscNet) SetDefaultValue() {
 	}
 	if net.Name == "" {
 		net.Name = DefaultNetName
+	}
+}
+
+// SetVolumeDefaultValue set the Volume default values from volume configuration
+func (node *OscNode) SetVolumeDefaultValue() {
+	if len(node.Volumes) == 0 {
+		volume := OscVolume{
+			Name:          DefaultVolumeName,
+			Iops:          DefaultVolumeIops,
+			Size:          DefaultVolumeSize,
+			SubregionName: DefaultVolumeSubregionName,
+			VolumeType:    DefaultVolumeType,
+		}
+		node.Volumes = append(node.Volumes, &volume)
 	}
 }
 
