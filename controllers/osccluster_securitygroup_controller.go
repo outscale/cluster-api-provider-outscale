@@ -11,9 +11,7 @@ import (
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -93,7 +91,7 @@ func checkSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (strin
 			return securityGroupTagName, err
 		}
 		securityGroupDescription := securityGroupSpec.Description
-		_, err = security.ValidateDescription(securityGroupDescription)
+		_, err = infrastructurev1beta1.ValidateDescription(securityGroupDescription)
 		if err != nil {
 			return securityGroupTagName, err
 		}
@@ -121,27 +119,27 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleFlow := securityGroupRuleSpec.Flow
-			_, err = security.ValidateFlow(securityGroupRuleFlow)
+			_, err = infrastructurev1beta1.ValidateFlow(securityGroupRuleFlow)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleIpProtocol := securityGroupRuleSpec.IpProtocol
-			_, err = security.ValidateIpProtocol(securityGroupRuleIpProtocol)
+			_, err = infrastructurev1beta1.ValidateIpProtocol(securityGroupRuleIpProtocol)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
-			_, err = net.ValidateCidr(securityGroupRuleIpRange)
+			_, err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
-			_, err = service.ValidatePort(securityGroupRuleFromPortRange)
+			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleFromPortRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
-			_, err = service.ValidatePort(securityGroupRuleToPortRange)
+			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleToPortRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}

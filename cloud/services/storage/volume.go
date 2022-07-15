@@ -3,7 +3,6 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -11,51 +10,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"time"
 )
-
-const (
-	minIops = 0
-	maxIops = 13000
-	minSize = 0
-	maxSize = 14901
-)
-
-// ValidateIops check that iops is valid
-func ValidateIops(iops int32) (int32, error) {
-	if iops < maxIops && iops > minIops {
-		return iops, nil
-	} else {
-		return iops, errors.New("Invalid iops")
-	}
-}
-
-// ValidateSize check that size is valid
-func ValidateSize(size int32) (int32, error) {
-	if size < maxSize && size > minSize {
-		return size, nil
-	} else {
-		return size, errors.New("Invalid size")
-	}
-}
-
-// ValidateVolumeType check that volumeType is a valid volumeType
-func ValidateVolumeType(volumeType string) (string, error) {
-	switch volumeType {
-	case "standard", "gp2", "io1":
-		return volumeType, nil
-	default:
-		return volumeType, errors.New("Invalid volumeType")
-	}
-}
-
-// ValidateSubregionName check that subregionName is a valid az format
-func ValidateSubregionName(subregionName string) (string, error) {
-	switch {
-	case strings.HasSuffix(subregionName, "1a") || strings.HasSuffix(subregionName, "1b") || strings.HasSuffix(subregionName, "2a") || strings.HasSuffix(subregionName, "2b"):
-		return subregionName, nil
-	default:
-		return subregionName, errors.New("Invalid subregionName")
-	}
-}
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
 type OscVolumeInterface interface {

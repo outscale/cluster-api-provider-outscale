@@ -9,13 +9,23 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
-  creationTimestamp: null
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
   name: oscclusters.infrastructure.cluster.x-k8s.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: cluster-api-provider-outscale-webhook-service
+          namespace: cluster-api-provider-outscale-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
   group: infrastructure.cluster.x-k8s.io
   names:
     kind: OscCluster
@@ -407,13 +417,23 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
-  creationTimestamp: null
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
   name: oscmachines.infrastructure.cluster.x-k8s.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: cluster-api-provider-outscale-webhook-service
+          namespace: cluster-api-provider-outscale-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
   group: infrastructure.cluster.x-k8s.io
   names:
     kind: OscMachine
@@ -1049,6 +1069,19 @@ spec:
   selector:
     control-plane: controller-manager
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-api-provider-outscale-webhook-service
+  namespace: cluster-api-provider-outscale-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1106,7 +1139,7 @@ spec:
               key: secret_key
               name: cluster-api-provider-outscale
               optional: true
-        image: outscale/cluster-api-osc-controller:v0.1.0-alpha.1
+        image: core.harbor-dev.80-247-5-219.sslip.io/osc/cluster-api-outscale-controllers:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1114,6 +1147,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -1129,9 +1166,176 @@ spec:
             memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       imagePullSecrets:
       - name: regcred
       securityContext:
         runAsNonRoot: true
       serviceAccountName: cluster-api-provider-outscale-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cluster-api-provider-outscale-serving-cert
+  namespace: cluster-api-provider-outscale-system
+spec:
+  dnsNames:
+  - cluster-api-provider-outscale-webhook-service.cluster-api-provider-outscale-system.svc
+  - cluster-api-provider-outscale-webhook-service.cluster-api-provider-outscale-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: cluster-api-provider-outscale-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cluster-api-provider-outscale-selfsigned-issuer
+  namespace: cluster-api-provider-outscale-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
+  name: cluster-api-provider-outscale-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate
+  failurePolicy: Fail
+  name: moscclustertemplate.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscclustertemplates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine
+  failurePolicy: Fail
+  name: moscmachine.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate
+  failurePolicy: Fail
+  name: moscmachinetemplate.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscmachinetemplates
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
+  name: cluster-api-provider-outscale-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate
+  failurePolicy: Fail
+  name: voscclustertemplate.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscclustertemplates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine
+  failurePolicy: Fail
+  name: voscmachine.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate
+  failurePolicy: Fail
+  name: voscmachinetemplate.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscmachinetemplates
+  sideEffects: None
