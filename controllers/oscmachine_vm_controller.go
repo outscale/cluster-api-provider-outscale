@@ -3,8 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -15,6 +13,7 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strings"
 )
 
 // getVmResourceId return the vmId from the resourceMap base on resourceName (tag name + cluster uid)
@@ -410,7 +409,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		vmSpec.ResourceId = vmID
 		machineScope.SetProviderID(vmID)
 	}
-
 	return reconcile.Result{}, nil
 }
 

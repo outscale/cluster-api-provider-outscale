@@ -19,13 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
-
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -34,16 +27,23 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
+	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -298,7 +298,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		machineScope.SetFailureMessage(errors.Errorf("instance state %+v  is undefined", vmState))
 		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
 	}
-
 	return reconcile.Result{}, nil
 }
 
@@ -326,7 +325,11 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
-	err := ctrl.NewControllerManagedBy(mgr).
+	clusterToObjectFunc, err := util.ClusterToObjectsMapper(r.Client, &infrastructurev1beta1.OscMachineList{}, mgr.GetScheme())
+	if err != nil {
+		return errors.Errorf("failed to create mapper for Cluster to OscMachines: %+v", err)
+	}
+	err = ctrl.NewControllerManagedBy(mgr).
 		For(&infrastructurev1beta1.OscMachine{}).
 		Watches(
 			&source.Kind{Type: &clusterv1.Machine{}},
@@ -335,6 +338,11 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		Watches(
 			&source.Kind{Type: &infrastructurev1beta1.OscCluster{}},
 			handler.EnqueueRequestsFromMapFunc(r.OscClusterToOscMachines(ctx)),
+		).
+		Watches(
+			&source.Kind{Type: &clusterv1.Cluster{}},
+			handler.EnqueueRequestsFromMapFunc(clusterToObjectFunc),
+			builder.WithPredicates(predicates.ClusterUnpausedAndInfrastructureReady(ctrl.LoggerFrom(ctx))),
 		).
 		Complete(r)
 
