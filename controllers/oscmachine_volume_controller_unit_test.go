@@ -659,7 +659,6 @@ func TestReconcileVolumeGet(t *testing.T) {
 }
 
 // TestReconcileDeleteVolumeDelete has several tests to cover the code of the function reconcileDeleteVolume
-
 func TestReconcileDeleteVolumeDelete(t *testing.T) {
 	volumeTestCases := []struct {
 		name                            string

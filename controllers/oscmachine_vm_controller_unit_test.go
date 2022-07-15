@@ -209,7 +209,6 @@ var (
 				VmType:           "tinav4.c2r4p2",
 				ResourceId:       "i-test-vm-uid",
 				PublicIpName:     "test-publicip",
-
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",

@@ -7,7 +7,6 @@ import (
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"regexp"
 	"strings"
-
 	"github.com/benbjohnson/clock"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"net"

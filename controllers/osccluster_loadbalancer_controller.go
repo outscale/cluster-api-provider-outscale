@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
@@ -167,7 +169,12 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		clusterScope.Info("### Get lb ###", "loadbalancer", loadbalancer)
 
 	}
-	controlPlaneEndpoint := *loadbalancer.DnsName
+	endpoint := *loadbalancer.DnsName
+	ns, err := net.LookupHost(endpoint)
+	if err != nil {
+		return reconcile.Result{}, nil
+	}
+	controlPlaneEndpoint := strings.Replace(ns[0], ".", "-", -1) + ".sslip.io"
 	controlPlanePort := loadBalancerSpec.Listener.LoadBalancerPort
 	clusterScope.SetControlPlaneEndpoint(clusterv1.APIEndpoint{
 		Host: controlPlaneEndpoint,
