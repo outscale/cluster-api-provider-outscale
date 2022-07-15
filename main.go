@@ -99,7 +99,7 @@ func main() {
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(ctx, mgr, controller.Options{}); err != nil {
-		setupLog.Error(err, "unabble to create controller", "controller", "OscMachine")
+		setupLog.Error(err, "unable to create controller", "controller", "OscMachine")
 		os.Exit(1)
 	}
 

@@ -64,8 +64,8 @@ type OscVolumeInterface interface {
 	GetVolume(volumeId string) (*osc.Volume, error)
 	ValidateVolumeIds(volumeIds []string) ([]string, error)
 	LinkVolume(volumeId string, vmId string, deviceName string) error
-	UnlinkVolume(volumeId string) error
 	CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error
+	UnlinkVolume(volumeId string) error
 }
 
 // CreateVolume create machine volume

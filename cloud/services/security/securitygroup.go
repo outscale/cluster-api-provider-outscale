@@ -22,6 +22,7 @@ type OscSecurityGroupInterface interface {
 	GetSecurityGroupIdsFromNetIds(netId string) ([]string, error)
 }
 
+// CreateSecurityGroup create the securitygroup associated with the net
 func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error) {
 	securityGroupRequest := osc.CreateSecurityGroupRequest{
 		SecurityGroupName: securityGroupName,
@@ -42,6 +43,7 @@ func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, se
 	return securityGroup, nil
 }
 
+// CreateSecurityGroupRule create the security group rule associated with the security group and the net
 func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
 	var rule osc.SecurityGroupRule
 	if securityGroupMemberId != "" && ipRange == "" {
@@ -83,6 +85,7 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 	return securityGroupRule, nil
 }
 
+// DeleteSecurityGroupRule delete the security group rule associated with the security group and the net
 func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error {
 	var rule osc.SecurityGroupRule
 	if securityGroupMemberId != "" && ipRange == "" {
@@ -119,6 +122,7 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 	return nil
 }
 
+// DeleteSecurityGroup delete the securitygroup associated with the net
 func (s *Service) DeleteSecurityGroup(securityGroupId string) (error, *http.Response) {
 	deleteSecurityGroupRequest := osc.DeleteSecurityGroupRequest{SecurityGroupId: &securityGroupId}
 	oscApiClient := s.scope.GetApi()
@@ -131,6 +135,7 @@ func (s *Service) DeleteSecurityGroup(securityGroupId string) (error, *http.Resp
 	return nil, httpRes
 }
 
+// GetSecurityGroup retrieve security group object from the security group id
 func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error) {
 	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
@@ -156,6 +161,7 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 	}
 }
 
+// GetSecurityGroupFromSecurityGroupRule retrieve security group rule object from the security group id
 func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, flow string, ipProtocols string, ipRanges string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
 	switch {
@@ -200,6 +206,8 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 		return &securityGroup[0], nil
 	}
 }
+
+// GetSecurityGroupIdsFromNetIds return the security group id resource that exist from the net id
 func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) {
 	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
@@ -227,6 +235,7 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) 
 	return securityGroupIds, nil
 }
 
+// ValidateIpProtocol check that ipProtocol is valid
 func ValidateIpProtocol(protocol string) (string, error) {
 	switch {
 	case protocol == "tcp" || protocol == "udp" || protocol == "icmp" || protocol == "-1":
@@ -236,6 +245,7 @@ func ValidateIpProtocol(protocol string) (string, error) {
 	}
 }
 
+// ValidateFlow check that flow is valid
 func ValidateFlow(flow string) (string, error) {
 	switch {
 	case flow == "Inbound" || flow == "Outbound":
@@ -245,6 +255,7 @@ func ValidateFlow(flow string) (string, error) {
 	}
 }
 
+// ValidateDescription check that description is valid
 func ValidateDescription(description string) (string, error) {
 	isValidateDescription := regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
 	if isValidateDescription(description) {
