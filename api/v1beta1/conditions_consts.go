@@ -30,6 +30,18 @@ const (
 )
 
 const (
+	InstanceReadyCondition                clusterv1.ConditionType = "InstanceReady"
+	InstanceNotFoundReason                                        = "InstanceNotFound"
+	InstanceTerminatedReason                                      = "InstanceTerminated"
+	InstanceStoppedReason                                         = "InstanceStopped"
+	InstanceNotReadyReason                                        = "InstanceNotReady"
+	InstanceProvisionStartedReason                                = "InstanceProvisionStarted"
+	InstanceProvisionFailedReason                                 = "InstanceProvisionFailed"
+	WaitingForClusterInfrastructureReason                         = "WaitingForClusterInfrastructure"
+	WaitingForBootstrapDataReason                                 = "WaitingForBoostrapData"
+)
+
+const (
 	SecurityGroupReadyCondition             clusterv1.ConditionType = "SecurityGroupsReady"
 	SecurityGroupReconciliationFailedReason                         = "SecurityGroupReconciliationFailed"
 )
@@ -42,4 +54,9 @@ const (
 const (
 	PublicIpsReadyCondition clusterv1.ConditionType = "PublicIpsReady"
 	PublicIpsFailedReason                           = "PublicIpsFailed"
+)
+
+const (
+	VolumeReadyCondition             clusterv1.ConditionType = "VolumeReady"
+	VolumeReconciliationFailedReason                         = "VolumeFailed"
 )
