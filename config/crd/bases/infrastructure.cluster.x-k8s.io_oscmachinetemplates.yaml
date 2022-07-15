@@ -106,23 +106,47 @@ spec:
                             type: object
                           vm:
                             properties:
+                              deviceName:
+                                type: string
                               imageId:
                                 type: string
                               keypairName:
+                                type: string
+                              loadBalancerName:
                                 type: string
                               name:
                                 type: string
                               privateIps:
                                 items:
-                                  type: string
+                                  properties:
+                                    name:
+                                      type: string
+                                    privateIp:
+                                      type: string
+                                  required:
+                                  - privateIp
+                                  type: object
                                 type: array
+                              publicIpName:
+                                type: string
                               resourceId:
                                 type: string
-                              securityGroupsNames:
+                              role:
+                                type: string
+                              securityGroupNames:
                                 items:
-                                  type: string
+                                  properties:
+                                    name:
+                                      type: string
+                                  type: object
                                 type: array
                               subnetName:
+                                type: string
+                              subregionName:
+                                type: string
+                              vmType:
+                                type: string
+                              volumeName:
                                 type: string
                             type: object
                           volumes:

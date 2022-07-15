@@ -97,6 +97,12 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		if subnetSpec.ResourceId != "" {
 			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
 		}
+		_, resourceMapExist := subnetRef.ResourceMap[subnetName]
+		if resourceMapExist {
+			subnetSpec.ResourceId = subnetRef.ResourceMap[subnetName]
+		}
+		clusterScope.Info("### Get subnetIds ###", "subnetIds", subnetIds)
+		clusterScope.Info("### Get subnetId ###", "subnetId", subnetId)
 		if !Contains(subnetIds, subnetId) {
 			clusterScope.Info("Create the desired subnet", "subnetName", subnetName)
 			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, subnetName)

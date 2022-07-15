@@ -11,7 +11,8 @@ CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
 CAPO_NAMESPACE ?= cluster-api-provider-outscale-system  
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
-
+E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
+E2E_CONF_FILE ?= ${PWD}/test/e2e/config/outscale-ci-envsubst.yaml
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -85,9 +86,13 @@ unit-test:
 testenv:
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
+.PHONY: e2e-conf-file
+e2e-conf-file: envsubst
+	$(ENVSUBST) < $(E2E_CONF_FILE_SOURCE) > $(E2E_CONF_FILE)
+
 .PHONY: e2etest
-e2etest:
-	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=${PWD}/test/e2e/config/outscale-ci.yaml
+e2etest: envsubst e2e-conf-file
+	@USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_FILE)
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
@@ -133,13 +138,13 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 KUSTOMIZE := $(shell command -v kustomize 2> /dev/null)
 
 .PHONY: deploy
-deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 ifndef KUSTOMIZE
 	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
-	$(LOCAL_KUSTOMIZE) build config/default | envsubst | kubectl apply -f -
+	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | envsubst | kubectl apply -f -  
+	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -  
 endif
 
 .PHONY: credential
@@ -166,26 +171,26 @@ logs-capi: ## Get logs capi
 	kubectl logs -l  control-plane=controller-manager -n ${CAPI_NAMESPACE}  --tail=${LOG_TAIL}
 
 .PHONY: capm
-capm: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+capm: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 ifndef KUSTOMIZE
 	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
-	$(LOCAL_KUSTOMIZE) build config/default | envsubst > capm.yaml
+	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST)  > capm.yaml
 else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | envsubst > capm.yaml
+	$(KUSTOMIZE) build config/default | $(ENVSUBST)  > capm.yaml
 endif
 
 .PHONY: deploy-dev
 deploy-dev: manifests deploy  ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller to the K8s cluster specified in ~/.kube/config.
+undeploy: envsubst ## Undeploy controller to the K8s cluster specified in ~/.kube/config.
 ifndef KUSTOMIZE
 	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
-	$(LOCAL_KUSTOMIZE) build config/default | envsubst | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST)  | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | envsubst | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/default | $(ENVSUBST)  | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 endif
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
@@ -227,6 +232,12 @@ MOCKGEN = $(shell pwd)/bin/mockgen
 mockgen: ## Download mockgen locally if necessary.
 	mkdir -p $(shell pwd)/bin
 	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
+
+ENVSUBST = $(shell pwd)/bin/envsubst
+.PHONY: envsubst
+envsubst: ## Download envsubst
+	mkdir -p $(shell pwd)/bin
+	go build -tags=tools -o $(ENVSUBST) github.com/drone/envsubst/v2/cmd/envsubst
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

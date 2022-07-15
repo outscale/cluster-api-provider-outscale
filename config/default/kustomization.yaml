@@ -53,7 +53,3 @@ patches:
       value: [{ name: regcred }]
   target:
     kind: Deployment
-images:
-- name: controller
-  newName: outscale/cluster-api-osc-controller
-  newTag: v0.1.0-alpha.1

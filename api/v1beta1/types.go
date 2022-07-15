@@ -196,6 +196,15 @@ type OscRoute struct {
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
+type OscPrivateIpElement struct {
+	Name      string `json:"name,omitempty"`
+	PrivateIp string `json:"privateIp,omiteempty"`
+}
+
+type OscSecurityGroupElement struct {
+	Name string `json:"name,omitempty"`
+}
+
 type OscSecurityGroupRule struct {
 	// The tag name associate with the security group
 	// +optional
@@ -248,10 +257,11 @@ type OscNetworkResource struct {
 }
 
 type OscNodeResource struct {
-	VolumeRef  OscResourceMapReference `json:"volumeRef,omitempty"`
-	ImageRef   OscResourceMapReference `json:"imageRef,omitempty"`
-	KeypairRef OscResourceMapReference `json:"keypairRef,omitempty"`
-	VmRef      OscResourceMapReference `json:"vmRef,omitempty"`
+	VolumeRef       OscResourceMapReference `json:"volumeRef,omitempty"`
+	ImageRef        OscResourceMapReference `json:"imageRef,omitempty"`
+	KeypairRef      OscResourceMapReference `json:"keypairRef,omitempty"`
+	VmRef           OscResourceMapReference `json:"vmRef,omitempty"`
+	LinkPublicIpRef OscResourceMapReference `json:"linkPublicIpRef,omitempty"`
 }
 
 type OscImage struct {
@@ -275,13 +285,20 @@ type OscKeypair struct {
 }
 
 type OscVm struct {
-	Name                string   `json:"name,omitempty"`
-	ImageId             string   `json:"imageId,omitempty"`
-	KeypairName         string   `json:"keypairName,omitempty"`
-	PrivateIps          []string `json:"privateIps,omitempty"`
-	SecurityGroupsNames []string `json:"securityGroupsNames,omitempty"`
-	SubnetName          string   `json:"subnetName,omitempty"`
-	ResourceId          string   `json:"resourceId,omitempty"`
+	Name               string                    `json:"name,omitempty"`
+	ImageId            string                    `json:"imageId,omitempty"`
+	KeypairName        string                    `json:"keypairName,omitempty"`
+	VmType             string                    `json:"vmType,omitempty"`
+	VolumeName         string                    `json:"volumeName,omitempty"`
+	DeviceName         string                    `json:"deviceName,omitempty"`
+	SubnetName         string                    `json:"subnetName,omitempty"`
+	LoadBalancerName   string                    `json:"loadBalancerName,omitempty"`
+	PublicIpName       string                    `json:"publicIpName,omitempty"`
+	SubregionName      string                    `json:"subregionName,omitempty"`
+	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
+	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
+	ResourceId         string                    `json:"resourceId,omitempty"`
+	Role               string                    `json:"role,omitempty"`
 }
 
 type VmState string
@@ -293,6 +310,14 @@ var (
 	VmStateTerminated                   = VmState("terminated")
 	VmStateStopping                     = VmState("stopping")
 	VmStateStopped                      = VmState("stopped")
+	DefaultVmName                string = "cluster-api-vm"
+	DefaultVmSubregionName       string = "eu-west-2a"
+	DefaultVmImageId             string = "ami-bb490c7"
+	DefaultVmKeypairName         string = "rke2"
+	DefaultVmType                string = "tinav5.c4r8p1"
+	DefaultVmDeviceName          string = "/dev/xvdb"
+	DefaultVmPrivateIpName       string = "cluster-api-privateip"
+	DefaultVmPrivateIp           string = "10.0.0.15"
 	DefaultVolumeName            string = "cluster-api-volume"
 	DefaultVolumeIops            int32  = 1000
 	DefaultVolumeSize            int32  = 30
@@ -360,6 +385,50 @@ func (node *OscNode) SetVolumeDefaultValue() {
 func (igw *OscInternetService) SetDefaultValue() {
 	if igw.Name == "" {
 		igw.Name = DefaultInternetServiceName
+	}
+}
+
+// SetDefaultValue set the vm default values
+func (vm *OscVm) SetDefaultValue() {
+	if vm.Name == "" {
+		vm.Name = DefaultVmName
+	}
+	if vm.ImageId == "" {
+		vm.ImageId = DefaultVmImageId
+	}
+	if vm.KeypairName == "" {
+		vm.KeypairName = DefaultVmKeypairName
+	}
+	if vm.VmType == "" {
+		vm.VmType = DefaultVmType
+	}
+	if vm.VolumeName == "" {
+		vm.VolumeName = DefaultVolumeName
+	}
+	if vm.DeviceName == "" {
+		vm.DeviceName = DefaultVmDeviceName
+	}
+	if vm.SubregionName == "" {
+		vm.SubregionName = DefaultVmSubregionName
+	}
+	if vm.SubnetName == "" {
+		vm.SubnetName = DefaultSubnetName
+	}
+	if vm.Role == "controlplane" && vm.LoadBalancerName == "" {
+		vm.LoadBalancerName = DefaultLoadBalancerName
+	}
+	if len(vm.SecurityGroupNames) == 0 {
+		securityGroup := OscSecurityGroupElement{
+			Name: DefaultSecurityGroupName,
+		}
+		vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroup}
+	}
+	if len(vm.PrivateIps) == 0 {
+		privateIp := OscPrivateIpElement{
+			Name:      DefaultVmPrivateIpName,
+			PrivateIp: DefaultVmPrivateIp,
+		}
+		vm.PrivateIps = []OscPrivateIpElement{privateIp}
 	}
 }
 

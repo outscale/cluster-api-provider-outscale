@@ -51,18 +51,18 @@ func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroup(netId, 
 }
 
 // CreateSecurityGroupRule mocks base method.
-func (m *MockOscSecurityGroupInterface) CreateSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange string, fromPortRange, toPortRange int32) (*osc.SecurityGroup, error) {
+func (m *MockOscSecurityGroupInterface) CreateSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId string, fromPortRange, toPortRange int32) (*osc.SecurityGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSecurityGroupRule", securityGroupId, flow, ipProtocol, ipRange, fromPortRange, toPortRange)
+	ret := m.ctrl.Call(m, "CreateSecurityGroupRule", securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId, fromPortRange, toPortRange)
 	ret0, _ := ret[0].(*osc.SecurityGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSecurityGroupRule indicates an expected call of CreateSecurityGroupRule.
-func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange, fromPortRange, toPortRange interface{}) *gomock.Call {
+func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId, fromPortRange, toPortRange interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSecurityGroupRule", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).CreateSecurityGroupRule), securityGroupId, flow, ipProtocol, ipRange, fromPortRange, toPortRange)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSecurityGroupRule", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).CreateSecurityGroupRule), securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId, fromPortRange, toPortRange)
 }
 
 // DeleteSecurityGroup mocks base method.
@@ -81,17 +81,17 @@ func (mr *MockOscSecurityGroupInterfaceMockRecorder) DeleteSecurityGroup(securit
 }
 
 // DeleteSecurityGroupRule mocks base method.
-func (m *MockOscSecurityGroupInterface) DeleteSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange string, fromPortRange, toPortRange int32) error {
+func (m *MockOscSecurityGroupInterface) DeleteSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId string, fromPortRange, toPortRange int32) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteSecurityGroupRule", securityGroupId, flow, ipProtocol, ipRange, fromPortRange, toPortRange)
+	ret := m.ctrl.Call(m, "DeleteSecurityGroupRule", securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId, fromPortRange, toPortRange)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteSecurityGroupRule indicates an expected call of DeleteSecurityGroupRule.
-func (mr *MockOscSecurityGroupInterfaceMockRecorder) DeleteSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange, fromPortRange, toPortRange interface{}) *gomock.Call {
+func (mr *MockOscSecurityGroupInterfaceMockRecorder) DeleteSecurityGroupRule(securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId, fromPortRange, toPortRange interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecurityGroupRule", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).DeleteSecurityGroupRule), securityGroupId, flow, ipProtocol, ipRange, fromPortRange, toPortRange)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecurityGroupRule", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).DeleteSecurityGroupRule), securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId, fromPortRange, toPortRange)
 }
 
 // GetSecurityGroup mocks base method.
