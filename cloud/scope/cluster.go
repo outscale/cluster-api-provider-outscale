@@ -240,11 +240,27 @@ func (s *ClusterScope) GetSubnetRef() *infrastructurev1beta1.OscResourceMapRefer
 	return &s.OscCluster.Status.Network.SubnetRef
 }
 
-// SetControlPlaneEndpoint  set the control plane endpoint
+// SetControlPlaneEndpoint set controlPlane endpoint
 func (s *ClusterScope) SetControlPlaneEndpoint(apiEndpoint clusterv1.APIEndpoint) {
 	s.OscCluster.Spec.ControlPlaneEndpoint = apiEndpoint
 }
 
+// GetControlPlaneEndpoint get controlPlane endpoint
+func (s *ClusterScope) GetControlPlaneEndpoint() clusterv1.APIEndpoint {
+	return s.OscCluster.Spec.ControlPlaneEndpoint
+}
+
+// GetControlPlaneEndpoint get controlPlane endpoint host
+func (s *ClusterScope) GetControlPlaneEndpointHost() string {
+	return s.OscCluster.Spec.ControlPlaneEndpoint.Host
+}
+
+// GetControlPlaneEndpointPort get controlPlane endpoint port
+func (s *ClusterScope) GetControlPlaneEndpointPort() int32 {
+	return s.OscCluster.Spec.ControlPlaneEndpoint.Port
+}
+
+// SetNotReady set not ready status
 func (s *ClusterScope) SetNotReady() {
 	s.OscCluster.Status.Ready = false
 }

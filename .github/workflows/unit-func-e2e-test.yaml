@@ -155,7 +155,7 @@ jobs:
       run: make testenv
       shell: bash
       env:
-        KUBECONFIG: ../rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+        KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
     - name: Delete osccluster and cluster if functional test has been failed

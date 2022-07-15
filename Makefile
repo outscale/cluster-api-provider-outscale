@@ -90,8 +90,13 @@ unit-test:
 	go tool cover -func=apicovers.out -o apicovers.txt
 	go tool cover -html=apicovers.out -o apicovers.html
 	
+
+.PHONY: cloud-init-secret
+cloud-init-secret:
+	kubectl create secret generic cluster-api-test --save-config --dry-run=client --from-file=${PWD}/testenv/value -o yaml | kubectl apply -f -
+
 .PHONY: testenv
-testenv:
+testenv: cloud-init-secret
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
 .PHONY: e2e-conf-file

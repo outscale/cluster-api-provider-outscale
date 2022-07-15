@@ -196,7 +196,7 @@ spec:
             subregionName: eu-west-2a
         vm:
           name: cluster-api-vm-kw
-          imageId: ami-6a871c21
+          imageId: ami-e1a786f1
           keypairName: cluster-api
           volumeName: cluster-api-volume-kw
           deviceName: /dev/xvdb
@@ -226,7 +226,7 @@ spec:
             subregionName: eu-west-2a
         vm:
           name: cluster-api-vm-kcp
-          imageId: ami-6a871c21
+          imageId: ami-e1a786f1
           keypairName: cluster-api
           volumeName: cluster-api-volume-kcp
           deviceName: /dev/xvdb
@@ -251,11 +251,11 @@ spec:
     spec:
       files:
       - content: |
-          #!/bin/bash
+          #!/bin/sh
  
           curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
           chmod +x /tmp/runc.amd64
-          \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
         owner: root:root
         path: /tmp/set_runc.sh
         permissions: "0744"
@@ -289,11 +289,11 @@ spec:
         name: '{{ ds.meta_data.local_hostname }}'
     files:
     - content: |
-        #!/bin/bash
+        #!/bin/sh
 
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
         chmod +x /tmp/runc.amd64	
-        \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       owner: root:root
       path: /tmp/set_runc.sh
       permissions: "0744"

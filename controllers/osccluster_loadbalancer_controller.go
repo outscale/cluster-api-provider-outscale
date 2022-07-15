@@ -169,7 +169,10 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 	}
 	controlPlaneEndpoint := *loadbalancer.DnsName
+	clusterScope.Info("### Set controlPlaneEndpoint ###", "endpoint", controlPlaneEndpoint)
+
 	controlPlanePort := loadBalancerSpec.Listener.LoadBalancerPort
+
 	clusterScope.SetControlPlaneEndpoint(clusterv1.APIEndpoint{
 		Host: controlPlaneEndpoint,
 		Port: controlPlanePort,
