@@ -125,7 +125,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 			if volumeId != "" {
 				err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not get volume available for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+					return reconcile.Result{}, fmt.Errorf("%w Can not get volume available for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 				}
 				machineScope.Info("Volume is available", "volumeId", volumeId)
 			}

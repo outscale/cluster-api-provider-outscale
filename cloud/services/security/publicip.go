@@ -161,7 +161,7 @@ func (s *Service) CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop t
 		}
 		_, ok := publicIp.GetLinkPublicIpIdOk()
 		if !ok {
-			return nil
+			break
 		}
 		time.Sleep(clockInsideLoop * time.Second)
 
