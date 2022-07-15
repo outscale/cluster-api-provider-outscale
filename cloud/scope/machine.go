@@ -132,9 +132,45 @@ func (m *MachineScope) GetVolume() []*infrastructurev1beta1.OscVolume {
 	return m.OscMachine.Spec.Node.Volumes
 }
 
+// GetVolumeSubregionName return the volume subregionName
+func (m *MachineScope) GetVolumeSubregionName(Name string) string {
+	volumes := m.OscMachine.Spec.Node.Volumes
+	for _, volume := range volumes {
+		if volume.Name == Name {
+			return volume.SubregionName
+		}
+	}
+	return ""
+}
+
+// GetVm return the vm
+func (m *MachineScope) GetVm() *infrastructurev1beta1.OscVm {
+	return &m.OscMachine.Spec.Node.Vm
+}
+
+// GetVmPrivateIps return the vm privateIps
+func (m *MachineScope) GetVmPrivateIps() *[]infrastructurev1beta1.OscPrivateIpElement {
+	return &m.GetVm().PrivateIps
+}
+
+// GetVmSecurityGroups return the vm securityGroups
+func (m *MachineScope) GetVmSecurityGroups() *[]infrastructurev1beta1.OscSecurityGroupElement {
+	return &m.GetVm().SecurityGroupNames
+}
+
+// GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
+func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &m.OscMachine.Status.Node.LinkPublicIpRef
+}
+
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &m.OscMachine.Status.Node.VolumeRef
+}
+
+// GetVmRef get the status of vm (a Map with tag name with machine uid associate with resource response id)
+func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &m.OscMachine.Status.Node.VmRef
 }
 
 // IsControlPlane check if it is control plane
@@ -172,6 +208,12 @@ func (m *MachineScope) GetInstanceID() string {
 	return parsed.ID()
 }
 
+// SetProviderID set the instanceID
+func (m *MachineScope) SetProviderID(vmId string) {
+	pid := fmt.Sprintf("osc://%s", vmId)
+	m.OscMachine.Spec.ProviderID = pointer.StringPtr(pid)
+}
+
 // GetVmState return the vmState
 func (m *MachineScope) GetVmState() *infrastructurev1beta1.VmState {
 	return m.OscMachine.Status.VmState
@@ -207,27 +249,10 @@ func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 	m.OscMachine.Status.Addresses = addrs
 }
 
-// GetBostrapData return bootstrapData
-func (m *MachineScope) GetBootstrapData() (string, error) {
-	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
-		return "", errors.New("error retrieving bootstrap data: linked Machine's boostrap.dataSecretName is nil")
-	}
-	secret := &corev1.Secret{}
-	key := types.NamespacedName{Namespace: m.GetNamespace(), Name: *m.Machine.Spec.Bootstrap.DataSecretName}
-	if err := m.client.Get(context.TODO(), key, secret); err != nil {
-		return "", fmt.Errorf("failed to retrieve bootstrap data secret for OscMachine %s/%s %+v", m.GetNamespace(), m.GetName(), err)
-	}
-	value, ok := secret.Data["value"]
-	if !ok {
-		return "", errors.New("error retrieving bootstrap data: secret value key is missing")
-	}
-	return string(value), nil
-}
-
 // PatchObject keep the machine configuration and status
 func (m *MachineScope) PatchObject() error {
 	applicableConditions := []clusterv1.ConditionType{
-		infrastructurev1beta1.InstanceReadyCondition,
+		infrastructurev1beta1.VmReadyCondition,
 	}
 	conditions.SetSummary(m.OscMachine,
 		conditions.WithConditions(applicableConditions...),
@@ -239,6 +264,23 @@ func (m *MachineScope) PatchObject() error {
 		m.OscMachine,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,
-			infrastructurev1beta1.InstanceReadyCondition,
+			infrastructurev1beta1.VmReadyCondition,
 		}})
+}
+
+// GetBootstrapData return bootstrapData
+func (m *MachineScope) GetBootstrapData() (string, error) {
+	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
+		return "", errors.New("error retrieving bootstrap data: linked Machine's bootstrap.DataSecretName is nil")
+	}
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{Namespace: m.GetNamespace(), Name: *m.Machine.Spec.Bootstrap.DataSecretName}
+	if err := m.client.Get(context.TODO(), key, secret); err != nil {
+		return "", fmt.Errorf("%w failed to retrieve bootstrap data secret for OscMachine %s/%s", err, m.GetNamespace(), m.GetName())
+	}
+	value, ok := secret.Data["value"]
+	if !ok {
+		return "", errors.New("error retrieving bootstrap data: secret value key is missing")
+	}
+	return string(value), nil
 }

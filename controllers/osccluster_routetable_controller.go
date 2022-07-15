@@ -274,6 +274,11 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		if routeTableSpec.ResourceId != "" {
 			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
 		}
+		_, resourceMapExist := routeTablesRef.ResourceMap[routeTableName]
+		if resourceMapExist {
+			routeTableSpec.ResourceId = routeTablesRef.ResourceMap[routeTableName]
+		}
+
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		var natRouteTable bool = false
 

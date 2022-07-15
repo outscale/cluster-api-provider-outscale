@@ -30,13 +30,13 @@ const (
 )
 
 const (
-	InstanceReadyCondition                clusterv1.ConditionType = "InstanceReady"
-	InstanceNotFoundReason                                        = "InstanceNotFound"
-	InstanceTerminatedReason                                      = "InstanceTerminated"
-	InstanceStoppedReason                                         = "InstanceStopped"
-	InstanceNotReadyReason                                        = "InstanceNotReady"
-	InstanceProvisionStartedReason                                = "InstanceProvisionStarted"
-	InstanceProvisionFailedReason                                 = "InstanceProvisionFailed"
+	VmReadyCondition                      clusterv1.ConditionType = "VmReady"
+	VmNotFoundReason                                              = "VmNotFound"
+	VmTerminatedReason                                            = "VmTerminated"
+	VmStoppedReason                                               = "VmStopped"
+	VmNotReadyReason                                              = "VmNotReady"
+	VmProvisionStartedReason                                      = "VmProvisionStarted"
+	VmProvisionFailedReason                                       = "VmProvisionFailed"
 	WaitingForClusterInfrastructureReason                         = "WaitingForClusterInfrastructure"
 	WaitingForBootstrapDataReason                                 = "WaitingForBoostrapData"
 )

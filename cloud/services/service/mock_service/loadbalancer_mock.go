@@ -6,6 +6,7 @@ package mock_service
 
 import (
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -33,6 +34,20 @@ func NewMockOscLoadBalancerInterface(ctrl *gomock.Controller) *MockOscLoadBalanc
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOscLoadBalancerInterface) EXPECT() *MockOscLoadBalancerInterfaceMockRecorder {
 	return m.recorder
+}
+
+// CheckLoadBalancerDeregisterVm mocks base method.
+func (m *MockOscLoadBalancerInterface) CheckLoadBalancerDeregisterVm(clockInsideLoop, clockLoop time.Duration, spec *v1beta1.OscLoadBalancer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckLoadBalancerDeregisterVm", clockInsideLoop, clockLoop, spec)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckLoadBalancerDeregisterVm indicates an expected call of CheckLoadBalancerDeregisterVm.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerDeregisterVm(clockInsideLoop, clockLoop, spec interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLoadBalancerDeregisterVm", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CheckLoadBalancerDeregisterVm), clockInsideLoop, clockLoop, spec)
 }
 
 // ConfigureHealthCheck mocks base method.
@@ -92,4 +107,32 @@ func (m *MockOscLoadBalancerInterface) GetLoadBalancer(spec *v1beta1.OscLoadBala
 func (mr *MockOscLoadBalancerInterfaceMockRecorder) GetLoadBalancer(spec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLoadBalancer", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).GetLoadBalancer), spec)
+}
+
+// LinkLoadBalancerBackendMachines mocks base method.
+func (m *MockOscLoadBalancerInterface) LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LinkLoadBalancerBackendMachines", vmIds, loadBalancerName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LinkLoadBalancerBackendMachines indicates an expected call of LinkLoadBalancerBackendMachines.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) LinkLoadBalancerBackendMachines(vmIds, loadBalancerName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkLoadBalancerBackendMachines", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).LinkLoadBalancerBackendMachines), vmIds, loadBalancerName)
+}
+
+// UnlinkLoadBalancerBackendMachines mocks base method.
+func (m *MockOscLoadBalancerInterface) UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnlinkLoadBalancerBackendMachines", vmIds, loadBalancerName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnlinkLoadBalancerBackendMachines indicates an expected call of UnlinkLoadBalancerBackendMachines.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) UnlinkLoadBalancerBackendMachines(vmIds, loadBalancerName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkLoadBalancerBackendMachines", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).UnlinkLoadBalancerBackendMachines), vmIds, loadBalancerName)
 }

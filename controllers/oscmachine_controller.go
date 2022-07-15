@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,10 +28,14 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	"github.com/pkg/errors"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -38,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -67,6 +74,26 @@ type OscMachineReconciler struct {
 // getVolumeSvc retrieve volumeSvc
 func (r *OscMachineReconciler) getVolumeSvc(ctx context.Context, scope scope.ClusterScope) storage.OscVolumeInterface {
 	return storage.NewService(ctx, &scope)
+}
+
+// getVmSvc retrieve vmSvc
+func (r *OscMachineReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
+	return compute.NewService(ctx, &scope)
+}
+
+// getPublicIpSvc retrieve publicIpSvc
+func (r *OscMachineReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
+	return security.NewService(ctx, &scope)
+}
+
+// getSecurityGroupSvc retrieve securityGroupSvc
+func (r *OscMachineReconciler) getSecurityGroupSvc(ctx context.Context, scope scope.ClusterScope) security.OscSecurityGroupInterface {
+	return security.NewService(ctx, &scope)
+}
+
+// getLoadBalancerSvc retrieve loadBalancerSvc
+func (r *OscMachineReconciler) getLoadBalancerSvc(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
+	return service.NewService(ctx, &scope)
 }
 
 func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -161,20 +188,68 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	machineScope.SetNotReady()
 	if !machineScope.Cluster.Status.InfrastructureReady {
 		machineScope.Info("Cluster infrastructure is not ready yet")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.InstanceReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	}
 	machineScope.Info("Check bootstrap data")
-	if machineScope.Machine.Spec.Bootstrap.DataSecretName != nil {
-		machineScope.Info("Bootstrap data secret reference is not yet available")
+	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
+		machineScope.Info("Bootstrap data secret reference is not yet availablle")
+		return ctrl.Result{}, nil
 	}
 	volumeName, err := checkVolumeFormatParameters(machineScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create volume %s for OscMachine %s/%s", err, volumeName, machineScope.GetNamespace(), machineScope.GetName())
 	}
+
+	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
+	}
+
 	duplicateResourceVolumeErr := checkVolumeOscDuplicateName(machineScope)
 	if duplicateResourceVolumeErr != nil {
 		return reconcile.Result{}, duplicateResourceVolumeErr
+	}
+
+	duplicateResourceVmPrivateIpErr := checkVmPrivateIpOscDuplicateName(machineScope)
+	if duplicateResourceVmPrivateIpErr != nil {
+		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
+	}
+
+	checkOscAssociateVmVolumeErr := checkVmVolumeOscAssociateResourceName(machineScope)
+	if checkOscAssociateVmVolumeErr != nil {
+		return reconcile.Result{}, checkOscAssociateVmVolumeErr
+	}
+
+	checkOscAssociateVmSecurityGroupErr := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
+	if checkOscAssociateVmSecurityGroupErr != nil {
+		return reconcile.Result{}, checkOscAssociateVmSecurityGroupErr
+	}
+
+	checkOscAssociateVmSubnetErr := checkVmSubnetOscAssociateResourceName(machineScope, clusterScope)
+	if checkOscAssociateVmSubnetErr != nil {
+		return reconcile.Result{}, checkOscAssociateVmSubnetErr
+	}
+
+	vmSpec := machineScope.GetVm()
+	vmSpec.SetDefaultValue()
+	if vmSpec.PublicIpName != "" {
+		checkOscAssociateVmPublicIpErr := checkVmPublicIpOscAssociateResourceName(machineScope, clusterScope)
+		if checkOscAssociateVmPublicIpErr != nil {
+			return reconcile.Result{}, checkOscAssociateVmPublicIpErr
+		}
+	}
+
+	if vmSpec.LoadBalancerName != "" {
+		checkOscAssociateVmLoadBalancerErr := checkVmLoadBalancerOscAssociateResourceName(machineScope, clusterScope)
+		if checkOscAssociateVmLoadBalancerErr != nil {
+			return reconcile.Result{}, checkOscAssociateVmLoadBalancerErr
+		}
+	}
+
+	checkVmVolumeSubregionNameErr := checkVmVolumeSubregionName(machineScope)
+	if checkVmVolumeSubregionNameErr != nil {
+		return reconcile.Result{}, checkVmVolumeSubregionNameErr
 	}
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
@@ -184,9 +259,45 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcileVolume, err
 	}
+
+	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
+	vmSvc := r.getVmSvc(ctx, *clusterScope)
+	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
+	if err != nil {
+		machineScope.Error(err, "failed to reconcile vm")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileVm, err
+	}
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
-	machineScope.Info("Set OscMachine status to ready")
-	machineScope.SetReady()
+
+	vmState := machineScope.GetVmState()
+
+	switch *vmState {
+	case infrastructurev1beta1.VmStatePending:
+		machineScope.SetNotReady()
+		machineScope.Info("Vm pending", "state", vmState)
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "")
+	case infrastructurev1beta1.VmStateStopping, infrastructurev1beta1.VmStateStopped:
+		machineScope.SetNotReady()
+		machineScope.Info("Vm stopped", "state", vmState)
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmStoppedReason, clusterv1.ConditionSeverityWarning, "")
+	case infrastructurev1beta1.VmStateRunning:
+		machineScope.SetReady()
+		machineScope.Info("Vm running", "state", vmState)
+		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
+	case infrastructurev1beta1.VmStateShuttingDown, infrastructurev1beta1.VmStateTerminated:
+		machineScope.SetNotReady()
+		machineScope.Info("Unexpected vm termination", "state", vmState)
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmTerminatedReason, clusterv1.ConditionSeverityError, "")
+	default:
+		machineScope.SetNotReady()
+		machineScope.Info("Vm state is undefined", "state", vmState)
+		machineScope.SetFailureReason(capierrors.UpdateMachineError)
+		machineScope.SetFailureMessage(errors.Errorf("instance state %+v  is undefined", vmState))
+		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
+	}
 
 	return reconcile.Result{}, nil
 }
@@ -201,15 +312,37 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	if err != nil {
 		return reconcileDeleteVolume, err
 	}
+	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
+	vmSvc := r.getVmSvc(ctx, *clusterScope)
+	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
+	if err != nil {
+		return reconcileDeleteVm, err
+	}
 	controllerutil.RemoveFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *OscMachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&infrastructurev1beta1.OscMachine{}).
+		Watches(
+			&source.Kind{Type: &clusterv1.Machine{}},
+			handler.EnqueueRequestsFromMapFunc(util.MachineToInfrastructureMapFunc(infrastructurev1beta1.GroupVersion.WithKind("OscMachine"))),
+		).
+		Watches(
+			&source.Kind{Type: &infrastructurev1beta1.OscCluster{}},
+			handler.EnqueueRequestsFromMapFunc(r.OscClusterToOscMachines(ctx)),
+		).
 		Complete(r)
+
+	if err != nil {
+		return errors.Errorf("error creating controller: %+v", err)
+	}
+
+	return nil
 }
 
 // OscClusterToOscMachines convert the cluster to machine spec

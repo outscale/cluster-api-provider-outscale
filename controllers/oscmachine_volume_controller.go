@@ -116,6 +116,15 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create volume for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 			}
+			volumeId := volume.GetVolumeId()
+			machineScope.Info("### Get VolumeId ###", "volumeId", volumeId)
+			if volumeId != "" {
+				err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not get volume available for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+				}
+				machineScope.Info("Volume is available", "volumeId", volumeId)
+			}
 			machineScope.Info("### Get volume ###", "volume", volume)
 			volumeRef.ResourceMap[volumeName] = volume.GetVolumeId()
 			volumeSpec.ResourceId = volume.GetVolumeId()
@@ -156,11 +165,28 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 			controllerutil.RemoveFinalizer(oscmachine, "")
 			return reconcile.Result{}, nil
 		}
+		err = volumeSvc.CheckVolumeState(5, 60, "in-use", volumeId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+		}
+		machineScope.Info("Volume is in use", "volumeId", volumeId)
+
+		err = volumeSvc.UnlinkVolume(volumeId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not unlink volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+		}
+		machineScope.Info("Volume is unlinked", "volumeId", volumeId)
+
+		err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+		}
+		machineScope.Info("Volume is available", "volumeId", volumeId)
 		machineScope.Info("Remove volume")
 		machineScope.Info("Delete the desired volume", "volumeName", volumeName)
 		err = volumeSvc.DeleteVolume(volumeId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delelete volume for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
 	}
 	return reconcile.Result{}, nil

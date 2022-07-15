@@ -22,6 +22,15 @@ func getPublicIpResourceId(resourceName string, clusterScope *scope.ClusterScope
 	}
 }
 
+func getLinkPublicIpResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
+	linkPublicIpRef := machineScope.GetLinkPublicIpRef()
+	if linkPublicIpId, ok := linkPublicIpRef.ResourceMap[resourceName]; ok {
+		return linkPublicIpId, nil
+	} else {
+		return "", fmt.Errorf("%s does not exist", resourceName)
+	}
+}
+
 // checkPublicIpFormatParameters check PublicIp parameters format (Tag format, cidr format, ..)
 func checkPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Public Ip parameters")
@@ -109,6 +118,11 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 		if publicIpSpec.ResourceId != "" {
 			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
 		}
+		_, resourceMapExist := publicIpRef.ResourceMap[publicIpName]
+		if resourceMapExist {
+			publicIpSpec.ResourceId = publicIpRef.ResourceMap[publicIpName]
+		}
+
 		publicIpId := publicIpRef.ResourceMap[publicIpName]
 		if !Contains(validPublicIpIds, publicIpId) {
 			publicIp, err := publicIpSvc.CreatePublicIp(publicIpName)
@@ -149,11 +163,18 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpId := publicIpSpec.ResourceId
+		clusterScope.Info("### check PublicIp Id ###", "publicipid", publicIpId)
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
+		clusterScope.Info("### Check validPublicIpIds###", "validPublicIpIds", validPublicIpIds)
 		if !Contains(validPublicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
+		err = publicIpSvc.CheckPublicIpUnlink(5, 120, publicIpId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp %s for Osccluster %s/%s", err, publicIpId, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+
 		clusterScope.Info("Remove publicip")
 		clusterScope.Info("Delete the desired publicip", "publicIpName", publicIpName)
 		err = publicIpSvc.DeletePublicIp(publicIpId)
