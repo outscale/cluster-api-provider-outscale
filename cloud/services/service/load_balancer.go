@@ -5,9 +5,10 @@ import (
 	"regexp"
 
 	"errors"
-
+	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"time"
 )
 
 const (
@@ -27,6 +28,9 @@ type OscLoadBalancerInterface interface {
 	GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
 	CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
 	DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) error
+	LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
+	UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
+	CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
 }
 
 // ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
@@ -145,6 +149,36 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 	return loadBalancer, nil
 }
 
+func (s *Service) LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error {
+	linkLoadBalancerBackendMachinesRequest := osc.LinkLoadBalancerBackendMachinesRequest{
+		BackendVmIds:     &vmIds,
+		LoadBalancerName: loadBalancerName,
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	_, httpRes, err := oscApiClient.LoadBalancerApi.LinkLoadBalancerBackendMachines(oscAuthClient).LinkLoadBalancerBackendMachinesRequest(linkLoadBalancerBackendMachinesRequest).Execute()
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return err
+	}
+	return nil
+}
+
+func (s *Service) UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error {
+	unlinkLoadBalancerBackendMachinesRequest := osc.UnlinkLoadBalancerBackendMachinesRequest{
+		BackendVmIds:     &vmIds,
+		LoadBalancerName: loadBalancerName,
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	_, httpRes, err := oscApiClient.LoadBalancerApi.UnlinkLoadBalancerBackendMachines(oscAuthClient).UnlinkLoadBalancerBackendMachinesRequest(unlinkLoadBalancerBackendMachinesRequest).Execute()
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return err
+	}
+	return nil
+}
+
 // GetLoadBalancer retrieve loadBalancer object from spec
 func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	loadBalancerName, err := s.GetName(spec)
@@ -234,6 +268,27 @@ func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
+	}
+	return nil
+}
+
+func (s *Service) CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
+	clock_time := clock.New()
+	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
+	var getLoadBalancerDeregisterVm = false
+	if !getLoadBalancerDeregisterVm {
+		loadBalancer, err := s.GetLoadBalancer(spec)
+		if err != nil {
+			return err
+		}
+		loadBalancerBackendVmIds := loadBalancer.GetBackendVmIds()
+		if len(loadBalancerBackendVmIds) == 0 {
+			getLoadBalancerDeregisterVm = true
+		}
+		time.Sleep(clockInsideLoop * time.Second)
+		if clock_time.Now().After(currentTimeout) {
+			return errors.New("vm is stil register")
+		}
 	}
 	return nil
 }

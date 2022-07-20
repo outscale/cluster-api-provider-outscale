@@ -196,6 +196,15 @@ type OscRoute struct {
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
+type OscPrivateIpList struct {
+	Name      string `json:"name,omitempty"`
+	PrivateIp string `json:"privateIp,omitempty"`
+}
+
+type OscSecurityGroupList struct {
+	Name string `json:"name,omitempty"`
+}
+
 type OscSecurityGroupRule struct {
 	// The tag name associate with the security group
 	// +optional
@@ -275,13 +284,19 @@ type OscKeypair struct {
 }
 
 type OscVm struct {
-	Name                string   `json:"name,omitempty"`
-	ImageId             string   `json:"imageId,omitempty"`
-	KeypairName         string   `json:"keypairName,omitempty"`
-	PrivateIps          []string `json:"privateIps,omitempty"`
-	SecurityGroupsNames []string `json:"securityGroupsNames,omitempty"`
-	SubnetName          string   `json:"subnetName,omitempty"`
-	ResourceId          string   `json:"resourceId,omitempty"`
+	Name             string                 `json:"name,omitempty"`
+	ImageId          string                 `json:"imageId,omitempty"`
+	KeypairName      string                 `json:"keypairName,omitempty"`
+	VmType           string                 `json:"vmType,omitempty"`
+	VolumeName       string                 `json:"volumeName,omitempty"`
+	DeviceName       string                 `json:"deviceName,omitempty"`
+	SubnetName       string                 `json:"subnetName,omitempty"`
+	LoadBalancerName string                 `json:"loadBalancerName,omitempty"`
+	PublicIpName     string                 `json:"publicIpName,omitempty"`
+	SubregionName    string                 `json:"subregionName,omitempty"`
+	PrivateIps       []OscPrivateIpList     `json:"privateIps,omitempty"`
+	SecurityGroups   []OscSecurityGroupList `json:"securityGroups,omitempty"`
+	ResourceId       string                 `json:"resourceId,omitempty"`
 }
 
 type VmState string
@@ -293,6 +308,14 @@ var (
 	VmStateTerminated                   = VmState("terminated")
 	VmStateStopping                     = VmState("stopping")
 	VmStateStopped                      = VmState("stopped")
+	DefaultVmName                string = "cluster-api-vm"
+	DefaultVmSubregionName       string = "eu-west-2a"
+	DefaultVmImageId             string = "ami-bb490c7"
+	DefaultVmKeypairName         string = "rke2"
+	DefaultVmType                string = "t2.small"
+	DefaultVmDeviceName          string = "/dev/xvdb"
+	DefaultVmPrivateIpName       string = "cluster-api-privateip"
+	DefaultVmPrivateIp           string = "10.0.0.15"
 	DefaultVolumeName            string = "cluster-api-volume"
 	DefaultVolumeIops            int32  = 1000
 	DefaultVolumeSize            int32  = 30
@@ -360,6 +383,49 @@ func (node *OscNode) SetVolumeDefaultValue() {
 func (igw *OscInternetService) SetDefaultValue() {
 	if igw.Name == "" {
 		igw.Name = DefaultInternetServiceName
+	}
+}
+
+func (vm *OscVm) SetDefaultValue() {
+	if vm.Name == "" {
+		vm.Name = DefaultVmName
+	}
+	if vm.ImageId == "" {
+		vm.ImageId = DefaultVmImageId
+	}
+	if vm.KeypairName == "" {
+		vm.KeypairName = DefaultVmKeypairName
+	}
+	if vm.VmType == "" {
+		vm.VmType = DefaultVmType
+	}
+	if vm.VolumeName == "" {
+		vm.VolumeName = DefaultVolumeName
+	}
+	if vm.DeviceName == "" {
+		vm.DeviceName = DefaultVmDeviceName
+	}
+	if vm.SubregionName == "" {
+		vm.SubregionName = DefaultVmSubregionName
+	}
+	if vm.SubnetName == "" {
+		vm.SubnetName = DefaultSubnetName
+	}
+	if vm.LoadBalancerName == "" {
+		vm.LoadBalancerName = DefaultLoadBalancerName
+	}
+	if len(vm.SecurityGroups) == 0 {
+		securityGroup := OscSecurityGroupList{
+			Name: DefaultSecurityGroupName,
+		}
+		vm.SecurityGroups = []OscSecurityGroupList{securityGroup}
+	}
+	if len(vm.PrivateIps) == 0 {
+		privateIp := OscPrivateIpList{
+			Name:      DefaultVmPrivateIpName,
+			PrivateIp: DefaultVmPrivateIp,
+		}
+		vm.PrivateIps = []OscPrivateIpList{privateIp}
 	}
 }
 

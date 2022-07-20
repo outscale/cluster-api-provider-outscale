@@ -198,6 +198,16 @@ func (s *ClusterScope) GetRoute(Name string) *[]infrastructurev1beta1.OscRoute {
 	return nil
 }
 
+func (s *ClusterScope) GetIpSubnetRange(Name string) string {
+	subnets := s.OscCluster.Spec.Network.Subnets
+	for _, subnet := range subnets {
+		if subnet.Name == Name {
+			return subnet.IpSubnetRange
+		}
+	}
+	return ""
+}
+
 // GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
 func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
 	securityGroups := s.OscCluster.Spec.Network.SecurityGroups

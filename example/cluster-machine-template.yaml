@@ -36,8 +36,12 @@ spec:
     subnets:
       - name: cluster-api-subnet
         ipSubnetRange: "10.0.0.0/24"
+      - name: cluster-api-sub
+        ipSubnetRange: "10.0.1.0/24"
     publicIps:
       - name: cluster-api-publicip
+      - name: cluster-api-kw-publicip
+      - name: cluster-api-kcp-publicip
     internetService:
       name: cluster-api-internetservice
     natService:
@@ -105,6 +109,21 @@ spec:
             size: 30
             volumeType: io1
             subregionName: eu-west-2a
+        vm:
+          name: cluster-api-vm
+          imageId: ami-04d11c98
+          keypairName: rke2
+          volumeName: cluster-api-volume
+          deviceName: /dev/xvdb
+          subnetName: cluster-api-sub
+          subregionName: eu-west-2a
+          securityGroups:
+            - name: cluster-api-securitygroups
+          privateIps:
+            - name: cluster-api-kw-privateip
+              privateIp: "10.0.1.17"
+          publicIpName: cluster-api-kw-publicip
+          vmType: "tinav4.c2r4p2"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -121,6 +140,21 @@ spec:
             size: 30
             volumeType: io1
             subregionName: eu-west-2a
+        vm:
+          name: cluster-api-vm
+          imageId: ami-04d11c98
+          keypairName: rke
+          volumeName: cluster-api-volume
+          deviceName: /dev/xvdb
+          subregionName: eu-west-2a
+          subnetName: cluster-api-subnet
+          loadBalancerName: OscSdkExample-6
+          securityGroups:
+            - name: cluster-api-securitygroups
+          privateIps:
+            - name: cluster-api-privateip
+              privateIp: "10.0.0.17"
+          vmType: "tinav4.c2r4p2"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate

@@ -132,9 +132,39 @@ func (m *MachineScope) GetVolume() []*infrastructurev1beta1.OscVolume {
 	return m.OscMachine.Spec.Node.Volumes
 }
 
+func (m *MachineScope) GetVolumeSubregionName(Name string) string {
+	volumes := m.OscMachine.Spec.Node.Volumes
+	for _, volume := range volumes {
+		if volume.Name == Name {
+			return volume.SubregionName
+		}
+	}
+	return ""
+}
+
+func (m *MachineScope) GetVm() *infrastructurev1beta1.OscVm {
+	return &m.OscMachine.Spec.Node.Vm
+}
+
+func (m *MachineScope) GetVmPrivateIps() *[]infrastructurev1beta1.OscPrivateIpList {
+	return &m.OscMachine.Spec.Node.Vm.PrivateIps
+}
+
+func (m *MachineScope) GetVmSecurityGroups() *[]infrastructurev1beta1.OscSecurityGroupList {
+	return &m.OscMachine.Spec.Node.Vm.SecurityGroups
+}
+
+func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &m.OscMachine.Status.Node.LinkPublicIpRef
+}
+
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &m.OscMachine.Status.Node.VolumeRef
+}
+
+func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &m.OscMachine.Status.Node.VmRef
 }
 
 // IsControlPlane check if it is control plane
@@ -170,6 +200,11 @@ func (m *MachineScope) GetInstanceID() string {
 		return ""
 	}
 	return parsed.ID()
+}
+
+func (m *MachineScope) SetProviderID(vmId string) {
+	pid := fmt.Sprintf("osc://%s", vmId)
+	m.OscMachine.Spec.ProviderID = pointer.StringPtr(pid)
 }
 
 // GetVmState return the vmState
@@ -227,7 +262,7 @@ func (m *MachineScope) GetBootstrapData() (string, error) {
 // PatchObject keep the machine configuration and status
 func (m *MachineScope) PatchObject() error {
 	applicableConditions := []clusterv1.ConditionType{
-		infrastructurev1beta1.InstanceReadyCondition,
+		infrastructurev1beta1.VmReadyCondition,
 	}
 	conditions.SetSummary(m.OscMachine,
 		conditions.WithConditions(applicableConditions...),
@@ -239,6 +274,22 @@ func (m *MachineScope) PatchObject() error {
 		m.OscMachine,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,
-			infrastructurev1beta1.InstanceReadyCondition,
+			infrastructurev1beta1.VmReadyCondition,
 		}})
+}
+
+func (m *MachineScope) GetBootstrapData() (string, error) {
+	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
+		return "", errors.New("error retrieving bootstrap data: linked Machine's bootstrap.DataSecretName is nil")
+	}
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{Namespace: m.GetNamespace(), Name: *m.Machine.Spec.Bootstrap.DataSecretName}
+	if err := m.client.Get(context.TODO(), key, secret); err != nil {
+		return "", fmt.Errorf("%W failed to retrieve bootstrap data secret for OscMachine %s/%s", m.GetNamespace(), m.GetName())
+	}
+	value, ok := secret.Data["value"]
+	if !ok {
+		return "", errors.New("error retrieving bootstrap data: secret value key is missing")
+	}
+	return string(value), nil
 }

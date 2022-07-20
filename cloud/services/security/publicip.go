@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"errors"
-
+	"github.com/benbjohnson/clock"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
@@ -14,6 +15,9 @@ type OscPublicIpInterface interface {
 	CreatePublicIp(publicIpName string) (*osc.PublicIp, error)
 	DeletePublicIp(publicIpId string) error
 	GetPublicIp(publicIpId string) (*osc.PublicIp, error)
+	LinkPublicIp(publicIpId string, vmId string) (string, error)
+	UnlinkPublicIp(linkPublicIpId string) error
+	CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
 	ValidatePublicIpIds(publicIpIds []string) ([]string, error)
 }
 
@@ -107,4 +111,60 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 		}
 	}
 	return validPublicIpIds, nil
+}
+
+func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
+	linkPublicIpRequest := osc.LinkPublicIpRequest{
+		PublicIpId: &publicIpId,
+		VmId:       &vmId,
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	linkPublicIp, httpRes, err := oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
+
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return "", err
+	}
+	linkPublicIpId, ok := linkPublicIp.GetLinkPublicIpIdOk()
+	if !ok {
+		return "", errors.New("Can not get publicip")
+	}
+	return *linkPublicIpId, nil
+}
+
+func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
+	unlinkPublicIpRequest := osc.UnlinkPublicIpRequest{
+		LinkPublicIpId: &linkPublicIpId,
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	_, httpRes, err := oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return err
+	}
+	return nil
+}
+
+func (s *Service) CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error {
+	clock_time := clock.New()
+	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
+	var getPublicIpUnlink = false
+	for !getPublicIpUnlink {
+		publicIp, err := s.GetPublicIp(publicIpId)
+		if err != nil {
+			return err
+		}
+		_, ok := publicIp.GetLinkPublicIpIdOk()
+		if !ok {
+			getPublicIpUnlink = true
+		}
+		time.Sleep(clockInsideLoop * time.Second)
+
+		if clock_time.Now().After(currentTimeout) {
+			return errors.New("PublicIp is still link")
+		}
+	}
+	return nil
 }

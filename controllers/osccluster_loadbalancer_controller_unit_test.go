@@ -9,6 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"time"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -818,28 +819,31 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 // TestReconcileDeleteLoadBalancerDelete  has several tests to cover the code of the function ReconcileDeleteLoadBalancer
 func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 	loadBalancerTestCases := []struct {
-		name                              string
-		spec                              infrastructurev1beta1.OscClusterSpec
-		expLoadBalancerFound              bool
-		expDescribeLoadBalancerErr        error
-		expDeleteLoadBalancerErr          error
-		expReconcileDeleteLoadBalancerErr error
+		name                                string
+		spec                                infrastructurev1beta1.OscClusterSpec
+		expLoadBalancerFound                bool
+		expDescribeLoadBalancerErr          error
+		expDeleteLoadBalancerErr            error
+		expCheckLoadBalancerDeregisterVmErr error
+		expReconcileDeleteLoadBalancerErr   error
 	}{
 		{
-			name:                              "delete loadBalancer (first time reconcile loop)",
-			spec:                              defaultLoadBalancerReconcile,
-			expLoadBalancerFound:              true,
-			expDeleteLoadBalancerErr:          nil,
-			expDescribeLoadBalancerErr:        nil,
-			expReconcileDeleteLoadBalancerErr: nil,
+			name:                                "delete loadBalancer (first time reconcile loop)",
+			spec:                                defaultLoadBalancerReconcile,
+			expLoadBalancerFound:                true,
+			expDeleteLoadBalancerErr:            nil,
+			expDescribeLoadBalancerErr:          nil,
+			expCheckLoadBalancerDeregisterVmErr: nil,
+			expReconcileDeleteLoadBalancerErr:   nil,
 		},
 		{
-			name:                              "failed to delete loadBalancer",
-			spec:                              defaultLoadBalancerReconcile,
-			expLoadBalancerFound:              true,
-			expDeleteLoadBalancerErr:          fmt.Errorf("DeleteLoadBalancer generic error"),
-			expDescribeLoadBalancerErr:        nil,
-			expReconcileDeleteLoadBalancerErr: fmt.Errorf("DeleteLoadBalancer generic error Can not delete loadBalancer for Osccluster test-system/test-osc"),
+			name:                                "failed to delete loadBalancer",
+			spec:                                defaultLoadBalancerReconcile,
+			expLoadBalancerFound:                true,
+			expDeleteLoadBalancerErr:            fmt.Errorf("DeleteLoadBalancer generic error"),
+			expDescribeLoadBalancerErr:          nil,
+			expCheckLoadBalancerDeregisterVmErr: nil,
+			expReconcileDeleteLoadBalancerErr:   fmt.Errorf("DeleteLoadBalancer generic error Can not delete loadBalancer for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -861,6 +865,8 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
+			var clockInsideLoop time.Duration = 5
+			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
 				GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
@@ -869,6 +875,12 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				EXPECT().
 				DeleteLoadBalancer(gomock.Eq(&loadBalancerSpec)).
 				Return(lbtc.expDeleteLoadBalancerErr)
+
+			mockOscLoadBalancerInterface.
+				EXPECT().
+				CheckLoadBalancerDeregisterVm(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(&loadBalancerSpec)).
+				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
+
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if err != nil {
 				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr.Error(), err.Error(), "reconcileDeleteLoadBalancer() should return the same error")
@@ -883,20 +895,22 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 // TestReconcileDeleteLoadBalancerDeleteWithoutSpec  has several tests to cover the code of the function reconcileDeleteLoadBalancer
 func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 	loadBalancerTestCases := []struct {
-		name                              string
-		spec                              infrastructurev1beta1.OscClusterSpec
-		expLoadBalancerFound              bool
-		expDescribeLoadBalancerErr        error
-		expDeleteLoadBalancerErr          error
-		expReconcileDeleteLoadBalancerErr error
+		name                                string
+		spec                                infrastructurev1beta1.OscClusterSpec
+		expLoadBalancerFound                bool
+		expDescribeLoadBalancerErr          error
+		expDeleteLoadBalancerErr            error
+		expCheckLoadBalancerDeregisterVmErr error
+		expReconcileDeleteLoadBalancerErr   error
 	}{
 		{
-			name:                              "delete loadBalancer without spec (with default values)",
-			spec:                              defaultLoadBalancerReconcile,
-			expLoadBalancerFound:              true,
-			expDescribeLoadBalancerErr:        nil,
-			expDeleteLoadBalancerErr:          nil,
-			expReconcileDeleteLoadBalancerErr: nil,
+			name:                                "delete loadBalancer without spec (with default values)",
+			spec:                                defaultLoadBalancerReconcile,
+			expLoadBalancerFound:                true,
+			expDescribeLoadBalancerErr:          nil,
+			expDeleteLoadBalancerErr:            nil,
+			expCheckLoadBalancerDeregisterVmErr: nil,
+			expReconcileDeleteLoadBalancerErr:   nil,
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -918,14 +932,79 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
+			var clockInsideLoop time.Duration = 5
+			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
 				GetLoadBalancer(gomock.Eq(loadBalancerSpec)).
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 			mockOscLoadBalancerInterface.
 				EXPECT().
+				CheckLoadBalancerDeregisterVm(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(loadBalancerSpec)).
+				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
+			mockOscLoadBalancerInterface.
+				EXPECT().
 				DeleteLoadBalancer(gomock.Eq(loadBalancerSpec)).
 				Return(lbtc.expDeleteLoadBalancerErr)
+			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
+			if err != nil {
+				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr.Error(), err.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+			} else {
+				assert.Nil(t, lbtc.expReconcileDeleteLoadBalancerErr)
+			}
+			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
+		})
+	}
+}
+
+// TestReconcileDeleteLoadBalancerCheck  has one tests to cover the code of the function ReconcileDeleteLoadBalancer
+func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
+	loadBalancerTestCases := []struct {
+		name                                string
+		spec                                infrastructurev1beta1.OscClusterSpec
+		expLoadBalancerFound                bool
+		expDescribeLoadBalancerErr          error
+		expCheckLoadBalancerDeregisterVmErr error
+		expReconcileDeleteLoadBalancerErr   error
+	}{
+		{
+			name:                                "failed to delete loadBalancer",
+			spec:                                defaultLoadBalancerReconcile,
+			expLoadBalancerFound:                true,
+			expDescribeLoadBalancerErr:          nil,
+			expCheckLoadBalancerDeregisterVmErr: fmt.Errorf("CheckLoadBalancerDeregisterVm generic error"),
+			expReconcileDeleteLoadBalancerErr:   fmt.Errorf("CheckLoadBalancerDeregisterVm generic error VmBackend is not deregister in loadBalancer test-loadbalancer for OscCluster test-system/test-osc"),
+		},
+	}
+	for _, lbtc := range loadBalancerTestCases {
+		t.Run(lbtc.name, func(t *testing.T) {
+			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
+			loadBalancerDnsName := loadBalancerName + ".eu-west-2.lbu.outscale.com"
+			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
+			loadBalancerSpec.SetDefaultValue()
+			loadBalancer := osc.CreateLoadBalancerResponse{
+				LoadBalancer: &osc.LoadBalancer{
+					LoadBalancerName: &loadBalancerName,
+					DnsName:          &loadBalancerDnsName,
+				},
+			}
+			readLoadBalancers := osc.ReadLoadBalancersResponse{
+				LoadBalancers: &[]osc.LoadBalancer{
+					*loadBalancer.LoadBalancer,
+				},
+			}
+			readLoadBalancer := *readLoadBalancers.LoadBalancers
+			var clockInsideLoop time.Duration = 5
+			var clockLoop time.Duration = 120
+			mockOscLoadBalancerInterface.
+				EXPECT().
+				GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
+				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
+			mockOscLoadBalancerInterface.
+				EXPECT().
+				CheckLoadBalancerDeregisterVm(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(&loadBalancerSpec)).
+				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if err != nil {

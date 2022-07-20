@@ -6,6 +6,7 @@ package mock_security
 
 import (
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -32,6 +33,20 @@ func NewMockOscPublicIpInterface(ctrl *gomock.Controller) *MockOscPublicIpInterf
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOscPublicIpInterface) EXPECT() *MockOscPublicIpInterfaceMockRecorder {
 	return m.recorder
+}
+
+// CheckPublicIpUnlink mocks base method.
+func (m *MockOscPublicIpInterface) CheckPublicIpUnlink(clockInsideLoop, clockLoop time.Duration, publicIpId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckPublicIpUnlink", clockInsideLoop, clockLoop, publicIpId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckPublicIpUnlink indicates an expected call of CheckPublicIpUnlink.
+func (mr *MockOscPublicIpInterfaceMockRecorder) CheckPublicIpUnlink(clockInsideLoop, clockLoop, publicIpId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckPublicIpUnlink", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CheckPublicIpUnlink), clockInsideLoop, clockLoop, publicIpId)
 }
 
 // CreatePublicIp mocks base method.
@@ -76,6 +91,35 @@ func (m *MockOscPublicIpInterface) GetPublicIp(publicIpId string) (*osc.PublicIp
 func (mr *MockOscPublicIpInterfaceMockRecorder) GetPublicIp(publicIpId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).GetPublicIp), publicIpId)
+}
+
+// LinkPublicIp mocks base method.
+func (m *MockOscPublicIpInterface) LinkPublicIp(publicIpId, vmId string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LinkPublicIp", publicIpId, vmId)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LinkPublicIp indicates an expected call of LinkPublicIp.
+func (mr *MockOscPublicIpInterfaceMockRecorder) LinkPublicIp(publicIpId, vmId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).LinkPublicIp), publicIpId, vmId)
+}
+
+// UnlinkPublicIp mocks base method.
+func (m *MockOscPublicIpInterface) UnlinkPublicIp(linkPublicIpId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnlinkPublicIp", linkPublicIpId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnlinkPublicIp indicates an expected call of UnlinkPublicIp.
+func (mr *MockOscPublicIpInterfaceMockRecorder) UnlinkPublicIp(linkPublicIpId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).UnlinkPublicIp), linkPublicIpId)
 }
 
 // ValidatePublicIpIds mocks base method.

@@ -14,8 +14,8 @@ import (
 
 type OscSecurityGroupInterface interface {
 	CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error)
-	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
-	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) error
+	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
+	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
 	DeleteSecurityGroup(securityGroupId string) (error, *http.Response)
 	GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error)
 	GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
@@ -42,14 +42,31 @@ func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, se
 	return securityGroup, nil
 }
 
-func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
+func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
+	var rule osc.SecurityGroupRule
+	if securityGroupMemberId != "" && ipRange == "" {
+		securityGroupMember := osc.SecurityGroupsMember{
+			SecurityGroupId: &securityGroupMemberId,
+		}
+		rule = osc.SecurityGroupRule{
+			SecurityGroupsMembers: &[]osc.SecurityGroupsMember{securityGroupMember},
+			IpProtocol:            &ipProtocol,
+			FromPortRange:         &fromPortRange,
+			ToPortRange:           &toPortRange,
+		}
+	} else {
+		rule = osc.SecurityGroupRule{
+			IpProtocol:    &ipProtocol,
+			IpRanges:      &[]string{ipRange},
+			FromPortRange: &fromPortRange,
+			ToPortRange:   &toPortRange,
+		}
+	}
+
 	createSecurityGroupRuleRequest := osc.CreateSecurityGroupRuleRequest{
 		Flow:            flow,
 		SecurityGroupId: securityGroupId,
-		IpProtocol:      &ipProtocol,
-		IpRange:         &ipRange,
-		FromPortRange:   &fromPortRange,
-		ToPortRange:     &toPortRange,
+		Rules:           &[]osc.SecurityGroupRule{rule},
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -65,14 +82,31 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 	return securityGroupRule, nil
 }
 
-func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, fromPortRange int32, toPortRange int32) error {
+func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error {
+        var rule osc.SecurityGroupRule
+        if securityGroupMemberId != "" && ipRange == "" {
+                securityGroupMember := osc.SecurityGroupsMember{
+                        SecurityGroupId: &securityGroupMemberId,
+                }
+                rule = osc.SecurityGroupRule{
+                        SecurityGroupsMembers: &[]osc.SecurityGroupsMember{securityGroupMember},
+                        IpProtocol:            &ipProtocol,
+                        FromPortRange:         &fromPortRange,
+                        ToPortRange:           &toPortRange,
+                }
+	} else {
+		rule = osc.SecurityGroupRule{
+			IpProtocol:    &ipProtocol,
+			IpRanges:      &[]string{ipRange},
+			FromPortRange: &fromPortRange,
+			ToPortRange:   &toPortRange,
+		}
+	}
+
 	deleteSecurityGroupRuleRequest := osc.DeleteSecurityGroupRuleRequest{
 		Flow:            flow,
 		SecurityGroupId: securityGroupId,
-		IpProtocol:      &ipProtocol,
-		IpRange:         &ipRange,
-		FromPortRange:   &fromPortRange,
-		ToPortRange:     &toPortRange,
+		Rules:           &[]osc.SecurityGroupRule{rule},
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
