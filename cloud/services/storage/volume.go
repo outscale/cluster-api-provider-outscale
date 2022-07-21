@@ -11,13 +11,15 @@ import (
 )
 
 const (
+	minIops = 0
 	maxIops = 13000
+	minSize = 0
 	maxSize = 14901
 )
 
 // ValidateIops check that iops is valid
 func ValidateIops(iops int32) (int32, error) {
-	if iops < maxIops {
+	if iops < maxIops && iops > minIops {
 		return iops, nil
 	} else {
 		return iops, errors.New("Invalid iops")
@@ -26,27 +28,26 @@ func ValidateIops(iops int32) (int32, error) {
 
 // ValidateSize check that size is valid
 func ValidateSize(size int32) (int32, error) {
-	if size < maxSize {
+	if size < minSize && size > minSize {
 		return size, nil
 	} else {
-		return size, errors.New("Invalid Size")
+		return size, errors.New("Invalid size")
 	}
 }
 
 // ValidateVolumeType check that volumeType is a valid volumeType
 func ValidateVolumeType(volumeType string) (string, error) {
-	switch {
-	case volumeType == "standard" || volumeType == "gp2" || volumeType == "io1":
+	switch volumeType {
+	case "standard", "gp2", "io1":
 		return volumeType, nil
 	default:
 		return volumeType, errors.New("Invalid volumeType")
 	}
 }
 
-// ValidateSubregionName check that subregionName is a valid az format
 func ValidateSubregionName(subregionName string) (string, error) {
 	switch {
-	case strings.Contains(subregionName, "1a") || strings.Contains(subregionName, "1b") || strings.Contains(subregionName, "2a") || strings.Contains(subregionName, "2b"):
+	case strings.HasSuffix(subregionName, "1a") || strings.HasSuffix(subregionName, "1b") || strings.HasSuffix(subregionName, "2a") || strings.HasSuffix(subregionName, "2b"):
 		return subregionName, nil
 	default:
 		return subregionName, errors.New("Invalid subregionName")
@@ -65,21 +66,14 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 	size := spec.Size
 	subregionName := spec.SubregionName
 	volumeType := spec.VolumeType
-	var volumeRequest osc.CreateVolumeRequest
+	volumeRequest := osc.CreateVolumeRequest{
+		Size:          &size,
+		SubregionName: subregionName,
+		VolumeType:    &volumeType,
+	}
 	if volumeType == "io1" {
 		iops := spec.Iops
-		volumeRequest = osc.CreateVolumeRequest{
-			Iops:          &iops,
-			Size:          &size,
-			SubregionName: subregionName,
-			VolumeType:    &volumeType,
-		}
-	} else {
-		volumeRequest = osc.CreateVolumeRequest{
-			Size:          &size,
-			SubregionName: subregionName,
-			VolumeType:    &volumeType,
-		}
+		volumeRequest.SetIops(iops)
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -88,16 +82,17 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
+	volume, ok := volumeResponse.GetVolumeOk()
+	if !ok {
+		return nil, errors.New("Can not create volume")
+	}
 	resourceIds := []string{*volumeResponse.Volume.VolumeId}
 	err = tag.AddTag("Name", volumeName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	volume, ok := volumeResponse.GetVolumeOk()
-	if !ok {
-		return nil, errors.New("Can not create volume")
-	}
+
 	return volume, nil
 }
 

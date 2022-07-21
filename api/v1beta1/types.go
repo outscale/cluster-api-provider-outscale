@@ -248,10 +248,10 @@ type OscNetworkResource struct {
 }
 
 type OscNodeResource struct {
-	VolumeRef  OscResourceMapReference `json:"VolumeRef,omitempty"`
-	ImageRef   OscResourceMapReference `json:"ImageRef,omitempty"`
-	KeypairRef OscResourceMapReference `json:"KeypairRef,omitempty"`
-	VmRef      OscResourceMapReference `json:"VmRef,omitempty"`
+	VolumeRef  OscResourceMapReference `json:"volumeRef,omitempty"`
+	ImageRef   OscResourceMapReference `json:"imageRef,omitempty"`
+	KeypairRef OscResourceMapReference `json:"keypairRef,omitempty"`
+	VmRef      OscResourceMapReference `json:"vmRef,omitempty"`
 }
 
 type OscImage struct {
@@ -270,18 +270,18 @@ type OscVolume struct {
 
 type OscKeypair struct {
 	Name       string `json:"name,omitempty"`
-	PublicKey  string `json:"publickey,omitempty"`
+	PublicKey  string `json:"publicKey,omitempty"`
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscVm struct {
-	Name               string `json:"name,omitempty"`
-	ImageId            string `json:"imageId,omitempty"`
-	KeypairName        string `json:"keypairnName,omitempty"`
-	PrivateIps         string `json:"privateIps,omitempty"`
-	SecurityGroupsName string `json:"securityGroupsName,omitempty"`
-	SubnetName         string `json:"subnetName,omitempty"`
-	ResourceId         string `json:"resourceId,omitempty"`
+	Name                string   `json:"name,omitempty"`
+	ImageId             string   `json:"imageId,omitempty"`
+	KeypairName         string   `json:"keypairName,omitempty"`
+	PrivateIps          []string `json:"privateIps,omitempty"`
+	SecurityGroupsNames []string `json:"securityGroupsNames,omitempty"`
+	SubnetName          string   `json:"subnetName,omitempty"`
+	ResourceId          string   `json:"resourceId,omitempty"`
 }
 
 type VmState string

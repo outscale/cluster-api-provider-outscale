@@ -48,7 +48,7 @@ spec:
                     properties:
                       name:
                         type: string
-                      publickey:
+                      publicKey:
                         type: string
                       resourceId:
                         type: string
@@ -57,16 +57,20 @@ spec:
                     properties:
                       imageId:
                         type: string
-                      keypairnName:
+                      keypairName:
                         type: string
                       name:
                         type: string
                       privateIps:
-                        type: string
+                        items:
+                          type: string
+                        type: array
                       resourceId:
                         type: string
-                      securityGroupsName:
-                        type: string
+                      securityGroupsNames:
+                        items:
+                          type: string
+                        type: array
                       subnetName:
                         type: string
                     type: object
@@ -96,7 +100,7 @@ spec:
           status:
             description: OscMachineStatus defines the observed state of OscMachine
             properties:
-              address:
+              addresses:
                 items:
                   description: NodeAddress contains information for the node's address.
                   properties:
@@ -166,7 +170,7 @@ spec:
                 type: string
               node:
                 properties:
-                  ImageRef:
+                  imageRef:
                     description: Map between resourceId and resourceName (tag Name
                       with cluster UID)
                     properties:
@@ -175,7 +179,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  KeypairRef:
+                  keypairRef:
                     description: Map between resourceId and resourceName (tag Name
                       with cluster UID)
                     properties:
@@ -184,7 +188,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  VmRef:
+                  vmRef:
                     description: Map between resourceId and resourceName (tag Name
                       with cluster UID)
                     properties:
@@ -193,7 +197,7 @@ spec:
                           type: string
                         type: object
                     type: object
-                  VolumeRef:
+                  volumeRef:
                     description: Map between resourceId and resourceName (tag Name
                       with cluster UID)
                     properties:

@@ -150,7 +150,7 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 	}
 	machineScope.Info("### Check Id ###", "volume", volumeIds)
 	for _, volumeSpec := range volumesSpec {
-		volumeId := volumeSpec.ResourceId
+		volumeId = volumeSpec.ResourceId
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
 		if !Contains(validVolumeIds, volumeId) {
 			controllerutil.RemoveFinalizer(oscmachine, "")

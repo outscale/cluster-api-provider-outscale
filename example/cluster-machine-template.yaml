@@ -1,0 +1,157 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: hello-osc
+    namespace: default
+  controlPlaneRef:
+    kind: KubeadmControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    name: "hello-osc-control-plane"
+    namespace: default
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  network:
+    loadBalancer:
+      loadbalancername: OscSdkExample-6
+      loadbalancertype: internet-facing
+      subnetname: cluster-api-subnet
+      securitygroupname: cluster-api-securitygroups
+    net:
+      name: cluster-api-net
+      ipRange: "10.0.0.0/16"
+    subnets:
+      - name: cluster-api-subnet
+        ipSubnetRange: "10.0.0.0/24"
+    publicIps:
+      - name: cluster-api-publicip
+    internetService:
+      name: cluster-api-internetservice
+    natService:
+      name: cluster-api-natservice
+      publicipname: cluster-api-publicip
+      subnetname: cluster-api-subnet
+    routeTables:
+      - name: cluster-api-routetable
+        subnetname: cluster-api-subnet
+        routes:
+          - name: cluster-api-routes
+            targetName: cluster-api-internetservice
+            targetType: gateway 
+            destination: "0.0.0.0/0"
+    securityGroups:
+      - name: cluster-api-securitygroups
+        description: Security Group with cluster-api   
+        securityGroupRules:
+          - name: cluste-api-securitygrouprule
+            flow: Inbound
+            ipProtocol: tcp
+# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            ipRange: "0.0.0.0/0"
+            fromPortRange: 6443
+            toPortRange: 6443
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "hello-osc-md-0"
+  namespace: default
+spec:
+  clusterName: "hello-osc"
+  replicas: 1
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "hello-osc"
+      version: "1.24.0"
+      bootstrap:
+        configRef:
+          name: "hello-osc-md-0"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          namespace: default
+      infrastructureRef:
+        name: "hello-osc-md-0"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+        namespace: default
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "hello-osc-md-0"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        volumes:
+          - name: cluster-api-volume
+            iops: 1000
+            size: 30
+            volumeType: io1
+            subregionName: eu-west-2a
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "hello-osc-control-plane"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        volumes:
+          - name: cluster-api-volume
+            iops: 1000
+            size: 30
+            volumeType: io1
+            subregionName: eu-west-2a
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: "hello-osc-md-0"
+  namespace: default
+spec:
+  template:
+    spec:
+      initConfiguration:
+        nodeRegistration:
+          name: 'hello-osc'
+          kubeletExtraArgs:
+            cloud-provider: external
+---
+kind: KubeadmControlPlane
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+metadata:
+  name: "hello-osc-control-plane"
+spec:
+  replicas: 1
+  machineTemplate:
+    infrastructureRef:
+      kind: OscMachineTemplate
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      name: "hello-osc-control-plane"
+      namespace: default
+  kubeadmConfigSpec:
+    initConfiguration:
+      nodeRegistration:
+        name: "hello-osc"
+        kubeletExtraArgs:
+          cloud-provider: external
+  version: "1.24.0"

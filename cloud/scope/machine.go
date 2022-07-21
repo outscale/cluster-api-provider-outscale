@@ -149,7 +149,7 @@ func (m *MachineScope) GetNode() *infrastructurev1beta1.OscNode {
 
 // GetRole return the role
 func (m *MachineScope) GetRole() string {
-	if util.IsControlPlaneMachine(m.Machine) {
+	if m.IsControlPlane() {
 		return infrastructurev1beta1.APIServerRoleTagValue
 	}
 	return infrastructurev1beta1.NodeRoleTagValue
@@ -208,7 +208,7 @@ func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 }
 
 // GetBostrapData return bootstrapData
-func (m *MachineScope) GetBostrapData() (string, error) {
+func (m *MachineScope) GetBootstrapData() (string, error) {
 	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
 		return "", errors.New("error retrieving bootstrap data: linked Machine's boostrap.dataSecretName is nil")
 	}

@@ -32,7 +32,7 @@ type OscMachineSpec struct {
 // OscMachineStatus defines the observed state of OscMachine
 type OscMachineStatus struct {
 	Ready          bool                       `json:"ready,omitempty"`
-	Addresses      []corev1.NodeAddress       `json:"address,omitempty"`
+	Addresses      []corev1.NodeAddress       `json:"addresses,omitempty"`
 	FailureReason  *errors.MachineStatusError `json:"failureReason,omitempty"`
 	VmState        *VmState                   `json:"vmState,omitempty"`
 	Node           OscNodeResource            `json:"node,omitempty"`
