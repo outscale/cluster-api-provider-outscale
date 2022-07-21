@@ -20,6 +20,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
+        description: OscMachineTemplate is the Schema for the OscMachineTemplate API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -31,13 +32,16 @@ spec:
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
-          metdata:
+          metadata:
             type: object
           spec:
+            description: OscMachineTemplateSpec define oscMachine template
             properties:
               template:
+                description: OscMachineTemplateResource is the Schema for the OscMachineTemplate
+                  api
                 properties:
-                  metdata:
+                  metadata:
                     description: "ObjectMeta is metadata that all persisted resources
                       must have, which includes all objects users must create. This
                       is a copy of customizable fields from metav1.ObjectMeta. \n
@@ -95,7 +99,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                              publickey:
+                              publicKey:
                                 type: string
                               resourceId:
                                 type: string
@@ -104,16 +108,20 @@ spec:
                             properties:
                               imageId:
                                 type: string
-                              keypairnName:
+                              keypairName:
                                 type: string
                               name:
                                 type: string
                               privateIps:
-                                type: string
+                                items:
+                                  type: string
+                                type: array
                               resourceId:
                                 type: string
-                              securityGroupsName:
-                                type: string
+                              securityGroupsNames:
+                                items:
+                                  type: string
+                                type: array
                               subnetName:
                                 type: string
                             type: object

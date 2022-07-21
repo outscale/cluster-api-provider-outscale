@@ -17,7 +17,7 @@ type OscMachineTemplateSpec struct {
 // OscMachineTemplate is the Schema for the OscMachineTemplate API
 type OscMachineTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metdata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec OscMachineTemplateSpec `json:"spec,omitempty"`
 }
@@ -26,13 +26,13 @@ type OscMachineTemplate struct {
 // +kubebuilder:object:root=true
 type OscMachineTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metdata,omitemmpty"`
+	metav1.ListMeta `json:"metadata,omitemmpty"`
 	Items           []OscMachineTemplate `json:"items"`
 }
 
 // OscMachineTemplateResource is the Schema for the OscMachineTemplate api
 type OscMachineTemplateResource struct {
-	ObjectMeta clusterv1.ObjectMeta `json:"metdata,omitempty"`
+	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty"`
 	Spec       OscMachineSpec       `json:"spec"`
 }
 
