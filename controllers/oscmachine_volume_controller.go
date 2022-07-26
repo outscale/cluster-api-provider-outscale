@@ -57,13 +57,16 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 			return volumeTagName, err
 		}
 
-		volumeIops := volumeSpec.Iops
-		_, err = storage.ValidateIops(volumeIops)
-		if err != nil {
-			return volumeTagName, err
+		if volumeSpec.Iops != 0 {
+			volumeIops := volumeSpec.Iops
+			_, err = storage.ValidateIops(volumeIops)
+			if err != nil {
+				return volumeTagName, err
+			}
 		}
 
 		volumeSize := volumeSpec.Size
+		machineScope.Info("Check volume info", "volumeSize", volumeSize)
 		_, err = storage.ValidateSize(volumeSize)
 		if err != nil {
 			return volumeTagName, err
@@ -96,6 +99,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		volumeId = volumeSpec.ResourceId
 		volumeIds = append(volumeIds, volumeId)
 	}
+
 	machineScope.Info("Check if the desired volumes exist")
 	validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
 	if err != nil {
@@ -114,7 +118,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		if !Contains(validVolumeIds, volumeId) {
 			volume, err := volumeSvc.CreateVolume(volumeSpec, volumeName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create volume for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("%w Can not create volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			volumeId := volume.GetVolumeId()
 			machineScope.Info("### Get VolumeId ###", "volumeId", volumeId)
