@@ -28,7 +28,7 @@ func ValidateIops(iops int32) (int32, error) {
 
 // ValidateSize check that size is valid
 func ValidateSize(size int32) (int32, error) {
-	if size < minSize && size > minSize {
+	if size < maxSize && size > minSize {
 		return size, nil
 	} else {
 		return size, errors.New("Invalid size")
