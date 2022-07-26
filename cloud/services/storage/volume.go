@@ -54,6 +54,7 @@ func ValidateSubregionName(subregionName string) (string, error) {
 	}
 }
 
+//go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
 type OscVolumeInterface interface {
 	CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error)
 	DeleteVolume(volumeId string) error

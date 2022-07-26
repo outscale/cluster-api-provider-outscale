@@ -1309,13 +1309,13 @@ func TestDeleteSecurityGroup(t *testing.T) {
 				if sgtc.expDeleteSecurityGroupFirstMockErr != nil {
 					if sgtc.expLoadBalancerResourceConflict {
 						httpResponse = &http.Response{
-							StatusCode: 9029,
+							StatusCode: 9085,
 							Body: ioutil.NopCloser(strings.NewReader(`{
 							"Errors": [
                                                 	        {
                                                 	       	    "Type": "ResourceConflict",
         	                                                    "Details": "",
-	                                                            "Code": "9029"
+	                                                            "Code": "9085"
                                  	                       }
                                         	        ],
                                                	 	"ResponseContext": {
