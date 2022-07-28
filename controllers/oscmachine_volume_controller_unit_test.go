@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"time"
+	"fmt"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -83,28 +83,28 @@ var (
 		},
 	}
 
-	defaultMultiVolumeReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
-				{
-					Name:          "test-volume-first",
-					Iops:          1000,
-					Size:          30,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-first-uid",
-				},
-				{
-					Name:          "test-volume-second",
-					Iops:          1000,
-					Size:          30,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-second-uid",
-				},
-			},
-		},
-	}
+        defaultMultiVolumeReconcile = infrastructurev1beta1.OscMachineSpec{
+                Node: infrastructurev1beta1.OscNode{
+                        Volumes: []*infrastructurev1beta1.OscVolume{
+                                {
+                                        Name:          "test-volume-first",
+                                        Iops:          1000,
+                                        Size:          30,
+                                        VolumeType:    "io1",
+                                        SubregionName: "eu-west-2a",
+					ResourceId: "volume-test-volume-first-uid",
+                                },
+                                {
+                                        Name:          "test-volume-second",
+                                        Iops:          1000,
+                                        Size:          30,
+                                        VolumeType:    "io1",
+                                        SubregionName: "eu-west-2a",
+					ResourceId: "volume-test-volume-second-uid",
+                                },
+                        },
+                },
+        }
 )
 
 // Setup set osccluster, oscmachine, machineScope and clusterScope
@@ -287,31 +287,31 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 			expCheckVolumeFormatParametersErr: nil,
 		},
 		{
-			name:        "Check work without spec (with default values)",
+			name: "Check work without spec (with default values)",
 			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
+			machineSpec: infrastructurev1beta1.OscMachineSpec {
 				Node: infrastructurev1beta1.OscNode{},
 			},
 			expCheckVolumeFormatParametersErr: nil,
 		},
 		{
-			name:        "Check Bad name volume",
+			name: "Check Bad name volume",
 			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
+			machineSpec: infrastructurev1beta1.OscMachineSpec {
+				Node: infrastructurev1beta1.OscNode {
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume@test",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
+							Name: "test-volume@test",
+							Iops: 1000,
+							Size: 50,	
+							VolumeType: "io1",
 							SubregionName: "eu-west-2a",
 						},
 					},
 				},
 			},
 			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
-		},
+		},	
 		{
 			name:        "Check Bad Iops volume",
 			clusterSpec: defaultClusterInitialize,
@@ -349,39 +349,39 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid size"),
 		},
 		{
-			name:        "Check Bad SubregionName",
+			name: "Check Bad SubregionName",
 			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2c",
-						},
-					},
-				},
-			},
+                        machineSpec: infrastructurev1beta1.OscMachineSpec{
+                                Node: infrastructurev1beta1.OscNode{
+                                        Volumes: []*infrastructurev1beta1.OscVolume{
+                                                {
+                                                        Name:          "test-volume",
+                                                        Iops:          1000,
+                                                        Size:          50,
+                                                        VolumeType:    "io1",
+                                                        SubregionName: "eu-west-2c",
+                                                },
+                                        },
+                                },
+                        },
 			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid subregionName"),
 		},
 		{
-			name:        "Check Bad volumeType",
+			name: "Check Bad volumeType",
 			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "gp3",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
+                        machineSpec: infrastructurev1beta1.OscMachineSpec{
+                                Node: infrastructurev1beta1.OscNode{
+                                        Volumes: []*infrastructurev1beta1.OscVolume{
+                                                {
+                                                        Name:          "test-volume",
+                                                        Iops:          1000,
+                                                        Size:          50,
+                                                        VolumeType:    "gp3",
+                                                        SubregionName: "eu-west-2a",
+                                                },
+                                        },
+                                },
+                        },
 			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid volumeType"),
 		},
 		{
@@ -436,30 +436,30 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 // TestReconcileVolumeCreate has several tests to cover the code of the function reconcileVolume
 func TestReconcileVolumeCreate(t *testing.T) {
 	volumeTestCases := []struct {
-		name                              string
-		clusterSpec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                       infrastructurev1beta1.OscMachineSpec
-		expVolumeFound                    bool
+		name                    string
+		clusterSpec             infrastructurev1beta1.OscClusterSpec
+		machineSpec             infrastructurev1beta1.OscMachineSpec
+		expVolumeFound          bool
 		expCheckVolumeStateAvailableFound bool
-		expCreateVolumeFound              bool
-		expUserDeleteVolumeFound          bool
-		expCreateVolumeErr                error
-		expCheckVolumeStateAvailableErr   error
-		expValidateVolumeIdsErr           error
-		expReconcileVolumeErr             error
+		expCreateVolumeFound    bool
+		expUserDeleteVolumeFound bool
+		expCreateVolumeErr      error
+		expCheckVolumeStateAvailableErr error
+		expValidateVolumeIdsErr error
+		expReconcileVolumeErr   error
 	}{
 		{
-			name:                              "create volume (first time reconcile loop)",
-			clusterSpec:                       defaultClusterInitialize,
-			machineSpec:                       defaultVolumeInitialize,
-			expVolumeFound:                    false,
-			expUserDeleteVolumeFound:          false,
+			name: "create volume (first time reconcile loop)",
+			clusterSpec: defaultClusterInitialize,
+			machineSpec: defaultVolumeInitialize,
+			expVolumeFound: false,
+			expUserDeleteVolumeFound: false,
 			expCheckVolumeStateAvailableFound: true,
-			expValidateVolumeIdsErr:           nil,
-			expCreateVolumeFound:              true,
-			expCreateVolumeErr:                nil,
-			expCheckVolumeStateAvailableErr:   nil,
-			expReconcileVolumeErr:             nil,
+			expValidateVolumeIdsErr: nil,
+			expCreateVolumeFound: true,
+			expCreateVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+			expReconcileVolumeErr: nil,
 		},
 		{
 			name:                              "create two volumes (first time reconcile loop)",
@@ -468,60 +468,64 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expVolumeFound:                    false,
 			expUserDeleteVolumeFound:          false,
 			expCheckVolumeStateAvailableFound: true,
-			expValidateVolumeIdsErr:           nil,
-			expCreateVolumeFound:              true,
-			expCreateVolumeErr:                nil,
-			expCheckVolumeStateAvailableErr:   nil,
-			expReconcileVolumeErr:             nil,
+			expValidateVolumeIdsErr: nil,
+			expCreateVolumeFound: true,
+			expCreateVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+			expReconcileVolumeErr: nil,
 		},
 		{
-			name:                              "failed to create volume",
-			clusterSpec:                       defaultClusterInitialize,
-			machineSpec:                       defaultVolumeInitialize,
-			expVolumeFound:                    false,
-			expUserDeleteVolumeFound:          false,
+			name: "failed to create volume",
+			clusterSpec: defaultClusterInitialize,
+			machineSpec: defaultVolumeInitialize,
+			expVolumeFound: false,
+			expUserDeleteVolumeFound: false,
 			expCheckVolumeStateAvailableFound: false,
-			expValidateVolumeIdsErr:           nil,
-			expCreateVolumeFound:              false,
-			expCreateVolumeErr:                fmt.Errorf("CreateVolume generic error"),
-			expCheckVolumeStateAvailableErr:   nil,
-			expReconcileVolumeErr:             fmt.Errorf("CreateVolume generic error Can not create volume for OscMachine test-system/test-osc"),
+			expValidateVolumeIdsErr: nil,
+			expCreateVolumeFound: false,
+			expCreateVolumeErr: fmt.Errorf("CreateVolume generic error"),
+                        expCheckVolumeStateAvailableErr: nil,
+			expReconcileVolumeErr: fmt.Errorf("CreateVolume generic error Can not create volume for OscMachine test-system/test-osc"),
 		},
 		{
-			name:                              "user delete volume without cluster-api",
-			clusterSpec:                       defaultClusterInitialize,
-			machineSpec:                       defaultVolumeReconcile,
-			expVolumeFound:                    false,
+			name: "user delete volume without cluster-api",
+			clusterSpec: defaultClusterInitialize,
+			machineSpec: defaultVolumeReconcile,
+			expVolumeFound: false,
 			expCheckVolumeStateAvailableFound: true,
-			expUserDeleteVolumeFound:          true,
-			expValidateVolumeIdsErr:           nil,
-			expCreateVolumeFound:              true,
-			expCreateVolumeErr:                nil,
-			expCheckVolumeStateAvailableErr:   nil,
-			expReconcileVolumeErr:             nil,
+			expUserDeleteVolumeFound: true,
+			expValidateVolumeIdsErr: nil,
+			expCreateVolumeFound: true,
+			expCreateVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+			expReconcileVolumeErr: nil,
 		},
-		{
-			name:                              "failed get vmVolumeState",
-			clusterSpec:                       defaultClusterInitialize,
-			machineSpec:                       defaultVolumeReconcile,
-			expVolumeFound:                    false,
+                {
+                        name: "failed get vmVolumeState",
+                        clusterSpec: defaultClusterInitialize,
+                        machineSpec: defaultVolumeReconcile,
+                        expVolumeFound: false,
 			expCheckVolumeStateAvailableFound: true,
-			expUserDeleteVolumeFound:          true,
-			expValidateVolumeIdsErr:           nil,
-			expCreateVolumeFound:              true,
-			expCreateVolumeErr:                nil,
-			expCheckVolumeStateAvailableErr:   fmt.Errorf("CheckVolumeStateAvailable generic error"),
-			expReconcileVolumeErr:             fmt.Errorf("CheckVolumeStateAvailable generic error Can not get volume available for OscMachine test-system/test-osc"),
-		},
+                        expUserDeleteVolumeFound: true,
+                        expValidateVolumeIdsErr: nil,
+                        expCreateVolumeFound: true,
+                        expCreateVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: fmt.Errorf("CheckVolumeStateAvailable generic error"),
+                        expReconcileVolumeErr: fmt.Errorf("CheckVolumeStateAvailable generic error Can not get volume available for OscMachine test-system/test-osc"),
+                },
+
+
+			
+			
 	}
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
 			var volumesIds []string
-			var clockInsideLoop time.Duration = 5
-			var clockLoop time.Duration = 60
-			volumeStateAvailable := "available"
+                        var clockInsideLoop time.Duration = 5
+                        var clockLoop time.Duration = 60
+                        volumeStateAvailable := "available"
 			for index, volumeSpec := range volumesSpec {
 				volumeName := volumeSpec.Name + "-uid"
 				volumeId := "volume-" + volumeName
@@ -549,12 +553,12 @@ func TestReconcileVolumeCreate(t *testing.T) {
 						Return(nil, vtc.expCreateVolumeErr)
 				}
 				if vtc.expCheckVolumeStateAvailableFound {
-					mockOscVolumeInterface.
-						EXPECT().
-						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-						Return(vtc.expCheckVolumeStateAvailableErr)
+	                        mockOscVolumeInterface.
+        	                        EXPECT().
+                	                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+                        	        Return(vtc.expCheckVolumeStateAvailableErr)
 				}
-
+				
 			}
 			if vtc.expUserDeleteVolumeFound {
 				mockOscVolumeInterface.
@@ -602,7 +606,7 @@ func TestReconcileVolumeGet(t *testing.T) {
 			machineSpec:             defaultVolumeReconcile,
 			expVolumeFound:          true,
 			expValidateVolumeIdsErr: nil,
-			expReconcileVolumeErr:   nil,
+			expReconcileVolumeErr: nil,
 		},
 		{
 			name:                    "check two volumes exist (second time reconcile loop)",
@@ -610,7 +614,7 @@ func TestReconcileVolumeGet(t *testing.T) {
 			machineSpec:             defaultMultiVolumeReconcile,
 			expVolumeFound:          true,
 			expValidateVolumeIdsErr: nil,
-			expReconcileVolumeErr:   nil,
+			expReconcileVolumeErr: nil,
 		},
 		{
 			name:                    "failed to validate volume",
@@ -618,7 +622,7 @@ func TestReconcileVolumeGet(t *testing.T) {
 			machineSpec:             defaultVolumeReconcile,
 			expVolumeFound:          false,
 			expValidateVolumeIdsErr: fmt.Errorf("ValidateVolumeIds generic error"),
-			expReconcileVolumeErr:   fmt.Errorf("ValidateVolumeIds generic error"),
+			expReconcileVolumeErr: fmt.Errorf("ValidateVolumeIds generic error"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
@@ -633,20 +637,20 @@ func TestReconcileVolumeGet(t *testing.T) {
 				volumeRef := machineScope.GetVolumeRef()
 				volumeRef.ResourceMap = make(map[string]string)
 				volumeRef.ResourceMap[volumeName] = volumeId
-
+				
 			}
-			if vtc.expVolumeFound {
-				mockOscVolumeInterface.
-					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
-					Return(volumesIds, vtc.expValidateVolumeIdsErr)
-			} else {
-				mockOscVolumeInterface.
-					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
-					Return(nil, vtc.expValidateVolumeIdsErr)
-			}
-
+				if vtc.expVolumeFound {
+					mockOscVolumeInterface.
+						EXPECT().
+						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						Return(volumesIds, vtc.expValidateVolumeIdsErr)
+				} else {
+					mockOscVolumeInterface.
+						EXPECT().
+						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						Return(nil, vtc.expValidateVolumeIdsErr)
+				}
+ 
 			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVolumeErr, err, "reconcileVolume should return the same error")
@@ -661,64 +665,64 @@ func TestReconcileVolumeGet(t *testing.T) {
 // TestReconcileDeleteVolumeDelete has several tests to cover the code of the function reconcileDeleteVolume
 func TestReconcileDeleteVolumeDelete(t *testing.T) {
 	volumeTestCases := []struct {
-		name                            string
-		clusterSpec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec                     infrastructurev1beta1.OscMachineSpec
-		expVolumeFound                  bool
-		expValidateVolumeIdsErr         error
-		expCheckVolumeStateAvailableErr error
-		expUnlinkVolumeErr              error
-		expCheckVolumeStateUseErr       error
-		expDeleteVolumeErr              error
-		expReconcileDeleteVolumeErr     error
+		name                        string
+		clusterSpec                 infrastructurev1beta1.OscClusterSpec
+		machineSpec                 infrastructurev1beta1.OscMachineSpec
+		expVolumeFound              bool
+		expValidateVolumeIdsErr error
+                expCheckVolumeStateAvailableErr      error
+                expUnlinkVolumeErr                     error
+                expCheckVolumeStateUseErr            error
+		expDeleteVolumeErr          error
+		expReconcileDeleteVolumeErr error
 	}{
 		{
-			name:                            "delete volume (first time reconcile loop)",
-			clusterSpec:                     defaultClusterReconcile,
-			machineSpec:                     defaultVolumeReconcile,
-			expVolumeFound:                  true,
-			expDeleteVolumeErr:              nil,
-			expValidateVolumeIdsErr:         nil,
-			expCheckVolumeStateAvailableErr: nil,
-			expUnlinkVolumeErr:              nil,
-			expCheckVolumeStateUseErr:       nil,
-			expReconcileDeleteVolumeErr:     nil,
+			name: "delete volume (first time reconcile loop)",
+			clusterSpec: defaultClusterReconcile,
+			machineSpec: defaultVolumeReconcile,
+			expVolumeFound: true,
+			expDeleteVolumeErr: nil,
+			expValidateVolumeIdsErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+                        expUnlinkVolumeErr: nil,
+                        expCheckVolumeStateUseErr: nil,
+			expReconcileDeleteVolumeErr: nil,
 		},
 		{
-			name:                            "delete two volumes (first time reconcile loop)",
-			clusterSpec:                     defaultClusterReconcile,
-			machineSpec:                     defaultVolumeReconcile,
-			expVolumeFound:                  true,
-			expValidateVolumeIdsErr:         nil,
-			expDeleteVolumeErr:              nil,
-			expCheckVolumeStateAvailableErr: nil,
-			expUnlinkVolumeErr:              nil,
-			expCheckVolumeStateUseErr:       nil,
-			expReconcileDeleteVolumeErr:     nil,
+			name: "delete two volumes (first time reconcile loop)",
+			clusterSpec: defaultClusterReconcile,
+			machineSpec: defaultVolumeReconcile,
+			expVolumeFound: true,
+			expValidateVolumeIdsErr: nil,
+			expDeleteVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+                        expUnlinkVolumeErr: nil,
+                        expCheckVolumeStateUseErr: nil,
+			expReconcileDeleteVolumeErr: nil,
 		},
 		{
-			name:                            "failed to delete volume",
-			clusterSpec:                     defaultClusterReconcile,
-			machineSpec:                     defaultVolumeReconcile,
-			expVolumeFound:                  true,
-			expValidateVolumeIdsErr:         nil,
-			expDeleteVolumeErr:              fmt.Errorf("DeleteVolume generic error"),
-			expCheckVolumeStateAvailableErr: nil,
-			expUnlinkVolumeErr:              nil,
-			expCheckVolumeStateUseErr:       nil,
-			expReconcileDeleteVolumeErr:     fmt.Errorf("DeleteVolume generic error Can not delete volume for OscMachine test-system/test-osc"),
+			name: "failed to delete volume",
+			clusterSpec: defaultClusterReconcile,
+			machineSpec: defaultVolumeReconcile,
+			expVolumeFound: true,
+			expValidateVolumeIdsErr: nil,
+			expDeleteVolumeErr: fmt.Errorf("DeleteVolume generic error"),
+                        expCheckVolumeStateAvailableErr: nil,
+                        expUnlinkVolumeErr: nil,
+                        expCheckVolumeStateUseErr: nil,
+			expReconcileDeleteVolumeErr: fmt.Errorf("DeleteVolume generic error Can not delete volume for OscMachine test-system/test-osc"),
 		},
+		
 	}
-
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
-			volumeStateAvailable := "available"
-			volumeStateUse := "in-use"
+                        volumeStateAvailable := "available"
+                        volumeStateUse := "in-use"
 
-			var clockInsideLoop time.Duration = 5
-			var clockLoop time.Duration = 60
+                        var clockInsideLoop time.Duration = 5
+                        var clockLoop time.Duration = 60
 			var volumesIds []string
 			for _, volumeSpec := range volumesSpec {
 				volumeName := volumeSpec.Name + "-uid"
@@ -728,20 +732,20 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 					EXPECT().
 					DeleteVolume(gomock.Eq(volumeId)).
 					Return(vtc.expDeleteVolumeErr)
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateUseErr)
+                        mockOscVolumeInterface.
+                                EXPECT().
+                                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
+                                Return(vtc.expCheckVolumeStateUseErr)
 
-				mockOscVolumeInterface.
-					EXPECT().
-					UnlinkVolume(gomock.Eq(volumeId)).
-					Return(vtc.expUnlinkVolumeErr)
+                      mockOscVolumeInterface.
+                                EXPECT().
+                                UnlinkVolume(gomock.Eq(volumeId)).
+                                Return(vtc.expUnlinkVolumeErr)
 
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateAvailableErr)
+                        mockOscVolumeInterface.
+                                EXPECT().
+                                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+                                Return(vtc.expCheckVolumeStateAvailableErr)
 			}
 			if vtc.expVolumeFound {
 				mockOscVolumeInterface.
@@ -780,21 +784,21 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 		expReconcileDeleteVolumeErr error
 	}{
 		{
-			name:        "check work without volume spec (with default values)",
+			name: "check work without volume spec (with default values)",
 			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
-			},
-			expVolumeFound:              false,
-			expValidateVolumeIdsErr:     nil,
+                        machineSpec: infrastructurev1beta1.OscMachineSpec {
+                                Node: infrastructurev1beta1.OscNode{},
+                        },
+			expVolumeFound: false,
+			expValidateVolumeIdsErr: nil,
 			expReconcileDeleteVolumeErr: nil,
 		},
 		{
-			name:                        "failed to validate volume",
-			clusterSpec:                 defaultClusterReconcile,
-			machineSpec:                 defaultVolumeReconcile,
-			expVolumeFound:              true,
-			expValidateVolumeIdsErr:     fmt.Errorf("ValidateVolumeIds generic errors"),
+			name: "failed to validate volume",
+			clusterSpec: defaultClusterReconcile,
+			machineSpec: defaultVolumeReconcile,
+			expVolumeFound: true,
+			expValidateVolumeIdsErr: fmt.Errorf("ValidateVolumeIds generic errors"),
 			expReconcileDeleteVolumeErr: fmt.Errorf("ValidateVolumeIds generic errors"),
 		},
 		{
@@ -806,7 +810,7 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 			expReconcileDeleteVolumeErr: nil,
 		},
 	}
-
+	
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
@@ -846,63 +850,64 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 // TestReconcileDeleteVolumeWithoutSpec has several tests to cover the code of the function reconcileDeleteVolume
 func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 	volumeTestCases := []struct {
-		name                            string
-		clusterSpec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec                     infrastructurev1beta1.OscMachineSpec
-		expValidateVolumeIdsErr         error
-		expDeleteVolumeErr              error
-		expCheckVolumeStateAvailableErr error
-		expUnlinkVolumeErr              error
-		expCheckVolumeStateUseErr       error
-		expReconcileDeleteVolumeErr     error
+		name                        string
+		clusterSpec                 infrastructurev1beta1.OscClusterSpec
+		machineSpec                 infrastructurev1beta1.OscMachineSpec
+		expValidateVolumeIdsErr     error
+		expDeleteVolumeErr          error
+                expCheckVolumeStateAvailableErr      error
+                expUnlinkVolumeErr                     error
+                expCheckVolumeStateUseErr            error
+		expReconcileDeleteVolumeErr error
 	}{
 		{
-			name:                            "delete volume without spec",
-			clusterSpec:                     defaultClusterReconcile,
-			machineSpec:                     defaultVolumeReconcile,
-			expDeleteVolumeErr:              nil,
-			expCheckVolumeStateAvailableErr: nil,
-			expUnlinkVolumeErr:              nil,
-			expCheckVolumeStateUseErr:       nil,
-			expReconcileDeleteVolumeErr:     nil,
+			name: "delete volume without spec",
+			clusterSpec: defaultClusterReconcile,
+			machineSpec: defaultVolumeReconcile,
+			expDeleteVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+                        expUnlinkVolumeErr: nil,
+                        expCheckVolumeStateUseErr: nil,
+			expReconcileDeleteVolumeErr: nil,
 		},
+		
 	}
-
+	
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			var volumesIds []string
-			var clockInsideLoop time.Duration = 5
-			var clockLoop time.Duration = 60
-			volumeStateUse := "in-use"
+                        var clockInsideLoop time.Duration = 5
+                        var clockLoop time.Duration = 60
+                        volumeStateUse := "in-use"
 
-			volumeStateAvailable := "available"
+                        volumeStateAvailable := "available"
 			volumeName := "cluster-api-volume-uid"
 			volumeId := "volume-" + volumeName
 			volumesIds = append(volumesIds, volumeId)
-			mockOscVolumeInterface.
-				EXPECT().
-				DeleteVolume(gomock.Eq(volumeId)).
-				Return(vtc.expDeleteVolumeErr)
-			mockOscVolumeInterface.
-				EXPECT().
-				ValidateVolumeIds(gomock.Eq(volumesIds)).
-				Return(volumesIds, vtc.expValidateVolumeIdsErr)
+				mockOscVolumeInterface.
+					EXPECT().
+					DeleteVolume(gomock.Eq(volumeId)).
+					Return(vtc.expDeleteVolumeErr)
+				mockOscVolumeInterface.
+					EXPECT().
+					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					Return(volumesIds, vtc.expValidateVolumeIdsErr)
 
-			mockOscVolumeInterface.
-				EXPECT().
-				CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
-				Return(vtc.expCheckVolumeStateUseErr)
+                        mockOscVolumeInterface.
+                                EXPECT().
+                                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
+                                Return(vtc.expCheckVolumeStateUseErr)
 
-			mockOscVolumeInterface.
-				EXPECT().
-				UnlinkVolume(gomock.Eq(volumeId)).
-				Return(vtc.expUnlinkVolumeErr)
+                      mockOscVolumeInterface.
+                                EXPECT().
+                                UnlinkVolume(gomock.Eq(volumeId)).
+                                Return(vtc.expUnlinkVolumeErr)
 
-			mockOscVolumeInterface.
-				EXPECT().
-				CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-				Return(vtc.expCheckVolumeStateAvailableErr)
+                        mockOscVolumeInterface.
+                                EXPECT().
+                                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+                                Return(vtc.expCheckVolumeStateAvailableErr)
 
 			nodeSpec := vtc.machineSpec.Node
 			nodeSpec.SetVolumeDefaultValue()
@@ -921,148 +926,148 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 // TestReconcileDeleteVolumeUnlink has several tests to cover the code of the function reconcileDeleteVolume
 func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 	volumeTestCases := []struct {
-		name                              string
-		clusterSpec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                       infrastructurev1beta1.OscMachineSpec
-		expVolumeFound                    bool
-		expValidateVolumeIdsErr           error
-		expCheckVolumeStateAvailableFound bool
-		expUnlinkVolumeFound              bool
-		expCheckVolumeStateUseFound       bool
-		expCheckVolumeStateAvailableErr   error
-		expUnlinkVolumeErr                error
-		expCheckVolumeStateUseErr         error
-		expDeleteVolumeErr                error
-		expDeleteVolumeFound              bool
-		expReconcileDeleteVolumeErr       error
+		name                        string
+		clusterSpec                 infrastructurev1beta1.OscClusterSpec
+		machineSpec                 infrastructurev1beta1.OscMachineSpec
+		expVolumeFound              bool
+		expValidateVolumeIdsErr error
+                expCheckVolumeStateAvailableFound bool
+                expUnlinkVolumeFound                     bool
+                expCheckVolumeStateUseFound            bool
+                expCheckVolumeStateAvailableErr      error
+                expUnlinkVolumeErr                     error
+                expCheckVolumeStateUseErr            error
+		expDeleteVolumeErr          error
+                expDeleteVolumeFound          bool
+		expReconcileDeleteVolumeErr error
 	}{
-		{
-			name:        "failed VmVolumeStateUse",
-			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-							ResourceId:    "volume-test-volume-uid",
-						},
-					},
-				},
-			},
-			expVolumeFound:                    true,
-			expValidateVolumeIdsErr:           nil,
-			expDeleteVolumeErr:                fmt.Errorf("DeleteVolume generic error"),
-			expCheckVolumeStateAvailableErr:   nil,
-			expCheckVolumeStateAvailableFound: false,
-			expUnlinkVolumeErr:                nil,
-			expUnlinkVolumeFound:              false,
-			expCheckVolumeStateUseErr:         fmt.Errorf("VolumeState generic error"),
-			expCheckVolumeStateUseFound:       true,
-			expDeleteVolumeFound:              false,
-			expReconcileDeleteVolumeErr:       fmt.Errorf("VolumeState generic error Can not get volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
-		},
-		{
-			name:        "failed to unlink volume",
-			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-							ResourceId:    "volume-test-volume-uid",
-						},
-					},
-				},
-			},
-			expVolumeFound:                    true,
-			expValidateVolumeIdsErr:           nil,
-			expDeleteVolumeErr:                nil,
-			expCheckVolumeStateAvailableErr:   nil,
-			expCheckVolumeStateAvailableFound: false,
-			expUnlinkVolumeErr:                fmt.Errorf("UnlinkVolume generic error"),
-			expUnlinkVolumeFound:              true,
-			expCheckVolumeStateUseErr:         nil,
-			expCheckVolumeStateUseFound:       true,
-			expDeleteVolumeFound:              false,
-			expReconcileDeleteVolumeErr:       fmt.Errorf("UnlinkVolume generic error Can not unlink volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
-		},
-		{
-			name:        "failed to delete volume",
-			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-							ResourceId:    "volume-test-volume-uid",
-						},
-					},
-				},
-			},
-			expVolumeFound:                    true,
-			expValidateVolumeIdsErr:           nil,
-			expDeleteVolumeErr:                fmt.Errorf("DeleteVolume generic error"),
-			expCheckVolumeStateAvailableErr:   fmt.Errorf("VolumeState generic error"),
-			expCheckVolumeStateAvailableFound: true,
-			expUnlinkVolumeErr:                nil,
-			expUnlinkVolumeFound:              true,
-			expCheckVolumeStateUseErr:         nil,
-			expCheckVolumeStateUseFound:       true,
-			expDeleteVolumeFound:              false,
-			expReconcileDeleteVolumeErr:       fmt.Errorf("VolumeState generic error Can not get volume volume-test-volume-uid available for OscMachine test-system/test-osc"),
-		},
+                {
+                        name: "failed VmVolumeStateUse",
+                        clusterSpec: defaultClusterReconcile,
+                        machineSpec: infrastructurev1beta1.OscMachineSpec{
+                Node: infrastructurev1beta1.OscNode{
+                        Volumes: []*infrastructurev1beta1.OscVolume{
+                                {
+                                        Name:          "test-volume",
+                                        Iops:          1000,
+                                        Size:          50,
+                                        VolumeType:    "io1",
+                                        SubregionName: "eu-west-2a",
+                                        ResourceId:    "volume-test-volume-uid",
+                                },
+                        },
+                },
+        },
+                        expVolumeFound: true,
+                        expValidateVolumeIdsErr: nil,
+                        expDeleteVolumeErr: fmt.Errorf("DeleteVolume generic error"),
+                        expCheckVolumeStateAvailableErr: nil,
+                        expCheckVolumeStateAvailableFound: false,
+                        expUnlinkVolumeErr: nil,
+                        expUnlinkVolumeFound: false,
+                        expCheckVolumeStateUseErr: fmt.Errorf("VolumeState generic error"),
+                        expCheckVolumeStateUseFound: true,
+                        expDeleteVolumeFound: false,
+                        expReconcileDeleteVolumeErr: fmt.Errorf("VolumeState generic error Can not get volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
+                },
+                {
+                        name: "failed to unlink volume",
+                        clusterSpec: defaultClusterReconcile,
+                        machineSpec: infrastructurev1beta1.OscMachineSpec{
+                Node: infrastructurev1beta1.OscNode{
+                        Volumes: []*infrastructurev1beta1.OscVolume{
+                                {
+                                        Name:          "test-volume",
+                                        Iops:          1000,
+                                        Size:          50,
+                                        VolumeType:    "io1",
+                                        SubregionName: "eu-west-2a",
+                                        ResourceId:    "volume-test-volume-uid",
+                                },
+                        },
+                },
+        },
+                        expVolumeFound: true,
+                        expValidateVolumeIdsErr: nil,
+                        expDeleteVolumeErr: nil,
+                        expCheckVolumeStateAvailableErr: nil,
+                        expCheckVolumeStateAvailableFound: false,
+                        expUnlinkVolumeErr: fmt.Errorf("UnlinkVolume generic error"),
+                        expUnlinkVolumeFound: true,
+                        expCheckVolumeStateUseErr: nil,
+                        expCheckVolumeStateUseFound: true,
+                        expDeleteVolumeFound: false,
+                        expReconcileDeleteVolumeErr: fmt.Errorf("UnlinkVolume generic error Can not unlink volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
+                },
+                {
+                        name: "failed to delete volume",
+                        clusterSpec: defaultClusterReconcile,
+                        machineSpec: infrastructurev1beta1.OscMachineSpec{
+                Node: infrastructurev1beta1.OscNode{
+                        Volumes: []*infrastructurev1beta1.OscVolume{
+                                {
+                                        Name:          "test-volume",
+                                        Iops:          1000,
+                                        Size:          50,
+                                        VolumeType:    "io1",
+                                        SubregionName: "eu-west-2a",
+                                        ResourceId:    "volume-test-volume-uid",
+                                },
+                        },
+                },
+        },
+                        expVolumeFound: true,
+                        expValidateVolumeIdsErr: nil,
+                        expDeleteVolumeErr: fmt.Errorf("DeleteVolume generic error"),
+                        expCheckVolumeStateAvailableErr: fmt.Errorf("VolumeState generic error"),
+                        expCheckVolumeStateAvailableFound: true,
+                        expUnlinkVolumeErr: nil,
+                        expUnlinkVolumeFound: true,
+                        expCheckVolumeStateUseErr: nil,
+                        expCheckVolumeStateUseFound: true,
+                        expDeleteVolumeFound: false,
+                        expReconcileDeleteVolumeErr: fmt.Errorf("VolumeState generic error Can not get volume volume-test-volume-uid available for OscMachine test-system/test-osc"),
+                },
+		
 	}
-
+	
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
-			volumeStateAvailable := "available"
-			volumeStateUse := "in-use"
+                        volumeStateAvailable := "available"
+                        volumeStateUse := "in-use"
 
-			var clockInsideLoop time.Duration = 5
-			var clockLoop time.Duration = 60
+                        var clockInsideLoop time.Duration = 5
+                        var clockLoop time.Duration = 60
 			var volumesIds []string
 			for _, volumeSpec := range volumesSpec {
 				volumeName := volumeSpec.Name + "-uid"
 				volumeId := "volume-" + volumeName
 				volumesIds = append(volumesIds, volumeId)
 				if vtc.expDeleteVolumeFound {
-					mockOscVolumeInterface.
-						EXPECT().
-						DeleteVolume(gomock.Eq(volumeId)).
-						Return(vtc.expDeleteVolumeErr)
+				mockOscVolumeInterface.
+					EXPECT().
+					DeleteVolume(gomock.Eq(volumeId)).
+					Return(vtc.expDeleteVolumeErr)
 				}
-				if vtc.expCheckVolumeStateUseFound {
-					mockOscVolumeInterface.
-						EXPECT().
-						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
-						Return(vtc.expCheckVolumeStateUseErr)
-				}
-				if vtc.expUnlinkVolumeFound {
-					mockOscVolumeInterface.
-						EXPECT().
-						UnlinkVolume(gomock.Eq(volumeId)).
-						Return(vtc.expUnlinkVolumeErr)
-				}
-				if vtc.expCheckVolumeStateAvailableFound {
-					mockOscVolumeInterface.
-						EXPECT().
-						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-						Return(vtc.expCheckVolumeStateAvailableErr)
-				}
+			if vtc.expCheckVolumeStateUseFound {
+                        	mockOscVolumeInterface.
+                                	EXPECT().
+	                                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
+        	                        Return(vtc.expCheckVolumeStateUseErr)
+			}
+			if vtc.expUnlinkVolumeFound {
+	                      mockOscVolumeInterface.
+        	                        EXPECT().
+                	                UnlinkVolume(gomock.Eq(volumeId)).
+                        	        Return(vtc.expUnlinkVolumeErr)
+			}
+			if vtc.expCheckVolumeStateAvailableFound {
+                        mockOscVolumeInterface.
+                                EXPECT().
+                                CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+                                Return(vtc.expCheckVolumeStateAvailableErr)
 			}
 			if vtc.expVolumeFound {
 				mockOscVolumeInterface.

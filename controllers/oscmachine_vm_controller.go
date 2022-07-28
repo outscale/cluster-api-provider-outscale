@@ -214,6 +214,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 			return vmTagName, err
 		}
 	}
+
 	return "", nil
 }
 
@@ -400,7 +401,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			}
 			_, err = securityGroupSvc.CreateSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%s Can not create inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("%w Can not create inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 		}
 
@@ -490,6 +491,10 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
+                err = securityGroupSvc.DeleteSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+                if err != nil {
+                        return reconcile.Result{}, fmt.Errorf("%w Can not delete inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+                }
 	}
 
 	err = vmSvc.DeleteVm(vmId)
