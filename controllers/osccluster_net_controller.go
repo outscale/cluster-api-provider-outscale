@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-
+        infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -34,7 +34,7 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	}
 	clusterScope.Info("Check Net IpRange parameters")
 	netIpRange := netSpec.IpRange
-	_, err = net.ValidateCidr(netIpRange)
+	_, err = infrastructurev1beta1.ValidateCidr(netIpRange)
 	if err != nil {
 		return netTagName, err
 	}

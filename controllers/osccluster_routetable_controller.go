@@ -6,7 +6,6 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -69,7 +68,7 @@ func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error
 			}
 			clusterScope.Info("Check route destination IpRange parameters")
 			destinationIpRange := routeSpec.Destination
-			_, err = net.ValidateCidr(destinationIpRange)
+			_, err = infrastructurev1beta1.ValidateCidr(destinationIpRange)
 			if err != nil {
 				return routeTagName, err
 			}

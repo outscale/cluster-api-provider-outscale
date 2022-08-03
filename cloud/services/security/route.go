@@ -3,10 +3,9 @@ package security
 import (
 	"fmt"
 
-	net "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"errors"
 )
 
@@ -51,7 +50,7 @@ func (s *Service) CreateRouteTable(netId string, routeTableName string) (*osc.Ro
 // CreateRoute create the route associated with the routetable and the net
 func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
-	valideDestinationIpRange, err := net.ValidateCidr(destinationIpRange)
+	valideDestinationIpRange, err := infrastructurev1beta1.ValidateCidr(destinationIpRange)
 	if err != nil {
 		return nil, err
 	}

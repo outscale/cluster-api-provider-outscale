@@ -3,8 +3,7 @@
 import (
 	"context"
 	"fmt"
-	"strings"
-	"net"
+        infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
@@ -39,73 +38,74 @@ func checkLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string
 	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 
-	validLoadBalancerName := service.ValidateLoadBalancerName(loadBalancerName)
-	if !validLoadBalancerName {
+	_, err := infrastructurev1beta1.ValidateLoadBalancerName(loadBalancerName)
+	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer name", loadBalancerName)
 	}
 
 	loadBalancerType := loadBalancerSpec.LoadBalancerType
-	validLoadBalancerType := service.ValidateLoadBalancerType(loadBalancerType)
-	if !validLoadBalancerType {
+	_, err = infrastructurev1beta1.ValidateLoadBalancerType(loadBalancerType)
+	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer type", loadBalancerType)
 	}
+	
 
 	loadBalancerBackendPort := loadBalancerSpec.Listener.BackendPort
-	_, err := service.ValidatePort(loadBalancerBackendPort)
+	_, err = infrastructurev1beta1.ValidatePort(loadBalancerBackendPort)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer backend", loadBalancerBackendPort, err)
 	}
 
 	loadBalancerBackendProtocol := loadBalancerSpec.Listener.BackendProtocol
-	_, err = service.ValidateProtocol(loadBalancerBackendProtocol)
+	_, err = infrastructurev1beta1.ValidateProtocol(loadBalancerBackendProtocol)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an %w for loadBalancer backend", loadBalancerBackendProtocol, err)
 	}
 
 	loadBalancerPort := loadBalancerSpec.Listener.LoadBalancerPort
-	_, err = service.ValidatePort(loadBalancerPort)
+	_, err = infrastructurev1beta1.ValidatePort(loadBalancerPort)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerPort, err)
 	}
 
 	loadBalancerProtocol := loadBalancerSpec.Listener.LoadBalancerProtocol
-	_, err = service.ValidateProtocol(loadBalancerProtocol)
+	_, err = infrastructurev1beta1.ValidateProtocol(loadBalancerProtocol)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an %w for loadBalancer", loadBalancerProtocol, err)
 	}
 
 	loadBalancerCheckInterval := loadBalancerSpec.HealthCheck.CheckInterval
-	_, err = service.ValidateInterval(loadBalancerCheckInterval)
+	_, err = infrastructurev1beta1.ValidateInterval(loadBalancerCheckInterval)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerCheckInterval, err)
 	}
 
 	loadBalancerHealthyThreshold := loadBalancerSpec.HealthCheck.HealthyThreshold
-	_, err = service.ValidateThreshold(loadBalancerHealthyThreshold)
+	_, err = infrastructurev1beta1.ValidateThreshold(loadBalancerHealthyThreshold)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerHealthyThreshold, err)
 	}
 
 	loadBalancerHealthCheckPort := loadBalancerSpec.HealthCheck.Port
-	_, err = service.ValidatePort(loadBalancerHealthCheckPort)
+	_, err = infrastructurev1beta1.ValidatePort(loadBalancerHealthCheckPort)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerHealthCheckPort, err)
 	}
 
 	loadBalancerHealthCheckProtocol := loadBalancerSpec.HealthCheck.Protocol
-	_, err = service.ValidateProtocol(loadBalancerHealthCheckProtocol)
+	_, err = infrastructurev1beta1.ValidateProtocol(loadBalancerHealthCheckProtocol)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an %w for loadBalancer", loadBalancerHealthCheckProtocol, err)
 	}
 
 	loadBalancerTimeout := loadBalancerSpec.HealthCheck.Timeout
-	_, err = service.ValidateTimeout(loadBalancerTimeout)
+	_, err = infrastructurev1beta1.ValidateTimeout(loadBalancerTimeout)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerTimeout, err)
 	}
 
 	loadBalancerUnhealthyThreshold := loadBalancerSpec.HealthCheck.UnhealthyThreshold
-	_, err = service.ValidateThreshold(loadBalancerUnhealthyThreshold)
+	_, err = infrastructurev1beta1.ValidateThreshold(loadBalancerUnhealthyThreshold)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerUnhealthyThreshold, err)
 	}

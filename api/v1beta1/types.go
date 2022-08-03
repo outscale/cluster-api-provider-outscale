@@ -329,8 +329,8 @@ var (
 	DefaultBackendProtocol       string = "TCP"
 	DefaultLoadBalancerPort      int32  = 6443
 	DefaultLoadBalancerProtocol  string = "TCP"
-	DefaultCheckInterval         int32  = 30
-	DefaultHealthyThreshold      int32  = 10
+	DefaultCheckInterval         int32  = 5
+	DefaultHealthyThreshold      int32  = 5
 	DefaultUnhealthyThreshold    int32  = 2
 	DefaultTimeout               int32  = 5
 	DefaultProtocol              string = "TCP"

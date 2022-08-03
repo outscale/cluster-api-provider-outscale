@@ -202,8 +202,7 @@ spec:
           deviceName: /dev/xvdb
           subnetName: cluster-api-subnet-kw
           subregionName: eu-west-2a
-          role: controlplane
-          securityGroupsNames:
+          securityGroupNames:
             - name: cluster-api-securitygroups-kw
           privateIps:
             - name: cluster-api-kw-privateip-kw
@@ -234,7 +233,7 @@ spec:
           subregionName: eu-west-2a
           subnetName: cluster-api-subnet-kcp
           loadBalancerName: osc-k8s
-          securityGroupsNames:
+          securityGroupNames:
             - name: cluster-api-securitygroups-kcp
           privateIps:
             - name: cluster-api-privateip-kcp

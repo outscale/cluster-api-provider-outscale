@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	"regexp"
-	"strings"
 	"github.com/benbjohnson/clock"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"net"
@@ -23,49 +21,6 @@ type OscVmInterface interface {
 	GetVm(vmId string) (*osc.Vm, error)
 	GetVmState(vmId string) (string, error)
 	CheckVmState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, vmId string) error
-}
-
-// ValidateKeypairName check that KeypairName is a valid name of keypair
-func ValidateKeypairName(keypairName string) (string, error) {
-	isValidateKeypairName := regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
-	if isValidateKeypairName(keypairName) {
-		return keypairName, nil
-	} else {
-		return keypairName, errors.New("Invalid KeypairName")
-	}
-}
-
-// ValidateImageId check that imageId is a valid imageId
-func ValidateImageId(imageId string) (string, error) {
-	switch {
-	case strings.Contains(imageId, "ami"):
-		return imageId, nil
-	default:
-		return imageId, errors.New("Invalid imageId")
-	}
-}
-
-// ValidateDeviceName check that DeviceName  is a valid DeviceName
-func ValidateDeviceName(deviceName string) (string, error) {
-	last := deviceName[len(deviceName)-1:]
-	isValidate := regexp.MustCompile(`^[a-z]$`).MatchString
-	switch {
-	case strings.Contains(deviceName, "/dev/xvd") && len(deviceName) == 9 && isValidate(last):
-		return deviceName, nil
-	default:
-		return deviceName, errors.New("Invalid deviceName")
-	}
-}
-
-// ValidateVmType check that vmType is a valid vmType
-func ValidateVmType(vmType string) (string, error) {
-	isValidate := regexp.MustCompile(`^tinav[1-5].c[0-9]+r[0-9]+p[1-3]$`).MatchString
-	switch {
-	case isValidate(vmType):
-		return vmType, nil
-	default:
-		return vmType, errors.New("Invalid vmType")
-	}
 }
 
 // ValidateIpAddrInCidr check that ipaddr is in cidr

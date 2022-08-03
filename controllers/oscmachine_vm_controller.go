@@ -162,31 +162,31 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 		return vmTagName, err
 	}
 	vmImageId := vmSpec.ImageId
-	_, err = compute.ValidateImageId(vmImageId)
+	_, err = infrastructurev1beta1.ValidateImageId(vmImageId)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmKeypairName := vmSpec.KeypairName
-	_, err = compute.ValidateKeypairName(vmKeypairName)
+	_, err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmType := vmSpec.VmType
-	_, err = compute.ValidateVmType(vmType)
+	_, err = infrastructurev1beta1.ValidateVmType(vmType)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmDeviceName := vmSpec.DeviceName
-	_, err = compute.ValidateDeviceName(vmDeviceName)
+	_, err = infrastructurev1beta1.ValidateDeviceName(vmDeviceName)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmSubregionName := vmSpec.SubregionName
-	_, err = storage.ValidateSubregionName(vmSubregionName)
+	_, err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
 	if err != nil {
 		return vmTagName, err
 	}

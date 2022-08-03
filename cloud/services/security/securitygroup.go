@@ -3,7 +3,6 @@ package security
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"errors"
 
@@ -233,34 +232,4 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) 
 		}
 	}
 	return securityGroupIds, nil
-}
-
-// ValidateIpProtocol check that ipProtocol is valid
-func ValidateIpProtocol(protocol string) (string, error) {
-	switch {
-	case protocol == "tcp" || protocol == "udp" || protocol == "icmp" || protocol == "-1":
-		return protocol, nil
-	default:
-		return protocol, errors.New("Invalid protocol")
-	}
-}
-
-// ValidateFlow check that flow is valid
-func ValidateFlow(flow string) (string, error) {
-	switch {
-	case flow == "Inbound" || flow == "Outbound":
-		return flow, nil
-	default:
-		return flow, errors.New("Invalid flow")
-	}
-}
-
-// ValidateDescription check that description is valid
-func ValidateDescription(description string) (string, error) {
-	isValidateDescription := regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
-	if isValidateDescription(description) {
-		return description, nil
-	} else {
-		return description, errors.New("Invalid Description")
-	}
 }
