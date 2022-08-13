@@ -3,10 +3,11 @@ package controllers
 import (
 	"context"
 	"fmt"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"strings"
 	"testing"
 	"time"
+
+	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -304,7 +305,7 @@ func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{},
 			},
-			expCheckVmVolumeOscAssociateResourceNameErr: fmt.Errorf("cluster-api-volume-uid volume does not exist in vm"),
+			expCheckVmVolumeOscAssociateResourceNameErr: fmt.Errorf("cluster-api-volume-kw-uid volume does not exist in vm"),
 		},
 		{
 			name:        "check Bad name volume",
@@ -472,7 +473,7 @@ func TestCheckVmSecurityGroupOscAssociateResourceName(t *testing.T) {
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{},
 			},
-			expCheckVmSecurityGroupOscAssociateResourceNameErr: fmt.Errorf("cluster-api-securitygroup-uid securityGroup does not exist in vm"),
+			expCheckVmSecurityGroupOscAssociateResourceNameErr: fmt.Errorf("cluster-api-securitygroup-kw-uid securityGroup does not exist in vm"),
 		},
 		{
 			name:        "check Bad security group name",
@@ -969,7 +970,7 @@ func TestCheckVmSubnetAssociateResourceName(t *testing.T) {
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{},
 			},
-			expCheckVmSubnetAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-uid subnet does not exist in vm"),
+			expCheckVmSubnetAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-kw-uid subnet does not exist in vm"),
 		},
 		{
 			name:        "check Bad subnet name",
@@ -3086,7 +3087,6 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 					},
 				},
 			},
-
 			expCheckVmStateBootErr:                 nil,
 			expUnlinkLoadBalancerBackendMachineErr: nil,
 			expCheckVmStateLoadBalancerErr:         nil,
@@ -3113,7 +3113,7 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 			var securityGroupIds []string
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			securityGroupName := "cluster-api-securitygroup-uid"
+			securityGroupName := "cluster-api-securitygroup-kw-uid"
 			securityGroupId := "sg-" + securityGroupName
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 			securityGroupIds = append(securityGroupIds, securityGroupId)
@@ -3150,10 +3150,11 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 				Return(vtc.expDeleteVmErr)
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconccileDeleteVm() hould return the same error")
+				assert.Equal(t, vtc.expReconcileDeleteVmErr, err, "reconcileDeleteVm() should return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileDeleteVmErr)
 			}
+
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
 	}

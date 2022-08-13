@@ -253,7 +253,7 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-uid subnet does not exist in natService"),
+			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-nat-uid subnet does not exist in natService"),
 		},
 		{
 			name: "check natService association with subnet",
@@ -564,13 +564,13 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 
 			clusterScope.OscCluster.Spec.Network.NatService.ResourceId = natServiceId
 
-			publicIpName := "cluster-api-publicip-uid"
+			publicIpName := "cluster-api-publicip-nat-uid"
 			publicIpId := "eipalloc-" + publicIpName
 			publicIpRef := clusterScope.GetPublicIpRef()
 			publicIpRef.ResourceMap = make(map[string]string)
 			publicIpRef.ResourceMap[publicIpName] = publicIpId
 
-			subnetName := "cluster-api-subnet-uid"
+			subnetName := "cluster-api-subnet-nat-uid"
 			subnetId := "subnet-" + subnetName
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)

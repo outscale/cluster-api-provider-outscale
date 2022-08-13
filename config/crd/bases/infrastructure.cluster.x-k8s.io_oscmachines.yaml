@@ -37,6 +37,8 @@ spec:
             properties:
               node:
                 properties:
+                  clusterName:
+                    type: string
                   image:
                     properties:
                       name:
@@ -46,6 +48,8 @@ spec:
                     type: object
                   keypair:
                     properties:
+                      clusterName:
+                        type: string
                       name:
                         type: string
                       publicKey:
@@ -55,6 +59,8 @@ spec:
                     type: object
                   vm:
                     properties:
+                      clusterName:
+                        type: string
                       deviceName:
                         type: string
                       imageId:

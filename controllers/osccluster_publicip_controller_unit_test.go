@@ -533,7 +533,7 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120
-			publicIpName := "cluster-api-publicip-uid"
+			publicIpName := "cluster-api-publicip-nat-uid"
 			publicIpId := "eipalloc-" + publicIpName
 			publicIpIds = append(publicIpIds, publicIpId)
 			mockOscPublicIpInterface.

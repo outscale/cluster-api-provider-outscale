@@ -1,6 +1,11 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+REGISTRY ?= outscale
+IMAGE_NAME ?= cluster-api-provider-osc
+TAG ?= dev
+RELEASE_TAG ?= v0.1.0
+IMG ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
+IMG_RELEASE ?= $(REGISTRY)/$(IMAGE_NAME):$(RELEASE_TAG)
 OSC_ACCESS_KEY ?= access
 OSC_SECRET_KEY ?= secret
 OSC_CLUSTER ?= cluster-api
@@ -193,6 +198,85 @@ else
 	$(KUSTOMIZE) build config/default | $(ENVSUBST)  | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 endif
 
+##@ Release
+
+RELEASE_DIR := out
+GH_ORG_NAME ?= outscale-dev
+GH_REPO_NAME ?= cluster-api-provider-outscale
+RELEASE_BINARY ?= cluster-api
+GH_REPO ?= outscale-dev/$(GH_REPO_NAME)
+GOARCH  := $(shell go env GOARCH)
+GOOS    := $(shell go env GOOS)
+RELEASE_TAG ?= v0.1.0
+
+release_dir:
+	mkdir -p $(RELEASE_DIR)/
+
+.PHONY: clean-release
+clean-release: 
+	rm -rf $(RELEASE_DIR)
+
+.PHONY: release
+release: clean-release release_dir check-release-tag release-templates release-manifests
+
+.PHONY: release-manifests
+release-manifests: kustomize release_dir envsubst
+	cp metadata.yaml $(RELEASE_DIR)/metadata.yaml
+ifndef KUSTOMIZE
+	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG_RELEASE}
+	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) > out/infrastructure-components.yaml
+else
+	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG_RELEASE}
+	$(KUSTOMIZE) build config/default | $(ENVSUBST) > out/infrastructure-components.yaml
+endif
+.PHONY: release-templates
+release-templates: 
+	cp templates/cluster-template* $(RELEASE_DIR)/
+
+.PHONY: release-binary 
+release-binary: 
+	docker run \
+		--rm \
+		-e CGO_ENABLED=0 \
+		-e GOOS=$(GOOS) \
+		-e GOARCH=$(GOARCH) \
+		-v "$$(pwd):/workspace" \
+		-w /workspace \
+		golang:1.18 \
+		go build -a -ldflags '$(LDFLAGS) -extldflags "-static"' \
+		-o $(RELEASE_DIR)/$(notdir $(RELEASE_BINARY))-$(GOOS)-$(GOARCH) $(RELEASE_BINARY)
+
+.PHONY: release-tag
+release-tag: 
+	docker tag $(IMG) $(IMG_RELEASE)
+	docker push $(IMG_RELEASE)
+
+.PHONY: check-previous-release-tag
+check-previous-release-tag: ## Check if the previous release tag is set
+	@if [ -z "${PREVIOUS_RELEASE_TAG}" ]; then echo "PREVIOUS_RELEASE_TAG is not set"; exit 1; fi
+
+.PHONY: check-release-tag
+check-release-tag: ## Check if the release tag is set
+	@if [ -z "${RELEASE_TAG}" ]; then echo "RELEASE_TAG is not set"; exit 1; fi
+
+.PHONY: check-github-token
+check-github-token: 
+	@if [ -z "${SECRET_GITHUB_TOKEN}" ]; then echo "GITHUB_TOKEN is not set"; exit 1; fi
+
+.PHONY: gh-login
+gh-login: gh check-github-token
+	cat <<< "${SECRET_GITHUB_TOKEN}"  | $(GH)  auth login --with-token
+        
+GH = $(shell pwd)/bin/gh
+
+.PHONY: release-changelog
+release-changelog: gh release_dir check-release-tag check-previous-release-tag
+	./hack/releasechangelog.sh -t $(RELEASE_TAG) -p ${PREVIOUS_RELEASE_TAG} -g ${GH} -o $(GH_ORG_NAME) -r $(GH_REPO_NAME) -i $(IMG_RELEASE)  > $(RELEASE_DIR)/CHANGELOG.md
+
+.PHONY: create-gh-release
+create-gh-release: gh
+	$(GH) release create $(RELEASE_TAG) -d -F $(RELEASE_DIR)/CHANGELOG.md -t $(RELEASE_TAG) -R $(GH_REPO) $(RELEASE_DIR)/*.yaml
+
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
@@ -202,10 +286,12 @@ controller-gen: ## Download controller-gen locally if necessary.
 LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
 .PHONY: install-clusterctl
 install-clusterctl: ## Download clusterctl locally if necessary.
-	mkdir -p $(shell pwd)/bin
-	wget -c https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterctl-linux-amd64	
-	mv $(shell pwd)/clusterctl-linux-amd64 $(shell pwd)/bin/clusterctl
-	chmod +x  $(LOCAL_CLUSTERCTL)
+	@if [ ! -s ${LOCAL_CLUSTERCTL} ]; then \
+		mkdir -p $(shell pwd)/bin; \
+		wget -c https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterctl-linux-amd64; \
+		mv $(shell pwd)/clusterctl-linux-amd64 $(shell pwd)/bin/clusterctl; \
+		chmod +x  $(LOCAL_CLUSTERCTL); \
+	fi
 
 .PHONY: deploy-clusterapi
 deploy-clusterapi: install-clusterctl ## Deploy clusterapi
@@ -238,6 +324,19 @@ ENVSUBST = $(shell pwd)/bin/envsubst
 envsubst: ## Download envsubst
 	mkdir -p $(shell pwd)/bin
 	go build -tags=tools -o $(ENVSUBST) github.com/drone/envsubst/v2/cmd/envsubst
+
+GH = $(shell pwd)/bin/gh
+GH_VERSION ?= 2.14.4
+.PHONY: gh
+gh: 
+	@if [ ! -s ${GH} ]; then \
+		mkdir -p $(shell pwd)/bin; \
+		curl https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz -Lo gh_${GH_VERSION}_linux_amd64.tar.gz; \
+		tar -zxvf gh_2.14.4_linux_amd64.tar.gz gh_2.14.4_linux_amd64/bin/gh  --strip-components 2 -C ${GH}; \
+                mv gh ./bin; \
+		rm -f gh_${GH_VERSION}_linux_amd64.tar.gz; \
+	fi 
+	
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
