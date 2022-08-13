@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"regexp"
 
 	"errors"
 	"github.com/benbjohnson/clock"
