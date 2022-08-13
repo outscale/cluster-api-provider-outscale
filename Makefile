@@ -30,6 +30,14 @@ MINIMUM_HELM_VERSION=v3.9.4
 MINIMUM_KUSTOMIZE_VERSION=4.5.1
 MINIMUM_MOCKGEN_VERSION=1.6.0
 MINIMUM_KUBECTL_VERSION=1.22.10
+E2E_CONF_CLASS_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale.yaml
+E2E_CONF_CLASS_FILE ?= ${PWD}/test/e2e/config/outscale-envsubst.yaml
+E2E_CONF_CCM_FILE_SOURCE ?= ${PWD}/test/e2e/data/ccm/ccm.yaml.template
+E2E_CONF_CCM_FILE ?= ${PWD}/test/e2e/data/ccm/ccm.yaml
+E2E_CONF_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml.tmpl
+E2E_CONF_CLUSTER_CLASS_FILE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml
+E2E_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/clusterclass.yaml.tmpl
+E2E_CLUSTER_CLASS_FILE ?= ${PWD}/example/clusterclass.yaml
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -111,13 +119,37 @@ cloud-init-secret:
 testenv: cloud-init-secret
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
+.PHONY: testtools
+testtools:
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testtools/ -ginkgo.v -ginkgo.progress -test.v
+
 .PHONY: e2e-conf-file
 e2e-conf-file: envsubst
 	$(ENVSUBST) < $(E2E_CONF_FILE_SOURCE) > $(E2E_CONF_FILE)
 
 .PHONY: e2etest
 e2etest: envsubst e2e-conf-file
-	@USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_FILE)
+	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 30m -ginkgo.v -ginkgo.progress  -e2e.use-cni=false -e2e.use-existing-cluster=true  -e2e.use-ccm=false -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_FILE)
+
+.PHONY: e2e-conf-class-file
+e2e-conf-class-file: envsubst
+	$(ENVSUBST) < $(E2E_CONF_CLASS_FILE_SOURCE) > $(E2E_CONF_CLASS_FILE)
+
+.PHONY: e2etestclass
+e2etestclass: envsubst e2e-conf-class-file ccm-file
+	@USE_EXISTING_CLUSTER=false IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 60m -e2e.use-existing-cluster=false -ginkgo.focus=".*conformance.*" -ginkgo.skip="basic" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE) 
+
+.PHONY: ccm-file
+ccm-file: envsubst
+	$(ENVSUBST) < $(E2E_CONF_CCM_FILE_SOURCE) > $(E2E_CONF_CCM_FILE)
+
+.PHONY: ccm-cni-ex
+ccm-cni-ex: envsubst
+	$(ENVSUBST) < $(E2E_CONF_CLUSTER_CLASS_FILE_SOURCE) > $(E2E_CONF_CLUSTER_CLASS_FILE)
+
+.PHONY: cluster-class-ex
+cluster-class-ex: envsubst
+	$(ENVSUBST) < $(E2E_CLUSTER_CLASS_FILE_SOURCE) > $(E2E_CLUSTER_CLASS_FILE)
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
@@ -173,9 +205,14 @@ else
 endif
 
 .PHONY: credential
-credential: ## Set Credentials
-	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f -
+credential: envsubst ## Set Credentials
+	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f - ||:
 	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} -n cluster-api-provider-outscale-system ||:
+	@cat ./hack/ccm-secret.yaml | $(ENVSUBST)| kubectl apply -f - ||:
+
+.PHONY: clusterclass
+clusterclass: envsubst ## Set Clusterclass
+	@cat ./example/cluster-class.yaml | $(ENVSUBST)| kubectl apply -f - 
 
 .PHONY: logs-capo
 logs-capo: ## Get logs capo

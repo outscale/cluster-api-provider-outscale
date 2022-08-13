@@ -1351,12 +1351,12 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 					routeTablesRef.ResourceMap[routeTableName] = routeTableId
 					mockOscRouteTableInterface.
 						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+						CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
 						Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
 				} else {
 					mockOscRouteTableInterface.
 						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+						CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expCreateRouteTableErr)
 				}
 				if rttc.expLinkRouteTableFound {
@@ -1662,7 +1662,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+					CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
 					Return(nil, rttc.expCreateRouteTableErr)
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 				if err != nil {
@@ -1730,7 +1730,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+					CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
 					Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
 				mockOscRouteTableInterface.
 					EXPECT().

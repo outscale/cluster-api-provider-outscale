@@ -40,6 +40,11 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) 
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
+	err = tag.AddTag("OscK8sClusterID/"+netName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
 	net, ok := netResponse.GetNetOk()
 	if !ok {
 		return nil, errors.New("Can not create net")

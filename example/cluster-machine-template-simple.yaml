@@ -3,6 +3,9 @@ kind: Cluster
 metadata:
   name: hello-osc
   namespace: default
+  labels:
+    cni: "hello-osc-crs-cni"
+    ccm: "hello-osc-crs-ccm"
 spec:
   clusterNetwork:
     pods:
@@ -166,7 +169,7 @@ spec:
   template:
     spec:
       clusterName: "hello-osc"
-      version: "1.22.9"
+      version: "1.22.11"
       bootstrap:
         configRef:
           name: "hello-osc-md-0"
@@ -188,18 +191,15 @@ spec:
   template:
     spec:
       node:
-        volumes:
-          - name: cluster-api-volume-kw
-            iops: 1000
-            size: 30
-            volumeType: io1
-            subregionName: eu-west-2a
         vm:
           name: cluster-api-vm-kw
           imageId: ami-e1a786f1
           keypairName: cluster-api
-          volumeName: cluster-api-volume-kw
-          deviceName: /dev/xvdb
+          deviceName: /dev/sda1
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: io1
           subnetName: cluster-api-subnet-kw
           subregionName: eu-west-2a
           securityGroupNames:
@@ -218,18 +218,15 @@ spec:
   template:
     spec:
       node:
-        volumes:
-          - name: cluster-api-volume-kcp
-            iops: 2000
-            size: 50
-            volumeType: io1
-            subregionName: eu-west-2a
         vm:
           name: cluster-api-vm-kcp
           imageId: ami-e1a786f1
           keypairName: cluster-api
-          volumeName: cluster-api-volume-kcp
-          deviceName: /dev/xvdb
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: io1
+          deviceName: /dev/sda1
           subregionName: eu-west-2a
           subnetName: cluster-api-subnet-kcp
           role: controlplane
@@ -303,4 +300,4 @@ spec:
           cloud-provider: external
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
-  version: "1.22.9"
+  version: "1.22.11"

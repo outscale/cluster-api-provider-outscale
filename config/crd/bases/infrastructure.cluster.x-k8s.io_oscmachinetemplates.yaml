@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.1-0.20220728222311-8a80a3bfa411
   creationTimestamp: null
   name: oscmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
@@ -139,6 +139,20 @@ spec:
                                 type: string
                               role:
                                 type: string
+                              rootDisk:
+                                properties:
+                                  rootDiskIops:
+                                    format: int32
+                                    type: integer
+                                  rootDiskSize:
+                                    format: int32
+                                    type: integer
+                                  rootDiskType:
+                                    type: string
+                                required:
+                                - rootDiskSize
+                                - rootDiskType
+                                type: object
                               securityGroupNames:
                                 items:
                                   properties:
@@ -151,6 +165,8 @@ spec:
                               subregionName:
                                 type: string
                               vmType:
+                                type: string
+                              volumeDeviceName:
                                 type: string
                               volumeName:
                                 type: string
@@ -187,9 +203,3 @@ spec:
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

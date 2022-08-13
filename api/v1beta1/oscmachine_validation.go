@@ -42,7 +42,6 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 			allErrs = append(allErrs, errs...)
 		}
 	}
-
 	if len(spec.Node.Volumes) != 0 {
 		volumesSpec := spec.Node.Volumes
 		for _, volumeSpec := range volumesSpec {
@@ -68,6 +67,21 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 					allErrs = append(allErrs, errs...)
 				}
 			}
+		}
+	}
+	if spec.Node.Vm.RootDisk.RootDiskIops != 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskIops, field.NewPath("iops"), ValidateIops); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+	if spec.Node.Vm.RootDisk.RootDiskSize != 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskSize, field.NewPath("size"), ValidateSize); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+	if spec.Node.Vm.RootDisk.RootDiskType != "" {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskType, field.NewPath("diskType"), ValidateVolumeType); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
 		}
 	}
 	return allErrs
@@ -134,9 +148,9 @@ func ValidateSubregionName(subregionName string) (string, error) {
 // ValidateDeviceName check that DeviceName  is a valid DeviceName
 func ValidateDeviceName(deviceName string) (string, error) {
 	last := deviceName[len(deviceName)-1:]
-	isValidateDeviceName := regexp.MustCompile(`^[a-z]$`).MatchString
+	isValidateDeviceName := regexp.MustCompile(`^[0-9a-z]$`).MatchString
 	switch {
-	case strings.HasPrefix(deviceName, "/dev/xvd") && len(deviceName) == 9 && isValidateDeviceName(last):
+	case (strings.Contains(deviceName, "/dev/xvd") || strings.Contains(deviceName, "/dev/sda")) && len(deviceName) == 9 && isValidateDeviceName(last):
 		return deviceName, nil
 	default:
 		return deviceName, errors.New("Invalid deviceName")

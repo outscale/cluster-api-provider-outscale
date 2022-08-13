@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-
+	"strings"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
@@ -375,6 +375,20 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	osccluster := clusterScope.OscCluster
 
 	// reconcile deletion of each element of the cluster
+
+	machines, _, err := clusterScope.ListMachines(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to list machines for OscCluster %s/%s: %+v", err, clusterScope.GetNamespace(), clusterScope.GetName())
+	}
+	if len(machines) > 0 {
+		names := make([]string, len(machines))
+		for i, m := range machines {
+			names[i] = fmt.Sprintf("machine/%s", m.Name)
+		}
+		nameMachineList := strings.Join(names, ", ")
+		clusterScope.Info("Machine are still running, postpone oscCluster deletion", "nameMachineList", nameMachineList)
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	}
 
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, loadBalancerSvc)
