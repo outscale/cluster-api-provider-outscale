@@ -37,6 +37,20 @@ func (m *MockOscVmInterface) EXPECT() *MockOscVmInterfaceMockRecorder {
 	return m.recorder
 }
 
+// AddCcmTag mocks base method.
+func (m *MockOscVmInterface) AddCcmTag(netName, hostname, vmId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCcmTag", netName, hostname, vmId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCcmTag indicates an expected call of AddCcmTag.
+func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(netName, hostname, vmId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), netName, hostname, vmId)
+}
+
 // CheckVmState mocks base method.
 func (m *MockOscVmInterface) CheckVmState(clockInsideLoop, clockLoop time.Duration, state, vmId string) error {
 	m.ctrl.T.Helper()

@@ -71,7 +71,9 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
+	leaseDuration := 100 * time.Second
+	renewDeadline := 80 * time.Second
+	retryPeriod := 20 * time.Second
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -79,6 +81,9 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "controller-leader-election-capo",
+		LeaseDuration: &leaseDuration,
+		RenewDeadline: &renewDeadline,
+		RetryPeriod: &retryPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
