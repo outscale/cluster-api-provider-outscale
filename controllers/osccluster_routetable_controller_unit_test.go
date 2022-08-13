@@ -2122,6 +2122,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 			natServiceId := "nat-" + natServiceName
 			natServiceRef := clusterScope.GetNatServiceRef()
 			natServiceRef.ResourceMap = make(map[string]string)
+			natServiceRef.ResourceMap[natServiceName] = natServiceId
 
 			routeRef := clusterScope.GetRouteRef()
 			routeRef.ResourceMap = make(map[string]string)
@@ -2136,7 +2137,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 			var resourceId string
 			var routeTableIds []string
 
-			routeTableName := "cluster-api-routetable-uid"
+			routeTableName := "cluster-api-routetable-kw-uid"
 			routeTableId := "rtb-" + routeTableName
 			routeTableIds = append(routeTableIds, routeTableId)
 			linkRouteTableId := "eipalloc-" + routeTableName
@@ -2158,9 +2159,10 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 				Return(rttc.expDeleteRouteTableErr)
 
 			destinationIpRange := "0.0.0.0/0"
-			resourceType := "gateway"
-			routeName := "cluster-api-route-uid"
+			resourceType := "nat"
+			routeName := "cluster-api-route-kw-uid"
 			routeRef.ResourceMap[routeName] = routeTableId
+
 			if resourceType == "gateway" {
 				resourceId = internetServiceId
 			} else {

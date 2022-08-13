@@ -439,7 +439,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
-
 	if vm == nil {
 		machineScope.Info("The desired vm does not exist anymore", "vmName", vmName)
 		controllerutil.RemoveFinalizer(oscmachine, "")
@@ -456,6 +455,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
+
 	}
 	if vmSpec.LoadBalancerName != "" {
 		err = vmSvc.CheckVmState(5, 60, "running", vmId)

@@ -199,7 +199,6 @@ func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope,
 			return reconcile.Result{}, err
 		}
 	} else {
-
 		resourceId, err = getNatResourceId(resourceName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
