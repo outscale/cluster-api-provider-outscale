@@ -37,6 +37,7 @@ if [ "$PREVIOUS_RELEASE_TAG" == "None" ]; then
 	$GH api "repos/$GH_ORG_NAME/$GH_REPO_NAME/releases/generate-notes" -F tag_name="$RELEASE_TAG" --jq '.body'
 else
 	$GH api "repos/$GH_ORG_NAME/$GH_REPO_NAME/releases/generate-notes" -F tag_name="$RELEASE_TAG" -F previous_tag_name="$PREVIOUS_RELEASE_TAG" --jq '.body'
+
 fi
 
 echo "**The release image is**: $IMG_RELEASE"

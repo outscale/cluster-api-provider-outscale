@@ -1,0 +1,169 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: capo-quickstart
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["10.42.0.0/16"]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name:  capo-quickstart
+    namespace: default
+  controlPlaneRef:
+    kind: KubeadmControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    name: "capo-quickstart-control-plane"
+    namespace: default
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name:  capo-quickstart
+  namespace: default
+spec:
+  network:
+    clusterName: capo-quickstart
+    loadBalancer:
+      loadbalancername: capo-k8s
+      clusterName: capo-quickstart
+    net:
+      clusterName: capo-quickstart
+    internetService:
+      clusterName: capo-quickstart      
+    natService:
+      clusterName: capo-quickstart
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "capo-quickstart-md-0"
+  namespace: default
+spec:
+  clusterName: "capo-quickstart"
+  replicas: 1
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "capo-quickstart"
+      version: "1.22.11"
+      bootstrap:
+        configRef:
+          name: "capo-quickstart-md-0"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          namespace: default
+      infrastructureRef:
+        name: "capo-quickstart-md-0"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+        namespace: default
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "capo-quickstart-md-0"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: capo-quickstart
+        vm:
+          clusterName: capo-quickstart
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: "io1"
+          keypairName: cluster-api
+          subregionName: eu-west-2a
+          vmType: "tinav4.c2r4p2"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "capo-quickstart-control-plane"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: capo-quickstart
+        vm:
+          clusterName: capo-quickstart
+          keypairName: cluster-api
+          subregionName: eu-west-2a
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: "io1"
+          role: controlplane
+          loadBalancerName: capo-k8s
+          vmType: "tinav5.c4r8p1"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: "capo-quickstart-md-0"
+  namespace: default
+spec:
+  template:
+    spec:
+      files:
+      - content: |
+          #!/bin/bash
+ 
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        owner: root:root
+        path: /tmp/set_runc.sh
+        permissions: "0744"
+      joinConfiguration:
+        nodeRegistration:
+          name: "{{ ds.meta_data.local_hostname }}"
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: osc://'{{ ds.meta_data.instance_id }}'
+      preKubeadmCommands:
+        - sh /tmp/set_runc.sh
+---
+kind: KubeadmControlPlane
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+metadata:
+  name: "capo-quickstart-control-plane"
+spec:
+  replicas: 1
+  machineTemplate:
+    infrastructureRef:
+      kind: OscMachineTemplate
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      name: "capo-quickstart-control-plane"
+      namespace: default
+  kubeadmConfigSpec:
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: osc://'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
+    files:
+    - content: |
+        #!/bin/bash
+
+        curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+        chmod +x /tmp/runc.amd64	
+        \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+      owner: root:root
+      path: /tmp/set_runc.sh
+      permissions: "0744"
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+    preKubeadmCommands:
+      - sh /tmp/set_runc.sh
+  version: "1.22.11"

@@ -64,15 +64,6 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscMachine)
 
-	oscMachineLog.Info("validate update old imageId", "old imageId", old.Spec.Node.Vm.ImageId)
-	oscMachineLog.Info("validate update imageId", "imageId", m.Spec.Node.Vm.ImageId)
-	if !reflect.DeepEqual(m.Spec.Node.Vm.ImageId, old.Spec.Node.Vm.ImageId) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "imageId"),
-				m.Spec.Node.Vm.ImageId, "field is immutable"),
-		)
-	}
-
 	oscMachineLog.Info("validate update old vmType", "old vmType", old.Spec.Node.Vm.VmType)
 	oscMachineLog.Info("validate update vmType", "vmType", m.Spec.Node.Vm.VmType)
 
@@ -83,26 +74,6 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 		)
 	}
 
-	oscMachineLog.Info("validate update old deviceName", "old deviceName", old.Spec.Node.Vm.DeviceName)
-	oscMachineLog.Info("validate update deviceName", "deviceName", m.Spec.Node.Vm.DeviceName)
-
-	if !reflect.DeepEqual(m.Spec.Node.Vm.DeviceName, old.Spec.Node.Vm.DeviceName) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "deviceName"),
-				m.Spec.Node.Vm.DeviceName, "field is immutable"),
-		)
-	}
-
-	oscMachineLog.Info("validate update old volumeName", "old volumeName", old.Spec.Node.Vm.VolumeName)
-	oscMachineLog.Info("validate update volumeName", "volumeName", m.Spec.Node.Vm.VolumeName)
-
-	if !reflect.DeepEqual(m.Spec.Node.Vm.VolumeName, old.Spec.Node.Vm.VolumeName) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "volumeName"),
-				m.Spec.Node.Vm.VolumeName, "field is immutable"),
-		)
-	}
-
 	oscMachineLog.Info("validate update old keypairName", "old keypairName", old.Spec.Node.Vm.KeypairName)
 	oscMachineLog.Info("validate update keyPairName", "keypairName", m.Spec.Node.Vm.KeypairName)
 
@@ -110,16 +81,6 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("spec", "keyPairName"),
 				m.Spec.Node.Vm.KeypairName, "field is immutable"),
-		)
-	}
-
-	oscMachineLog.Info("validate update old subnetName", "old subnetName", old.Spec.Node.Vm.SubnetName)
-	oscMachineLog.Info("validate update subnetName", "subnetName", m.Spec.Node.Vm.SubnetName)
-
-	if !reflect.DeepEqual(m.Spec.Node.Vm.SubnetName, old.Spec.Node.Vm.SubnetName) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "subnetName"),
-				m.Spec.Node.Vm.SubnetName, "field is immutable"),
 		)
 	}
 
@@ -142,72 +103,34 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 				m.Spec.Node.Vm.SubregionName, "field is immutable"),
 		)
 	}
+	oscMachineLog.Info("validate update old rootDiskSize", "old rootDiskSize", old.Spec.Node.Vm.RootDisk.RootDiskSize)
+	oscMachineLog.Info("validate update rootDiskSize", "rootDiskSize", m.Spec.Node.Vm.RootDisk.RootDiskSize)
 
-	oscMachineLog.Info("validate update old privateIps", "old vmPrivateIps", old.Spec.Node.Vm.PrivateIps)
-	oscMachineLog.Info("validate update privateIps", "vmPrivateIps", m.Spec.Node.Vm.PrivateIps)
-
-	if !reflect.DeepEqual(m.Spec.Node.Vm.PrivateIps, old.Spec.Node.Vm.PrivateIps) {
+	if !reflect.DeepEqual(m.Spec.Node.Vm.RootDisk.RootDiskSize, old.Spec.Node.Vm.RootDisk.RootDiskSize) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "privateIps"),
-				m.Spec.Node.Vm.PrivateIps, "field is immutable"),
+			field.Invalid(field.NewPath("spec", "rootDiskSize"),
+				m.Spec.Node.Vm.RootDisk.RootDiskSize, "field is immutable"),
 		)
 	}
 
-	oscMachineLog.Info("validate update old securityGroupNames", "old securityGroupNames", old.Spec.Node.Vm.SecurityGroupNames)
-	oscMachineLog.Info("validate update securityGroupNames", "securityGroupNames", m.Spec.Node.Vm.SecurityGroupNames)
-
-	if !reflect.DeepEqual(m.Spec.Node.Vm.SecurityGroupNames, old.Spec.Node.Vm.SecurityGroupNames) {
+	oscMachineLog.Info("validate update of old rootDiskIops", "old rootDiskIops", old.Spec.Node.Vm.RootDisk.RootDiskIops)
+	oscMachineLog.Info("validate update rootDiskIops", "old rootDiskIops", m.Spec.Node.Vm.RootDisk.RootDiskIops)
+	if !reflect.DeepEqual(m.Spec.Node.Vm.RootDisk.RootDiskIops, old.Spec.Node.Vm.RootDisk.RootDiskIops) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "securityGroupNames"),
-				m.Spec.Node.Vm.SecurityGroupNames, "field is immutable"),
+			field.Invalid(field.NewPath("spec", "rootDiskIops"),
+				m.Spec.Node.Vm.RootDisk.RootDiskIops, "field is immutable"),
 		)
 	}
-	volumesSpec := m.Spec.Node.Volumes
-	oldVolumesSpec := old.Spec.Node.Volumes
-	for _, volumeSpec := range volumesSpec {
-		for _, oldVolumeSpec := range oldVolumesSpec {
 
-			oscMachineLog.Info("validate update old volumeIops", "old volumeIops", oldVolumeSpec.Iops)
-			oscMachineLog.Info("validate update volumeIops", "volumeIops", volumeSpec.Iops)
-
-			if !reflect.DeepEqual(volumeSpec.Iops, oldVolumeSpec.Iops) {
-				allErrs = append(allErrs,
-					field.Invalid(field.NewPath("spec", "iops"),
-						volumeSpec.Iops, "field is immutable"),
-				)
-			}
-
-			oscMachineLog.Info("validate update old volumeSize", "old volumeSize", oldVolumeSpec.Size)
-			oscMachineLog.Info("validate update volumeSize", "volumeSize", volumeSpec.Size)
-
-			if !reflect.DeepEqual(volumeSpec.Size, oldVolumeSpec.Size) {
-				allErrs = append(allErrs,
-					field.Invalid(field.NewPath("spec", "size"),
-						volumeSpec.Size, "field is immutable"),
-				)
-			}
-
-			oscMachineLog.Info("validate update old subregionName", "old subregionName", oldVolumeSpec.SubregionName)
-			oscMachineLog.Info("validate update subregionName", "subregionName", volumeSpec.SubregionName)
-
-			if !reflect.DeepEqual(volumeSpec.SubregionName, oldVolumeSpec.SubregionName) {
-				allErrs = append(allErrs,
-					field.Invalid(field.NewPath("spec", "subregionName"),
-						volumeSpec.SubregionName, "field is immutable"),
-				)
-			}
-
-			oscMachineLog.Info("validate update old volumeType", "old volumeType", oldVolumeSpec.VolumeType)
-			oscMachineLog.Info("validate update volumeType", "volumeType", volumeSpec.VolumeType)
-
-			if !reflect.DeepEqual(volumeSpec.VolumeType, oldVolumeSpec.VolumeType) {
-				allErrs = append(allErrs,
-					field.Invalid(field.NewPath("spec", "volumeType"),
-						volumeSpec.VolumeType, "field is immutable"),
-				)
-			}
-		}
+	oscMachineLog.Info("validate update of old rootDiskTyp", "old rootDisktype", old.Spec.Node.Vm.RootDisk.RootDiskType)
+	oscMachineLog.Info("validate update rootDiskType", "old rootDiskType", m.Spec.Node.Vm.RootDisk.RootDiskType)
+	if !reflect.DeepEqual(m.Spec.Node.Vm.RootDisk.RootDiskType, old.Spec.Node.Vm.RootDisk.RootDiskType) {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec", "rootDiskTyp"),
+				m.Spec.Node.Vm.RootDisk.RootDiskType, "field is immutable"),
+		)
 	}
+
 	if len(allErrs) == 0 {
 		return nil
 	}

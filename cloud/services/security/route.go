@@ -11,7 +11,7 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_security/route_mock.go -package mock_security -source ./route.go
 type OscRouteTableInterface interface {
-	CreateRouteTable(netId string, routeTableName string) (*osc.RouteTable, error)
+	CreateRouteTable(netId string, netName string, routeTableName string) (*osc.RouteTable, error)
 	CreateRoute(destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
 	DeleteRouteTable(routeTableId string) error
 	DeleteRoute(destinationIpRange string, routeTableId string) error
@@ -23,7 +23,7 @@ type OscRouteTableInterface interface {
 }
 
 // CreateRouteTable create the routetable associated with the net
-func (s *Service) CreateRouteTable(netId string, routeTableName string) (*osc.RouteTable, error) {
+func (s *Service) CreateRouteTable(netId string, netName string, routeTableName string) (*osc.RouteTable, error) {
 	routeTableRequest := osc.CreateRouteTableRequest{
 		NetId: netId,
 	}
@@ -40,6 +40,12 @@ func (s *Service) CreateRouteTable(netId string, routeTableName string) (*osc.Ro
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
+	err = tag.AddTag("OscK8sClusterID/"+netName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+
 	routeTable, ok := routeTableResponse.GetRouteTableOk()
 	if !ok {
 		return nil, errors.New("Can not create route table")

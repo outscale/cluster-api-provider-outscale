@@ -7,11 +7,10 @@ import (
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"net"
-	"time"
-
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"net"
+	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
@@ -21,6 +20,7 @@ type OscVmInterface interface {
 	GetVm(vmId string) (*osc.Vm, error)
 	GetVmState(vmId string) (string, error)
 	CheckVmState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, vmId string) error
+	AddCcmTag(netName string, hostname string, vmId string) error
 }
 
 // ValidateIpAddrInCidr check that ipaddr is in cidr
@@ -40,6 +40,11 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
 	subregionName := spec.SubregionName
+	rootDiskIops := spec.RootDisk.RootDiskIops
+	rootDiskSize := spec.RootDisk.RootDiskSize
+	rootDiskType := spec.RootDisk.RootDiskType
+	deviceName := spec.DeviceName
+
 	placement := osc.Placement{
 		SubregionName: &subregionName,
 	}
@@ -48,15 +53,32 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 		return nil, fmt.Errorf("%w failed to decode bootstrap data", err)
 	}
 	bootstrapDataEnc := b64.StdEncoding.EncodeToString([]byte(bootstrapData))
+	rootDisk := osc.BlockDeviceMappingVmCreation{
+		Bsu: &osc.BsuToCreate{
+			VolumeType: &rootDiskType,
+			VolumeSize: &rootDiskSize,
+		},
+		DeviceName: &deviceName,
+	}
+	if rootDiskType == "io1" {
+		rootDisk.Bsu.SetIops(rootDiskIops)
+	}
+
 	vmOpt := osc.CreateVmsRequest{
 		ImageId:          imageId,
 		KeypairName:      &keypairName,
 		VmType:           &vmType,
 		SubnetId:         &subnetId,
-		PrivateIps:       &privateIps,
 		SecurityGroupIds: &securityGroupIds,
 		UserData:         &bootstrapDataEnc,
-		Placement:        &placement,
+		BlockDeviceMappings: &[]osc.BlockDeviceMappingVmCreation{
+			rootDisk,
+		},
+		Placement: &placement,
+	}
+
+	if len(privateIps) > 0 {
+		vmOpt.SetPrivateIps(privateIps)
 	}
 
 	oscApiClient := s.scope.GetApi()
@@ -161,4 +183,21 @@ func (s *Service) GetVmState(vmId string) (string, error) {
 		return "", errors.New("Can not get vm state")
 	}
 	return *vmState, nil
+}
+
+// AddCcmTag add ccm tag
+func (s *Service) AddCcmTag(netName string, hostname string, vmId string) error {
+	resourceIds := []string{vmId}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+
+	err := tag.AddTag("OscK8SNodeName", hostname, resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		return fmt.Errorf("%w failed to add OscK8sNodeName tag", err)
+	}
+	err = tag.AddTag("OscK8sClusterID/"+netName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		return fmt.Errorf("%w failed to add OscK8sClusterId tag", err)
+	}
+	return nil
 }

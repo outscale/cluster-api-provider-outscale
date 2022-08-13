@@ -2,10 +2,12 @@ package scope
 
 import (
 	"context"
+
 	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"errors"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud"
@@ -250,7 +252,7 @@ func (s *ClusterScope) GetControlPlaneEndpoint() clusterv1.APIEndpoint {
 	return s.OscCluster.Spec.ControlPlaneEndpoint
 }
 
-// GetControlPlaneEndpoint get controlPlane endpoint host
+// GetControlPlaneEndpointHost get controlPlane endpoint host
 func (s *ClusterScope) GetControlPlaneEndpointHost() string {
 	return s.OscCluster.Spec.ControlPlaneEndpoint.Host
 }
@@ -306,4 +308,38 @@ func (s *ClusterScope) PatchObject() error {
 			infrastructurev1beta1.NatServicesReadyCondition,
 			infrastructurev1beta1.LoadBalancerReadyCondition,
 		}})
+}
+
+func (s *ClusterScope) ListMachines(ctx context.Context) ([]*clusterv1.Machine, []*infrastructurev1beta1.OscMachine, error) {
+	var machineListRaw clusterv1.MachineList
+	var machineByOscMachineName = make(map[string]*clusterv1.Machine)
+	if err := s.client.List(ctx, &machineListRaw, client.InNamespace(s.GetNamespace())); err != nil {
+		return nil, nil, err
+	}
+	expectedGk := infrastructurev1beta1.GroupVersion.WithKind("OscMachine").GroupKind()
+	for pos := range machineListRaw.Items {
+		m := &machineListRaw.Items[pos]
+		actualGk := m.Spec.InfrastructureRef.GroupVersionKind().GroupKind()
+		if m.Spec.ClusterName != s.Cluster.Name || actualGk.String() != expectedGk.String() {
+			continue
+		}
+		machineByOscMachineName[m.Spec.InfrastructureRef.Name] = m
+	}
+	var oscMachineListRaw infrastructurev1beta1.OscMachineList
+	if err := s.client.List(ctx, &oscMachineListRaw, client.InNamespace(s.GetNamespace())); err != nil {
+		return nil, nil, err
+	}
+	machineList := make([]*clusterv1.Machine, 0, len(oscMachineListRaw.Items))
+
+	oscMachineList := make([]*infrastructurev1beta1.OscMachine, 0, len(oscMachineListRaw.Items))
+	for pos := range oscMachineListRaw.Items {
+		oscm := &oscMachineListRaw.Items[pos]
+		m, ok := machineByOscMachineName[oscm.Name]
+		if !ok {
+			continue
+		}
+		machineList = append(machineList, m)
+		oscMachineList = append(oscMachineList, oscm)
+	}
+	return machineList, oscMachineList, nil
 }
