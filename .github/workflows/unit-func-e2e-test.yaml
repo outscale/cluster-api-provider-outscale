@@ -24,7 +24,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
     - uses: actions/setup-go@v3
       with:
-        go-version: '1.17.8'
+        go-version: '1.18.5'
     - name: unit-test
       run: |
         make unit-test
@@ -292,8 +292,14 @@ jobs:
         DOCKER_BUILDKIT: 1
     - name: Retrieve NodePort Ip and NodePort
       run: |
-        echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
-        echo nodeport_ip=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")  >> $GITHUB_ENV
+        echo 'NODEPORT_PORT<<EOF' >> $GITHUB_ENV
+        echo "$(kubectl get --namespace default -o jsonpath='{.spec.ports[0].nodePort}' services docker-registry)" >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+
+        echo 'NODEPORT_IP<<EOF' >> $GITHUB_ENV
+        echo "$(kubectl get nodes --namespace default -o jsonpath='{.items[0].status.addresses[0].address}')"  >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
     - name: Create ns and set credential
@@ -308,7 +314,7 @@ jobs:
       shell: bash
       id: e2etest
       env:
-        IMG: ${nodeport_ip}:${nodeport_port}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
     - name: Get cluster api outscale logs
       run: make logs-capo
       if: ${{ steps.e2etest.outcome == 'success' }}
