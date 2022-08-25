@@ -1,0 +1,46 @@
+name: image-builder
+
+on:
+  schedule:
+  - cron: "0 6 * * Sun"
+jobs:
+  image-builder:
+    runs-on: [self-hosted, linux]
+    steps:
+    - name: Checkout image-builder
+      uses: actions/checkout@v3
+      with:
+        repository: 'outscale-vbr/image-builder'
+        path: "add-outscale-image"
+        ref: add-outscale-image
+    - uses: actions/setup-go@v3
+      with:
+        go-version: '1.18.5'
+    - uses: actions/checkout@v3
+      with:
+          repository: outscale-dev/cluster-api-provider-outscale
+          ref: main
+          path: cluster-api-provider-outscale 
+    - name: Install Packer
+      run: make install-packer
+      shell: bash
+      working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
+    - name: Launch image-builder
+      run: |
+        sudo pip3 install setuptools-rust
+        sudo pip3 install --upgrade pip
+        export PATH=$HOME/.local/bin:$GITHUB_WORKSPACE/image-builder/images/capi/.local/bin:$PATH
+        make deps-osc
+        groupadd -r packer && useradd -m -s /bin/bash -r -g packer packer
+        chown -R packer:packer ${{ github.workspace }}/add-outscale-image
+        runuser -l packer -c "export LANG=C.UTF-8; export LC_ALL=C.UTF-8; export PACKER_LOG=1; export PATH=~packer/.local/bin/:$GITHUB_WORKSPACE/image-builder/images/capi/.local/bin:$PATH; export OSC_ACCESS_KEY=${OSC_ACCESS_KEY}; export OSC_SECRET_KEY=${OSC_SECRET_KEY}; export OUTSCALE_REGION=${OUTSCALE_REGION}; cd $GITHUB_WORKSPACE/add-outscale-image/images/capi;  ./scripts/ci-outscale-nightly.sh"
+      shell: bash
+      working-directory: "${{ github.workspace }}/add-outscale-image/images/capi"
+      env:
+         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
+         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}   
+         OUTSCALE_REGION: ${{secrets.OSC_REGION}}
+         CRYPTOGRAPHY_DONT_BUILD_RUST: 1
+         PACKER_LOG: 1 
+         LANG: C.UTF-8
+         LC_ALL: C.UTF-8
