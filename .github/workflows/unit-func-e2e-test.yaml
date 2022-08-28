@@ -11,6 +11,7 @@ on:
       - "!osc-secret.yaml"
       - "!example/**.yaml" 
       - "Makefile"
+      - "hack/*.sh"
   pull_request_target:
     branches: [ main ]
 

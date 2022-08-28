@@ -103,6 +103,19 @@ cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Runnin
 
 # Develop
 
+## Install project in order to devellop
+
+You must install those project with :
+```
+make install-dev-prerequisites
+```
+
+Optionally, you can install those project:
+```
+make install-packer
+make install-gh
+```
+
 ## Using tiltfile
 
 Choose your favorite editor to develop.
