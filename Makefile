@@ -18,6 +18,18 @@ CAPO_NAMESPACE ?= cluster-api-provider-outscale-system
 ENVTEST_K8S_VERSION = 1.23
 E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
 E2E_CONF_FILE ?= ${PWD}/test/e2e/config/outscale-ci-envsubst.yaml
+MINIMUM_CLUSTERCTL_VERSION=1.1.3
+MIN_GO_VERSION=1.18.5
+MINIMUM_TILT_VERSION=0.25.3
+MINIMUM_PACKER_VERSION=1.8.1
+MINIMUM_KIND_VERSION=v0.14.0
+MINIMUM_CONTROLLER_GEN_VERSION=0.8.0 
+MINIMUM_GH_VERSION=2.12.1
+MINIMUM_ENVTEST_VERSION=1.23.3
+MINIMUM_HELM_VERSION=v3.9.4
+MINIMUM_KUSTOMIZE_VERSION=4.5.1
+MINIMUM_MOCKGEN_VERSION=1.6.0
+MINIMUM_KUBECTL_VERSION=1.22.10
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -287,19 +299,41 @@ create-gh-release: gh
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
-	mkdir -p $(shell pwd)/bin
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+controller-gen: ## Download controller-gen
+	MINIMUM_CONTROLLER_GEN_VERSION=${MINIMUM_CONTROLLER_GEN_VERSION} ./hack/ensure-controller-gen.sh 
 
 LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
 .PHONY: install-clusterctl
-install-clusterctl: ## Download clusterctl locally if necessary.
-	@if [ ! -s ${LOCAL_CLUSTERCTL} ]; then \
-		mkdir -p $(shell pwd)/bin; \
-		wget -c https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterctl-linux-amd64; \
-		mv $(shell pwd)/clusterctl-linux-amd64 $(shell pwd)/bin/clusterctl; \
-		chmod +x  $(LOCAL_CLUSTERCTL); \
-	fi
+install-clusterctl: ## Download clusterctl
+	MINIMUM_CLUSTERCTL_VERSION=$(MINIMUM_CLUSTERCTL_VERSION) ./hack/ensure-clusterctl.sh
+
+.PHONY: verify-go
+verify-go:  ## Download go
+	MIN_GO_VERSION=$(MIN_GO_VERSION) ./hack/ensure-go.sh
+
+.PHONY: install-tilt
+install-tilt: ## Download tilt
+	MINIMUM_TILT_VERSION=$(MINIMUM_TILT_VERSION) ./hack/ensure-tilt.sh
+
+.PHONY: install-packer
+install-packer: ## Download packer
+	MINIMUM_PACKER_VERSION=$(MINIMUM_PACKER_VERSION) ./hack/ensure-packer.sh
+
+.PHONY: install-gh
+install-gh: ## Download gh
+	MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh 
+
+.PHONY: install-kind
+install-kind: ## Download kind
+	MINIMUM_KIND_VERSION=$(MINIMUM_KIND_VERSION) ./hack/ensure-kind.sh
+
+.PHONY: install-kubectl
+install-kubectl: ## Download kubectl
+	MINIMUM_KUBECTL_VERSION=$(MINIMUM_KUBECTL_VERSION) ./hack/ensure-kubectl.sh
+
+.PHONY: install-helm
+install-helm: ## Downlload helm
+	MINIMUM_HELM_VERSION=$(MINIMUM_HELM_VERSION) ./hack/ensure-helm.sh
 
 .PHONY: deploy-clusterapi
 deploy-clusterapi: install-clusterctl ## Deploy clusterapi
@@ -311,40 +345,44 @@ undeploy-clusterapi:  ## undeploy clusterapi
 
 LOCAL_KUSTOMIZE ?= $(shell pwd)/bin/kustomize
 .PHONY: kustomize
-kustomize: ## Download kustomize locally if necessary.
-	mkdir -p $(shell pwd)/bin
-	$(call go-get-tool,$(LOCAL_KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+kustomize: ## Download Kustomize
+	MINIMUM_KUSTOMIZE_VERSION=$(MINIMUM_KUSTOMIZE_VERSION) hack/ensure-kustomize.sh
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
-	mkdir -p $(shell pwd)/bin
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+	MINIMUM_ENVTEST_VERSION=$(MINIMUM_ENVTEST_VERSION) ./hack/ensure-envtest.sh
 
 MOCKGEN = $(shell pwd)/bin/mockgen
 .PHONY: mockgen
 mockgen: ## Download mockgen locally if necessary.
-	mkdir -p $(shell pwd)/bin
-	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
+        MINIMUM_MOCKGEN_VERSION=$(MINIMUM_MOCKGEN_VERSION) ./hack/ensure-mockgen.sh
 
 ENVSUBST = $(shell pwd)/bin/envsubst
 .PHONY: envsubst
 envsubst: ## Download envsubst
-	mkdir -p $(shell pwd)/bin
-	go build -tags=tools -o $(ENVSUBST) github.com/drone/envsubst/v2/cmd/envsubst
+	./hack/ensure-envsubst.sh 
 
 GH = $(shell pwd)/bin/gh
-GH_VERSION ?= 2.14.4
 .PHONY: gh
-gh: 
-	@if [ ! -s ${GH} ]; then \
-		mkdir -p $(shell pwd)/bin; \
-		curl https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz -Lo gh_${GH_VERSION}_linux_amd64.tar.gz; \
-		tar -zxvf gh_2.14.4_linux_amd64.tar.gz gh_2.14.4_linux_amd64/bin/gh  --strip-components 2 -C ${GH}; \
-                mv gh ./bin; \
-		rm -f gh_${GH_VERSION}_linux_amd64.tar.gz; \
-	fi 
+gh: ## Download gh
+	MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh
 	
+
+install-dev-prerequisites: ## Install clusterctl, controller-gen, envsubst, envtest, gh, go, helm, kind, kubectl, kustomize, packer, til 
+	@echo "Start install all depencies"
+	$(MAKE) install-clusterctl
+	$(MAKE) controller-gen
+	$(MAKE) verify-go
+	$(MAKE) envsubst
+	$(MAKE) mockgen
+	$(MAKE) envtest
+	$(MAKE) install-helm
+	$(MAKE) install-kind
+	$(MAKE) install-kubectl
+	$(MAKE) kustomize
+	$(MAKE) install-tilt
+	@echo "Finished to install all dependencies"
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
