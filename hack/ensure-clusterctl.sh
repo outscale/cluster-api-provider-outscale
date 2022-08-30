@@ -4,18 +4,18 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+BIN_ROOT="./bin"
 check_clusterctl_installed() {
-  if ! [ -x "$(command -v clusterctl)" ]; then
+  if ! [ -x "$(command -v ${BIN_ROOT}/clusterctl)" ]; then
     echo 'clusterctl not found, installing'
     install_clusterctl
   fi
 }
 
-
 verify_clusterctl_version() {
 
   local clusterctl_version
-  clusterctl_version="$(clusterctl version -o short | sed 's/v//')"
+  clusterctl_version="$(${BIN_ROOT}/clusterctl version -o short | sed 's/v//')"
   if [[ "${MINIMUM_CLUSTERCTL_VERSION}" != $(echo -e "${MINIMUM_CLUSTERCTL_VERSION}\n${clusterctl_version}" | sort -s -t. -k 1,1n -k 2,2n -k 3,3n | head -n1) ]]; then
     cat <<EOF
 Detected clusterctl version: v${clusterctl_version}.
@@ -45,10 +45,12 @@ install_clusterctl() {
 
 function copy_binary() {
       echo "Copy binary in /usr/local/bin which is protected as sudo"
-      sudo mv clusterctl /usr/local/bin/clusterctl
-      chmod +x "/usr/local/bin/clusterctl"
+      if ! [ -d "${BIN_ROOT}" ]; then
+        mkdir -p "${BIN_ROOT}"
+      fi
+      sudo mv clusterctl  ${BIN_ROOT}/clusterctl
+      chmod +x "${BIN_ROOT}/clusterctl"
       echo "Installation Finished"
 }
-
 check_clusterctl_installed "$@"
 verify_clusterctl_version "$@"

@@ -110,10 +110,12 @@ You must install those project with :
 make install-dev-prerequisites
 ```
 
-Optionally, you can install those project:
+Optionally, you can install those project([kind], [gh], [packer], [kubebuildertool]):
 ```
 make install-packer
 make install-gh
+make install-kind
+make install-kubebuildertool
 ```
 
 ## Using tiltfile
@@ -193,4 +195,7 @@ make deploy-clusterapi
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [configuration]: config.md
-
+[kind]: https://github.com/kubernetes-sigs/kind
+[gh]: https://github.com/cli/cli
+[packer]: https://github.com/hashicorp/packer
+[kubebuildertool]: https://github.com/kubernetes-sigs/kubebuilder

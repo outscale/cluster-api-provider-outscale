@@ -21,15 +21,16 @@ type DeploymentInput struct {
 }
 
 type CreateDeploymentInput struct {
-	Getter    client.Client
-	Name      string
-	Namespace string
-	Image     string
+	Getter        client.Client
+	Name          string
+	Namespace     string
+	Image         string
 	ConfigMapName string
-	ConfigMapKey string
-	Port      int32
+	ConfigMapKey  string
+	Port          int32
 }
 
+// CreateDeployment create a deployment
 func CreateDeployment(ctx context.Context, input CreateDeploymentInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in CreateDeployment")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in CreateDeployment")
@@ -90,7 +91,7 @@ func CreateDeployment(ctx context.Context, input CreateDeploymentInput) bool {
 										},
 									},
 								},
-							}, 
+							},
 						},
 					},
 				},
@@ -105,6 +106,7 @@ func CreateDeployment(ctx context.Context, input CreateDeploymentInput) bool {
 	return true
 }
 
+// GetDeployment retrieve a deployment
 func GetDeployment(ctx context.Context, input DeploymentInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in GetDeployment")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in GetDeployment")
@@ -121,6 +123,7 @@ func GetDeployment(ctx context.Context, input DeploymentInput) bool {
 	return true
 }
 
+// DeleteDeployment delete Deployment
 func DeleteDeployment(ctx context.Context, input DeploymentInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in deleteDeployment")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in DeleteDeployment")
@@ -141,6 +144,7 @@ func DeleteDeployment(ctx context.Context, input DeploymentInput) bool {
 	return true
 }
 
+// WaitForDeploymentAvailable wait for deployment to be available
 func WaitForDeploymentAvailable(ctx context.Context, input DeploymentInput) {
 	By(fmt.Sprintf("Waiting for deployment %s to be available", input.Name))
 	Eventually(func() bool {
@@ -149,6 +153,7 @@ func WaitForDeploymentAvailable(ctx context.Context, input DeploymentInput) {
 	}, 15*time.Second, 3*time.Second).Should(BeTrue(), "Failed to find deployment %s", input.Name)
 }
 
+// WaitForCreateDeploymentAvailable wait for deployment to be created
 func WaitForCreateDeploymentAvailable(ctx context.Context, input CreateDeploymentInput) {
 	By(fmt.Sprintf("Wait for deployment %s to be created and be available", input.Name))
 	Eventually(func() bool {
@@ -157,6 +162,7 @@ func WaitForCreateDeploymentAvailable(ctx context.Context, input CreateDeploymen
 	}, 2*time.Minute, 10*time.Second).Should(BeTrue(), "Failed to create deployment %s", input.Name)
 }
 
+// WaitForDeleteDeploymentAvailable wait for deployment to be available
 func WaitForDeleteDeploymentAvailable(ctx context.Context, input DeploymentInput) {
 	By(fmt.Sprintf("Wait for deployment %s to be deleted", input.Name))
 	Eventually(func() bool {

@@ -36,18 +36,18 @@ func (m *MockOscSecurityGroupInterface) EXPECT() *MockOscSecurityGroupInterfaceM
 }
 
 // CreateSecurityGroup mocks base method.
-func (m *MockOscSecurityGroupInterface) CreateSecurityGroup(netId, netName, securityGroupName, securityGroupDescription string) (*osc.SecurityGroup, error) {
+func (m *MockOscSecurityGroupInterface) CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription string) (*osc.SecurityGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSecurityGroup", netId, netName, securityGroupName, securityGroupDescription)
+	ret := m.ctrl.Call(m, "CreateSecurityGroup", netId, clusterName, securityGroupName, securityGroupDescription)
 	ret0, _ := ret[0].(*osc.SecurityGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSecurityGroup indicates an expected call of CreateSecurityGroup.
-func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroup(netId, netName, securityGroupName, securityGroupDescription interface{}) *gomock.Call {
+func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSecurityGroup", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).CreateSecurityGroup), netId, netName, securityGroupName, securityGroupDescription)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSecurityGroup", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).CreateSecurityGroup), netId, clusterName, securityGroupName, securityGroupDescription)
 }
 
 // CreateSecurityGroupRule mocks base method.

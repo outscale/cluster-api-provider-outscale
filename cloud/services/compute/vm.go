@@ -20,7 +20,7 @@ type OscVmInterface interface {
 	GetVm(vmId string) (*osc.Vm, error)
 	GetVmState(vmId string) (string, error)
 	CheckVmState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, vmId string) error
-	AddCcmTag(netName string, hostname string, vmId string) error
+	AddCcmTag(clusterName string, hostname string, vmId string) error
 }
 
 // ValidateIpAddrInCidr check that ipaddr is in cidr
@@ -186,7 +186,7 @@ func (s *Service) GetVmState(vmId string) (string, error) {
 }
 
 // AddCcmTag add ccm tag
-func (s *Service) AddCcmTag(netName string, hostname string, vmId string) error {
+func (s *Service) AddCcmTag(clusterName string, hostname string, vmId string) error {
 	resourceIds := []string{vmId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -195,7 +195,7 @@ func (s *Service) AddCcmTag(netName string, hostname string, vmId string) error 
 	if err != nil {
 		return fmt.Errorf("%w failed to add OscK8sNodeName tag", err)
 	}
-	err = tag.AddTag("OscK8sClusterID/"+netName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		return fmt.Errorf("%w failed to add OscK8sClusterId tag", err)
 	}

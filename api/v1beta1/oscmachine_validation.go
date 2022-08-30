@@ -147,10 +147,9 @@ func ValidateSubregionName(subregionName string) (string, error) {
 
 // ValidateDeviceName check that DeviceName  is a valid DeviceName
 func ValidateDeviceName(deviceName string) (string, error) {
-	last := deviceName[len(deviceName)-1:]
-	isValidateDeviceName := regexp.MustCompile(`^[0-9a-z]$`).MatchString
+	isValidateDeviceName := regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
 	switch {
-	case (strings.Contains(deviceName, "/dev/xvd") || strings.Contains(deviceName, "/dev/sda")) && len(deviceName) == 9 && isValidateDeviceName(last):
+	case isValidateDeviceName(deviceName):
 		return deviceName, nil
 	default:
 		return deviceName, errors.New("Invalid deviceName")

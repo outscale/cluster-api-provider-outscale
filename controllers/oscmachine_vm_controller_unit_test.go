@@ -23,8 +23,9 @@ var (
 	defaultVmClusterInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
-				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				Name:        "test-net",
+				IpRange:     "10.0.0.0/16",
+				ClusterName: "test-cluster",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
@@ -65,9 +66,10 @@ var (
 	defaultVmClusterReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
-				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				Name:        "test-net",
+				IpRange:     "10.0.0.0/16",
+				ClusterName: "test-cluster",
+				ResourceId:  "vpc-test-net-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
@@ -162,10 +164,11 @@ var (
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
-				Name:       "test-vm",
-				ImageId:    "ami-00000000",
-				Role:       "controlplane",
-				DeviceName: "/dev/sda1",
+				ClusterName: "test-cluster",
+				Name:        "test-vm",
+				ImageId:     "ami-00000000",
+				Role:        "controlplane",
+				DeviceName:  "/dev/sda1",
 				RootDisk: infrastructurev1beta1.OscRootDisk{
 					RootDiskSize: 30,
 					RootDiskIops: 1500,
@@ -203,6 +206,7 @@ var (
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
+				ClusterName: "test-cluster",
 				Name:        "test-vm",
 				ImageId:     "ami-00000000",
 				Role:        "controlplane",
@@ -249,6 +253,7 @@ var (
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
+				ClusterName: "test-cluster",
 				Name:        "test-vm",
 				ImageId:     "ami-00000000",
 				Role:        "controlplane",
@@ -2860,12 +2865,11 @@ func TestReconcileVmGet(t *testing.T) {
 					GetVmState(gomock.Eq(vmId)).
 					Return(vmState, vtc.expGetVmStateErr)
 			}
-			netName := vtc.clusterSpec.Network.Net.Name + "-uid"
-
+			clusterName := vtc.clusterSpec.Network.Net.ClusterName
 			if vtc.expAddCcmTagFound {
 				mockOscVmInterface.
 					EXPECT().
-					AddCcmTag(gomock.Eq(netName), gomock.Eq(privateDnsName), gomock.Eq(vmId)).
+					AddCcmTag(gomock.Eq(clusterName), gomock.Eq(privateDnsName), gomock.Eq(vmId)).
 					Return(vtc.expAddCcmTagErr)
 			}
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
