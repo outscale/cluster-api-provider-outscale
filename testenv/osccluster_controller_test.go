@@ -105,7 +105,6 @@ func createCheckDeleteOscClusterMachine(ctx context.Context, infraClusterSpec in
 	checkOscSecurityGroupToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSecurityGroupRuleToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscLoadBalancerToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
-	checkOscVolumeToBeProvisioned(ctx, oscInfraMachineKey, clusterScope, machineScope)
 	checkOscVmToBeProvisioned(ctx, oscInfraMachineKey, clusterScope, machineScope)
 	WaitControlPlaneDnsNameRegister(clusterScope)
 	WaitControlPlaneEndpointUp(clusterScope)
@@ -604,7 +603,7 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 				IpRange := securityGroupRuleSpec.IpRange
 				FromPortRange := securityGroupRuleSpec.FromPortRange
 				ToPortRange := securityGroupRuleSpec.ToPortRange
-				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(securityGroupId, Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
+				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 				if err != nil {
 					return err
 				}
@@ -1041,26 +1040,21 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 				},
 			}
-
 			infraMachineSpec := infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "cluster-api-volume-kcp",
-							Iops:          1000,
-							Size:          30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
 					Vm: infrastructurev1beta1.OscVm{
-						Name:             "cluster-api-vm-kcp",
-						ImageId:          "ami-6a871c21",
-						Role:             "controlplane",
-						VolumeName:       "cluster-api-volume-kcp",
-						DeviceName:       "/dev/xvdb",
-						KeypairName:      "cluster-api",
-						SubregionName:    "eu-west-2a",
+						Name:          "cluster-api-vm-kcp",
+						ImageId:       "ami-e1a786f1",
+						Role:          "controlplane",
+						DeviceName:    "/dev/sda1",
+						KeypairName:   "cluster-api",
+						SubregionName: "eu-west-2a",
+						RootDisk: infrastructurev1beta1.OscRootDisk{
+
+							RootDiskSize: 30,
+							RootDiskIops: 1500,
+							RootDiskType: "io1",
+						},
 						SubnetName:       "cluster-api-subnet-kcp",
 						LoadBalancerName: "osc-k8s-machine",
 						VmType:           "tinav4.c2r4p2",

@@ -1,0 +1,96 @@
+name: kind
+
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  kind:
+    runs-on: [self-hosted, linux]
+    steps:
+    - name: Checkout cluster-api-outscales
+      uses: actions/checkout@v3
+    - name: Checkout osc-k8s-rke-cluster
+      uses: actions/checkout@v3
+      with:
+        repository: 'outscale-dev/osc-k8s-rke-cluster'
+        path: "rke-cluster-for-cluster-api"
+        ref: master
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v2.0
+      with:
+        version: v1.22.7
+      id: install
+    - name: Install golang
+      uses: actions/setup-go@v3
+      with:
+        go-version: '>=1.17.8'
+    - name: Install kustomize
+      uses: imranismail/setup-kustomize@v1
+    - name: Install kind
+      run: |
+        make install-kind
+        make envtest
+        make install-kubebuildertool
+    - name: Build image
+      run: make docker-build
+      env:
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        DOCKER_BUILDKIT: 1
+    - name: Deploy Cluster
+      uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
+      with:
+        repository_folder: "rke-cluster-for-cluster-api"
+        rke_version: "v1.3.9"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}
+        kubernetes_version: "v1.22.7-rancher1-2"
+        bastion_vm_type: "tinav5.c4r8p1"
+        bastion_volume_type: "io1"
+        bastion_volume_size: 30
+        bastion_iops: 1500
+        control_plane_vm_type: "tinav5.c4r8p1"
+        control_plane_count: 1
+        control_plane_volume_type: "io1"
+        control_plane_volume_size: 30
+        control_plane_iops: 1500
+        worker_vm_type: "tinav5.c4r8p1"
+        worker_count: 2
+        worker_volume_type: "io1"
+        worker_volume_size: 30
+        worker_iops: 1500
+    - name: Wait Kubernetes control plane is up and running
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 30
+        max_attempts: 20
+        retry_wait_seconds: 30
+        command: kubectl get --raw='/readyz?verbose'
+      env:
+        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+    - name: Wait all infrastructure app are really up and running
+      uses: jupyterhub/action-k8s-await-workloads@v1
+      with:
+        workloads: ""
+        namespace: "" 
+        timeout: 600
+        max-restarts: -1
+      env:
+        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+    - name: Launch e2testkind
+      run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2etestkind
+      shell: bash
+      id: e2etestkind
+      env:
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
+        OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+    - name: Destroy cluster
+      uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
+      if: ${{ always() }}
+      with:
+        repository_folder: "./rke-cluster-for-cluster-api"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }} 
