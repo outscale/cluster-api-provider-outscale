@@ -204,9 +204,6 @@ spec:
           subregionName: eu-west-2a
           securityGroupNames:
             - name: cluster-api-securitygroups-kw
-          privateIps:
-            - name: cluster-api-kw-privateip-kw
-              privateIp: "10.0.0.138"
           vmType: "tinav4.c2r4p2"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -233,9 +230,6 @@ spec:
           loadBalancerName: osc-k8s
           securityGroupNames:
             - name: cluster-api-securitygroups-kcp
-          privateIps:
-            - name: cluster-api-privateip-kcp
-              privateIp: "10.0.0.38"
           vmType: "tinav5.c4r8p1"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1

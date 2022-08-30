@@ -8,19 +8,19 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	"k8s.io/client-go/rest"
 	"os"
 	"path"
 	"path/filepath"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
-	"testing"
-        utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"strings"
+	"testing"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -42,7 +42,8 @@ var (
 
 	useCni bool
 
-	useCcm bool
+	useCcm        bool
+	validateStack bool
 	// artifactFolder is the folder to store e2e test artifacts.
 	artifactFolder string
 
@@ -89,6 +90,7 @@ func init() {
 	flag.BoolVar(&useExistingCluster, "e2e.use-existing-cluster", true, "if true, the test uses the current cluster instead of creating a new one (default discovery rules apply)")
 	flag.BoolVar(&useCni, "e2e.use-cni", false, "if true, the test will use cni clusterclass")
 	flag.BoolVar(&useCcm, "e2e.use-ccm", false, "if true, the test will use ccm clusterclass")
+	flag.BoolVar(&validateStack, "e2e.validate-stack", false, "if true, the test will validate stack")
 	flag.BoolVar(&useCIArtifacts, "kubetest.use-ci-artifacts", false, "use the latest build from the main branch of the Kubernetes repository. Set KUBERNETES_VERSION environment variable to latest-1.xx to use the build from 1.xx release branch.")
 
 	flag.StringVar(&kubetestConfigFilePath, "kubetest.config-file", "", "path to the kubetest configuration file")
@@ -102,7 +104,7 @@ func TestE2E(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t, "capdo-e2e", []Reporter{junitReporter})
 }
 
-func Run() {
+func getK8sClient() {
 	if os.Getenv(kubeconfigEnvVar) == "" {
 		kubeconfig := filepath.Join("/root", ".kube", "config")
 		os.Setenv(kubeconfigEnvVar, kubeconfig)
@@ -126,7 +128,7 @@ func Run() {
 	Expect(k8sClient).ToNot(BeNil())
 }
 
-func addCredential(name string, namespace string, timeout string, interval string ) {
+func addCredential(name string, namespace string, timeout string, interval string) {
 	const oscAccessKeyEnvVar = "OSC_ACCESS_KEY"
 	const oscSecretKeyEnvVar = "OSC_SECRET_KEY"
 	accessKey := os.Getenv(oscAccessKeyEnvVar)
@@ -135,20 +137,19 @@ func addCredential(name string, namespace string, timeout string, interval strin
 		_ = createNamespace(ctx, namespace, bootstrapClusterProxy, timeout, interval)
 		k8sClient := bootstrapClusterProxy.GetClient()
 		utils.WaitForCreateMultiSecretAvailable(ctx, utils.CreateMultiSecretInput{
-			Getter: k8sClient,
-	                Name: name,
-                	Namespace: namespace,
-                	DataFirstKey: "access_key",
-	                DataFirstValue: accessKey,
-        	        DataSecondKey: "secret_key",
-                	DataSecondValue: secretKey,		
+			Getter:          k8sClient,
+			Name:            name,
+			Namespace:       namespace,
+			DataFirstKey:    "access_key",
+			DataFirstValue:  accessKey,
+			DataSecondKey:   "secret_key",
+			DataSecondValue: secretKey,
 		})
 	}
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	// Before all ParallelNodes.
-	Run()
 	Expect(configPath).To(BeAnExistingFile(), "Invalid test suite argument. e2e.config should be an existing file.")
 	Expect(os.MkdirAll(artifactFolder, 0755)).To(Succeed(), "Invalid test suite argument. Can't create e2e.artifacts-folder %q", artifactFolder)
 
@@ -165,8 +166,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	By("Setting up the bootstrap cluster")
 	bootstrapClusterProvider, bootstrapClusterProxy = setupBootstrapCluster(e2eConfig, scheme, useExistingCluster)
 
-	By("Setting up the cluster api outscale provider credential")
-	addCredential("cluster-api-provider-outscale", "cluster-api-provider-outscale-system", "40s", "10s")	
+	if validateStack {
+		getK8sClient()
+	}
+
+	if !useExistingCluster {
+		By("Setting up the cluster api outscale provider credential")
+		addCredential("cluster-api-provider-outscale", "cluster-api-provider-outscale-system", "40s", "10s")
+	}
 	By("Initializing the bootstrap cluster")
 	initBootstrapCluster(ctx, bootstrapClusterProxy, e2eConfig, clusterctlConfigPath, artifactFolder)
 
@@ -206,10 +213,12 @@ var _ = SynchronizedAfterSuite(func() {
 	if !skipCleanup {
 		tearDown(ctx, bootstrapClusterProvider, bootstrapClusterProxy)
 	}
-	cancel()
-	By("Tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	if validateStack {
+		cancel()
+		By("Tearing down the test environment")
+		err := testEnv.Stop()
+		Expect(err).NotTo(HaveOccurred())
+	}
 })
 
 func initScheme() *runtime.Scheme {

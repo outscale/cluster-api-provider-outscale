@@ -159,23 +159,6 @@ jobs:
         KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-    - name: Delete osccluster and cluster if functional test has been failed
-      run: make delete-capo
-      if: ${{ failure() }}
-      timeout-minutes: 5
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CLUSTER: cluster-api-test
-        OSC_CLUSTER: cluster-api-test
-    - name: Delete osccluster and cluster if functional test has been failed
-      run: make force-delete-capo
-      if: ${{ failure() }}
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CLUSTER: cluster-api-test
-        OSC_CLUSTER: cluster-api-test
     - name: Get log capo master
       run: make logs-capo
       if: ${{ failure() && steps.deploy-capo.conclusion == 'failure' }}
@@ -296,11 +279,9 @@ jobs:
         echo 'NODEPORT_PORT<<EOF' >> $GITHUB_ENV
         echo "$(kubectl get --namespace default -o jsonpath='{.spec.ports[0].nodePort}' services docker-registry)" >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
-
         echo 'NODEPORT_IP<<EOF' >> $GITHUB_ENV
         echo "$(kubectl get nodes --namespace default -o jsonpath='{.items[0].status.addresses[0].address}')"  >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
-
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
     - name: Create ns and set credential
@@ -311,11 +292,13 @@ jobs:
          OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
          OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
     - name: Launch e2etest
-      run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2etest
+      run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2etestexistingcluster
       shell: bash
       id: e2etest
       env:
         IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
+        OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
+        OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
     - name: Get cluster api outscale logs
       run: make logs-capo
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}

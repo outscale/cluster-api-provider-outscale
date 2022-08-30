@@ -324,8 +324,8 @@ type OscVm struct {
 
 type OscRootDisk struct {
 	RootDiskIops int32  `json:"rootDiskIops,omitempty"`
-	RootDiskSize int32  `json:"rootDiskSize, omitempty"`
-	RootDiskType string `json:"rootDiskType, omitempty"`
+	RootDiskSize int32  `json:"rootDiskSize,omitempty"`
+	RootDiskType string `json:"rootDiskType,omitempty"`
 }
 
 type VmState string
@@ -472,20 +472,18 @@ var (
 	DefaultRuleIpRangeEtcd                    string = "10.0.0.32/28"
 	DefaultFromPortRangeEtcd                  int32  = 2378
 	DefaultToPortRangeEtcd                    int32  = 2379
-	DefaultSecurityGroupRuleKcpBgpKcpName        string = "cluster-api-securitygrouprule-kcp-bgp-kcp"
-	DefaultSecurityGroupRuleKcpBgpKwName string = "cluster-api-securitygrouprule-kcp-bgp-kw"
+	DefaultSecurityGroupRuleKcpBgpName        string = "cluster-api-securitygrouprule-kcp-bgp"
 	DefaultFlowKcpBgp                         string = "Inbound"
-        DefaultIpProtocolKcpBgp                   string = "tcp"
-	DefaultRuleIpRangeKcpBgp                  string = "10.0.0.32/28"
-        DefaultFromPortRangeKcpBgp                int32 = 179
-        DefaultToPortRangeKcpBgp                  int32 = 179
-        DefaultSecurityGroupRuleKwBgpKwName         string = "cluster-api-securitygrouprule-kw-bgp-kw"
-	DefaultSecurityGroupRuleKwBgpKcpName    string = "cluster-api-securitygrouprule-kw-bgp-kcp"
+	DefaultIpProtocolKcpBgp                   string = "tcp"
+	DefaultRuleIpRangeKcpBgp                  string = "10.0.0.0/24"
+	DefaultFromPortRangeKcpBgp                int32  = 179
+	DefaultToPortRangeKcpBgp                  int32  = 179
+	DefaultSecurityGroupRuleKwBgpName         string = "cluster-api-securitygrouprule-kw-bgp"
 	DefaultFlowKwBgp                          string = "Inbound"
 	DefaultIpProtocolKwBgp                    string = "tcp"
-        DefaultRuleIpRangeKwBgp                   string = "10.0.0.128/26"
-        DefaultFromPortRangeKwBgp                 int32 = 179
-        DefaultToPortRangeKwBgp                   int32 = 179
+	DefaultRuleIpRangeKwBgp                   string = "10.0.0.0/24"
+	DefaultFromPortRangeKwBgp                 int32  = 179
+	DefaultToPortRangeKwBgp                   int32  = 179
 	DefaultSecurityGroupRuleKubeletKcpName    string = "cluster-api-securitygrouprule-kubelet-kcp"
 	DefaultFlowKubeletKcp                     string = "Inbound"
 	DefaultIpProtocolKubeletKcp               string = "tcp"
@@ -820,10 +818,8 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		var securityGroupRuleApiKwName string = DefaultSecurityGroupRuleApiKwName
 		var securityGroupRuleApiKcpName string = DefaultSecurityGroupRuleApiKcpName
 		var securityGroupRuleEtcdName string = DefaultSecurityGroupRuleEtcdName
-		var securityGroupRuleKwBgpKwName string = DefaultSecurityGroupRuleKwBgpKwName
-                var securityGroupRuleKwBgpKcpName string = DefaultSecurityGroupRuleKwBgpKcpName
-                var securityGroupRuleKcpBgpKwName string = DefaultSecurityGroupRuleKcpBgpKwName
-		var securityGroupRuleKcpBgpKcpName string = DefaultSecurityGroupRuleKcpBgpKcpName
+		var securityGroupRuleKwBgpName string = DefaultSecurityGroupRuleKwBgpName
+		var securityGroupRuleKcpBgpName string = DefaultSecurityGroupRuleKcpBgpName
 		var securityGroupRuleKubeletKcpName string = DefaultSecurityGroupRuleKubeletKcpName
 		var securityGroupKcpName string = DefaultSecurityGroupKcpName
 		var securityGroupRuleLbName string = DefaultSecurityGroupRuleLbName
@@ -837,10 +833,8 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			securityGroupRuleApiKwName = strings.Replace(DefaultSecurityGroupRuleApiKwName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleApiKcpName = strings.Replace(DefaultSecurityGroupRuleApiKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleEtcdName = strings.Replace(DefaultSecurityGroupRuleEtcdName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKwBgpKwName = strings.Replace(DefaultSecurityGroupRuleKwBgpKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKwBgpKcpName = strings.Replace(DefaultSecurityGroupRuleKwBgpKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKcpBgpKwName = strings.Replace(DefaultSecurityGroupRuleKcpBgpKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKcpBgpKcpName = strings.Replace(DefaultSecurityGroupRuleKcpBgpKcpName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupRuleKwBgpName = strings.Replace(DefaultSecurityGroupRuleKwBgpName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupRuleKcpBgpName = strings.Replace(DefaultSecurityGroupRuleKcpBgpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleKubeletKcpName = strings.Replace(DefaultSecurityGroupRuleKubeletKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupKcpName = strings.Replace(DefaultSecurityGroupKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleLbName = strings.Replace(DefaultSecurityGroupRuleLbName, DefaultClusterName, network.ClusterName, -1)
@@ -881,30 +875,20 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			FromPortRange: DefaultFromPortRangeNodeIpKcp,
 			ToPortRange:   DefaultToPortRangeNodeIpKcp,
 		}
-		
-		securityGroupRuleKwBgpKw := OscSecurityGroupRule{
-			Name: securityGroupRuleKwBgpKwName,
-			Flow: DefaultFlowKwBgp,
-			IpProtocol: DefaultIpProtocolKwBgp,
-			IpRange: DefaultRuleIpRangeKwBgp,
+
+		securityGroupRuleKwBgp := OscSecurityGroupRule{
+			Name:          securityGroupRuleKwBgpName,
+			Flow:          DefaultFlowKwBgp,
+			IpProtocol:    DefaultIpProtocolKwBgp,
+			IpRange:       DefaultRuleIpRangeKwBgp,
 			FromPortRange: DefaultFromPortRangeKwBgp,
-			ToPortRange: DefaultToPortRangeKwBgp,
+			ToPortRange:   DefaultToPortRangeKwBgp,
 		}
-		
-		securityGroupRuleKwBgpKcp := OscSecurityGroupRule{
-			Name: securityGroupRuleKwBgpKcpName,
-			Flow: DefaultFlowKcpBgp,
-			IpProtocol: DefaultIpProtocolKcpBgp,
-			IpRange: DefaultRuleIpRangeKcpBgp,
-			FromPortRange: DefaultFromPortRangeKcpBgp,
-			ToPortRange: DefaultToPortRangeKcpBgp,
-		}
-	
-	
+
 		securityGroupKw := OscSecurityGroup{
 			Name:               securityGroupKwName,
 			Description:        DefaultDescriptionKw,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleApiKubeletKw, securityGroupRuleApiKubeletKcp, securityGroupRuleNodeIpKw, securityGroupRuleNodeIpKcp, securityGroupRuleKwBgpKw, securityGroupRuleKwBgpKcp},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleApiKubeletKw, securityGroupRuleApiKubeletKcp, securityGroupRuleNodeIpKw, securityGroupRuleNodeIpKcp, securityGroupRuleKwBgp},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKw)
 
@@ -943,29 +927,20 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			FromPortRange: DefaultFromPortRangeKubeletKcp,
 			ToPortRange:   DefaultToPortRangeKubeletKcp,
 		}
-		
-		securityGroupRuleKcpBgpKcp := OscSecurityGroupRule{
-			Name: securityGroupRuleKcpBgpKcpName,
-			Flow: DefaultFlowKcpBgp,
-			IpProtocol: DefaultIpProtocolKcpBgp,
-			IpRange: DefaultRuleIpRangeKcpBgp,
+
+		securityGroupRuleKcpBgp := OscSecurityGroupRule{
+			Name:          securityGroupRuleKcpBgpName,
+			Flow:          DefaultFlowKcpBgp,
+			IpProtocol:    DefaultIpProtocolKcpBgp,
+			IpRange:       DefaultRuleIpRangeKcpBgp,
 			FromPortRange: DefaultFromPortRangeKcpBgp,
-			ToPortRange: DefaultToPortRangeKcpBgp,
+			ToPortRange:   DefaultToPortRangeKcpBgp,
 		}
-		
-		securityGroupRuleKcpBgpKw := OscSecurityGroupRule {
-			Name: securityGroupRuleKcpBgpKwName,
-			Flow: DefaultFlowKwBgp,
-			IpProtocol: DefaultIpProtocolKwBgp,
-			IpRange: DefaultRuleIpRangeKwBgp,
-			FromPortRange: DefaultFromPortRangeKwBgp,
-			ToPortRange: DefaultToPortRangeKwBgp,
-		}
-	
+
 		securityGroupKcp := OscSecurityGroup{
 			Name:               securityGroupKcpName,
 			Description:        DefaultDescriptionKcp,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleEtcd, securityGroupRuleKubeletKcp, securityGroupRuleKcpBgpKcp, securityGroupRuleKcpBgpKw},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleEtcd, securityGroupRuleKubeletKcp, securityGroupRuleKcpBgp},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKcp)
 

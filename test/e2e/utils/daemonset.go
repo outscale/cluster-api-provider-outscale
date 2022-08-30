@@ -20,15 +20,16 @@ type DaemonSetInput struct {
 }
 
 type CreateDaemonSetInput struct {
-	Getter    client.Client
-	Name      string
-	Namespace string
-	Image     string
+	Getter     client.Client
+	Name       string
+	Namespace  string
+	Image      string
 	SecretName string
-	SecretKey string
-	Port      int32
+	SecretKey  string
+	Port       int32
 }
 
+// GetDaemonSet retrieve daemonset
 func GetDaemonSet(ctx context.Context, input DaemonSetInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in GetDaemonSet")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in GetDaemonSet")
@@ -45,6 +46,7 @@ func GetDaemonSet(ctx context.Context, input DaemonSetInput) bool {
 	return true
 }
 
+// DeleteDaemonSet delete daemonset
 func DeleteDaemonSet(ctx context.Context, input DaemonSetInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in DeleteDaemonSet")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in DeleteDaemonSet")
@@ -65,6 +67,7 @@ func DeleteDaemonSet(ctx context.Context, input DaemonSetInput) bool {
 	return true
 }
 
+// CreateDaemonSet create daemonset
 func CreateDaemonSet(ctx context.Context, input CreateDaemonSetInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namesppace in CreateDaemonSet")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in CreateDaemonSet")
@@ -142,6 +145,7 @@ func CreateDaemonSet(ctx context.Context, input CreateDaemonSetInput) bool {
 	return true
 }
 
+// WaitForDaemonSetAvailable wait for daemonset to be available
 func WaitForDaemonSetAvailable(ctx context.Context, input DaemonSetInput) {
 	By(fmt.Sprintf("Waiting for daemonset %s to be available", input.Name))
 	Eventually(func() bool {
@@ -150,6 +154,7 @@ func WaitForDaemonSetAvailable(ctx context.Context, input DaemonSetInput) {
 	}, 15*time.Second, 3*time.Second).Should(BeTrue(), "Failed to find deployment %s", input.Name)
 }
 
+// WaitForCreateDaemonSetAvailable  wait for daemonset to be created
 func WaitForCreateDaemonSetAvailable(ctx context.Context, input CreateDaemonSetInput) {
 	By(fmt.Sprintf("Wait for daemonSet %s to be created and be available", input.Name))
 	Eventually(func() bool {
@@ -158,6 +163,7 @@ func WaitForCreateDaemonSetAvailable(ctx context.Context, input CreateDaemonSetI
 	}, 2*time.Minute, 10*time.Second).Should(BeTrue(), "Failed to create daemonSet %s", input.Name)
 }
 
+// WaitForDeleteDaemonSetAvailable wait for daemonset to be deleted
 func WaitForDeleteDaemonSetAvailable(ctx context.Context, input DaemonSetInput) {
 	By(fmt.Sprintf("Wait for daemonset M%s to be deleted", input.Name))
 	Eventually(func() bool {

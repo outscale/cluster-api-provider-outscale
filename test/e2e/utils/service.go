@@ -25,6 +25,7 @@ type CreateServiceInput struct {
 	TargetPort      int
 }
 
+// GetService retrieve service
 func GetService(ctx context.Context, input ServiceInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in getService")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in getService")
@@ -41,6 +42,7 @@ func GetService(ctx context.Context, input ServiceInput) bool {
 	return true
 }
 
+// DeleteService delete service
 func DeleteService(ctx context.Context, input ServiceInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in deleteService")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in deleteService")
@@ -61,6 +63,7 @@ func DeleteService(ctx context.Context, input ServiceInput) bool {
 	return true
 }
 
+// CreateService create service
 func CreateService(ctx context.Context, input CreateServiceInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in CreateService")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in CreateService")
@@ -102,6 +105,7 @@ func CreateService(ctx context.Context, input CreateServiceInput) bool {
 	return true
 }
 
+// WaitForServiceAvailable wait for service to be available
 func WaitForServiceAvailable(ctx context.Context, input ServiceInput) {
 	By(fmt.Sprintf("Waiting for service %s to be available", input.Name))
 	Eventually(func() bool {
@@ -110,6 +114,7 @@ func WaitForServiceAvailable(ctx context.Context, input ServiceInput) {
 	}, 15*time.Second, 3*time.Second).Should(BeTrue(), "Failed to find service %s", input.Name)
 }
 
+// WaitForCreateServiceAvailable wait for service to be created
 func WaitForCreateServiceAvailable(ctx context.Context, input CreateServiceInput) {
 	By(fmt.Sprintf("Wait for secret %s to be created and available", input.Name))
 	Eventually(func() bool {
@@ -118,6 +123,7 @@ func WaitForCreateServiceAvailable(ctx context.Context, input CreateServiceInput
 	}, 2*time.Minute, 3*time.Second).Should(BeTrue(), "Failed to create service %s", input.Name)
 }
 
+// WaitForDeleteServiceAvailable wait for service to be deleted
 func WaitForDeleteServiceAvailable(ctx context.Context, input ServiceInput) {
 	By(fmt.Sprintf("Wait for service %s to be deleted", input.Name))
 	Eventually(func() bool {

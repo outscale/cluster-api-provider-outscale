@@ -246,6 +246,8 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	networkSpec := clusterScope.GetNetwork()
+	clusterName := networkSpec.ClusterName
 
 	clusterScope.Info("Get list of all desired routetable in net", "netId", netId)
 	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(netId)
@@ -297,7 +299,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 				continue
 			}
 			clusterScope.Info("Create the desired routetable", "routeTableName", routeTableName)
-			routeTable, err := routeTableSvc.CreateRouteTable(netId, netName, routeTableName)
+			routeTable, err := routeTableSvc.CreateRouteTable(netId, clusterName, routeTableName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create routetable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}

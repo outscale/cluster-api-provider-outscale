@@ -21,6 +21,7 @@ type CreateConfigMapInput struct {
 	Name, Namespace, DataKey, DataValue string
 }
 
+// GetConfigMap retrieve configmap
 func GetConfigMap(ctx context.Context, input ConfigMapInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in GetConfigMap")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in GetConfigMap")
@@ -37,6 +38,7 @@ func GetConfigMap(ctx context.Context, input ConfigMapInput) bool {
 	return true
 }
 
+// DeleteConfigMap delete configmap
 func DeleteConfigMap(ctx context.Context, input ConfigMapInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in deleteConfigMap")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in DeleteConfigMap")
@@ -57,6 +59,7 @@ func DeleteConfigMap(ctx context.Context, input ConfigMapInput) bool {
 	return true
 }
 
+// CreateConfigMap create configmap
 func CreateConfigMap(ctx context.Context, input CreateConfigMapInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in CreateConfigMap")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in CreaeConfigMap")
@@ -87,6 +90,7 @@ func CreateConfigMap(ctx context.Context, input CreateConfigMapInput) bool {
 	return true
 }
 
+// WaitForConfigMapsAvailable wait confimap to be available
 func WaitForConfigMapsAvailable(ctx context.Context, input ConfigMapInput) {
 	By(fmt.Sprintf("Waiting for configmap %s to be available", input.Name))
 	Eventually(func() bool {
@@ -95,6 +99,7 @@ func WaitForConfigMapsAvailable(ctx context.Context, input ConfigMapInput) {
 	}, 15*time.Second, 3*time.Second).Should(BeTrue(), "Failed to find configMap %s", input.Name)
 }
 
+// WaitForCreateConfigMapAvailable wait creation of configmap to be available
 func WaitForCreateConfigMapAvailable(ctx context.Context, input CreateConfigMapInput) {
 	By(fmt.Sprintf("Wait for configmap %s to be created and available", input.Name))
 	Eventually(func() bool {
@@ -103,6 +108,7 @@ func WaitForCreateConfigMapAvailable(ctx context.Context, input CreateConfigMapI
 	}, 2*time.Minute, 10*time.Second).Should(BeTrue(), "Failed to create configmap %s", input.Name)
 }
 
+// WaitForDeleteConfigMapAvailable wait deletion of configmap
 func WaitForDeleteConfigMapAvailable(ctx context.Context, input ConfigMapInput) {
 	By(fmt.Sprintf("Wait for configMap %s to be deleted", input.Name))
 	Eventually(func() bool {

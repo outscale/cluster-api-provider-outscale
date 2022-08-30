@@ -242,6 +242,8 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	networkSpec := clusterScope.GetNetwork()
+	clusterName := networkSpec.ClusterName
 
 	clusterScope.Info("Get list of all desired securitygroup in net", "netId", netId)
 	securityGroupIds, err := securityGroupSvc.GetSecurityGroupIdsFromNetIds(netId)
@@ -270,7 +272,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if !Contains(securityGroupIds, securityGroupId) {
 			clusterScope.Info("Find securitygroup", "securityGroup", securityGroupId)
 			clusterScope.Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
-			securityGroup, err := securityGroupSvc.CreateSecurityGroup(netId, netName, securityGroupName, securityGroupDescription)
+			securityGroup, err := securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription)
 			clusterScope.Info("### Get securityGroup", "securityGroup", securityGroup)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())

@@ -342,19 +342,16 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		netSpec := clusterScope.GetNet()
-		netSpec.SetDefaultValue()
-		netName := netSpec.Name + "-" + clusterScope.GetUID()
+		clusterName := vmSpec.ClusterName
 
 		privateDnsName, ok := vm.GetPrivateDnsNameOk()
 		if !ok {
 			return reconcile.Result{}, fmt.Errorf("Can not found privateDnsName %s/%s", machineScope.GetNamespace(), machineScope.GetName())
 		}
-		err = vmSvc.AddCcmTag(netName, *privateDnsName, vmId)
+		err = vmSvc.AddCcmTag(clusterName, *privateDnsName, vmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w can not add ccm tag %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
-
 		vmState, err := vmSvc.GetVmState(vmId)
 		if err != nil {
 			machineScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
@@ -385,18 +382,15 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		machineScope.Info("Vm is running", "vmId", vmID)
 		machineScope.SetVmState(infrastructurev1beta1.VmState("pending"))
 		if vmSpec.VolumeName != "" {
-
 			err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			machineScope.Info("Volume is available", "volumeId", volumeId)
-
 			err = volumeSvc.LinkVolume(volumeId, vmID, vmVolumeDeviceName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}
-
 			machineScope.Info("Volume is linked", "volumeId", volumeId)
 			err = volumeSvc.CheckVolumeState(5, 60, "in-use", volumeId)
 			machineScope.Info("Volume is in-use", "volumeId", volumeId)

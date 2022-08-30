@@ -1,6 +1,6 @@
 ---
 images:
-  - name: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:tilt-e3da6fad9919c065 
+  - name: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:tilt-1f539afd5798289c 
     loadBehavior: mustLoad
 providers:
   - name: cluster-api
@@ -53,7 +53,7 @@ providers:
       contract: v1beta1
       replacements:
         - old: controller:latest 
-          new: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:tilt-e3da6fad9919c065
+          new: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:tilt-1f539afd5798289c
         - old: "imagePullPolicy: Always"
           new: "imagePullPolicy: IfNotPresent"
       files:

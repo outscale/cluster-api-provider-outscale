@@ -100,12 +100,12 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 				Node: OscNode{
 					Vm: OscVm{
 						RootDisk: OscRootDisk{
-							RootDiskType: "gp3",
+							RootDiskType: "ssd1",
 						},
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: diskType: Invalid value: \"gp3\": Invalid volumeType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: diskType: Invalid value: \"ssd1\": Invalid volumeType"),
 		},
 		{
 			name: "create with bad volumeType",
@@ -116,13 +116,13 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 							Name:          "test-webhook",
 							Iops:          20,
 							Size:          30,
-							VolumeType:    "gp3",
+							VolumeType:    "ssd1",
 							SubregionName: "eu-west-2a",
 						},
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"gp3\": Invalid volumeType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"ssd1\": Invalid volumeType"),
 		},
 		{
 			name: "create with bad subregionName",

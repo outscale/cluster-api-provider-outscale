@@ -13,13 +13,13 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_net/net_mock.go -package mock_net -source ./net.go
 
 type OscNetInterface interface {
-	CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error)
+	CreateNet(spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error)
 	DeleteNet(netId string) error
 	GetNet(netId string) (*osc.Net, error)
 }
 
 // CreateNet create the net from spec (in order to retrieve ip range)
-func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) (*osc.Net, error) {
+func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error) {
 	ipRange, err := infrastructurev1beta1.ValidateCidr(spec.IpRange)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, netName string) 
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	err = tag.AddTag("OscK8sClusterID/"+netName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
