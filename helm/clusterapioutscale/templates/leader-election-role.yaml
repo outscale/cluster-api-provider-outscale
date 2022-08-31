@@ -1,0 +1,47 @@
+{{- if .Values.clusterapioutscale.leaderElectionRole.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.leaderElectionRole }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
+    app: "{{ template "clusterapioutscale.fullname" $root }}"
+    chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    release: "{{ $root.Release.Name }}"
+  name: {{ template "clusterapioutscale.leaderElectionRole" $root }}
+  namespace:  {{ $root.Release.Namespace }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+ {{- end }}
+{{- end }} 

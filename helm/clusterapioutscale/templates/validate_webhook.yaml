@@ -1,0 +1,72 @@
+{{- if .Values.clusterapioutscale.validatingWebhook.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.validatingWebhook }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: {{ $root.Release.Namespace }}/{{ template "clusterapioutscale.fullname" $root }}-serving-cert
+  name: {{ template "clusterapioutscale.validatingwebhook" $root }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "clusterapioutscale.webhookservice" $root }}
+      namespace:  {{ $root.Release.Namespace }}
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate
+  failurePolicy: Fail
+  name: voscclustertemplate.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscclustertemplates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ template "clusterapioutscale.webhookservice" $root }}
+      namespace: {{ $root.Release.Namespace }}
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine
+  failurePolicy: Fail
+  name: voscmachine.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscmachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name:  {{ template "clusterapioutscale.webhookservice" $root }}
+      namespace: {{ $root.Release.Namespace }}
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate
+  failurePolicy: Fail
+  name: voscmachinetemplate.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscmachinetemplates
+  sideEffects: None
+  {{- end }}
+{{- end }}
