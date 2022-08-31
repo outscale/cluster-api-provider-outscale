@@ -1,0 +1,28 @@
+{{- if .Values.clusterapioutscale.proxyClusterRole.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.proxyClusterRole }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
+    app: "{{ template "clusterapioutscale.fullname" $root }}"
+    chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    release: "{{ $root.Release.Name }}"
+  name: {{ template "clusterapioutscale.proxyClusterRole" $root }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+  {{- end }}
+{{- end }} 
+

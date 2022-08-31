@@ -1,0 +1,21 @@
+{{- if .Values.clusterapioutscale.webhookservice.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.webhookservice }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: {{ template "clusterapioutscale.controllermanager" $root }}
+    app: "{{ template "clusterapioutscale.fullname" $root }}"
+    chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+  name: {{ template "clusterapioutscale.webhookservice" $root }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: {{ template "clusterapioutscale.controllermanager" $root }}
+  {{- end }}
+{{- end }} 

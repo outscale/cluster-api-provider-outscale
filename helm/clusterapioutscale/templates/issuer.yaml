@@ -1,0 +1,17 @@
+{{- if .Values.clusterapioutscale.issuer.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.issuer }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
+    app: "{{ template "clusterapioutscale.fullname" $root }}"
+    chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    release: "{{ $root.Release.Name }}"
+  name: {{ template "clusterapioutscale.issuer" $root }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  selfSigned: {}
+  {{- end }}
+{{- end }} 
