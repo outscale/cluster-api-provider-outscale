@@ -1,0 +1,20 @@
+{{- if .Values.clusterapioutscale.managerClusterRoleBinding.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.managerClusterRoleBinding }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    release: "{{ $root.Release.Name }}"
+  name: {{ template "clusterapioutscale.managerClusterRoleBinding" $root }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "clusterapioutscale.managerClusterRole" $root }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "clusterapioutscale.serviceAccount" $root }}
+  namespace: {{ $root.Release.Namespace }}
+  {{- end }}
+{{- end }} 

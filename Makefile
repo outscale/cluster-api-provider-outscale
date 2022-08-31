@@ -132,6 +132,10 @@ docker-build-dev: ## Generate and Build docker image with the manager
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+##@ Docs
+.PHONY: helm-docs
+helm-docs: ## Generate helm docs
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:latest
 
 ##@ Deployment
 

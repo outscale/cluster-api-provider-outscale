@@ -10,6 +10,8 @@ on:
       - "!capm.yaml"
       - "!osc-secret.yaml"
       - "!example/**.yaml" 
+      - "!testclean/**"
+      - "!helm/**"
       - "Makefile"
   pull_request_target:
     branches: [ main ]
