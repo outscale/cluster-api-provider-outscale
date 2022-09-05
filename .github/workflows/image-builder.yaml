@@ -1,8 +1,6 @@
 name: image-builder
 
-on:
-  schedule:
-    - cron: "0 6 */14 * *"
+on: push
 jobs:
   image-builder:
     runs-on: [self-hosted, linux]
@@ -29,8 +27,8 @@ jobs:
       shell: bash
       working-directory: "${{ github.workspace }}/add-outscale-image/images/capi"
       env:
-         OUTSCALE_ACCESSKEYID: ${{secrets.OSC_ACCESS_KEY}}
-         OUTSCALE_SECRETKEYID: ${{secrets.OSC_SECRET_KEY}}   
+         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
+         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}   
          OUTSCALE_REGION: ${{secrets.OSC_REGION}}
          CRYPTOGRAPHY_DONT_BUILD_RUST: 1
          PACKER_LOG: 1 
