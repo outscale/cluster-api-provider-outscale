@@ -161,6 +161,11 @@ func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceMa
 	return &m.OscMachine.Status.Node.LinkPublicIpRef
 }
 
+// GetKeyPair return the keypair of the cluster
+func (m *MachineScope) GetKeypair() *infrastructurev1beta1.OscKeypair {
+	return &m.OscMachine.Spec.Node.KeyPair
+}
+
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &m.OscMachine.Status.Node.VolumeRef
@@ -169,6 +174,11 @@ func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapRefer
 // GetVmRef get the status of vm (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &m.OscMachine.Status.Node.VmRef
+}
+
+// GetKeyPairRef get the status of key pair (a Map with tag name with machine uid associate with resource response id)
+func (m *MachineScope) GetKeypairRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &m.OscMachine.Status.Node.KeypairRef
 }
 
 // IsControlPlane check if it is control plane

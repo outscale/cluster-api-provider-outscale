@@ -1,7 +1,14 @@
 package v1beta1
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	base64 "encoding/base64"
+	"log"
 	"strings"
+
+	"golang.org/x/crypto/ssh"
 )
 
 type OscNode struct {
@@ -325,6 +332,8 @@ var (
 
 	DefaultClusterName string = "cluster-api"
 
+	DefaultKeypairName string = "cluster-api-keypair"
+
 	DefaultVmSubregionName    string = "eu-west-2a"
 	DefaultVmImageId          string = "ami-2fe74243"
 	DefaultVmKeypairName      string = "cluster-api"
@@ -508,6 +517,25 @@ func (node *OscNode) SetVolumeDefaultValue() {
 			}
 		}
 		node.Volumes = append(node.Volumes, &volume)
+	}
+}
+
+// SetKeyPairDefaultValue set the KeyPair default values
+func (node *OscNode) SetKeyPairDefaultValue() {
+	if len(node.KeyPair.PublicKey) == 0 {
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		node.KeyPair.PublicKey = base64.StdEncoding.EncodeToString(ssh.MarshalAuthorizedKey(publicKey))
+	}
+	if len(node.KeyPair.Name) == 0 {
+		node.KeyPair.Name = DefaultKeypairName
 	}
 }
 
