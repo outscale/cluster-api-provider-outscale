@@ -81,6 +81,11 @@ func (r *OscMachineReconciler) getVmSvc(ctx context.Context, scope scope.Cluster
 	return compute.NewService(ctx, &scope)
 }
 
+// getImageSvc retrieve imageSvc
+func (r *OscMachineReconciler) getImageSvc(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
+	return compute.NewService(ctx, &scope)
+}
+
 // getPublicIpSvc retrieve publicIpSvc
 func (r *OscMachineReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
 	return security.NewService(ctx, &scope)
@@ -94,6 +99,11 @@ func (r *OscMachineReconciler) getSecurityGroupSvc(ctx context.Context, scope sc
 // getLoadBalancerSvc retrieve loadBalancerSvc
 func (r *OscMachineReconciler) getLoadBalancerSvc(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
 	return service.NewService(ctx, &scope)
+}
+
+// getKeyPairSvc retrieve keypairSvc
+func (r *OscMachineReconciler) getKeyPairSvc(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface {
+	return security.NewService(ctx, &scope)
 }
 
 func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -206,6 +216,11 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
 	}
 
+	keypairName, err := checkKeypairFormatParameters(machineScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, keypairName, machineScope.GetNamespace(), machineScope.GetName())
+	}
+
 	duplicateResourceVolumeErr := checkVolumeOscDuplicateName(machineScope)
 	if duplicateResourceVolumeErr != nil {
 		return reconcile.Result{}, duplicateResourceVolumeErr
@@ -252,12 +267,26 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, checkVmVolumeSubregionNameErr
 	}
 
+	imageSvc := r.getImageSvc(ctx, *clusterScope)
+	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
+	if err != nil {
+		machineScope.Error(err, "failed to reconcile Image")
+		return reconcileImage, err
+	}
+
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
 	reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile volume")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcileVolume, err
+	}
+
+	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
+	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
+	if err != nil {
+		machineScope.Error(err, "failed to reconcile keypair")
+		return reconcileKeypair, err
 	}
 
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
@@ -318,6 +347,11 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
 		return reconcileDeleteVm, err
+	}
+	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
+	reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, keypairSvc)
+	if err != nil {
+		return reconcileDeleteKeyPair, err
 	}
 	controllerutil.RemoveFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil
