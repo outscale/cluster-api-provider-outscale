@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 check_kind_installed() {
 	if ! [ -x "$(command -v kind)" ]; then
