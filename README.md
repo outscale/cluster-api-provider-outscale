@@ -9,7 +9,7 @@ The Cluster API is used to create, manage and configure cluster using a declarat
 The Cluster API allows you to deploy kubernetes across multiple cloud provider. The cluster api provider outscale allows you a outscale deployment of kubernetes.
 
 ## Project Status
- 
+
 Thee project is Work in Progress,  in an Alpha state.
 
 
@@ -23,7 +23,7 @@ The provider version has currently been tested with the following version of Clu
 The provider version has currently been tested with the following version of kubernetes:
 |                 | Outscale Provider v1beta1 (v0.1) |
 | --------------- | ------------------------------------- |
-| Kubernetes 1.22 |  ✓                                    | 
+| Kubernetes 1.22 |  ✓                                    |
 
 # Features
 

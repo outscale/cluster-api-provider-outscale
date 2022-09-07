@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1beta1
 
 import (
@@ -8,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TestOscMachineTemplate_ValidateCreate check good and bad update of oscMachineTemplate
+// TestOscMachineTemplate_ValidateCreate check good and bad update of oscMachineTemplate.
 func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 	machineTestCases := []struct {
 		name                 string
@@ -19,11 +35,11 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create Valid Vm Spec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						ImageId:     "ami-01234567",
+					VM: OscVM{
+						ImageID:     "ami-01234567",
 						KeypairName: "test-webhook",
 						DeviceName:  "/dev/xvdb",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 				},
 			},
@@ -33,45 +49,45 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with bad keypairName",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "rke λ",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": Invalid KeypairName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": invalid KeypairName"),
 		},
 		{
 			name: "create with bad imageId",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "omi-00000000",
+					VM: OscVM{
+						ImageID: "omi-00000000",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: imageId: Invalid value: \"omi-00000000\": Invalid imageId"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: imageId: Invalid value: \"omi-00000000\": invalid imageId"),
 		},
 		{
 			name: "create with bad deviceName",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						DeviceName: "/dev/xvaa",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: deviceName: Invalid value: \"/dev/xvaa\": Invalid deviceName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: deviceName: Invalid value: \"/dev/xvaa\": invalid deviceName"),
 		},
 		{
 			name: "create with bad vmType",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						VmType: "oscv4.c2r4p2",
+					VM: OscVM{
+						VMType: "oscv4.c2r4p2",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": Invalid vmType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": invalid vmType"),
 		},
 		{
 			name: "create with bad iops",
@@ -88,7 +104,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: invalid iops"),
 		},
 		{
 			name: "create with bad size",
@@ -105,7 +121,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -30: Invalid size"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -30: invalid size"),
 		},
 		{
 			name: "create with bad volumeType",
@@ -122,7 +138,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"gp3\": Invalid volumeType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"gp3\": invalid volumeType"),
 		},
 		{
 			name: "create with bad subregionName",
@@ -139,7 +155,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": Invalid subregionName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": invalid subregionName"),
 		},
 		{
 			name: "create with good io1 volumeSpec",
@@ -204,7 +220,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 	}
 }
 
-// TestOscMachineTemplate_ValidateUpdate check good and bad update of oscMachineTemplate
+// TestOscMachineTemplate_ValidateUpdate check good and bad update of oscMachineTemplate.
 func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 	machineTestCases := []struct {
 		name                 string
@@ -216,11 +232,11 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 			name: "Update only oscMachineTemplate name",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook",
-						ImageId:     "ami-00000000",
+						ImageID:     "ami-00000000",
 						DeviceName:  "/dev/xvda",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 					Volumes: []*OscVolume{
 						{
@@ -235,11 +251,11 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook",
-						ImageId:     "ami-00000000",
+						ImageID:     "ami-00000000",
 						DeviceName:  "/dev/xvda",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 					Volumes: []*OscVolume{
 						{
@@ -258,25 +274,25 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 			name: "update one element (keypair)",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook-1",
-						ImageId:     "ami-00000000",
+						ImageID:     "ami-00000000",
 						DeviceName:  "/dev/xvda",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 				},
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook-2",
-						ImageId:     "ami-00000000",
+						ImageID:     "ami-00000000",
 						DeviceName:  "/dev/xvda",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 				},
 			},
-			expValidateUpdateErr: fmt.Errorf("OscMachineTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: OscMachineTemplate.spec.template.spec: Invalid value: v1beta1.OscMachineTemplate{TypeMeta:v1.TypeMeta{Kind:\"\", APIVersion:\"\"}, ObjectMeta:v1.ObjectMeta{Name:\"webhook-test\", GenerateName:\"\", Namespace:\"default\", SelfLink:\"\", UID:\"\", ResourceVersion:\"\", Generation:0, CreationTimestamp:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), DeletionTimestamp:<nil>, DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string(nil), Annotations:map[string]string(nil), OwnerReferences:[]v1.OwnerReference(nil), Finalizers:[]string(nil), ClusterName:\"\", ManagedFields:[]v1.ManagedFieldsEntry(nil)}, Spec:v1beta1.OscMachineTemplateSpec{Template:v1beta1.OscMachineTemplateResource{ObjectMeta:v1beta1.ObjectMeta{Labels:map[string]string(nil), Annotations:map[string]string(nil)}, Spec:v1beta1.OscMachineSpec{ProviderID:(*string)(nil), Node:v1beta1.OscNode{Vm:v1beta1.OscVm{Name:\"\", ImageId:\"ami-00000000\", KeypairName:\"test-webhook-2\", VmType:\"tinav4.c2r4p2\", VolumeName:\"\", DeviceName:\"/dev/xvda\", SubnetName:\"\", LoadBalancerName:\"\", PublicIpName:\"\", SubregionName:\"\", PrivateIps:[]v1beta1.OscPrivateIpElement(nil), SecurityGroupNames:[]v1beta1.OscSecurityGroupElement(nil), ResourceId:\"\", Role:\"\", ClusterName:\"\"}, Image:v1beta1.OscImage{Name:\"\", ResourceId:\"\"}, Volumes:[]*v1beta1.OscVolume(nil), KeyPair:v1beta1.OscKeypair{Name:\"\", PublicKey:\"\", ResourceId:\"\", ClusterName:\"\"}, ClusterName:\"\"}}}}}: OscMachineTemplate spec.template.spec field is immutable."),
+			expValidateUpdateErr: fmt.Errorf("OscMachineTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: OscMachineTemplate.spec.template.spec: Invalid value: v1beta1.OscMachineTemplate{TypeMeta:v1.TypeMeta{Kind:\"\", APIVersion:\"\"}, ObjectMeta:v1.ObjectMeta{Name:\"webhook-test\", GenerateName:\"\", Namespace:\"default\", SelfLink:\"\", UID:\"\", ResourceVersion:\"\", Generation:0, CreationTimestamp:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), DeletionTimestamp:<nil>, DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string(nil), Annotations:map[string]string(nil), OwnerReferences:[]v1.OwnerReference(nil), Finalizers:[]string(nil), ClusterName:\"\", ManagedFields:[]v1.ManagedFieldsEntry(nil)}, Spec:v1beta1.OscMachineTemplateSpec{Template:v1beta1.OscMachineTemplateResource{ObjectMeta:v1beta1.ObjectMeta{Labels:map[string]string(nil), Annotations:map[string]string(nil)}, Spec:v1beta1.OscMachineSpec{ProviderID:(*string)(nil), Node:v1beta1.OscNode{VM:v1beta1.OscVM{Name:\"\", ImageID:\"ami-00000000\", KeypairName:\"test-webhook-2\", VMType:\"tinav4.c2r4p2\", VolumeName:\"\", DeviceName:\"/dev/xvda\", SubnetName:\"\", LoadBalancerName:\"\", PublicIPName:\"\", SubregionName:\"\", PrivateIPS:[]v1beta1.OscPrivateIPElement(nil), SecurityGroupNames:[]v1beta1.OscSecurityGroupElement(nil), ResourceID:\"\", Role:\"\", ClusterName:\"\"}, Image:v1beta1.OscImage{Name:\"\", ResourceID:\"\"}, Volumes:[]*v1beta1.OscVolume(nil), KeyPair:v1beta1.OscKeypair{Name:\"\", PublicKey:\"\", ResourceID:\"\", ClusterName:\"\"}, ClusterName:\"\"}}}}}: OscMachineTemplate spec.template.spec field is immutable."),
 		},
 	}
 	for _, mtc := range machineTestCases {
@@ -293,7 +309,7 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 	}
 }
 
-// createOscInfraMachineTemplate create oscInfraMachineTemplate
+// createOscInfraMachineTemplate create oscInfraMachineTemplate.
 func createOscInfraMachineTemplate(infraMachineSpec OscMachineSpec, name string, namespace string) *OscMachineTemplate {
 	oscInfraMachineTemplate := &OscMachineTemplate{
 		Spec: OscMachineTemplateSpec{

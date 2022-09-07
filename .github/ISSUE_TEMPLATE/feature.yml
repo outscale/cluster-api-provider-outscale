@@ -7,26 +7,26 @@ assignees:
 body:
   - type: textarea
     id: explain
-    attributes: 
-      label: Explain problem to solve 
+    attributes:
+      label: Explain problem to solve
       description: Which problem your feature request will solve ?
       placeholder: Explain with a clear and concise description
     validations:
       required: true
   - type: textarea
     id: describe
-    attributes: 
+    attributes:
       label: Describe the solution you would like
-      description: Describe with a clear and concise description 
+      description: Describe with a clear and concise description
     validations:
       required: true
   - type: textarea
     id: context
     attributes:
-      label: Additional context      
-      description: Any context about your feature request that will allow us to understand your feature request 
+      label: Additional context
+      description: Any context about your feature request that will allow us to understand your feature request
     validations:
-      required: true	
+      required: true
   - type: textarea
     id: env
     attributes:
@@ -42,14 +42,14 @@ body:
           - **Kubernetes Distribution**: rke
           - **Kubernetes Distribution Version**:  v1.3.10
       value: |
-          - Kubernetes version: (use `kubectl version`):
-          - OS (e.g. from `/etc/os-release`):
-          - Kernel (e.g. `uname -a`):
-          - cluster-api-provider-outscale version:
-          - cluster-api version:
-          - Install tools:
-          - Kubernetes Distribution:
-          - Kubernetes Diestribution version:
+        - Kubernetes version: (use `kubectl version`):
+        - OS (e.g. from `/etc/os-release`):
+        - Kernel (e.g. `uname -a`):
+        - cluster-api-provider-outscale version:
+        - cluster-api version:
+        - Install tools:
+        - Kubernetes Distribution:
+        - Kubernetes Diestribution version:
       render: markdown
     validations:
       required: true

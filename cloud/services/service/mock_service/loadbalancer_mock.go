@@ -36,18 +36,18 @@ func (m *MockOscLoadBalancerInterface) EXPECT() *MockOscLoadBalancerInterfaceMoc
 	return m.recorder
 }
 
-// CheckLoadBalancerDeregisterVm mocks base method.
-func (m *MockOscLoadBalancerInterface) CheckLoadBalancerDeregisterVm(clockInsideLoop, clockLoop time.Duration, spec *v1beta1.OscLoadBalancer) error {
+// CheckLoadBalancerDeregisterVM mocks base method.
+func (m *MockOscLoadBalancerInterface) CheckLoadBalancerDeregisterVM(clockInsideLoop, clockLoop time.Duration, spec *v1beta1.OscLoadBalancer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckLoadBalancerDeregisterVm", clockInsideLoop, clockLoop, spec)
+	ret := m.ctrl.Call(m, "CheckLoadBalancerDeregisterVM", clockInsideLoop, clockLoop, spec)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CheckLoadBalancerDeregisterVm indicates an expected call of CheckLoadBalancerDeregisterVm.
-func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerDeregisterVm(clockInsideLoop, clockLoop, spec interface{}) *gomock.Call {
+// CheckLoadBalancerDeregisterVM indicates an expected call of CheckLoadBalancerDeregisterVM.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerDeregisterVM(clockInsideLoop, clockLoop, spec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLoadBalancerDeregisterVm", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CheckLoadBalancerDeregisterVm), clockInsideLoop, clockLoop, spec)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLoadBalancerDeregisterVM", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CheckLoadBalancerDeregisterVM), clockInsideLoop, clockLoop, spec)
 }
 
 // ConfigureHealthCheck mocks base method.
@@ -66,18 +66,18 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) ConfigureHealthCheck(spec in
 }
 
 // CreateLoadBalancer mocks base method.
-func (m *MockOscLoadBalancerInterface) CreateLoadBalancer(spec *v1beta1.OscLoadBalancer, subnetId, securityGroupId string) (*osc.LoadBalancer, error) {
+func (m *MockOscLoadBalancerInterface) CreateLoadBalancer(spec *v1beta1.OscLoadBalancer, subnetID, securityGroupID string) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateLoadBalancer", spec, subnetId, securityGroupId)
+	ret := m.ctrl.Call(m, "CreateLoadBalancer", spec, subnetID, securityGroupID)
 	ret0, _ := ret[0].(*osc.LoadBalancer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateLoadBalancer indicates an expected call of CreateLoadBalancer.
-func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancer(spec, subnetId, securityGroupId interface{}) *gomock.Call {
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancer(spec, subnetID, securityGroupID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLoadBalancer", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CreateLoadBalancer), spec, subnetId, securityGroupId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLoadBalancer", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CreateLoadBalancer), spec, subnetID, securityGroupID)
 }
 
 // DeleteLoadBalancer mocks base method.

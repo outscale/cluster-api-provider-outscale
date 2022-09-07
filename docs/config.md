@@ -1,6 +1,6 @@
 # Cluster-template
 There are a relationship between controller
- 
+
 # Configuration
 
 ## cluster infrastructure controller OscCluster
@@ -36,24 +36,24 @@ spec:
         routes:
           - name: cluster-api-routes
             targetName: cluster-api-internetservice
-            targetType: gateway 
+            targetType: gateway
             destination: "0.0.0.0/0"
     securityGroups:
       - name: cluster-api-securitygroups
-        description: Security Group with cluster-api   
+        description: Security Group with cluster-api
         securityGroupRules:
           - name: cluste-api-securitygrouprule
             flow: Inbound
             ipProtocol: tcp
             ipRange: "46.231.147.5/32"
             fromPortRange: 22
-            toPortRange: 22 
+            toPortRange: 22
 ```
 ### loadBalancer
 
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
-| `loadbalancername`| `OscClusterApi-1` | false | The Load Balancer  unique name 
+| `loadbalancername`| `OscClusterApi-1` | false | The Load Balancer  unique name
 | `subregionname` | `eu-west-2a` | false | The SubRegion Name where the Load Balancer will be created
 | `listener` | `` | false | The Listener Spec
 | `healthcheck` | `` | false | The healthcheck Spec

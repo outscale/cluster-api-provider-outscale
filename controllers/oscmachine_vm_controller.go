@@ -1,8 +1,26 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -13,12 +31,11 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
 )
 
 // getVmResourceId return the vmId from the resourceMap base on resourceName (tag name + cluster uid)
 func getVmResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
-	vmRef := machineScope.GetVmRef()
+	vmRef := machineScope.GetVMRef()
 	if vmId, ok := vmRef.ResourceMap[resourceName]; ok {
 		return vmId, nil
 	} else {
@@ -26,11 +43,11 @@ func getVmResourceId(resourceName string, machineScope *scope.MachineScope) (str
 	}
 }
 
-// checkVmVolumeOscAssociateResourceName check that Volume dependancies tag name in both resource configuration are the same.
-func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) error {
+// checkVMVolumeOscAssociateResourceName check that Volume dependancies tag name in both resource configuration are the same.
+func checkVMVolumeOscAssociateResourceName(machineScope *scope.MachineScope) error {
 	var resourceNameList []string
 	machineScope.Info("check match volume with vm")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
 	vmVolumeName := vmSpec.VolumeName + "-" + machineScope.GetUID()
 	volumesSpec := machineScope.GetVolume()
@@ -46,11 +63,11 @@ func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) err
 	}
 }
 
-// checkVmLoadBalancerOscAssociateResourceName  check that LoadBalancer dependancies tag name in both resource configuration are the same.
-func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
+// checkVMLoadBalancerOscAssociateResourceName  check that LoadBalancer dependancies tag name in both resource configuration are the same.
+func checkVMLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	machineScope.Info("check match loadbalancer with vm")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
 	vmLoadBalancerName := vmSpec.LoadBalancerName + "-" + clusterScope.GetUID()
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -68,9 +85,9 @@ func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScop
 
 }
 
-func checkVmVolumeSubregionName(machineScope *scope.MachineScope) error {
+func checkVMVolumeSubregionName(machineScope *scope.MachineScope) error {
 	machineScope.Info("check have the same subregionName for vm and for volume")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
 	vmVolumeName := vmSpec.VolumeName
 	volumeSubregionName := machineScope.GetVolumeSubregionName(vmVolumeName)
@@ -83,15 +100,15 @@ func checkVmVolumeSubregionName(machineScope *scope.MachineScope) error {
 	}
 }
 
-// checkVmSecurityGroupOscAssociateResourceName check that SecurityGroup dependancies tag name in both resource configuration are the same.
-func checkVmSecurityGroupOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
+// checkVMSecurityGroupOscAssociateResourceName check that SecurityGroup dependancies tag name in both resource configuration are the same.
+func checkVMSecurityGroupOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	var vmSecurityGroupNameList []string
 	var checkOscAssociate bool
 	machineScope.Info("check match securityGroup with vm")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
-	vmSecurityGroups := machineScope.GetVmSecurityGroups()
+	vmSecurityGroups := machineScope.GetVMSecurityGroups()
 	for _, vmSecurityGroup := range *vmSecurityGroups {
 		vmSecurityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
 		vmSecurityGroupNameList = append(vmSecurityGroupNameList, vmSecurityGroupName)
@@ -110,11 +127,11 @@ func checkVmSecurityGroupOscAssociateResourceName(machineScope *scope.MachineSco
 	return nil
 }
 
-// checkVmSubnetOscAssociateResourceName check that Subnet dependancies tag name in both resource configuration are the same.
-func checkVmSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
+// checkVMSubnetOscAssociateResourceName check that Subnet dependancies tag name in both resource configuration are the same.
+func checkVMSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	machineScope.Info("check match subnet with vm")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
 	vmSubnetName := vmSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetsSpec := clusterScope.GetSubnet()
@@ -130,38 +147,38 @@ func checkVmSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clu
 	}
 }
 
-// checkVmPublicIpOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
-func checkVmPublicIpOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
+// checkVMPublicIPOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
+func checkVMPublicIPOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	machineScope.Info("check match publicip with vm")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
-	vmPublicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-	publicIpsSpec := clusterScope.GetPublicIp()
+	vmPublicIPName := vmSpec.PublicIPName + "-" + clusterScope.GetUID()
+	publicIpsSpec := clusterScope.GetPublicIP()
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, publicIpName)
 	}
-	checkOscAssociate := Contains(resourceNameList, vmPublicIpName)
+	checkOscAssociate := Contains(resourceNameList, vmPublicIPName)
 	if checkOscAssociate {
 		return nil
 	} else {
-		return fmt.Errorf("%s publicIp does not exist in vm", vmPublicIpName)
+		return fmt.Errorf("%s publicIp does not exist in vm", vmPublicIPName)
 	}
 }
 
-//checkVmFormatParameters check Volume parameters format
-func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (string, error) {
+// checkVMFormatParameters check Volume parameters format
+func checkVMFormatParameters(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (string, error) {
 	machineScope.Info("Check Vm parameters")
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
 	vmTagName, err := tag.ValidateTagNameValue(vmName)
 	if err != nil {
 		return vmTagName, err
 	}
-	vmImageId := vmSpec.ImageId
-	_, err = infrastructurev1beta1.ValidateImageId(vmImageId)
+	vmImageID := vmSpec.ImageID
+	_, err = infrastructurev1beta1.ValidateImageID(vmImageID)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -172,8 +189,8 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 		return vmTagName, err
 	}
 
-	vmType := vmSpec.VmType
-	_, err = infrastructurev1beta1.ValidateVmType(vmType)
+	vmType := vmSpec.VMType
+	_, err = infrastructurev1beta1.ValidateVMType(vmType)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -192,23 +209,23 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 
 	vmSubnetName := vmSpec.SubnetName
 	machineScope.Info("Get vmSubnetName", "vmSubnetName", vmSubnetName)
-	ipSubnetRange := clusterScope.GetIpSubnetRange(vmSubnetName)
-	vmPrivateIps := machineScope.GetVmPrivateIps()
+	ipSubnetRange := clusterScope.GetIPSubnetRange(vmSubnetName)
+	vmPrivateIps := machineScope.GetVMPrivateIPS()
 	var subnetsSpec []*infrastructurev1beta1.OscSubnet
 	networkSpec := clusterScope.GetNetwork()
 	networkSpec.SetSubnetDefaultValue()
 	subnetsSpec = networkSpec.Subnets
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name
-		ipSubnetRange := subnetSpec.IpSubnetRange
-		machineScope.Info("Get IpSubnetRange", "ipSubnetRange", ipSubnetRange)
+		ipSubnetRange := subnetSpec.IPSubnetRange
+		machineScope.Info("Get IPSubnetRange", "ipSubnetRange", ipSubnetRange)
 		machineScope.Info("Get SubnetName", "subnetName", subnetName)
 	}
 	for _, vmPrivateIp := range *vmPrivateIps {
-		privateIp := vmPrivateIp.PrivateIp
+		privateIp := vmPrivateIp.PrivateIP
 		machineScope.Info("### Get Valid IP", "privateIp", privateIp)
 		machineScope.Info("### Get Valiid subnet ###", "ipSubnetRange", ipSubnetRange)
-		_, err := compute.ValidateIpAddrInCidr(privateIp, ipSubnetRange)
+		_, err := compute.ValidateIPAddrInCidr(privateIp, ipSubnetRange)
 		if err != nil {
 			return vmTagName, err
 		}
@@ -217,11 +234,11 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	return "", nil
 }
 
-// checkVmPrivateIpOscDuplicateName check that there are not the same name for vm resource
-func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
+// checkVMPrivateIPOscDuplicateName check that there are not the same name for vm resource
+func checkVMPrivateIPOscDuplicateName(machineScope *scope.MachineScope) error {
 	machineScope.Info("check unique privateIp")
 	var resourceNameList []string
-	vmPrivateIps := machineScope.GetVmPrivateIps()
+	vmPrivateIps := machineScope.GetVMPrivateIPS()
 	for _, vmPrivateIp := range *vmPrivateIps {
 		privateIpName := vmPrivateIp.Name
 		resourceNameList = append(resourceNameList, privateIpName)
@@ -235,52 +252,52 @@ func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
 }
 
 // reconcileVm reconcile the vm of the machine
-func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVMInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIPInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	machineScope.Info("Create Vm")
-	vmSpec := machineScope.GetVm()
-	vmRef := machineScope.GetVmRef()
+	vmSpec := machineScope.GetVM()
+	vmRef := machineScope.GetVMRef()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
 
 	volumeName := vmSpec.VolumeName + "-" + machineScope.GetUID()
-	volumeId, err := getVolumeResourceId(volumeName, machineScope)
+	volumeId, err := getVolumeResourceID(volumeName, machineScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	subnetName := vmSpec.SubnetName + "-" + clusterScope.GetUID()
-	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
+	subnetId, err := getSubnetResourceID(subnetName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	var publicIpId string
-	var vmPublicIpName string
+	var vmPublicIPName string
 	var linkPublicIpRef *infrastructurev1beta1.OscResourceMapReference
-	if vmSpec.PublicIpName != "" {
-		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)
+	if vmSpec.PublicIPName != "" {
+		vmPublicIPName = vmSpec.PublicIPName + "-" + clusterScope.GetUID()
+		publicIpId, err = getPublicIPResourceID(vmPublicIPName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		linkPublicIpRef = machineScope.GetLinkPublicIpRef()
+		linkPublicIpRef = machineScope.GetLinkPublicIPRef()
 		if len(linkPublicIpRef.ResourceMap) == 0 {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 		}
 	}
 	var privateIps []string
-	vmPrivateIps := machineScope.GetVmPrivateIps()
+	vmPrivateIps := machineScope.GetVMPrivateIPS()
 	for _, vmPrivateIp := range *vmPrivateIps {
-		privateIp := vmPrivateIp.PrivateIp
+		privateIp := vmPrivateIp.PrivateIP
 		privateIps = append(privateIps, privateIp)
 
 	}
 
 	var securityGroupIds []string
-	vmSecurityGroups := machineScope.GetVmSecurityGroups()
+	vmSecurityGroups := machineScope.GetVMSecurityGroups()
 	for _, vmSecurityGroup := range *vmSecurityGroups {
 		machineScope.Info("Get vmSecurityGroup", "vmSecurityGroup", vmSecurityGroup)
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+		securityGroupId, err := getSecurityGroupResourceID(securityGroupName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -295,41 +312,41 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	if len(vmRef.ResourceMap) == 0 {
 		vmRef.ResourceMap = make(map[string]string)
 	}
-	machineScope.Info("### Get ResourceId ###", "resourceId", vmSpec.ResourceId)
+	machineScope.Info("### Get ResourceId ###", "resourceId", vmSpec.ResourceID)
 	machineScope.Info("### Get ResourceMap ###", "resourceMap", vmRef.ResourceMap)
-	if vmSpec.ResourceId != "" {
-		vmRef.ResourceMap[vmName] = vmSpec.ResourceId
-		vmId := vmSpec.ResourceId
+	if vmSpec.ResourceID != "" {
+		vmRef.ResourceMap[vmName] = vmSpec.ResourceID
+		vmId := vmSpec.ResourceID
 		machineScope.Info("Check if the desired vm exist", "vmName", vmName)
 		machineScope.Info("### Get VmId ####", "vm", vmRef.ResourceMap)
-		vm, err = vmSvc.GetVm(vmId)
+		vm, err = vmSvc.GetVM(vmId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		vmState, err := vmSvc.GetVmState(vmId)
+		vmState, err := vmSvc.GetVMState(vmId)
 		if err != nil {
-			machineScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
+			machineScope.SetVMState(infrastructurev1beta1.VMState("unknown"))
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s state for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
 		}
-		machineScope.SetVmState(infrastructurev1beta1.VmState(vmState))
+		machineScope.SetVMState(infrastructurev1beta1.VMState(vmState))
 		machineScope.Info("Get vm state", "vmState", vmState)
 	}
-	if vm == nil || vmSpec.ResourceId == "" {
+	if vm == nil || vmSpec.ResourceID == "" {
 		machineScope.Info("Create the desired vm", "vmName", vmName)
-		imageId := vmSpec.ImageId
+		imageId := vmSpec.ImageID
 		keypairName := vmSpec.KeypairName
-		vmType := vmSpec.VmType
-		machineScope.Info("### Info ImageId ###", "imageId", imageId)
+		vmType := vmSpec.VMType
+		machineScope.Info("### Info ImageID ###", "imageId", imageId)
 		machineScope.Info("### Info keypairName ###", "keypairName", keypairName)
 		machineScope.Info("### Info vmType ####", "vmType", vmType)
 
-		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName)
+		vm, err := vmSvc.CreateVM(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
 
 		vmID = vm.GetVmId()
-		err = vmSvc.CheckVmState(5, 120, "running", vmID)
+		err = vmSvc.CheckVMState(5, 120, "running", vmID)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
@@ -341,7 +358,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 		machineScope.Info("Volume is available", "volumeId", volumeId)
 
-		machineScope.SetVmState(infrastructurev1beta1.VmState("pending"))
+		machineScope.SetVMState(infrastructurev1beta1.VMState("pending"))
 		err = volumeSvc.LinkVolume(volumeId, vmID, vmDeviceName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmID, machineScope.GetNamespace(), machineScope.GetName())
@@ -354,21 +371,21 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 		machineScope.Info("Volume is in-use", "volumeId", volumeId)
 
-		err = vmSvc.CheckVmState(5, 60, "running", vmID)
+		err = vmSvc.CheckVMState(5, 60, "running", vmID)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
 		machineScope.Info("Vm is running again", "vmId", vmID)
 
-		if vmSpec.PublicIpName != "" {
-			linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmID)
+		if vmSpec.PublicIPName != "" {
+			linkPublicIpId, err := publicIpSvc.LinkPublicIP(publicIpId, vmID)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with %s for OscCluster %s/%s", err, publicIpId, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			machineScope.Info("Link public ip", "linkPublicIpId", linkPublicIpId)
-			linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
+			linkPublicIpRef.ResourceMap[vmPublicIPName] = linkPublicIpId
 
-			err = vmSvc.CheckVmState(5, 60, "running", vmID)
+			err = vmSvc.CheckVMState(5, 60, "running", vmID)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}
@@ -406,33 +423,33 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 		machineScope.Info("#### Get Vm ###", "vm", vm)
 		vmRef.ResourceMap[vmName] = vmID
-		vmSpec.ResourceId = vmID
+		vmSpec.ResourceID = vmID
 		machineScope.SetProviderID(vmID)
 	}
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteVm reconcile the destruction of the vm of the machine
-func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVMInterface, publicIpSvc security.OscPublicIPInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	oscmachine := machineScope.OscMachine
 	machineScope.Info("Delete vm")
 
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
 
-	vmId := vmSpec.ResourceId
+	vmId := vmSpec.ResourceID
 	machineScope.Info("### VmiD ###", "vmId", vmId)
 	vmName := vmSpec.Name
-	vm, err := vmSvc.GetVm(vmId)
+	vm, err := vmSvc.GetVM(vmId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	var securityGroupIds []string
-	vmSecurityGroups := machineScope.GetVmSecurityGroups()
+	vmSecurityGroups := machineScope.GetVMSecurityGroups()
 	for _, vmSecurityGroup := range *vmSecurityGroups {
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+		securityGroupId, err := getSecurityGroupResourceID(securityGroupName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -443,21 +460,21 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		controllerutil.RemoveFinalizer(oscmachine, "")
 		return reconcile.Result{}, nil
 	}
-	if vmSpec.PublicIpName != "" {
-		linkPublicIpRef := machineScope.GetLinkPublicIpRef()
-		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		err = vmSvc.CheckVmState(5, 120, "running", vmId)
+	if vmSpec.PublicIPName != "" {
+		linkPublicIpRef := machineScope.GetLinkPublicIPRef()
+		publicIpName := vmSpec.PublicIPName + "-" + clusterScope.GetUID()
+		err = vmSvc.CheckVMState(5, 120, "running", vmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
 		}
-		err = publicIpSvc.UnlinkPublicIp(linkPublicIpRef.ResourceMap[publicIpName])
+		err = publicIpSvc.UnlinkPublicIP(linkPublicIpRef.ResourceMap[publicIpName])
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
 
 	}
 	if vmSpec.LoadBalancerName != "" {
-		err = vmSvc.CheckVmState(5, 60, "running", vmId)
+		err = vmSvc.CheckVMState(5, 60, "running", vmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
 		}
@@ -491,7 +508,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 	}
 
-	err = vmSvc.DeleteVm(vmId)
+	err = vmSvc.DeleteVM(vmId)
 	machineScope.Info("Delete the desired vm", "vmName", vmName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())

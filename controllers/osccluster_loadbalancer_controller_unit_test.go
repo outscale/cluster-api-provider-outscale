@@ -1,16 +1,30 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
-	"testing"
-
 	"fmt"
+	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"time"
-
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
@@ -21,12 +35,12 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -37,8 +51,8 @@ var (
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
-							IpProtocol:    "tcp",
-							IpRange:       "0.0.0.0/0",
+							IPProtocol:    "tcp",
+							IPRange:       "0.0.0.0/0",
 							FromPortRange: 6443,
 							ToPortRange:   6443,
 						},
@@ -58,27 +72,27 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-uid",
 				},
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
-					ResourceId:  "sg-test-securitygroup-uid",
+					ResourceID:  "sg-test-securitygroup-uid",
 					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
-							IpProtocol:    "tcp",
-							IpRange:       "0.0.0.0/0",
+							IPProtocol:    "tcp",
+							IPRange:       "0.0.0.0/0",
 							FromPortRange: 6443,
 							ToPortRange:   6443,
 						},
@@ -122,12 +136,12 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -138,8 +152,8 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -202,7 +216,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("test-loadbalancer@test is an invalid loadBalancer name: Invalid Description"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("test-loadbalancer@test is an invalid loadBalancer name: invalid Description"),
 		},
 		{
 			name: "check invalid type loadBalancer",
@@ -216,7 +230,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("internet is an invalid loadBalancer type: Invalid LoadBalancerType"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("internet is an invalid loadBalancer type: invalid LoadBalancerType"),
 		},
 		{
 			name: "check invalid backend port loadBalancer",
@@ -232,7 +246,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an Invalid Port for loadBalancer backend"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an invalid Port for loadBalancer backend"),
 		},
 		{
 			name: "check invalid backend protocol loadBalancer",
@@ -248,7 +262,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an Invalid protocol for loadBalancer backend"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an invalid protocol for loadBalancer backend"),
 		},
 		{
 			name: "check invalid loadBalancer port",
@@ -264,7 +278,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an Invalid Port for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an invalid Port for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer protocol",
@@ -280,7 +294,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an Invalid protocol for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an invalid protocol for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer health check interval",
@@ -298,7 +312,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("602 is an Invalid Interval for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("602 is an invalid Interval for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck healthy threshold",
@@ -316,7 +330,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("12 is an Invalid threshold for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("12 is an invalid threshold for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck port",
@@ -334,7 +348,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an Invalid Port for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an invalid Port for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck protocol",
@@ -352,7 +366,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an Invalid protocol for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an invalid protocol for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck timeout",
@@ -370,7 +384,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("62 is an Invalid Timeout for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("62 is an invalid Timeout for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck unhealthy threshold",
@@ -388,7 +402,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("12 is an Invalid threshold for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("12 is an invalid threshold for loadBalancer"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -424,12 +438,12 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -440,8 +454,8 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -752,8 +766,8 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 	}
 }
 
-// TestReconcileLoadBalancerResourceId has several tests to cover the code of the function reconcileLoadBalancer
-func TestReconcileLoadBalancerResourceId(t *testing.T) {
+// TestReconcileLoadBalancerResourceID has several tests to cover the code of the function reconcileLoadBalancer
+func TestReconcileLoadBalancerResourceID(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
@@ -824,7 +838,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 		expLoadBalancerFound                bool
 		expDescribeLoadBalancerErr          error
 		expDeleteLoadBalancerErr            error
-		expCheckLoadBalancerDeregisterVmErr error
+		expCheckLoadBalancerDeregisterVMErr error
 		expReconcileDeleteLoadBalancerErr   error
 	}{
 		{
@@ -833,7 +847,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 			expLoadBalancerFound:                true,
 			expDeleteLoadBalancerErr:            nil,
 			expDescribeLoadBalancerErr:          nil,
-			expCheckLoadBalancerDeregisterVmErr: nil,
+			expCheckLoadBalancerDeregisterVMErr: nil,
 			expReconcileDeleteLoadBalancerErr:   nil,
 		},
 		{
@@ -842,7 +856,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 			expLoadBalancerFound:                true,
 			expDeleteLoadBalancerErr:            fmt.Errorf("DeleteLoadBalancer generic error"),
 			expDescribeLoadBalancerErr:          nil,
-			expCheckLoadBalancerDeregisterVmErr: nil,
+			expCheckLoadBalancerDeregisterVMErr: nil,
 			expReconcileDeleteLoadBalancerErr:   fmt.Errorf("DeleteLoadBalancer generic error Can not delete loadBalancer for Osccluster test-system/test-osc"),
 		},
 	}
@@ -878,8 +892,8 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				CheckLoadBalancerDeregisterVm(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(&loadBalancerSpec)).
-				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
+				CheckLoadBalancerDeregisterVM(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(&loadBalancerSpec)).
+				Return(lbtc.expCheckLoadBalancerDeregisterVMErr)
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if err != nil {
@@ -900,7 +914,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 		expLoadBalancerFound                bool
 		expDescribeLoadBalancerErr          error
 		expDeleteLoadBalancerErr            error
-		expCheckLoadBalancerDeregisterVmErr error
+		expCheckLoadBalancerDeregisterVMErr error
 		expReconcileDeleteLoadBalancerErr   error
 	}{
 		{
@@ -909,7 +923,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 			expLoadBalancerFound:                true,
 			expDescribeLoadBalancerErr:          nil,
 			expDeleteLoadBalancerErr:            nil,
-			expCheckLoadBalancerDeregisterVmErr: nil,
+			expCheckLoadBalancerDeregisterVMErr: nil,
 			expReconcileDeleteLoadBalancerErr:   nil,
 		},
 	}
@@ -940,8 +954,8 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				CheckLoadBalancerDeregisterVm(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(loadBalancerSpec)).
-				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
+				CheckLoadBalancerDeregisterVM(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(loadBalancerSpec)).
+				Return(lbtc.expCheckLoadBalancerDeregisterVMErr)
 			mockOscLoadBalancerInterface.
 				EXPECT().
 				DeleteLoadBalancer(gomock.Eq(loadBalancerSpec)).
@@ -964,7 +978,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 		spec                                infrastructurev1beta1.OscClusterSpec
 		expLoadBalancerFound                bool
 		expDescribeLoadBalancerErr          error
-		expCheckLoadBalancerDeregisterVmErr error
+		expCheckLoadBalancerDeregisterVMErr error
 		expReconcileDeleteLoadBalancerErr   error
 	}{
 		{
@@ -972,8 +986,8 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 			spec:                                defaultLoadBalancerReconcile,
 			expLoadBalancerFound:                true,
 			expDescribeLoadBalancerErr:          nil,
-			expCheckLoadBalancerDeregisterVmErr: fmt.Errorf("CheckLoadBalancerDeregisterVm generic error"),
-			expReconcileDeleteLoadBalancerErr:   fmt.Errorf("CheckLoadBalancerDeregisterVm generic error VmBackend is not deregister in loadBalancer test-loadbalancer for OscCluster test-system/test-osc"),
+			expCheckLoadBalancerDeregisterVMErr: fmt.Errorf("CheckLoadBalancerDeregisterVM generic error"),
+			expReconcileDeleteLoadBalancerErr:   fmt.Errorf("CheckLoadBalancerDeregisterVM generic error VmBackend is not deregister in loadBalancer test-loadbalancer for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1003,8 +1017,8 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				CheckLoadBalancerDeregisterVm(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(&loadBalancerSpec)).
-				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
+				CheckLoadBalancerDeregisterVM(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(&loadBalancerSpec)).
+				Return(lbtc.expCheckLoadBalancerDeregisterVMErr)
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if err != nil {

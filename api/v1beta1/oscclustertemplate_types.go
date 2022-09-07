@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,15 +21,15 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-// OscClusterTemplateSpec defines the desired state of OscClusterTemplate
+// OscClusterTemplateSpec defines the desired state of OscClusterTemplate.
 type OscClusterTemplateSpec struct {
 	Template OscClusterTemplateResource `json:"template"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 // +kubebuilder:resource:path=oscclustertemplates,scope=Namespaced,categories=cluster-api
 // +kubebuilder:storageversion
-// OscClusterTemplate is the Schema for the oscclustertemplates API
+// OscClusterTemplate is the Schema for the oscclustertemplates API.
 type OscClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -38,13 +38,14 @@ type OscClusterTemplate struct {
 
 //+kubebuilder:object:root=true
 
-// OscClusterTemplateList contains a list of OscClusterTemplate
+// OscClusterTemplateList contains a list of OscClusterTemplate.
 type OscClusterTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OscClusterTemplate `json:"items"`
 }
 
+// OscClusterTemplateResource is the resource of OscClusterTemplate.
 type OscClusterTemplateResource struct {
 	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty"`
 	Spec       OscClusterSpec       `json:"spec"`

@@ -51,30 +51,30 @@ func (mr *MockOscNetInterfaceMockRecorder) CreateNet(spec, netName interface{}) 
 }
 
 // DeleteNet mocks base method.
-func (m *MockOscNetInterface) DeleteNet(netId string) error {
+func (m *MockOscNetInterface) DeleteNet(netID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNet", netId)
+	ret := m.ctrl.Call(m, "DeleteNet", netID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteNet indicates an expected call of DeleteNet.
-func (mr *MockOscNetInterfaceMockRecorder) DeleteNet(netId interface{}) *gomock.Call {
+func (mr *MockOscNetInterfaceMockRecorder) DeleteNet(netID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNet", reflect.TypeOf((*MockOscNetInterface)(nil).DeleteNet), netId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNet", reflect.TypeOf((*MockOscNetInterface)(nil).DeleteNet), netID)
 }
 
 // GetNet mocks base method.
-func (m *MockOscNetInterface) GetNet(netId string) (*osc.Net, error) {
+func (m *MockOscNetInterface) GetNet(netID string) (*osc.Net, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNet", netId)
+	ret := m.ctrl.Call(m, "GetNet", netID)
 	ret0, _ := ret[0].(*osc.Net)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNet indicates an expected call of GetNet.
-func (mr *MockOscNetInterfaceMockRecorder) GetNet(netId interface{}) *gomock.Call {
+func (mr *MockOscNetInterfaceMockRecorder) GetNet(netID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNet", reflect.TypeOf((*MockOscNetInterface)(nil).GetNet), netId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNet", reflect.TypeOf((*MockOscNetInterface)(nil).GetNet), netID)
 }

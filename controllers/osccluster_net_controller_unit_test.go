@@ -1,20 +1,34 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
-
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"k8s.io/klog/v2/klogr"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -23,7 +37,7 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 		},
 	}
@@ -32,8 +46,8 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 		},
 	}
@@ -75,25 +89,25 @@ func SetupWithNetMock(t *testing.T, name string, spec infrastructurev1beta1.OscC
 	return clusterScope, ctx, mockOscNetInterface
 }
 
-// TestGetNetResourceId has several tests to cover the code of the function getNetResourceId
-func TestGetNetResourceId(t *testing.T) {
+// TestGetNetResourceID has several tests to cover the code of the function getNetResourceID
+func TestGetNetResourceID(t *testing.T) {
 	netTestCases := []struct {
 		name                   string
 		spec                   infrastructurev1beta1.OscClusterSpec
 		expNetFound            bool
-		expGetNetResourceIdErr error
+		expGetNetResourceIDErr error
 	}{
 		{
 			name:                   "get NetId",
 			spec:                   defaultNetInitialize,
 			expNetFound:            true,
-			expGetNetResourceIdErr: nil,
+			expGetNetResourceIDErr: nil,
 		},
 		{
 			name:                   "can not get netId",
 			spec:                   defaultNetInitialize,
 			expNetFound:            false,
-			expGetNetResourceIdErr: fmt.Errorf("test-net-uid does not exist"),
+			expGetNetResourceIDErr: fmt.Errorf("test-net-uid does not exist"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -106,13 +120,13 @@ func TestGetNetResourceId(t *testing.T) {
 				netRef.ResourceMap = make(map[string]string)
 				netRef.ResourceMap[netName] = netId
 			}
-			netResourceId, err := getNetResourceId(netName, clusterScope)
+			netResourceID, err := getNetResourceID(netName, clusterScope)
 			if err != nil {
-				assert.Equal(t, ntc.expGetNetResourceIdErr, err, "getNetResourceId() should return the same error")
+				assert.Equal(t, ntc.expGetNetResourceIDErr, err, "getNetResourceID() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expGetNetResourceIdErr)
+				assert.Nil(t, ntc.expGetNetResourceIDErr)
 			}
-			t.Logf("find netResourceId %s", netResourceId)
+			t.Logf("find netResourceID %s", netResourceID)
 		})
 	}
 }
@@ -142,7 +156,7 @@ func TestCheckNetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/36",
+						IPRange: "10.0.0.0/36",
 					},
 				},
 			},
@@ -154,7 +168,7 @@ func TestCheckNetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.256/16",
+						IPRange: "10.0.0.256/16",
 					},
 				},
 			},
@@ -166,11 +180,11 @@ func TestCheckNetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net@test",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 				},
 			},
-			expCheckNetFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNetFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -319,8 +333,8 @@ func TestReconcileNetGet(t *testing.T) {
 	}
 }
 
-// TestReconcileNetResourceId has several tests to cover the code of the function reconcileNet
-func TestReconcileNetResourceId(t *testing.T) {
+// TestReconcileNetResourceID has several tests to cover the code of the function reconcileNet
+func TestReconcileNetResourceID(t *testing.T) {
 	netTestCases := []struct {
 		name               string
 		spec               infrastructurev1beta1.OscClusterSpec
@@ -462,7 +476,7 @@ func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := "cluster-api-net-uid"
 			netId := "vpc-" + netName
-			clusterScope.OscCluster.Spec.Network.Net.ResourceId = netId
+			clusterScope.OscCluster.Spec.Network.Net.ResourceID = netId
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
 					NetId: &netId,

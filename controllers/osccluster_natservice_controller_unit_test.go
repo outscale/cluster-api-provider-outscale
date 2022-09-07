@@ -1,9 +1,24 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +26,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -18,20 +34,20 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			NatService: infrastructurev1beta1.OscNatService{
 				Name:         "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 				{
 					Name: "test-publicip",
 				},
@@ -43,25 +59,25 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 			NatService: infrastructurev1beta1.OscNatService{Name: "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet-test",
-				ResourceId:   "nat-test-natservice-uid",
+				ResourceID:   "nat-test-natservice-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-uid",
 				},
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 				{
 					Name:       "test-publicip",
-					ResourceId: "eipalloc-test-publicip-uid",
+					ResourceID: "eipalloc-test-publicip-uid",
 				},
 			},
 		},
@@ -77,25 +93,25 @@ func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1bet
 	return clusterScope, ctx, mockOscNatServiceInterface
 }
 
-// TestGetNatResourceId has several tests to cover the code of the function getNatResourceId
-func TestGetNatResourceId(t *testing.T) {
+// TestGetNatResourceID has several tests to cover the code of the function getNatResourceID
+func TestGetNatResourceID(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                   string
 		spec                   infrastructurev1beta1.OscClusterSpec
 		expNatServiceFound     bool
-		expGetNatResourceIdErr error
+		expGetNatResourceIDErr error
 	}{
 		{
 			name:                   "get natServiceId",
 			spec:                   defaultNatServiceInitialize,
 			expNatServiceFound:     true,
-			expGetNatResourceIdErr: nil,
+			expGetNatResourceIDErr: nil,
 		},
 		{
 			name:                   "can not get natServiceId",
 			spec:                   defaultNatServiceInitialize,
 			expNatServiceFound:     false,
-			expGetNatResourceIdErr: fmt.Errorf("test-natservice-uid does not exist"),
+			expGetNatResourceIDErr: fmt.Errorf("test-natservice-uid does not exist"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -110,14 +126,14 @@ func TestGetNatResourceId(t *testing.T) {
 				natServiceRef.ResourceMap[natServiceName] = natServiceId
 			}
 
-			natResourceId, err := getNatResourceId(natServiceName, clusterScope)
+			natResourceID, err := getNatResourceID(natServiceName, clusterScope)
 			if err != nil {
-				assert.Equal(t, nstc.expGetNatResourceIdErr, err, "GetNatResourceId() should return the same error")
+				assert.Equal(t, nstc.expGetNatResourceIDErr, err, "GetNatResourceId() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expGetNatResourceIdErr)
+				assert.Nil(t, nstc.expGetNatResourceIDErr)
 
 			}
-			t.Logf("find natResourceId %s", natResourceId)
+			t.Logf("find natResourceID %s", natResourceID)
 		})
 	}
 }
@@ -147,27 +163,27 @@ func TestCheckNatFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "test-natservice@test",
-						PublicIpName: "test-publicip",
+						PublicIPName: "test-publicip",
 						SubnetName:   "test-subnet",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "test-publicip",
 						},
 					},
 				},
 			},
-			expCheckNatFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNatFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 		{
 			name: "check Bad name publicIp",
@@ -175,27 +191,27 @@ func TestCheckNatFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "test-natservice",
-						PublicIpName: "test-publicip@test",
+						PublicIPName: "test-publicip@test",
 						SubnetName:   "test-subnet",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "test-publicip",
 						},
 					},
 				},
 			},
-			expCheckNatFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNatFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 		{
 			name: "Check BadName subnet",
@@ -203,28 +219,28 @@ func TestCheckNatFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "test-natservice",
-						PublicIpName: "test-publicip",
+						PublicIPName: "test-publicip",
 						SubnetName:   "test-subnet@test",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
-							ResourceId:    "subnet-test-subnet-uid",
+							IPSubnetRange: "10.0.0.0/24",
+							ResourceID:    "subnet-test-subnet-uid",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "test-publicip",
 						},
 					},
 				},
 			},
-			expCheckNatFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNatFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -266,21 +282,21 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "test-natservice@test",
-						PublicIpName: "test-publicip",
+						PublicIPName: "test-publicip",
 						SubnetName:   "test-subnet-test",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
-							ResourceId:    "subnet-test-subnet-uid",
+							IPSubnetRange: "10.0.0.0/24",
+							ResourceID:    "subnet-test-subnet-uid",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "test-publicip",
 						},
@@ -345,9 +361,9 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			natServiceRef := clusterScope.GetNatServiceRef()
 			natServiceRef.ResourceMap = make(map[string]string)
 
-			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
+			publicIpName := nstc.spec.Network.NatService.PublicIPName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
-			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef := clusterScope.GetPublicIPRef()
 			publicIpRef.ResourceMap = make(map[string]string)
 			if nstc.expPublicIpFound {
 				publicIpRef.ResourceMap[publicIpName] = publicIpId
@@ -431,9 +447,9 @@ func TestReconcileNatServiceGet(t *testing.T) {
 				natServiceRef.ResourceMap[natServiceName] = natServiceId
 			}
 
-			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
+			publicIpName := nstc.spec.Network.NatService.PublicIPName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
-			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef := clusterScope.GetPublicIPRef()
 			publicIpRef.ResourceMap = make(map[string]string)
 			if nstc.expPublicIpFound {
 				publicIpRef.ResourceMap[publicIpName] = publicIpId
@@ -481,8 +497,8 @@ func TestReconcileNatServiceGet(t *testing.T) {
 	}
 }
 
-// TestReconcileNatServiceResourceId has several tests to cover the code of the function reconcileNatService
-func TestReconcileNatServiceResourceId(t *testing.T) {
+// TestReconcileNatServiceResourceID has several tests to cover the code of the function reconcileNatService
+func TestReconcileNatServiceResourceID(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                      string
 		spec                      infrastructurev1beta1.OscClusterSpec
@@ -509,9 +525,9 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 		t.Run(nstc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
-			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
+			publicIpName := nstc.spec.Network.NatService.PublicIPName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
-			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef := clusterScope.GetPublicIPRef()
 			publicIpRef.ResourceMap = make(map[string]string)
 			if nstc.expPublicIpFound {
 				publicIpRef.ResourceMap[publicIpName] = publicIpId
@@ -562,11 +578,11 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 			natServiceRef.ResourceMap = make(map[string]string)
 			natServiceRef.ResourceMap[natServiceName] = natServiceId
 
-			clusterScope.OscCluster.Spec.Network.NatService.ResourceId = natServiceId
+			clusterScope.OscCluster.Spec.Network.NatService.ResourceID = natServiceId
 
 			publicIpName := "cluster-api-publicip-nat-uid"
 			publicIpId := "eipalloc-" + publicIpName
-			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef := clusterScope.GetPublicIPRef()
 			publicIpRef.ResourceMap = make(map[string]string)
 			publicIpRef.ResourceMap[publicIpName] = publicIpId
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Outscale SAS.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,18 +23,19 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
+// OscReplaceName replace name.
 func OscReplaceName(name string) string {
 	replacer := strings.NewReplacer(".", "-", "/", "-", "_", "-")
 	return replacer.Replace(name)
 }
 
-// OscClusterSpec defines the desired state of OscCluster
+// OscClusterSpec defines the desired state of OscCluster.
 type OscClusterSpec struct {
 	Network              OscNetwork            `json:"network,omitempty"`
 	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
 }
 
-// OscClusterStatus defines the observed state of OscCluster
+// OscClusterStatus defines the observed state of OscCluster.
 type OscClusterStatus struct {
 	Ready      bool                 `json:"ready,omitempty"`
 	Network    OscNetworkResource   `json:"network,omitempty"`
@@ -44,7 +45,7 @@ type OscClusterStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// OscCluster is the Schema for the oscclusters API
+// OscCluster is the Schema for the oscclusters API.
 type OscCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -55,7 +56,7 @@ type OscCluster struct {
 
 //+kubebuilder:object:root=true
 
-// OscClusterList contains a list of OscCluster
+// OscClusterList contains a list of OscCluster.
 type OscClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

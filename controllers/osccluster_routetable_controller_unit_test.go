@@ -1,18 +1,32 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
-	"testing"
-
 	"fmt"
-
-	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -20,12 +34,12 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
@@ -51,31 +65,31 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-uid",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
 				Name:       "test-internetservice",
-				ResourceId: "igw-test-interneetservice-uid",
+				ResourceID: "igw-test-interneetservice-uid",
 			},
 			NatService: infrastructurev1beta1.OscNatService{
 				Name:         "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet",
-				ResourceId:   "nat-test-natservice-uid",
+				ResourceID:   "nat-test-natservice-uid",
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
 					Name:       "test-routetable",
 					SubnetName: "test-subnet",
-					ResourceId: "rtb-test-routetable-uid",
+					ResourceID: "rtb-test-routetable-uid",
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
 							Name:        "test-route",
@@ -93,12 +107,12 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
@@ -106,7 +120,7 @@ var (
 			},
 			NatService: infrastructurev1beta1.OscNatService{
 				Name:         "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet",
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
@@ -130,31 +144,31 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-uid",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
 				Name:       "test-internetservice",
-				ResourceId: "igw-test-interneetservice-uid",
+				ResourceID: "igw-test-interneetservice-uid",
 			},
 			NatService: infrastructurev1beta1.OscNatService{
 				Name:         "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet",
-				ResourceId:   "nat-test-natservice-uid",
+				ResourceID:   "nat-test-natservice-uid",
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
 					Name:       "test-routetable",
 					SubnetName: "test-subnet",
-					ResourceId: "rtb-test-routetable-uid",
+					ResourceID: "rtb-test-routetable-uid",
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
 							Name:        "test-route",
@@ -172,12 +186,12 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
@@ -185,7 +199,7 @@ var (
 			},
 			NatService: infrastructurev1beta1.OscNatService{
 				Name:         "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet",
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
@@ -215,31 +229,31 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-uid",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
 				Name:       "test-internetservice",
-				ResourceId: "igw-test-internetservice-uid",
+				ResourceID: "igw-test-internetservice-uid",
 			},
 			NatService: infrastructurev1beta1.OscNatService{
 				Name:         "test-natservice",
-				PublicIpName: "test-publicip",
+				PublicIPName: "test-publicip",
 				SubnetName:   "test-subnet",
-				ResourceId:   "nat-test-natservice-uid",
+				ResourceID:   "nat-test-natservice-uid",
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
 					Name:       "test-routetable",
 					SubnetName: "test-subnet",
-					ResourceId: "rtb-test-routetable-uid",
+					ResourceID: "rtb-test-routetable-uid",
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
 							Name:        "test-route-nat",
@@ -269,25 +283,25 @@ func SetupWithRouteTableMock(t *testing.T, name string, spec infrastructurev1bet
 	return clusterScope, ctx, mockOscRouteTableInterface
 }
 
-// TestGettRouteTableResourceId has several tests to cover the code of the function getRouteTableResourceId
-func TestGetRouteTableResourceId(t *testing.T) {
+// TestGettRouteTableResourceID has several tests to cover the code of the function getRouteTableResourceID
+func TestGetRouteTableResourceID(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                          string
 		spec                          infrastructurev1beta1.OscClusterSpec
 		expRouteTablesFound           bool
-		expGetRouteTableResourceIdErr error
+		expGetRouteTableResourceIDErr error
 	}{
 		{
 			name:                          "get RouteTableId",
 			spec:                          defaultRouteTableGatewayInitialize,
 			expRouteTablesFound:           true,
-			expGetRouteTableResourceIdErr: nil,
+			expGetRouteTableResourceIDErr: nil,
 		},
 		{
 			name:                          "can not get RouteTableId",
 			spec:                          defaultRouteTableGatewayInitialize,
 			expRouteTablesFound:           false,
-			expGetRouteTableResourceIdErr: fmt.Errorf("test-routetable-uid does not exist"),
+			expGetRouteTableResourceIDErr: fmt.Errorf("test-routetable-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -303,37 +317,37 @@ func TestGetRouteTableResourceId(t *testing.T) {
 				if rttc.expRouteTablesFound {
 					routeTablesRef.ResourceMap[routeTableName] = routeTableId
 				}
-				routeTableResourceId, err := getRouteTableResourceId(routeTableName, clusterScope)
+				routeTableResourceID, err := getRouteTableResourceID(routeTableName, clusterScope)
 				if err != nil {
-					assert.Equal(t, rttc.expGetRouteTableResourceIdErr, err, "GetRouteTableResourceId() should return the same error")
+					assert.Equal(t, rttc.expGetRouteTableResourceIDErr, err, "GetRouteTableResourceID() should return the same error")
 				} else {
-					assert.Nil(t, rttc.expGetRouteTableResourceIdErr)
+					assert.Nil(t, rttc.expGetRouteTableResourceIDErr)
 				}
-				t.Logf("Find routeTableResourceId %s\n", routeTableResourceId)
+				t.Logf("Find routeTableResourceID %s\n", routeTableResourceID)
 			}
 		})
 	}
 }
 
-// TestGettRouteResourceId has several tests to cover the code of the function getRouteResourceId
-func TestGetRouteResourceId(t *testing.T) {
+// TestGettRouteResourceID has several tests to cover the code of the function getRouteResourceID
+func TestGetRouteResourceID(t *testing.T) {
 	routeTestCases := []struct {
 		name                     string
 		spec                     infrastructurev1beta1.OscClusterSpec
 		expRouteFound            bool
-		expGetRouteResourceIdErr error
+		expGetRouteResourceIDErr error
 	}{
 		{
 			name:                     "get RouteId",
 			spec:                     defaultRouteTableGatewayInitialize,
 			expRouteFound:            true,
-			expGetRouteResourceIdErr: nil,
+			expGetRouteResourceIDErr: nil,
 		},
 		{
 			name:                     "can not get RouteId",
 			spec:                     defaultRouteTableGatewayInitialize,
 			expRouteFound:            false,
-			expGetRouteResourceIdErr: fmt.Errorf("test-route-uid does not exist"),
+			expGetRouteResourceIDErr: fmt.Errorf("test-route-uid does not exist"),
 		},
 	}
 	for _, rtc := range routeTestCases {
@@ -351,13 +365,13 @@ func TestGetRouteResourceId(t *testing.T) {
 					if rtc.expRouteFound {
 						routeRef.ResourceMap[routeName] = routeTableId
 					}
-					routeResourceId, err := getRouteResourceId(routeName, clusterScope)
+					routeResourceID, err := getRouteResourceID(routeName, clusterScope)
 					if err != nil {
-						assert.Equal(t, rtc.expGetRouteResourceIdErr, err, "GetRouteResourceId() should return the same error")
+						assert.Equal(t, rtc.expGetRouteResourceIDErr, err, "GetRouteResourceID() should return the same error")
 					} else {
-						assert.Nil(t, rtc.expGetRouteResourceIdErr)
+						assert.Nil(t, rtc.expGetRouteResourceIDErr)
 					}
-					t.Logf("Find routeResourceId %s\n", routeResourceId)
+					t.Logf("Find routeResourceID %s\n", routeResourceID)
 				}
 			}
 		})
@@ -389,12 +403,12 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -457,12 +471,12 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -484,7 +498,7 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteTableFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckRouteTableFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -526,12 +540,12 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -553,7 +567,7 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckRouteFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 		{
 			name: "check Bad Ip Range IP route",
@@ -561,12 +575,12 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -596,12 +610,12 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -659,12 +673,12 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -744,12 +758,12 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -785,12 +799,12 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -826,12 +840,12 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -963,7 +977,7 @@ func TestReconcilerRouteCreate(t *testing.T) {
 				associateRouteTableId = routeTableId
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
+					destinationIPRange := routeSpec.Destination
 					resourceType := routeSpec.TargetType
 					if resourceType == "gateway" {
 						resourceId = internetServiceId
@@ -997,13 +1011,13 @@ func TestReconcilerRouteCreate(t *testing.T) {
 					if rttc.expCreateRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							CreateRoute(gomock.Eq(destinationIPRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(route.RouteTable, rttc.expCreateRouteErr)
 
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							CreateRoute(gomock.Eq(destinationIPRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expCreateRouteErr)
 					}
 					reconcileRoute, err := reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
@@ -1137,8 +1151,8 @@ func TestReconcileRouteGet(t *testing.T) {
 	}
 }
 
-// TestReconcileRouteResourceId has several tests to cover the code of the function reconcileRouteResourceId
-func TestReconcileRouteResourceId(t *testing.T) {
+// TestReconcileRouteResourceID has several tests to cover the code of the function reconcileRouteResourceID
+func TestReconcileRouteResourceID(t *testing.T) {
 	routeTestCases := []struct {
 		name                    string
 		spec                    infrastructurev1beta1.OscClusterSpec
@@ -1373,7 +1387,7 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
+					destinationIPRange := routeSpec.Destination
 					resourceType := routeSpec.TargetType
 					if resourceType == "gateway" {
 						resourceId = internetServiceId
@@ -1400,12 +1414,12 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 					if rttc.expCreateRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							CreateRoute(gomock.Eq(destinationIPRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(route.RouteTable, rttc.expCreateRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							CreateRoute(gomock.Eq(destinationIPRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expCreateRouteErr)
 					}
 					reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
@@ -1552,8 +1566,8 @@ func TestReconcileRouteTableGet(t *testing.T) {
 	}
 }
 
-// TestReconcileRouteTableResourceId has several tests to cover the code of the function reconcileRouteTable
-func TestReconcileRouteTableResourceId(t *testing.T) {
+// TestReconcileRouteTableResourceID has several tests to cover the code of the function reconcileRouteTable
+func TestReconcileRouteTableResourceID(t *testing.T) {
 	routeTestCases := []struct {
 		name                      string
 		spec                      infrastructurev1beta1.OscClusterSpec
@@ -1598,12 +1612,12 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -1843,7 +1857,7 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 				associateRouteTableId = routeTableId
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
+					destinationIPRange := routeSpec.Destination
 					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					routeRef.ResourceMap[routeName] = routeTableId
@@ -1878,7 +1892,7 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 					}
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+						DeleteRoute(gomock.Eq(destinationIPRange), gomock.Eq(routeTableId)).
 						Return(rttc.expDeleteRouteErr)
 
 					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
@@ -2009,8 +2023,8 @@ func TestReconcileDeleteRouteGet(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteRouteResourceId has several tests to cover the code of the function reconcileDeleteRoute
-func TestReconcileDeleteRouteResourceId(t *testing.T) {
+// TestReconcileDeleteRouteResourceID has several tests to cover the code of the function reconcileDeleteRoute
+func TestReconcileDeleteRouteResourceID(t *testing.T) {
 	routeTestCases := []struct {
 		name                       string
 		spec                       infrastructurev1beta1.OscClusterSpec
@@ -2158,7 +2172,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 				DeleteRouteTable(gomock.Eq(routeTableId)).
 				Return(rttc.expDeleteRouteTableErr)
 
-			destinationIpRange := "0.0.0.0/0"
+			destinationIPRange := "0.0.0.0/0"
 			resourceType := "nat"
 			routeName := "cluster-api-route-kw-uid"
 			routeRef.ResourceMap[routeName] = routeTableId
@@ -2188,7 +2202,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 
 			mockOscRouteTableInterface.
 				EXPECT().
-				DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+				DeleteRoute(gomock.Eq(destinationIPRange), gomock.Eq(routeTableId)).
 				Return(rttc.expDeleteRouteErr)
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if err != nil {
@@ -2331,7 +2345,7 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
+					destinationIPRange := routeSpec.Destination
 					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					if rttc.expRouteFound {
@@ -2368,7 +2382,7 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 					}
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+						DeleteRoute(gomock.Eq(destinationIPRange), gomock.Eq(routeTableId)).
 						Return(rttc.expDeleteRouteErr)
 				}
 			}
@@ -2556,7 +2570,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
+					destinationIPRange := routeSpec.Destination
 					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					routeRef.ResourceMap[routeName] = routeTableId
@@ -2584,7 +2598,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 						Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+						DeleteRoute(gomock.Eq(destinationIPRange), gomock.Eq(routeTableId)).
 						Return(rttc.expDeleteRouteErr).AnyTimes()
 				}
 			}
@@ -2668,7 +2682,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
+					destinationIPRange := routeSpec.Destination
 					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					routeRef.ResourceMap[routeName] = routeTableId
@@ -2696,7 +2710,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 						Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(destinationIpRange, routeTableId).
+						DeleteRoute(destinationIPRange, routeTableId).
 						Return(rttc.expDeleteRouteErr)
 				}
 			}
@@ -2712,8 +2726,8 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteRouteTableResourceId has several tests to cover the code of the function reconcileDeleteRouteTable
-func TestReconcileDeleteRouteTableResourceId(t *testing.T) {
+// TestReconcileDeleteRouteTableResourceID has several tests to cover the code of the function reconcileDeleteRouteTable
+func TestReconcileDeleteRouteTableResourceID(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                            string
 		spec                            infrastructurev1beta1.OscClusterSpec

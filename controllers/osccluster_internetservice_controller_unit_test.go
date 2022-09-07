@@ -1,18 +1,32 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
-	"testing"
-
 	"fmt"
-	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	osc "github.com/outscale/osc-sdk-go/v2"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -20,7 +34,7 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
 				Name: "test-internetservice",
@@ -32,12 +46,12 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
 				Name:       "test-internetservice",
-				ResourceId: "igw-test-internetservice-uid",
+				ResourceID: "igw-test-internetservice-uid",
 			},
 		},
 	}
@@ -52,25 +66,25 @@ func SetupWithInternetServiceMock(t *testing.T, name string, spec infrastructure
 	return clusterScope, ctx, mockOscInternetServiceInterface
 }
 
-// TestGetInternetServiceResourceId has several tests to cover the code of the function getInternetServiceResourceId
-func TestGetInternetServiceResourceId(t *testing.T) {
+// TestGetInternetServiceResourceID has several tests to cover the code of the function getInternetServiceResourceID
+func TestGetInternetServiceResourceID(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                               string
 		spec                               infrastructurev1beta1.OscClusterSpec
 		expInternetServiceFound            bool
-		expGetInternetServiceResourceIdErr error
+		expGetInternetServiceResourceIDErr error
 	}{
 		{
 			name:                               "get InternetServiceId",
 			spec:                               defaultInternetServiceInitialize,
 			expInternetServiceFound:            true,
-			expGetInternetServiceResourceIdErr: nil,
+			expGetInternetServiceResourceIDErr: nil,
 		},
 		{
 			name:                               "can not get InternetServiceId",
 			spec:                               defaultInternetServiceInitialize,
 			expInternetServiceFound:            false,
-			expGetInternetServiceResourceIdErr: fmt.Errorf("test-internetservice-uid does not exist"),
+			expGetInternetServiceResourceIDErr: fmt.Errorf("test-internetservice-uid does not exist"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -83,13 +97,13 @@ func TestGetInternetServiceResourceId(t *testing.T) {
 			if istc.expInternetServiceFound {
 				internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
 			}
-			internetServiceResourceId, err := getInternetServiceResourceId(internetServiceName, clusterScope)
+			internetServiceResourceID, err := getInternetServiceResourceID(internetServiceName, clusterScope)
 			if err != nil {
-				assert.Equal(t, istc.expGetInternetServiceResourceIdErr.Error(), err.Error(), "GetInternetServiceResourceId() should return the same error")
+				assert.Equal(t, istc.expGetInternetServiceResourceIDErr.Error(), err.Error(), "GetInternetServiceResourceId() should return the same error")
 			} else {
-				assert.Nil(t, istc.expGetInternetServiceResourceIdErr)
+				assert.Nil(t, istc.expGetInternetServiceResourceIDErr)
 			}
-			t.Logf("find internetServiceResourceId %s", internetServiceResourceId)
+			t.Logf("find internetServiceResourceID %s", internetServiceResourceID)
 		})
 	}
 }
@@ -119,14 +133,14 @@ func TestCheckInternetServiceFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
 						Name: "test-internetservice@test",
 					},
 				},
 			},
-			expCheckInternetServiceFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckInternetServiceFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -303,10 +317,10 @@ func TestReconcileDeleteInternetServiceDeleteWithoutSpec(t *testing.T) {
 			clusterScope, ctx, mockOscInternetServiceInterface := SetupWithInternetServiceMock(t, istc.name, istc.spec)
 			internetServiceName := "cluster-api-internetservice-uid"
 			internetServiceId := "igw-" + internetServiceName
-			clusterScope.OscCluster.Spec.Network.InternetService.ResourceId = internetServiceId
+			clusterScope.OscCluster.Spec.Network.InternetService.ResourceID = internetServiceId
 			netName := "cluster-api-net-uid"
 			netId := "vpc-" + netName
-			clusterScope.OscCluster.Spec.Network.Net.ResourceId = netId
+			clusterScope.OscCluster.Spec.Network.Net.ResourceID = netId
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
@@ -464,8 +478,8 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 	}
 }
 
-// TestReconcileInternetServiceResourceId has several tests to cover the code of the function reconcileInternetService
-func TestReconcileInternetServiceResourceId(t *testing.T) {
+// TestReconcileInternetServiceResourceID has several tests to cover the code of the function reconcileInternetService
+func TestReconcileInternetServiceResourceID(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
 		spec                           infrastructurev1beta1.OscClusterSpec
@@ -721,8 +735,8 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteInternetServiceResourceId has several tests to cover the code of the function reconcileDeleteInternetService
-func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
+// TestReconcileDeleteInternetServiceResourceID has several tests to cover the code of the function reconcileDeleteInternetService
+func TestReconcileDeleteInternetServiceResourceID(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
 		spec                                 infrastructurev1beta1.OscClusterSpec

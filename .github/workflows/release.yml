@@ -7,65 +7,65 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Install kustomize
-      run: make kustomize
-    - name: Install envsubst
-      run: make envsubst
-    - name: Set release_tag
-      run: |
-        echo 'RELEASE_TAG<<EOF' >> $GITHUB_ENV
-        echo "${GITHUB_REF:10}" >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - name: Docker login
-      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
-      env:
-        DOCKER_USER: ${{secrets.DOCKER_USER}}
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-    - name: build and push docker image
-      run: |
-        make docker-build
-        make docker-push
-        docker image prune -a -f
-      env:
-        IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-        DOCKER_BUILDKIT: 1
-    - name: generate artefacts
-      run: make release
-      env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-    - name: gh login
-      run: make gh-login
-      env:
-        SECRET_GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
-    - name: get previous tag
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y  original-awk
-        LATEST_RELEASE_TAG=`gh release list -L 1 | awk '{print $1}'`
-        if [ -z "$LATEST_RELEASE_TAG" ]; then
-                PREVIOUS_RELEASE_TAG="None"
-        else
-                PREVIOUS_RELEASE_TAG=${LATEST_RELEASE_TAG}
-        fi
-        echo 'PREVIOUS_RELEASE_TAG<<EOF' >> $GITHUB_ENV
-        echo "${PREVIOUS_RELEASE_TAG}" >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - name: generate changelog
-      run: make release-changelog
-      env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-        PREVIOUS_RELEASE_TAG: ${{ env.PREVIOUS_RELEASE_TAG }}
-        GH_ORG_NAME: ${{ github.repository_owner }}
-        GH_REPO_NAME: "cluster-api-provider-outscale" 
-    - name: create release
-      run: make create-gh-release
-      env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY }}/osc/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-        PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
-        GH_REPO: ${{ github.repository }} 
+      - uses: actions/checkout@v3
+      - name: Install kustomize
+        run: make kustomize
+      - name: Install envsubst
+        run: make envsubst
+      - name: Set release_tag
+        run: |
+          echo 'RELEASE_TAG<<EOF' >> $GITHUB_ENV
+          echo "${GITHUB_REF:10}" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Docker login
+        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      - name: build and push docker image
+        run: |
+          make docker-build
+          make docker-push
+          docker image prune -a -f
+        env:
+          IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          DOCKER_BUILDKIT: 1
+      - name: generate artefacts
+        run: make release
+        env:
+          IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+      - name: gh login
+        run: make gh-login
+        env:
+          SECRET_GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
+      - name: get previous tag
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y  original-awk
+          LATEST_RELEASE_TAG=`gh release list -L 1 | awk '{print $1}'`
+          if [ -z "$LATEST_RELEASE_TAG" ]; then
+                  PREVIOUS_RELEASE_TAG="None"
+          else
+                  PREVIOUS_RELEASE_TAG=${LATEST_RELEASE_TAG}
+          fi
+          echo 'PREVIOUS_RELEASE_TAG<<EOF' >> $GITHUB_ENV
+          echo "${PREVIOUS_RELEASE_TAG}" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      - name: generate changelog
+        run: make release-changelog
+        env:
+          IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          PREVIOUS_RELEASE_TAG: ${{ env.PREVIOUS_RELEASE_TAG }}
+          GH_ORG_NAME: ${{ github.repository_owner }}
+          GH_REPO_NAME: "cluster-api-provider-outscale"
+      - name: create release
+        run: make create-gh-release
+        env:
+          IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY }}/osc/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
+          GH_REPO: ${{ github.repository }}

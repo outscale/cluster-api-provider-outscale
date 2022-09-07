@@ -1,28 +1,44 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package storage
 
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
 type OscVolumeInterface interface {
 	CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error)
-	DeleteVolume(volumeId string) error
-	GetVolume(volumeId string) (*osc.Volume, error)
-	ValidateVolumeIds(volumeIds []string) ([]string, error)
-	LinkVolume(volumeId string, vmId string, deviceName string) error
-	CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error
-	UnlinkVolume(volumeId string) error
+	DeleteVolume(volumeID string) error
+	GetVolume(volumeID string) (*osc.Volume, error)
+	ValidateVolumeIds(volumeIDs []string) ([]string, error)
+	LinkVolume(volumeID string, vmID string, deviceName string) error
+	CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeID string) error
+	UnlinkVolume(volumeID string) error
 }
 
-// CreateVolume create machine volume
+// CreateVolume create machine volume.
 func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error) {
 	size := spec.Size
 	subregionName := spec.SubregionName
@@ -36,19 +52,19 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 		iops := spec.Iops
 		volumeRequest.SetIops(iops)
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	volumeResponse, httpRes, err := oscApiClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
+	volumeResponse, httpRes, err := oscAPIClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	volume, ok := volumeResponse.GetVolumeOk()
 	if !ok {
-		return nil, errors.New("Can not create volume")
+		return nil, errors.New("can not create volume")
 	}
 	resourceIds := []string{*volumeResponse.Volume.VolumeId}
-	err = tag.AddTag("Name", volumeName, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(oscAuthClient, "Name", volumeName, resourceIds, oscAPIClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
@@ -57,42 +73,41 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 	return volume, nil
 }
 
-// GetVolume retrieve volume from volumeId
-func (s *Service) GetVolume(volumeId string) (*osc.Volume, error) {
+// GetVolume retrieve volume from volumeID.
+func (s *Service) GetVolume(volumeID string) (*osc.Volume, error) {
 	readVolumesRequest := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
-			VolumeIds: &[]string{volumeId},
+			VolumeIds: &[]string{volumeID},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	readVolumesResponse, httpRes, err := oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
+	readVolumesResponse, httpRes, err := oscAPIClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	volumes, ok := readVolumesResponse.GetVolumesOk()
 	if !ok {
-		return nil, errors.New("Can not get volume")
+		return nil, errors.New("can not get volume")
 	}
 	if len(*volumes) == 0 {
 		return nil, nil
-	} else {
-		volume := *volumes
-		return &volume[0], nil
 	}
+	volume := *volumes
+	return &volume[0], nil
 }
 
-// LinkVolume link machine volume
-func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) error {
+// LinkVolume link machine volume.
+func (s *Service) LinkVolume(volumeID string, vmID string, deviceName string) error {
 	linkVolumeRequest := osc.LinkVolumeRequest{
 		DeviceName: deviceName,
-		VolumeId:   volumeId,
-		VmId:       vmId,
+		VolumeId:   volumeID,
+		VmId:       vmID,
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
+	_, httpRes, err := oscAPIClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
@@ -100,14 +115,14 @@ func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) er
 	return nil
 }
 
-// UnlinkVolume unlink machine volume
-func (s *Service) UnlinkVolume(volumeId string) error {
+// UnlinkVolume unlink machine volume.
+func (s *Service) UnlinkVolume(volumeID string) error {
 	unlinkVolumeRequest := osc.UnlinkVolumeRequest{
-		VolumeId: volumeId,
+		VolumeId: volumeID,
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
+	_, httpRes, err := oscAPIClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
@@ -115,12 +130,12 @@ func (s *Service) UnlinkVolume(volumeId string) error {
 	return nil
 }
 
-// DeleteVolume delete machine volume
-func (s *Service) DeleteVolume(volumeId string) error {
-	deleteVolumeRequest := osc.DeleteVolumeRequest{VolumeId: volumeId}
-	oscApiClient := s.scope.GetApi()
+// DeleteVolume delete machine volume.
+func (s *Service) DeleteVolume(volumeID string) error {
+	deleteVolumeRequest := osc.DeleteVolumeRequest{VolumeId: volumeID}
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
+	_, httpRes, err := oscAPIClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
@@ -128,16 +143,16 @@ func (s *Service) DeleteVolume(volumeId string) error {
 	return nil
 }
 
-// ValidatePublicIpIds validate the list of id by checking each volume resource and return volume resource that currently exist
-func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
+// ValidateVolumeIds validate the list of id by checking each volume resource and return volume resource that currently exist.
+func (s *Service) ValidateVolumeIds(volumeIDs []string) ([]string, error) {
 	readVolumeRequest := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
-			VolumeIds: &volumeIds,
+			VolumeIds: &volumeIDs,
 		},
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	readVolume, httpRes, err := oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumeRequest).Execute()
+	readVolume, httpRes, err := oscAPIClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumeRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
@@ -145,37 +160,37 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 	var validVolumeIds []string
 	volumes, ok := readVolume.GetVolumesOk()
 	if !ok {
-		return nil, errors.New("Can not get volume")
+		return nil, errors.New("can not get volume")
 	}
 	if len(*volumes) != 0 {
 		for _, volume := range *volumes {
-			volumeId := volume.GetVolumeId()
-			validVolumeIds = append(validVolumeIds, volumeId)
+			volumeID := volume.GetVolumeId()
+			validVolumeIds = append(validVolumeIds, volumeID)
 		}
 	}
 	return validVolumeIds, nil
 }
 
-//CheckVolumeState check volume in state
-func (s *Service) CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error {
-	clock_time := clock.New()
-	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
+// CheckVolumeState check volume in state.
+func (s *Service) CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeID string) error {
+	clocktime := clock.New()
+	currentTimeout := clocktime.Now().Add(time.Second * clockLoop)
 	var getVolumeState = false
 	for !getVolumeState {
-		volume, err := s.GetVolume(volumeId)
+		volume, err := s.GetVolume(volumeID)
 		if err != nil {
 			return err
 		}
 		volumeState, ok := volume.GetStateOk()
 		if !ok {
-			return errors.New("Can not get volume state")
+			return errors.New("can not get volume state")
 		}
 		if *volumeState == state {
 			break
 		}
 		time.Sleep(clockInsideLoop * time.Second)
-		if clock_time.Now().After(currentTimeout) {
-			return fmt.Errorf("Volume still not in %s state", state)
+		if clocktime.Now().After(currentTimeout) {
+			return fmt.Errorf("volume still not in %s state", state)
 		}
 	}
 	return nil

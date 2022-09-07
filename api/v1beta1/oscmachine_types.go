@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Outscale SAS.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,18 +23,18 @@ import (
 	"sigs.k8s.io/cluster-api/errors"
 )
 
-// OscMachineSpec defines the desired state of OscMachine
+// OscMachineSpec defines the desired state of OscMachine.
 type OscMachineSpec struct {
 	ProviderID *string `json:"providerID,omitempty"`
 	Node       OscNode `json:"node,omitempty"`
 }
 
-// OscMachineStatus defines the observed state of OscMachine
+// OscMachineStatus defines the observed state of OscMachine.
 type OscMachineStatus struct {
 	Ready          bool                       `json:"ready,omitempty"`
 	Addresses      []corev1.NodeAddress       `json:"addresses,omitempty"`
 	FailureReason  *errors.MachineStatusError `json:"failureReason,omitempty"`
-	VmState        *VmState                   `json:"vmState,omitempty"`
+	VMState        *VMState                   `json:"vmState,omitempty"`
 	Node           OscNodeResource            `json:"node,omitempty"`
 	FailureMessage *string                    `json:"failureMessage,omitempty"`
 	Conditions     clusterv1.Conditions       `json:"conditions,omitempty"`
@@ -43,7 +43,7 @@ type OscMachineStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// OscMachine is the Schema for the oscmachines API
+// OscMachine is the Schema for the oscmachines API.
 type OscMachine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -54,19 +54,19 @@ type OscMachine struct {
 
 //+kubebuilder:object:root=true
 
-// OscMachineList contains a list of OscMachine
+// OscMachineList contains a list of OscMachine.
 type OscMachineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OscMachine `json:"items"`
 }
 
-// GetConditions return status of the state of the machine resource
+// GetConditions return status of the state of the machine resource.
 func (r *OscMachine) GetConditions() clusterv1.Conditions {
 	return r.Status.Conditions
 }
 
-// SetConditions set status of the state of the machine resource from machine
+// SetConditions set status of the state of the machine resource from machine.
 func (r *OscMachine) SetConditions(conditions clusterv1.Conditions) {
 	r.Status.Conditions = conditions
 }

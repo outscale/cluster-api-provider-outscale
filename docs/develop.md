@@ -1,11 +1,11 @@
 
-# Prerequisite 
+# Prerequisite
 - Install [kubectl][kubectl]
 - Install [kustomize][kustomize]  `v3.1.0+`
 - Outscale account with ak/sk [Outscale Access Key and Secret Key][Outscale Access Key and Secret Key]
 - A Kubernetes cluster:
-    - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
-    - You can use a container with [kind][kind]. 
+    - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube].
+    - You can use a container with [kind][kind].
     - You can use a rke cluster with [osc-rke][osc-rke].
 - Container registry to store container image
 - Registry secret [registry-secret][registry-secret]
@@ -20,9 +20,9 @@ Please clone the project
 git clone https://github.com/outscale-dev/cluster-api-provider-outscale
 ```
 
-## User Credentials configuration 
+## User Credentials configuration
 
-This step wil deploy user credential secret 
+This step wil deploy user credential secret
 Put your credentials in osc-secret.yaml and apply:
 ```
 /usr/local/bin/kubectl apply -f osc-secret.yaml
@@ -33,7 +33,7 @@ Put your credentials in osc-secret.yaml and apply:
 By default, if you use a private registry (docker registry, harbor, dockerhub, quay.io, ....)  with credentials, registry credentials must be named regcred and must be deployed in cluster-api-provider-outscale-system namespace.
 
 ```
-kubectl get secret regcred  -n cluster-api-provider-outscale-system 
+kubectl get secret regcred  -n cluster-api-provider-outscale-system
 NAME      TYPE                             DATA   AGE
 regcred   kubernetes.io/dockerconfigjson   1      52s
 ```
@@ -92,7 +92,7 @@ v0.25.3, built 2022-03-04
 (ctrl-c) to exit
 ```
 
-You can track your docker build and controller log in your web browser. 
+You can track your docker build and controller log in your web browser.
 
 ## Check your cluster is deployed
 ```
@@ -102,19 +102,6 @@ cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Runnin
 ```
 
 # Develop
-
-## Install project in order to devellop
-
-You must install those project with :
-```
-make install-dev-prerequisites
-```
-
-Optionally, you can install those project:
-```
-make install-packer
-make install-gh
-```
 
 ## Using tiltfile
 
@@ -131,7 +118,7 @@ You can change parameter from cluster-template.yaml (please look at [configurati
 kubectl apply -f example/cluster-template.yaml
 ```
 
-# Test 
+# Test
 
 ## Generate Mock
 
@@ -160,7 +147,7 @@ make testenv
 
 ##  Delete cluster
 
-This step will delete your cluster 
+This step will delete your cluster
 ```
 kubectl delete -f example/cluster-template.yaml
 ```

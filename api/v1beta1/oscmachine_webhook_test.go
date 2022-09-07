@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1beta1
 
 import (
@@ -8,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TestOscMachine_ValidateCreate check good and bad validation of oscMachine spec
+// TestOscMachine_ValidateCreate check good and bad validation of oscMachine spec.
 func TestOscMachine_ValidateCreate(t *testing.T) {
 	machineTestCases := []struct {
 		name                 string
@@ -19,11 +35,11 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create Valid Vm Spec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						ImageId:     "ami-01234567",
+					VM: OscVM{
+						ImageID:     "ami-01234567",
 						KeypairName: "test-webhook",
 						DeviceName:  "/dev/xvdb",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 				},
 			},
@@ -33,56 +49,56 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with bad keypairName",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "rke λ",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": Invalid KeypairName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": invalid KeypairName"),
 		},
 		{
 			name: "create with bad imageId",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "omi-00000000",
+					VM: OscVM{
+						ImageID: "omi-00000000",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: imageId: Invalid value: \"omi-00000000\": Invalid imageId"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: imageId: Invalid value: \"omi-00000000\": invalid imageId"),
 		},
 		{
 			name: "create with bad deviceName",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						DeviceName: "/dev/xvaa",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: deviceName: Invalid value: \"/dev/xvaa\": Invalid deviceName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: deviceName: Invalid value: \"/dev/xvaa\": invalid deviceName"),
 		},
 		{
 			name: "create with bad vmType",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						VmType: "oscv4.c2r4p2",
+					VM: OscVM{
+						VMType: "oscv4.c2r4p2",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": Invalid vmType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": invalid vmType"),
 		},
 		{
 			name: "create with bad subregionname",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						SubregionName: "eu-west-2c",
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": Invalid subregionName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": invalid subregionName"),
 		},
 		{
 			name: "create with bad iops",
@@ -99,7 +115,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: invalid iops"),
 		},
 		{
 			name: "create with bad size",
@@ -116,7 +132,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -30: Invalid size"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -30: invalid size"),
 		},
 		{
 			name: "create with bad volumeType",
@@ -133,7 +149,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"gp3\": Invalid volumeType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"gp3\": invalid volumeType"),
 		},
 		{
 			name: "create with bad subregionName",
@@ -150,7 +166,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": Invalid subregionName"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": invalid subregionName"),
 		},
 		{
 			name: "create with good io1 volumeSpec",
@@ -215,7 +231,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 	}
 }
 
-// TestOscMachine_ValidateUpdate check good and bad update of oscMachine
+// TestOscMachine_ValidateUpdate check good and bad update of oscMachine.
 func TestOscMachine_ValidateUpdate(t *testing.T) {
 	machineTestCases := []struct {
 		name                 string
@@ -227,11 +243,11 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			name: "update only oscMachine name",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook",
-						ImageId:     "ami-00000000",
+						ImageID:     "ami-00000000",
 						DeviceName:  "/dev/xvda",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 					Volumes: []*OscVolume{
 						{
@@ -246,11 +262,11 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook",
-						ImageId:     "ami-00000000",
+						ImageID:     "ami-00000000",
 						DeviceName:  "/dev/xvda",
-						VmType:      "tinav4.c2r4p2",
+						VMType:      "tinav4.c2r4p2",
 					},
 					Volumes: []*OscVolume{
 						{
@@ -269,14 +285,14 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			name: "update keypairName",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook-1",
 					},
 				},
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						KeypairName: "test-webhook-2",
 					},
 				},
@@ -287,15 +303,15 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			name: "update imageId",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "ami-012345678",
+					VM: OscVM{
+						ImageID: "ami-012345678",
 					},
 				},
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "ami-00000000",
+					VM: OscVM{
+						ImageID: "ami-00000000",
 					},
 				},
 			},
@@ -305,14 +321,14 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			name: "update deviceName",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						DeviceName: "/dev/xvda",
 					},
 				},
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
+					VM: OscVM{
 						DeviceName: "/dev/xvdb",
 					},
 				},
@@ -323,15 +339,15 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			name: "update vmType",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						VmType: "tinav4.c2r4p2",
+					VM: OscVM{
+						VMType: "tinav4.c2r4p2",
 					},
 				},
 			},
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Vm: OscVm{
-						VmType: "tinav4.c2r4p1",
+					VM: OscVM{
+						VMType: "tinav4.c2r4p1",
 					},
 				},
 			},
@@ -442,7 +458,7 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 	}
 }
 
-// createOscInfraMachine create oscInfraMachine
+// createOscInfraMachine create oscInfraMachine.
 func createOscInfraMachine(infraMachineSpec OscMachineSpec, name string, namespace string) *OscMachine {
 	oscInfraMachine := &OscMachine{
 		Spec: infraMachineSpec,

@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1beta1
 
 import (
@@ -8,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TestOscClusterTemplate_ValidateCreate check good and bad validation of oscCluster spec
+// TestOscClusterTemplate_ValidateCreate check good and bad validation of oscCluster spec.
 func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 	clusterTestCases := []struct {
 		name                 string
@@ -20,7 +36,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 			clusterSpec: OscClusterSpec{
 				Network: OscNetwork{
 					Net: OscNet{
-						IpRange: "10.0.0.0/36",
+						IPRange: "10.0.0.0/36",
 					},
 				},
 			},
@@ -31,7 +47,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 			clusterSpec: OscClusterSpec{
 				Network: OscNetwork{
 					Net: OscNet{
-						IpRange: "10.0.0.256/16",
+						IPRange: "10.0.0.256/16",
 					},
 				},
 			},
@@ -44,7 +60,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					Subnets: []*OscSubnet{
 						{
 							Name:          "test-webhook",
-							IpSubnetRange: "10.0.0.0/36",
+							IPSubnetRange: "10.0.0.0/36",
 						},
 					},
 				},
@@ -92,7 +108,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					Subnets: []*OscSubnet{
 						{
 							Name:          "test-webhook",
-							IpSubnetRange: "10.0.0.256/16",
+							IPSubnetRange: "10.0.0.256/16",
 						},
 					},
 				},
@@ -111,8 +127,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "sctp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "sctp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -121,7 +137,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: ipProtocol: Invalid value: \"sctp\": Invalid protocol"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: ipProtocol: Invalid value: \"sctp\": invalid protocol"),
 		},
 		{
 			name: "create with bad flow securityGroupRule",
@@ -135,8 +151,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "NoBound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -145,7 +161,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: flow: Invalid value: \"NoBound\": Invalid flow"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: flow: Invalid value: \"NoBound\": invalid flow"),
 		},
 		{
 			name: "create with bad description securityGroup",
@@ -159,8 +175,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -169,7 +185,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: description: Invalid value: \"test webhook λ\": Invalid Description"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: description: Invalid value: \"test webhook λ\": invalid Description"),
 		},
 		{
 			name: "create with bad fromPortRange securityGroup",
@@ -183,8 +199,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 65537,
 									ToPortRange:   6443,
 								},
@@ -193,7 +209,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: fromPortRange: Invalid value: 65537: Invalid Port"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: fromPortRange: Invalid value: 65537: invalid Port"),
 		},
 		{
 			name: "create with bad toPortRange securityGroupRule",
@@ -207,8 +223,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   65537,
 								},
@@ -217,7 +233,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: toPortRange: Invalid value: 65537: Invalid Port"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: toPortRange: Invalid value: 65537: invalid Port"),
 		},
 		{
 			name: "create with bad ip range prefix securityGroupRule",
@@ -231,8 +247,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.0/36",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.0/36",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -255,8 +271,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.256/16",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.256/16",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -276,7 +292,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerType: Invalid value: \"internet\": Invalid LoadBalancerType"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerType: Invalid value: \"internet\": invalid LoadBalancerType"),
 		},
 		{
 			name: "create with bad loadBalancerName",
@@ -287,7 +303,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": Invalid Description"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": invalid Description"),
 		},
 		{
 			name: "create with bad healthCheck interval",
@@ -300,7 +316,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: checkInterval: Invalid value: 602: Invalid Interval"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: checkInterval: Invalid value: 602: invalid Interval"),
 		},
 		{
 			name: "create with bad healthy threshold",
@@ -313,7 +329,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: healthyThreshold: Invalid value: 12: Invalid threshold"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: healthyThreshold: Invalid value: 12: invalid threshold"),
 		},
 		{
 			name: "create with bad unhealthy threshold",
@@ -326,7 +342,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: unhealthyThreshold: Invalid value: 12: Invalid threshold"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: unhealthyThreshold: Invalid value: 12: invalid threshold"),
 		},
 		{
 			name: "create with bad healthcheck protocol",
@@ -339,7 +355,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: protocol: Invalid value: \"SCTP\": Invalid protocol"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: protocol: Invalid value: \"SCTP\": invalid protocol"),
 		},
 		{
 			name: "create with bad backend protocol loadBalancer",
@@ -352,7 +368,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: backendProtocol: Invalid value: \"SCTP\": Invalid protocol"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: backendProtocol: Invalid value: \"SCTP\": invalid protocol"),
 		},
 		{
 			name: "create with bad protocol loadBalancer",
@@ -365,7 +381,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerProtocol: Invalid value: \"SCTP\": Invalid protocol"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerProtocol: Invalid value: \"SCTP\": invalid protocol"),
 		},
 		{
 			name: "create with bad timeout",
@@ -378,7 +394,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: timeout: Invalid value: 62: Invalid Timeout"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: timeout: Invalid value: 62: invalid Timeout"),
 		},
 		{
 			name: "create with bad backend port",
@@ -391,7 +407,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: backendPort: Invalid value: 65537: Invalid Port"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: backendPort: Invalid value: 65537: invalid Port"),
 		},
 		{
 			name: "create with bad loadBalancer port",
@@ -404,7 +420,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerPort: Invalid value: 65537: Invalid Port"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerPort: Invalid value: 65537: invalid Port"),
 		},
 		{
 			name: "create with bad healthcheck loadBalancer port",
@@ -417,7 +433,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: port: Invalid value: 65537: Invalid Port"),
+			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: port: Invalid value: 65537: invalid Port"),
 		},
 	}
 	for _, ctc := range clusterTestCases {
@@ -433,7 +449,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 	}
 }
 
-// TestOscClusterTemplate_ValidateUpdate check good and bad update of oscClusterTemplate
+// TestOscClusterTemplate_ValidateUpdate check good and bad update of oscClusterTemplate.
 func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 	clusterTestCases := []struct {
 		name                 string
@@ -447,12 +463,12 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 				Network: OscNetwork{
 					Net: OscNet{
 						Name:    "test-webhook",
-						IpRange: "10.0.0.0/24",
+						IPRange: "10.0.0.0/24",
 					},
 					Subnets: []*OscSubnet{
 						{
 							Name:          "test-webhook",
-							IpSubnetRange: "10.0.0.32/28",
+							IPSubnetRange: "10.0.0.32/28",
 						},
 					},
 					RouteTables: []*OscRouteTable{
@@ -474,8 +490,8 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 10250,
 									ToPortRange:   10250,
 								},
@@ -493,12 +509,12 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 				Network: OscNetwork{
 					Net: OscNet{
 						Name:    "test-webhook",
-						IpRange: "10.0.0.0/24",
+						IPRange: "10.0.0.0/24",
 					},
 					Subnets: []*OscSubnet{
 						{
 							Name:          "test-webhook",
-							IpSubnetRange: "10.0.0.32/28",
+							IPSubnetRange: "10.0.0.32/28",
 						},
 					},
 					RouteTables: []*OscRouteTable{
@@ -520,8 +536,8 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 								{
 									Name:          "test-webhook",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 10250,
 									ToPortRange:   10250,
 								},
@@ -542,7 +558,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 				Network: OscNetwork{
 					Net: OscNet{
 						Name:    "test-webhook",
-						IpRange: "10.0.0.0/24",
+						IPRange: "10.0.0.0/24",
 					},
 					LoadBalancer: OscLoadBalancer{
 						LoadBalancerName: "test-webhook",
@@ -555,7 +571,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 				Network: OscNetwork{
 					Net: OscNet{
 						Name:    "test-webhook",
-						IpRange: "10.0.0.1/24",
+						IPRange: "10.0.0.1/24",
 					},
 					LoadBalancer: OscLoadBalancer{
 						LoadBalancerName: "test-webhook",
@@ -563,7 +579,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-			expValidateUpdateErr: fmt.Errorf("OscClusterTemmplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: OscClusterTemplate.spec.template.spec: Invalid value: v1beta1.OscClusterTemplate{TypeMeta:v1.TypeMeta{Kind:\"\", APIVersion:\"\"}, ObjectMeta:v1.ObjectMeta{Name:\"webhook-test\", GenerateName:\"\", Namespace:\"default\", SelfLink:\"\", UID:\"\", ResourceVersion:\"\", Generation:0, CreationTimestamp:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), DeletionTimestamp:<nil>, DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string(nil), Annotations:map[string]string(nil), OwnerReferences:[]v1.OwnerReference(nil), Finalizers:[]string(nil), ClusterName:\"\", ManagedFields:[]v1.ManagedFieldsEntry(nil)}, Spec:v1beta1.OscClusterTemplateSpec{Template:v1beta1.OscClusterTemplateResource{ObjectMeta:v1beta1.ObjectMeta{Labels:map[string]string(nil), Annotations:map[string]string(nil)}, Spec:v1beta1.OscClusterSpec{Network:v1beta1.OscNetwork{LoadBalancer:v1beta1.OscLoadBalancer{LoadBalancerName:\"test-webhook\", LoadBalancerType:\"internet-facing\", SubnetName:\"\", SecurityGroupName:\"\", Listener:v1beta1.OscLoadBalancerListener{BackendPort:0, BackendProtocol:\"\", LoadBalancerPort:0, LoadBalancerProtocol:\"\"}, HealthCheck:v1beta1.OscLoadBalancerHealthCheck{CheckInterval:0, HealthyThreshold:0, Port:0, Protocol:\"\", Timeout:0, UnhealthyThreshold:0}, ClusterName:\"\"}, Net:v1beta1.OscNet{Name:\"test-webhook\", IpRange:\"10.0.0.1/24\", ClusterName:\"\", ResourceId:\"\"}, Subnets:[]*v1beta1.OscSubnet(nil), InternetService:v1beta1.OscInternetService{Name:\"\", ClusterName:\"\", ResourceId:\"\"}, NatService:v1beta1.OscNatService{Name:\"\", PublicIpName:\"\", SubnetName:\"\", ClusterName:\"\", ResourceId:\"\"}, RouteTables:[]*v1beta1.OscRouteTable(nil), SecurityGroups:[]*v1beta1.OscSecurityGroup(nil), PublicIps:[]*v1beta1.OscPublicIp(nil), ClusterName:\"\"}, ControlPlaneEndpoint:v1beta1.APIEndpoint{Host:\"\", Port:0}}}}}: OscClusterTemplate spec.template.spec field is immutable."),
+			expValidateUpdateErr: fmt.Errorf("OscClusterTemmplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: OscClusterTemplate.spec.template.spec: Invalid value: v1beta1.OscClusterTemplate{TypeMeta:v1.TypeMeta{Kind:\"\", APIVersion:\"\"}, ObjectMeta:v1.ObjectMeta{Name:\"webhook-test\", GenerateName:\"\", Namespace:\"default\", SelfLink:\"\", UID:\"\", ResourceVersion:\"\", Generation:0, CreationTimestamp:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), DeletionTimestamp:<nil>, DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string(nil), Annotations:map[string]string(nil), OwnerReferences:[]v1.OwnerReference(nil), Finalizers:[]string(nil), ClusterName:\"\", ManagedFields:[]v1.ManagedFieldsEntry(nil)}, Spec:v1beta1.OscClusterTemplateSpec{Template:v1beta1.OscClusterTemplateResource{ObjectMeta:v1beta1.ObjectMeta{Labels:map[string]string(nil), Annotations:map[string]string(nil)}, Spec:v1beta1.OscClusterSpec{Network:v1beta1.OscNetwork{LoadBalancer:v1beta1.OscLoadBalancer{LoadBalancerName:\"test-webhook\", LoadBalancerType:\"internet-facing\", SubnetName:\"\", SecurityGroupName:\"\", Listener:v1beta1.OscLoadBalancerListener{BackendPort:0, BackendProtocol:\"\", LoadBalancerPort:0, LoadBalancerProtocol:\"\"}, HealthCheck:v1beta1.OscLoadBalancerHealthCheck{CheckInterval:0, HealthyThreshold:0, Port:0, Protocol:\"\", Timeout:0, UnhealthyThreshold:0}, ClusterName:\"\"}, Net:v1beta1.OscNet{Name:\"test-webhook\", IPRange:\"10.0.0.1/24\", ClusterName:\"\", ResourceID:\"\"}, Subnets:[]*v1beta1.OscSubnet(nil), InternetService:v1beta1.OscInternetService{Name:\"\", ClusterName:\"\", ResourceID:\"\"}, NatService:v1beta1.OscNatService{Name:\"\", PublicIPName:\"\", SubnetName:\"\", ClusterName:\"\", ResourceID:\"\"}, RouteTables:[]*v1beta1.OscRouteTable(nil), SecurityGroups:[]*v1beta1.OscSecurityGroup(nil), PublicIPS:[]*v1beta1.OscPublicIP(nil), ClusterName:\"\"}, ControlPlaneEndpoint:v1beta1.APIEndpoint{Host:\"\", Port:0}}}}}: OscClusterTemplate spec.template.spec field is immutable."),
 		},
 	}
 	for _, ctc := range clusterTestCases {
@@ -580,7 +596,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 	}
 }
 
-// createOscInfraClusterTemplate create oscInfraClusterTemplate
+// createOscInfraClusterTemplate create oscInfraClusterTemplate.
 func createOscInfraClusterTemplate(infraClusterSpec OscClusterSpec, name string, namespace string) *OscClusterTemplate {
 	oscInfraClusterTemplate := &OscClusterTemplate{
 		Spec: OscClusterTemplateSpec{

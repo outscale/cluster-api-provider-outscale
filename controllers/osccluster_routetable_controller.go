@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
@@ -12,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getRouteTableResourceId return the RouteTableId from the resourceMap base on RouteTableName (tag name + cluster object uid)
-func getRouteTableResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getRouteTableResourceID return the RouteTableId from the resourceMap base on RouteTableName (tag name + cluster object uid)
+func getRouteTableResourceID(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	routeTableRef := clusterScope.GetRouteTablesRef()
 	if routeTableId, ok := routeTableRef.ResourceMap[resourceName]; ok {
 		return routeTableId, nil
@@ -22,8 +38,8 @@ func getRouteTableResourceId(resourceName string, clusterScope *scope.ClusterSco
 	}
 }
 
-// getRouteResourceId return the resourceId from the resourceMap base on routeName (tag name + cluster object uid)
-func getRouteResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getRouteResourceID return the resourceId from the resourceMap base on routeName (tag name + cluster object uid)
+func getRouteResourceID(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	routeRef := clusterScope.GetRouteRef()
 	if routeId, ok := routeRef.ResourceMap[resourceName]; ok {
 		return routeId, nil
@@ -56,8 +72,7 @@ func checkRouteTableFormatParameters(clusterScope *scope.ClusterScope) (string, 
 // checkRouteFormatParameters check Route parameters format (Tag format, cidr format, ..)
 func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	clusterScope.Info("Check Route parameters")
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	routeTablesSpec = clusterScope.GetRouteTables()
+	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable = clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 		for _, routeSpec := range *routesSpec {
@@ -150,12 +165,12 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 	var resourceId string
 	var err error
 	if resourceType == "gateway" {
-		resourceId, err = getInternetServiceResourceId(resourceName, clusterScope)
+		resourceId, err = getInternetServiceResourceID(resourceName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	} else {
-		resourceId, err = getNatResourceId(resourceName, clusterScope)
+		resourceId, err = getNatResourceID(resourceName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -193,17 +208,17 @@ func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope,
 	var resourceId string
 	var err error
 	if resourceType == "gateway" {
-		resourceId, err = getInternetServiceResourceId(resourceName, clusterScope)
+		resourceId, err = getInternetServiceResourceID(resourceName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	} else {
-		resourceId, err = getNatResourceId(resourceName, clusterScope)
+		resourceId, err = getNatResourceID(resourceName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
-	routeTableId, err := getRouteResourceId(routeName, clusterScope)
+	routeTableId, err := getRouteResourceID(routeName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -243,7 +258,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceID(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -258,7 +273,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		clusterScope.Info("Check if the desired routeTable existin net", "routeTableName", routeTableName)
 		clusterScope.Info("### Get routeTable Id ###", "routeTable", routeTablesRef.ResourceMap)
 		subnetName := routeTableSpec.SubnetName + "-" + clusterScope.GetUID()
-		subnetId, err := getSubnetResourceId(subnetName, clusterScope)
+		subnetId, err := getSubnetResourceID(subnetName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -269,12 +284,12 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		if len(linkRouteTablesRef.ResourceMap) == 0 {
 			linkRouteTablesRef.ResourceMap = make(map[string]string)
 		}
-		if routeTableSpec.ResourceId != "" {
-			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
+		if routeTableSpec.ResourceID != "" {
+			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceID
 		}
 		_, resourceMapExist := routeTablesRef.ResourceMap[routeTableName]
 		if resourceMapExist {
-			routeTableSpec.ResourceId = routeTablesRef.ResourceMap[routeTableName]
+			routeTableSpec.ResourceID = routeTablesRef.ResourceMap[routeTableName]
 		}
 
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
@@ -311,7 +326,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 			}
 			clusterScope.Info("### Get routeTable ###", "routeTable", routeTable)
 			routeTablesRef.ResourceMap[routeTableName] = routeTableId
-			routeTableSpec.ResourceId = routeTableId
+			routeTableSpec.ResourceID = routeTableId
 			linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
 
 			for _, routeSpec := range *routesSpec {
@@ -345,7 +360,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceID(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

@@ -1,8 +1,25 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
+
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -11,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getInternetServiceResourceId return the InternetServiceId from the resourceMap base on resourceName (tag name + cluster object uid)
-func getInternetServiceResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getInternetServiceResourceID return the InternetServiceId from the resourceMap base on resourceName (tag name + cluster object uid)
+func getInternetServiceResourceID(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	if internetServiceId, ok := internetServiceRef.ResourceMap[resourceName]; ok {
 		return internetServiceId, nil
@@ -44,16 +61,16 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceID(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if len(internetServiceRef.ResourceMap) == 0 {
 		internetServiceRef.ResourceMap = make(map[string]string)
 	}
-	if internetServiceSpec.ResourceId != "" {
-		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
-		internetServiceId := internetServiceSpec.ResourceId
+	if internetServiceSpec.ResourceID != "" {
+		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceID
+		internetServiceId := internetServiceSpec.ResourceID
 		clusterScope.Info("Check if the desired internetservice exist", "internetserviceName", internetServiceName)
 		clusterScope.Info("### Get internetServiceId ###", "internetservice", internetServiceRef.ResourceMap)
 		internetService, err = internetServiceSvc.GetInternetService(internetServiceId)
@@ -61,7 +78,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 			return reconcile.Result{}, err
 		}
 	}
-	if internetService == nil || internetServiceSpec.ResourceId == "" {
+	if internetService == nil || internetServiceSpec.ResourceID == "" {
 		clusterScope.Info("Create the desired internetservice", "internetServiceName", internetServiceName)
 		internetService, err := internetServiceSvc.CreateInternetService(internetServiceName)
 		if err != nil {
@@ -74,7 +91,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 		}
 		clusterScope.Info("### Get internetService ###", "internetservice", internetService)
 		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
-		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
+		internetServiceSpec.ResourceID = internetService.GetInternetServiceId()
 
 	}
 	return reconcile.Result{}, nil
@@ -93,12 +110,12 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceID(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	internetServiceId := internetServiceSpec.ResourceId
+	internetServiceId := internetServiceSpec.ResourceID
 	internetServiceName := internetServiceSpec.Name
 	internetService, err := internetServiceSvc.GetInternetService(internetServiceId)
 	if err != nil {

@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,15 +17,19 @@ limitations under the License.
 package test
 
 import (
+	"testing"
+	"time"
+
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	gomega "github.com/onsi/gomega"
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
+
 	//	"os"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,10 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"testing"
-	"time"
-
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -44,7 +44,6 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg              *rest.Config
 	k8sClient        client.Client
 	testEnv          *envtest.Environment
 	reconcileTimeout time.Duration
@@ -57,14 +56,12 @@ func init() {
 }
 
 func TestAPIs(t *testing.T) {
-	RegisterFailHandler(Fail)
+	gomega.RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Controller Suite",
 		[]Reporter{printer.NewlineReporter{}})
 }
-
-const kubeconfigEnvVar = "KUBECONFIG"
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
@@ -74,11 +71,11 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{}
 
 	cfg, err := testEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomega.Expect(cfg).NotTo(gomega.BeNil())
 
-	Expect(clusterv1.AddToScheme(scheme.Scheme)).To(Succeed())
-	Expect(infrastructurev1beta1.AddToScheme(scheme.Scheme)).To(Succeed())
+	gomega.Expect(clusterv1.AddToScheme(scheme.Scheme)).To(gomega.Succeed())
+	gomega.Expect(infrastructurev1beta1.AddToScheme(scheme.Scheme)).To(gomega.Succeed())
 
 	//+kubebuilder:scaffold:scheme
 
@@ -88,25 +85,25 @@ var _ = BeforeSuite(func() {
 		LeaderElection:          true,
 		LeaderElectionID:        "controller-leader-election-capo",
 	})
-	Expect(err).ToNot(HaveOccurred())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	err = (&controllers.OscClusterReconciler{
 		Client:           k8sManager.GetClient(),
 		Recorder:         k8sManager.GetEventRecorderFor("osc-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(k8sManager)
-
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	go func() {
 		defer GinkgoRecover()
 		err := k8sManager.Start(ctrl.SetupSignalHandler())
-		Expect(err).ToNot(HaveOccurred())
+		gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	}()
 	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
+	gomega.Expect(k8sClient).ToNot(gomega.BeNil())
 
 }, 60)
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 })

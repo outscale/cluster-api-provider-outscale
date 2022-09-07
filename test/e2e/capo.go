@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package e2e
 
 import (
@@ -8,7 +24,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	gomega "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/kubernetes/test/e2e/framework/log"
 	"k8s.io/utils/pointer"
@@ -18,6 +34,7 @@ import (
 	"sigs.k8s.io/cluster-api/util"
 )
 
+// CapoClusterDeploymentSpecInput is used with method CapoClusterDeploymentSpec.
 type CapoClusterDeploymentSpecInput struct {
 	E2EConfig             *clusterctl.E2EConfig
 	ClusterctlConfigPath  string
@@ -27,6 +44,7 @@ type CapoClusterDeploymentSpecInput struct {
 	Flavor                string
 }
 
+// CreateClusterAndWaitInput is use with method CreateClusterAndWait.
 type CreateClusterAndWaitInput struct {
 	ClusterProxy            framework.ClusterProxy
 	ConfigCluster           clusterctl.ConfigClusterInput
@@ -34,17 +52,18 @@ type CreateClusterAndWaitInput struct {
 	Args                    []string
 }
 
+// CreateClusterAndWaitResult is composed of cluster..
 type CreateClusterAndWaitResult struct {
 	Cluster *clusterv1.Cluster
 }
 
-// CreateClusterAndWait create cluster infrastructure and wait to be provisionned
+// CreateClusterAndWait create cluster infrastructure and wait to be provisionned.
 func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, result *CreateClusterAndWaitResult) {
-	Expect(ctx).NotTo(BeNil(), "ctx is required for CreateClusterAndWait")
-	Expect(input.ClusterProxy).ToNot(BeNil(), "Invalid argument. input.ClusterProxy can't be nil when calling CreateClusterAndWait")
-	Expect(result).ToNot(BeNil(), "Invalid argument. result can't be nil when calling CreateClusterTemplateAndWait")
-	Expect(input.ConfigCluster.ControlPlaneMachineCount).ToNot(BeNil())
-	Expect(input.ConfigCluster.WorkerMachineCount).ToNot(BeNil())
+	gomega.Expect(ctx).NotTo(gomega.BeNil(), "ctx is required for CreateClusterAndWait")
+	gomega.Expect(input.ClusterProxy).ToNot(gomega.BeNil(), "Invalid argument. input.ClusterProxy can't be nil when calling CreateClusterAndWait")
+	gomega.Expect(result).ToNot(gomega.BeNil(), "Invalid argument. result can't be nil when calling CreateClusterTemplateAndWait")
+	gomega.Expect(input.ConfigCluster.ControlPlaneMachineCount).ToNot(gomega.BeNil())
+	gomega.Expect(input.ConfigCluster.WorkerMachineCount).ToNot(gomega.BeNil())
 
 	log.Logf("Creating the workload cluster with name %q using the %q template (Kubernetes %s, %d control-plane machines, %d worker machines)",
 		input.ConfigCluster.ClusterName, input.ConfigCluster.Flavor, input.ConfigCluster.KubernetesVersion, *input.ConfigCluster.ControlPlaneMachineCount, *input.ConfigCluster.WorkerMachineCount)
@@ -61,11 +80,11 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 		InfrastructureProvider:   input.ConfigCluster.InfrastructureProvider,
 		LogFolder:                input.ConfigCluster.LogFolder,
 	})
-	Expect(workloadClusterTemplate).ToNot(BeNil(), "Failed to get the cluster template")
+	gomega.Expect(workloadClusterTemplate).ToNot(gomega.BeNil(), "Failed to get the cluster template")
 	log.Logf("Applying the cluster template yaml to the cluster")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		return input.ClusterProxy.Apply(ctx, workloadClusterTemplate, input.Args...)
-	}, 10*time.Second).Should(Succeed(), "Failed to apply the cluster template")
+	}, 10*time.Second).Should(gomega.Succeed(), "Failed to apply the cluster template")
 
 	log.Logf("Waiting for the cluster infrastructure to be provisioned")
 	result.Cluster = framework.DiscoveryAndWaitForCluster(ctx, framework.DiscoveryAndWaitForClusterInput{
@@ -75,7 +94,7 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 	}, input.WaitForClusterIntervals...)
 }
 
-// CapoClusterDeploymentSpec create infrastructure cluster using its generated config and wait infrastructure cluster to be provisionned
+// CapoClusterDeploymentSpec create infrastructure cluster using its generated config and wait infrastructure cluster to be provisionned.
 func CapoClusterDeploymentSpec(ctx context.Context, inputGetter func() CapoClusterDeploymentSpecInput) {
 	var (
 		specName         = "capo"
@@ -87,19 +106,19 @@ func CapoClusterDeploymentSpec(ctx context.Context, inputGetter func() CapoClust
 	)
 
 	BeforeEach(func() {
-		Expect(ctx).NotTo(BeNil(), "ctx is required for %s spec", specName)
+		gomega.Expect(ctx).NotTo(gomega.BeNil(), "ctx is required for %s spec", specName)
 		input = inputGetter()
-		Expect(input.E2EConfig).ToNot(BeNil(), "Invalid argument. input.E2EConfig can't be nil when calling %s spec", specName)
-		Expect(input.ClusterctlConfigPath).To(BeAnExistingFile(), "Invalid argument. input.ClusterConfigPath must be an existing file when calling %s spec", specName)
-		Expect(input.BootstrapClusterProxy).ToNot(BeNil(), "Invalid argument. input.BoostrapClusterProxy can't be nil when calling %s spec", specName)
-		Expect(os.MkdirAll(input.ArtifactFolder, 0750)).To(Succeed(), "Invalid argument. input.ArtifactFolder can't be created for %s spec", specName)
-		Expect(input.E2EConfig.Variables).To(HaveKey(KubernetesVersion))
+		gomega.Expect(input.E2EConfig).ToNot(gomega.BeNil(), "Invalid argument. input.E2EConfig can't be nil when calling %s spec", specName)
+		gomega.Expect(input.ClusterctlConfigPath).To(gomega.BeAnExistingFile(), "Invalid argument. input.ClusterConfigPath must be an existing file when calling %s spec", specName)
+		gomega.Expect(input.BootstrapClusterProxy).ToNot(gomega.BeNil(), "Invalid argument. input.BoostrapClusterProxy can't be nil when calling %s spec", specName)
+		gomega.Expect(os.MkdirAll(input.ArtifactFolder, 0750)).To(gomega.Succeed(), "Invalid argument. input.ArtifactFolder can't be created for %s spec", specName)
+		gomega.Expect(input.E2EConfig.Variables).To(gomega.HaveKey(KubernetesVersion))
 		clusterResources = new(CreateClusterAndWaitResult)
 		namespace, cancelWatches = setupSpecNamespace(ctx, specName, input.BootstrapClusterProxy, input.ArtifactFolder)
 		clusterName = fmt.Sprintf("%s-%s", specName, util.RandomString(6))
 	})
 
-	It("Should sucessfully create an infrastructure cluster", func() {
+	It("Should successfully create an infrastructure cluster", func() {
 		By("creating an infrastructure cluster")
 		CreateClusterAndWait(ctx, CreateClusterAndWaitInput{
 			ClusterProxy: input.BootstrapClusterProxy,

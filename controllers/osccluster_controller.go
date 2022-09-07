@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,14 +22,13 @@ import (
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -86,8 +85,8 @@ func (r *OscClusterReconciler) getNatServiceSvc(ctx context.Context, scope scope
 	return net.NewService(ctx, &scope)
 }
 
-// getPublicIpSvc retrieve publicIpSvc
-func (r *OscClusterReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
+// getPublicIPSvc retrieve publicIPSvc
+func (r *OscClusterReconciler) getPublicIPSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIPInterface {
 	return security.NewService(ctx, &scope)
 }
 
@@ -154,7 +153,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func alertDuplicate(nameArray []string) error {
 	checkMap := make(map[string]bool, 0)
 	for _, name := range nameArray {
-		if checkMap[name] == true {
+		if checkMap[name] {
 			return fmt.Errorf("%s already exist", name)
 		} else {
 			checkMap[name] = true
@@ -196,7 +195,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, fmt.Errorf("%w Can not create internetService %s for OscCluster %s/%s", err, internetServiceName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
-	publicIpName, err := checkPublicIpFormatParameters(clusterScope)
+	publicIpName, err := checkPublicIPFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create internetService %s for OscCluster %s/%s", err, publicIpName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
@@ -251,7 +250,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, duplicateResourceSecurityGroupRuleErr
 	}
 
-	duplicateResourcePublicIpErr := checkPublicIpOscDuplicateName(clusterScope)
+	duplicateResourcePublicIpErr := checkPublicIPOscDuplicateName(clusterScope)
 	if duplicateResourcePublicIpErr != nil {
 		return reconcile.Result{}, duplicateResourcePublicIpErr
 	}
@@ -263,7 +262,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	// Check that every element of the cluster spec which has other element depencies has the same dependencies tag name
 
-	checkOscAssociatePublicIpErr := checkPublicIpOscAssociateResourceName(clusterScope)
+	checkOscAssociatePublicIpErr := checkPublicIPOscAssociateResourceName(clusterScope)
 	if checkOscAssociatePublicIpErr != nil {
 		return reconcile.Result{}, checkOscAssociatePublicIpErr
 	}
@@ -317,14 +316,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
 
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
-	reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, publicIpSvc)
+	publicIpSvc := r.getPublicIPSvc(ctx, *clusterScope)
+	reconcilePublicIp, err := reconcilePublicIP(ctx, clusterScope, publicIpSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile publicIp")
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.PublicIpsReadyCondition, infrastructurev1beta1.PublicIpsFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.PublicIPSReadyCondition, infrastructurev1beta1.PublicIPSFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcilePublicIp, err
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIPSReadyCondition)
 
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
 	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc)
@@ -363,6 +362,9 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	clusterScope.Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
@@ -388,8 +390,8 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteNatService, err
 	}
 
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
-	reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, publicIpSvc)
+	publicIpSvc := r.getPublicIPSvc(ctx, *clusterScope)
+	reconcileDeletePublicIp, err := reconcileDeletePublicIP(ctx, clusterScope, publicIpSvc)
 	if err != nil {
 		return reconcileDeletePublicIp, err
 	}

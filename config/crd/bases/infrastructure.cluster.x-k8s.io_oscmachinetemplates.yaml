@@ -1,195 +1,160 @@
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.1-0.20220825130208-40db49591af1
   creationTimestamp: null
   name: oscmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
   names:
     categories:
-    - cluster-api
+      - cluster-api
     kind: OscMachineTemplate
     listKind: OscMachineTemplateList
     plural: oscmachinetemplates
     singular: oscmachinetemplate
   scope: Namespaced
   versions:
-  - name: v1beta1
-    schema:
-      openAPIV3Schema:
-        description: OscMachineTemplate is the Schema for the OscMachineTemplate API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: OscMachineTemplateSpec define oscMachine template
-            properties:
-              template:
-                description: OscMachineTemplateResource is the Schema for the OscMachineTemplate
-                  api
-                properties:
-                  metadata:
-                    description: "ObjectMeta is metadata that all persisted resources
-                      must have, which includes all objects users must create. This
-                      is a copy of customizable fields from metav1.ObjectMeta. \n
-                      ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template`
-                      and `MachineSet.Template`, which are not top-level Kubernetes
-                      objects. Given that metav1.ObjectMeta has lots of special cases
-                      and read-only fields which end up in the generated CRD validation,
-                      having it as a subset simplifies the API and some issues that
-                      can impact user experience. \n During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054)
-                      for v1alpha2, we noticed a failure would occur running Cluster
-                      API test suite against the new CRDs, specifically `spec.metadata.creationTimestamp
-                      in body must be of type string: \"null\"`. The investigation
-                      showed that `controller-tools@v2` behaves differently than its
-                      previous version when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1)
-                      package. \n In more details, we found that embedded (non-top
-                      level) types that embedded `metav1.ObjectMeta` had validation
-                      properties, including for `creationTimestamp` (metav1.Time).
-                      The `metav1.Time` type specifies a custom json marshaller that,
-                      when IsZero() is true, returns `null` which breaks validation
-                      because the field isn't marked as nullable. \n In future versions,
-                      controller-tools@v2 might allow overriding the type and validation
-                      for embedded types. When that happens, this hack should be revisited."
-                    properties:
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: 'Annotations is an unstructured key value map
-                          stored with a resource that may be set by external tools
-                          to store and retrieve arbitrary metadata. They are not queryable
-                          and should be preserved when modifying objects. More info:
-                          http://kubernetes.io/docs/user-guide/annotations'
-                        type: object
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: 'Map of string keys and values that can be used
-                          to organize and categorize (scope and select) objects. May
-                          match selectors of replication controllers and services.
-                          More info: http://kubernetes.io/docs/user-guide/labels'
-                        type: object
-                    type: object
-                  spec:
-                    description: OscMachineSpec defines the desired state of OscMachine
-                    properties:
-                      node:
-                        properties:
-                          clusterName:
+    - name: v1beta1
+      schema:
+        openAPIV3Schema:
+          description: OscMachineTemplate is the Schema for the OscMachineTemplate API.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: OscMachineTemplateSpec define oscMachine template.
+              properties:
+                template:
+                  description: OscMachineTemplateResource is the Schema for the OscMachineTemplate api.
+                  properties:
+                    metadata:
+                      description: "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. This is a copy of customizable fields from metav1.ObjectMeta. \n ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template` and `MachineSet.Template`, which are not top-level Kubernetes objects. Given that metav1.ObjectMeta has lots of special cases and read-only fields which end up in the generated CRD validation, having it as a subset simplifies the API and some issues that can impact user experience. \n During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054) for v1alpha2, we noticed a failure would occur running Cluster API test suite against the new CRDs, specifically `spec.metadata.creationTimestamp in body must be of type string: \"null\"`. The investigation showed that `controller-tools@v2` behaves differently than its previous version when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1) package. \n In more details, we found that embedded (non-top level) types that embedded `metav1.ObjectMeta` had validation properties, including for `creationTimestamp` (metav1.Time). The `metav1.Time` type specifies a custom json marshaller that, when IsZero() is true, returns `null` which breaks validation because the field isn't marked as nullable. \n In future versions, controller-tools@v2 might allow overriding the type and validation for embedded types. When that happens, this hack should be revisited."
+                      properties:
+                        annotations:
+                          additionalProperties:
                             type: string
-                          image:
-                            properties:
-                              name:
-                                type: string
-                              resourceId:
-                                type: string
-                            type: object
-                          keypair:
-                            properties:
-                              clusterName:
-                                type: string
-                              name:
-                                type: string
-                              publicKey:
-                                type: string
-                              resourceId:
-                                type: string
-                            type: object
-                          vm:
-                            properties:
-                              clusterName:
-                                type: string
-                              deviceName:
-                                type: string
-                              imageId:
-                                type: string
-                              keypairName:
-                                type: string
-                              loadBalancerName:
-                                type: string
-                              name:
-                                type: string
-                              privateIps:
-                                items:
-                                  properties:
-                                    name:
-                                      type: string
-                                    privateIp:
-                                      type: string
-                                  required:
-                                  - privateIp
-                                  type: object
-                                type: array
-                              publicIpName:
-                                type: string
-                              resourceId:
-                                type: string
-                              role:
-                                type: string
-                              securityGroupNames:
-                                items:
-                                  properties:
-                                    name:
-                                      type: string
-                                  type: object
-                                type: array
-                              subnetName:
-                                type: string
-                              subregionName:
-                                type: string
-                              vmType:
-                                type: string
-                              volumeName:
-                                type: string
-                            type: object
-                          volumes:
-                            items:
+                          description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+                          type: object
+                      type: object
+                    spec:
+                      description: OscMachineSpec defines the desired state of OscMachine.
+                      properties:
+                        node:
+                          description: OscNode is all included vm.
+                          properties:
+                            clusterName:
+                              type: string
+                            image:
+                              description: OscImage is the image.
                               properties:
-                                iops:
-                                  format: int32
-                                  type: integer
                                 name:
                                   type: string
                                 resourceId:
                                   type: string
-                                size:
-                                  format: int32
-                                  type: integer
-                                subregionName:
+                              type: object
+                            keypair:
+                              description: OscKeypair is the keypair.
+                              properties:
+                                clusterName:
                                   type: string
-                                volumeType:
+                                name:
+                                  type: string
+                                publicKey:
+                                  type: string
+                                resourceId:
                                   type: string
                               type: object
-                            type: array
-                        type: object
-                      providerID:
-                        type: string
-                    type: object
-                required:
-                - spec
-                type: object
-            required:
-            - template
-            type: object
-        type: object
-    served: true
-    storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
+                            vm:
+                              description: OscVM is the vm.
+                              properties:
+                                clusterName:
+                                  type: string
+                                deviceName:
+                                  type: string
+                                imageId:
+                                  type: string
+                                keypairName:
+                                  type: string
+                                loadBalancerName:
+                                  type: string
+                                name:
+                                  type: string
+                                privateIPs:
+                                  items:
+                                    description: OscPrivateIPElement is a privateIp element.
+                                    properties:
+                                      name:
+                                        type: string
+                                      privateIP:
+                                        type: string
+                                    type: object
+                                  type: array
+                                publicIPName:
+                                  type: string
+                                resourceId:
+                                  type: string
+                                role:
+                                  type: string
+                                securityGroupNames:
+                                  items:
+                                    description: OscSecurityGroupElement is a securityGroup element.
+                                    properties:
+                                      name:
+                                        type: string
+                                    type: object
+                                  type: array
+                                subnetName:
+                                  type: string
+                                subregionName:
+                                  type: string
+                                vmType:
+                                  type: string
+                                volumeName:
+                                  type: string
+                              type: object
+                            volumes:
+                              items:
+                                description: OscVolume  is the volume.
+                                properties:
+                                  iops:
+                                    format: int32
+                                    type: integer
+                                  name:
+                                    type: string
+                                  resourceId:
+                                    type: string
+                                  size:
+                                    format: int32
+                                    type: integer
+                                  subregionName:
+                                    type: string
+                                  volumeType:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        providerID:
+                          type: string
+                      type: object
+                  required:
+                    - spec
+                  type: object
+              required:
+                - template
+              type: object
+          type: object
+      served: true
+      storage: true

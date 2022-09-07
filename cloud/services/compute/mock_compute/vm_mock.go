@@ -14,98 +14,98 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
-// MockOscVmInterface is a mock of OscVmInterface interface.
-type MockOscVmInterface struct {
+// MockOscVMInterface is a mock of OscVMInterface interface.
+type MockOscVMInterface struct {
 	ctrl     *gomock.Controller
-	recorder *MockOscVmInterfaceMockRecorder
+	recorder *MockOscVMInterfaceMockRecorder
 }
 
-// MockOscVmInterfaceMockRecorder is the mock recorder for MockOscVmInterface.
-type MockOscVmInterfaceMockRecorder struct {
-	mock *MockOscVmInterface
+// MockOscVMInterfaceMockRecorder is the mock recorder for MockOscVMInterface.
+type MockOscVMInterfaceMockRecorder struct {
+	mock *MockOscVMInterface
 }
 
-// NewMockOscVmInterface creates a new mock instance.
-func NewMockOscVmInterface(ctrl *gomock.Controller) *MockOscVmInterface {
-	mock := &MockOscVmInterface{ctrl: ctrl}
-	mock.recorder = &MockOscVmInterfaceMockRecorder{mock}
+// NewMockOscVMInterface creates a new mock instance.
+func NewMockOscVMInterface(ctrl *gomock.Controller) *MockOscVMInterface {
+	mock := &MockOscVMInterface{ctrl: ctrl}
+	mock.recorder = &MockOscVMInterfaceMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockOscVmInterface) EXPECT() *MockOscVmInterfaceMockRecorder {
+func (m *MockOscVMInterface) EXPECT() *MockOscVMInterfaceMockRecorder {
 	return m.recorder
 }
 
-// CheckVmState mocks base method.
-func (m *MockOscVmInterface) CheckVmState(clockInsideLoop, clockLoop time.Duration, state, vmId string) error {
+// CheckVMState mocks base method.
+func (m *MockOscVMInterface) CheckVMState(clockInsideLoop, clockLoop time.Duration, state, vmID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckVmState", clockInsideLoop, clockLoop, state, vmId)
+	ret := m.ctrl.Call(m, "CheckVMState", clockInsideLoop, clockLoop, state, vmID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CheckVmState indicates an expected call of CheckVmState.
-func (mr *MockOscVmInterfaceMockRecorder) CheckVmState(clockInsideLoop, clockLoop, state, vmId interface{}) *gomock.Call {
+// CheckVMState indicates an expected call of CheckVMState.
+func (mr *MockOscVMInterfaceMockRecorder) CheckVMState(clockInsideLoop, clockLoop, state, vmID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckVmState", reflect.TypeOf((*MockOscVmInterface)(nil).CheckVmState), clockInsideLoop, clockLoop, state, vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckVMState", reflect.TypeOf((*MockOscVMInterface)(nil).CheckVMState), clockInsideLoop, clockLoop, state, vmID)
 }
 
-// CreateVm mocks base method.
-func (m *MockOscVmInterface) CreateVm(machineScope *scope.MachineScope, spec *v1beta1.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string) (*osc.Vm, error) {
+// CreateVM mocks base method.
+func (m *MockOscVMInterface) CreateVM(machineScope *scope.MachineScope, spec *v1beta1.OscVM, subnetID string, securityGroupIds, privateIps []string, vmName string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVm", machineScope, spec, subnetId, securityGroupIds, privateIps, vmName)
+	ret := m.ctrl.Call(m, "CreateVM", machineScope, spec, subnetID, securityGroupIds, privateIps, vmName)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateVm indicates an expected call of CreateVm.
-func (mr *MockOscVmInterfaceMockRecorder) CreateVm(machineScope, spec, subnetId, securityGroupIds, privateIps, vmName interface{}) *gomock.Call {
+// CreateVM indicates an expected call of CreateVM.
+func (mr *MockOscVMInterfaceMockRecorder) CreateVM(machineScope, spec, subnetID, securityGroupIds, privateIps, vmName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), machineScope, spec, subnetId, securityGroupIds, privateIps, vmName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVM", reflect.TypeOf((*MockOscVMInterface)(nil).CreateVM), machineScope, spec, subnetID, securityGroupIds, privateIps, vmName)
 }
 
-// DeleteVm mocks base method.
-func (m *MockOscVmInterface) DeleteVm(vmId string) error {
+// DeleteVM mocks base method.
+func (m *MockOscVMInterface) DeleteVM(vmID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteVm", vmId)
+	ret := m.ctrl.Call(m, "DeleteVM", vmID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteVm indicates an expected call of DeleteVm.
-func (mr *MockOscVmInterfaceMockRecorder) DeleteVm(vmId interface{}) *gomock.Call {
+// DeleteVM indicates an expected call of DeleteVM.
+func (mr *MockOscVMInterfaceMockRecorder) DeleteVM(vmID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVm", reflect.TypeOf((*MockOscVmInterface)(nil).DeleteVm), vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVM", reflect.TypeOf((*MockOscVMInterface)(nil).DeleteVM), vmID)
 }
 
-// GetVm mocks base method.
-func (m *MockOscVmInterface) GetVm(vmId string) (*osc.Vm, error) {
+// GetVM mocks base method.
+func (m *MockOscVMInterface) GetVM(vmID string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVm", vmId)
+	ret := m.ctrl.Call(m, "GetVM", vmID)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetVm indicates an expected call of GetVm.
-func (mr *MockOscVmInterfaceMockRecorder) GetVm(vmId interface{}) *gomock.Call {
+// GetVM indicates an expected call of GetVM.
+func (mr *MockOscVMInterfaceMockRecorder) GetVM(vmID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVm", reflect.TypeOf((*MockOscVmInterface)(nil).GetVm), vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVM", reflect.TypeOf((*MockOscVMInterface)(nil).GetVM), vmID)
 }
 
-// GetVmState mocks base method.
-func (m *MockOscVmInterface) GetVmState(vmId string) (string, error) {
+// GetVMState mocks base method.
+func (m *MockOscVMInterface) GetVMState(vmID string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVmState", vmId)
+	ret := m.ctrl.Call(m, "GetVMState", vmID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetVmState indicates an expected call of GetVmState.
-func (mr *MockOscVmInterfaceMockRecorder) GetVmState(vmId interface{}) *gomock.Call {
+// GetVMState indicates an expected call of GetVMState.
+func (mr *MockOscVMInterfaceMockRecorder) GetVMState(vmID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmState", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmState), vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVMState", reflect.TypeOf((*MockOscVMInterface)(nil).GetVMState), vmID)
 }

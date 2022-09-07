@@ -62,7 +62,7 @@ spec:
         subnetname: cluster-api-subnet-kcp
         routes:
           - name: cluster-api-routes-kcp
-            targetName: cluster-api-natservice	
+            targetName: cluster-api-natservice
             targetType: nat
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-nat
@@ -81,33 +81,33 @@ spec:
             destination: "0.0.0.0/0"
     securityGroups:
       - name: cluster-api-securitygroups-kw
-        description: Security Group with cluster-api   
+        description: Security Group with cluster-api
         securityGroupRules:
           - name: cluster-api-securitygrouprule-api-kubelet-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.128/26"
             fromPortRange: 10250
             toPortRange: 10250
           - name: cluster-api-securitygrouprule-api-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.32/28"
             fromPortRange: 10250
             toPortRange: 10250
           - name: cluster-api-securitygrouprule-nodeip-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.128/26"
             fromPortRange: 30000
             toPortRange: 32767
           - name: cluster-api-securitygrouprule-nodeip-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.32/28"
             fromPortRange: 30000
             toPortRange: 32767
@@ -117,28 +117,28 @@ spec:
           - name: cluster-api-securitygrouprule-api-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.128/26"
             fromPortRange: 6443
             toPortRange: 6443
           - name: cluster-api-securitygrouprule-api-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.32/28"
             fromPortRange: 6443
             toPortRange: 6443
           - name: cluster-api-securitygrouprule-etcd
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.32/28"
             fromPortRange: 2378
             toPortRange: 2379
           - name: cluster-api-securitygrouprule-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.0.32/28"
             fromPortRange: 10250
             toPortRange: 10252
@@ -148,7 +148,7 @@ spec:
           - name: cluste-api-securitygrouprule-lb
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "0.0.0.0/0"
             fromPortRange: 6443
             toPortRange: 6443
@@ -250,15 +250,15 @@ spec:
   template:
     spec:
       files:
-      - content: |
-          #!/bin/sh
- 
-          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-          chmod +x /tmp/runc.amd64
-          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-        owner: root:root
-        path: /tmp/set_runc.sh
-        permissions: "0744"
+        - content: |
+            #!/bin/sh
+
+            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+            chmod +x /tmp/runc.amd64
+            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+          owner: root:root
+          path: /tmp/set_runc.sh
+          permissions: "0744"
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
@@ -288,15 +288,15 @@ spec:
           provider-id: osc://'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     files:
-    - content: |
-        #!/bin/sh
+      - content: |
+          #!/bin/sh
 
-        curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-        chmod +x /tmp/runc.amd64	
-        cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-      owner: root:root
-      path: /tmp/set_runc.sh
-      permissions: "0744"
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        owner: root:root
+        path: /tmp/set_runc.sh
+        permissions: "0744"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:

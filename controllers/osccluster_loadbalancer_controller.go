@@ -1,10 +1,26 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -143,12 +159,12 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		return reconcile.Result{}, err
 	}
 	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
-	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
+	subnetId, err := getSubnetResourceID(subnetName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
-	securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+	securityGroupId, err := getSecurityGroupResourceID(securityGroupName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -200,7 +216,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	err = loadBalancerSvc.CheckLoadBalancerDeregisterVm(5, 120, loadBalancerSpec)
+	err = loadBalancerSvc.CheckLoadBalancerDeregisterVM(5, 120, loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w VmBackend is not deregister in loadBalancer %s for OscCluster %s/%s", err, loadBalancerSpec.LoadBalancerName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}

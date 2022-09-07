@@ -44,7 +44,7 @@ spec:
         routes:
           - name: cluster-api-routes
             targetName: cluster-api-internetservice
-            targetType: gateway 
+            targetType: gateway
             destination: "0.0.0.0/0"
       - name: cluster-api-rt
         subnetname: cluster-api-sub
@@ -55,19 +55,19 @@ spec:
             destination: "0.0.0.0/0"
     securityGroups:
       - name: cluster-api-securitygroups
-        description: Security Group with cluster-api   
+        description: Security Group with cluster-api
         securityGroupRules:
           - name: cluste-api-securitygrouprule
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "0.0.0.0/0"
             fromPortRange: 6443
             toPortRange: 6443
           - name: cluste-api-securitygrouprule-http
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), please change with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), please change with a CIDR that best suits with your environment.
             ipRange: "0.0.0.0/0"
             fromPortRange: 80
             toPortRange: 80

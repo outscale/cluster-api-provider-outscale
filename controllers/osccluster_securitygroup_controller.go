@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
@@ -17,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getSecurityGroupResourceId return the SecurityGroupId from the resourceMap base on SecurityGroupName (tag name + cluster object uid)
-func getSecurityGroupResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getSecurityGroupResourceID return the SecurityGroupId from the resourceMap base on SecurityGroupName (tag name + cluster object uid)
+func getSecurityGroupResourceID(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	securityGroupRef := clusterScope.GetSecurityGroupsRef()
 	if securityGroupId, ok := securityGroupRef.ResourceMap[resourceName]; ok {
 		return securityGroupId, nil
@@ -27,8 +43,8 @@ func getSecurityGroupResourceId(resourceName string, clusterScope *scope.Cluster
 	}
 }
 
-// getSecurityGroupRulesResourceId return the SecurityGroupId from the resourceMap base on SecurityGroupRuleName (tag name + cluster object uid)
-func getSecurityGroupRulesResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getSecurityGroupRulesResourceID return the SecurityGroupId from the resourceMap base on SecurityGroupRuleName (tag name + cluster object uid)
+func getSecurityGroupRulesResourceID(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	securityGroupRuleRef := clusterScope.GetSecurityGroupRuleRef()
 	if securityGroupRuleId, ok := securityGroupRuleRef.ResourceMap[resourceName]; ok {
 		return securityGroupRuleId, nil
@@ -123,13 +139,13 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
-			securityGroupRuleIpProtocol := securityGroupRuleSpec.IpProtocol
-			_, err = infrastructurev1beta1.ValidateIpProtocol(securityGroupRuleIpProtocol)
+			securityGroupRuleIPProtocol := securityGroupRuleSpec.IPProtocol
+			_, err = infrastructurev1beta1.ValidateIPProtocol(securityGroupRuleIPProtocol)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
-			securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
-			_, err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
+			securityGroupRuleIPRange := securityGroupRuleSpec.IPRange
+			_, err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIPRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
@@ -151,7 +167,6 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 
 // reconcileSecurityGroupRule reconcile the securityGroupRule of the cluster.
 func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRuleSpec infrastructurev1beta1.OscSecurityGroupRule, securityGroupName string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
-	//osccluster := clusterScope.OscCluster
 
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 	securityGroupRuleRef := clusterScope.GetSecurityGroupRuleRef()
@@ -161,21 +176,21 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 		securityGroupRuleRef.ResourceMap = make(map[string]string)
 	}
 	Flow := securityGroupRuleSpec.Flow
-	IpProtocol := securityGroupRuleSpec.IpProtocol
-	IpRange := securityGroupRuleSpec.IpRange
+	IPProtocol := securityGroupRuleSpec.IPProtocol
+	IPRange := securityGroupRuleSpec.IPRange
 	FromPortRange := securityGroupRuleSpec.FromPortRange
 	ToPortRange := securityGroupRuleSpec.ToPortRange
 	associateSecurityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 	clusterScope.Info("### Get associateSecurityGroupId###", "securityGroup", associateSecurityGroupId)
 	clusterScope.Info("check if the desired securityGroupRule exist", "securityGroupRuleName", securityGroupRuleName)
-	securityGroupFromSecurityGroupRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupId, Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
+	securityGroupFromSecurityGroupRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupId, Flow, IPProtocol, IPRange, FromPortRange, ToPortRange)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if securityGroupFromSecurityGroupRule == nil {
 		clusterScope.Info("### Create securityGroupRule")
 		clusterScope.Info("Create the desired securityGroupRule", "securityGroupRuleName", securityGroupRuleName)
-		securityGroupFromSecurityGroupRule, err = securityGroupSvc.CreateSecurityGroupRule(associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+		securityGroupFromSecurityGroupRule, err = securityGroupSvc.CreateSecurityGroupRule(associateSecurityGroupId, Flow, IPProtocol, IPRange, "", FromPortRange, ToPortRange)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
@@ -186,16 +201,19 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 }
 
 // deleteSecurityGroup reconcile the deletion of securityGroup of the cluster.
-func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clock_time clock.Clock) (reconcile.Result, error) {
+func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clocktime clock.Clock) (reconcile.Result, error) {
 	clusterScope.Info("Check loadbalancer deletion")
 
-	currentTimeout := clock_time.Now().Add(time.Second * 20)
+	currentTimeout := clocktime.Now().Add(time.Second * 20)
 	var loadbalancer_delete = false
 	for !loadbalancer_delete {
-		err, httpRes := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
+		httpRes, err := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
 		if err != nil {
 			buffer := new(strings.Builder)
 			_, err := io.Copy(buffer, httpRes.Body)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w io copy failed %s/%s \n", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			}
 			httpResBody := buffer.String()
 			clusterScope.Info("Find body", "httpResBody", httpResBody)
 			httpResBodyData := []byte(httpResBody)
@@ -221,7 +239,7 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			loadbalancer_delete = true
 		}
 
-		if clock_time.Now().After(currentTimeout) {
+		if clocktime.Now().After(currentTimeout) {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup because to waiting loadbalancer to be delete timeout  for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 
@@ -238,7 +256,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceID(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -258,12 +276,12 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if len(securityGroupsRef.ResourceMap) == 0 {
 			securityGroupsRef.ResourceMap = make(map[string]string)
 		}
-		if securityGroupSpec.ResourceId != "" {
-			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
+		if securityGroupSpec.ResourceID != "" {
+			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceID
 		}
 		_, resourceMapExist := securityGroupsRef.ResourceMap[securityGroupName]
 		if resourceMapExist {
-			securityGroupSpec.ResourceId = securityGroupsRef.ResourceMap[securityGroupName]
+			securityGroupSpec.ResourceID = securityGroupsRef.ResourceMap[securityGroupName]
 		}
 
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
@@ -276,7 +294,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 				return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 			securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
-			securityGroupSpec.ResourceId = *securityGroup.SecurityGroupId
+			securityGroupSpec.ResourceID = *securityGroup.SecurityGroupId
 
 			clusterScope.Info("check securityGroupRule")
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
@@ -300,14 +318,14 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 	securityGroupRuleName := securityGroupRuleSpec.Name + "-" + clusterScope.GetUID()
 
 	Flow := securityGroupRuleSpec.Flow
-	IpProtocol := securityGroupRuleSpec.IpProtocol
-	IpRange := securityGroupRuleSpec.IpRange
+	IPProtocol := securityGroupRuleSpec.IPProtocol
+	IPRange := securityGroupRuleSpec.IPRange
 	FromPortRange := securityGroupRuleSpec.FromPortRange
 	ToPortRange := securityGroupRuleSpec.ToPortRange
 	associateSecurityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 	clusterScope.Info("Delete SecurityGroupRule")
 	clusterScope.Info("Check if the desired securityGroupRule exist", "securityGroupRuleName", securityGroupRuleName)
-	securityGroupFromSecurityGroupRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupId, Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
+	securityGroupFromSecurityGroupRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupId, Flow, IPProtocol, IPRange, FromPortRange, ToPortRange)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -317,7 +335,7 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 		return reconcile.Result{}, nil
 	}
 	clusterScope.Info("Delete the desired securityGroupRule", "securityGroupRuleName", securityGroupRuleName)
-	err = securityGroupSvc.DeleteSecurityGroupRule(associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+	err = securityGroupSvc.DeleteSecurityGroupRule(associateSecurityGroupId, Flow, IPProtocol, IPRange, "", FromPortRange, ToPortRange)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%s Can not delete securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
@@ -342,7 +360,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := getNetResourceID(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -351,7 +369,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 		return reconcile.Result{}, err
 	}
 	clusterScope.Info("Delete SecurityGroup Info")
-	clock_time := clock.New()
+	clocktime := clock.New()
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
@@ -370,7 +388,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 		}
 		clusterScope.Info("Delete SecurityGroup")
 		clusterScope.Info("delete the desired securityGroup", "securityGroupName", securityGroupName)
-		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc, clock_time)
+		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc, clocktime)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup  for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}

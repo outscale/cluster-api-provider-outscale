@@ -1,8 +1,25 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
@@ -12,8 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getNetResourceId return the netId from the resourceMap base on resourceName (tag name + cluster object uid)
-func getNetResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
+// getNetResourceID return the netId from the resourceMap base on resourceName (tag name + cluster object uid)
+func getNetResourceID(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
 	netRef := clusterScope.GetNetRef()
 	if netId, ok := netRef.ResourceMap[resourceName]; ok {
 		return netId, nil
@@ -32,9 +49,9 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	if err != nil {
 		return netTagName, err
 	}
-	clusterScope.Info("Check Net IpRange parameters")
-	netIpRange := netSpec.IpRange
-	_, err = infrastructurev1beta1.ValidateCidr(netIpRange)
+	clusterScope.Info("Check Net.IPRange parameters")
+	netIPRange := netSpec.IPRange
+	_, err = infrastructurev1beta1.ValidateCidr(netIPRange)
 	if err != nil {
 		return netTagName, err
 	}
@@ -53,9 +70,9 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	if len(netRef.ResourceMap) == 0 {
 		netRef.ResourceMap = make(map[string]string)
 	}
-	if netSpec.ResourceId != "" {
-		netRef.ResourceMap[netName] = netSpec.ResourceId
-		netId := netSpec.ResourceId
+	if netSpec.ResourceID != "" {
+		netRef.ResourceMap[netName] = netSpec.ResourceID
+		netId := netSpec.ResourceID
 		clusterScope.Info("Check if the desired net exist", "netName", netName)
 		clusterScope.Info("### Get netId ###", "net", netRef.ResourceMap)
 		net, err = netSvc.GetNet(netId)
@@ -64,7 +81,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		}
 
 	}
-	if net == nil || netSpec.ResourceId == "" {
+	if net == nil || netSpec.ResourceID == "" {
 		clusterScope.Info("Create the desired net", "netName", netName)
 		net, err := netSvc.CreateNet(netSpec, netName)
 		if err != nil {
@@ -72,9 +89,9 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		}
 		clusterScope.Info("### Get net ###", "net", net)
 		netRef.ResourceMap[netName] = net.GetNetId()
-		netSpec.ResourceId = *net.NetId
+		netSpec.ResourceID = *net.NetId
 		netRef.ResourceMap[netName] = net.GetNetId()
-		netSpec.ResourceId = net.GetNetId()
+		netSpec.ResourceID = net.GetNetId()
 	}
 	return reconcile.Result{}, nil
 }
@@ -85,7 +102,7 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
-	netId := netSpec.ResourceId
+	netId := netSpec.ResourceID
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
 	clusterScope.Info("Delete net")

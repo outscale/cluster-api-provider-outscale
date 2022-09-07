@@ -7,13 +7,13 @@ write_files:
     permissions: '0744'
     content: |
       #!/bin/bash
-      
+
       curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
       chmod +x /tmp/runc.amd64	
       \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       # Add to avoid retrieve controlPlaneEndpoint
       echo "10.0.0.38 k8smanager" >> /etc/hosts
-      
+
 -   path: /run/kubeadm/kubeadm.yaml
     owner: root:root
     permissions: '0640'
@@ -31,7 +31,7 @@ write_files:
       networking:
         podSubnet: 10.42.0.0/16
       scheduler: {}
-      
+
       ---
       apiVersion: kubeadm.k8s.io/v1beta3
       kind: InitConfiguration
@@ -42,7 +42,7 @@ write_files:
           provider-id: osc://'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
         taints: null
-      
+
 -   path: /run/cluster-api/placeholder
     owner: root:root
     permissions: '0640'

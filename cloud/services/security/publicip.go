@@ -1,171 +1,204 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package security
 
 import (
-	"fmt"
-
 	"errors"
+	"fmt"
+	"time"
+
 	"github.com/benbjohnson/clock"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
-type OscPublicIpInterface interface {
-	CreatePublicIp(publicIpName string) (*osc.PublicIp, error)
-	DeletePublicIp(publicIpId string) error
-	GetPublicIp(publicIpId string) (*osc.PublicIp, error)
-	LinkPublicIp(publicIpId string, vmId string) (string, error)
-	UnlinkPublicIp(linkPublicIpId string) error
-	CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
-	ValidatePublicIpIds(publicIpIds []string) ([]string, error)
+type OscPublicIPInterface interface {
+	CreatePublicIP(publicIPName string) (*osc.PublicIp, error)
+	DeletePublicIP(publicIPID string) error
+	GetPublicIP(publicIPID string) (*osc.PublicIp, error)
+	LinkPublicIP(publicIPID string, vmID string) (string, error)
+	UnlinkPublicIP(linkPublicIPId string) error
+	CheckPublicIPUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIPID string) error
+	ValidatePublicIPIds(publicIPIds []string) ([]string, error)
 }
 
-//CreatePublicIp retrieve a publicip associated with you account
-func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
-	publicIpRequest := osc.CreatePublicIpRequest{}
-	oscApiClient := s.scope.GetApi()
+// CreatePublicIP retrieve a publicip associated with you account.
+func (s *Service) CreatePublicIP(publicIPName string) (*osc.PublicIp, error) {
+	publicIPRequest := osc.CreatePublicIpRequest{}
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	publicIpResponse, httpRes, err := oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
+	publicIPResponse, httpRes, err := oscAPIClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIPRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	resourceIds := []string{*publicIpResponse.PublicIp.PublicIpId}
-	err = tag.AddTag("Name", publicIpName, resourceIds, oscApiClient, oscAuthClient)
+	if httpRes != nil {
+		defer httpRes.Body.Close()
+	}
+	resourceIds := []string{*publicIPResponse.PublicIp.PublicIpId}
+	err = tag.AddTag(oscAuthClient, "Name", publicIPName, resourceIds, oscAPIClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	publicIp, ok := publicIpResponse.GetPublicIpOk()
+	publicIP, ok := publicIPResponse.GetPublicIpOk()
 	if !ok {
-		return nil, errors.New("Can not create publicIp")
+		return nil, errors.New("can not create publicIP")
 	}
-	return publicIp, nil
+	return publicIP, nil
 }
 
-// DeletePublicIp release the public ip
-func (s *Service) DeletePublicIp(publicIpId string) error {
-	deletePublicIpRequest := osc.DeletePublicIpRequest{
-		PublicIpId: &publicIpId,
+// DeletePublicIP release the public ip.
+func (s *Service) DeletePublicIP(publicIPID string) error {
+	deletePublicIPRequest := osc.DeletePublicIpRequest{
+		PublicIpId: &publicIPID,
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
+	_, httpRes, err := oscAPIClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIPRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
 	}
+	if httpRes != nil {
+		defer httpRes.Body.Close()
+	}
 	return nil
 }
 
-// GetPublicIp get a public ip object using a public ip id
-func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
-	readPublicIpRequest := osc.ReadPublicIpsRequest{
+// GetPublicIP get a public ip object using a public ip id.
+func (s *Service) GetPublicIP(publicIPID string) (*osc.PublicIp, error) {
+	readPublicIPRequest := osc.ReadPublicIpsRequest{
 		Filters: &osc.FiltersPublicIp{
-			PublicIpIds: &[]string{publicIpId},
+			PublicIpIds: &[]string{publicIPID},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	readPublicIp, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+	readPublicIP, httpRes, err := oscAPIClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIPRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	publicIps, ok := readPublicIp.GetPublicIpsOk()
+	if httpRes != nil {
+		defer httpRes.Body.Close()
+	}
+	publicIPs, ok := readPublicIP.GetPublicIpsOk()
 	if !ok {
-		return nil, errors.New("Can not get publicIp")
+		return nil, errors.New("can not get publicIP")
 	}
-	if len(*publicIps) == 0 {
+	if len(*publicIPs) == 0 {
 		return nil, nil
-	} else {
-		publicIp := *publicIps
-		return &publicIp[0], nil
 	}
+	publicIP := *publicIPs
+	return &publicIP[0], nil
 }
 
-// ValidatePublicIpIds validate the list of id by checking each public ip resource and return only  public ip resource id that currently exist.
-func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
-	readPublicIpRequest := osc.ReadPublicIpsRequest{
+// ValidatePublicIPIds validate the list of id by checking each public ip resource and return only  public ip resource id that currently exist.
+func (s *Service) ValidatePublicIPIds(publicIPIds []string) ([]string, error) {
+	readPublicIPRequest := osc.ReadPublicIpsRequest{
 		Filters: &osc.FiltersPublicIp{
-			PublicIpIds: &publicIpIds,
+			PublicIpIds: &publicIPIds,
 		},
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	readPublicIp, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+	readPublicIP, httpRes, err := oscAPIClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIPRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
-	var validPublicIpIds []string
-	publicIps, ok := readPublicIp.GetPublicIpsOk()
-	if !ok {
-		return nil, errors.New("Can not get publicIp")
+	if httpRes != nil {
+		defer httpRes.Body.Close()
 	}
-	if len(*publicIps) != 0 {
-		for _, publicIp := range *publicIps {
-			publicIpId := publicIp.GetPublicIpId()
-			validPublicIpIds = append(validPublicIpIds, publicIpId)
+	var validPublicIPIDs []string
+	publicIPs, ok := readPublicIP.GetPublicIpsOk()
+	if !ok {
+		return nil, errors.New("can not get publicIP")
+	}
+	if len(*publicIPs) != 0 {
+		for _, publicIP := range *publicIPs {
+			publicIPID := publicIP.GetPublicIpId()
+			validPublicIPIDs = append(validPublicIPIDs, publicIPID)
 		}
 	}
-	return validPublicIpIds, nil
+	return validPublicIPIDs, nil
 }
 
-// LinkPublicIp link publicIp
-func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
-	linkPublicIpRequest := osc.LinkPublicIpRequest{
-		PublicIpId: &publicIpId,
-		VmId:       &vmId,
+// LinkPublicIP link publicIP.
+func (s *Service) LinkPublicIP(publicIPID string, vmID string) (string, error) {
+	linkPublicIPRequest := osc.LinkPublicIpRequest{
+		PublicIpId: &publicIPID,
+		VmId:       &vmID,
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	linkPublicIp, httpRes, err := oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
+	linkPublicIP, httpRes, err := oscAPIClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIPRequest).Execute()
 
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return "", err
 	}
-	linkPublicIpId, ok := linkPublicIp.GetLinkPublicIpIdOk()
-	if !ok {
-		return "", errors.New("Can not get publicip")
+	if httpRes != nil {
+		defer httpRes.Body.Close()
 	}
-	return *linkPublicIpId, nil
+	linkPublicIPID, ok := linkPublicIP.GetLinkPublicIpIdOk()
+	if !ok {
+		return "", errors.New("can not get publicip")
+	}
+	return *linkPublicIPID, nil
 }
 
-// UnlinkPublicIp unlink publicIp
-func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
-	unlinkPublicIpRequest := osc.UnlinkPublicIpRequest{
-		LinkPublicIpId: &linkPublicIpId,
+// UnlinkPublicIP unlink publicIP.
+func (s *Service) UnlinkPublicIP(linkPublicIPID string) error {
+	unlinkPublicIPRequest := osc.UnlinkPublicIpRequest{
+		LinkPublicIpId: &linkPublicIPID,
 	}
-	oscApiClient := s.scope.GetApi()
+	oscAPIClient := s.scope.GetAPI()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
+	_, httpRes, err := oscAPIClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIPRequest).Execute()
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
 	}
+	if httpRes != nil {
+		defer httpRes.Body.Close()
+	}
 	return nil
 }
 
-// CheckPublicIpUnlink check publicIp is unlinked
-func (s *Service) CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error {
-	clock_time := clock.New()
-	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	var getPublicIpUnlink = false
-	for !getPublicIpUnlink {
-		publicIp, err := s.GetPublicIp(publicIpId)
+// CheckPublicIPUnlink check publicIP is unlinked.
+func (s *Service) CheckPublicIPUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIPID string) error {
+	clocktime := clock.New()
+	currentTimeout := clocktime.Now().Add(time.Second * clockLoop)
+	var getPublicIPUnlink = false
+	for !getPublicIPUnlink {
+		publicIP, err := s.GetPublicIP(publicIPID)
 		if err != nil {
 			return err
 		}
-		_, ok := publicIp.GetLinkPublicIpIdOk()
+		_, ok := publicIP.GetLinkPublicIpIdOk()
 		if !ok {
 			break
 		}
 		time.Sleep(clockInsideLoop * time.Second)
 
-		if clock_time.Now().After(currentTimeout) {
+		if clocktime.Now().After(currentTimeout) {
 			return errors.New("PublicIp is still link")
 		}
 	}

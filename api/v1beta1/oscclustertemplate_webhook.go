@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ import (
 	"reflect"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
+	// OscClusterTemplateImmutableMsg is oscClusterTemplate immutable message.
 	OscClusterTemplateImmutableMsg = "OscClusterTemplate spec.template.spec field is immutable."
 )
 
@@ -43,9 +43,9 @@ func (r *OscClusterTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &OscClusterTemplate{}
 
+// Default set default values.
 func (r *OscClusterTemplate) Default() {
 	oscClusterTemplateLog.Info("default", "name", r.Name)
-
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -53,7 +53,7 @@ func (r *OscClusterTemplate) Default() {
 
 var _ webhook.Validator = &OscClusterTemplate{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OscClusterTemplate) ValidateCreate() error {
 	oscClusterTemplateLog.Info("validate create", "name", r.Name)
 	if allErrs := ValidateOscClusterSpec(r.Spec.Template.Spec); len(allErrs) > 0 {
@@ -63,7 +63,7 @@ func (r *OscClusterTemplate) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) error {
 	oscClusterTemplateLog.Info("validate update", "name", r.Name)
 	var allErrs field.ErrorList
@@ -79,7 +79,7 @@ func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) error {
 	return apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemmplate").GroupKind(), r.Name, allErrs)
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (r *OscClusterTemplate) ValidateDelete() error {
 	oscClusterTemplateLog.Info("validate delete", "name", r.Name)
 	return nil

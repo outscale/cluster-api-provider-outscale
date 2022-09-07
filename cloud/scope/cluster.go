@@ -1,14 +1,30 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package scope
 
 import (
 	"context"
-	osc "github.com/outscale/osc-sdk-go/v2"
-
 	"errors"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -16,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ClusterScopeParams is a collection of input parameters to create a new scope
+// ClusterScopeParams is a collection of input parameters to create a new scope.
 type ClusterScopeParams struct {
 	OscClient  *OscClient
 	Client     client.Client
@@ -25,14 +41,14 @@ type ClusterScopeParams struct {
 	OscCluster *infrastructurev1beta1.OscCluster
 }
 
-// NewClusterScope create new clusterScope from parameters which is called at each reconciliation iteration
+// NewClusterScope create new clusterScope from parameters which is called at each reconciliation iteration.
 func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	if params.Cluster == nil {
-		return nil, errors.New("Cluster is required when creating a ClusterScope")
+		return nil, errors.New("cluster is required when creating a ClusterScope")
 	}
 
 	if params.OscCluster == nil {
-		return nil, errors.New("OscCluster is required when creating a ClusterScope")
+		return nil, errors.New("oscCluster is required when creating a ClusterScope")
 	}
 
 	if params.Logger == (logr.Logger{}) {
@@ -72,7 +88,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	}, nil
 }
 
-// ClusterScope is the basic context of the actuator that will be used
+// ClusterScope is the basic context of the actuator that will be used.
 type ClusterScope struct {
 	logr.Logger
 	client      client.Client
@@ -82,205 +98,205 @@ type ClusterScope struct {
 	OscCluster  *infrastructurev1beta1.OscCluster
 }
 
-// Close closes the scope of the cluster configuration and status
+// Close closes the scope of the cluster configuration and status.
 func (s *ClusterScope) Close() error {
 	return s.patchHelper.Patch(context.TODO(), s.OscCluster)
 }
 
-// GetName return the name of the cluster
+// GetName return the name of the cluster.
 func (s *ClusterScope) GetName() string {
 	return s.Cluster.GetName()
 }
 
-// GetNamespace return the namespace of the cluster
+// GetNamespace return the namespace of the cluster.
 func (s *ClusterScope) GetNamespace() string {
 	return s.Cluster.GetNamespace()
 }
 
-// GetUID return the uid of the cluster
+// GetUID return the uid of the cluster.
 func (s *ClusterScope) GetUID() string {
 	return string(s.Cluster.UID)
 }
 
-// GetAuth return outscale api context
+// GetAuth return outscale api context.
 func (s *ClusterScope) GetAuth() context.Context {
 	return s.OscClient.auth
 }
 
-// GetApi return outscale api credential
-func (s *ClusterScope) GetApi() *osc.APIClient {
+// GetAPI return outscale api credential.
+func (s *ClusterScope) GetAPI() *osc.APIClient {
 	return s.OscClient.api
 }
 
-// GetInternetService return the internetService of the cluster
+// GetInternetService return the internetService of the cluster.
 func (s *ClusterScope) GetInternetService() *infrastructurev1beta1.OscInternetService {
 	return &s.OscCluster.Spec.Network.InternetService
 }
 
-// GetInternetServiceRef get the status of internetService (a Map with tag name with cluster uid associate with resource response id)
+// GetInternetServiceRef get the status of internetService (a Map with tag name with cluster uid associate with resource response id).
 func (s *ClusterScope) GetInternetServiceRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.InternetServiceRef
 }
 
-// GetNatService return the natService of the cluster
+// GetNatService return the natService of the cluster.
 func (s *ClusterScope) GetNatService() *infrastructurev1beta1.OscNatService {
 	return &s.OscCluster.Spec.Network.NatService
 }
 
-// GetNatServiceRef get the status of natService (a Map with tag name with cluster uid associate with resource response id)
+// GetNatServiceRef get the status of natService (a Map with tag name with cluster uid associate with resource response id).
 func (s *ClusterScope) GetNatServiceRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.NatServiceRef
 }
 
-// GetLoadBalancer return the loadbalanacer of the cluster
+// GetLoadBalancer return the loadbalanacer of the cluster.
 func (s *ClusterScope) GetLoadBalancer() *infrastructurev1beta1.OscLoadBalancer {
 	return &s.OscCluster.Spec.Network.LoadBalancer
 }
 
-// GetNet return the net of the cluster
+// GetNet return the net of the cluster.
 func (s *ClusterScope) GetNet() *infrastructurev1beta1.OscNet {
 	return &s.OscCluster.Spec.Network.Net
 }
 
-// GetNetwork return the network of the cluster
+// GetNetwork return the network of the cluster.
 func (s *ClusterScope) GetNetwork() *infrastructurev1beta1.OscNetwork {
 	return &s.OscCluster.Spec.Network
 }
 
-// GetRouteTables return the routeTables of the cluster
+// GetRouteTables return the routeTables of the cluster.
 func (s *ClusterScope) GetRouteTables() []*infrastructurev1beta1.OscRouteTable {
 	return s.OscCluster.Spec.Network.RouteTables
 }
 
-// GetSecurityGroups return the securitygroup of the cluster
+// GetSecurityGroups return the securitygroup of the cluster.
 func (s *ClusterScope) GetSecurityGroups() []*infrastructurev1beta1.OscSecurityGroup {
 	return s.OscCluster.Spec.Network.SecurityGroups
 }
 
-// GetRouteTablesRef get the status of routeTable (a Map with tag name with cluster uid associate with resource response id)
+// GetRouteTablesRef get the status of routeTable (a Map with tag name with cluster uid associate with resource response id).
 func (s *ClusterScope) GetRouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.RouteTablesRef
 }
 
-// GetSecurityGroupsRef get the status of securityGroup
+// GetSecurityGroupsRef get the status of securityGroup.
 func (s *ClusterScope) GetSecurityGroupsRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.SecurityGroupsRef
 }
 
-// GetRouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id)
+// GetRouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id).
 func (s *ClusterScope) GetRouteRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.RouteRef
 }
 
-// GetSecurityGroupRuleRef get the status of securityGroup rule
+// GetSecurityGroupRuleRef get the status of securityGroup rule.
 func (s *ClusterScope) GetSecurityGroupRuleRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.SecurityGroupRuleRef
 }
 
-// PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetPublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
-	return &s.OscCluster.Status.Network.PublicIpRef
+// GetPublicIPRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id).
+func (s *ClusterScope) GetPublicIPRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &s.OscCluster.Status.Network.PublicIPRef
 }
 
-// LinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
+// GetLinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id).
 func (s ClusterScope) GetLinkRouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.LinkRouteTableRef
 }
 
-// Route return slices of routes associated with routetable Name
-func (s *ClusterScope) GetRoute(Name string) *[]infrastructurev1beta1.OscRoute {
+// GetRoute return slices of routes associated with routetable Name.
+func (s *ClusterScope) GetRoute(name string) *[]infrastructurev1beta1.OscRoute {
 	routeTables := s.OscCluster.Spec.Network.RouteTables
 	for _, routeTable := range routeTables {
-		if routeTable.Name == Name {
+		if routeTable.Name == name {
 			return &routeTable.Routes
 		}
 	}
 	return nil
 }
 
-// GetIpSubnetRange return IpSubnetRang from the subnet
-func (s *ClusterScope) GetIpSubnetRange(Name string) string {
+// GetIPSubnetRange return IpSubnetRang from the subnet.
+func (s *ClusterScope) GetIPSubnetRange(name string) string {
 	subnets := s.OscCluster.Spec.Network.Subnets
 	for _, subnet := range subnets {
-		if subnet.Name == Name {
-			return subnet.IpSubnetRange
+		if subnet.Name == name {
+			return subnet.IPSubnetRange
 		}
 	}
 	return ""
 }
 
-// GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
-func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
+// GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name.
+func (s *ClusterScope) GetSecurityGroupRule(name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
 	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
 	for _, securityGroup := range securityGroups {
-		if securityGroup.Name == Name {
+		if securityGroup.Name == name {
 			return &securityGroup.SecurityGroupRules
 		}
 	}
 	return nil
 }
 
-// GetPublicIp return the public ip of the cluster
-func (s *ClusterScope) GetPublicIp() []*infrastructurev1beta1.OscPublicIp {
-	return s.OscCluster.Spec.Network.PublicIps
+// GetPublicIP return the public ip of the cluster.
+func (s *ClusterScope) GetPublicIP() []*infrastructurev1beta1.OscPublicIP {
+	return s.OscCluster.Spec.Network.PublicIPS
 }
 
-// GetLinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
+// GetNetRef get the status of net.
 func (s *ClusterScope) GetNetRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.NetRef
 }
 
-// GetSubnet return the subnet of the cluster
+// GetSubnet return the subnet of the cluster.
 func (s *ClusterScope) GetSubnet() []*infrastructurev1beta1.OscSubnet {
 	return s.OscCluster.Spec.Network.Subnets
 }
 
-// GetSubnetRef get the subnet (a Map with tag name with cluster uid associate with resource response id)
+// GetSubnetRef get the subnet (a Map with tag name with cluster uid associate with resource response id).
 func (s *ClusterScope) GetSubnetRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &s.OscCluster.Status.Network.SubnetRef
 }
 
-// SetControlPlaneEndpoint set controlPlane endpoint
+// SetControlPlaneEndpoint set controlPlane endpoint.
 func (s *ClusterScope) SetControlPlaneEndpoint(apiEndpoint clusterv1.APIEndpoint) {
 	s.OscCluster.Spec.ControlPlaneEndpoint = apiEndpoint
 }
 
-// GetControlPlaneEndpoint get controlPlane endpoint
+// GetControlPlaneEndpoint get controlPlane endpoint.
 func (s *ClusterScope) GetControlPlaneEndpoint() clusterv1.APIEndpoint {
 	return s.OscCluster.Spec.ControlPlaneEndpoint
 }
 
-// GetControlPlaneEndpoint get controlPlane endpoint host
+// GetControlPlaneEndpointHost get controlPlane endpoint host.
 func (s *ClusterScope) GetControlPlaneEndpointHost() string {
 	return s.OscCluster.Spec.ControlPlaneEndpoint.Host
 }
 
-// GetControlPlaneEndpointPort get controlPlane endpoint port
+// GetControlPlaneEndpointPort get controlPlane endpoint port.
 func (s *ClusterScope) GetControlPlaneEndpointPort() int32 {
 	return s.OscCluster.Spec.ControlPlaneEndpoint.Port
 }
 
-// SetNotReady set not ready status
+// SetNotReady set not ready status.
 func (s *ClusterScope) SetNotReady() {
 	s.OscCluster.Status.Ready = false
 }
 
-// SetReady set the ready status of the cluster
+// SetReady set the ready status of the cluster.
 func (s *ClusterScope) SetReady() {
 	s.OscCluster.Status.Ready = true
 }
 
-// InfraCluster return the Outscale infrastructure cluster
+// InfraCluster return the Outscale infrastructure cluster.
 func (s *ClusterScope) InfraCluster() cloud.ClusterObject {
 	return s.OscCluster
 }
 
-// ClusterObj return the cluster object
+// ClusterObj return the cluster object.
 func (s *ClusterScope) ClusterObj() cloud.ClusterObject {
 	return s.Cluster
 }
 
-// PatchObject keep the cluster configuration and status
+// PatchObject keep the cluster configuration and status.
 func (s *ClusterScope) PatchObject() error {
 	setConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.NetReadyCondition,

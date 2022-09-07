@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -42,10 +44,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
-
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // OscMachineReconciler reconciles a OscMachine object
@@ -77,12 +77,12 @@ func (r *OscMachineReconciler) getVolumeSvc(ctx context.Context, scope scope.Clu
 }
 
 // getVmSvc retrieve vmSvc
-func (r *OscMachineReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
+func (r *OscMachineReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVMInterface {
 	return compute.NewService(ctx, &scope)
 }
 
 // getPublicIpSvc retrieve publicIpSvc
-func (r *OscMachineReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
+func (r *OscMachineReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIPInterface {
 	return security.NewService(ctx, &scope)
 }
 
@@ -188,7 +188,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	machineScope.SetNotReady()
 	if !machineScope.Cluster.Status.InfrastructureReady {
 		machineScope.Info("Cluster infrastructure is not ready yet")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VMReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	}
 	machineScope.Info("Check bootstrap data")
@@ -201,7 +201,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, fmt.Errorf("%w Can not create volume %s for OscMachine %s/%s", err, volumeName, machineScope.GetNamespace(), machineScope.GetName())
 	}
 
-	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
+	vmName, err := checkVMFormatParameters(machineScope, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
 	}
@@ -211,45 +211,45 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, duplicateResourceVolumeErr
 	}
 
-	duplicateResourceVmPrivateIpErr := checkVmPrivateIpOscDuplicateName(machineScope)
+	duplicateResourceVmPrivateIpErr := checkVMPrivateIPOscDuplicateName(machineScope)
 	if duplicateResourceVmPrivateIpErr != nil {
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
 	}
 
-	checkOscAssociateVmVolumeErr := checkVmVolumeOscAssociateResourceName(machineScope)
+	checkOscAssociateVmVolumeErr := checkVMVolumeOscAssociateResourceName(machineScope)
 	if checkOscAssociateVmVolumeErr != nil {
 		return reconcile.Result{}, checkOscAssociateVmVolumeErr
 	}
 
-	checkOscAssociateVmSecurityGroupErr := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
+	checkOscAssociateVmSecurityGroupErr := checkVMSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
 	if checkOscAssociateVmSecurityGroupErr != nil {
 		return reconcile.Result{}, checkOscAssociateVmSecurityGroupErr
 	}
 
-	checkOscAssociateVmSubnetErr := checkVmSubnetOscAssociateResourceName(machineScope, clusterScope)
+	checkOscAssociateVmSubnetErr := checkVMSubnetOscAssociateResourceName(machineScope, clusterScope)
 	if checkOscAssociateVmSubnetErr != nil {
 		return reconcile.Result{}, checkOscAssociateVmSubnetErr
 	}
 
-	vmSpec := machineScope.GetVm()
+	vmSpec := machineScope.GetVM()
 	vmSpec.SetDefaultValue()
-	if vmSpec.PublicIpName != "" {
-		checkOscAssociateVmPublicIpErr := checkVmPublicIpOscAssociateResourceName(machineScope, clusterScope)
+	if vmSpec.PublicIPName != "" {
+		checkOscAssociateVmPublicIpErr := checkVMPublicIPOscAssociateResourceName(machineScope, clusterScope)
 		if checkOscAssociateVmPublicIpErr != nil {
 			return reconcile.Result{}, checkOscAssociateVmPublicIpErr
 		}
 	}
 
 	if vmSpec.LoadBalancerName != "" {
-		checkOscAssociateVmLoadBalancerErr := checkVmLoadBalancerOscAssociateResourceName(machineScope, clusterScope)
+		checkOscAssociateVmLoadBalancerErr := checkVMLoadBalancerOscAssociateResourceName(machineScope, clusterScope)
 		if checkOscAssociateVmLoadBalancerErr != nil {
 			return reconcile.Result{}, checkOscAssociateVmLoadBalancerErr
 		}
 	}
 
-	checkVmVolumeSubregionNameErr := checkVmVolumeSubregionName(machineScope)
-	if checkVmVolumeSubregionNameErr != nil {
-		return reconcile.Result{}, checkVmVolumeSubregionNameErr
+	checkVMVolumeSubregionNameErr := checkVMVolumeSubregionName(machineScope)
+	if checkVMVolumeSubregionNameErr != nil {
+		return reconcile.Result{}, checkVMVolumeSubregionNameErr
 	}
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
@@ -267,36 +267,36 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VMReadyCondition, infrastructurev1beta1.VMNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcileVm, err
 	}
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
-	vmState := machineScope.GetVmState()
+	vmState := machineScope.GetVMState()
 
 	switch *vmState {
-	case infrastructurev1beta1.VmStatePending:
+	case infrastructurev1beta1.VMStatePending:
 		machineScope.SetNotReady()
 		machineScope.Info("Vm pending", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "")
-	case infrastructurev1beta1.VmStateStopping, infrastructurev1beta1.VmStateStopped:
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VMReadyCondition, infrastructurev1beta1.VMNotReadyReason, clusterv1.ConditionSeverityWarning, "")
+	case infrastructurev1beta1.VMStateStopping, infrastructurev1beta1.VMStateStopped:
 		machineScope.SetNotReady()
 		machineScope.Info("Vm stopped", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmStoppedReason, clusterv1.ConditionSeverityWarning, "")
-	case infrastructurev1beta1.VmStateRunning:
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VMReadyCondition, infrastructurev1beta1.VMStoppedReason, clusterv1.ConditionSeverityWarning, "")
+	case infrastructurev1beta1.VMStateRunning:
 		machineScope.SetReady()
 		machineScope.Info("Vm running", "state", vmState)
-		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
-	case infrastructurev1beta1.VmStateShuttingDown, infrastructurev1beta1.VmStateTerminated:
+		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VMReadyCondition)
+	case infrastructurev1beta1.VMStateShuttingDown, infrastructurev1beta1.VMStateTerminated:
 		machineScope.SetNotReady()
 		machineScope.Info("Unexpected vm termination", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmTerminatedReason, clusterv1.ConditionSeverityError, "")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VMReadyCondition, infrastructurev1beta1.VMTerminatedReason, clusterv1.ConditionSeverityError, "")
 	default:
 		machineScope.SetNotReady()
 		machineScope.Info("Vm state is undefined", "state", vmState)
 		machineScope.SetFailureReason(capierrors.UpdateMachineError)
 		machineScope.SetFailureMessage(errors.Errorf("instance state %+v  is undefined", vmState))
-		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
+		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VMReadyCondition, "", "")
 	}
 	return reconcile.Result{}, nil
 }

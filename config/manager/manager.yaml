@@ -27,50 +27,50 @@ spec:
       securityContext:
         runAsNonRoot: true
       imagePullSecrets:
-      - name: regcred
+        - name: regcred
       containers:
-      - command:
-        - /manager
-        args:
-        - --leader-elect
-        image: controller:latest
-        name: manager
-        imagePullPolicy: IfNotPresent
-        securityContext:
-          allowPrivilegeEscalation: false
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        # TODO(user): Configure the resources accordingly based on the project requirements.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-        env:
-          - name: OSC_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: cluster-api-provider-outscale 
-                key: access_key
-                optional: true
-          - name: OSC_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: cluster-api-provider-outscale
-                key: secret_key
-                optional: true
+        - command:
+            - /manager
+          args:
+            - --leader-elect
+          image: controller:latest
+          name: manager
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # TODO(user): Configure the resources accordingly based on the project requirements.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          env:
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cluster-api-provider-outscale
+                  key: access_key
+                  optional: true
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cluster-api-provider-outscale
+                  key: secret_key
+                  optional: true
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

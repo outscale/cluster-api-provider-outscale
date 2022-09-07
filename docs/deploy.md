@@ -1,11 +1,11 @@
 
-# Prerequisite 
+# Prerequisite
 - Install [kubectl][kubectl]
 - Install [kustomize][kustomize]  `v3.1.0+`
 - Outscale account with ak/sk [Outscale Access Key and Secret Key][Outscale Access Key and Secret Key]
 - A Kubernetes cluster:
-    - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
-    - You can use a container with [kind][kind]. 
+    - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube].
+    - You can use a container with [kind][kind].
     - You can use a rke cluster with [osc-rke][osc-rke].
 - Container registry to store container image
 - Registry secret [registry-secret][registry-secret]
@@ -18,7 +18,7 @@ Please clone the project:
 git clone https://github.com/outscale-dev/cluster-api-provider-outscale
 ```
 
-## User Credentials configuration 
+## User Credentials configuration
 Put your ak/sk in osc-secret.yaml and launch:
 ```
 /usr/local/bin/kubectl apply -f osc-secret.yaml

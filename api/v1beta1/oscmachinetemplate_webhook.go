@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@ limitations under the License.
 package v1beta1
 
 import (
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"reflect"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
+	// OscMachineTemplateImmutableMsg is oscMachineTemplate immutable message.
 	OscMachineTemplateImmutableMsg = "OscMachineTemplate spec.template.spec field is immutable."
 )
 
@@ -41,7 +42,7 @@ func (m *OscMachineTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &OscMachineTemplate{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (m *OscMachineTemplate) Default() {
 	oscMachineTemplateLog.Info("default", "name", m.Name)
 }
@@ -51,7 +52,7 @@ func (m *OscMachineTemplate) Default() {
 
 var _ webhook.Validator = &OscMachineTemplate{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (m *OscMachineTemplate) ValidateCreate() error {
 	oscMachineTemplateLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscMachineSpec(m.Spec.Template.Spec); len(allErrs) > 0 {
@@ -61,7 +62,7 @@ func (m *OscMachineTemplate) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) error {
 	oscMachineTemplateLog.Info("validate update", "name", m.Name)
 	var allErrs field.ErrorList
@@ -77,7 +78,7 @@ func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) error {
 	return apierrors.NewInvalid(GroupVersion.WithKind("OscMachineTemplate").GroupKind(), m.Name, allErrs)
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (m *OscMachineTemplate) ValidateDelete() error {
 	oscMachineTemplateLog.Info("validate delete", "name", m.Name)
 	return nil

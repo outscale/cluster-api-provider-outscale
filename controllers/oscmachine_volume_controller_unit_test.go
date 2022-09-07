@@ -1,11 +1,26 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -23,7 +38,7 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 		},
 	}
@@ -31,8 +46,8 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 		},
 	}
@@ -58,7 +73,7 @@ var (
 					Size:          50,
 					VolumeType:    "io1",
 					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-uid",
+					ResourceID:    "volume-test-volume-uid",
 				},
 			},
 		},
@@ -93,7 +108,7 @@ var (
 					Size:          30,
 					VolumeType:    "io1",
 					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-first-uid",
+					ResourceID:    "volume-test-volume-first-uid",
 				},
 				{
 					Name:          "test-volume-second",
@@ -101,7 +116,7 @@ var (
 					Size:          30,
 					VolumeType:    "io1",
 					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-second-uid",
+					ResourceID:    "volume-test-volume-second-uid",
 				},
 			},
 		},
@@ -172,28 +187,28 @@ func SetupWithVolumeMock(t *testing.T, name string, clusterSpec infrastructurev1
 	return clusterScope, machineScope, ctx, mockOscVolumeInterface
 }
 
-// TestGetVolumeResourceId has several tests to cover the code of the function getVolumeResourceId
-func TestGetVolumeResourceId(t *testing.T) {
+// TestGetVolumeResourceID has several tests to cover the code of the function getVolumeResourceId
+func TestGetVolumeResourceID(t *testing.T) {
 	volumeTestCases := []struct {
 		name                      string
 		clusterSpec               infrastructurev1beta1.OscClusterSpec
 		machineSpec               infrastructurev1beta1.OscMachineSpec
 		expVolumeFound            bool
-		expGetVolumeResourceIdErr error
+		expGetVolumeResourceIDErr error
 	}{
 		{
 			name:                      "get VolumeId",
 			clusterSpec:               defaultClusterInitialize,
 			machineSpec:               defaultVolumeInitialize,
 			expVolumeFound:            true,
-			expGetVolumeResourceIdErr: nil,
+			expGetVolumeResourceIDErr: nil,
 		},
 		{
 			name:                      "can not get VolumeId",
 			clusterSpec:               defaultClusterInitialize,
 			machineSpec:               defaultVolumeInitialize,
 			expVolumeFound:            false,
-			expGetVolumeResourceIdErr: fmt.Errorf("test-volume-uid does not exist"),
+			expGetVolumeResourceIDErr: fmt.Errorf("test-volume-uid does not exist"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
@@ -208,13 +223,13 @@ func TestGetVolumeResourceId(t *testing.T) {
 					volumeRef.ResourceMap = make(map[string]string)
 					volumeRef.ResourceMap[volumeName] = volumeId
 				}
-				volumeResourceId, err := getVolumeResourceId(volumeName, machineScope)
+				volumeResourceID, err := getVolumeResourceID(volumeName, machineScope)
 				if err != nil {
-					assert.Equal(t, vtc.expGetVolumeResourceIdErr, err, "getVolumeResourceId() should return the same error")
+					assert.Equal(t, vtc.expGetVolumeResourceIDErr, err, "getVolumeResourceId() should return the same error")
 				} else {
-					assert.Nil(t, vtc.expGetVolumeResourceIdErr)
+					assert.Nil(t, vtc.expGetVolumeResourceIDErr)
 				}
-				t.Logf("Find volumeResourceId %s\n", volumeResourceId)
+				t.Logf("Find volumeResourceID %s\n", volumeResourceID)
 			}
 		})
 	}
@@ -311,7 +326,7 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckVolumeFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 		{
 			name:        "Check Bad Iops volume",
@@ -329,7 +344,7 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid iops"),
+			expCheckVolumeFormatParametersErr: fmt.Errorf("invalid iops"),
 		},
 		{
 			name:        "Check Bad size volume",
@@ -347,7 +362,7 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid size"),
+			expCheckVolumeFormatParametersErr: fmt.Errorf("invalid size"),
 		},
 		{
 			name:        "Check Bad SubregionName",
@@ -365,7 +380,7 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid subregionName"),
+			expCheckVolumeFormatParametersErr: fmt.Errorf("invalid subregionName"),
 		},
 		{
 			name:        "Check Bad volumeType",
@@ -383,7 +398,7 @@ func TestCheckVolumeFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid volumeType"),
+			expCheckVolumeFormatParametersErr: fmt.Errorf("invalid volumeType"),
 		},
 		{
 			name:        "Check standard volumeType",
@@ -906,7 +921,7 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 
 			nodeSpec := vtc.machineSpec.Node
 			nodeSpec.SetVolumeDefaultValue()
-			machineScope.OscMachine.Spec.Node.Volumes[0].ResourceId = volumeId
+			machineScope.OscMachine.Spec.Node.Volumes[0].ResourceID = volumeId
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
@@ -948,7 +963,7 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 							Size:          50,
 							VolumeType:    "io1",
 							SubregionName: "eu-west-2a",
-							ResourceId:    "volume-test-volume-uid",
+							ResourceID:    "volume-test-volume-uid",
 						},
 					},
 				},
@@ -977,7 +992,7 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 							Size:          50,
 							VolumeType:    "io1",
 							SubregionName: "eu-west-2a",
-							ResourceId:    "volume-test-volume-uid",
+							ResourceID:    "volume-test-volume-uid",
 						},
 					},
 				},
@@ -1006,7 +1021,7 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 							Size:          50,
 							VolumeType:    "io1",
 							SubregionName: "eu-west-2a",
-							ResourceId:    "volume-test-volume-uid",
+							ResourceID:    "volume-test-volume-uid",
 						},
 					},
 				},

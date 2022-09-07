@@ -1,16 +1,32 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package test
 
 import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	network "net"
 	"net/http"
 	"time"
 
+	. "github.com/onsi/ginkgo"
+	gomega "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -19,16 +35,15 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// deployOscInfraCluster will deploy OscInfraCluster (create osccluster object)
+// deployOscInfraCluster will deploy OscInfraCluster (create osccluster object).
 func deployOscInfraCluster(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec, name string, namespace string) (client.Object, client.ObjectKey) {
 	By("Deploy oscInfraCluster")
 	oscInfraCluster := &infrastructurev1beta1.OscCluster{
@@ -38,12 +53,12 @@ func deployOscInfraCluster(ctx context.Context, infraClusterSpec infrastructurev
 			Namespace: namespace,
 		},
 	}
-	Expect(k8sClient.Create(ctx, oscInfraCluster)).To(Succeed())
+	gomega.Expect(k8sClient.Create(ctx, oscInfraCluster)).To(gomega.Succeed())
 	oscInfraClusterKey := client.ObjectKey{Namespace: namespace, Name: name}
 	return oscInfraCluster, oscInfraClusterKey
 }
 
-// deployOscInfraMachine will deploy OscInfraMachine (create oscmachine object)
+// deployOscInfraMachine will deploy OscInfraMachine (create oscmachine object).
 func deployOscInfraMachine(ctx context.Context, infraMachineSpec infrastructurev1beta1.OscMachineSpec, name string, namespace string) (client.Object, client.ObjectKey) {
 	By("Deploy oscInfraMachine")
 	oscInfraMachine := &infrastructurev1beta1.OscMachine{
@@ -53,24 +68,24 @@ func deployOscInfraMachine(ctx context.Context, infraMachineSpec infrastructurev
 			Namespace: namespace,
 		},
 	}
-	Expect(k8sClient.Create(ctx, oscInfraMachine)).To(Succeed())
+	gomega.Expect(k8sClient.Create(ctx, oscInfraMachine)).To(gomega.Succeed())
 	oscInfraMachineKey := client.ObjectKey{Namespace: namespace, Name: name}
 	return oscInfraMachine, oscInfraMachineKey
 }
 
-// createCheckDeleteOscCluster will deploy oscInfraCluster (create osccluster object), deploy capoCluster (create cluster object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster)
+// createCheckDeleteOscCluster will deploy oscInfraCluster (create osccluster object), deploy capoCluster (create cluster object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster).
 func createCheckDeleteOscCluster(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec) {
 	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, "cluster-api-test", "default")
 	capoCluster, capoClusterKey := deployCapoCluster(ctx, "cluster-api-test", "default")
 	waitOscInfraClusterToBeReady(ctx, oscInfraClusterKey)
 	waitOscClusterToProvision(ctx, capoClusterKey)
 	clusterScope, err := getClusterScope(ctx, capoClusterKey, oscInfraClusterKey)
-	Expect(err).ShouldNot(HaveOccurred())
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	checkOscNetToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSubnetToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscInternetServiceToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscNatServiceToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
-	checkOscPublicIpToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
+	checkOscPublicIPToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscRouteTableToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscRouteToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSecurityGroupToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
@@ -81,32 +96,32 @@ func createCheckDeleteOscCluster(ctx context.Context, infraClusterSpec infrastru
 	deleteObj(ctx, capoCluster, capoClusterKey, "capoCluster", "default")
 }
 
-// createCheckDeleteOscClusterMachine will deploy oscInfraCluster (create osccluster object), deploy oscInfraMachine (create oscmachine object),  deploy capoCluster (create cluster object), deploy capoMachine (create machine object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster)
+// createCheckDeleteOscClusterMachine will deploy oscInfraCluster (create osccluster object), deploy oscInfraMachine (create oscmachine object),  deploy capoCluster (create cluster object), deploy capoMachine (create machine object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster).
 func createCheckDeleteOscClusterMachine(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec, infraMachineSpec infrastructurev1beta1.OscMachineSpec) {
 	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, "cluster-api-test", "default")
 	capoCluster, capoClusterKey := deployCapoCluster(ctx, "cluster-api-test", "default")
 	waitOscInfraClusterToBeReady(ctx, oscInfraClusterKey)
 	waitOscClusterToProvision(ctx, capoClusterKey)
 	clusterScope, err := getClusterScope(ctx, capoClusterKey, oscInfraClusterKey)
-	Expect(err).ShouldNot(HaveOccurred())
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	oscInfraMachine, oscInfraMachineKey := deployOscInfraMachine(ctx, infraMachineSpec, "cluster-api-test", "default")
 	capoMachine, capoMachineKey := deployCapoMachine(ctx, "cluster-api-test", "default")
 	waitOscInfraMachineToBeReady(ctx, oscInfraMachineKey)
 	waitOscMachineToProvision(ctx, capoMachineKey)
 	machineScope, err := getMachineScope(ctx, capoMachineKey, capoClusterKey, oscInfraMachineKey, oscInfraClusterKey)
-	Expect(err).ShouldNot(HaveOccurred())
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	checkOscNetToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSubnetToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscInternetServiceToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscNatServiceToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
-	checkOscPublicIpToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
+	checkOscPublicIPToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscRouteTableToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscRouteToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSecurityGroupToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSecurityGroupRuleToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscLoadBalancerToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscVolumeToBeProvisioned(ctx, oscInfraMachineKey, clusterScope, machineScope)
-	checkOscVmToBeProvisioned(ctx, oscInfraMachineKey, clusterScope, machineScope)
+	checkOscVMToBeProvisioned(ctx, oscInfraMachineKey, clusterScope, machineScope)
 	WaitControlPlaneDnsNameRegister(clusterScope)
 	WaitControlPlaneEndpointUp(clusterScope)
 	By("Delete machine")
@@ -117,38 +132,38 @@ func createCheckDeleteOscClusterMachine(ctx context.Context, infraClusterSpec in
 	deleteObj(ctx, capoCluster, capoClusterKey, "capoCluster", "default")
 }
 
-// deleteObj will delete any kubernetes object
+// deleteObj will delete any kubernetes object.
 func deleteObj(ctx context.Context, obj client.Object, key client.ObjectKey, kind string, name string) {
-	Expect(k8sClient.Delete(ctx, obj)).To(Succeed())
-	EventuallyWithOffset(1, func() error {
+	gomega.Expect(k8sClient.Delete(ctx, obj)).To(gomega.Succeed())
+	gomega.EventuallyWithOffset(1, func() error {
 		fmt.Fprintf(GinkgoWriter, "Wait %s %s to be deleted\n", kind, name)
 		return k8sClient.Get(ctx, key, obj)
-	}, 5*time.Minute, 3*time.Second).ShouldNot(Succeed())
+	}, 5*time.Minute, 3*time.Second).ShouldNot(gomega.Succeed())
 }
 
-// deletePatchMachineObj will delete and patch machine object
+// deletePatchMachineObj will delete and patch machine object.
 func deletePatchMachineObj(ctx context.Context, obj client.Object, key client.ObjectKey, kind string, name string) {
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		return k8sClient.Delete(ctx, obj)
-	}, 30*time.Second, 10*time.Second).Should(Succeed())
+	}, 30*time.Second, 10*time.Second).Should(gomega.Succeed())
 	fmt.Fprintf(GinkgoWriter, "Delete Machine pending \n")
 
 	time.Sleep(5 * time.Second)
 	updated := &clusterv1.Machine{}
-	Expect(k8sClient.Get(ctx, key, updated)).Should(Succeed())
+	gomega.Expect(k8sClient.Get(ctx, key, updated)).Should(gomega.Succeed())
 	fmt.Fprintf(GinkgoWriter, "Get Machine \n")
 
 	updated.ObjectMeta.Finalizers = nil
-	Expect(k8sClient.Update(ctx, updated)).Should(Succeed())
+	gomega.Expect(k8sClient.Update(ctx, updated)).Should(gomega.Succeed())
 	fmt.Fprintf(GinkgoWriter, "Patch machine \n")
 
-	EventuallyWithOffset(1, func() error {
+	gomega.EventuallyWithOffset(1, func() error {
 		fmt.Fprintf(GinkgoWriter, "Wait %s %s to be deleted\n", kind, name)
 		return k8sClient.Get(ctx, key, obj)
-	}, 5*time.Minute, 3*time.Second).ShouldNot(Succeed())
+	}, 5*time.Minute, 3*time.Second).ShouldNot(gomega.Succeed())
 }
 
-// deployCapoCluster will deploy capoCluster (create cluster object)
+// deployCapoCluster will deploy capoCluster (create cluster object).
 func deployCapoCluster(ctx context.Context, name string, namespace string) (client.Object, client.ObjectKey) {
 	By("Deploy capoCluster")
 	capoCluster := &clusterv1.Cluster{
@@ -169,24 +184,24 @@ func deployCapoCluster(ctx context.Context, name string, namespace string) (clie
 			},
 		},
 	}
-	Expect(k8sClient.Create(ctx, capoCluster)).To(Succeed())
+	gomega.Expect(k8sClient.Create(ctx, capoCluster)).To(gomega.Succeed())
 	capoClusterKey := client.ObjectKey{Namespace: namespace, Name: name}
 	return capoCluster, capoClusterKey
 }
 
-// GetControlPlaneEndpoint retrieve control plane endpoint
+// GetControlPlaneEndpoint retrieve control plane endpoint.
 func GetControlPlaneEndpoint(clusterScope *scope.ClusterScope) string {
 	controlPlaneEndpoint := "https://" + clusterScope.GetControlPlaneEndpointHost() + ":" + fmt.Sprint(clusterScope.GetControlPlaneEndpointPort())
 	return controlPlaneEndpoint
 }
 
-// GetControlPlaneDnsName retrieve control plane dns name
+// GetControlPlaneDnsName retrieve control plane dns name.
 func GetControlPlaneDnsName(clusterScope *scope.ClusterScope) string {
 	controlPlaneDnsName := clusterScope.GetControlPlaneEndpointHost()
 	return controlPlaneDnsName
 }
 
-// IsControlPlaneDnsNameRegister validate control plane dns name is registered
+// IsControlPlaneDnsNameRegister validate control plane dns name is registered.
 func IsControlPlaneDnsNameRegister(controlPlaneDnsName string) (bool, error) {
 	ns, err := network.LookupHost(controlPlaneDnsName)
 	if err != nil {
@@ -197,16 +212,16 @@ func IsControlPlaneDnsNameRegister(controlPlaneDnsName string) (bool, error) {
 	return true, nil
 }
 
-// WaitControlPlaneDnsNameRegister wait control plane dns name is registered
+// WaitControlPlaneDnsNameRegister wait control plane dns name is registered.
 func WaitControlPlaneDnsNameRegister(clusterScope *scope.ClusterScope) {
 	By("Wait ControlPlaneDnsName be registered")
-	Eventually(func() (bool, error) {
+	gomega.Eventually(func() (bool, error) {
 		controlPlaneDnsName := GetControlPlaneDnsName(clusterScope)
 		return IsControlPlaneDnsNameRegister(controlPlaneDnsName)
-	}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+	}, 2*time.Minute, 5*time.Second).Should(gomega.BeTrue())
 }
 
-// IsControlPlaneEndpointUp validate that control plane is up and running
+// IsControlPlaneEndpointUp validate that control plane is up and running.
 func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 	transportCfg := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -223,7 +238,7 @@ func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 
 	data, err := ioutil.ReadAll(response.Body)
 	var res map[string]interface{}
-	json.Unmarshal([]byte(data), &res)
+	gomega.Expect(json.Unmarshal([]byte(data), &res)).To(gomega.Succeed())
 	if err != nil {
 		return false, err
 	}
@@ -236,16 +251,16 @@ func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 	return false, nil
 }
 
-// WaitControlPlaneEndpointUp wait that control plane endpoint
+// WaitControlPlaneEndpointUp wait that control plane endpoint.
 func WaitControlPlaneEndpointUp(clusterScope *scope.ClusterScope) {
 	By("Wait ControlPlaneEndpoint be up")
-	Eventually(func() (bool, error) {
+	gomega.Eventually(func() (bool, error) {
 		controlPlaneEndpoint := GetControlPlaneEndpoint(clusterScope)
 		return IsControlPlaneEndpointUp(controlPlaneEndpoint)
-	}, 10*time.Minute, 15*time.Second).Should(BeTrue())
+	}, 10*time.Minute, 15*time.Second).Should(gomega.BeTrue())
 }
 
-// deployCapoMachine will deploy capoMachine (create machine object)
+// deployCapoMachine will deploy capoMachine (create machine object).
 func deployCapoMachine(ctx context.Context, name string, namespace string) (client.Object, client.ObjectKey) {
 	By("Deploy capoMachine")
 	capoMachine := &clusterv1.Machine{
@@ -270,87 +285,87 @@ func deployCapoMachine(ctx context.Context, name string, namespace string) (clie
 			},
 		},
 	}
-	Expect(k8sClient.Create(ctx, capoMachine)).To(Succeed())
+	gomega.Expect(k8sClient.Create(ctx, capoMachine)).To(gomega.Succeed())
 	capoMachineKey := client.ObjectKey{Namespace: namespace, Name: name}
 	return capoMachine, capoMachineKey
 
 }
 
-// waitOscClusterToProvision will wait that capi will set capoCluster in provisionned phase
+// waitOscClusterToProvision will wait that capi will set capoCluster in provisionned phase.
 func waitOscClusterToProvision(ctx context.Context, capoClusterKey client.ObjectKey) {
 	By("Wait capoCluster to be in provisioned phase")
-	Eventually(func() (string, error) {
+	gomega.Eventually(func() (string, error) {
 		capoCluster := &clusterv1.Cluster{}
-		k8sClient.Get(ctx, capoClusterKey, capoCluster)
+		gomega.Expect(k8sClient.Get(ctx, capoClusterKey, capoCluster)).To(gomega.Succeed())
 		fmt.Fprintf(GinkgoWriter, "capoClusterPhase: %v\n", capoCluster.Status.Phase)
 		return capoCluster.Status.Phase, nil
-	}, 2*time.Minute, 3*time.Second).Should(Equal("Provisioned"))
+	}, 2*time.Minute, 3*time.Second).Should(gomega.Equal("Provisioned"))
 }
 
-// waitOscMachineToProvision will wait that capi will set capoMachine in provisionned phase
+// waitOscMachineToProvision will wait that capi will set capoMachine in provisionned phase.
 func waitOscMachineToProvision(ctx context.Context, capoMachineKey client.ObjectKey) {
 	By("Wait capoMachine to be in provisioned phase")
-	Eventually(func() (string, error) {
+	gomega.Eventually(func() (string, error) {
 		capoMachine := &clusterv1.Machine{}
-		k8sClient.Get(ctx, capoMachineKey, capoMachine)
+		gomega.Expect(k8sClient.Get(ctx, capoMachineKey, capoMachine)).To(gomega.Succeed())
 		fmt.Fprintf(GinkgoWriter, "capoMachinePhase: %v\n", capoMachine.Status.Phase)
 		return capoMachine.Status.Phase, nil
-	}, 8*time.Minute, 15*time.Second).Should(Equal("Provisioned"))
+	}, 8*time.Minute, 15*time.Second).Should(gomega.Equal("Provisioned"))
 
 }
 
-// waitOscClusterToProvision will wait OscInfraCluster to be deployed and ready (object osccluster create with ready status)
+// waitOscClusterToProvision will wait OscInfraCluster to be deployed and ready (object osccluster create with ready status).
 func waitOscInfraClusterToBeReady(ctx context.Context, oscInfraClusterKey client.ObjectKey) {
 	By("Wait OscInfraCluster to be in ready status")
-	EventuallyWithOffset(1, func() bool {
+	gomega.EventuallyWithOffset(1, func() bool {
 		oscInfraCluster := &infrastructurev1beta1.OscCluster{}
-		k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+		gomega.Expect(k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)).To(gomega.Succeed())
 		fmt.Fprintf(GinkgoWriter, "oscInfraClusterReady: %v\n", oscInfraCluster.Status.Ready)
 		return oscInfraCluster.Status.Ready
-	}, 2*time.Minute, 3*time.Second).Should(BeTrue())
+	}, 2*time.Minute, 3*time.Second).Should(gomega.BeTrue())
 }
 
-// waitOscMachineToProvision will wait OscInfraCluster to be deployed and ready (object oscmachine create with ready status)
+// waitOscMachineToProvision will wait OscInfraCluster to be deployed and ready (object oscmachine create with ready status).
 func waitOscInfraMachineToBeReady(ctx context.Context, oscInfraMachineKey client.ObjectKey) {
 	By("Wait OscInfraMachine to be in ready status")
-	EventuallyWithOffset(1, func() bool {
+	gomega.EventuallyWithOffset(1, func() bool {
 		oscInfraMachine := &infrastructurev1beta1.OscMachine{}
-		k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
+		gomega.Expect(k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)).To(gomega.Succeed())
 		fmt.Fprintf(GinkgoWriter, "oscInfraMachineReady: %v\n", oscInfraMachine.Status.Ready)
 		return oscInfraMachine.Status.Ready
-	}, 8*time.Minute, 15*time.Second).Should(BeTrue())
+	}, 8*time.Minute, 15*time.Second).Should(gomega.BeTrue())
 }
 
-// checkOscNetToBeProvisioned will validate that OscNet is provisionned
+// checkOscNetToBeProvisioned will validate that OscNet is provisionned.
 func checkOscNetToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscNet is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		netsvc := net.NewService(ctx, clusterScope)
 		netSpec := clusterScope.GetNet()
-		netId := netSpec.ResourceId
-		fmt.Fprintf(GinkgoWriter, "Check NetId %s\n", netId)
-		net, err := netsvc.GetNet(netId)
+		netID := netSpec.ResourceID
+		fmt.Fprintf(GinkgoWriter, "Check NetId %s\n", netID)
+		net, err := netsvc.GetNet(netID)
 		if err != nil {
 			return err
 		}
 		fmt.Fprintf(GinkgoWriter, "Check NetId has been received %s\n", net.GetNetId())
-		if netId != net.GetNetId() {
-			return fmt.Errorf("Net %s does not exist", netId)
+		if netID != net.GetNetId() {
+			return fmt.Errorf("Net %s does not exist", netID)
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscNet \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscVmToBeProvisioned will validate that OscVm is provisionned
-func checkOscVmToBeProvisioned(ctx context.Context, oscInfraMachineKey client.ObjectKey, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
-	By("Check OscVm is provisioned")
-	Eventually(func() error {
+// checkOscVMToBeProvisioned will validate that OscVm is provisionned.
+func checkOscVMToBeProvisioned(ctx context.Context, oscInfraMachineKey client.ObjectKey, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
+	By("Check OscVM is provisioned")
+	gomega.Eventually(func() error {
 		vmSvc := compute.NewService(ctx, clusterScope)
-		vmSpec := machineScope.GetVm()
-		vmId := vmSpec.ResourceId
+		vmSpec := machineScope.GetVM()
+		vmId := vmSpec.ResourceID
 		fmt.Fprintf(GinkgoWriter, "Check VmId %s\n", vmId)
-		vm, err := vmSvc.GetVm(vmId)
+		vm, err := vmSvc.GetVM(vmId)
 		if err != nil {
 			return err
 		}
@@ -358,258 +373,256 @@ func checkOscVmToBeProvisioned(ctx context.Context, oscInfraMachineKey client.Ob
 		if vmId != vm.GetVmId() {
 			return fmt.Errorf("Vm %s does not exist", vmId)
 		}
-		fmt.Fprintf(GinkgoWriter, "Found OscVm \n")
+		fmt.Fprintf(GinkgoWriter, "Found OscVM \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscSubnetToBeProvisioned will validate that OscSubnet is provisionned
+// checkOscSubnetToBeProvisioned will validate that OscSubnet is provisionned.
 func checkOscSubnetToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscSubnet is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		netsvc := net.NewService(ctx, clusterScope)
 		netSpec := clusterScope.GetNet()
 		subnetsSpec := clusterScope.GetSubnet()
-		netId := netSpec.ResourceId
-		var subnetIds []string
-		subnetIds, err := netsvc.GetSubnetIdsFromNetIds(netId)
+		netID := netSpec.ResourceID
+		var subnetIDs []string
+		subnetIDs, err := netsvc.GetSubnetIDsFromNetIds(netID)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(GinkgoWriter, "Check SubnetIds has been received %v \n", subnetIds)
+		fmt.Fprintf(GinkgoWriter, "Check SubnetIDs has been received %v \n", subnetIDs)
 		for _, subnetSpec := range subnetsSpec {
-			subnetId := subnetSpec.ResourceId
+			subnetID := subnetSpec.ResourceID
 
-			fmt.Fprintf(GinkgoWriter, "Check SubnetId %s\n", subnetId)
-			if !controllers.Contains(subnetIds, subnetId) {
-				return fmt.Errorf("Subnet %s does not exist", subnetId)
+			fmt.Fprintf(GinkgoWriter, "Check SubnetID %s\n", subnetID)
+			if !controllers.Contains(subnetIDs, subnetID) {
+				return fmt.Errorf("Subnet %s does not exist", subnetID)
 			}
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSubnet \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscInternetServiceToBeProvisioned will validate that OscInternetService is provisionned
+// checkOscInternetServiceToBeProvisioned will validate that OscInternetService is provisionned.
 func checkOscInternetServiceToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscInternetService is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		netsvc := net.NewService(ctx, clusterScope)
 		internetServiceSpec := clusterScope.GetInternetService()
-		internetServiceId := internetServiceSpec.ResourceId
-		fmt.Fprintf(GinkgoWriter, "Check InternetServiceId %s\n", internetServiceId)
-		internetService, err := netsvc.GetInternetService(internetServiceId)
+		internetServiceID := internetServiceSpec.ResourceID
+		fmt.Fprintf(GinkgoWriter, "Check InternetServiceId %s\n", internetServiceID)
+		internetService, err := netsvc.GetInternetService(internetServiceID)
 		if err != nil {
 			return err
 		}
 		fmt.Fprintf(GinkgoWriter, "Check InternetServiceId has been received %s\n", internetService.GetInternetServiceId())
-		if internetServiceId != internetService.GetInternetServiceId() {
-			return fmt.Errorf("InternetService %s does not exist", internetServiceId)
+		if internetServiceID != internetService.GetInternetServiceId() {
+			return fmt.Errorf("InternetService %s does not exist", internetServiceID)
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscInternetService \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscNatServiceToBeProvisioned will validate that OscNatService is provisionned
+// checkOscNatServiceToBeProvisioned will validate that OscNatService is provisionned.
 func checkOscNatServiceToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscNatService is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		netsvc := net.NewService(ctx, clusterScope)
 		natServiceSpec := clusterScope.GetNatService()
-		natServiceId := natServiceSpec.ResourceId
-		fmt.Fprintf(GinkgoWriter, "Check NatServiceId %s\n", natServiceId)
-		natService, err := netsvc.GetNatService(natServiceId)
+		natServiceID := natServiceSpec.ResourceID
+		fmt.Fprintf(GinkgoWriter, "Check NatServiceId %s\n", natServiceID)
+		natService, err := netsvc.GetNatService(natServiceID)
 		if err != nil {
 			return err
 		}
 		fmt.Fprintf(GinkgoWriter, "Check NatServiceId has been received %s\n", natService.GetNatServiceId())
-		if natServiceId != natService.GetNatServiceId() {
-			return fmt.Errorf("NatService %s does not exist", natServiceId)
+		if natServiceID != natService.GetNatServiceId() {
+			return fmt.Errorf("NatService %s does not exist", natServiceID)
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscNatService \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscPublicIpToBeProvisioned will validate that OscPublicIp is provisionned
-func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
-	By("Check OscPublicIp is provisioned")
-	Eventually(func() error {
+// checkOscPublicIPToBeProvisioned will validate that OscPublicIp is provisionned.
+func checkOscPublicIPToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
+	By("Check OscPublicIP is provisioned")
+	gomega.Eventually(func() error {
 		securitysvc := security.NewService(ctx, clusterScope)
-		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-		publicIpsSpec = clusterScope.GetPublicIp()
-		var publicIpId string
-		var publicIpIds []string
-		for _, publicIpSpec := range publicIpsSpec {
-			publicIpId = publicIpSpec.ResourceId
-			publicIpIds = append(publicIpIds, publicIpId)
+		var publicIpsSpec []*infrastructurev1beta1.OscPublicIP = clusterScope.GetPublicIP()
+		var publicIPId string
+		var publicIPIds []string
+		for _, publicIPSpec := range publicIpsSpec {
+			publicIPId = publicIPSpec.ResourceID
+			publicIPIds = append(publicIPIds, publicIPId)
 		}
-		validPublicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpIds)
+		validPublicIpIds, err := securitysvc.ValidatePublicIPIds(publicIPIds)
 		fmt.Fprintf(GinkgoWriter, "Check PublicIpIds has been received %s\n", validPublicIpIds)
 		if err != nil {
 			return err
 		}
-		for _, publicIpSpec := range publicIpsSpec {
-			publicIpId = publicIpSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check PublicIpId %s\n", publicIpId)
+		for _, publicIPSpec := range publicIpsSpec {
+			publicIPId = publicIPSpec.ResourceID
+			fmt.Fprintf(GinkgoWriter, "Check PublicIpId %s\n", publicIPId)
 		}
-		if !controllers.Contains(validPublicIpIds, publicIpId) {
-			return fmt.Errorf("PublicIpId %s does not exist", publicIpId)
+		if !controllers.Contains(validPublicIpIds, publicIPId) {
+			return fmt.Errorf("PublicIpId %s does not exist", publicIPId)
 		}
-		fmt.Fprintf(GinkgoWriter, "Found OscPublicIp \n")
+		fmt.Fprintf(GinkgoWriter, "Found OscPublicIP \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscVolumeToBeProvisioned will validate that OscVolume is provisionned
+// checkOscVolumeToBeProvisioned will validate that OscVolume is provisionned.
 func checkOscVolumeToBeProvisioned(ctx context.Context, oscInfraMachineKey client.ObjectKey, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
 	By("Check OscVolume is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		volumeSvc := storage.NewService(ctx, clusterScope)
-		var volumesSpec []*infrastructurev1beta1.OscVolume
-		volumesSpec = machineScope.GetVolume()
-		var volumeId string
-		var volumeIds []string
+		var volumesSpec []*infrastructurev1beta1.OscVolume = machineScope.GetVolume()
+		var volumeID string
+		var volumeIDs []string
 		for _, volumeSpec := range volumesSpec {
-			volumeId = volumeSpec.ResourceId
-			volumeIds = append(volumeIds, volumeId)
+			volumeID = volumeSpec.ResourceID
+			volumeIDs = append(volumeIDs, volumeID)
 		}
-		validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
+		validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIDs)
 		fmt.Fprintf(GinkgoWriter, "Check VolumeIds has been received %s\n", validVolumeIds)
 		if err != nil {
 			return err
 		}
 		for _, volumeSpec := range volumesSpec {
-			volumeId := volumeSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check VolumeId %s\n", volumeId)
+			volumeID := volumeSpec.ResourceID
+			fmt.Fprintf(GinkgoWriter, "Check VolumeId %s\n", volumeID)
 		}
-		if !controllers.Contains(validVolumeIds, volumeId) {
-			return fmt.Errorf("VolumeId %s does not exist", volumeId)
+		if !controllers.Contains(validVolumeIds, volumeID) {
+			return fmt.Errorf("VolumeId %s does not exist", volumeID)
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscVolume \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscRouteTableToBeProvisioned will validate that OscRouteTable is provisionned
+// checkOscRouteTableToBeProvisioned will validate that OscRouteTable is provisionned.
 func checkOscRouteTableToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscRouteTable is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		netSpec := clusterScope.GetNet()
-		netId := netSpec.ResourceId
+		netID := netSpec.ResourceID
 		securitysvc := security.NewService(ctx, clusterScope)
 		routeTablesSpec := clusterScope.GetRouteTables()
-		routeTableIds, err := securitysvc.GetRouteTableIdsFromNetIds(netId)
-		fmt.Fprintf(GinkgoWriter, "Check RouteTableIds has been received %v \n", routeTableIds)
+		routeTableIDs, err := securitysvc.GetRouteTableIdsFromNetIds(netID)
+		fmt.Fprintf(GinkgoWriter, "Check RouteTableIds has been received %v \n", routeTableIDs)
 
 		if err != nil {
 			return err
 		}
 
 		for _, routeTableSpec := range routeTablesSpec {
-			routeTableId := routeTableSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check RouteTableId %s\n", routeTableId)
-			if !controllers.Contains(routeTableIds, routeTableId) {
-				return fmt.Errorf("RouteTableId %s does not exist", routeTableId)
+			routeTableID := routeTableSpec.ResourceID
+			fmt.Fprintf(GinkgoWriter, "Check RouteTableId %s\n", routeTableID)
+			if !controllers.Contains(routeTableIDs, routeTableID) {
+				return fmt.Errorf("RouteTableId %s does not exist", routeTableID)
 			}
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscRouteTable \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscRouteToBeProvisioned will validate that OscRoute is provisionned
+// checkOscRouteToBeProvisioned will validate that OscRoute is provisionned.
 func checkOscRouteToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscRoute is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		securitysvc := security.NewService(ctx, clusterScope)
 		routeTablesSpec := clusterScope.GetRouteTables()
 		natServiceSpec := clusterScope.GetNatService()
-		natServiceId := natServiceSpec.ResourceId
+		natServiceID := natServiceSpec.ResourceID
 		internetServiceSpec := clusterScope.GetInternetService()
-		internetServiceId := internetServiceSpec.ResourceId
-		var resourceId string
+		internetServiceID := internetServiceSpec.ResourceID
+		var resourceID string
 		for _, routeTableSpec := range routeTablesSpec {
-			routeTableId := routeTableSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check RouteTableId %s\n", routeTableId)
+			routeTableID := routeTableSpec.ResourceID
+			fmt.Fprintf(GinkgoWriter, "Check RouteTableId %s\n", routeTableID)
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 			for _, routeSpec := range *routesSpec {
 				routeName := routeSpec.Name + clusterScope.GetUID()
 				fmt.Fprintf(GinkgoWriter, "Check Route %s exist \n", routeName)
 				resourceType := routeSpec.TargetType
 				if resourceType == "gateway" {
-					resourceId = internetServiceId
+					resourceID = internetServiceID
 				} else {
-					resourceId = natServiceId
+					resourceID = natServiceID
 				}
-				fmt.Fprintf(GinkgoWriter, "Check RouteTable %s %s %s\n", routeTableId, resourceId, resourceType)
+				fmt.Fprintf(GinkgoWriter, "Check RouteTable %s %s %s\n", routeTableID, resourceID, resourceType)
 
-				routeTableFromRoute, err := securitysvc.GetRouteTableFromRoute(routeTableId, resourceId, resourceType)
+				routeTableFromRoute, err := securitysvc.GetRouteTableFromRoute(routeTableID, resourceID, resourceType)
 				if err != nil {
 					return err
 				}
 				fmt.Fprintf(GinkgoWriter, "Check RouteTableId has been received %s\n", routeTableFromRoute.GetRouteTableId())
-				if routeTableId != routeTableFromRoute.GetRouteTableId() {
+				if routeTableID != routeTableFromRoute.GetRouteTableId() {
 					return fmt.Errorf("Route %s does not exist", routeName)
 				}
 			}
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscRoute \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscSecurityGroupToBeProvisioned will validate that OscSecurityGroup is provisionned
+// checkOscSecurityGroupToBeProvisioned will validate that OscSecurityGroup is provisionned.
 func checkOscSecurityGroupToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscSecurityGroup is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		netSpec := clusterScope.GetNet()
-		netId := netSpec.ResourceId
+		netID := netSpec.ResourceID
 		securitysvc := security.NewService(ctx, clusterScope)
 		securityGroupsSpec := clusterScope.GetSecurityGroups()
-		securityGroupIds, err := securitysvc.GetSecurityGroupIdsFromNetIds(netId)
-		fmt.Fprintf(GinkgoWriter, "Check SecurityGroupIds received %v \n", securityGroupIds)
+		securityGroupIDs, err := securitysvc.GetSecurityGroupIdsFromNetIds(netID)
+		fmt.Fprintf(GinkgoWriter, "Check SecurityGroupIds received %v \n", securityGroupIDs)
 		if err != nil {
 			return err
 		}
 		for _, securityGroupSpec := range securityGroupsSpec {
-			securityGroupId := securityGroupSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupId)
-			if !controllers.Contains(securityGroupIds, securityGroupId) {
-				return fmt.Errorf("SecurityGroupId %s does not exist", securityGroupId)
+			securityGroupID := securityGroupSpec.ResourceID
+			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupID)
+			if !controllers.Contains(securityGroupIDs, securityGroupID) {
+				return fmt.Errorf("SecurityGroupId %s does not exist", securityGroupID)
 			}
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroup \n")
 		return nil
 
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscSecurityGroupRuleToBeProvisioned will validate that OscSecurityGroupRule is provisionned
+// checkOscSecurityGroupRuleToBeProvisioned will validate that OscSecurityGroupRule is provisionned.
 func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscSecurityGroupRule is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		securitysvc := security.NewService(ctx, clusterScope)
 		securityGroupsSpec := clusterScope.GetSecurityGroups()
 		for _, securityGroupSpec := range securityGroupsSpec {
-			securityGroupId := securityGroupSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupId)
+			securityGroupID := securityGroupSpec.ResourceID
+			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupID)
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
 			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
 				securityGroupRuleName := securityGroupRuleSpec.Name + "-" + clusterScope.GetUID()
 				fmt.Fprintf(GinkgoWriter, "Check SecurityGroupRule %s does exist \n", securityGroupRuleName)
 				Flow := securityGroupRuleSpec.Flow
-				IpProtocol := securityGroupRuleSpec.IpProtocol
-				IpRange := securityGroupRuleSpec.IpRange
+				IPProtocol := securityGroupRuleSpec.IPProtocol
+				IPRange := securityGroupRuleSpec.IPRange
 				FromPortRange := securityGroupRuleSpec.FromPortRange
 				ToPortRange := securityGroupRuleSpec.ToPortRange
-				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(securityGroupId, Flow, IpProtocol, IpRange, FromPortRange, ToPortRange)
+				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(securityGroupID, Flow, IPProtocol, IPRange, FromPortRange, ToPortRange)
 				if err != nil {
 					return err
 				}
 				fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId received %s\n", securityGroupFromSecurityGroupRule.GetSecurityGroupId())
-				if securityGroupId != securityGroupFromSecurityGroupRule.GetSecurityGroupId() {
+				if securityGroupID != securityGroupFromSecurityGroupRule.GetSecurityGroupId() {
 					return fmt.Errorf("SecurityGroupRule %s does not exist", securityGroupRuleName)
 				}
 
@@ -617,13 +630,13 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroupRule \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// checkOscLoadBalancerToBeProvisioned will validate that OscLoadBalancer is provisionned
+// checkOscLoadBalancerToBeProvisioned will validate that OscLoadBalancer is provisionned.
 func checkOscLoadBalancerToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscLoadBalancer is provisioned")
-	Eventually(func() error {
+	gomega.Eventually(func() error {
 		servicesvc := service.NewService(ctx, clusterScope)
 		loadBalancerSpec := clusterScope.GetLoadBalancer()
 		loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
@@ -638,16 +651,16 @@ func checkOscLoadBalancerToBeProvisioned(ctx context.Context, oscInfraClusterKey
 		fmt.Fprintf(GinkgoWriter, "Check loadBalancer has been received %s\n", *loadbalancer.LoadBalancerName)
 		fmt.Fprintf(GinkgoWriter, "Found OscLoadBalancer \n")
 		return nil
-	}, 1*time.Minute, 1*time.Second).Should(BeNil())
+	}, 1*time.Minute, 1*time.Second).Should(gomega.BeNil())
 }
 
-// getClusterScope will setup clusterscope use for our functional test
+// getClusterScope will setup clusterscope use for our functional test.
 func getClusterScope(ctx context.Context, capoClusterKey client.ObjectKey, oscInfraClusterKey client.ObjectKey) (clusterScope *scope.ClusterScope, err error) {
 	By("Get ClusterScope")
 	capoCluster := &clusterv1.Cluster{}
-	k8sClient.Get(ctx, capoClusterKey, capoCluster)
+	gomega.Expect(k8sClient.Get(ctx, capoClusterKey, capoCluster)).To(gomega.Succeed())
 	oscInfraCluster := &infrastructurev1beta1.OscCluster{}
-	k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	gomega.Expect(k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)).To(gomega.Succeed())
 	clusterScope, err = scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     k8sClient,
 		Cluster:    capoCluster,
@@ -656,17 +669,17 @@ func getClusterScope(ctx context.Context, capoClusterKey client.ObjectKey, oscIn
 	return clusterScope, err
 }
 
-// getMachineScope will setup machinescope use for our functional test
+// getMachineScope will setup machinescope use for our functional test.
 func getMachineScope(ctx context.Context, capoMachineKey client.ObjectKey, capoClusterKey client.ObjectKey, oscInfraMachineKey client.ObjectKey, oscInfraClusterKey client.ObjectKey) (machineScope *scope.MachineScope, err error) {
 	By("Get MachineScope")
 	capoCluster := &clusterv1.Cluster{}
-	k8sClient.Get(ctx, capoClusterKey, capoCluster)
+	gomega.Expect(k8sClient.Get(ctx, capoClusterKey, capoCluster)).To(gomega.Succeed())
 	capoMachine := &clusterv1.Machine{}
-	k8sClient.Get(ctx, capoMachineKey, capoMachine)
+	gomega.Expect(k8sClient.Get(ctx, capoMachineKey, capoMachine)).To(gomega.Succeed())
 	oscInfraCluster := &infrastructurev1beta1.OscCluster{}
-	k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	gomega.Expect(k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)).To(gomega.Succeed())
 	oscInfraMachine := &infrastructurev1beta1.OscMachine{}
-	k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
+	gomega.Expect(k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)).To(gomega.Succeed())
 	machineScope, err = scope.NewMachineScope(scope.MachineScopeParams{
 		Client:     k8sClient,
 		Cluster:    capoCluster,
@@ -687,12 +700,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "cluster-api-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -700,7 +713,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "cluster-api-natservice",
-						PublicIpName: "cluster-api-publicip",
+						PublicIPName: "cluster-api-publicip",
 						SubnetName:   "cluster-api-subnet",
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
@@ -717,7 +730,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "cluster-api-publicip",
 						},
@@ -730,8 +743,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 								{
 									Name:          "cluster-api-securitygrouprule",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -754,16 +767,16 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "cluster-api-subnet",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 						{
 							Name:          "cluster-api-sub",
-							IpSubnetRange: "10.0.1.0/24",
+							IPSubnetRange: "10.0.1.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -771,7 +784,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "cluster-api-natservice",
-						PublicIpName: "cluster-api-publicip",
+						PublicIPName: "cluster-api-publicip",
 						SubnetName:   "cluster-api-subnet",
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
@@ -800,7 +813,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "cluster-api-publicip",
 						},
@@ -813,16 +826,16 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 								{
 									Name:          "cluster-api-securitygrouprule",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-http",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 80,
 									ToPortRange:   80,
 								},
@@ -858,24 +871,24 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
-						IpRange: "10.0.0.0/24",
+						IPRange: "10.0.0.0/24",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "cluster-api-subnet-kcp",
-							IpSubnetRange: "10.0.0.32/28",
+							IPSubnetRange: "10.0.0.32/28",
 						},
 						{
 							Name:          "cluster-api-subnet-kw",
-							IpSubnetRange: "10.0.0.128/26",
+							IPSubnetRange: "10.0.0.128/26",
 						},
 						{
 							Name:          "cluster-api-subnet-public",
-							IpSubnetRange: "10.0.0.8/29",
+							IPSubnetRange: "10.0.0.8/29",
 						},
 						{
 							Name:          "cluster-api-subnet-nat",
-							IpSubnetRange: "10.0.0.0/29",
+							IPSubnetRange: "10.0.0.0/29",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -883,7 +896,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "cluster-api-natservice",
-						PublicIpName: "cluster-api-publicip-nat",
+						PublicIPName: "cluster-api-publicip-nat",
 						SubnetName:   "cluster-api-subnet-nat",
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
@@ -936,7 +949,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIPS: []*infrastructurev1beta1.OscPublicIP{
 						{
 							Name: "cluster-api-publicip-nat",
 						},
@@ -949,32 +962,32 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 								{
 									Name:          "cluster-api-securitygrouprule-api-kubelet-kw",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.128/26",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.128/26",
 									FromPortRange: 10250,
 									ToPortRange:   10250,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-api-kubelet-kcp",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 10250,
 									ToPortRange:   10250,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-nodeip-kw",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.128/26",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.128/26",
 									FromPortRange: 30000,
 									ToPortRange:   32767,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-nodeip-kcp",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 30000,
 									ToPortRange:   32767,
 								},
@@ -987,32 +1000,32 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 								{
 									Name:          "cluster-api-securitygrouprule-api-kw",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.128/26",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.128/26",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-api-kcp",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-etcd",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 2378,
 									ToPortRange:   2379,
 								},
 								{
 									Name:          "cluster-api-securitygrouprule-kubelet-kcp",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IPProtocol:    "tcp",
+									IPRange:       "10.0.0.32/28",
 									FromPortRange: 10250,
 									ToPortRange:   10252,
 								},
@@ -1025,8 +1038,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 								{
 									Name:          "cluster-api-securitygrouprule-lb",
 									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
+									IPProtocol:    "tcp",
+									IPRange:       "0.0.0.0/0",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -1053,9 +1066,9 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							SubregionName: "eu-west-2a",
 						},
 					},
-					Vm: infrastructurev1beta1.OscVm{
+					VM: infrastructurev1beta1.OscVM{
 						Name:             "cluster-api-vm-kcp",
-						ImageId:          "ami-6a871c21",
+						ImageID:          "ami-6a871c21",
 						Role:             "controlplane",
 						VolumeName:       "cluster-api-volume-kcp",
 						DeviceName:       "/dev/xvdb",
@@ -1063,16 +1076,16 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "cluster-api-subnet-kcp",
 						LoadBalancerName: "osc-k8s-machine",
-						VmType:           "tinav4.c2r4p2",
+						VMType:           "tinav4.c2r4p2",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
 								Name: "cluster-api-securitygroups-kcp",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIPS: []infrastructurev1beta1.OscPrivateIPElement{
 							{
 								Name:      "cluster-api-privateip-kcp",
-								PrivateIp: "10.0.0.38",
+								PrivateIP: "10.0.0.38",
 							},
 						},
 					},

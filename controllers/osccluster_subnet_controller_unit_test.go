@@ -1,18 +1,32 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
 	"context"
 	"fmt"
-
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -20,12 +34,12 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 			},
 		},
@@ -34,14 +48,14 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-uid",
 				},
 			},
 		},
@@ -51,16 +65,16 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
-				IpRange: "10.0.0.0/16",
+				IPRange: "10.0.0.0/16",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet-first",
-					IpSubnetRange: "10.0.0.0/24",
+					IPSubnetRange: "10.0.0.0/24",
 				},
 				{
 					Name:          "test-subnet-second",
-					IpSubnetRange: "10.0.1.0/24",
+					IPSubnetRange: "10.0.1.0/24",
 				},
 			},
 		},
@@ -69,19 +83,19 @@ var (
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
+				IPRange:    "10.0.0.0/16",
+				ResourceID: "vpc-test-net-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
 					Name:          "test-subnet-first",
-					IpSubnetRange: "10.0.0.0/24",
-					ResourceId:    "subnet-test-subnet-first-uid",
+					IPSubnetRange: "10.0.0.0/24",
+					ResourceID:    "subnet-test-subnet-first-uid",
 				},
 				{
 					Name:          "test-subnet-second",
-					IpSubnetRange: "10.0.1.0/24",
-					ResourceId:    "subnet-test-subnet-second-uid",
+					IPSubnetRange: "10.0.1.0/24",
+					ResourceID:    "subnet-test-subnet-second-uid",
 				},
 			},
 		},
@@ -97,25 +111,25 @@ func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta1.O
 	return clusterScope, ctx, mockOscSubnetInterface
 }
 
-// TestGetSubnetResourceId has several tests to cover the code of the function getSubnetResourceId
-func TestGetSubnetResourceId(t *testing.T) {
+// TestGetSubnetResourceID has several tests to cover the code of the function getSubnetResourceID
+func TestGetSubnetResourceID(t *testing.T) {
 	subnetTestCases := []struct {
 		name                      string
 		spec                      infrastructurev1beta1.OscClusterSpec
 		expSubnetFound            bool
-		expGetSubnetResourceIdErr error
+		expGetSubnetResourceIDErr error
 	}{
 		{
 			name:                      "get SubnetId",
 			spec:                      defaultSubnetInitialize,
 			expSubnetFound:            true,
-			expGetSubnetResourceIdErr: nil,
+			expGetSubnetResourceIDErr: nil,
 		},
 		{
 			name:                      "failed to get Subnet",
 			spec:                      defaultSubnetInitialize,
 			expSubnetFound:            false,
-			expGetSubnetResourceIdErr: fmt.Errorf("test-subnet-uid does not exist"),
+			expGetSubnetResourceIDErr: fmt.Errorf("test-subnet-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -130,14 +144,14 @@ func TestGetSubnetResourceId(t *testing.T) {
 					subnetRef.ResourceMap = make(map[string]string)
 					subnetRef.ResourceMap[subnetName] = subnetId
 				}
-				subnetResourceId, err := getSubnetResourceId(subnetName, clusterScope)
+				subnetResourceID, err := getSubnetResourceID(subnetName, clusterScope)
 				if err != nil {
-					assert.Equal(t, stc.expGetSubnetResourceIdErr, err, "getSubnetResourceId() should return the same error")
+					assert.Equal(t, stc.expGetSubnetResourceIDErr, err, "getSubnetResourceID() should return the same error")
 				} else {
-					assert.Nil(t, stc.expGetSubnetResourceIdErr)
+					assert.Nil(t, stc.expGetSubnetResourceIDErr)
 
 				}
-				t.Logf("Find subnetResourceId %s\n", subnetResourceId)
+				t.Logf("Find subnetResourceID %s\n", subnetResourceID)
 			}
 		})
 	}
@@ -162,16 +176,16 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet-first",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 						{
 							Name:          "test-subnet-first",
-							IpSubnetRange: "10.0.1.0/24",
+							IPSubnetRange: "10.0.1.0/24",
 						},
 					},
 				},
@@ -218,17 +232,17 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet@test",
-							IpSubnetRange: "10.0.0.0/24",
+							IPSubnetRange: "10.0.0.0/24",
 						},
 					},
 				},
 			},
-			expCheckSubnetFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckSubnetFormatParametersErr: fmt.Errorf("invalid Tag Name"),
 		},
 		{
 			name: "check Bad Ip Range Prefix subnet",
@@ -236,12 +250,12 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/36",
+							IPSubnetRange: "10.0.0.0/36",
 						},
 					},
 				},
@@ -254,12 +268,12 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.0/16",
+						IPRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.256/16",
+							IPSubnetRange: "10.0.0.256/16",
 						},
 					},
 				},
@@ -375,12 +389,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface)
@@ -450,12 +464,12 @@ func TestReconcileSubnetGet(t *testing.T) {
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface)
@@ -469,8 +483,8 @@ func TestReconcileSubnetGet(t *testing.T) {
 	}
 }
 
-// TestReconcileSubnetResourceId has several tests to cover the code of the function reconcileSubnet
-func TestReconcileSubnetResourceId(t *testing.T) {
+// TestReconcileSubnetResourceID has several tests to cover the code of the function reconcileSubnet
+func TestReconcileSubnetResourceID(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
 		spec                  infrastructurev1beta1.OscClusterSpec
@@ -546,12 +560,12 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 
@@ -590,7 +604,7 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
-			clusterScope.OscCluster.Spec.Network.Net.ResourceId = netId
+			clusterScope.OscCluster.Spec.Network.Net.ResourceID = netId
 
 			var subnetIds []string
 			subnetName := "cluster-api-subnet-uid"
@@ -598,7 +612,7 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 			subnetIds = append(subnetIds, subnetId)
 			mockOscSubnetInterface.
 				EXPECT().
-				GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+				GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 				Return(subnetIds, stc.expGetSubnetIdsErr)
 			mockOscSubnetInterface.
 				EXPECT().
@@ -606,7 +620,7 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 				Return(stc.expDeleteSubnetErr)
 			networkSpec := clusterScope.GetNetwork()
 			networkSpec.SetSubnetDefaultValue()
-			clusterScope.OscCluster.Spec.Network.Subnets[0].ResourceId = subnetId
+			clusterScope.OscCluster.Spec.Network.Subnets[0].ResourceID = subnetId
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
 			if err != nil {
 				assert.Equal(t, stc.expReconcileDeleteSubnetErr, err, "reconcileDeleteSubnet() should return the same error")
@@ -681,12 +695,12 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIDsFromNetIds(gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 
@@ -701,8 +715,8 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteSubnetResourceId has several tests to cover the code of the function reconcileDeleteSubnet
-func TestReconcileDeleteSubnetResourceId(t *testing.T) {
+// TestReconcileDeleteSubnetResourceID has several tests to cover the code of the function reconcileDeleteSubnet
+func TestReconcileDeleteSubnetResourceID(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec

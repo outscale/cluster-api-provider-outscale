@@ -7,15 +7,15 @@ assignees:
 body:
   - type: textarea
     id: what-happened
-    attributes: 
+    attributes:
       label: What happened
-      description: What happened ? 
+      description: What happened ?
       placeholder: Explain the bug with a clear and concise description
     validations:
       required: true
   - type: textarea
     id: step
-    attributes: 
+    attributes:
       label: Step to reproduce
       description: What steps did you take (as minimally and precisely as possible to reproduce it)  ?
     validations:
@@ -23,10 +23,10 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected to happen	      
+      label: Expected to happen
       description: What did you expect to happen ?
     validations:
-      required: true	
+      required: true
   - type: textarea
     id: Add
     attributes:
@@ -57,15 +57,7 @@ body:
           - **Install tools**: calico, ...
           - **Kubernetes Distribution**: rke
           - **Kubernetes Distribution Version**:  v1.3.10
-      value: |
-          - Kubernetes version: (use `kubectl version`): 
-          - OS (e.g. from `/etc/os-release`):
-          - Kernel (e.g. `uname -a`):
-          - cluster-api-provider-outscale version:
-          - cluster-api version: 
-          - Install tools:
-          - Kubernetes Distribution:
-          - Kubernetes Diestribution version: 
+      value: "- Kubernetes version: (use `kubectl version`): \n- OS (e.g. from `/etc/os-release`):\n- Kernel (e.g. `uname -a`):\n- cluster-api-provider-outscale version:\n- cluster-api version: \n- Install tools:\n- Kubernetes Distribution:\n- Kubernetes Diestribution version: \n"
       render: markdown
     validations:
       required: true

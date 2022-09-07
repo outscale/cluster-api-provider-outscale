@@ -1,3 +1,21 @@
+# Copyright 2022 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Ensure Make is run with bash shell as some syntax below is bash-specific
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# This is a requirement for 'setup-envtest.sh' in the test target.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
 
 # Image URL to use all building/pushing image targets
 REGISTRY ?= outscale
@@ -12,24 +30,17 @@ OSC_CLUSTER ?= cluster-api
 CLUSTER ?= cluster-api
 LOG_TAIL ?= -1
 CAPI_VERSION ?= v1.1.4
-CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system   
-CAPO_NAMESPACE ?= cluster-api-provider-outscale-system  
+CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
+CAPO_NAMESPACE ?= cluster-api-provider-outscale-system
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
 E2E_CONF_FILE ?= ${PWD}/test/e2e/config/outscale-ci-envsubst.yaml
-MINIMUM_CLUSTERCTL_VERSION=1.1.3
-MIN_GO_VERSION=1.18.5
-MINIMUM_TILT_VERSION=0.25.3
-MINIMUM_PACKER_VERSION=1.8.1
-MINIMUM_KIND_VERSION=v0.14.0
-MINIMUM_CONTROLLER_GEN_VERSION=0.8.0 
-MINIMUM_GH_VERSION=2.12.1
-MINIMUM_ENVTEST_VERSION=1.23.3
-MINIMUM_HELM_VERSION=v3.9.4
-MINIMUM_KUSTOMIZE_VERSION=4.5.1
-MINIMUM_MOCKGEN_VERSION=1.6.0
-MINIMUM_KUBECTL_VERSION=1.22.10
+MINIMUM_GOLANGCI_LINT_VERSION=1.49.0
+MINIMUM_SHELLCHECK_VERSION=0.8.0
+MODE=check
+MINIMUM_BUILDIFIER_VERSION=5.1.0
+MINIMUM_YAMLFMT_VERSION=0.3.0
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -71,7 +82,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate/boilerplate.go.txt" paths="./..."
 
 .PHONY: mock-generate
 mock-generate: mockgen ## Generate mock
@@ -85,16 +96,32 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: format
+format: gofmt gospace yamlspace yamlfmt  
+
 .PHONY: gofmt
 gofmt: ## Run gofmt
 	find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -w
+
+.PHONY: gospace
+gospace: ## Run to remove trailling space
+	find . -name "*.go" -type f -print0 | xargs -0 sed -i 's/[[:space:]]*$$//'
+
+.PHONY: yamlspace
+yamlspace: ## Run to remove trailling space
+	find . -name "*.yaml" -type f -print0 | xargs -0 sed -i 's/[[:space:]]*$$//'
+
+.PHONY: yamlfmt
+yamlfmt: install-yamlfmt
+	find . -name "*.yaml" | grep -v "\/vendor\/" | xargs yamlfmt
+
 
 .PHONY: checkfmt
 checkfmt: ## check gofmt
 	./check-gofmt
 
 .PHONY: unit-test
-unit-test: 
+unit-test:
 	go test -v -coverprofile=covers.out  ./controllers
 	go tool cover -func=covers.out -o covers.txt
 	go tool cover -html=covers.out -o covers.html
@@ -169,7 +196,7 @@ ifndef KUSTOMIZE
 	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -  
+	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 endif
 
 .PHONY: credential
@@ -233,7 +260,7 @@ release_dir:
 	mkdir -p $(RELEASE_DIR)/
 
 .PHONY: clean-release
-clean-release: 
+clean-release:
 	rm -rf $(RELEASE_DIR)
 
 .PHONY: release
@@ -250,11 +277,11 @@ else
 	$(KUSTOMIZE) build config/default | $(ENVSUBST) > out/infrastructure-components.yaml
 endif
 .PHONY: release-templates
-release-templates: 
+release-templates:
 	cp templates/cluster-template* $(RELEASE_DIR)/
 
-.PHONY: release-binary 
-release-binary: 
+.PHONY: release-binary
+release-binary:
 	docker run \
 		--rm \
 		-e CGO_ENABLED=0 \
@@ -267,7 +294,7 @@ release-binary:
 		-o $(RELEASE_DIR)/$(notdir $(RELEASE_BINARY))-$(GOOS)-$(GOARCH) $(RELEASE_BINARY)
 
 .PHONY: release-tag
-release-tag: 
+release-tag:
 	docker tag $(IMG) $(IMG_RELEASE)
 	docker push $(IMG_RELEASE)
 
@@ -280,13 +307,13 @@ check-release-tag: ## Check if the release tag is set
 	@if [ -z "${RELEASE_TAG}" ]; then echo "RELEASE_TAG is not set"; exit 1; fi
 
 .PHONY: check-github-token
-check-github-token: 
+check-github-token:
 	@if [ -z "${SECRET_GITHUB_TOKEN}" ]; then echo "GITHUB_TOKEN is not set"; exit 1; fi
 
 .PHONY: gh-login
 gh-login: gh check-github-token
 	cat <<< "${SECRET_GITHUB_TOKEN}"  | $(GH)  auth login --with-token
-        
+
 GH = $(shell pwd)/bin/gh
 
 .PHONY: release-changelog
@@ -299,41 +326,40 @@ create-gh-release: gh
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
-controller-gen: ## Download controller-gen
-	MINIMUM_CONTROLLER_GEN_VERSION=${MINIMUM_CONTROLLER_GEN_VERSION} ./hack/ensure-controller-gen.sh 
+controller-gen: ## Download controller-gen locally if necessary.
+	mkdir -p $(shell pwd)/bin
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+
+
+.PHONY: install-golangcilint
+install-golangcilint: ## Download golangci-lint
+	MINIMUM_GOLANGCI_LINT_VERSION=$(MINIMUM_GOLANGCI_LINT_VERSION) ./hack/ensure-golangci-lint.sh
+
+.PHONY: install-yamlfmt
+install-yamlfmt: ## donwload yaml fmt
+        MINIMUM_YAMLFMT_VERSION=$(MINIMUM_YAMLFMT_VERSION) ./hack/ensure-yamlfmt.sh
+
+.PHONY: install-shellcheck
+install-shellcheck: ## Download shellcheck
+	MINIMUM_SHELLCHECK_VERSION=$(MINIMUM_SHELLCHECK_VERSION) ./hack/verify-shellcheck.sh
+.PHONY: verify-boilerplate
+verify-boilerplate: ## Verify boilerplate text exists in each file
+	./hack/verify-boilerplate.sh
+
+.PHONY: install-buildifier
+install-buildifier: ## Download shellcheck
+	MODE=${MODE_BUILDIFIER} MINIMUM_BUILDIFIER_VERSION=$(MINIMUM_BUILDIFIER_VERSION) ./hack/verify-buildifier.sh
+
 
 LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
 .PHONY: install-clusterctl
-install-clusterctl: ## Download clusterctl
-	MINIMUM_CLUSTERCTL_VERSION=$(MINIMUM_CLUSTERCTL_VERSION) ./hack/ensure-clusterctl.sh
-
-.PHONY: verify-go
-verify-go:  ## Download go
-	MIN_GO_VERSION=$(MIN_GO_VERSION) ./hack/ensure-go.sh
-
-.PHONY: install-tilt
-install-tilt: ## Download tilt
-	MINIMUM_TILT_VERSION=$(MINIMUM_TILT_VERSION) ./hack/ensure-tilt.sh
-
-.PHONY: install-packer
-install-packer: ## Download packer
-	MINIMUM_PACKER_VERSION=$(MINIMUM_PACKER_VERSION) ./hack/ensure-packer.sh
-
-.PHONY: install-gh
-install-gh: ## Download gh
-	MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh 
-
-.PHONY: install-kind
-install-kind: ## Download kind
-	MINIMUM_KIND_VERSION=$(MINIMUM_KIND_VERSION) ./hack/ensure-kind.sh
-
-.PHONY: install-kubectl
-install-kubectl: ## Download kubectl
-	MINIMUM_KUBECTL_VERSION=$(MINIMUM_KUBECTL_VERSION) ./hack/ensure-kubectl.sh
-
-.PHONY: install-helm
-install-helm: ## Downlload helm
-	MINIMUM_HELM_VERSION=$(MINIMUM_HELM_VERSION) ./hack/ensure-helm.sh
+install-clusterctl: ## Download clusterctl locally if necessary.
+	@if [ ! -s ${LOCAL_CLUSTERCTL} ]; then \
+		mkdir -p $(shell pwd)/bin; \
+		wget -c https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/clusterctl-linux-amd64; \
+		mv $(shell pwd)/clusterctl-linux-amd64 $(shell pwd)/bin/clusterctl; \
+		chmod +x  $(LOCAL_CLUSTERCTL); \
+	fi
 
 .PHONY: deploy-clusterapi
 deploy-clusterapi: install-clusterctl ## Deploy clusterapi
@@ -345,44 +371,40 @@ undeploy-clusterapi:  ## undeploy clusterapi
 
 LOCAL_KUSTOMIZE ?= $(shell pwd)/bin/kustomize
 .PHONY: kustomize
-kustomize: ## Download Kustomize
-	MINIMUM_KUSTOMIZE_VERSION=$(MINIMUM_KUSTOMIZE_VERSION) hack/ensure-kustomize.sh
+kustomize: ## Download kustomize locally if necessary.
+	mkdir -p $(shell pwd)/bin
+	$(call go-get-tool,$(LOCAL_KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
-	MINIMUM_ENVTEST_VERSION=$(MINIMUM_ENVTEST_VERSION) ./hack/ensure-envtest.sh
+	mkdir -p $(shell pwd)/bin
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 MOCKGEN = $(shell pwd)/bin/mockgen
 .PHONY: mockgen
 mockgen: ## Download mockgen locally if necessary.
-        MINIMUM_MOCKGEN_VERSION=$(MINIMUM_MOCKGEN_VERSION) ./hack/ensure-mockgen.sh
+	mkdir -p $(shell pwd)/bin
+	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
 
 ENVSUBST = $(shell pwd)/bin/envsubst
 .PHONY: envsubst
 envsubst: ## Download envsubst
-	./hack/ensure-envsubst.sh 
+	mkdir -p $(shell pwd)/bin
+	go build -tags=tools -o $(ENVSUBST) github.com/drone/envsubst/v2/cmd/envsubst
 
 GH = $(shell pwd)/bin/gh
+GH_VERSION ?= 2.14.4
 .PHONY: gh
-gh: ## Download gh
-	MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh
+gh:
+	@if [ ! -s ${GH} ]; then \
+		mkdir -p $(shell pwd)/bin; \
+		curl https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz -Lo gh_${GH_VERSION}_linux_amd64.tar.gz; \
+		tar -zxvf gh_2.14.4_linux_amd64.tar.gz gh_2.14.4_linux_amd64/bin/gh  --strip-components 2 -C ${GH}; \
+                mv gh ./bin; \
+		rm -f gh_${GH_VERSION}_linux_amd64.tar.gz; \
+	fi
 	
-
-install-dev-prerequisites: ## Install clusterctl, controller-gen, envsubst, envtest, gh, go, helm, kind, kubectl, kustomize, packer, til 
-	@echo "Start install all depencies"
-	$(MAKE) install-clusterctl
-	$(MAKE) controller-gen
-	$(MAKE) verify-go
-	$(MAKE) envsubst
-	$(MAKE) mockgen
-	$(MAKE) envtest
-	$(MAKE) install-helm
-	$(MAKE) install-kind
-	$(MAKE) install-kubectl
-	$(MAKE) kustomize
-	$(MAKE) install-tilt
-	@echo "Finished to install all dependencies"
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

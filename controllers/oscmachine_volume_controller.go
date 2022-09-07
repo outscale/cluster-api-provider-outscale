@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
@@ -5,16 +21,15 @@ import (
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getVolumeResourceId return the volumeId from the resourceMap base on resourceName (tag name + cluster uid)
-func getVolumeResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
+// getVolumeResourceID return the volumeId from the resourceMap base on resourceName (tag name + cluster uid)
+func getVolumeResourceID(resourceName string, machineScope *scope.MachineScope) (string, error) {
 	volumeRef := machineScope.GetVolumeRef()
 	if volumeId, ok := volumeRef.ResourceMap[resourceName]; ok {
 		return volumeId, nil
@@ -93,11 +108,10 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 
 	var volumeId string
 	var volumeIds []string
-	var volumesSpec []*infrastructurev1beta1.OscVolume
-	volumesSpec = machineScope.GetVolume()
+	var volumesSpec []*infrastructurev1beta1.OscVolume = machineScope.GetVolume()
 	volumeRef := machineScope.GetVolumeRef()
 	for _, volumeSpec := range volumesSpec {
-		volumeId = volumeSpec.ResourceId
+		volumeId = volumeSpec.ResourceID
 		volumeIds = append(volumeIds, volumeId)
 	}
 
@@ -112,8 +126,8 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		if len(volumeRef.ResourceMap) == 0 {
 			volumeRef.ResourceMap = make(map[string]string)
 		}
-		if volumeSpec.ResourceId != "" {
-			volumeRef.ResourceMap[volumeName] = volumeSpec.ResourceId
+		if volumeSpec.ResourceID != "" {
+			volumeRef.ResourceMap[volumeName] = volumeSpec.ResourceID
 		}
 		volumeId := volumeRef.ResourceMap[volumeName]
 		if !Contains(validVolumeIds, volumeId) {
@@ -132,7 +146,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 			}
 			machineScope.Info("### Get volume ###", "volume", volume)
 			volumeRef.ResourceMap[volumeName] = volume.GetVolumeId()
-			volumeSpec.ResourceId = volume.GetVolumeId()
+			volumeSpec.ResourceID = volume.GetVolumeId()
 		}
 	}
 	return reconcile.Result{}, nil
@@ -155,7 +169,7 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 	var volumeIds []string
 	var volumeId string
 	for _, volumeSpec := range volumesSpec {
-		volumeId = volumeSpec.ResourceId
+		volumeId = volumeSpec.ResourceID
 		volumeIds = append(volumeIds, volumeId)
 	}
 	validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
@@ -164,7 +178,7 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 	}
 	machineScope.Info("### Check Id ###", "volume", volumeIds)
 	for _, volumeSpec := range volumesSpec {
-		volumeId = volumeSpec.ResourceId
+		volumeId = volumeSpec.ResourceID
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
 		if !Contains(validVolumeIds, volumeId) {
 			controllerutil.RemoveFinalizer(oscmachine, "")
