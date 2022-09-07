@@ -339,7 +339,7 @@ var (
 	DefaultVmSubregionName    string = "eu-west-2a"
 	DefaultVmImageId          string = "ami-e1a786f1"
 	DefaultVmKeypairName      string = "cluster-api"
-	DefaultVmType             string = "tinav5.c4r8p1"
+	DefaultVmType             string = "tinav5.c2r2p1"
 	DefaultVmDeviceName       string = "/dev/sda1"
 	DefaultVmPrivateIpKwName  string = "cluster-api-privateip-kw"
 	DefaultVmPrivateIpKcpName string = "cluster-api-privateip-kcp"
