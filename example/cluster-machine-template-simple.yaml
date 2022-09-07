@@ -292,6 +292,7 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: osc://'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
   version: "1.22.11"
