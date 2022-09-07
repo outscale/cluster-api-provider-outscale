@@ -523,28 +523,54 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not unlink vm %s with loadBalancerName %s for OscCluster %s/%s", err, loadBalancerName, vmId, machineScope.GetNamespace(), machineScope.GetName())
 		}
-		machineScope.Info("Delete LoadBalancer sg")
-		securityGroupsRef := clusterScope.GetSecurityGroupsRef()
-		loadBalancerSpec := clusterScope.GetLoadBalancer()
-		loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
-		ipProtocol := strings.ToLower(loadBalancerSpec.Listener.BackendProtocol)
-		machineScope.Info("Get IpProtocol", "ipProtocol", ipProtocol)
-		fromPortRange := loadBalancerSpec.Listener.BackendPort
-		machineScope.Info("Get FromPortRange", "FromPortRange", fromPortRange)
-		toPortRange := loadBalancerSpec.Listener.BackendPort
-		machineScope.Info("Get ToPortRange", "ToPortRange", toPortRange)
-		loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-" + clusterScope.GetUID()
-		associateSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
-		machineScope.Info("Get associate", "AssociateSecurityGroupId", associateSecurityGroupId)
-		machineScope.Info("Get sg id", "securityGroupIds", securityGroupIds[0])
-		err = securityGroupSvc.DeleteSecurityGroupRule(associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete outbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-		}
-		err = securityGroupSvc.DeleteSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-		}
+                clusterScope.Info("Get list OscMachine")
+                machines, _, err := clusterScope.ListMachines(ctx)
+                if err != nil {
+                        return reconcile.Result{}, fmt.Errorf("%w Can not get ListMachine", err)
+                }
+                var machineKcpCount int32 = 0
+                if len(machines) > 0 {
+                        names := make([]string, len(machines))
+                        for i, m := range machines {
+                                names[i] = fmt.Sprintf("machine/%s", m.Name)
+                                machineScope.Info("Get Machines", "machine", m.Name)
+                                machineLabel := m.Labels
+                                for labelKey, _ := range machineLabel {
+                                        if labelKey == "cluster.x-k8s.io/control-plane" {
+                                                machineScope.Info("Get Kcp Machine", "machineKcp", m.Name)
+                                                machineKcpCount++
+                                        }
+                                }
+
+                        }
+                        if machineKcpCount == 1 {
+                                machineScope.Info("Delete LoadBalancer sg")
+                                securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+                                loadBalancerSpec := clusterScope.GetLoadBalancer()
+                                loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
+                                ipProtocol := strings.ToLower(loadBalancerSpec.Listener.BackendProtocol)
+                                machineScope.Info("Get IpProtocol", "ipProtocol", ipProtocol)
+                                fromPortRange := loadBalancerSpec.Listener.BackendPort
+                                machineScope.Info("Get FromPortRange", "FromPortRange", fromPortRange)
+                                toPortRange := loadBalancerSpec.Listener.BackendPort
+                                machineScope.Info("Get ToPortRange", "ToPortRange", toPortRange)
+                                loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-" + clusterScope.GetUID()
+                                associateSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
+                                machineScope.Info("Get associate", "AssociateSecurityGroupId", associateSecurityGroupId)
+                                machineScope.Info("Get sg id", "securityGroupIds", securityGroupIds[0])
+                                err = securityGroupSvc.DeleteSecurityGroupRule(associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+                                if err != nil {
+                                        return reconcile.Result{}, fmt.Errorf("%w Can not delete outbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+                                }
+                                err = securityGroupSvc.DeleteSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+                                if err != nil {
+                                        return reconcile.Result{}, fmt.Errorf("%w Can not delete inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+                                }
+
+                        } else {
+                                machineScope.Info("Get several control plane machine, can not delete loadBalancer securityGroup", "machineKcp", machineKcpCount)
+                        }
+                }
 	}
 
 	err = vmSvc.DeleteVm(vmId)
