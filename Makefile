@@ -40,6 +40,7 @@ E2E_CONF_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/cluster-machine-template-wi
 E2E_CONF_CLUSTER_CLASS_FILE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml
 E2E_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/clusterclass.yaml.tmpl
 E2E_CLUSTER_CLASS_FILE ?= ${PWD}/example/clusterclass.yaml
+ClusterToClean ?= hello-osc
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -121,9 +122,10 @@ cloud-init-secret:
 testenv: cloud-init-secret
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
-.PHONY: testtools
-testtools:
-	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testtools/ -ginkgo.v -ginkgo.progress -test.v
+.PHONY: testclean
+testclean: 
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.progress -test.v
+
 
 .PHONY: e2e-conf-file
 e2e-conf-file: envsubst
