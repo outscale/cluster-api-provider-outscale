@@ -175,13 +175,14 @@ jobs:
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
-    - name: Undeploy cluster-api-outscale
-      run: make undeploy
+        CAPO_NAMESPACE: cluster-api-provider-outscale-system
+    - name: Get log capi
+      run: make logs-capi
+      if: ${{ failure() && steps.deploy-capi.conclusion == 'failure' }}
       shell: bash
       env:
-        IMG: ${{ steps.nodeports.outputs.nodeport_ip}}:${{ steps.nodeports.outputs.nodeport_ip}}/cluster-api-outscale-controller:${{ github.sha }}
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
     - name: Destroy cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
       if: ${{ always() }}
@@ -213,6 +214,11 @@ jobs:
         go-version: '>=1.17.8'
     - name: Install kustomize
       uses: imranismail/setup-kustomize@v1
+    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
+      with:
+        access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        region: ${{ secrets.OSC_REGION }}
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
       with:
