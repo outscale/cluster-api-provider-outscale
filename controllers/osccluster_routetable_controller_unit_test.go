@@ -1276,7 +1276,7 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 			if rttc.expNetFound {
 				netRef.ResourceMap[netName] = netId
 			}
-			clusterName := rttc.spec.Network.ClusterName
+			clusterName := rttc.spec.Network.ClusterName + "-uid"
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 
@@ -1641,7 +1641,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 			clusterScope, ctx, mockOscRouteTableInterface := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
 
 			netName := rttc.spec.Network.Net.Name + "-uid"
-			clusterName := rttc.spec.Network.ClusterName
+			clusterName := rttc.spec.Network.ClusterName + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
@@ -1712,7 +1712,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
 
-			clusterName := rttc.spec.Network.ClusterName
+			clusterName := rttc.spec.Network.ClusterName + "-uid"
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 

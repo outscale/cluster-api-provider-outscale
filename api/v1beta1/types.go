@@ -176,6 +176,7 @@ type OscSecurityGroup struct {
 	// The Security Group Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	Tag        string `json:"tag,omitempty"`
 }
 
 type OscPublicIp struct {
@@ -313,6 +314,7 @@ type OscVm struct {
 	ResourceId         string                    `json:"resourceId,omitempty"`
 	Role               string                    `json:"role,omitempty"`
 	ClusterName        string                    `json:"clusterName,omitempty"`
+	Replica            int32                     `json:"replica,omitempty"`
 }
 
 type OscRootDisk struct {
@@ -489,6 +491,8 @@ var (
 	DefaultRuleIpRangeLb                      string = "0.0.0.0/0"
 	DefaultFromPortRangeLb                    int32  = 6443
 	DefaultToPortRangeLb                      int32  = 6443
+	DefaultSecurityGroupNodeName              string = "cluster-api-securitygroup-node"
+	DefaultDescriptionNode                    string = "Security Group Node with cluster-api"
 )
 
 // SetDefaultValue set the Net default values
@@ -518,6 +522,7 @@ func (node *OscNode) SetVolumeDefaultValue() {
 			volumeKwName = strings.Replace(DefaultVolumeKwName, DefaultClusterName, node.ClusterName, -1)
 			volumeKcpSubregionName = strings.Replace(DefaultVolumeKcpSubregionName, DefaultClusterName, node.ClusterName, -1)
 			volumeKwSubregionName = strings.Replace(DefaultVolumeKwSubregionName, DefaultClusterName, node.ClusterName, -1)
+
 		}
 		if node.Vm.Role == "controlplane" {
 			volume = OscVolume{
@@ -559,6 +564,7 @@ func (vm *OscVm) SetDefaultValue() {
 	var subnetKwName string = DefaultSubnetKwName
 	var securityGroupKcpName string = DefaultSecurityGroupKcpName
 	var securityGroupKwName string = DefaultSecurityGroupKwName
+	var securityGroupNodeName string = DefaultSecurityGroupNodeName
 	if vm.ClusterName != "" {
 		vmKcpName = strings.Replace(DefaultVmKcpName, DefaultClusterName, vm.ClusterName, -1)
 		vmKwName = strings.Replace(DefaultVmKwName, DefaultClusterName, vm.ClusterName, -1)
@@ -566,6 +572,7 @@ func (vm *OscVm) SetDefaultValue() {
 		subnetKwName = strings.Replace(DefaultSubnetKwName, DefaultClusterName, vm.ClusterName, -1)
 		securityGroupKcpName = strings.Replace(DefaultSecurityGroupKcpName, DefaultClusterName, vm.ClusterName, -1)
 		securityGroupKwName = strings.Replace(DefaultSecurityGroupKwName, DefaultClusterName, vm.ClusterName, -1)
+		securityGroupNodeName = strings.Replace(DefaultSecurityGroupNodeName, DefaultClusterName, vm.ClusterName, -1)
 	}
 	if vm.Role == "controlplane" {
 		if vm.Name == "" {
@@ -594,10 +601,13 @@ func (vm *OscVm) SetDefaultValue() {
 			vm.LoadBalancerName = DefaultLoadBalancerName
 		}
 		if len(vm.SecurityGroupNames) == 0 {
-			securityGroup := OscSecurityGroupElement{
+			securityGroupKw := OscSecurityGroupElement{
 				Name: securityGroupKcpName,
 			}
-			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroup}
+			securityGroupNode := OscSecurityGroupElement{
+				Name: securityGroupNodeName,
+			}
+			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroupKw, securityGroupNode}
 		}
 	} else {
 		if vm.Name == "" {
@@ -623,10 +633,13 @@ func (vm *OscVm) SetDefaultValue() {
 			vm.SubnetName = subnetKwName
 		}
 		if len(vm.SecurityGroupNames) == 0 {
-			securityGroup := OscSecurityGroupElement{
+			securityGroupKw := OscSecurityGroupElement{
 				Name: securityGroupKwName,
 			}
-			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroup}
+			securityGroupNode := OscSecurityGroupElement{
+				Name: securityGroupNodeName,
+			}
+			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroupKw, securityGroupNode}
 		}
 	}
 	if vm.ImageId == "" {
@@ -641,6 +654,7 @@ func (vm *OscVm) SetDefaultValue() {
 	if vm.SubregionName == "" {
 		vm.SubregionName = DefaultVmSubregionName
 	}
+
 }
 
 // SetDefaultValue set the Subnet default values
@@ -789,6 +803,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		var securityGroupKcpName string = DefaultSecurityGroupKcpName
 		var securityGroupRuleLbName string = DefaultSecurityGroupRuleLbName
 		var securityGroupLbName string = DefaultSecurityGroupLbName
+		var securityGroupNodeName string = DefaultSecurityGroupNodeName
 		if network.ClusterName != "" {
 			securityGroupRuleApiKubeletKwName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKwName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleApiKubeletKcpName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKcpName, DefaultClusterName, network.ClusterName, -1)
@@ -804,6 +819,8 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			securityGroupKcpName = strings.Replace(DefaultSecurityGroupKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleLbName = strings.Replace(DefaultSecurityGroupRuleLbName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupLbName = strings.Replace(DefaultSecurityGroupLbName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupNodeName = strings.Replace(DefaultSecurityGroupNodeName, DefaultClusterName, network.ClusterName, -1)
+
 		}
 		securityGroupRuleApiKubeletKw := OscSecurityGroupRule{
 			Name:          securityGroupRuleApiKubeletKwName,
@@ -923,6 +940,12 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleLb},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupLb)
+		securityGroupNode := OscSecurityGroup{
+			Name:               securityGroupNodeName,
+			Description:        DefaultDescriptionNode,
+			SecurityGroupRules: []OscSecurityGroupRule{},
+		}
+		network.SecurityGroups = append(network.SecurityGroups, &securityGroupNode)
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"fmt"
-	"github.com/benbjohnson/clock"
 	"io/ioutil"
 	"net/http"
 	"runtime"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/benbjohnson/clock"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -966,7 +967,7 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 		t.Run(sgtc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
-			clusterName := sgtc.spec.Network.ClusterName
+			clusterName := sgtc.spec.Network.ClusterName + "-uid"
 			netName := sgtc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
@@ -983,6 +984,7 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupDescription := securityGroupSpec.Description
+				securityGroupTag := securityGroupSpec.Tag
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				securityGroup := osc.CreateSecurityGroupResponse{
 					SecurityGroup: &osc.SecurityGroup{
@@ -995,7 +997,7 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 					Return(nil, sgtc.expGetSecurityGroupFromNetIdsErr)
 				mockOscSecurityGroupInterface.
 					EXPECT().
-					CreateSecurityGroup(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(securityGroupName), gomock.Eq(securityGroupDescription)).
+					CreateSecurityGroup(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(securityGroupName), gomock.Eq(securityGroupDescription), gomock.Eq(securityGroupTag)).
 					Return(securityGroup.SecurityGroup, sgtc.expCreateSecurityGroupErr)
 				for _, securityGroupSpec := range securityGroupsSpec {
 					securityGroupName := securityGroupSpec.Name + "-uid"
@@ -1177,7 +1179,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 
 			netName := sgtc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
-			clusterName := sgtc.spec.Network.ClusterName
+			clusterName := sgtc.spec.Network.ClusterName + "-uid"
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
@@ -1191,6 +1193,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupIds = append(securityGroupIds, securityGroupId)
+				securityGroupTag := securityGroupSpec.Tag
 				securityGroupDescription := securityGroupSpec.Description
 				securityGroup := osc.CreateSecurityGroupResponse{
 					SecurityGroup: &osc.SecurityGroup{
@@ -1203,7 +1206,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 					Return(nil, sgtc.expGetSecurityGroupFromNetIdsErr)
 				mockOscSecurityGroupInterface.
 					EXPECT().
-					CreateSecurityGroup(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(securityGroupName), gomock.Eq(securityGroupDescription)).
+					CreateSecurityGroup(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(securityGroupName), gomock.Eq(securityGroupDescription), gomock.Eq(securityGroupTag)).
 					Return(securityGroup.SecurityGroup, sgtc.expCreateSecurityGroupErr)
 			}
 			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
