@@ -2,10 +2,11 @@ package security
 
 import (
 	"fmt"
-	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"net/http"
 
 	"errors"
+
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
@@ -13,7 +14,7 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
 
 type OscSecurityGroupInterface interface {
-	CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error)
+	CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error)
 	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
 	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
 	DeleteSecurityGroup(securityGroupId string) (error, *http.Response)
@@ -23,7 +24,7 @@ type OscSecurityGroupInterface interface {
 }
 
 // CreateSecurityGroup create the securitygroup associated with the net
-func (s *Service) CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error) {
+func (s *Service) CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error) {
 	securityGroupRequest := osc.CreateSecurityGroupRequest{
 		SecurityGroupName: securityGroupName,
 		Description:       securityGroupDescription,
@@ -45,6 +46,13 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
+	}
+	if securityGroupTag == "OscK8sMainSG" {
+		err = tag.AddTag("OscK8sMainSG/"+clusterName, "True", resourceIds, oscApiClient, oscAuthClient)
+		if err != nil {
+			fmt.Printf("Error with http result %s", httpRes.Status)
+			return nil, err
+		}
 	}
 
 	return securityGroup, nil

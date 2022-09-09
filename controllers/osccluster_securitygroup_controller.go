@@ -13,6 +13,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -243,7 +244,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		return reconcile.Result{}, err
 	}
 	networkSpec := clusterScope.GetNetwork()
-	clusterName := networkSpec.ClusterName
+	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 
 	clusterScope.Info("Get list of all desired securitygroup in net", "netId", netId)
 	securityGroupIds, err := securityGroupSvc.GetSecurityGroupIdsFromNetIds(netId)
@@ -257,6 +258,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		clusterScope.Info("Check if the desired securityGroup exist in net", "securityGroupName", securityGroupName)
 		securityGroupDescription := securityGroupSpec.Description
 		clusterScope.Info("### Get securityGroup Id ###", "securityGroup", securityGroupIds)
+		securityGroupTag := securityGroupSpec.Tag
 		if len(securityGroupsRef.ResourceMap) == 0 {
 			securityGroupsRef.ResourceMap = make(map[string]string)
 		}
@@ -267,12 +269,16 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if resourceMapExist {
 			securityGroupSpec.ResourceId = securityGroupsRef.ResourceMap[securityGroupName]
 		}
-
+		var securityGroup *osc.SecurityGroup
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 		if !Contains(securityGroupIds, securityGroupId) {
 			clusterScope.Info("Find securitygroup", "securityGroup", securityGroupId)
 			clusterScope.Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
-			securityGroup, err := securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription)
+			if securityGroupTag == "OscK8sMainSG" {
+				securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "OscK8sMainSG")
+			} else {
+				securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "")
+			}
 			clusterScope.Info("### Get securityGroup", "securityGroup", securityGroup)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())

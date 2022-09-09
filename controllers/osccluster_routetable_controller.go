@@ -247,7 +247,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		return reconcile.Result{}, err
 	}
 	networkSpec := clusterScope.GetNetwork()
-	clusterName := networkSpec.ClusterName
+	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 
 	clusterScope.Info("Get list of all desired routetable in net", "netId", netId)
 	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(netId)

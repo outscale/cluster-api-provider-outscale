@@ -3,6 +3,9 @@ kind: Cluster
 metadata:
   name: capo-quickstart
   namespace: default
+  labels:
+    cni: "capo-quickstart-crs-cni"
+    ccm: "capo-quickstart-crs-ccm"
 spec:
   clusterNetwork:
     pods:

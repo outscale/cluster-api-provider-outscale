@@ -138,6 +138,7 @@ var (
 				LoadBalancerName: "test-loadbalancer",
 				PublicIpName:     "test-publicip",
 				VmType:           "tinav4.c2r4p2",
+				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
@@ -180,6 +181,7 @@ var (
 				LoadBalancerName: "test-loadbalancer",
 				PublicIpName:     "test-publicip",
 				VmType:           "tinav4.c2r4p2",
+				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
@@ -222,6 +224,7 @@ var (
 				LoadBalancerName: "test-loadbalancer",
 				VmType:           "tinav4.c2r4p2",
 				PublicIpName:     "test-publicip",
+				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
@@ -271,6 +274,7 @@ var (
 				VmType:           "tinav4.c2r4p2",
 				ResourceId:       "i-test-vm-uid",
 				PublicIpName:     "test-publicip",
+				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
@@ -2865,7 +2869,7 @@ func TestReconcileVmGet(t *testing.T) {
 					GetVmState(gomock.Eq(vmId)).
 					Return(vmState, vtc.expGetVmStateErr)
 			}
-			clusterName := vtc.clusterSpec.Network.Net.ClusterName
+			clusterName := vtc.clusterSpec.Network.Net.ClusterName + "-uid"
 			if vtc.expAddCcmTagFound {
 				mockOscVmInterface.
 					EXPECT().
@@ -3646,10 +3650,14 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 			var securityGroupIds []string
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			securityGroupName := "cluster-api-securitygroup-kw-uid"
-			securityGroupId := "sg-" + securityGroupName
-			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-			securityGroupIds = append(securityGroupIds, securityGroupId)
+			securityGroupKwName := "cluster-api-securitygroup-kw-uid"
+			securityGroupKwId := "sg-" + securityGroupKwName
+			securityGroupsRef.ResourceMap[securityGroupKwName] = securityGroupKwId
+			securityGroupNodeName := "cluster-api-securitygroup-node-uid"
+			securityGroupNodeId := "sg-" + securityGroupNodeName
+			securityGroupsRef.ResourceMap[securityGroupNodeName] = securityGroupNodeId
+			securityGroupIds = append(securityGroupIds, securityGroupKwId)
+			securityGroupIds = append(securityGroupIds, securityGroupNodeId)
 			publicIpName := "cluster-api-publicip-uid"
 			linkPublicIpId := "eipassoc-" + publicIpName
 			linkPublicIpRef := machineScope.GetLinkPublicIpRef()

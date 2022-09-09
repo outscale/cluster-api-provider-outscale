@@ -220,7 +220,7 @@ func TestReconcileNetCreate(t *testing.T) {
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
 			netId := "vpc-" + netName
-			clusterName := ntc.spec.Network.ClusterName
+			clusterName := ntc.spec.Network.ClusterName + "-uid"
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
 					NetId: &netId,
@@ -342,7 +342,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
-			clusterName := ntc.spec.Network.ClusterName
+			clusterName := ntc.spec.Network.ClusterName + "-uid"
 			netId := "vpc-" + netName
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{

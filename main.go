@@ -110,8 +110,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	setUpWebhookWithManager(mgr)
+	if err = (&controllers.OscMachineTemplateReconciler{
+		Client:           mgr.GetClient(),
+		Recorder:         mgr.GetEventRecorderFor("oscmachinetemplate-controller"),
+		ReconcileTimeout: reconcileTimeout,
+	}).SetupWithManager(ctx, mgr, controller.Options{}); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OscMachineTemplate")
+		os.Exit(1)
+	}
 
+	setUpWebhookWithManager(mgr)
 	if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
 		os.Exit(1)
