@@ -81,6 +81,11 @@ func (r *OscMachineReconciler) getVmSvc(ctx context.Context, scope scope.Cluster
 	return compute.NewService(ctx, &scope)
 }
 
+// getImageSvc retrieve imageSvc
+func (r *OscMachineReconciler) getImageSvc(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
+	return compute.NewService(ctx, &scope)
+}
+
 // getPublicIpSvc retrieve publicIpSvc
 func (r *OscMachineReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
 	return security.NewService(ctx, &scope)
@@ -260,6 +265,13 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	checkVmVolumeSubregionNameErr := checkVmVolumeSubregionName(machineScope)
 	if checkVmVolumeSubregionNameErr != nil {
 		return reconcile.Result{}, checkVmVolumeSubregionNameErr
+	}
+
+	imageSvc := r.getImageSvc(ctx, *clusterScope)
+	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
+	if err != nil {
+		machineScope.Error(err, "failed to reconcile Image")
+		return reconcileImage, err
 	}
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)

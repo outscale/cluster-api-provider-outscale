@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -146,6 +147,11 @@ func (m *MachineScope) GetVm() *infrastructurev1beta1.OscVm {
 	return &m.OscMachine.Spec.Node.Vm
 }
 
+// GetImage return the image
+func (m *MachineScope) GetImage() *infrastructurev1beta1.OscImage {
+	return &m.OscMachine.Spec.Node.Image
+}
+
 // GetVmPrivateIps return the vm privateIps
 func (m *MachineScope) GetVmPrivateIps() *[]infrastructurev1beta1.OscPrivateIpElement {
 	return &m.GetVm().PrivateIps
@@ -174,6 +180,11 @@ func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapRefer
 // GetVmRef get the status of vm (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &m.OscMachine.Status.Node.VmRef
+}
+
+// GetImageRef get the status of image (a Map with tag name with machine uid associate with resource response id)
+func (m *MachineScope) GetImageRef() *infrastructurev1beta1.OscResourceMapReference {
+	return &m.OscMachine.Status.Node.ImageRef
 }
 
 // GetKeyPairRef get the status of key pair (a Map with tag name with machine uid associate with resource response id)
