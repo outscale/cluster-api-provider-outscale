@@ -646,6 +646,13 @@ func (vm *OscVm) SetDefaultValue() {
 	}
 }
 
+// SetDefaultValue set the image default values
+func (node *OscNode) SetImageDefaultValue() {
+	if node.Image.Name == "" {
+		node.Image.Name = DefaultVmImageId
+	}
+}
+
 // SetDefaultValue set the Subnet default values
 func (sub *OscSubnet) SetDefaultValue() {
 	if sub.IpSubnetRange == "" {
