@@ -332,8 +332,6 @@ var (
 
 	DefaultClusterName string = "cluster-api"
 
-	DefaultKeypairName string = "cluster-api-keypair"
-
 	DefaultVmSubregionName    string = "eu-west-2a"
 	DefaultVmImageId          string = "ami-2fe74243"
 	DefaultVmKeypairName      string = "cluster-api"
@@ -643,6 +641,13 @@ func (vm *OscVm) SetDefaultValue() {
 	}
 	if vm.SubregionName == "" {
 		vm.SubregionName = DefaultVmSubregionName
+	}
+}
+
+// SetDefaultValue set the image default values
+func (node *OscNode) SetImageDefaultValue() {
+	if node.Image.Name == "" {
+		node.Image.Name = DefaultVmImageId
 	}
 }
 
