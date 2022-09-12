@@ -1,0 +1,47 @@
+name: publish
+
+on: push
+jobs:
+  publish:
+    runs-on: ubuntu-latest          
+    steps:
+      - name: Install aws-cli
+        run: |
+          sudo apt-get install -y unzip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -o awscliv2.zip
+          sudo ./aws/install -u 
+      - uses: actions/checkout@v3
+        with:
+          repository: 'outscale-vbr/cluster-api-provider-outscale'
+          path: "cluster-api-provider-outscale"
+          ref: book        
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18.5'
+      - name: install mdbook
+        run: make install-mdbook
+        shell: bash
+        working-directory: cluster-api-provider-outscale
+      - name: generate doc
+        run: make build 
+        shell: bash
+        working-directory: cluster-api-provider-outscale/docs/
+      - name: Copy website
+        run: cp website.json ./book 
+        shell: bash
+        working-directory: cluster-api-provider-outscale/docs/       
+      - run: aws s3 cp ./book s3://cluster-api --acl public-read --recursive  --endpoint https://oos.eu-west-2.outscale.com  
+        shell: bash
+        working-directory: cluster-api-provider-outscale/docs/
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.OSC_ACCESS_KEY}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.OSC_SECRET_KEY}}
+          AWS_DEFAULT_REGION: ${{secrets.OSC_REGION}}
+      - run: aws s3 cp ./theme s3://cluster-api --acl public-read --recursive  --endpoint https://oos.eu-west-2.outscale.com
+        shell: bash
+        working-directory: cluster-api-provider-outscale/docs/
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.OSC_ACCESS_KEY}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.OSC_SECRET_KEY}}
+          AWS_DEFAULT_REGION: ${{secrets.OSC_REGION}}

@@ -18,6 +18,7 @@ spec:
       subregionname: eu-west-2a
     net:
       name: cluster-api-net
+      clusterName: cluster-api
       ipRange: "172.19.95.128/25"
     subnets:
       - name: cluster-api-subnet
@@ -25,8 +26,10 @@ spec:
     publicIps:
       - name: cluster-api-publicip
     internetService:
+      clusterName: cluster-api
       name: cluster-api-internetservice
     natService:
+      clusterName: cluster-api
       name: cluster-api-natservice
       publicipname: cluster-api-publicip
       subnetname: cluster-api-subnet
@@ -85,6 +88,8 @@ spec:
 | --- | --- | --- | ---
 | `name`| `cluster-api-net` | false | the tag name associated with the Net
 | `ipRange` | `172.19.95.128/25` | false | Net Ip range with CIDR notation
+| `clusterName` | `cluster-api` | false | Name of the cluster
+
 
 ### Subnet
 
@@ -104,6 +109,7 @@ spec:
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
 | `name`| `cluster-api-internetservice` | false | The tag name associated with the Internet Service
+| `clusterName` | `cluster-api` | false | Name of the cluster
 
 
 ### natService
@@ -113,6 +119,7 @@ spec:
 | `name`| `cluster-api-natservice` | false | The tag name associated with the Nat Service
 | `publicIpName` | `cluster-api-publicip` | false | The Public Ip tag name associated wtih a Public Ip
 | `subnetName`| `cluster-api-subnet` | false | The subnet tag name associated with a Subnet
+| `clusterName` | `cluster-api` | false | Name of the cluster
 
 ### routeTables
 
@@ -154,3 +161,73 @@ spec:
 | `ipRange` | `46.231.147.5/32` | false |  The ip range of the security group rule
 | `fromPortRange` | `6443` | false |  The beginning of the port range
 | `toPortRange` | `6443` | false |  The end of the port range
+
+## machine infrastructure controller OscCluster
+example:
+```
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "cluster-api-md-0"
+  namespace: default
+  annotations:
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "5"
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "0"
+spec:
+  template:
+    spec:
+      node:
+        clusterName: cluster-api
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api
+        vm:
+          clusterName: cluster-api
+          name: cluster-api-vm-kw
+          keypairName: cluster-api
+          deviceName: /dev/sda1
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: io1
+          subnetName: cluster-api-subnet-kw
+          subregionName: eu-west-2a
+          securityGroupNames:
+            - name: cluster-api-securitygroups-kw
+          vmType: "tinav4.c2r4p2"
+```
+
+### OscImage
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `name`| `` | false | The image name you will use
+
+### OscKeypair
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `keypairName`| `cluster-api-keypair` | false | The keypairname you will use
+
+### OscVm
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `clusterName`| `cluster-api` | false | The cluster name
+| `name` | `cluster-api-vm-kw` | false | The name of the vm
+| `imageId` | `tcp` | false |  The ip protocol name (tcp, udp, icmp or -1)
+| `keypairName` | `cluster-api` | false |  The keypair name used to access vm
+| `DeviceName` | `cluster-api` | false |  The device path to mount root volumes
+| `rootDiskSize` | `30` | false |  The Root Disk Size
+| `rootDiskIops` | `1500` | false |  The Root Disk Iops (only for io1)
+| `rootDiskType` | `io1` | false |  The Root Disk Type (io1, gp2, standard)
+| `rootDiskType` | `io1` | false |  The Root Disk Type (io1, gp2, standard)
+| `subnetName` | `cluster-api-subnet-kw` | false |  The Subnet associated to your vm
+| `subregionName` | `eu-west-2a` | false | The subregionName used for vm and volume
+| `securityGroupNames` | `cluster-api-securitygroups-kw` | false | The securityGroupName which is associated with vm
+| `vmType` | `tinav4.c2r4p2` | false |  The vmType use for the vm
+| `imageId` | `` | false |  The vmType use for the vm
+
+
+

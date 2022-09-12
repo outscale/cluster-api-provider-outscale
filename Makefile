@@ -41,6 +41,7 @@ E2E_CONF_CLUSTER_CLASS_FILE ?= ${PWD}/example/cluster-machine-template-with-clus
 E2E_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/clusterclass.yaml.tmpl
 E2E_CLUSTER_CLASS_FILE ?= ${PWD}/example/clusterclass.yaml
 ClusterToClean ?= hello-osc
+MINIMUM_MDBOOK_VERSION=0.4.21
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -364,6 +365,9 @@ LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
 install-clusterctl: ## Download clusterctl
 	MINIMUM_CLUSTERCTL_VERSION=$(MINIMUM_CLUSTERCTL_VERSION) ./hack/ensure-clusterctl.sh
 
+.PHONY: install-mdbook
+install-mdbook: ## Download mdbook
+	MINIMUM_MDBOOK_VERSION=$(MINIMUM_MDBOOK_VERSION) ./hack/ensure-mdbook.sh
 .PHONY: verify-go
 verify-go:  ## Download go
 	MIN_GO_VERSION=$(MIN_GO_VERSION) ./hack/ensure-go.sh

@@ -30,7 +30,7 @@ Put your credentials in osc-secret.yaml and apply:
 
 ## Registry credentials configuration
 
-By default, if you use a private registry (docker registry, harbor, dockerhub, quay.io, ....)  with credentials, registry credentials must be named regcred and must be deployed in cluster-api-provider-outscale-system namespace.
+If you use a private registry (docker registry, harbor, dockerhub, quay.io, ....)  with credentials, registry credentials must be named regcred and must be deployed in cluster-api-provider-outscale-system namespace.
 
 ```
 kubectl get secret regcred  -n cluster-api-provider-outscale-system 
@@ -38,7 +38,7 @@ NAME      TYPE                             DATA   AGE
 regcred   kubernetes.io/dockerconfigjson   1      52s
 ```
 
-If you want to change it with another name, you change it in *cluster-api-provider-outscale/config/default*:
+If you want to change it with another name, you can do so in this file cluster-api-provider-outscale/config/default:
 ```
       value: [{ name: regcred }]
 ```
@@ -118,45 +118,6 @@ make install-kind
 make install-kubebuildertool
 ```
 
-## Using tiltfile
-
-Choose your favorite editor to develop.
-
-With the current tiltfile, each time you change a file, it build docker image, push into the registry and deploy it with kustomize.
-
-## Create your cluster
-
-This step will create your infrastructure cluster. It create vpc, net, sg, routetables, eip, nat.
-
-You can change parameter from cluster-template.yaml (please look at [configuration][configuration]) if you need:
-```
-kubectl apply -f example/cluster-template.yaml
-```
-
-# Test 
-
-## Generate Mock
-
-Please use if you make some changes(add, changes, delete ) in *cloud/services/net*, *cloud/services/service*, *cloud/services/security*:
-```
-make mock-generate
-```
-
-## Unit test
-Please use if you want to launch unit test:
-
-```
-make unit-test
-```
-
-Yòu can look at code coverage with covers.txt and covers.html
-
-## Functional test
-
-Please use if you want to launch functional test:
-```
-make testenv
-```
 
 # CleanUp
 
@@ -194,8 +155,3 @@ make deploy-clusterapi
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
-[configuration]: config.md
-[kind]: https://github.com/kubernetes-sigs/kind
-[gh]: https://github.com/cli/cli
-[packer]: https://github.com/hashicorp/packer
-[kubebuildertool]: https://github.com/kubernetes-sigs/kubebuilder
