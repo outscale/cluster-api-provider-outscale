@@ -15,16 +15,8 @@ Thee project is Work in Progress,  in an Alpha state.
 
 ## Compatibility with Cluster API and Kubernetes Versions
 
-The provider version has currently been tested with the following version of Cluster API:
-|                                       | Cluster API v1 (v1.0) |
-| ------------------------------------- | --------------------- |
-| Outscale Provider v1beta1       (v0.1)| ✓                     |
-
-The provider version has currently been tested with the following version of kubernetes:
-|                 | Outscale Provider v1beta1 (v0.1) |
-| --------------- | ------------------------------------- |
-| Kubernetes 1.22 |  ✓                                    | 
-
+The provider version has currently been tested with the following version of Cluster API (v1beta1)
+The provider version has currently been tested with the following version of kubernetes (v1.22.x)
 # Features
 
 - Cluster infrastructure Outscale controller (https://cluster-api.sigs.k8s.io/developer/providers/cluster-infrastructure.html#cluster-infrastructure-provider-specification)

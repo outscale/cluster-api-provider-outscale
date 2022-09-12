@@ -1,0 +1,10 @@
+[book]
+authors = ["The Cluster API Provider Outscale Maintainers"]
+language = "en"
+multilingual = false
+src = "src"
+title = "The Cluster API Provider Outscale Book"
+
+[output.html]
+curly-quotes = true
+git-repository-url = ""

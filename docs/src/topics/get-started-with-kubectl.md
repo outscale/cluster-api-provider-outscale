@@ -71,7 +71,10 @@ kubectl logs -f cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f 
 
 ## Create your cluster
 
-This step will create your infrastructure cluster. It create vpc, net, sg, routetables, eip, nat.
+This step will create your infrastructure cluster. 
+
+It will create vpc, net, sg, routetables, eip, nat.
+
 You can change parameter from cluster-template.yaml (please look at [configuration][configuration]) if you need:
 ```
 kubectl apply -f example/cluster-template.yaml
@@ -79,8 +82,9 @@ kubectl apply -f example/cluster-template.yaml
 
 ## Kubeadmconfig
 
-You can use https://cluster-api.sigs.k8s.io/tasks/kubeadm-bootstrap.html to custom the bootstrap config.
-Currently, we overwrite runc with containerd because of https://github.com/containerd/containerd/releases/tag/v1.6.0
+You can use [bootstrap][bootstrap] to custom the bootstrap config.
+
+Currently, we overwrite runc with containerd because of [containerd][containerd]
 
 # CleanUp
 
@@ -119,4 +123,5 @@ make deploy-clusterapi
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [configuration]: config.md
-
+[bootstrap]: https://cluster-api.sigs.k8s.io/tasks/kubeadm-bootstrap.html 
+[containerd]: https://github.com/containerd/containerd/releases/tag/v1.6.0
