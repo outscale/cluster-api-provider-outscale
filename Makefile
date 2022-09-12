@@ -243,6 +243,9 @@ force-delete-capo: ## Force delete Cluster api Outscale cluster (Remove finalize
 logs-capi: ## Get logs capi
 	kubectl logs -l  control-plane=controller-manager -n ${CAPI_NAMESPACE}  --tail=${LOG_TAIL}
 
+.PHONY: create-capm
+create-capm: kustomize controller-gen manifests generate capm
+
 .PHONY: capm
 capm: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 ifndef KUSTOMIZE
