@@ -155,20 +155,21 @@ jobs:
     - name: Launch functional test
       run: make testenv
       shell: bash
+      id: func-test
       env:
         KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
     - name: Get log capo master
       run: make logs-capo
-      if: ${{ failure() && steps.deploy-capo.conclusion == 'failure' }}
+      if: ${{ failure() && steps.func-test.conclusion == 'failure' }}
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
     - name: Get log capi
       run: make logs-capi
-      if: ${{ failure() && steps.deploy-capi.conclusion == 'failure' }}
+      if: ${{ failure() && steps.func-test.conclusion == 'failure' }}
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
