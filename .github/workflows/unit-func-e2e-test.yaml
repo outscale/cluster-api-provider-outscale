@@ -178,14 +178,14 @@ jobs:
         OSC_CLUSTER: cluster-api-test
     - name: Get log capo master
       run: make logs-capo
-      if: ${{ steps.deploy-capo.outcome == 'success' }}
+      if: ${{ failure() && steps.deploy-capo.conclusion == 'failure' }}
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
     - name: Get log capi
       run: make logs-capi
-      if: ${{ steps.deploy-capi.outcome == 'success' }}
+      if: ${{ failure() && steps.deploy-capi.conclusion == 'failure' }}
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
@@ -318,14 +318,14 @@ jobs:
         IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
     - name: Get cluster api outscale logs
       run: make logs-capo
-      if: ${{ steps.e2etest.outcome == 'success' }}
+      if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
-    - name: Get cluster api logs 
+    - name: Get cluster api logs
       run: make logs-capi
-      if: ${{ steps.e2etest.outcome == 'success' }}
+      if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
