@@ -50,18 +50,18 @@ func (mr *MockOscRouteTableInterfaceMockRecorder) CreateRoute(destinationIpRange
 }
 
 // CreateRouteTable mocks base method.
-func (m *MockOscRouteTableInterface) CreateRouteTable(netId, routeTableName string) (*osc.RouteTable, error) {
+func (m *MockOscRouteTableInterface) CreateRouteTable(netId, clusterName, routeTableName string) (*osc.RouteTable, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateRouteTable", netId, routeTableName)
+	ret := m.ctrl.Call(m, "CreateRouteTable", netId, clusterName, routeTableName)
 	ret0, _ := ret[0].(*osc.RouteTable)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateRouteTable indicates an expected call of CreateRouteTable.
-func (mr *MockOscRouteTableInterfaceMockRecorder) CreateRouteTable(netId, routeTableName interface{}) *gomock.Call {
+func (mr *MockOscRouteTableInterfaceMockRecorder) CreateRouteTable(netId, clusterName, routeTableName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRouteTable", reflect.TypeOf((*MockOscRouteTableInterface)(nil).CreateRouteTable), netId, routeTableName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRouteTable", reflect.TypeOf((*MockOscRouteTableInterface)(nil).CreateRouteTable), netId, clusterName, routeTableName)
 }
 
 // DeleteRoute mocks base method.

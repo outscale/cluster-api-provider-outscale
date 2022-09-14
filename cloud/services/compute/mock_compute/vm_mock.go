@@ -12,6 +12,7 @@ import (
 	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	scope "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	v1 "k8s.io/api/core/v1"
 )
 
 // MockOscVmInterface is a mock of OscVmInterface interface.
@@ -35,6 +36,20 @@ func NewMockOscVmInterface(ctrl *gomock.Controller) *MockOscVmInterface {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOscVmInterface) EXPECT() *MockOscVmInterfaceMockRecorder {
 	return m.recorder
+}
+
+// AddCcmTag mocks base method.
+func (m *MockOscVmInterface) AddCcmTag(clusterName, hostname, vmId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCcmTag", clusterName, hostname, vmId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCcmTag indicates an expected call of AddCcmTag.
+func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(clusterName, hostname, vmId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), clusterName, hostname, vmId)
 }
 
 // CheckVmState mocks base method.
@@ -78,6 +93,21 @@ func (m *MockOscVmInterface) DeleteVm(vmId string) error {
 func (mr *MockOscVmInterfaceMockRecorder) DeleteVm(vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVm", reflect.TypeOf((*MockOscVmInterface)(nil).DeleteVm), vmId)
+}
+
+// GetCapacity mocks base method.
+func (m *MockOscVmInterface) GetCapacity(tagKey, tagValue, vmType string) (v1.ResourceList, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCapacity", tagKey, tagValue, vmType)
+	ret0, _ := ret[0].(v1.ResourceList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCapacity indicates an expected call of GetCapacity.
+func (mr *MockOscVmInterfaceMockRecorder) GetCapacity(tagKey, tagValue, vmType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapacity", reflect.TypeOf((*MockOscVmInterface)(nil).GetCapacity), tagKey, tagValue, vmType)
 }
 
 // GetVm mocks base method.

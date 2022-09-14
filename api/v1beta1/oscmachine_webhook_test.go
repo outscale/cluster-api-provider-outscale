@@ -41,28 +41,6 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": Invalid KeypairName"),
 		},
 		{
-			name: "create with bad imageId",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "omi-00000000",
-					},
-				},
-			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: imageId: Invalid value: \"omi-00000000\": Invalid imageId"),
-		},
-		{
-			name: "create with bad deviceName",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						DeviceName: "/dev/xvaa",
-					},
-				},
-			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: deviceName: Invalid value: \"/dev/xvaa\": Invalid deviceName"),
-		},
-		{
 			name: "create with bad vmType",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
@@ -72,17 +50,6 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 				},
 			},
 			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": Invalid vmType"),
-		},
-		{
-			name: "create with bad subregionname",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						SubregionName: "eu-west-2c",
-					},
-				},
-			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": Invalid subregionName"),
 		},
 		{
 			name: "create with bad iops",
@@ -102,21 +69,43 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
 		},
 		{
-			name: "create with bad size",
+			name: "create rootdisk with bad iops",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "test-webhook",
-							Iops:          20,
-							Size:          -30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+					Vm: OscVm{
+						RootDisk: OscRootDisk{
+							RootDiskIops: -15,
 						},
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -30: Invalid size"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
+		},
+		{
+			name: "create rootdisk with bad size",
+			machineSpec: OscMachineSpec{
+				Node: OscNode{
+					Vm: OscVm{
+						RootDisk: OscRootDisk{
+							RootDiskSize: -15,
+						},
+					},
+				},
+			},
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -15: Invalid size"),
+		},
+		{
+			name: "create rootdisk with bad volumeType",
+			machineSpec: OscMachineSpec{
+				Node: OscNode{
+					Vm: OscVm{
+						RootDisk: OscRootDisk{
+							RootDiskType: "ssd1",
+						},
+					},
+				},
+			},
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: diskType: Invalid value: \"ssd1\": Invalid volumeType"),
 		},
 		{
 			name: "create with bad volumeType",
@@ -127,13 +116,13 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 							Name:          "test-webhook",
 							Iops:          20,
 							Size:          30,
-							VolumeType:    "gp3",
+							VolumeType:    "ssd1",
 							SubregionName: "eu-west-2a",
 						},
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"gp3\": Invalid volumeType"),
+			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"ssd1\": Invalid volumeType"),
 		},
 		{
 			name: "create with bad subregionName",
@@ -284,42 +273,6 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.keyPairName: Invalid value: \"test-webhook-2\": field is immutable"),
 		},
 		{
-			name: "update imageId",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "ami-012345678",
-					},
-				},
-			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "ami-00000000",
-					},
-				},
-			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.imageId: Invalid value: \"ami-00000000\": field is immutable"),
-		},
-		{
-			name: "update deviceName",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						DeviceName: "/dev/xvda",
-					},
-				},
-			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						DeviceName: "/dev/xvdb",
-					},
-				},
-			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.deviceName: Invalid value: \"/dev/xvdb\": field is immutable"),
-		},
-		{
 			name: "update vmType",
 			oldMachineSpec: OscMachineSpec{
 				Node: OscNode{
@@ -336,96 +289,6 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 				},
 			},
 			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.vmType: Invalid value: \"tinav4.c2r4p1\": field is immutable"),
-		},
-		{
-			name: "update volume iops",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "update-webhook",
-							Iops:          15,
-							Size:          30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "update-webhook",
-							Iops:          30,
-							Size:          30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.iops: Invalid value: 30: field is immutable"),
-		},
-		{
-			name: "update volume size",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "update-webhook",
-							Iops:          15,
-							Size:          30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "update-webhook",
-							Iops:          15,
-							Size:          45,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.size: Invalid value: 45: field is immutable"),
-		},
-		{
-			name: "update subregion name",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "update-webhook",
-							Iops:          15,
-							Size:          30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []*OscVolume{
-						{
-							Name:          "update-webhook",
-							Iops:          15,
-							Size:          30,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2b",
-						},
-					},
-				},
-			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.subregionName: Invalid value: \"eu-west-2b\": field is immutable"),
 		},
 	}
 	for _, mtc := range machineTestCases {

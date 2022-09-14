@@ -1,0 +1,18 @@
+{{- if .Values.clusterapioutscale.certificate.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.certificate }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "clusterapioutscale.certificate" $root }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  dnsNames:
+  - {{ template "clusterapioutscale.webhookservice" $root }}.{{ $root.Release.Namespace }}.svc
+  - {{ template "clusterapioutscale.webhookservice" $root }}.{{ $root.Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ template "clusterapioutscale.issuer" $root }}
+  secretName: webhook-server-cert
+  {{- end }}
+{{- end }}

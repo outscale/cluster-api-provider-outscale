@@ -220,6 +220,7 @@ func TestReconcileNetCreate(t *testing.T) {
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
 			netId := "vpc-" + netName
+			clusterName := ntc.spec.Network.ClusterName + "-uid"
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
 					NetId: &netId,
@@ -228,12 +229,12 @@ func TestReconcileNetCreate(t *testing.T) {
 			if ntc.expCreateNetFound {
 				mockOscNetInterface.
 					EXPECT().
-					CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
+					CreateNet(gomock.Eq(&netSpec), gomock.Eq(clusterName), gomock.Eq(netName)).
 					Return(net.Net, ntc.expCreateNetErr)
 			} else {
 				mockOscNetInterface.
 					EXPECT().
-					CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
+					CreateNet(gomock.Eq(&netSpec), gomock.Eq(clusterName), gomock.Eq(netName)).
 					Return(nil, ntc.expCreateNetErr)
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface)
@@ -341,6 +342,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
+			clusterName := ntc.spec.Network.ClusterName + "-uid"
 			netId := "vpc-" + netName
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
@@ -353,7 +355,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 				Return(nil, ntc.expDescribeNetErr)
 			mockOscNetInterface.
 				EXPECT().
-				CreateNet(gomock.Eq(&netSpec), gomock.Eq(netName)).
+				CreateNet(gomock.Eq(&netSpec), gomock.Eq(clusterName), gomock.Eq(netName)).
 				Return(net.Net, ntc.expCreateNetErr)
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface)
 			if err != nil {
