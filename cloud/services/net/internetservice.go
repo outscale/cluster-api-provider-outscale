@@ -69,7 +69,7 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 	return nil
 }
 
-//UnlinkInternetService detach the internet service from the net
+// UnlinkInternetService detach the internet service from the net
 func (s *Service) UnlinkInternetService(internetServiceId string, netId string) error {
 	unlinkInternetServiceRequest := osc.UnlinkInternetServiceRequest{
 		InternetServiceId: internetServiceId,
