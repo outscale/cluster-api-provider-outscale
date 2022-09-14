@@ -71,7 +71,9 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
+	leaseDuration := 40 * time.Second
+	renewDeadline := 30 * time.Second
+	retryPeriod := 10 * time.Second
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -79,6 +81,9 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "controller-leader-election-capo",
+		LeaseDuration:          &leaseDuration,
+		RenewDeadline:          &renewDeadline,
+		RetryPeriod:            &retryPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -105,8 +110,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	setUpWebhookWithManager(mgr)
+	if err = (&controllers.OscMachineTemplateReconciler{
+		Client:           mgr.GetClient(),
+		Recorder:         mgr.GetEventRecorderFor("oscmachinetemplate-controller"),
+		ReconcileTimeout: reconcileTimeout,
+	}).SetupWithManager(ctx, mgr, controller.Options{}); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OscMachineTemplate")
+		os.Exit(1)
+	}
 
+	setUpWebhookWithManager(mgr)
 	if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
 		os.Exit(1)

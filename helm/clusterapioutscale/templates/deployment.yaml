@@ -1,0 +1,128 @@
+{{- if .Values.clusterapioutscale.deployment.enable }}
+  {{ $root := . }}
+  {{- with .Values.clusterapioutscale.deployment }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    {{- range $key,$val := .annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+  labels:
+    control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
+    app: "{{ template "clusterapioutscale.fullname" $root }}"
+    chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    release: "{{ $root.Release.Name }}"
+  name: "{{ template "clusterapioutscale.deployment" $root }}"
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  replicas: {{ .repliaccount | default "1" }}
+  selector:
+    matchLabels:
+      control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
+  template:
+    metadata:
+      annotations:
+        {{- range $key,$val := .pods.annotations }}
+        {{ $key }}: {{ $val }}
+        {{- end }}
+      labels:
+      {{- range $key,$val := .labels }}
+        {{ $key }}: {{ $val }}
+      {{- end }}
+        control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
+        chart: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+        release: "{{ $root.Release.Name }}"
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: {{ .containers.imageProxy }}:{{ .containers.imageProxyTag }}
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+      {{- if.containers.resources }}
+        resources:
+          requests:
+            memory: {{ .containers.resourcesproxy.memory.requests | default "128Mi" | quote }}
+            cpu: {{ .containers.resourcesproxy.cpu.requests | default "500m" | quote }}
+          limits:
+            memory: {{ .containers.resourcesproxy.memory.limits | default "64Mi" | quote }}
+            cpu: {{ .containers.resourcesproxy.cpu.limits | default "10m" | quote }}
+      {{- end }}
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        env:
+        - name: OSC_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: access_key
+              name: cluster-api-provider-outscale
+              optional: true
+        - name: OSC_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret_key
+              name: cluster-api-provider-outscale
+              optional: true
+        image: {{ .containers.image }}:{{ .containers.imageTag }}
+        imagePullPolicy: {{ .containers.pullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      {{- if.containers.resources }}
+        resources:
+          requests:
+            memory: {{ .containers.resources.memory.requests | default "128Mi" | quote }}
+            cpu: {{ .containers.resources.cpu.requests | default "500m" | quote }}
+          limits:
+            memory: {{ .containers.resources.memory.limits | default "64Mi" | quote }}
+            cpu: {{ .containers.resources.cpu.limits | default "10m" | quote }}
+      {{- end }}
+      {{- if .containers.securityContext }}
+        securityContext:
+        {{- range $key, $val := .containers.securityContext }}
+          {{ $key }}: {{ $val }}
+        {{- end }}
+          allowPrivilegeEscalation: false
+      {{- end }}
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      imagePullSecrets:
+      - name: {{ .registry_credential | default "regcred" }}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: {{ template "clusterapioutscale.serviceAccount" $root }}
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+  {{- end }}
+{{- end }}

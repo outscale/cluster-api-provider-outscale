@@ -9,7 +9,7 @@ import (
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 )
 
-var _ = Describe("Running the Cluster API E2E tests", func() {
+var _ = Describe("[basic] Running the Cluster API E2E tests", func() {
 	BeforeEach(func() {
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.KubernetesVersionUpgradeFrom))
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.KubernetesVersionUpgradeTo))

@@ -78,7 +78,3 @@ vars:
     kind: Service
     name: webhook-service
     version: v1
-images:
-- name: controller
-  newName: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers
-  newTag: latest

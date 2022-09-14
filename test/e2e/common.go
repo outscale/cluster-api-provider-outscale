@@ -34,6 +34,16 @@ func setupSpecNamespace(ctx context.Context, specName string, clusterProxy frame
 	return namespace, cancelWatches
 }
 
+// Create the namespace
+func createNamespace(ctx context.Context, specName string, clusterProxy framework.ClusterProxy, timeout string, interval string) *corev1.Namespace {
+	Byf("Creating a namespace %s for bootstrap cluster", specName)
+	namespace := framework.CreateNamespace(ctx, framework.CreateNamespaceInput{
+		Creator: clusterProxy.GetClient(),
+		Name:    specName,
+	}, timeout, interval)
+	return namespace
+}
+
 // dumpSpecResourcesAndCleanup dump all ressource and delete cluster and namespace
 func dumpSpecResourcesAndCleanup(ctx context.Context, specName string, clusterProxy framework.ClusterProxy, artifactFolder string, namespace *corev1.Namespace, cancelWatches context.CancelFunc, cluster *clusterv1.Cluster, intervalsGetter func(spec, key string) []interface{}, skipCleanup bool) {
 	Byf("Dumping logs from the %q workload cluster", cluster.Name)

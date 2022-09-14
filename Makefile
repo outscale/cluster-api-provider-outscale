@@ -16,20 +16,31 @@ CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
 CAPO_NAMESPACE ?= cluster-api-provider-outscale-system  
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
+MINIMUM_KUBEBUILDERTOOL_VERSION=1.24.1
+MINIMUM_ENVTEST_VERSION=1.23.3
 E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
 E2E_CONF_FILE ?= ${PWD}/test/e2e/config/outscale-ci-envsubst.yaml
 MINIMUM_CLUSTERCTL_VERSION=1.1.3
 MIN_GO_VERSION=1.18.5
 MINIMUM_TILT_VERSION=0.25.3
 MINIMUM_PACKER_VERSION=1.8.1
-MINIMUM_KIND_VERSION=v0.14.0
 MINIMUM_CONTROLLER_GEN_VERSION=0.8.0 
 MINIMUM_GH_VERSION=2.12.1
+MINIMUM_KIND_USE_VERSION=v0.14.0
 MINIMUM_ENVTEST_VERSION=1.23.3
 MINIMUM_HELM_VERSION=v3.9.4
 MINIMUM_KUSTOMIZE_VERSION=4.5.1
 MINIMUM_MOCKGEN_VERSION=1.6.0
 MINIMUM_KUBECTL_VERSION=1.22.10
+E2E_CONF_CLASS_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale.yaml
+E2E_CONF_CLASS_FILE ?= ${PWD}/test/e2e/config/outscale-envsubst.yaml
+E2E_CONF_CCM_FILE_SOURCE ?= ${PWD}/test/e2e/data/ccm/ccm.yaml.template
+E2E_CONF_CCM_FILE ?= ${PWD}/test/e2e/data/ccm/ccm.yaml
+E2E_CONF_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml.tmpl
+E2E_CONF_CLUSTER_CLASS_FILE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml
+E2E_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/clusterclass.yaml.tmpl
+E2E_CLUSTER_CLASS_FILE ?= ${PWD}/example/clusterclass.yaml
+ClusterToClean ?= hello-osc
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -111,13 +122,47 @@ cloud-init-secret:
 testenv: cloud-init-secret
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
+.PHONY: testclean
+testclean: 
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.progress -test.v
+
+
 .PHONY: e2e-conf-file
 e2e-conf-file: envsubst
 	$(ENVSUBST) < $(E2E_CONF_FILE_SOURCE) > $(E2E_CONF_FILE)
 
 .PHONY: e2etest
 e2etest: envsubst e2e-conf-file
-	@USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_FILE)
+	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 30m -ginkgo.v -ginkgo.progress  -e2e.use-cni=false -e2e.use-existing-cluster=true -ginkgo.focus=".*basic.*" -e2e.use-ccm=false -test.v -e2e.validate-stack=false -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_FILE)
+
+.PHONY: e2e-conf-class-file
+e2e-conf-class-file: envsubst
+	$(ENVSUBST) < $(E2E_CONF_CLASS_FILE_SOURCE) > $(E2E_CONF_CLASS_FILE)
+
+.PHONY: e2etestexistingcluster
+e2etestexistingcluster: envsubst e2e-conf-class-file ccm-file
+	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*feature.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=true -e2e.config=$(E2E_CONF_CLASS_FILE)
+
+.PHONY: e2etestkind
+e2etestkind: envsubst e2e-conf-class-file ccm-file
+	USE_EXISTING_CLUSTER=false IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=false -ginkgo.v -ginkgo.skip=".*feature.*|.*conformance.*|.*basic.*" -ginkgo.focus=".*first_upgrade.*|.*KCP.*remediation.*" -e2e.validate-stack=false  -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE) 
+
+.PHONY: e2econformance
+e2econformance: envsubst e2e-conf-class-file ccm-file
+	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*conformance.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=false -e2e.config=$(E2E_CONF_CLASS_FILE)
+
+
+.PHONY: ccm-file
+ccm-file: envsubst
+	$(ENVSUBST) < $(E2E_CONF_CCM_FILE_SOURCE) > $(E2E_CONF_CCM_FILE)
+
+.PHONY: ccm-cni-ex
+ccm-cni-ex: envsubst
+	$(ENVSUBST) < $(E2E_CONF_CLUSTER_CLASS_FILE_SOURCE) > $(E2E_CONF_CLUSTER_CLASS_FILE)
+
+.PHONY: cluster-class-ex
+cluster-class-ex: envsubst
+	$(ENVSUBST) < $(E2E_CLUSTER_CLASS_FILE_SOURCE) > $(E2E_CLUSTER_CLASS_FILE)
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
@@ -144,6 +189,10 @@ docker-build-dev: ## Generate and Build docker image with the manager
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+##@ Docs
+.PHONY: helm-docs
+helm-docs: ## Generate helm docs
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:latest
 
 ##@ Deployment
 
@@ -173,9 +222,14 @@ else
 endif
 
 .PHONY: credential
-credential: ## Set Credentials
-	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f -
+credential: envsubst ## Set Credentials
+	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f - ||:
 	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} -n cluster-api-provider-outscale-system ||:
+	@cat ./hack/ccm-secret.yaml | $(ENVSUBST)| kubectl apply -f - ||:
+
+.PHONY: clusterclass
+clusterclass: envsubst ## Set Clusterclass
+	@cat ./example/cluster-class.yaml | $(ENVSUBST)| kubectl apply -f - 
 
 .PHONY: logs-capo
 logs-capo: ## Get logs capo
@@ -194,6 +248,9 @@ force-delete-capo: ## Force delete Cluster api Outscale cluster (Remove finalize
 .PHONY: logs-capi
 logs-capi: ## Get logs capi
 	kubectl logs -l  control-plane=controller-manager -n ${CAPI_NAMESPACE}  --tail=${LOG_TAIL}
+
+.PHONY: create-capm
+create-capm: kustomize controller-gen manifests generate capm
 
 .PHONY: capm
 capm: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
@@ -325,7 +382,7 @@ install-gh: ## Download gh
 
 .PHONY: install-kind
 install-kind: ## Download kind
-	MINIMUM_KIND_VERSION=$(MINIMUM_KIND_VERSION) ./hack/ensure-kind.sh
+	MINIMUM_KIND_VERSION=$(MINIMUM_KIND_USE_VERSION)  ./hack/ensure-kind.sh
 
 .PHONY: install-kubectl
 install-kubectl: ## Download kubectl
@@ -342,6 +399,15 @@ deploy-clusterapi: install-clusterctl ## Deploy clusterapi
 .PHONY: undeploy-clusterapi
 undeploy-clusterapi:  ## undeploy clusterapi
 	$(LOCAL_CLUSTERCTL) delete --all --include-crd  --include-namespace -v 10
+
+.PHONY: install-kubebuildertool
+install-kubebuildertool: ## Download kubebuildertool
+	MINIMUM_KUBEBUILDERTOOL_VERSION=$(MINIMUM_KUBEBUILDERTOOL_VERSION) ./hack/ensure-kubebuildertool.sh
+
+
+.PHONY: install-kind
+install-kind: ## Download kind
+        MINIMUM_KIND_VERSION=$(MINIMUM_KIND_VERSION) ./hack/ensure-kind.sh
 
 LOCAL_KUSTOMIZE ?= $(shell pwd)/bin/kustomize
 .PHONY: kustomize

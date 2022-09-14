@@ -140,7 +140,6 @@ func checkRouteOscDuplicateName(clusterScope *scope.ClusterScope) error {
 func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta1.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
 	routeRef := clusterScope.GetRouteRef()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
-
 	resourceName := routeSpec.TargetName + "-" + clusterScope.GetUID()
 	resourceType := routeSpec.TargetType
 	routeName := routeSpec.Name + "-" + clusterScope.GetUID()
@@ -247,6 +246,8 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	networkSpec := clusterScope.GetNetwork()
+	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 
 	clusterScope.Info("Get list of all desired routetable in net", "netId", netId)
 	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(netId)
@@ -298,7 +299,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 				continue
 			}
 			clusterScope.Info("Create the desired routetable", "routeTableName", routeTableName)
-			routeTable, err := routeTableSvc.CreateRouteTable(netId, routeTableName)
+			routeTable, err := routeTableSvc.CreateRouteTable(netId, clusterName, routeTableName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create routetable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
