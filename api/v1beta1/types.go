@@ -356,9 +356,9 @@ var (
 	DefaultVmPrivateIpKw      string = "10.0.0.138"
 
 	DefaultVmKwName  string = "cluster-api-vm-kw"
-	DefaultVmKwType  string = "tinav5.c4r8p1"
+	DefaultVmKwType  string = "tinav5.c2r2p1"
 	DefaultVmKcpName string = "cluster-api-vm-kcp"
-	DefaultVmKcpType string = "tinav5.c4r8p1"
+	DefaultVmKcpType string = "tinav5.c2r2p1"
 
 	DefaultVolumeKcpName          string = "cluster-api-volume-kcp"
 	DefaultVolumeKcpIops          int32  = 1000
