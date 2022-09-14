@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.1-0.20220825130208-40db49591af1
   creationTimestamp: null
   name: oscclustertemplates.infrastructure.cluster.x-k8s.io
 spec:
@@ -102,9 +102,13 @@ spec:
                         type: object
                       network:
                         properties:
+                          clusterName:
+                            type: string
                           internetService:
                             description: The Internet Service configuration
                             properties:
+                              clusterName:
+                                type: string
                               name:
                                 description: The tag name associate with the Subnet
                                 type: string
@@ -115,6 +119,8 @@ spec:
                           loadBalancer:
                             description: The Load Balancer configuration
                             properties:
+                              clusterName:
+                                type: string
                               healthCheck:
                                 description: The healthCheck configuration  of the
                                   Load Balancer
@@ -185,6 +191,8 @@ spec:
                           natService:
                             description: The Nat Service configuration
                             properties:
+                              clusterName:
+                                type: string
                               name:
                                 description: The tag name associate with the Nat Service
                                 type: string
@@ -203,6 +211,8 @@ spec:
                           net:
                             description: The Net configuration
                             properties:
+                              clusterName:
+                                type: string
                               ipRange:
                                 description: the net ip range with CIDR notation
                                 type: string
@@ -217,6 +227,8 @@ spec:
                             description: The Public Ip configuration
                             items:
                               properties:
+                                clusterName:
+                                  type: string
                                 name:
                                   description: The tag name associate with the Public
                                     Ip
@@ -315,6 +327,8 @@ spec:
                                         type: integer
                                     type: object
                                   type: array
+                                tag:
+                                  type: string
                               type: object
                             type: array
                           subnets:
@@ -343,9 +357,3 @@ spec:
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

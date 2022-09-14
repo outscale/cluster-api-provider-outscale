@@ -6,23 +6,25 @@ import (
 
 	"errors"
 
+	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
 
 type OscSecurityGroupInterface interface {
-	CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error)
+	CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error)
 	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
 	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
 	DeleteSecurityGroup(securityGroupId string) (error, *http.Response)
 	GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error)
-	GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
+	GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, securityGroupMemberId string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
 	GetSecurityGroupIdsFromNetIds(netId string) ([]string, error)
 }
 
 // CreateSecurityGroup create the securitygroup associated with the net
-func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, securityGroupDescription string) (*osc.SecurityGroup, error) {
+func (s *Service) CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error) {
 	securityGroupRequest := osc.CreateSecurityGroupRequest{
 		SecurityGroupName: securityGroupName,
 		Description:       securityGroupDescription,
@@ -39,6 +41,20 @@ func (s *Service) CreateSecurityGroup(netId string, securityGroupName string, se
 	if !ok {
 		return nil, errors.New("Can not create securitygroup")
 	}
+	resourceIds := []string{*securityGroupResponse.SecurityGroup.SecurityGroupId}
+	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+	if securityGroupTag == "OscK8sMainSG" {
+		err = tag.AddTag("OscK8sMainSG/"+clusterName, "True", resourceIds, oscApiClient, oscAuthClient)
+		if err != nil {
+			fmt.Printf("Error with http result %s", httpRes.Status)
+			return nil, err
+		}
+	}
+
 	return securityGroup, nil
 }
 
@@ -161,7 +177,7 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 }
 
 // GetSecurityGroupFromSecurityGroupRule retrieve security group rule object from the security group id
-func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, flow string, ipProtocols string, ipRanges string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
+func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
 	switch {
 	case flow == "Inbound":
@@ -174,6 +190,7 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 				InboundRuleToPortRanges:   &[]int32{toPortRanges},
 			},
 		}
+
 	case flow == "Outbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
 			Filters: &osc.FiltersSecurityGroup{
@@ -187,6 +204,17 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 	default:
 		return nil, errors.New("Invalid Flow")
 	}
+
+	if securityGroupMemberId != "" && ipRanges == "" && flow == "Inbound" {
+		readSecurityGroupRuleRequest.Filters.SetInboundRuleSecurityGroupIds([]string{securityGroupMemberId})
+	} else if securityGroupMemberId != "" && ipRanges == "" && flow == "Outbound" {
+		readSecurityGroupRuleRequest.Filters.SetOutboundRuleSecurityGroupIds([]string{securityGroupMemberId})
+	} else if securityGroupMemberId != "" && ipRanges != "" {
+		return nil, errors.New("Get Both IpRange and securityGroupMemberId")
+	} else {
+		fmt.Printf("Have IpRange and no securityGroupMemberId")
+	}
+
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupRuleResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()

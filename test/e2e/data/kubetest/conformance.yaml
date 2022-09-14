@@ -1,0 +1,8 @@
+ginkgo.focus: \[Conformance\]
+ginkgo.skip: \[Serial\]|HostPort.* \[Conformance\].*|.*public.*image|.*closed.*webhook|.*to.*NodePort|.*DNS.*for.*services|.*services|.*CRs|.*stored.*version|.*creation|.*deletion|.*objects|.*Aggregator|.*cluster|.*validating.*webhooks.*should.*work|.*replication.*controller|.*killing.*a.*pod|.*NodePort.*service|.*ExternalName.*to.*NodePort|.*Subdomain|.*endpoints.*from.*pods|.*ExternalName.*to.*ClusterIP|.*pods.*for.*Hostname|.*mutate.*custom.*resource|.*validating.*webhook.*should.*work|.*CR.*v2|.*endpoint.*from.*pods|.*working.*application|.*a.*service.*and.*a.*pod|.*mutate.*configmap|.*attaching.*pod|.*ClusterIP.*to.*ExternalName|service.*account.*issuer|.*after.*mutation|.*for.*Hostname|.*ExternalName.*services|.*DNS.*for.*services|.*honor.*timeout|.*mutating.*webhook.*should.*work|.*with.*pruning       
+disable-log-dump: true
+ginkgo.progress: true
+ginkgo.slowSpecThreshold: 120.0
+ginkgo.flakeAttempts: 3
+ginkgo.trace: true
+ginkgo.v: true

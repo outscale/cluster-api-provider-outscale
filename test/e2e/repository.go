@@ -1,13 +1,16 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	. "github.com/onsi/gomega"
 	"os"
 	"path/filepath"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/yaml"
+	"strings"
 )
 
 type clusterctlConfig struct {
@@ -57,6 +60,11 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 				data, err := os.ReadFile(file.SourcePath)
 				Expect(err).ToNot(HaveOccurred(), "Failed to read file %q / %q", provider.Name, file.SourcePath)
 
+				for _, t := range input.FileTransformations {
+					data, err = t(data)
+					Expect(err).ToNot(HaveOccurred(), "Failed to apply transformation func template %q", file)
+				}
+
 				destinationFile := filepath.Join(filepath.Dir(destinationPath), file.TargetName)
 				Expect(os.WriteFile(destinationFile, data, 0600)).To(Succeed(), "Failed to write clusterctl local repository file %q / %q", provider.Name, file.TargetName)
 			}
@@ -84,4 +92,22 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 	clusterctlConfigFile.write()
 
 	return clusterctlConfigFile.Path
+}
+
+func (i *CreateRepositoryInput) RegisterClusterResourceSetConfigMapTransformation(manifestPath, envSubstVar string) {
+	Byf("Reading the ClusterResourceSet manifest %s", manifestPath)
+	manifestData, err := os.ReadFile(manifestPath) //nolint:gosec
+	Expect(err).ToNot(HaveOccurred(), "Failed to read the ClusterResourceSet manifest file")
+	Expect(manifestData).ToNot(BeEmpty(), "ClusterResourceSet manifest file should not be empty")
+
+	i.FileTransformations = append(i.FileTransformations, func(template []byte) ([]byte, error) {
+		oldData := fmt.Sprintf("data: ${%s}", envSubstVar)
+		newData := "data:\n"
+		newData += "  resources: |\n"
+		for _, l := range strings.Split(string(manifestData), "\n") {
+			newData += strings.Repeat(" ", 4) + l + "\n"
+		}
+		changeTemplate := bytes.ReplaceAll(template, []byte(oldData), []byte(newData))
+		return changeTemplate, nil
+	})
 }

@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
@@ -48,6 +49,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	netSpec.SetDefaultValue()
 	netRef := clusterScope.GetNetRef()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
+	clusterName := netSpec.ClusterName + "-" + clusterScope.GetUID()
 	var net *osc.Net
 	var err error
 	if len(netRef.ResourceMap) == 0 {
@@ -66,7 +68,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	}
 	if net == nil || netSpec.ResourceId == "" {
 		clusterScope.Info("Create the desired net", "netName", netName)
-		net, err := netSvc.CreateNet(netSpec, netName)
+		net, err := netSvc.CreateNet(netSpec, clusterName, netName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}

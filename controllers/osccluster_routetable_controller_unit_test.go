@@ -18,6 +18,7 @@ import (
 var (
 	defaultRouteTableGatewayInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -49,6 +50,7 @@ var (
 	}
 	defaultRouteTableGatewayReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -91,6 +93,7 @@ var (
 
 	defaultRouteTableNatInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -128,6 +131,7 @@ var (
 
 	defaultRouteTableNatReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -170,6 +174,7 @@ var (
 
 	defaultRouteTableGatewayNatInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -213,6 +218,7 @@ var (
 
 	defaultRouteTableGatewayNatReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -1270,7 +1276,7 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 			if rttc.expNetFound {
 				netRef.ResourceMap[netName] = netId
 			}
-
+			clusterName := rttc.spec.Network.ClusterName + "-uid"
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 
@@ -1351,12 +1357,12 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 					routeTablesRef.ResourceMap[routeTableName] = routeTableId
 					mockOscRouteTableInterface.
 						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+						CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
 						Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
 				} else {
 					mockOscRouteTableInterface.
 						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+						CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expCreateRouteTableErr)
 				}
 				if rttc.expLinkRouteTableFound {
@@ -1635,6 +1641,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 			clusterScope, ctx, mockOscRouteTableInterface := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
 
 			netName := rttc.spec.Network.Net.Name + "-uid"
+			clusterName := rttc.spec.Network.ClusterName + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
@@ -1662,7 +1669,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+					CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
 					Return(nil, rttc.expCreateRouteTableErr)
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 				if err != nil {
@@ -1705,6 +1712,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
 
+			clusterName := rttc.spec.Network.ClusterName + "-uid"
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 
@@ -1730,7 +1738,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					CreateRouteTable(gomock.Eq(netId), gomock.Eq(routeTableName)).
+					CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
 					Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
 				mockOscRouteTableInterface.
 					EXPECT().

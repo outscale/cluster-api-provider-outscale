@@ -2,7 +2,9 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: "${CLUSTER_NAME}"
-  namespace: default
+  labels:
+    cni: "${CLUSTER_NAME}-crs-cni"
+    ccm: "${CLUSTER_NAME}-crs-ccm"
 spec:
   clusterNetwork:
     pods:
@@ -11,23 +13,20 @@ spec:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: OscCluster
     name:  "${CLUSTER_NAME}"
-    namespace: default
   controlPlaneRef:
     kind: KubeadmControlPlane
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     name: "${CLUSTER_NAME}-control-plane"
-    namespace: default
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
   name:  "${CLUSTER_NAME}"
-  namespace: default
 spec:
   network:
     clusterName: "${CLUSTER_NAME}"
     loadBalancer:
-      loadbalancername: "${OSC_LOADBALANCER_NAME}"
+      loadbalancername: "${CLUSTER_NAME}-k8s"
       clusterName: "${CLUSTER_NAME}"
     net:
       clusterName: "${CLUSTER_NAME}"
@@ -40,7 +39,6 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   name: "${CLUSTER_NAME}-md-0"
-  namespace: default
 spec:
   clusterName: "${CLUSTER_NAME}"
   replicas: ${WORKER_MACHINE_COUNT}
@@ -49,37 +47,32 @@ spec:
   template:
     spec:
       clusterName: "${CLUSTER_NAME}"
-      version: "1.22.9"
+      version: "${KUBERNETES_VERSION}"
       bootstrap:
         configRef:
           name: "${CLUSTER_NAME}-md-0"
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
-          namespace: default
       infrastructureRef:
         name: "${CLUSTER_NAME}-md-0"
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
-        namespace: default
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
   name: "${CLUSTER_NAME}-md-0"
-  namespace: default
 spec:
   template:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
-        volumes:
-          - name: "${CLUSTER_NAME}-volume-kw"
-            iops: ${OSC_IOPS}
-            size: ${OSC_VOLUME_SIZE}
-            volumeType: ${OSC_VOLUME_TYPE}
-            subregionName: ${OSC_SUBREGION_NAME}
         vm:
           clusterName: "${CLUSTER_NAME}"
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS} 
+            rootDiskType: "${OSC_VOLUME_TYPE}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           subregionName: ${OSC_SUBREGION_NAME}
           vmType: "${OSC_VM_TYPE}"
@@ -88,31 +81,27 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
   name: "${CLUSTER_NAME}-control-plane"
-  namespace: default
 spec:
   template:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
-        volumes:
-          - name: "${CLUSTER_NAME}-volume-kcp"
-            iops: ${OSC_IOPS}
-            size: ${OSC_VOLUME_SIZE}
-            volumeType: ${OSC_VOLUME_TYPE}
-            subregionName: ${OSC_SUBREGION_NAME}
         vm:
           clusterName: "${CLUSTER_NAME}"
           keypairName: "${OSC_KEYPAIR_NAME}"
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS}
+            rootDiskType: "${OSC_VOLUME_TYPE}"
           subregionName: ${OSC_SUBREGION_NAME}
           role: controlplane
-          loadBalancerName: "${OSC_LOADBALANCER_NAME}"
+          loadBalancerName: "${CLUSTER_NAME}-k8s"
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
   name: "${CLUSTER_NAME}-md-0"
-  namespace: default
 spec:
   template:
     spec:
@@ -146,7 +135,6 @@ spec:
       kind: OscMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       name: "${CLUSTER_NAME}-control-plane"
-      namespace: default
   kubeadmConfigSpec:
     initConfiguration:
       nodeRegistration:
@@ -155,19 +143,20 @@ spec:
           provider-id: osc://'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     files:
-    - content: |
-        #!/bin/sh
+      - content: |
+          #!/bin/sh
 
-        curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-        chmod +x /tmp/runc.amd64	
-        cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-      owner: root:root
-      path: /tmp/set_runc.sh
-      permissions: "0744"
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        owner: root:root
+        path: /tmp/set_runc.sh
+        permissions: "0744"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: osc://'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
-  version: "1.22.9"
+  version: "${KUBERNETES_VERSION}"

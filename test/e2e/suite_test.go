@@ -8,12 +8,20 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
+	"k8s.io/client-go/rest"
 	"os"
 	"path"
 	"path/filepath"
+	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"strings"
 	"testing"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,6 +29,8 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 )
+
+const kubeconfigEnvVar = "KUBECONFIG"
 
 // Test suite flags.
 var (
@@ -30,11 +40,23 @@ var (
 	// useExistingCluster instructs the test to use the current cluster instead of creating a new one (default discovery rules apply).
 	useExistingCluster bool
 
+	useCni bool
+
+	useCcm        bool
+	validateStack bool
 	// artifactFolder is the folder to store e2e test artifacts.
 	artifactFolder string
 
 	// skipCleanup prevents cleanup of test resources e.g. for debug purposes.
 	skipCleanup bool
+)
+
+var (
+	cfg              *rest.Config
+	k8sClient        client.Client
+	testEnv          *envtest.Environment
+	reconcileTimeout time.Duration
+	cancel           context.CancelFunc
 )
 
 // Test suite global vars.
@@ -66,7 +88,11 @@ func init() {
 	flag.StringVar(&artifactFolder, "e2e.artifacts-folder", "", "folder where e2e test artifact should be stored")
 	flag.BoolVar(&skipCleanup, "e2e.skip-resource-cleanup", false, "if true, the resource cleanup after tests will be skipped")
 	flag.BoolVar(&useExistingCluster, "e2e.use-existing-cluster", true, "if true, the test uses the current cluster instead of creating a new one (default discovery rules apply)")
+	flag.BoolVar(&useCni, "e2e.use-cni", false, "if true, the test will use cni clusterclass")
+	flag.BoolVar(&useCcm, "e2e.use-ccm", false, "if true, the test will use ccm clusterclass")
+	flag.BoolVar(&validateStack, "e2e.validate-stack", false, "if true, the test will validate stack")
 	flag.BoolVar(&useCIArtifacts, "kubetest.use-ci-artifacts", false, "use the latest build from the main branch of the Kubernetes repository. Set KUBERNETES_VERSION environment variable to latest-1.xx to use the build from 1.xx release branch.")
+
 	flag.StringVar(&kubetestConfigFilePath, "kubetest.config-file", "", "path to the kubetest configuration file")
 }
 
@@ -76,6 +102,50 @@ func TestE2E(t *testing.T) {
 	junitReporter := reporters.NewJUnitReporter(junitPath)
 
 	RunSpecsWithDefaultAndCustomReporters(t, "capdo-e2e", []Reporter{junitReporter})
+}
+
+func getK8sClient() {
+	if os.Getenv(kubeconfigEnvVar) == "" {
+		kubeconfig := filepath.Join("/root", ".kube", "config")
+		os.Setenv(kubeconfigEnvVar, kubeconfig)
+	}
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	ctx, cancel = context.WithCancel(context.TODO())
+	testEnv = &envtest.Environment{}
+	cfg, err := testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+	k8sManager, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
+	Expect(err).ToNot(HaveOccurred())
+	go func() {
+		defer GinkgoRecover()
+		err = k8sManager.Start(ctx)
+		if err != nil {
+			Expect(err).NotTo(HaveOccurred())
+		}
+	}()
+	k8sClient = k8sManager.GetClient()
+	Expect(k8sClient).ToNot(BeNil())
+}
+
+func addCredential(name string, namespace string, timeout string, interval string) {
+	const oscAccessKeyEnvVar = "OSC_ACCESS_KEY"
+	const oscSecretKeyEnvVar = "OSC_SECRET_KEY"
+	accessKey := os.Getenv(oscAccessKeyEnvVar)
+	secretKey := os.Getenv(oscSecretKeyEnvVar)
+	if bootstrapClusterProxy != nil {
+		_ = createNamespace(ctx, namespace, bootstrapClusterProxy, timeout, interval)
+		k8sClient := bootstrapClusterProxy.GetClient()
+		utils.WaitForCreateMultiSecretAvailable(ctx, utils.CreateMultiSecretInput{
+			Getter:          k8sClient,
+			Name:            name,
+			Namespace:       namespace,
+			DataFirstKey:    "access_key",
+			DataFirstValue:  accessKey,
+			DataSecondKey:   "secret_key",
+			DataSecondValue: secretKey,
+		})
+	}
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -88,15 +158,29 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	By(fmt.Sprintf("Loading the e2e test configuration from %q", configPath))
 	e2eConfig = loadE2EConfig(ctx, configPath)
+
 	By(fmt.Sprintf("Loading the e2e test"))
-	By(fmt.Sprintf("Creating a clusterctl local repository into %q", artifactFolder))
-	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"))
+	By(fmt.Sprintf("Creating a clusterctl local repositorry into %q", artifactFolder))
+	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"), useCni)
 
 	By("Setting up the bootstrap cluster")
 	bootstrapClusterProvider, bootstrapClusterProxy = setupBootstrapCluster(e2eConfig, scheme, useExistingCluster)
 
+	if validateStack {
+		getK8sClient()
+	}
+
+	if !useExistingCluster {
+		By("Setting up the cluster api outscale provider credential")
+		addCredential("cluster-api-provider-outscale", "cluster-api-provider-outscale-system", "40s", "10s")
+	}
 	By("Initializing the bootstrap cluster")
 	initBootstrapCluster(ctx, bootstrapClusterProxy, e2eConfig, clusterctlConfigPath, artifactFolder)
+
+	if os.Getenv(kubeconfigEnvVar) == "" {
+		kubeconfig := filepath.Join("/root", ".kube", "config")
+		os.Setenv(kubeconfigEnvVar, kubeconfig)
+	}
 
 	return []byte(
 		strings.Join([]string{
@@ -129,6 +213,12 @@ var _ = SynchronizedAfterSuite(func() {
 	if !skipCleanup {
 		tearDown(ctx, bootstrapClusterProvider, bootstrapClusterProxy)
 	}
+	if validateStack {
+		cancel()
+		By("Tearing down the test environment")
+		err := testEnv.Stop()
+		Expect(err).NotTo(HaveOccurred())
+	}
 })
 
 func initScheme() *runtime.Scheme {
@@ -148,14 +238,32 @@ func loadE2EConfig(ctx context.Context, configPath string) *clusterctl.E2EConfig
 }
 
 // createClusterctlLocalRepository create clusterctl local repository with clusterctlConfig
-func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2EConfig, repositoryFolder string) string {
+func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2EConfig, repositoryFolder string, useCni bool) string {
 	createRepositoryInput := CreateRepositoryInput{
 		E2EConfig:        config,
 		RepositoryFolder: repositoryFolder,
 	}
 
+	if useCni {
+		By(fmt.Sprintf("Find CNI"))
+		Expect(config.Variables).To(HaveKey(capi_e2e.CNIPath), "Missing %s variable in the config", capi_e2e.CNIPath)
+		cniPath := config.GetVariable(capi_e2e.CNIPath)
+		Expect(cniPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", capi_e2e.CNIPath)
+		By(fmt.Sprintf("Find path %s", cniPath))
+		createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(cniPath, "CNI_RESOURCES")
+	}
+
+	if useCcm {
+		By(fmt.Sprintf("Find CCm"))
+		Expect(config.Variables).To(HaveKey("CCM"), "Missing %s variable in the config", "CCM")
+		ccmPath := config.GetVariable("CCM")
+		Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", "CCM")
+		By(fmt.Sprintf("Find path %s", ccmPath))
+		createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(ccmPath, "CCM_RESOURCES")
+
+	}
 	clusterctlConfig := CreateRepository(ctx, createRepositoryInput)
-	Expect(clusterctlConfig).To(BeAnExistingFile(), "The clusterctl config file does not exists in the local repository %s", repositoryFolder)
+	Expect(clusterctlConfig).To(BeAnExistingFile(), "the clusterctl config file does not exists in the local repository %s", repositoryFolder)
 
 	return clusterctlConfig
 }
