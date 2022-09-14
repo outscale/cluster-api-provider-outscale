@@ -156,7 +156,7 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 	return validVolumeIds, nil
 }
 
-//CheckVolumeState check volume in state
+// CheckVolumeState check volume in state
 func (s *Service) CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
