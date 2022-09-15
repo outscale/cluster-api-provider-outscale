@@ -47,3 +47,18 @@ func (mr *MockOscImageInterfaceMockRecorder) GetImage(imageId interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockOscImageInterface)(nil).GetImage), imageId)
 }
+
+// GetImageId mocks base method.
+func (m *MockOscImageInterface) GetImageId(imageName string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageId", imageName)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImage indicates an expected call of GetImage.
+func (mr *MockOscImageInterfaceMockRecorder) GetImageId(imageName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageId", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageId), imageName)
+}
