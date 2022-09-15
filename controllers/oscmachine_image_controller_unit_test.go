@@ -77,17 +77,17 @@ func TestGetImageResourceId(t *testing.T) {
 			expGetImageResourceIdErr: nil,
 		},
 		{
-			name:                     "failed to get Image",
+			name:                     "failed to get ImageId",
 			spec:                     defaultImageClusterInitialize,
 			machineSpec:              defaultImageInitialize,
 			expImageFound:            false,
-			expGetImageResourceIdErr: fmt.Errorf("test-image-uid does not exist"),
+			expGetImageResourceIdErr: fmt.Errorf("test-image does not exist"),
 		},
 	}
 	for _, itc := range imageTestCases {
 		t.Run(itc.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, itc.name, itc.spec, itc.machineSpec)
-			imageName := itc.machineSpec.Node.Image.Name + "-uid"
+			imageName := itc.machineSpec.Node.Image.Name
 			imageId := "omi-" + imageName
 			imageRef := machineScope.GetImageRef()
 			imageRef.ResourceMap = make(map[string]string)
@@ -115,7 +115,7 @@ func TestCheckImageFormatParameters(t *testing.T) {
 	}{
 		{
 			name:        "check Image format",
-			clusterSpec: defaultKeyClusterInitialize,
+			clusterSpec: defaultImageClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Image: infrastructurev1beta1.OscImage{
@@ -127,7 +127,7 @@ func TestCheckImageFormatParameters(t *testing.T) {
 		},
 		{
 			name:        "Check work without spec (with default values)",
-			clusterSpec: defaultKeyClusterInitialize,
+			clusterSpec: defaultImageClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{},
 			},
@@ -135,7 +135,7 @@ func TestCheckImageFormatParameters(t *testing.T) {
 		},
 		{
 			name:        "Check Bad name image",
-			clusterSpec: defaultKeyClusterInitialize,
+			clusterSpec: defaultImageClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Image: infrastructurev1beta1.OscImage{
@@ -143,7 +143,7 @@ func TestCheckImageFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckImageFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckImageFormatParametersErr: fmt.Errorf("Invalid Image Name"),
 		},
 	}
 	for _, itc := range imageTestCases {
@@ -196,7 +196,7 @@ func TestReconcileImageGet(t *testing.T) {
 		t.Run(itc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscimageInterface := SetupWithImageMock(t, itc.name, itc.spec, itc.machineSpec)
 			imageSpec := itc.machineSpec.Node.Image
-			imageName := itc.machineSpec.Node.Image.Name + "-uid"
+			imageName := itc.machineSpec.Node.Image.Name
 			imageId := "omi-" + imageName
 			imageRef := machineScope.GetImageRef()
 			imageRef.ResourceMap = make(map[string]string)
@@ -204,7 +204,7 @@ func TestReconcileImageGet(t *testing.T) {
 			image := osc.ReadImagesResponse{
 				Images: &[]osc.Image{
 					{
-						ImageName: &imageName,
+						ImageId: &imageId,
 					},
 				},
 			}
@@ -213,13 +213,18 @@ func TestReconcileImageGet(t *testing.T) {
 			if itc.expImageFound {
 				mockOscimageInterface.
 					EXPECT().
-					GetImage(gomock.Eq(imageName)).
+					GetImageId(gomock.Eq(imageName)).
+					Return(imageId, itc.expReconcileImageErr)
+				mockOscimageInterface.
+					EXPECT().
+					GetImage(gomock.Eq(imageId)).
 					Return(&(*image.Images)[0], itc.expReconcileImageErr)
+
 			} else {
 				mockOscimageInterface.
 					EXPECT().
-					GetImage(gomock.Eq(imageName)).
-					Return(nil, itc.expReconcileImageErr)
+					GetImageId(gomock.Eq(imageName)).
+					Return("", itc.expReconcileImageErr)
 			}
 
 			reconcileImage, err := reconcileImage(ctx, machineScope, mockOscimageInterface)
