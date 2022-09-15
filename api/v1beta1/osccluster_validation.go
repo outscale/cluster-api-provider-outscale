@@ -2,10 +2,11 @@ package v1beta1
 
 import (
 	"errors"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"net"
 	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 const (
@@ -22,75 +23,6 @@ const (
 // ValidateOscClusterSpec validate each parameters of oscCluster spec
 func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	var allErrs field.ErrorList
-	if spec.Network.Net.IpRange != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.Net.IpRange, field.NewPath("ipRange"), ValidateCidr); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Network.LoadBalancer.LoadBalancerType != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerType, field.NewPath("loadBalancerType"), ValidateLoadBalancerType); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Network.LoadBalancer.HealthCheck.CheckInterval != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.HealthCheck.CheckInterval, field.NewPath("checkInterval"), ValidateInterval); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.HealthCheck.HealthyThreshold != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.HealthCheck.HealthyThreshold, field.NewPath("healthyThreshold"), ValidateThreshold); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.HealthCheck.UnhealthyThreshold != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.HealthCheck.UnhealthyThreshold, field.NewPath("unhealthyThreshold"), ValidateThreshold); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.HealthCheck.Protocol != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.HealthCheck.Protocol, field.NewPath("protocol"), ValidateProtocol); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.Listener.BackendProtocol != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.Listener.BackendProtocol, field.NewPath("backendProtocol"), ValidateProtocol); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.Listener.LoadBalancerProtocol != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.Listener.LoadBalancerProtocol, field.NewPath("loadBalancerProtocol"), ValidateProtocol); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.HealthCheck.Timeout != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.HealthCheck.Timeout, field.NewPath("timeout"), ValidateTimeout); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.Listener.BackendPort != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.Listener.BackendPort, field.NewPath("backendPort"), ValidatePort); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.Listener.LoadBalancerPort != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.Listener.LoadBalancerPort, field.NewPath("loadBalancerPort"), ValidatePort); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-
-	if spec.Network.LoadBalancer.HealthCheck.Port != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.HealthCheck.Port, field.NewPath("port"), ValidatePort); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
 
 	if spec.Network.LoadBalancer.LoadBalancerName != "" {
 		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerName, field.NewPath("loadBalancerName"), ValidateLoadBalancerName); len(errs) > 0 {
@@ -98,56 +30,6 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 		}
 	}
 
-	if len(spec.Network.Subnets) != 0 {
-		subnetsSpec := spec.Network.Subnets
-		for _, subnetSpec := range subnetsSpec {
-			if errs := ValidateAndReturnErrorList(subnetSpec.IpSubnetRange, field.NewPath("ipSubnetRange"), ValidateCidr); len(errs) > 0 {
-				allErrs = append(allErrs, errs...)
-			}
-		}
-	}
-
-	if len(spec.Network.SecurityGroups) != 0 {
-		securityGroupsSpec := spec.Network.SecurityGroups
-		for _, securityGroupSpec := range securityGroupsSpec {
-			if errs := ValidateAndReturnErrorList(securityGroupSpec.Description, field.NewPath("description"), ValidateDescription); len(errs) > 0 {
-				allErrs = append(allErrs, errs...)
-			}
-			if len(securityGroupSpec.SecurityGroupRules) != 0 {
-				securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
-				for _, securityGroupRuleSpec := range securityGroupRulesSpec {
-					if errs := ValidateAndReturnErrorList(securityGroupRuleSpec.IpProtocol, field.NewPath("ipProtocol"), ValidateIpProtocol); len(errs) > 0 {
-						allErrs = append(allErrs, errs...)
-					}
-					if errs := ValidateAndReturnErrorList(securityGroupRuleSpec.Flow, field.NewPath("flow"), ValidateFlow); len(errs) > 0 {
-						allErrs = append(allErrs, errs...)
-					}
-					if errs := ValidateAndReturnErrorList(securityGroupRuleSpec.FromPortRange, field.NewPath("fromPortRange"), ValidatePort); len(errs) > 0 {
-						allErrs = append(allErrs, errs...)
-					}
-					if errs := ValidateAndReturnErrorList(securityGroupRuleSpec.ToPortRange, field.NewPath("toPortRange"), ValidatePort); len(errs) > 0 {
-						allErrs = append(allErrs, errs...)
-					}
-					if errs := ValidateAndReturnErrorList(securityGroupRuleSpec.IpRange, field.NewPath("ipRange"), ValidateCidr); len(errs) > 0 {
-						allErrs = append(allErrs, errs...)
-					}
-				}
-			}
-		}
-	}
-	if len(spec.Network.RouteTables) != 0 {
-		routeTablesSpec := spec.Network.RouteTables
-		for _, routeTableSpec := range routeTablesSpec {
-			if len(routeTableSpec.Routes) != 0 {
-				routesSpec := routeTableSpec.Routes
-				for _, routeSpec := range routesSpec {
-					if errs := ValidateAndReturnErrorList(routeSpec.Destination, field.NewPath("destination"), ValidateCidr); len(errs) > 0 {
-						allErrs = append(allErrs, errs...)
-					}
-				}
-			}
-		}
-	}
 	return allErrs
 }
 

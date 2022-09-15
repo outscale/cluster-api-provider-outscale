@@ -9,7 +9,7 @@ import (
 )
 
 // TestOscClusterTemplate_ValidateCreate check good and bad validation of oscCluster spec
-func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
+func TestOscCluster_ValidateCreate(t *testing.T) {
 	clusterTestCases := []struct {
 		name                 string
 		clusterSpec          OscClusterSpec
@@ -24,13 +24,13 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": Invalid Description"),
+			expValidateCreateErr: fmt.Errorf("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": Invalid Description"),
 		},
 	}
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
-			oscInfraClusterTemplate := createOscInfraClusterTemplate(ctc.clusterSpec, "webhook-test", "default")
-			err := oscInfraClusterTemplate.ValidateCreate()
+			oscInfraCluster := createOscInfraCluster(ctc.clusterSpec, "webhook-test", "default")
+			err := oscInfraCluster.ValidateCreate()
 			if err != nil {
 				assert.Equal(t, ctc.expValidateCreateErr.Error(), err.Error(), "ValidateCreate() should return the same error")
 			} else {
@@ -40,8 +40,8 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 	}
 }
 
-// TestOscClusterTemplate_ValidateUpdate check good and bad update of oscClusterTemplate
-func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
+// TestOscCluster_ValidateUpdate check good and bad update of oscCluster
+func TestOscCluster_ValidateUpdate(t *testing.T) {
 	clusterTestCases := []struct {
 		name                 string
 		oldClusterSpec       OscClusterSpec
@@ -49,7 +49,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 		expValidateUpdateErr error
 	}{
 		{
-			name: "Update only oscClusterTemplate name",
+			name: "Update only oscCluster name",
 			oldClusterSpec: OscClusterSpec{
 				Network: OscNetwork{
 					Net: OscNet{
@@ -146,9 +146,9 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 	}
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
-			oscOldInfraClusterTemplate := createOscInfraClusterTemplate(ctc.oldClusterSpec, "old-webhook-test", "default")
-			oscInfraClusterTemplate := createOscInfraClusterTemplate(ctc.newClusterSpec, "webhook-test", "default")
-			err := oscInfraClusterTemplate.ValidateUpdate(oscOldInfraClusterTemplate)
+			oscOldInfraCluster := createOscInfraCluster(ctc.oldClusterSpec, "old-webhook-test", "default")
+			oscInfraCluster := createOscInfraCluster(ctc.newClusterSpec, "webhook-test", "default")
+			err := oscInfraCluster.ValidateUpdate(oscOldInfraCluster)
 			if err != nil {
 				assert.Equal(t, ctc.expValidateUpdateErr.Error(), err.Error(), "ValidateUpdate should return the same error")
 			} else {
@@ -158,18 +158,14 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 	}
 }
 
-// createOscInfraClusterTemplate create oscInfraClusterTemplate
-func createOscInfraClusterTemplate(infraClusterSpec OscClusterSpec, name string, namespace string) *OscClusterTemplate {
-	oscInfraClusterTemplate := &OscClusterTemplate{
-		Spec: OscClusterTemplateSpec{
-			Template: OscClusterTemplateResource{
-				Spec: infraClusterSpec,
-			},
-		},
+// createOscInfraCluster create oscInfraCluster
+func createOscInfraCluster(infraClusterSpec OscClusterSpec, name string, namespace string) *OscCluster {
+	oscInfraCluster := &OscCluster{
+		Spec: infraClusterSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	}
-	return oscInfraClusterTemplate
+	return oscInfraCluster
 }

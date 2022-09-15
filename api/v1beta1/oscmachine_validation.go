@@ -2,9 +2,10 @@ package v1beta1
 
 import (
 	"errors"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 const (
@@ -19,11 +20,6 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	var allErrs field.ErrorList
 	if spec.Node.Vm.KeypairName != "" {
 		if errs := ValidateAndReturnErrorList(spec.Node.Vm.KeypairName, field.NewPath("keypairName"), ValidateKeypairName); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Node.Vm.ImageId != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.ImageId, field.NewPath("imageId"), ValidateImageId); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
@@ -104,6 +100,16 @@ func ValidateImageId(imageId string) (string, error) {
 		return imageId, nil
 	default:
 		return imageId, errors.New("Invalid imageId")
+	}
+}
+
+// ValidateIamegName check that Image name is a valide name
+func ValidateImageName(imageName string) (string, error) {
+	isValidateName := regexp.MustCompile(`^[0-9A-Za-z\-_\s\.\(\)\\]{0,255}$`).MatchString
+	if isValidateName(imageName) {
+		return imageName, nil
+	} else {
+		return imageName, errors.New("Invalid Image Name")
 	}
 }
 

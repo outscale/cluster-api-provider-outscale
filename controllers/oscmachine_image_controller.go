@@ -2,9 +2,7 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"regexp"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -13,16 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// ValidateTagNameValue check that tag name value is a valide name
-func ValidateImageName(imageName string) (string, error) {
-	isValidateName := regexp.MustCompile(`^[0-9A-Za-z\-_\s\.\(\)\\]{0,255}$`).MatchString
-	if isValidateName(imageName) {
-		return imageName, nil
-	} else {
-		return imageName, errors.New("Invalid Image Name")
-	}
-}
-
 // checkImageFormatParameters check keypair format
 func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error) {
 	machineScope.Info("Check Image parameters")
@@ -30,13 +18,12 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 	var imageSpec *infrastructurev1beta1.OscImage
 	nodeSpec := machineScope.GetNode()
 	if nodeSpec.Image.Name == "" {
-		nodeSpec.SetImageDefaultValue()
-		imageSpec = &nodeSpec.Image
+		return "", nil
 	} else {
 		imageSpec = machineScope.GetImage()
 	}
 	imageName := imageSpec.Name
-	imageName, err = ValidateImageName(imageName)
+	imageName, err = infrastructurev1beta1.ValidateImageName(imageName)
 	if err != nil {
 		return imageName, err
 	}
@@ -60,21 +47,29 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	imageSpec = machineScope.GetImage()
 	imageRef := machineScope.GetImageRef()
 	imageName := imageSpec.Name
+	imageId := machineScope.GetVm().ImageId
 	var image *osc.Image
 	var err error
 
 	if len(imageRef.ResourceMap) == 0 {
 		imageRef.ResourceMap = make(map[string]string)
 	}
+
+	if imageName != "" {
+		if imageId, err = imageSvc.GetImageId(imageName); err != nil {
+			return reconcile.Result{}, err
+		}
+	} else {
+		if imageName, err = imageSvc.GetImageName(imageId); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	if imageSpec.ResourceId != "" {
 		imageRef.ResourceMap[imageName] = imageSpec.ResourceId
 	}
-	if imageId, err := imageSvc.GetImageId(imageName); err != nil {
+
+	if image, err = imageSvc.GetImage(imageId); err != nil {
 		return reconcile.Result{}, err
-	} else {
-		if image, err = imageSvc.GetImage(imageId); err != nil {
-			return reconcile.Result{}, err
-		}
 	}
 	if image == nil || imageSpec.ResourceId == "" {
 		return reconcile.Result{}, err

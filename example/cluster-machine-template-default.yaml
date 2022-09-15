@@ -75,6 +75,8 @@ spec:
     spec:
       node:
         clusterName: capo-quickstart
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         vm:
           clusterName: capo-quickstart
           rootDisk:
@@ -95,6 +97,8 @@ spec:
     spec:
       node:
         clusterName: capo-quickstart
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         vm:
           clusterName: capo-quickstart
           keypairName: cluster-api
