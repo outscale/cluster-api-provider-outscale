@@ -26,7 +26,7 @@ type OscClusterTemplateSpec struct {
 	Template OscClusterTemplateResource `json:"template"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 // +kubebuilder:resource:path=oscclustertemplates,scope=Namespaced,categories=cluster-api
 // +kubebuilder:storageversion
 // OscClusterTemplate is the Schema for the oscclustertemplates API

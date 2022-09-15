@@ -21,7 +21,7 @@ type OscPublicIpInterface interface {
 	ValidatePublicIpIds(publicIpIds []string) ([]string, error)
 }
 
-// CreatePublicIp retrieve a publicip associated with you account
+//CreatePublicIp retrieve a publicip associated with you account
 func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 	publicIpRequest := osc.CreatePublicIpRequest{}
 	oscApiClient := s.scope.GetApi()

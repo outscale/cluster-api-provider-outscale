@@ -152,7 +152,7 @@ func checkVmPublicIpOscAssociateResourceName(machineScope *scope.MachineScope, c
 	}
 }
 
-// checkVmFormatParameters check Volume parameters format
+//checkVmFormatParameters check Volume parameters format
 func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (string, error) {
 	machineScope.Info("Check Vm parameters")
 	vmSpec := machineScope.GetVm()

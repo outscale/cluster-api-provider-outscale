@@ -6,7 +6,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-// OscMachineTemplateSpec define oscMachine template
+//OscMachineTemplateSpec define oscMachine template
 type OscMachineTemplateSpec struct {
 	Template OscMachineTemplateResource `json:"template"`
 }

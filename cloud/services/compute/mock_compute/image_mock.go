@@ -5,9 +5,9 @@
 package mock_compute
 
 import (
+	reflect "reflect"
 	gomock "github.com/golang/mock/gomock"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	reflect "reflect"
 )
 
 // MockOscImageInterface is a mock of OscImageInterface interface.

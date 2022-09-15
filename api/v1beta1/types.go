@@ -342,6 +342,7 @@ var (
 
 	DefaultClusterName string = "cluster-api"
 
+
 	DefaultKeypairName string = "cluster-api-keypair"
 
 	DefaultVmName             string = "cluster-api-vm"
