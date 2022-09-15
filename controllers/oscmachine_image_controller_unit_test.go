@@ -167,6 +167,7 @@ func TestReconcileImageGet(t *testing.T) {
 		spec                 infrastructurev1beta1.OscClusterSpec
 		machineSpec          infrastructurev1beta1.OscMachineSpec
 		expImageFound        bool
+		expImageNameFound    bool
 		expReconcileImageErr error
 	}{
 		{
@@ -180,27 +181,30 @@ func TestReconcileImageGet(t *testing.T) {
 				},
 			},
 			expImageFound:        true,
+			expImageNameFound:    true,
 			expReconcileImageErr: nil,
 		},
 		{
 			name: "failed to get Image",
 			spec: defaultImageClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						Name:    "test-vm",
+						ImageId: "omi-image",
+					},
+				},
 			},
 			expImageFound:        false,
+			expImageNameFound:    false,
 			expReconcileImageErr: fmt.Errorf("GetImage generic error"),
 		},
 	}
 	for _, itc := range imageTestCases {
 		t.Run(itc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscimageInterface := SetupWithImageMock(t, itc.name, itc.spec, itc.machineSpec)
-			imageSpec := itc.machineSpec.Node.Image
 			imageName := itc.machineSpec.Node.Image.Name
-			imageId := "omi-" + imageName
-			imageRef := machineScope.GetImageRef()
-			imageRef.ResourceMap = make(map[string]string)
-			imageRef.ResourceMap[imageName] = imageId
+			imageId := itc.machineSpec.Node.Vm.ImageId
 			image := osc.ReadImagesResponse{
 				Images: &[]osc.Image{
 					{
@@ -208,23 +212,24 @@ func TestReconcileImageGet(t *testing.T) {
 					},
 				},
 			}
-			imageSpec.ResourceId = imageName
 
-			if itc.expImageFound {
+			if itc.expImageNameFound {
 				mockOscimageInterface.
 					EXPECT().
 					GetImageId(gomock.Eq(imageName)).
 					Return(imageId, itc.expReconcileImageErr)
+			} else {
+				mockOscimageInterface.
+					EXPECT().
+					GetImageName(gomock.Eq(imageId)).
+					Return(imageName, itc.expReconcileImageErr)
+			}
+			if itc.expImageFound {
 				mockOscimageInterface.
 					EXPECT().
 					GetImage(gomock.Eq(imageId)).
 					Return(&(*image.Images)[0], itc.expReconcileImageErr)
 
-			} else {
-				mockOscimageInterface.
-					EXPECT().
-					GetImageId(gomock.Eq(imageName)).
-					Return("", itc.expReconcileImageErr)
 			}
 
 			reconcileImage, err := reconcileImage(ctx, machineScope, mockOscimageInterface)

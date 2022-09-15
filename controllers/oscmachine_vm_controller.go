@@ -162,10 +162,19 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if err != nil {
 		return vmTagName, err
 	}
-	vmImageId := vmSpec.ImageId
-	_, err = infrastructurev1beta1.ValidateImageId(vmImageId)
-	if err != nil {
-		return vmTagName, err
+
+	if vmSpec.ImageId != "" {
+		_, err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
+		if err != nil {
+			return vmTagName, err
+		}
+	} else if machineScope.GetImage().Name != "" {
+		_, err = infrastructurev1beta1.ValidateImageName(vmSpec.ImageId)
+		if err != nil {
+			return vmTagName, err
+		}
+	} else {
+		return vmTagName, fmt.Errorf("%s there is no ImageId or ImageName \n", vmTagName)
 	}
 
 	vmKeypairName := vmSpec.KeypairName

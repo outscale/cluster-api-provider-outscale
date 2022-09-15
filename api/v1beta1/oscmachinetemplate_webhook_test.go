@@ -41,17 +41,6 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": Invalid KeypairName"),
 		},
 		{
-			name: "create with bad imageId",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						ImageId: "omi-00000000",
-					},
-				},
-			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: imageId: Invalid value: \"omi-00000000\": Invalid imageId"),
-		},
-		{
 			name: "create with bad deviceName",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
