@@ -5,9 +5,10 @@
 package mock_compute
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	reflect "reflect"
 )
 
 // MockOscImageInterface is a mock of OscImageInterface interface.
@@ -16,12 +17,12 @@ type MockOscImageInterface struct {
 	recorder *MockOscImageInterfaceMockRecorder
 }
 
-// MockOscImageInterfaceMockRecorder is the mock recorder for MockOscVmInterface.
+// MockOscImageInterfaceMockRecorder is the mock recorder for MockOscImageInterface.
 type MockOscImageInterfaceMockRecorder struct {
 	mock *MockOscImageInterface
 }
 
-// NewMockOscVmInterface creates a new mock instance.
+// NewMockOscImageInterface creates a new mock instance.
 func NewMockOscImageInterface(ctrl *gomock.Controller) *MockOscImageInterface {
 	mock := &MockOscImageInterface{ctrl: ctrl}
 	mock.recorder = &MockOscImageInterfaceMockRecorder{mock}
@@ -57,8 +58,23 @@ func (m *MockOscImageInterface) GetImageId(imageName string) (string, error) {
 	return ret0, ret1
 }
 
-// GetImage indicates an expected call of GetImage.
+// GetImageId indicates an expected call of GetImageId.
 func (mr *MockOscImageInterfaceMockRecorder) GetImageId(imageName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageId", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageId), imageName)
+}
+
+// GetImageName mocks base method.
+func (m *MockOscImageInterface) GetImageName(imageId string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageName", imageId)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImageName indicates an expected call of GetImageName.
+func (mr *MockOscImageInterfaceMockRecorder) GetImageName(imageId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageName), imageId)
 }

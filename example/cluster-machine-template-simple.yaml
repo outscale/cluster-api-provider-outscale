@@ -200,10 +200,11 @@ spec:
     spec:
       node:
         clusterName: cluster-api
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         vm:
           clusterName: cluster-api
           name: cluster-api-vm-kw
-          imageId: ami-e1a786f1
           keypairName: cluster-api
           deviceName: /dev/sda1
           rootDisk:
@@ -227,10 +228,11 @@ spec:
     spec:
       node:
         clusterName: cluster-api
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         vm:
           clusterName: cluster-api
           name: cluster-api-vm-kcp
-          imageId: ami-e1a786f1
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 30

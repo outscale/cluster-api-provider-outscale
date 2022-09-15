@@ -10,6 +10,7 @@ import (
 type OscImageInterface interface {
 	GetImage(imageId string) (*osc.Image, error)
 	GetImageId(imageName string) (string, error)
+	GetImageName(imageId string) (string, error)
 }
 
 // GetImage retrieve image from imageId
@@ -50,4 +51,24 @@ func (s *Service) GetImageId(imageName string) (string, error) {
 	imageId := readImageResponse.GetImages()[0].ImageId
 
 	return *imageId, nil
+}
+
+// GetImageName retrieve imageId from imageName
+func (s *Service) GetImageName(imageId string) (string, error) {
+	readImageRequest := osc.ReadImagesRequest{
+		Filters: &osc.FiltersImage{ImageNames: &[]string{imageId}},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	readImageResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return "", err
+	}
+	if len(readImageResponse.GetImages()) == 0 {
+		return "", nil
+	}
+	imageName := readImageResponse.GetImages()[0].ImageName
+
+	return *imageName, nil
 }

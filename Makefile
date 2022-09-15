@@ -422,7 +422,7 @@ envtest: ## Download envtest-setup locally if necessary.
 MOCKGEN = $(shell pwd)/bin/mockgen
 .PHONY: mockgen
 mockgen: ## Download mockgen locally if necessary.
-        MINIMUM_MOCKGEN_VERSION=$(MINIMUM_MOCKGEN_VERSION) ./hack/ensure-mockgen.sh
+	MINIMUM_MOCKGEN_VERSION=$(MINIMUM_MOCKGEN_VERSION) ./hack/ensure-mockgen.sh
 
 ENVSUBST = $(shell pwd)/bin/envsubst
 .PHONY: envsubst

@@ -67,6 +67,8 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        image:
+          name: "{OSC_IMAGE_NAME}" 
         vm:
           clusterName: "${CLUSTER_NAME}"
           rootDisk:
@@ -86,6 +88,8 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        image:
+          name: "{OSC_IMAGE_NAME}" 
         vm:
           clusterName: "${CLUSTER_NAME}"
           keypairName: "${OSC_KEYPAIR_NAME}"
