@@ -348,7 +348,7 @@ var (
 	DefaultVmSubregionName    string = "eu-west-2a"
 	DefaultVmImageId          string = "ami-e1a786f1"
 	DefaultVmKeypairName      string = "cluster-api"
-	DefaultVmType             string = "tinav5.c2r2p1"
+	DefaultVmType             string = "tinav5.c4r8p1"
 	DefaultVmDeviceName       string = "/dev/sda1"
 	DefaultVmPrivateIpKwName  string = "cluster-api-privateip-kw"
 	DefaultVmPrivateIpKcpName string = "cluster-api-privateip-kcp"
@@ -356,9 +356,9 @@ var (
 	DefaultVmPrivateIpKw      string = "10.0.0.138"
 
 	DefaultVmKwName  string = "cluster-api-vm-kw"
-	DefaultVmKwType  string = "tinav5.c2r2p1"
+	DefaultVmKwType  string = "tinav5.c4r8p1"
 	DefaultVmKcpName string = "cluster-api-vm-kcp"
-	DefaultVmKcpType string = "tinav5.c2r2p1"
+	DefaultVmKcpType string = "tinav5.c4r8p1"
 
 	DefaultVolumeKcpName          string = "cluster-api-volume-kcp"
 	DefaultVolumeKcpIops          int32  = 1000
