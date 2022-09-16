@@ -168,6 +168,7 @@ func TestReconcileImageGet(t *testing.T) {
 		machineSpec          infrastructurev1beta1.OscMachineSpec
 		expImageFound        bool
 		expImageNameFound    bool
+		expImageErr          bool
 		expReconcileImageErr error
 	}{
 		{
@@ -183,6 +184,7 @@ func TestReconcileImageGet(t *testing.T) {
 			expImageFound:        true,
 			expImageNameFound:    true,
 			expReconcileImageErr: nil,
+			expImageErr:          false,
 		},
 		{
 			name: "failed to get Image",
@@ -197,6 +199,7 @@ func TestReconcileImageGet(t *testing.T) {
 			},
 			expImageFound:        false,
 			expImageNameFound:    false,
+			expImageErr:          true,
 			expReconcileImageErr: fmt.Errorf("GetImage generic error"),
 		},
 	}
@@ -205,6 +208,8 @@ func TestReconcileImageGet(t *testing.T) {
 			_, machineScope, ctx, mockOscimageInterface := SetupWithImageMock(t, itc.name, itc.spec, itc.machineSpec)
 			imageName := itc.machineSpec.Node.Image.Name
 			imageId := itc.machineSpec.Node.Vm.ImageId
+			imageSpec := machineScope.GetImage()
+			imageRef := machineScope.GetImageRef()
 			image := osc.ReadImagesResponse{
 				Images: &[]osc.Image{
 					{
@@ -212,6 +217,10 @@ func TestReconcileImageGet(t *testing.T) {
 					},
 				},
 			}
+			if len(imageRef.ResourceMap) == 0 {
+				imageRef.ResourceMap = make(map[string]string)
+			}
+			imageSpec.ResourceId = imageId
 
 			if itc.expImageNameFound {
 				mockOscimageInterface.
@@ -225,11 +234,17 @@ func TestReconcileImageGet(t *testing.T) {
 					Return(imageName, itc.expReconcileImageErr)
 			}
 			if itc.expImageFound {
-				mockOscimageInterface.
-					EXPECT().
-					GetImage(gomock.Eq(imageId)).
-					Return(&(*image.Images)[0], itc.expReconcileImageErr)
-
+				if !itc.expImageErr {
+					mockOscimageInterface.
+						EXPECT().
+						GetImage(gomock.Eq(imageId)).
+						Return(&(*image.Images)[0], itc.expReconcileImageErr)
+				} else {
+					mockOscimageInterface.
+						EXPECT().
+						GetImage(gomock.Eq(imageId)).
+						Return(nil, itc.expReconcileImageErr)
+				}
 			}
 
 			reconcileImage, err := reconcileImage(ctx, machineScope, mockOscimageInterface)
