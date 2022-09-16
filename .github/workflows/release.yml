@@ -18,11 +18,10 @@ jobs:
         echo "${GITHUB_REF:10}" >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
     - name: Docker login
-      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
       env:
         DOCKER_USER: ${{secrets.DOCKER_USER}}
         DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
     - name: build and push docker image
       run: |
         make docker-build
