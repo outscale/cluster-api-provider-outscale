@@ -56,12 +56,12 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	}
 
 	if imageName != "" {
-		machineScope.Info("########### image Names exist", "imageName", imageName)
+		machineScope.Info("########### Image Names exist", "imageName", imageName)
 		if imageId, err = imageSvc.GetImageId(imageName); err != nil {
 			return reconcile.Result{}, err
 		}
 	} else {
-		machineScope.Info("########### image Name is empty and w'll try to get it from Id#####", "imageId", imageId)
+		machineScope.Info("########### Image Name is empty and we wiqqll try to get it from Id#####", "imageId", imageId)
 		if imageName, err = imageSvc.GetImageName(imageId); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -74,7 +74,7 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 		return reconcile.Result{}, err
 	}
 	if image == nil || imageSpec.ResourceId == "" {
-		machineScope.Info("########### image is nil")
+		machineScope.Info("########### Image is nil")
 
 		return reconcile.Result{}, err
 	} else {
