@@ -367,6 +367,7 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		expReconcileDeleteKeyPairErr error
 		expKeyPairFound              bool
 		expKeyPairDelete             bool
+		expKeyPairNotnil             bool
 	}{
 		{
 			name:        "failed to delete keypair removed outside cluster api ",
@@ -378,6 +379,7 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			expKeyPairFound:              false,
 			expReconcileDeleteKeyPairErr: fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
 			expKeyPairDelete:             false,
+			expKeyPairNotnil:             false,
 		},
 		{
 			name:        "failed to delete keypair ",
@@ -389,6 +391,7 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			expKeyPairFound:              true,
 			expReconcileDeleteKeyPairErr: fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
 			expKeyPairDelete:             false,
+			expKeyPairNotnil:             true,
 		},
 		{
 			name:        "delete keypair ",
@@ -405,6 +408,7 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			expKeyPairFound:              true,
 			expReconcileDeleteKeyPairErr: nil,
 			expKeyPairDelete:             true,
+			expKeyPairNotnil:             true,
 		},
 	}
 
@@ -426,6 +430,13 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 					EXPECT().
 					GetKeyPair(gomock.Eq(keyPairName)).
 					Return(&(*key.Keypairs)[0], nil)
+			} else {
+				mockOscKeyPairInterface.
+					EXPECT().
+					GetKeyPair(gomock.Eq(keyPairName)).
+					Return(nil, k.expReconcileDeleteKeyPairErr)
+			}
+			if k.expKeyPairNotnil {
 				if k.expKeyPairDelete {
 					mockOscKeyPairInterface.
 						EXPECT().
@@ -437,11 +448,6 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 						DeleteKeyPair(gomock.Eq(keyPairName)).
 						Return(k.expReconcileDeleteKeyPairErr)
 				}
-			} else {
-				mockOscKeyPairInterface.
-					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
-					Return(nil, k.expReconcileDeleteKeyPairErr)
 			}
 
 			reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, mockOscKeyPairInterface)
