@@ -1065,6 +1065,53 @@ func TestCheckVmFormatParameters(t *testing.T) {
 			expCheckVmFormatParametersErr: fmt.Errorf("Invalid deviceName"),
 		},
 		{
+			name:        "check empty device name",
+			clusterSpec: defaultVmClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []*infrastructurev1beta1.OscVolume{
+						{
+							Name:          "test-volume",
+							Iops:          1000,
+							Size:          50,
+							VolumeType:    "io1",
+							SubregionName: "eu-west-2a",
+						},
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						Name:       "test-vm",
+						ImageId:    "ami-00000000",
+						Role:       "controlplane",
+						VolumeName: "test-volume",
+						RootDisk: infrastructurev1beta1.OscRootDisk{
+
+							RootDiskSize: 30,
+							RootDiskIops: 1500,
+							RootDiskType: "io1",
+						},
+						KeypairName:      "rke",
+						SubregionName:    "eu-west-2a",
+						SubnetName:       "test-subnet",
+						LoadBalancerName: "test-loadbalancer",
+						VmType:           "tinav4.c2r4p2",
+						PublicIpName:     "test-publicip",
+						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+							{
+								Name: "test-securitygroup",
+							},
+						},
+						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+							{
+								Name:      "test-privateip-first",
+								PrivateIp: "10.0.0.17",
+							},
+						},
+					},
+				},
+			},
+			expCheckVmFormatParametersErr: nil,
+		},
+		{
 			name:        "Check Bad VmType",
 			clusterSpec: defaultVmClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
