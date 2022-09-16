@@ -2,10 +2,7 @@ package controllers
 
 import (
 	"context"
-	b64 "encoding/base64"
 	"fmt"
-
-	"golang.org/x/crypto/ssh"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 
@@ -16,20 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-// validKeyPairPublicKey return if public key is valid
-func validKeyPairPublicKey(publicKey string) bool {
-	publicKeyBinary, err := b64.StdEncoding.DecodeString(publicKey)
-	if err != nil {
-		return false
-	}
-
-	_, _, _, _, err = ssh.ParseAuthorizedKey(publicKeyBinary)
-	if err != nil {
-		return false
-	}
-	return true
-}
 
 // checkKeypairFormatParameters check keypair format
 func checkKeypairFormatParameters(machineScope *scope.MachineScope) (string, error) {
@@ -50,14 +33,6 @@ func checkKeypairFormatParameters(machineScope *scope.MachineScope) (string, err
 		return keypairTagName, err
 	}
 
-	publicKey := keypairSpec.PublicKey
-	if publicKey == "" {
-		return keypairTagName, fmt.Errorf("keypair Public Ip is empty")
-	} else {
-		if !validKeyPairPublicKey(publicKey) {
-			return keypairTagName, fmt.Errorf("Invalid keypairType")
-		}
-	}
 	return "", nil
 }
 
@@ -76,6 +51,8 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 	machineScope.Info("Create Keypair or add existing one")
 	var keypairSpec *infrastructurev1beta1.OscKeypair
 	keypairSpec = machineScope.GetKeypair()
+	machineScope.Info("Get Keypair if existing", "keypair", keypairSpec.Name)
+
 	keypairRef := machineScope.GetKeypairRef()
 	keypairName := keypairSpec.Name
 	var keypair *osc.Keypair
@@ -84,29 +61,24 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 	if len(keypairRef.ResourceMap) == 0 {
 		keypairRef.ResourceMap = make(map[string]string)
 	}
-	keypairRef.ResourceMap[keypairName] = keypairSpec.ResourceId
+	keypairRef.ResourceMap[keypairName] = keypairName
 
 	if keypair, err = keypairSvc.GetKeyPair(keypairName); err != nil {
+		machineScope.Info("######### fail to get keypair #####", "keypair", keypairSpec.Name)
 		return reconcile.Result{}, err
 	}
-	if keypair == nil || keypairSpec.ResourceId == "" {
+	if keypair == nil {
+		machineScope.Info("######### key pair will be created #####", "keypair", keypairSpec.Name)
 		_, err := keypairSvc.CreateKeyPair(keypairName)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-	} else {
-		if keypairSpec.PublicKey != "" {
-			if !validKeyPairPublicKey(keypairSpec.PublicKey) {
-				return reconcile.Result{}, fmt.Errorf("keypair public IP is not valid")
-			} else {
-				if keypairSpec.ResourceId != "" {
-					keypairRef.ResourceMap[keypairName] = keypairSpec.ResourceId
-				}
-			}
-		} else {
-			return reconcile.Result{}, fmt.Errorf("keypair public IP is empty")
-		}
+	} else if keypairSpec.ResourceId == "" {
+		machineScope.Info("######### key pair Ressource id is empty  #####", "keypair", keypairSpec.Name)
+		keypairRef.ResourceMap[keypairName] = keypairName
 	}
+	machineScope.Info("@@@@@@@@@@@@@@@@@@@@@@@ Get Keypair after reconcile keypair@@@@@@@@@@@@", "keypair", keypairSpec.Name)
+
 	return reconcile.Result{}, nil
 }
 
