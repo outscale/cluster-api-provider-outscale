@@ -232,25 +232,23 @@ func TestReconcileKeyPairGet(t *testing.T) {
 					},
 				},
 			}
+			keyPairCreated := osc.CreateKeypairResponse{
+				Keypair: &osc.KeypairCreated{
+					KeypairName: &keyPairName,
+				},
+			}
 			keyPairSpec.ResourceId = keyPairName
 
-			if k.expKeyPairFound {
-				if len(*key.Keypairs) != 0 {
-					mockOscKeyPairInterface.
-						EXPECT().
-						GetKeyPair(gomock.Eq(keyPairName)).
-						Return(&(*key.Keypairs)[0], k.expReconcileKeyPairErr)
+			mockOscKeyPairInterface.
+				EXPECT().
+				GetKeyPair(gomock.Eq(keyPairName)).
+				Return(&(*key.Keypairs)[0], k.expReconcileKeyPairErr)
 
-					mockOscKeyPairInterface.
-						EXPECT().
-						CreateKeyPair(gomock.Eq(keyPairName)).
-						Return(nil, k.expReconcileKeyPairErr)
-				}
-			} else {
+			if &(*key.Keypairs)[0] == nil {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
-					Return(nil, k.expReconcileKeyPairErr)
+					CreateKeyPair(gomock.Eq(keyPairName)).
+					Return(keyPairCreated.Keypair, k.expReconcileKeyPairErr)
 			}
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
