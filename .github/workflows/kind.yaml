@@ -60,6 +60,7 @@ jobs:
         worker_volume_type: "io1"
         worker_volume_size: 30
         worker_iops: 1500
+        image_id: ${{ secrets.OMI_ID }}
     - name: Wait Kubernetes control plane is up and running
       uses: nick-invision/retry@v2
       with:
