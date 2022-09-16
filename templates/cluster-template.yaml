@@ -68,7 +68,9 @@ spec:
       node:
         clusterName: "${CLUSTER_NAME}"
         image:
-          name: "{OSC_IMAGE_NAME}" 
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api
         vm:
           clusterName: "${CLUSTER_NAME}"
           rootDisk:
@@ -89,7 +91,9 @@ spec:
       node:
         clusterName: "${CLUSTER_NAME}"
         image:
-          name: "{OSC_IMAGE_NAME}" 
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api
         vm:
           clusterName: "${CLUSTER_NAME}"
           keypairName: "${OSC_KEYPAIR_NAME}"

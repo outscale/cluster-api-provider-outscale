@@ -166,32 +166,6 @@ func TestCheckKeyPairFormatParameters(t *testing.T) {
 			},
 			expCheckKeyPairFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
 		},
-		{
-			name:        "Check empty Public key ",
-			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
-						Name:      "test-keypairEmpty",
-						PublicKey: "",
-					},
-				},
-			},
-			expCheckKeyPairFormatParametersErr: fmt.Errorf("keypair Public Ip is empty"),
-		},
-		{
-			name:        "Check bad Public key ",
-			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
-						Name:      "test-keypairWrong",
-						PublicKey: "!@@",
-					},
-				},
-			},
-			expCheckKeyPairFormatParametersErr: fmt.Errorf("Invalid keypairType"),
-		},
 	}
 	for _, k := range keypairTestCases {
 		t.Run(k.name, func(t *testing.T) {
