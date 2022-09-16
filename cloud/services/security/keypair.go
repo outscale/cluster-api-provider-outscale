@@ -80,7 +80,7 @@ func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
 	}
 
 	if len(*keypairs) == 0 {
-		return nil, fmt.Errorf("No keypair found")
+		return nil, nil
 	} else {
 		keypaires := *keypairs
 		return &keypaires[0], nil
