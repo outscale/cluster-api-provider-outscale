@@ -226,7 +226,6 @@ endif
 credential: envsubst ## Set Credentials
 	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f - ||:
 	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} -n cluster-api-provider-outscale-system ||:
-	@cat ./hack/ccm-secret.yaml | $(ENVSUBST)| kubectl apply -f - ||:
 
 .PHONY: clusterclass
 clusterclass: envsubst ## Set Clusterclass

@@ -77,13 +77,11 @@ func DeleteCapoMachineList(ctx context.Context, input CapoMachineListDeleteInput
 		Eventually(func() error {
 			return input.Deleter.Delete(ctx, capoMachineGet)
 		}, 2*time.Minute, 10*time.Second).Should(Succeed())
-		if capoMachine.Status.Phase == "Pending" || capoMachine.Status.Phase == "Deleting" {
-			fmt.Fprintf(GinkgoWriter, "Delete capoMachine pending \n")
-			time.Sleep(15 * time.Second)
-			capoMachineGet.ObjectMeta.Finalizers = nil
-			Expect(input.Deleter.Update(ctx, capoMachineGet)).Should(Succeed())
-			fmt.Fprintf(GinkgoWriter, "Patch machine \n")
-		}
+		fmt.Fprintf(GinkgoWriter, "Delete capoMachine pending \n")
+		time.Sleep(15 * time.Second)
+		capoMachineGet.ObjectMeta.Finalizers = nil
+		Expect(input.Deleter.Update(ctx, capoMachineGet)).Should(Succeed())
+		fmt.Fprintf(GinkgoWriter, "Patch machine \n")
 		capoMachineGet = &clusterv1.Machine{}
 		EventuallyWithOffset(1, func() error {
 			fmt.Fprintf(GinkgoWriter, "Wait capoMachine %s in namespace %s to be deleted \n", capoMachine.Name, capoMachine.Namespace)
