@@ -62,6 +62,7 @@ export OSC_VOLUME_TYPE=<osc-volume-type>
 export OSC_KEYPAIR_NAME=<osc-keypairname>
 export OSC_SUBREGION_NAME=<osc-subregion>
 export OSC_VM_TYPE=<osc-vm-type>
+export OSC_IMAGE_NAME=<osc-image-name>
 ```
 Then you will generate:
 ```
