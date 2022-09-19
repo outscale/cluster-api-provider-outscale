@@ -34,7 +34,7 @@ jobs:
     - name: generate artefacts
       run: make release
       env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
+        IMG_RELEASE: registry.hub.docker.com/${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
     - name: gh login
       run: make gh-login
@@ -64,7 +64,7 @@ jobs:
     - name: create release
       run: make create-gh-release
       env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY }}/osc/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
+        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
         PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
         GH_REPO: ${{ github.repository }} 
