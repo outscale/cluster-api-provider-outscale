@@ -12,7 +12,7 @@ clusterapioutscale:
         kubectl.kubernetes.io/default-container: manager
     containers:
     # -- Outscale provider image
-      image: outscale/cluster-api-outscale-controllers
+      image: registry.hub.docker.com/outscale/cluster-api-outscale-controllers
     # -- Outscale provider image tag
       imageTag: "v0.1.0"
     # -- Proxy image
