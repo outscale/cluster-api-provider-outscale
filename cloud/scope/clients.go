@@ -24,12 +24,16 @@ func newOscClient() (*OscClient, error) {
 	if secretKey == "" {
 		return nil, errors.New("environment variable OSC_SECRET_KEY is required")
 	}
+	auth := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
+		SecretKey: os.Getenv("OSC_SECRET_KEY"),
+	})
+	auth = context.WithValue(auth, osc.ContextServerIndex, 0)
+	auth = context.WithValue(auth, osc.ContextServerVariables, map[string]string{"region": os.Getenv("OSC_REGION")})
+
 	oscClient := &OscClient{
-		api: osc.NewAPIClient(osc.NewConfiguration()),
-		auth: context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
-			AccessKey: os.Getenv("OSC_ACCESS_KEY"),
-			SecretKey: os.Getenv("OSC_SECRET_KEY"),
-		}),
+		api:  osc.NewAPIClient(osc.NewConfiguration()),
+		auth: auth,
 	}
 	return oscClient, nil
 }

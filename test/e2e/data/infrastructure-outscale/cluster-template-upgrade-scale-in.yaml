@@ -67,6 +67,9 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
         vm:
           clusterName: "${CLUSTER_NAME}"
           name: "${CLUSTER_NAME}"
@@ -91,6 +94,9 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
         vm:
           name: "${CLUSTER_NAME}-vm-kw-upgrade"
           clusterName: "${CLUSTER_NAME}"

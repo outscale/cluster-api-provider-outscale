@@ -109,6 +109,7 @@ jobs:
          KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
          OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
          OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+         OSC_REGION: ${{ secrets.OSC_REGION }}
     - name: Launch conformance
       run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2econformance
       shell: bash
@@ -117,6 +118,10 @@ jobs:
         IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+        OSC_REGION: ${{ secrets.OSC_REGION }}
+        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
+        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
+        IMG_UPGRADE_TO: ${{ secrets.IMG_UPGRADE_TO }}
     - name: Get cluster api outscale logs
       run: make logs-capo
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}

@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -40,10 +40,14 @@ spec:
         description: OscCluster is the Schema for the oscclusters API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -66,9 +70,13 @@ spec:
                 type: object
               network:
                 properties:
+                  clusterName:
+                    type: string
                   internetService:
                     description: The Internet Service configuration
                     properties:
+                      clusterName:
+                        type: string
                       name:
                         description: The tag name associate with the Subnet
                         type: string
@@ -79,6 +87,8 @@ spec:
                   loadBalancer:
                     description: The Load Balancer configuration
                     properties:
+                      clusterName:
+                        type: string
                       healthCheck:
                         description: The healthCheck configuration  of the Load Balancer
                         properties:
@@ -87,7 +97,8 @@ spec:
                             format: int32
                             type: integer
                           healthythreshold:
-                            description: the consecutive number of pings which are sucessful to consider the vm healthy
+                            description: the consecutive number of pings which are
+                              sucessful to consider the vm healthy
                             format: int32
                             type: integer
                           port:
@@ -102,7 +113,8 @@ spec:
                             format: int32
                             type: integer
                           unhealthythreshold:
-                            description: the consecutive number of pings which are failed to consider the vm unhealthy
+                            description: the consecutive number of pings which are
+                              failed to consider the vm unhealthy
                             format: int32
                             type: integer
                         type: object
@@ -114,7 +126,8 @@ spec:
                             format: int32
                             type: integer
                           backendprotocol:
-                            description: The protocol ('HTTP'|'TCP') to route the traffic to the backend vm
+                            description: The protocol ('HTTP'|'TCP') to route the
+                              traffic to the backend vm
                             type: string
                           loadbalancerport:
                             description: The port on which the loadbalancer will listen
@@ -131,7 +144,8 @@ spec:
                         description: The Load Balancer Type internet-facing or internal
                         type: string
                       securitygroupname:
-                        description: The security group tag name associate with a security group
+                        description: The security group tag name associate with a
+                          security group
                         type: string
                       subnetname:
                         description: The subnet tag name associate with a Subnet
@@ -140,11 +154,14 @@ spec:
                   natService:
                     description: The Nat Service configuration
                     properties:
+                      clusterName:
+                        type: string
                       name:
                         description: The tag name associate with the Nat Service
                         type: string
                       publicipname:
-                        description: The Public Ip tag name associated wtih a Public Ip
+                        description: The Public Ip tag name associated wtih a Public
+                          Ip
                         type: string
                       resourceId:
                         description: The Nat Service Id response
@@ -156,6 +173,8 @@ spec:
                   net:
                     description: The Net configuration
                     properties:
+                      clusterName:
+                        type: string
                       ipRange:
                         description: the net ip range with CIDR notation
                         type: string
@@ -170,6 +189,8 @@ spec:
                     description: The Public Ip configuration
                     items:
                       properties:
+                        clusterName:
+                          type: string
                         name:
                           description: The tag name associate with the Public Ip
                           type: string
@@ -193,7 +214,8 @@ spec:
                           items:
                             properties:
                               destination:
-                                description: the destination match Ip range with CIDR notation
+                                description: the destination match Ip range with CIDR
+                                  notation
                                 type: string
                               name:
                                 description: The tag name associate with the Route
@@ -202,10 +224,12 @@ spec:
                                 description: The Route Id response
                                 type: string
                               targetName:
-                                description: The tag name associate with the target resource type
+                                description: The tag name associate with the target
+                                  resource type
                                 type: string
                               targetType:
-                                description: The target resource type which can be Internet Service (gateway) or Nat Service (nat-service)
+                                description: The target resource type which can be
+                                  Internet Service (gateway) or Nat Service (nat-service)
                                 type: string
                             type: object
                           type: array
@@ -231,20 +255,23 @@ spec:
                           items:
                             properties:
                               flow:
-                                description: The flow of the security group (inbound or outbound)
+                                description: The flow of the security group (inbound
+                                  or outbound)
                                 type: string
                               fromPortRange:
                                 description: The beginning of the port range
                                 format: int32
                                 type: integer
                               ipProtocol:
-                                description: The ip protocol name (tcp, udp, icmp or -1)
+                                description: The ip protocol name (tcp, udp, icmp
+                                  or -1)
                                 type: string
                               ipRange:
                                 description: The ip range of the security group rule
                                 type: string
                               name:
-                                description: The tag name associate with the security group
+                                description: The tag name associate with the security
+                                  group
                                 type: string
                               resourceId:
                                 description: The security group rule id
@@ -255,6 +282,8 @@ spec:
                                 type: integer
                             type: object
                           type: array
+                        tag:
+                          type: string
                       type: object
                     type: array
                   subnets:
@@ -278,28 +307,44 @@ spec:
             description: OscClusterStatus defines the observed state of OscCluster
             properties:
               conditions:
-                description: Conditions provide observations of the operational state of a Cluster API resource.
+                description: Conditions provide observations of the operational state
+                  of a Cluster API resource.
                 items:
-                  description: Condition defines an observation of a Cluster API resource operational state.
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
                   properties:
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status to another. This should be when the underlying condition changed. If that is not known, then using the time when the API field changed is acceptable.
+                      description: Last time the condition transitioned from one status
+                        to another. This should be when the underlying condition changed.
+                        If that is not known, then using the time when the API field
+                        changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about the transition. This field may be empty.
+                      description: A human readable message indicating details about
+                        the transition. This field may be empty.
                       type: string
                     reason:
-                      description: The reason for the condition's last transition in CamelCase. The specific API may choose whether or not this field is considered a guaranteed API. This field may not be empty.
+                      description: The reason for the condition's last transition
+                        in CamelCase. The specific API may choose whether or not this
+                        field is considered a guaranteed API. This field may not be
+                        empty.
                       type: string
                     severity:
-                      description: Severity provides an explicit classification of Reason code, so the users or machines can immediately understand the current situation and act accordingly. The Severity field MUST be set only when Status=False.
+                      description: Severity provides an explicit classification of
+                        Reason code, so the users or machines can immediately understand
+                        the current situation and act accordingly. The Severity field
+                        MUST be set only when Status=False.
                       type: string
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
                     type:
-                      description: Type of condition in CamelCase or in foo.example.com/CamelCase. Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important.
                       type: string
                   required:
                   - lastTransitionTime
@@ -310,7 +355,8 @@ spec:
               network:
                 properties:
                   LoadbalancerRef:
-                    description: Map between LoadbalancerId  and LoadbalancerName (Load Balancer tag Name with cluster UID)
+                    description: Map between LoadbalancerId  and LoadbalancerName
+                      (Load Balancer tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -318,7 +364,8 @@ spec:
                         type: object
                     type: object
                   internetserviceref:
-                    description: Map between InternetServiceId  and InternetServiceName (Internet Service tag Name with cluster UID)
+                    description: Map between InternetServiceId  and InternetServiceName
+                      (Internet Service tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -326,7 +373,8 @@ spec:
                         type: object
                     type: object
                   linkroutetableref:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -334,7 +382,8 @@ spec:
                         type: object
                     type: object
                   natref:
-                    description: Map between NatServiceId  and NatServiceName (Nat Service tag Name with cluster UID)
+                    description: Map between NatServiceId  and NatServiceName (Nat
+                      Service tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -342,7 +391,8 @@ spec:
                         type: object
                     type: object
                   netref:
-                    description: Map between NetId  and NetName (Net tag Name with cluster UID)
+                    description: Map between NetId  and NetName (Net tag Name with
+                      cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -350,7 +400,8 @@ spec:
                         type: object
                     type: object
                   publicipref:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -358,7 +409,8 @@ spec:
                         type: object
                     type: object
                   routeref:
-                    description: Map between RouteId  and RouteName (Route tag Name with cluster UID)
+                    description: Map between RouteId  and RouteName (Route tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -366,7 +418,8 @@ spec:
                         type: object
                     type: object
                   routetableref:
-                    description: Map between RouteTablesId  and RouteTablesName (Route Tables tag Name with cluster UID)
+                    description: Map between RouteTablesId  and RouteTablesName (Route
+                      Tables tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -374,7 +427,8 @@ spec:
                         type: object
                     type: object
                   securitygroupref:
-                    description: Map between PublicIpId  and PublicIpName (Public IP tag Name with cluster UID)
+                    description: Map between PublicIpId  and PublicIpName (Public
+                      IP tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -382,7 +436,8 @@ spec:
                         type: object
                     type: object
                   securitygroupruleref:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -390,7 +445,8 @@ spec:
                         type: object
                     type: object
                   subnetref:
-                    description: Map between SubnetId  and SubnetName (Subnet tag Name with cluster UID)
+                    description: Map between SubnetId  and SubnetName (Subnet tag
+                      Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -406,19 +462,13 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -448,10 +498,14 @@ spec:
         description: OscMachine is the Schema for the oscmachines API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -460,6 +514,8 @@ spec:
             properties:
               node:
                 properties:
+                  clusterName:
+                    type: string
                   image:
                     properties:
                       name:
@@ -469,6 +525,8 @@ spec:
                     type: object
                   keypair:
                     properties:
+                      clusterName:
+                        type: string
                       name:
                         type: string
                       publicKey:
@@ -478,6 +536,8 @@ spec:
                     type: object
                   vm:
                     properties:
+                      clusterName:
+                        type: string
                       deviceName:
                         type: string
                       imageId:
@@ -495,15 +555,31 @@ spec:
                               type: string
                             privateIp:
                               type: string
+                          required:
+                          - privateIp
                           type: object
                         type: array
                       publicIpName:
                         type: string
+                      replica:
+                        format: int32
+                        type: integer
                       resourceId:
                         type: string
                       role:
                         type: string
-                      securityGroupsNames:
+                      rootDisk:
+                        properties:
+                          rootDiskIops:
+                            format: int32
+                            type: integer
+                          rootDiskSize:
+                            format: int32
+                            type: integer
+                          rootDiskType:
+                            type: string
+                        type: object
+                      securityGroupNames:
                         items:
                           properties:
                             name:
@@ -515,6 +591,8 @@ spec:
                       subregionName:
                         type: string
                       vmType:
+                        type: string
+                      volumeDeviceName:
                         type: string
                       volumeName:
                         type: string
@@ -553,7 +631,8 @@ spec:
                       description: The node address.
                       type: string
                     type:
-                      description: Node address type, one of Hostname, ExternalIP or InternalIP.
+                      description: Node address type, one of Hostname, ExternalIP
+                        or InternalIP.
                       type: string
                   required:
                   - address
@@ -561,28 +640,44 @@ spec:
                   type: object
                 type: array
               conditions:
-                description: Conditions provide observations of the operational state of a Cluster API resource.
+                description: Conditions provide observations of the operational state
+                  of a Cluster API resource.
                 items:
-                  description: Condition defines an observation of a Cluster API resource operational state.
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
                   properties:
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status to another. This should be when the underlying condition changed. If that is not known, then using the time when the API field changed is acceptable.
+                      description: Last time the condition transitioned from one status
+                        to another. This should be when the underlying condition changed.
+                        If that is not known, then using the time when the API field
+                        changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about the transition. This field may be empty.
+                      description: A human readable message indicating details about
+                        the transition. This field may be empty.
                       type: string
                     reason:
-                      description: The reason for the condition's last transition in CamelCase. The specific API may choose whether or not this field is considered a guaranteed API. This field may not be empty.
+                      description: The reason for the condition's last transition
+                        in CamelCase. The specific API may choose whether or not this
+                        field is considered a guaranteed API. This field may not be
+                        empty.
                       type: string
                     severity:
-                      description: Severity provides an explicit classification of Reason code, so the users or machines can immediately understand the current situation and act accordingly. The Severity field MUST be set only when Status=False.
+                      description: Severity provides an explicit classification of
+                        Reason code, so the users or machines can immediately understand
+                        the current situation and act accordingly. The Severity field
+                        MUST be set only when Status=False.
                       type: string
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
                     type:
-                      description: Type of condition in CamelCase or in foo.example.com/CamelCase. Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important.
                       type: string
                   required:
                   - lastTransitionTime
@@ -593,12 +688,14 @@ spec:
               failureMessage:
                 type: string
               failureReason:
-                description: MachineStatusError defines errors states for Machine objects.
+                description: MachineStatusError defines errors states for Machine
+                  objects.
                 type: string
               node:
                 properties:
                   imageRef:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -606,7 +703,8 @@ spec:
                         type: object
                     type: object
                   keypairRef:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -614,7 +712,8 @@ spec:
                         type: object
                     type: object
                   linkPublicIpRef:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -622,7 +721,8 @@ spec:
                         type: object
                     type: object
                   vmRef:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -630,7 +730,8 @@ spec:
                         type: object
                     type: object
                   volumeRef:
-                    description: Map between resourceId and resourceName (tag Name with cluster UID)
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -648,18 +749,12 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
@@ -682,10 +777,14 @@ spec:
         description: OscMachineTemplate is the Schema for the OscMachineTemplate API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -693,20 +792,49 @@ spec:
             description: OscMachineTemplateSpec define oscMachine template
             properties:
               template:
-                description: OscMachineTemplateResource is the Schema for the OscMachineTemplate api
+                description: OscMachineTemplateResource is the Schema for the OscMachineTemplate
+                  api
                 properties:
                   metadata:
-                    description: "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. This is a copy of customizable fields from metav1.ObjectMeta. \n ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template` and `MachineSet.Template`, which are not top-level Kubernetes objects. Given that metav1.ObjectMeta has lots of special cases and read-only fields which end up in the generated CRD validation, having it as a subset simplifies the API and some issues that can impact user experience. \n During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054) for v1alpha2, we noticed a failure would occur running Cluster API test suite against the new CRDs, specifically `spec.metadata.creationTimestamp in body must be of type string: \"null\"`. The investigation showed that `controller-tools@v2` behaves differently than its previous version when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1) package. \n In more details, we found that embedded (non-top level) types that embedded `metav1.ObjectMeta` had validation properties, including for `creationTimestamp` (metav1.Time). The `metav1.Time` type specifies a custom json marshaller that, when IsZero() is true, returns `null` which breaks validation because the field isn't marked as nullable. \n In future versions, controller-tools@v2 might allow overriding the type and validation for embedded types. When that happens, this hack should be revisited."
+                    description: "ObjectMeta is metadata that all persisted resources
+                      must have, which includes all objects users must create. This
+                      is a copy of customizable fields from metav1.ObjectMeta. \n
+                      ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template`
+                      and `MachineSet.Template`, which are not top-level Kubernetes
+                      objects. Given that metav1.ObjectMeta has lots of special cases
+                      and read-only fields which end up in the generated CRD validation,
+                      having it as a subset simplifies the API and some issues that
+                      can impact user experience. \n During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054)
+                      for v1alpha2, we noticed a failure would occur running Cluster
+                      API test suite against the new CRDs, specifically `spec.metadata.creationTimestamp
+                      in body must be of type string: \"null\"`. The investigation
+                      showed that `controller-tools@v2` behaves differently than its
+                      previous version when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1)
+                      package. \n In more details, we found that embedded (non-top
+                      level) types that embedded `metav1.ObjectMeta` had validation
+                      properties, including for `creationTimestamp` (metav1.Time).
+                      The `metav1.Time` type specifies a custom json marshaller that,
+                      when IsZero() is true, returns `null` which breaks validation
+                      because the field isn't marked as nullable. \n In future versions,
+                      controller-tools@v2 might allow overriding the type and validation
+                      for embedded types. When that happens, this hack should be revisited."
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
-                        description: 'Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                        description: 'Annotations is an unstructured key value map
+                          stored with a resource that may be set by external tools
+                          to store and retrieve arbitrary metadata. They are not queryable
+                          and should be preserved when modifying objects. More info:
+                          http://kubernetes.io/docs/user-guide/annotations'
                         type: object
                       labels:
                         additionalProperties:
                           type: string
-                        description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+                        description: 'Map of string keys and values that can be used
+                          to organize and categorize (scope and select) objects. May
+                          match selectors of replication controllers and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels'
                         type: object
                     type: object
                   spec:
@@ -714,6 +842,8 @@ spec:
                     properties:
                       node:
                         properties:
+                          clusterName:
+                            type: string
                           image:
                             properties:
                               name:
@@ -723,6 +853,8 @@ spec:
                             type: object
                           keypair:
                             properties:
+                              clusterName:
+                                type: string
                               name:
                                 type: string
                               publicKey:
@@ -732,6 +864,8 @@ spec:
                             type: object
                           vm:
                             properties:
+                              clusterName:
+                                type: string
                               deviceName:
                                 type: string
                               imageId:
@@ -749,15 +883,31 @@ spec:
                                       type: string
                                     privateIp:
                                       type: string
+                                  required:
+                                  - privateIp
                                   type: object
                                 type: array
                               publicIpName:
                                 type: string
+                              replica:
+                                format: int32
+                                type: integer
                               resourceId:
                                 type: string
                               role:
                                 type: string
-                              securityGroupsNames:
+                              rootDisk:
+                                properties:
+                                  rootDiskIops:
+                                    format: int32
+                                    type: integer
+                                  rootDiskSize:
+                                    format: int32
+                                    type: integer
+                                  rootDiskType:
+                                    type: string
+                                type: object
+                              securityGroupNames:
                                 items:
                                   properties:
                                     name:
@@ -769,6 +919,8 @@ spec:
                               subregionName:
                                 type: string
                               vmType:
+                                type: string
+                              volumeDeviceName:
                                 type: string
                               volumeName:
                                 type: string
@@ -802,15 +954,69 @@ spec:
             required:
             - template
             type: object
+          status:
+            properties:
+              capacity:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: ResourceList is a set of (resource name, quantity) pairs.
+                type: object
+              conditions:
+                description: Conditions provide observations of the operational state
+                  of a Cluster API resource.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another. This should be when the underlying condition changed.
+                        If that is not known, then using the time when the API field
+                        changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition. This field may be empty.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition
+                        in CamelCase. The specific API may choose whether or not this
+                        field is considered a guaranteed API. This field may not be
+                        empty.
+                      type: string
+                    severity:
+                      description: Severity provides an explicit classification of
+                        Reason code, so the users or machines can immediately understand
+                        the current situation and act accordingly. The Severity field
+                        MUST be set only when Status=False.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
+    subresources:
+      status: {}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -965,6 +1171,26 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - infrastructure.cluster.x-k8s.io
+  resources:
+  - oscmachinetemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infrastructure.cluster.x-k8s.io
+  resources:
+  - oscmachinetemplates/status
+  verbs:
+  - get
+  - patch
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1103,24 +1329,6 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-      - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
@@ -1139,7 +1347,14 @@ spec:
               key: secret_key
               name: cluster-api-provider-outscale
               optional: true
-        image: core.harbor-dev.80-247-5-219.sslip.io/osc/cluster-api-outscale-controllers:latest
+        - name: OSC_REGION
+          valueFrom:
+            secretKeyRef:
+              key: region
+              name: cluster-api-provider-outscale
+              optional: true
+        image: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:latest
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
@@ -1170,6 +1385,24 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
       imagePullSecrets:
       - name: regcred
       securityContext:
@@ -1279,6 +1512,26 @@ metadata:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
   name: cluster-api-provider-outscale-validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster
+  failurePolicy: Fail
+  name: vosccluster.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscclusters
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

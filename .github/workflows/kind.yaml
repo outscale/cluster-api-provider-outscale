@@ -87,6 +87,10 @@ jobs:
         IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+        OSC_REGION: ${{ secrets.OSC_REGION }}
+        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
+        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
+        IMG_UPGRADE_TO: ${{ secrets.IMG_UPGRADE_TO }}
     - name: Destroy cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
       if: ${{ always() }}

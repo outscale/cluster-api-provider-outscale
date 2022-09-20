@@ -23,8 +23,8 @@ type CreateSecretInput struct {
 }
 
 type CreateMultiSecretInput struct {
-	Getter                                                                        client.Client
-	Name, Namespace, DataFirstKey, DataFirstValue, DataSecondKey, DataSecondValue string
+	Getter                                                                                                      client.Client
+	Name, Namespace, DataFirstKey, DataFirstValue, DataSecondKey, DataSecondValue, DataThirdKey, DataThirdValue string
 }
 
 // GetSecret retrieve secret
@@ -121,6 +121,7 @@ func CreateMultiSecret(ctx context.Context, input CreateMultiSecretInput) bool {
 		Data: map[string][]byte{
 			input.DataFirstKey:  []byte(input.DataFirstValue),
 			input.DataSecondKey: []byte(input.DataSecondValue),
+			input.DataThirdKey:  []byte(input.DataThirdValue),
 		},
 	}
 	if err := input.Getter.Create(ctx, createMultiSecret); err != nil {

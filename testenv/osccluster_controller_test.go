@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	network "net"
 	"net/http"
+	"os"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -1045,6 +1046,15 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 				},
 			}
+			osc_region, ok := os.LookupEnv("OSC_REGION")
+			if !ok {
+				osc_region = "eu-west-2"
+			}
+			osc_subregion := osc_region + "a"
+			imageId, ok := os.LookupEnv("IMG_UPGRADE_FROM")
+			if !ok {
+				imageId = "ami-e1a786f1"
+			}
 			infraMachineSpec := infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					KeyPair: infrastructurev1beta1.OscKeypair{
@@ -1053,11 +1063,11 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					Vm: infrastructurev1beta1.OscVm{
 						Name:          "cluster-api-vm-kcp",
-						ImageId:       "ami-e1a786f1",
 						Role:          "controlplane",
+						ImageId:       imageId,
 						DeviceName:    "/dev/sda1",
 						KeypairName:   "cluster-api-testenv",
-						SubregionName: "eu-west-2a",
+						SubregionName: osc_subregion,
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 
 							RootDiskSize: 30,
@@ -1082,8 +1092,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscClusterMachine(ctx, infraClusterSpec, infraMachineSpec)
-
 		})
-
 	})
 })

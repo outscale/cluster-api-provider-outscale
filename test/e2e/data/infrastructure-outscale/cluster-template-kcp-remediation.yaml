@@ -44,6 +44,9 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
         vm:
           clusterName: "${CLUSTER_NAME}"
           name: "${CLUSTER_NAME}"
@@ -88,6 +91,9 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
         vm:
           clusterName: "${CLUSTER_NAME}"
           imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"

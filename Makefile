@@ -40,7 +40,11 @@ E2E_CONF_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/cluster-machine-template-wi
 E2E_CONF_CLUSTER_CLASS_FILE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml
 E2E_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/clusterclass.yaml.tmpl
 E2E_CLUSTER_CLASS_FILE ?= ${PWD}/example/clusterclass.yaml
-ClusterToClean ?= hello-osc
+IMG_UPGRADE_FROM ?= ami-e1a786f1
+IMG_UPGRADE_TO ?= ami-30b8a096
+OSC_REGION ?= eu-west-2
+OSC_SUBREGION_NAME ?= eu-west-2a
+ClusterToClean ?= capo-quickstart
 MINIMUM_MDBOOK_VERSION=0.4.21
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -121,20 +125,15 @@ cloud-init-secret:
 
 .PHONY: testenv
 testenv: cloud-init-secret
-	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
+	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM}  go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v
 
 .PHONY: testclean
 testclean: 
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.progress -test.v
 
-
 .PHONY: e2e-conf-file
 e2e-conf-file: envsubst
 	$(ENVSUBST) < $(E2E_CONF_FILE_SOURCE) > $(E2E_CONF_FILE)
-
-.PHONY: e2etest
-e2etest: envsubst e2e-conf-file
-	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 30m -ginkgo.v -ginkgo.progress  -e2e.use-cni=false -e2e.use-existing-cluster=true -ginkgo.focus=".*basic.*" -e2e.use-ccm=false -test.v -e2e.validate-stack=false -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_FILE)
 
 .PHONY: e2e-conf-class-file
 e2e-conf-class-file: envsubst
@@ -142,15 +141,15 @@ e2e-conf-class-file: envsubst
 
 .PHONY: e2etestexistingcluster
 e2etestexistingcluster: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*feature.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=true -e2e.config=$(E2E_CONF_CLASS_FILE)
+	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*feature.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=true -e2e.config=$(E2E_CONF_CLASS_FILE)
 
 .PHONY: e2etestkind
 e2etestkind: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=false IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=false -ginkgo.v -ginkgo.skip=".*feature.*|.*conformance.*|.*basic.*" -ginkgo.focus=".*first_upgrade.*|.*KCP.*remediation.*" -e2e.validate-stack=false  -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE) 
+	USE_EXISTING_CLUSTER=false IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=false -ginkgo.v -ginkgo.skip=".*feature.*|.*conformance.*|.*basic.*" -ginkgo.focus=".*first_upgrade.*|.*KCP.*remediation.*" -e2e.validate-stack=false  -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE) 
 
 .PHONY: e2econformance
 e2econformance: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=true IMG=${IMG} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*conformance.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=false -e2e.config=$(E2E_CONF_CLASS_FILE)
+	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*conformance.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=false -e2e.config=$(E2E_CONF_CLASS_FILE)
 
 
 .PHONY: ccm-file
@@ -225,7 +224,7 @@ endif
 .PHONY: credential
 credential: envsubst ## Set Credentials
 	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f - ||:
-	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} -n cluster-api-provider-outscale-system ||:
+	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} --from-literal=region=${OSC_REGION}  -n cluster-api-provider-outscale-system ||:
 
 .PHONY: clusterclass
 clusterclass: envsubst ## Set Clusterclass
