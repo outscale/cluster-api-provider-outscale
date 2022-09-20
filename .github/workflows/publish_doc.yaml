@@ -15,7 +15,7 @@ jobs:
         with:
           repository: 'outscale-dev/cluster-api-provider-outscale'
           path: "cluster-api-provider-outscale"
-          ref: master        
+          ref: main       
       - uses: actions/setup-go@v3
         with:
           go-version: '1.18.5'
