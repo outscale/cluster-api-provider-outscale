@@ -72,5 +72,11 @@ spec:
                 name: cluster-api-provider-outscale
                 key: secret_key
                 optional: true
+          - name: OSC_REGION
+            valueFrom:
+              secretKeyRef:
+                name: cluster-api-provider-outscale
+                key: region
+                optional: true
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

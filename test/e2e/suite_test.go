@@ -131,8 +131,10 @@ func getK8sClient() {
 func addCredential(name string, namespace string, timeout string, interval string) {
 	const oscAccessKeyEnvVar = "OSC_ACCESS_KEY"
 	const oscSecretKeyEnvVar = "OSC_SECRET_KEY"
+	const oscRegionKeyEnvVar = "OSC_REGION"
 	accessKey := os.Getenv(oscAccessKeyEnvVar)
 	secretKey := os.Getenv(oscSecretKeyEnvVar)
+	oscRegionKey := os.Getenv(oscRegionKeyEnvVar)
 	if bootstrapClusterProxy != nil {
 		_ = createNamespace(ctx, namespace, bootstrapClusterProxy, timeout, interval)
 		k8sClient := bootstrapClusterProxy.GetClient()
@@ -144,6 +146,8 @@ func addCredential(name string, namespace string, timeout string, interval strin
 			DataFirstValue:  accessKey,
 			DataSecondKey:   "secret_key",
 			DataSecondValue: secretKey,
+			DataThirdKey:    "region",
+			DataThirdValue:  oscRegionKey,
 		})
 	}
 }
@@ -181,7 +185,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		kubeconfig := filepath.Join("/root", ".kube", "config")
 		os.Setenv(kubeconfigEnvVar, kubeconfig)
 	}
-
+	time.Sleep(3 * time.Minute)
 	return []byte(
 		strings.Join([]string{
 			artifactFolder,

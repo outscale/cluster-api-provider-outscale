@@ -18,21 +18,6 @@ on:
     branches: [ main ]
 
 jobs:
-  unit_test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-    - uses: actions/setup-go@v3
-      with:
-        go-version: '1.18.5'
-    - name: unit-test
-      run: |
-        make unit-test
-        cat covers.txt
-      shell: bash  
   testenv:
     runs-on: [self-hosted, linux]
     needs: [unit_test]
@@ -142,6 +127,7 @@ jobs:
          KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
          OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
          OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+         OSC_REGION: ${{ secrets.OSC_REGION }}
     - name: Deploy cluster-api
       run: make deploy-clusterapi
       id: deploy-capi
@@ -163,6 +149,9 @@ jobs:
         KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+        OSC_REGION: ${{ secrets.OSC_REGION }}
+        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
+        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
     - name: Get log capo master
       run: make logs-capo
       if: ${{ failure() && steps.func-test.conclusion == 'failure' }}
@@ -177,13 +166,6 @@ jobs:
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
-    - name: Get log capi
-      run: make logs-capi
-      if: ${{ failure() && steps.deploy-capi.conclusion == 'failure' }}
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
     - name: Destroy cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
       if: ${{ always() }}
@@ -192,6 +174,21 @@ jobs:
         osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
+  unit_test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+    - uses: actions/setup-go@v3
+      with:
+        go-version: '1.18.5'
+    - name: unit-test
+      run: |
+        make unit-test
+        cat covers.txt
+      shell: bash  
   e2etest:
     runs-on: [self-hosted, linux]
     needs: [unit_test, testenv]
@@ -302,6 +299,7 @@ jobs:
          KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
          OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
          OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+         OSC_REGION: ${{ secrets.OSC_REGION }}
     - name: Launch e2etest
       run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2etestexistingcluster
       shell: bash
@@ -310,6 +308,10 @@ jobs:
         IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
+        OSC_REGION: ${{ secrets.OSC_REGION }}
+        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
+        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
+        IMG_UPGRADE_TO: ${{ secrets.IMG_UPGRADE_TO }}
     - name: Get cluster api outscale logs
       run: make logs-capo
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}

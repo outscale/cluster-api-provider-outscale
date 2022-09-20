@@ -171,6 +171,16 @@ func (m *MachineScope) GetKeypair() *infrastructurev1beta1.OscKeypair {
 	return &m.OscMachine.Spec.Node.KeyPair
 }
 
+// SetDeleteKeyPair set deleteKeypair
+func (m *MachineScope) SetDeleteKeypair(deleteKeypair bool) {
+	m.OscMachine.Spec.Node.KeyPair.DeleteKeypair = deleteKeypair
+}
+
+// GetDeleteKeyPair return deleteKeypair
+func (m *MachineScope) GetDeleteKeypair() bool {
+	return m.OscMachine.Spec.Node.KeyPair.DeleteKeypair
+}
+
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapReference {
 	return &m.OscMachine.Status.Node.VolumeRef
@@ -265,16 +275,6 @@ func (m *MachineScope) SetFailureReason(v capierrors.MachineStatusError) {
 // SetAddresses set node address
 func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 	m.OscMachine.Status.Addresses = addrs
-}
-
-// SetDeleteKeyPair set deleteKeypair
-func (m *MachineScope) SetDeleteKeypair(deleteKeypair bool) {
-	m.OscMachine.Spec.Node.KeyPair.DeleteKeypair = deleteKeypair
-}
-
-// GetDeleteKeyPair return deleteKeypair
-func (m *MachineScope) GetDeleteKeypair() bool {
-	return m.OscMachine.Spec.Node.KeyPair.DeleteKeypair
 }
 
 // PatchObject keep the machine configuration and status

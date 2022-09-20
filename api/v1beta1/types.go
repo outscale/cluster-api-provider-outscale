@@ -572,6 +572,7 @@ func (node *OscNode) SetKeyPairDefaultValue() {
 	if len(node.KeyPair.Name) == 0 {
 		node.KeyPair.Name = DefaultKeypairName
 	}
+
 }
 
 // SetDefaultValue set the Internet Service default values

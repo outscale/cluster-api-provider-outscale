@@ -74,6 +74,12 @@ spec:
               key: secret_key
               name: cluster-api-provider-outscale
               optional: true
+        - name: OSC_REGION
+	  valueFrom:
+	    secretKeyRef:
+              key: region
+              name: cluster-api-provider-outscale
+	      optional: true	
         image: {{ .containers.image }}:{{ .containers.imageTag }}
         imagePullPolicy: {{ .containers.pullPolicy }}
         livenessProbe:

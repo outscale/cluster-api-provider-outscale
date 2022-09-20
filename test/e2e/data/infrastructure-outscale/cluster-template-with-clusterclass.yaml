@@ -67,8 +67,12 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
         vm:
           clusterName: "${CLUSTER_NAME}"
+          imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS} 
@@ -86,14 +90,18 @@ spec:
     spec:
       node:
         clusterName: "${CLUSTER_NAME}"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
         vm:
           clusterName: "${CLUSTER_NAME}"
-          keypairName: "${OSC_KEYPAIR_NAME}"
+          imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
           subregionName: ${OSC_SUBREGION_NAME}
+          keypairName: "${OSC_KEYPAIR_NAME}"
           role: controlplane
           loadBalancerName: "${CLUSTER_NAME}-k8s"
           vmType: "${OSC_VM_TYPE}"
