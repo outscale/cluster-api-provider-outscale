@@ -77,7 +77,7 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 		machineScope.Info("######### key pair Ressource id is empty  #####", "keypair", keypairSpec.Name)
 		keypairRef.ResourceMap[keypairName] = keypairName
 	}
-	machineScope.Info("@@@@@@@@@@@@@@@@@@@@@@@ Get Keypair after reconcile keypair@@@@@@@@@@@@", "keypair", keypairSpec.Name)
+	machineScope.Info("###### Get Keypair after reconcile keypair@@@@@@@@@@@@", "keypair", keypairSpec.Name)
 
 	return reconcile.Result{}, nil
 }
