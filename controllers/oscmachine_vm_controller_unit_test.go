@@ -790,7 +790,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
-						Name:             "test-vm@test",
+						Name:             "test-vm",
 						ImageId:          "ami-00000000",
 						Role:             "controlplane",
 						VolumeName:       "test-volume",
@@ -821,7 +821,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckVmFormatParametersErr: fmt.Errorf("Invalid deviceName"),
 		},
 		{
 			name:        "check Bad imageId",
