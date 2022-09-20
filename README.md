@@ -22,10 +22,10 @@ The provider version has currently been tested with the following version of kub
 - Cluster infrastructure Outscale controller (https://cluster-api.sigs.k8s.io/developer/providers/cluster-infrastructure.html#cluster-infrastructure-provider-specification)
 
 # To start using Outscale Cluster Api
-Please look at [Deployment](docs/deploy.md)
+Please look at [Deployment](https://cluster-api.oos-website.eu-west-2.outscale.com/topics/get-started-with-clusterctl.html)
 
 # To start developping Outscale Cluster Api
-Please look at [Development](docs/develop.md)
+Please look at [Development](https://cluster-api.oos-website.eu-west-2.outscale.com/developers/developement.html)
 
 # Contribution
 Please look at [Contribution](CONTRIBUTING.md)

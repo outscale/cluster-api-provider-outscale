@@ -1,6 +1,6 @@
 ---
 images:
-  - name: ${IMG:-} 
+  - name: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:tilt-3e714043e6ce200a 
     loadBehavior: mustLoad
 providers:
   - name: cluster-api
@@ -53,7 +53,7 @@ providers:
       contract: v1beta1
       replacements:
         - old: controller:latest 
-          new: ${IMG:-}
+          new: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:tilt-3e714043e6ce200a
         - old: "imagePullPolicy: Always"
           new: "imagePullPolicy: IfNotPresent"
       files:
@@ -79,8 +79,8 @@ variables:
   OSC_LOADBALANCER_NAME: "capo-e2e-k8s"
   WORKER_MACHINE_COUNT: 1
   CONTROL_PLANE_MACHINE_COUNT: 1
-  CNI: "${PWD}/test/e2e/data/cni/calico/calico.yaml"
-  CCM: "${PWD}/test/e2e/data/ccm/ccm.yaml"
+  CNI: "/root/test/cluster-api-provider-outscale/test/e2e/data/cni/calico/calico.yaml"
+  CCM: "/root/test/cluster-api-provider-outscale/test/e2e/data/ccm/ccm.yaml"
   EXP_CLUSTER_RESOURCE_SET: "true"
   EXP_MACHINE_POOL: "true"
   CLUSTER_TOPOLOGY: "true"
@@ -92,7 +92,7 @@ variables:
   KUBERNETES_VERSION: "v1.22.11"
   KUBERNETES_VERSION_UPGRADE_FROM: "v1.22.11"
   KUBERNETES_VERSION_UPGRADE_TO: "v1.23.8"
-  TEMPLATE_PATH: "${PWD}/test/e2e/data/infrastructure-outscale/cluster-template-with-clusterclass.yaml"
+  TEMPLATE_PATH: "/root/test/cluster-api-provider-outscale/test/e2e/data/infrastructure-outscale/cluster-template-with-clusterclass.yaml"
   CONTROL_PLANE_MACHINE_TEMPLATE_UPGRADE_TO: "k8s-upgrade-control-plane"
   WORKERS_MACHINE_TEMPLATE_UPGRADE_TO: "k8s-upgrade-worker"
   KUBERNETES_IMAGE_UPGRADE_FROM: "ami-e1a786f1"
@@ -101,7 +101,7 @@ variables:
   WORKERS_MACHINE_TEMPLATE_UPGRADE_TO: "worker-k8s-upgrade-and-conformance"
   CONFORMANCE_WORKER_MACHINE_COUNT: 3
   CONFORMANCE_CONTROL_PLANE_MACHINE_COUNT: 3
-  KUBETEST_CONFIGURATION: "${KUBETEST_CONF_PATH:=./data/kubetest/conformance.yaml}"
+  KUBETEST_CONFIGURATION: "./data/kubetest/conformance.yaml"
   NODE_DRAIN_TIMEOUT: "60s"
 
 intervals:
