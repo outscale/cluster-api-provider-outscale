@@ -7,7 +7,7 @@
     - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
     - You can use a container with [kind][kind]. 
     - You can use a rke cluster with [osc-rke][osc-rke].
-- Look at cluster-api note ()
+- Look at cluster-api note ([cluster-api][cluster-api])
 # Kubernetes cluster
 
 If you use your own cluster for production (with backup, disaster recovery, ...) and expose it:
@@ -54,6 +54,9 @@ clusterctl init --infrastructure outscale
 
 
 ## Launch your stack with clusterctl
+
+You can create a keypair before if you want.
+It is open to shell inside nodes only if you really need (with [openlens][openlens], [lens][lens], ...)
 You have to set:
 ```
 export OSC_IOPS=<osc-iops>
@@ -120,3 +123,6 @@ default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-md-0 
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
 [osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
+[openlens]: https://github.com/MuhammedKalkan/OpenLens
+[lens]: https://github.com/lensapp/lens
+[cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
