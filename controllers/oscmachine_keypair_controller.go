@@ -77,8 +77,7 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 		machineScope.Info("######### key pair Ressource id is empty  #####", "keypair", keypairSpec.Name)
 		keypairRef.ResourceMap[keypairName] = keypairName
 	}
-	machineScope.Info("###### Get Keypair after reconcile keypair@@@@@@@@@@@@", "keypair", keypairSpec.Name)
-
+	machineScope.Info("###### Get Keypair after reconcile keypair ######", "keypair", keypairSpec.Name)
 	return reconcile.Result{}, nil
 }
 
@@ -97,11 +96,15 @@ func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScop
 		controllerutil.RemoveFinalizer(oscmachine, "")
 		return reconcile.Result{}, err
 	}
-
-	machineScope.Info("Remove keypair")
-	err = keypairSvc.DeleteKeyPair(keypairName)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("Can not delete keypair for OscCluster %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+	deleteKeypair := machineScope.GetDeleteKeypair()
+	if deleteKeypair {
+		machineScope.Info("Remove keypair")
+		err = keypairSvc.DeleteKeyPair(keypairName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("Can not delete keypair for OscCluster %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+		}
+	} else {
+		machineScope.Info("Keep keypair")
 	}
 	return reconcile.Result{}, nil
 }

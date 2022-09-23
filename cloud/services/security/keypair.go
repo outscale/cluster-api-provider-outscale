@@ -42,10 +42,6 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 		return nil, fmt.Errorf("Unable to find key pair, please provide a better query criteria ")
 	}
 
-	if len(resp.GetKeypairs()) > 1 {
-		return nil, fmt.Errorf("too many key pair, please provide a better query criteria ")
-	}
-
 	resourceIds := []string{*keyPairResponse.Keypair.KeypairName}
 	err = tag.AddTag("Name", keypairName, resourceIds, oscAPIClient, oscAuthClient)
 	if err != nil {

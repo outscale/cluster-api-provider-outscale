@@ -4,13 +4,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"io/ioutil"
 	network "net"
 	"net/http"
 	"time"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -157,6 +156,8 @@ func deployCapoCluster(ctx context.Context, name string, namespace string) (clie
 			Namespace: namespace,
 			Labels: map[string]string{
 				"cluster.x-k8s.io/provider": "infrastructure-outscale",
+				"cni":                       "cluster-api-test-crs-cni",
+				"ccm":                       "cluster-api-test-crs-ccm",
 			},
 			Finalizers: []string{"cluster.cluster.x-k8s.io"},
 		},
@@ -847,6 +848,9 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					Net: infrastructurev1beta1.OscNet{
 						Name: "cluster-api-net",
 					},
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+						LoadBalancerName: "OscSdkExample-10",
+					},
 				},
 			}
 			createCheckDeleteOscCluster(ctx, infraClusterSpec)
@@ -1043,12 +1047,16 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			}
 			infraMachineSpec := infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						Name:          "cluster-api-testenv",
+						DeleteKeypair: false,
+					},
 					Vm: infrastructurev1beta1.OscVm{
 						Name:          "cluster-api-vm-kcp",
 						ImageId:       "ami-e1a786f1",
 						Role:          "controlplane",
 						DeviceName:    "/dev/sda1",
-						KeypairName:   "cluster-api",
+						KeypairName:   "cluster-api-testenv",
 						SubregionName: "eu-west-2a",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 

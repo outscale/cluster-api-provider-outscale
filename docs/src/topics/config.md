@@ -209,6 +209,7 @@ spec:
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
 | `keypairName`| `cluster-api-keypair` | false | The keypairname you will use
+| `destroyKeypair`| `false` | false | Destroy keypair at the end
 
 ### OscVm
 
