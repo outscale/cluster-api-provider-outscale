@@ -24,422 +24,380 @@ spec:
     singular: osccluster
   scope: Namespaced
   versions:
-  - name: v1beta1
-    schema:
-      openAPIV3Schema:
-        description: OscCluster is the Schema for the oscclusters API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: OscClusterSpec defines the desired state of OscCluster
-            properties:
-              controlPlaneEndpoint:
-                description: APIEndpoint represents a reachable Kubernetes API endpoint.
-                properties:
-                  host:
-                    description: The hostname on which the API server is serving.
-                    type: string
-                  port:
-                    description: The port on which the API server is serving.
-                    format: int32
-                    type: integer
-                required:
-                - host
-                - port
-                type: object
-              network:
-                properties:
-                  internetService:
-                    description: The Internet Service configuration
-                    properties:
-                      name:
-                        description: The tag name associate with the Subnet
-                        type: string
-                      resourceId:
-                        description: the Internet Service response
-                        type: string
-                    type: object
-                  loadBalancer:
-                    description: The Load Balancer configuration
-                    properties:
-                      healthCheck:
-                        description: The healthCheck configuration  of the Load Balancer
-                        properties:
-                          checkinterval:
-                            description: the time in second between two pings
-                            format: int32
-                            type: integer
-                          healthythreshold:
-                            description: the consecutive number of pings which are
-                              sucessful to consider the vm healthy
-                            format: int32
-                            type: integer
-                          port:
-                            description: the HealthCheck port number
-                            format: int32
-                            type: integer
-                          protocol:
-                            description: The HealthCheck protocol ('HTTP'|'TCP')
-                            type: string
-                          timeout:
-                            description: the Timeout to consider VM unhealthy
-                            format: int32
-                            type: integer
-                          unhealthythreshold:
-                            description: the consecutive number of pings which are
-                              failed to consider the vm unhealthy
-                            format: int32
-                            type: integer
-                        type: object
-                      listener:
-                        description: The Listener cofiguration of the loadBalancer
-                        properties:
-                          backendport:
-                            description: The port on which the backend vm will listen
-                            format: int32
-                            type: integer
-                          backendprotocol:
-                            description: The protocol ('HTTP'|'TCP') to route the
-                              traffic to the backend vm
-                            type: string
-                          loadbalancerport:
-                            description: The port on which the loadbalancer will listen
-                            format: int32
-                            type: integer
-                          loadbalancerprotocol:
-                            description: the routing protocol ('HTTP'|'TCP')
-                            type: string
-                        type: object
-                      loadbalancername:
-                        description: The Load Balancer unique name
-                        type: string
-                      loadbalancertype:
-                        description: The Load Balancer Type internet-facing or internal
-                        type: string
-                      securitygroupname:
-                        description: The security group tag name associate with a
-                          security group
-                        type: string
-                      subnetname:
-                        description: The subnet tag name associate with a Subnet
-                        type: string
-                    type: object
-                  natService:
-                    description: The Nat Service configuration
-                    properties:
-                      name:
-                        description: The tag name associate with the Nat Service
-                        type: string
-                      publicipname:
-                        description: The Public Ip tag name associated wtih a Public
-                          Ip
-                        type: string
-                      resourceId:
-                        description: The Nat Service Id response
-                        type: string
-                      subnetname:
-                        description: The subnet tag name associate with a Subnet
-                        type: string
-                    type: object
-                  net:
-                    description: The Net configuration
-                    properties:
-                      ipRange:
-                        description: the net ip range with CIDR notation
-                        type: string
-                      name:
-                        description: the tag name associate with the Net
-                        type: string
-                      resourceId:
-                        description: The Net Id response
-                        type: string
-                    type: object
-                  publicIps:
-                    description: The Public Ip configuration
-                    items:
+    - name: v1beta1
+      schema:
+        openAPIV3Schema:
+          description: OscCluster is the Schema for the oscclusters API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: OscClusterSpec defines the desired state of OscCluster
+              properties:
+                controlPlaneEndpoint:
+                  description: APIEndpoint represents a reachable Kubernetes API endpoint.
+                  properties:
+                    host:
+                      description: The hostname on which the API server is serving.
+                      type: string
+                    port:
+                      description: The port on which the API server is serving.
+                      format: int32
+                      type: integer
+                  required:
+                    - host
+                    - port
+                  type: object
+                network:
+                  properties:
+                    internetService:
+                      description: The Internet Service configuration
                       properties:
-                        name:
-                          description: The tag name associate with the Public Ip
-                          type: string
-                        resourceId:
-                          description: The Public Ip Id response
-                          type: string
-                      type: object
-                    type: array
-                  routeTables:
-                    description: The Route Table configuration
-                    items:
-                      properties:
-                        name:
-                          description: The tag name associate with the Route Table
-                          type: string
-                        resourceId:
-                          description: The Route Table Id response
-                          type: string
-                        routes:
-                          description: The Route configuration
-                          items:
-                            properties:
-                              destination:
-                                description: the destination match Ip range with CIDR
-                                  notation
-                                type: string
-                              name:
-                                description: The tag name associate with the Route
-                                type: string
-                              resourceId:
-                                description: The Route Id response
-                                type: string
-                              targetName:
-                                description: The tag name associate with the target
-                                  resource type
-                                type: string
-                              targetType:
-                                description: The target resource type which can be
-                                  Internet Service (gateway) or Nat Service (nat-service)
-                                type: string
-                            type: object
-                          type: array
-                        subnetname:
-                          description: The subnet tag name associate with a Subnet
-                          type: string
-                      type: object
-                    type: array
-                  securityGroups:
-                    items:
-                      properties:
-                        description:
-                          description: The description of the security group
-                          type: string
-                        name:
-                          description: The tag name associate with the security group
-                          type: string
-                        resourceId:
-                          description: The Security Group Id response
-                          type: string
-                        securityGroupRules:
-                          description: The Security Group Rules configuration
-                          items:
-                            properties:
-                              flow:
-                                description: The flow of the security group (inbound
-                                  or outbound)
-                                type: string
-                              fromPortRange:
-                                description: The beginning of the port range
-                                format: int32
-                                type: integer
-                              ipProtocol:
-                                description: The ip protocol name (tcp, udp, icmp
-                                  or -1)
-                                type: string
-                              ipRange:
-                                description: The ip range of the security group rule
-                                type: string
-                              name:
-                                description: The tag name associate with the security
-                                  group
-                                type: string
-                              resourceId:
-                                description: The security group rule id
-                                type: string
-                              toPortRange:
-                                description: The end of the port range
-                                format: int32
-                                type: integer
-                            type: object
-                          type: array
-                      type: object
-                    type: array
-                  subnets:
-                    description: The Subnet configuration
-                    items:
-                      properties:
-                        ipSubnetRange:
-                          description: Subnet Ip range with CIDR notation
-                          type: string
                         name:
                           description: The tag name associate with the Subnet
                           type: string
                         resourceId:
-                          description: The Subnet Id response
+                          description: the Internet Service response
                           type: string
                       type: object
-                    type: array
-                type: object
-            type: object
-          status:
-            description: OscClusterStatus defines the observed state of OscCluster
-            properties:
-              conditions:
-                description: Conditions provide observations of the operational state
-                  of a Cluster API resource.
-                items:
-                  description: Condition defines an observation of a Cluster API resource
-                    operational state.
-                  properties:
-                    lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another. This should be when the underlying condition changed.
-                        If that is not known, then using the time when the API field
-                        changed is acceptable.
-                      format: date-time
-                      type: string
-                    message:
-                      description: A human readable message indicating details about
-                        the transition. This field may be empty.
-                      type: string
-                    reason:
-                      description: The reason for the condition's last transition
-                        in CamelCase. The specific API may choose whether or not this
-                        field is considered a guaranteed API. This field may not be
-                        empty.
-                      type: string
-                    severity:
-                      description: Severity provides an explicit classification of
-                        Reason code, so the users or machines can immediately understand
-                        the current situation and act accordingly. The Severity field
-                        MUST be set only when Status=False.
-                      type: string
-                    status:
-                      description: Status of the condition, one of True, False, Unknown.
-                      type: string
-                    type:
-                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important.
-                      type: string
-                  required:
-                  - lastTransitionTime
-                  - status
-                  - type
+                    loadBalancer:
+                      description: The Load Balancer configuration
+                      properties:
+                        healthCheck:
+                          description: The healthCheck configuration  of the Load Balancer
+                          properties:
+                            checkinterval:
+                              description: the time in second between two pings
+                              format: int32
+                              type: integer
+                            healthythreshold:
+                              description: the consecutive number of pings which are sucessful to consider the vm healthy
+                              format: int32
+                              type: integer
+                            port:
+                              description: the HealthCheck port number
+                              format: int32
+                              type: integer
+                            protocol:
+                              description: The HealthCheck protocol ('HTTP'|'TCP')
+                              type: string
+                            timeout:
+                              description: the Timeout to consider VM unhealthy
+                              format: int32
+                              type: integer
+                            unhealthythreshold:
+                              description: the consecutive number of pings which are failed to consider the vm unhealthy
+                              format: int32
+                              type: integer
+                          type: object
+                        listener:
+                          description: The Listener cofiguration of the loadBalancer
+                          properties:
+                            backendport:
+                              description: The port on which the backend vm will listen
+                              format: int32
+                              type: integer
+                            backendprotocol:
+                              description: The protocol ('HTTP'|'TCP') to route the traffic to the backend vm
+                              type: string
+                            loadbalancerport:
+                              description: The port on which the loadbalancer will listen
+                              format: int32
+                              type: integer
+                            loadbalancerprotocol:
+                              description: the routing protocol ('HTTP'|'TCP')
+                              type: string
+                          type: object
+                        loadbalancername:
+                          description: The Load Balancer unique name
+                          type: string
+                        loadbalancertype:
+                          description: The Load Balancer Type internet-facing or internal
+                          type: string
+                        securitygroupname:
+                          description: The security group tag name associate with a security group
+                          type: string
+                        subnetname:
+                          description: The subnet tag name associate with a Subnet
+                          type: string
+                      type: object
+                    natService:
+                      description: The Nat Service configuration
+                      properties:
+                        name:
+                          description: The tag name associate with the Nat Service
+                          type: string
+                        publicipname:
+                          description: The Public Ip tag name associated wtih a Public Ip
+                          type: string
+                        resourceId:
+                          description: The Nat Service Id response
+                          type: string
+                        subnetname:
+                          description: The subnet tag name associate with a Subnet
+                          type: string
+                      type: object
+                    net:
+                      description: The Net configuration
+                      properties:
+                        ipRange:
+                          description: the net ip range with CIDR notation
+                          type: string
+                        name:
+                          description: the tag name associate with the Net
+                          type: string
+                        resourceId:
+                          description: The Net Id response
+                          type: string
+                      type: object
+                    publicIps:
+                      description: The Public Ip configuration
+                      items:
+                        properties:
+                          name:
+                            description: The tag name associate with the Public Ip
+                            type: string
+                          resourceId:
+                            description: The Public Ip Id response
+                            type: string
+                        type: object
+                      type: array
+                    routeTables:
+                      description: The Route Table configuration
+                      items:
+                        properties:
+                          name:
+                            description: The tag name associate with the Route Table
+                            type: string
+                          resourceId:
+                            description: The Route Table Id response
+                            type: string
+                          routes:
+                            description: The Route configuration
+                            items:
+                              properties:
+                                destination:
+                                  description: the destination match Ip range with CIDR notation
+                                  type: string
+                                name:
+                                  description: The tag name associate with the Route
+                                  type: string
+                                resourceId:
+                                  description: The Route Id response
+                                  type: string
+                                targetName:
+                                  description: The tag name associate with the target resource type
+                                  type: string
+                                targetType:
+                                  description: The target resource type which can be Internet Service (gateway) or Nat Service (nat-service)
+                                  type: string
+                              type: object
+                            type: array
+                          subnetname:
+                            description: The subnet tag name associate with a Subnet
+                            type: string
+                        type: object
+                      type: array
+                    securityGroups:
+                      items:
+                        properties:
+                          description:
+                            description: The description of the security group
+                            type: string
+                          name:
+                            description: The tag name associate with the security group
+                            type: string
+                          resourceId:
+                            description: The Security Group Id response
+                            type: string
+                          securityGroupRules:
+                            description: The Security Group Rules configuration
+                            items:
+                              properties:
+                                flow:
+                                  description: The flow of the security group (inbound or outbound)
+                                  type: string
+                                fromPortRange:
+                                  description: The beginning of the port range
+                                  format: int32
+                                  type: integer
+                                ipProtocol:
+                                  description: The ip protocol name (tcp, udp, icmp or -1)
+                                  type: string
+                                ipRange:
+                                  description: The ip range of the security group rule
+                                  type: string
+                                name:
+                                  description: The tag name associate with the security group
+                                  type: string
+                                resourceId:
+                                  description: The security group rule id
+                                  type: string
+                                toPortRange:
+                                  description: The end of the port range
+                                  format: int32
+                                  type: integer
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    subnets:
+                      description: The Subnet configuration
+                      items:
+                        properties:
+                          ipSubnetRange:
+                            description: Subnet Ip range with CIDR notation
+                            type: string
+                          name:
+                            description: The tag name associate with the Subnet
+                            type: string
+                          resourceId:
+                            description: The Subnet Id response
+                            type: string
+                        type: object
+                      type: array
                   type: object
-                type: array
-              network:
-                properties:
-                  LoadbalancerRef:
-                    description: Map between LoadbalancerId  and LoadbalancerName
-                      (Load Balancer tag Name with cluster UID)
+              type: object
+            status:
+              description: OscClusterStatus defines the observed state of OscCluster
+              properties:
+                conditions:
+                  description: Conditions provide observations of the operational state of a Cluster API resource.
+                  items:
+                    description: Condition defines an observation of a Cluster API resource operational state.
                     properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
+                      lastTransitionTime:
+                        description: Last time the condition transitioned from one status to another. This should be when the underlying condition changed. If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: A human readable message indicating details about the transition. This field may be empty.
+                        type: string
+                      reason:
+                        description: The reason for the condition's last transition in CamelCase. The specific API may choose whether or not this field is considered a guaranteed API. This field may not be empty.
+                        type: string
+                      severity:
+                        description: Severity provides an explicit classification of Reason code, so the users or machines can immediately understand the current situation and act accordingly. The Severity field MUST be set only when Status=False.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                      type:
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase. Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important.
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - status
+                      - type
                     type: object
-                  internetserviceref:
-                    description: Map between InternetServiceId  and InternetServiceName
-                      (Internet Service tag Name with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  linkroutetableref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  natref:
-                    description: Map between NatServiceId  and NatServiceName (Nat
-                      Service tag Name with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  netref:
-                    description: Map between NetId  and NetName (Net tag Name with
-                      cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  publicipref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  routeref:
-                    description: Map between RouteId  and RouteName (Route tag Name
-                      with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  routetableref:
-                    description: Map between RouteTablesId  and RouteTablesName (Route
-                      Tables tag Name with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  securitygroupref:
-                    description: Map between PublicIpId  and PublicIpName (Public
-                      IP tag Name with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  securitygroupruleref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  subnetref:
-                    description: Map between SubnetId  and SubnetName (Subnet tag
-                      Name with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                type: object
-              ready:
-                type: boolean
-            required:
-            - ready
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+                  type: array
+                network:
+                  properties:
+                    LoadbalancerRef:
+                      description: Map between LoadbalancerId  and LoadbalancerName (Load Balancer tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    internetserviceref:
+                      description: Map between InternetServiceId  and InternetServiceName (Internet Service tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    linkroutetableref:
+                      description: Map between resourceId and resourceName (tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    natref:
+                      description: Map between NatServiceId  and NatServiceName (Nat Service tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    netref:
+                      description: Map between NetId  and NetName (Net tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    publicipref:
+                      description: Map between resourceId and resourceName (tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    routeref:
+                      description: Map between RouteId  and RouteName (Route tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    routetableref:
+                      description: Map between RouteTablesId  and RouteTablesName (Route Tables tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    securitygroupref:
+                      description: Map between PublicIpId  and PublicIpName (Public IP tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    securitygroupruleref:
+                      description: Map between resourceId and resourceName (tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    subnetref:
+                      description: Map between SubnetId  and SubnetName (Subnet tag Name with cluster UID)
+                      properties:
+                        resourceMap:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                  type: object
+                ready:
+                  type: boolean
+              required:
+                - ready
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
 status:
   acceptedNames:
     kind: ""
@@ -466,37 +424,33 @@ spec:
     singular: oscmachine
   scope: Namespaced
   versions:
-  - name: v1beta1
-    schema:
-      openAPIV3Schema:
-        description: OscMachine is the Schema for the oscmachines API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: OscMachineSpec defines the desired state of OscMachine
-            properties:
-              foo:
-                type: string
-            type: object
-          status:
-            description: OscMachineStatus defines the observed state of OscMachine
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+    - name: v1beta1
+      schema:
+        openAPIV3Schema:
+          description: OscMachine is the Schema for the oscmachines API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: OscMachineSpec defines the desired state of OscMachine
+              properties:
+                foo:
+                  type: string
+              type: object
+            status:
+              description: OscMachineStatus defines the observed state of OscMachine
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
 status:
   acceptedNames:
     kind: ""
@@ -516,37 +470,37 @@ metadata:
   name: cluster-api-provider-outscale-leader-election-role
   namespace: cluster-api-provider-outscale-system
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -554,121 +508,121 @@ metadata:
   creationTimestamp: null
   name: cluster-api-provider-outscale-manager-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cluster.x-k8s.io
-  resources:
-  - clusters
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cluster.x-k8s.io
-  resources:
-  - clusters/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscclusters/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscclusters/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscmachines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscmachines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscmachines/status
-  verbs:
-  - get
-  - patch
-  - update
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - clusters/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscclusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscclusters/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscclusters/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscmachines
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscmachines/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscmachines/status
+    verbs:
+      - get
+      - patch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cluster-api-provider-outscale-metrics-reader
 rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cluster-api-provider-outscale-proxy-role
 rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -680,9 +634,9 @@ roleRef:
   kind: Role
   name: cluster-api-provider-outscale-leader-election-role
 subjects:
-- kind: ServiceAccount
-  name: cluster-api-provider-outscale-controller-manager
-  namespace: cluster-api-provider-outscale-system
+  - kind: ServiceAccount
+    name: cluster-api-provider-outscale-controller-manager
+    namespace: cluster-api-provider-outscale-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -693,9 +647,9 @@ roleRef:
   kind: ClusterRole
   name: cluster-api-provider-outscale-manager-role
 subjects:
-- kind: ServiceAccount
-  name: cluster-api-provider-outscale-controller-manager
-  namespace: cluster-api-provider-outscale-system
+  - kind: ServiceAccount
+    name: cluster-api-provider-outscale-controller-manager
+    namespace: cluster-api-provider-outscale-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -706,9 +660,9 @@ roleRef:
   kind: ClusterRole
   name: cluster-api-provider-outscale-proxy-role
 subjects:
-- kind: ServiceAccount
-  name: cluster-api-provider-outscale-controller-manager
-  namespace: cluster-api-provider-outscale-system
+  - kind: ServiceAccount
+    name: cluster-api-provider-outscale-controller-manager
+    namespace: cluster-api-provider-outscale-system
 ---
 apiVersion: v1
 data:
@@ -738,10 +692,10 @@ metadata:
   namespace: cluster-api-provider-outscale-system
 spec:
   ports:
-  - name: https
-    port: 8443
-    protocol: TCP
-    targetPort: https
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: https
   selector:
     control-plane: controller-manager
 ---
@@ -765,68 +719,68 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
-      - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-      - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
-        command:
-        - /manager
-        env:
-        - name: OSC_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              key: access_key
-              name: cluster-api-provider-outscale
-              optional: true
-        - name: OSC_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              key: secret_key
-              name: cluster-api-provider-outscale
-              optional: true
-        image: outscale/cluster-api-osc-controller:v0.1.0-alpha.1
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        name: manager
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
+        - args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=0
+          image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+          name: kube-rbac-proxy
+          ports:
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+        - args:
+            - --health-probe-bind-address=:8081
+            - --metrics-bind-address=127.0.0.1:8080
+            - --leader-elect
+          command:
+            - /manager
+          env:
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: access_key
+                  name: cluster-api-provider-outscale
+                  optional: true
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secret_key
+                  name: cluster-api-provider-outscale
+                  optional: true
+          image: outscale/cluster-api-osc-controller:v0.1.0-alpha.1
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          name: manager
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
       imagePullSecrets:
-      - name: regcred
+        - name: regcred
       securityContext:
         runAsNonRoot: true
       serviceAccountName: cluster-api-provider-outscale-controller-manager

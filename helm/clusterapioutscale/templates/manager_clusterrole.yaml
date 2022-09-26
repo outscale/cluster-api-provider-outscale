@@ -115,4 +115,4 @@ rules:
   - patch
   - update
   {{- end }}
-{{- end }} 
+{{- end }}

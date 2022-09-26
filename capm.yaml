@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.10.1-0.20221004130015-86faf72a154d
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -468,7 +468,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.10.1-0.20221004130015-86faf72a154d
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -527,6 +527,8 @@ spec:
                     properties:
                       clusterName:
                         type: string
+                      deleteKeypair:
+                        type: boolean
                       name:
                         type: string
                       publicKey:
@@ -754,7 +756,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.10.1-0.20221004130015-86faf72a154d
   creationTimestamp: null
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
@@ -855,6 +857,8 @@ spec:
                             properties:
                               clusterName:
                                 type: string
+                              deleteKeypair:
+                                type: boolean
                               name:
                                 type: string
                               publicKey:
@@ -1353,7 +1357,7 @@ spec:
               key: region
               name: cluster-api-provider-outscale
               optional: true
-        image: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:latest
+        image: outscale/cluster-api-provider-osc:dev
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -1389,7 +1393,7 @@ spec:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
-        - --v=0
+        - --v=6
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
         name: kube-rbac-proxy
         ports:

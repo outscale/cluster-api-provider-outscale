@@ -69,4 +69,4 @@ webhooks:
     - oscmachinetemplates
   sideEffects: None
   {{- end }}
-{{- end }} 
+{{- end }}
