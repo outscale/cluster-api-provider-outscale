@@ -18,4 +18,4 @@ spec:
   selector:
     control-plane: {{ template "clusterapioutscale.controllermanager" $root }}
   {{- end }}
-{{- end }} 
+{{- end }}

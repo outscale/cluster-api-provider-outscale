@@ -4,21 +4,21 @@ kind: ClusterRole
 metadata:
   name: oscclustertemplate-editor-role
 rules:
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscclustertemplates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - oscclustertemplates/status
-  verbs:
-  - get
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscclustertemplates
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - oscclustertemplates/status
+    verbs:
+      - get

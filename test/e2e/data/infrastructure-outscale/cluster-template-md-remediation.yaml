@@ -12,7 +12,7 @@ spec:
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: OscCluster
-    name:  "${CLUSTER_NAME}"
+    name: "${CLUSTER_NAME}"
   controlPlaneRef:
     kind: KubeadmControlPlane
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -21,7 +21,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
-  name:  "${CLUSTER_NAME}"
+  name: "${CLUSTER_NAME}"
 spec:
   network:
     clusterName: "${CLUSTER_NAME}"
@@ -31,7 +31,7 @@ spec:
     net:
       clusterName: "${CLUSTER_NAME}"
     internetService:
-      clusterName: "${CLUSTER_NAME}"    
+      clusterName: "${CLUSTER_NAME}"
     natService:
       clusterName: "${CLUSTER_NAME}"
 ---
@@ -109,15 +109,15 @@ spec:
   template:
     spec:
       files:
-      - content: |
-          #!/bin/sh
- 
-          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-          chmod +x /tmp/runc.amd64
-          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-        owner: root:root
-        path: /tmp/set_runc.sh
-        permissions: "0744"
+        - content: |
+            #!/bin/sh
+
+            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+            chmod +x /tmp/runc.amd64
+            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+          owner: root:root
+          path: /tmp/set_runc.sh
+          permissions: "0744"
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"

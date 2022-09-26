@@ -1,3 +1,16 @@
+# Copyright 2022 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Image URL to use all building/pushing image targets
 REGISTRY ?= outscale
@@ -32,6 +45,11 @@ MINIMUM_HELM_VERSION=v3.9.4
 MINIMUM_KUSTOMIZE_VERSION=4.5.1
 MINIMUM_MOCKGEN_VERSION=1.6.0
 MINIMUM_KUBECTL_VERSION=1.22.10
+MINIMUM_GOLANGCI_LINT_VERSION=1.49.0
+MINIMUM_SHELLCHECK_VERSION=0.8.0
+MODE=check
+MINIMUM_BUILDIFIER_VERSION=5.1.0
+MINIMUM_YAMLFMT_VERSION=0.3.0
 E2E_CONF_CLASS_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale.yaml
 E2E_CONF_CLASS_FILE ?= ${PWD}/test/e2e/config/outscale-envsubst.yaml
 E2E_CONF_CCM_FILE_SOURCE ?= ${PWD}/test/e2e/data/ccm/ccm.yaml.template
@@ -100,9 +118,23 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: gofmt
+.PHONY: format
+format: gofmt gospace yamlspace yamlfmt  
+
 gofmt: ## Run gofmt
 	find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -w
+
+.PHONY: gospace
+gospace: ## Run to remove trailling space
+	find . -name "*.go" -type f -print0 | xargs -0 sed -i 's/[[:space:]]*$$//'
+
+.PHONY: yamlspace
+yamlspace: ## Run to remove trailling space
+	find . -name "*.yaml" -type f -print0 -not -path "./helm/*" -not -path "./.github/workflows/*"| xargs -0 sed -i 's/[[:space:]]*$$//'
+
+.PHONY: yamlfmt
+yamlfmt: install-yamlfmt
+	find . -name "*.yaml" -not -path "./helm/*" -not -path "./.github/workflows/*" | grep -v "\/vendor\/" | xargs yamlfmt
 
 .PHONY: checkfmt
 checkfmt: ## check gofmt
@@ -372,9 +404,18 @@ verify-go:  ## Download go
 install-tilt: ## Download tilt
 	MINIMUM_TILT_VERSION=$(MINIMUM_TILT_VERSION) ./hack/ensure-tilt.sh
 
+.PHONY: install-golangcilint
+install-golangcilint: ## Download golangci-lint
+	MINIMUM_GOLANGCI_LINT_VERSION=$(MINIMUM_GOLANGCI_LINT_VERSION) ./hack/ensure-golangci-lint.sh
+
 .PHONY: install-packer
 install-packer: ## Download packer
 	MINIMUM_PACKER_VERSION=$(MINIMUM_PACKER_VERSION) ./hack/ensure-packer.sh
+
+.PHONY: install-yamlfmt
+install-yamlfmt: ## donwload yaml fmt
+        MINIMUM_YAMLFMT_VERSION=$(MINIMUM_YAMLFMT_VERSION) ./hack/ensure-yamlfmt.sh
+
 
 .PHONY: install-gh
 install-gh: ## Download gh
@@ -383,6 +424,18 @@ install-gh: ## Download gh
 .PHONY: install-kind
 install-kind: ## Download kind
 	MINIMUM_KIND_VERSION=$(MINIMUM_KIND_USE_VERSION)  ./hack/ensure-kind.sh
+
+.PHONY: install-buildifier
+install-buildifier: ## Download shellcheck
+	MODE=${MODE_BUILDIFIER} MINIMUM_BUILDIFIER_VERSION=$(MINIMUM_BUILDIFIER_VERSION) ./hack/verify-buildifier.sh
+
+.PHONY: install-shellcheck
+install-shellcheck: ## Download shellcheck
+	MINIMUM_SHELLCHECK_VERSION=$(MINIMUM_SHELLCHECK_VERSION) ./hack/verify-shellcheck.sh
+
+.PHONY: verify-boilerplate
+verify-boilerplate: ## Verify boilerplate text exists in each file
+	./hack/verify-boilerplate.sh
 
 .PHONY: install-kubectl
 install-kubectl: ## Download kubectl

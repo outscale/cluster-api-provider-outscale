@@ -19,4 +19,4 @@ subjects:
   name: {{ template "clusterapioutscale.serviceAccount" $root }}
   namespace: {{ $root.Release.Namespace }}
   {{- end }}
-{{- end }} 
+{{- end }}

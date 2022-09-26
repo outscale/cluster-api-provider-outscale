@@ -1,74 +1,71 @@
----
 images:
-  - name: ${IMG:-} 
+  - name: ${IMG:-}
     loadBehavior: mustLoad
 providers:
   - name: cluster-api
     type: CoreProvider
     versions:
-    - name: v1.1.4
-      value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.4/core-components.yaml
-      type: "url"
-      contract: v1beta1
-      files:
-      - sourcePath: "../data/shared/v1beta1/metadata.yaml"
-      replacements:
-        - old: "imagePullPolicy: Always"
-          new: "imagePullPolicy: IfNotPresent"
-        - old: "--leader-elect"
-          new: "--leader-elect=false"
+      - name: v1.1.4
+        value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.4/core-components.yaml
+        type: "url"
+        contract: v1beta1
+        files:
+          - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+        replacements:
+          - old: "imagePullPolicy: Always"
+            new: "imagePullPolicy: IfNotPresent"
+          - old: "--leader-elect"
+            new: "--leader-elect=false"
   - name: kubeadm
     type: BootstrapProvider
     versions:
-    - name: v1.1.4
-      value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.4/bootstrap-components.yaml
-      type: "url"
-      contract: v1beta1
-      files:
-      - sourcePath: "../data/shared/v1beta1/metadata.yaml"
-      replacements:
-        - old: "imagePullPolicy: Always"
-          new: "imagePullPolicy: IfNotPresent"
-        - old: "--leader-elect"
-          new: "--leader-elect=false"
+      - name: v1.1.4
+        value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.4/bootstrap-components.yaml
+        type: "url"
+        contract: v1beta1
+        files:
+          - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+        replacements:
+          - old: "imagePullPolicy: Always"
+            new: "imagePullPolicy: IfNotPresent"
+          - old: "--leader-elect"
+            new: "--leader-elect=false"
   - name: kubeadm
     type: ControlPlaneProvider
     versions:
-    - name: v1.1.4
-      value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.4/control-plane-components.yaml 
-      type: "url"
-      contract: v1beta1
-      files:
-        - sourcePath: "../data/shared/v1beta1/metadata.yaml"
-      replacements:
-      - old: "imagePullPolicy: Always"
-        new: "imagePullPolicy: IfNotPresent"
-      - old: "--leader-elect"
-        new: "--leader-elect=false"           
-  - name: outscale 
+      - name: v1.1.4
+        value: https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.4/control-plane-components.yaml
+        type: "url"
+        contract: v1beta1
+        files:
+          - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+        replacements:
+          - old: "imagePullPolicy: Always"
+            new: "imagePullPolicy: IfNotPresent"
+          - old: "--leader-elect"
+            new: "--leader-elect=false"
+  - name: outscale
     type: InfrastructureProvider
     versions:
-    - name: v0.1.99
-      value: "../../../config/default"
-      contract: v1beta1
-      replacements:
-        - old: controller:latest 
-          new: ${IMG:-}
-        - old: "imagePullPolicy: Always"
-          new: "imagePullPolicy: IfNotPresent"
-      files:
-      - sourcePath: "../../../metadata.yaml"
-        targetName: "metadata.yaml"
-      - sourcePath: "../data/infrastructure-outscale/cluster-template-with-clusterclass.yaml"
-      - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade.yaml"
-      - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade-scale-in.yaml"
-      - sourcePath: "../data/infrastructure-outscale/cluster-template-node-drain.yaml"
-      - sourcePath: "../data/infrastructure-outscale/cluster-template-kcp-remediation.yaml"
-      - sourcePath: "../data/infrastructure-outscale/cluster-template-md-remediation.yaml"
-
+      - name: v0.1.99
+        value: "../../../config/default"
+        contract: v1beta1
+        replacements:
+          - old: controller:latest
+            new: ${IMG:-}
+          - old: "imagePullPolicy: Always"
+            new: "imagePullPolicy: IfNotPresent"
+        files:
+          - sourcePath: "../../../metadata.yaml"
+            targetName: "metadata.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-with-clusterclass.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade-scale-in.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-node-drain.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-kcp-remediation.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-md-remediation.yaml"
 variables:
-# Outscale Provider Variable
-  KUBERNETES_VERSION: "v1.22.9"
+  # Outscale Provider Variable
   CLUSTER_NAME: "capo-e2e"
   OSC_IOPS: 2000
   OSC_VOLUME_SIZE: 20
@@ -93,8 +90,6 @@ variables:
   KUBERNETES_VERSION_UPGRADE_FROM: "v1.22.11"
   KUBERNETES_VERSION_UPGRADE_TO: "v1.23.8"
   TEMPLATE_PATH: "${PWD}/test/e2e/data/infrastructure-outscale/cluster-template-with-clusterclass.yaml"
-  CONTROL_PLANE_MACHINE_TEMPLATE_UPGRADE_TO: "k8s-upgrade-control-plane"
-  WORKERS_MACHINE_TEMPLATE_UPGRADE_TO: "k8s-upgrade-worker"
   KUBERNETES_IMAGE_UPGRADE_FROM: "${IMG_UPGRADE_FROM:ami-d3470f3f}"
   KUBERNETES_IMAGE_UPGRADE_TO: "${IMG_UPGRADE_TO:ami-58b89b08}"
   CONTROL_PLANE_MACHINE_TEMPLATE_UPGRADE_TO: "cp-k8s-upgrade-and-conformance"
@@ -103,7 +98,6 @@ variables:
   CONFORMANCE_CONTROL_PLANE_MACHINE_COUNT: 3
   KUBETEST_CONFIGURATION: "${KUBETEST_CONF_PATH:=./data/kubetest/conformance.yaml}"
   NODE_DRAIN_TIMEOUT: "60s"
-
 intervals:
   default/wait-cluster: ["20m", "10s"]
   default/wait-control-plane: ["30m", "10s"]

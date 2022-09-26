@@ -14,4 +14,4 @@ metadata:
 spec:
   selfSigned: {}
   {{- end }}
-{{- end }} 
+{{- end }}

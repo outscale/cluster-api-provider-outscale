@@ -27,7 +27,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       imagePullSecrets:
-      - name: regcred
+        - name: regcred
       containers:
       - command:
         - /manager
