@@ -7,4 +7,24 @@ title = "The Cluster API Provider Outscale Book"
 
 [output.html]
 curly-quotes = true
-git-repository-url = ""
+theme = "theme"
+default-theme = "navy"
+preferred-dark-theme = "navy"
+additional-css = ["theme/css/custom.css"]
+git-repository-url = "https://github.com/outscale-dev/cluster-api-provider-outscale"
+
+[output.html.search]
+enable = true            
+limit-results = 30       
+teaser-word-count = 30   
+use-boolean-and = true   
+boost-title = 2          
+boost-hierarchy = 1      
+boost-paragraph = 1      
+expand = true            
+heading-split-level = 3  
+copy-js = true           
+
+[output.html.fold]
+enable = false    
+level = 0         
