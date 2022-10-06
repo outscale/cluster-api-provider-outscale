@@ -204,6 +204,7 @@ spec:
           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         keypair:
           name: cluster-api
+          deleteKeypair: false
         vm:
           clusterName: cluster-api
           name: cluster-api-vm-kw
@@ -234,6 +235,7 @@ spec:
          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         keypair:
           name: cluster-api
+          deleteKeypair: false
         vm:
           clusterName: cluster-api
           name: cluster-api-vm-kcp
@@ -301,7 +303,6 @@ spec:
     files:
     - content: |
         #!/bin/sh
-
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
         chmod +x /tmp/runc.amd64	
         cp -f /tmp/runc.amd64 /usr/local/sbin/runc

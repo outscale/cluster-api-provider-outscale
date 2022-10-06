@@ -78,14 +78,15 @@ spec:
         image:
           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         keypair:
-          name: cluster-api
+          name: cluster-api-test
+          deleteKeypair: true
         vm:
           clusterName: capo-quickstart
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
             rootDiskType: "io1"
-          keypairName: cluster-api
+          keypairName: cluster-api-test
           subregionName: eu-west-2a
           vmType: "tinav4.c2r4p2"
 ---
@@ -102,10 +103,11 @@ spec:
         image:
           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         keypair:
-          name: cluster-api
+          name: cluster-api-test
+          deleteKeypair: true
         vm:
           clusterName: capo-quickstart
-          keypairName: cluster-api
+          keypairName: cluster-api-test
           subregionName: eu-west-2a
           rootDisk:
             rootDiskSize: 30
@@ -164,7 +166,6 @@ spec:
     files:
     - content: |
         #!/bin/bash
-
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
         chmod +x /tmp/runc.amd64	
         \cp -f /tmp/runc.amd64 /usr/local/sbin/runc

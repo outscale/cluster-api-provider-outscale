@@ -297,10 +297,11 @@ type OscVolume struct {
 }
 
 type OscKeypair struct {
-	Name        string `json:"name,omitempty"`
-	PublicKey   string `json:"publicKey,omitempty"`
-	ResourceId  string `json:"resourceId,omitempty"`
-	ClusterName string `json:"clusterName,omitempty"`
+	Name          string `json:"name,omitempty"`
+	PublicKey     string `json:"publicKey,omitempty"`
+	ResourceId    string `json:"resourceId,omitempty"`
+	ClusterName   string `json:"clusterName,omitempty"`
+	DeleteKeypair bool   `json:"deleteKeypair,omitempty"`
 }
 
 type OscVm struct {

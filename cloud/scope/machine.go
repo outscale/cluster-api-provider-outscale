@@ -267,6 +267,16 @@ func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 	m.OscMachine.Status.Addresses = addrs
 }
 
+// SetDeleteKeyPair set deleteKeypair
+func (m *MachineScope) SetDeleteKeypair(deleteKeypair bool) {
+	m.OscMachine.Spec.Node.KeyPair.DeleteKeypair = deleteKeypair
+}
+
+// GetDeleteKeyPair return deleteKeypair
+func (m *MachineScope) GetDeleteKeypair() bool {
+	return m.OscMachine.Spec.Node.KeyPair.DeleteKeypair
+}
+
 // PatchObject keep the machine configuration and status
 func (m *MachineScope) PatchObject() error {
 	applicableConditions := []clusterv1.ConditionType{
