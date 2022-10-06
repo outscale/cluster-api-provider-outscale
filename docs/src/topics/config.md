@@ -209,6 +209,7 @@ spec:
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
 | `keypairName`| `cluster-api-keypair` | false | The keypairname you will use
+| `destroyKeypair`| `false` | false | Destroy keypair at the end
 
 ### OscVm
 
@@ -228,6 +229,5 @@ spec:
 | `securityGroupNames` | `cluster-api-securitygroups-kw` | false | The securityGroupName which is associated with vm
 | `vmType` | `tinav4.c2r4p2` | false |  The vmType use for the vm
 | `imageId` | `` | false |  The vmType use for the vm
-
 
 

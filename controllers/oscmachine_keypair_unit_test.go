@@ -373,7 +373,11 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			name:        "failed to delete keypair removed outside cluster api ",
 			clusterSpec: defaultKeyClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						DeleteKeypair: true,
+					},
+				},
 			},
 
 			expKeyPairFound:              false,
@@ -385,7 +389,11 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			name:        "failed to delete keypair ",
 			clusterSpec: defaultKeyClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						DeleteKeypair: true,
+					},
+				},
 			},
 
 			expKeyPairFound:              true,
@@ -399,8 +407,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					KeyPair: infrastructurev1beta1.OscKeypair{
-						Name:      "test-keypair",
-						PublicKey: "00",
+						Name:          "test-keypair",
+						PublicKey:     "00",
+						DeleteKeypair: true,
 					},
 				},
 			},

@@ -3,8 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -16,6 +14,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strings"
+	"time"
 )
 
 // getVmResourceId return the vmId from the resourceMap base on resourceName (tag name + cluster uid)
@@ -489,6 +489,11 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	vmId := vmSpec.ResourceId
 	machineScope.Info("### VmiD ###", "vmId", vmId)
 	vmName := vmSpec.Name
+
+	keypairSpec := machineScope.GetKeypair()
+	machineScope.Info("Check keypair", "keypair", keypairSpec.Name)
+	deleteKeypair := machineScope.GetDeleteKeypair()
+
 	vm, err := vmSvc.GetVm(vmId)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -535,7 +540,10 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 		clusterScope.Info("Get list OscMachine")
 		var machineSize int
-		var machineKcpCount int32 = 0
+		var machineKcpCount int32
+		var machineKwCount int32
+		var machineCount int32
+
 		var machines []*clusterv1.Machine
 		if vmSpec.Replica != 1 {
 			machines, _, err = clusterScope.ListMachines(ctx)
@@ -547,6 +555,8 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		} else {
 			machineSize = 1
 			machineKcpCount = 1
+			machineCount = 1
+
 		}
 
 		if machineSize > 0 {
@@ -562,10 +572,22 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 							machineScope.Info("Get Kcp Machine", "machineKcp", m.Name)
 							machineKcpCount++
 						}
+						if labelKey == "cluster.x-k8s.io/deployment-name" {
+							machineScope.Info("Get Kw Machine", "machineKw", m.Name)
+							machineKwCount++
+						}
+
 					}
+					machineCount = machineKwCount + machineKcpCount
 				}
 			}
+			if machineCount != 1 {
+				machineScope.SetDeleteKeypair(false)
+				machineScope.Info("Keep Keypair from vm")
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			}
 			if machineKcpCount == 1 {
+				machineScope.SetDeleteKeypair(deleteKeypair)
 				machineScope.Info("Delete LoadBalancer sg")
 				securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 				loadBalancerSpec := clusterScope.GetLoadBalancer()
