@@ -485,11 +485,14 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 
 	vmSpec := machineScope.GetVm()
 	vmSpec.SetDefaultValue()
-	var isVmDeleted = false
 	vmId := vmSpec.ResourceId
 	machineScope.Info("### VmiD ###", "vmId", vmId)
 	vmName := vmSpec.Name
-
+	if vmSpec.ResourceId == "" {
+		machineScope.Info("The desired vm is currently destroyed", "vmName", vmName)
+		controllerutil.RemoveFinalizer(oscmachine, "")
+		return reconcile.Result{}, nil
+	}
 	keypairSpec := machineScope.GetKeypair()
 	machineScope.Info("Check keypair", "keypair", keypairSpec.Name)
 	deleteKeypair := machineScope.GetDeleteKeypair()
@@ -514,7 +517,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		controllerutil.RemoveFinalizer(oscmachine, "")
 		return reconcile.Result{}, nil
 	}
-	if vmSpec.PublicIpName != "" && !isVmDeleted {
+	if vmSpec.PublicIpName != "" {
 		linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
 		err = vmSvc.CheckVmState(5, 120, "running", vmId)
@@ -527,7 +530,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 
 	}
-	if vmSpec.LoadBalancerName != "" && !isVmDeleted {
+	if vmSpec.LoadBalancerName != "" {
 		err = vmSvc.CheckVmState(5, 60, "running", vmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
@@ -618,7 +621,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	}
 
 	err = vmSvc.DeleteVm(vmId)
-	isVmDeleted = true
+	vmSpec.ResourceId = ""
 	machineScope.Info("Delete the desired vm", "vmName", vmName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
