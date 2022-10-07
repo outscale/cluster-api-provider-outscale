@@ -30,6 +30,7 @@ jobs:
       env:
         IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
+        VERSION: ${{ env.RELEASE_TAG }}
         DOCKER_BUILDKIT: 1
     - name: generate artefacts
       run: make release
