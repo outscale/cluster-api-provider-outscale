@@ -6,6 +6,9 @@ clusterapioutscale:
     replicaccount: 1
     # -- Regitry credential to use
     registry_credential: harbor-dockerconfigjson
+    # -- Verbosity level of plugin
+    verbosity: 6
+
     # -- Additional annotions to use
     pods:
       annotations:
