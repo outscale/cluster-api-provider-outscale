@@ -11,10 +11,10 @@ Deploy clusterapioutscale. Please look at deploy.md
 | clusterapioutscale.certificate.enable | bool | `true` | enable certificate |
 | clusterapioutscale.configmap.enable | bool | `true` | enable configmap |
 | clusterapioutscale.crd.enable | bool | `true` | enable crd |
-| clusterapioutscale.deployment.containers.image | string | `"core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers"` | Outscale provider image |
+| clusterapioutscale.deployment.containers.image | string | `"registry.hub.docker.com/outscale/cluster-api-outscale-controllers"` | Outscale provider image |
 | clusterapioutscale.deployment.containers.imageProxy | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
 | clusterapioutscale.deployment.containers.imageProxyTag | string | `"v0.8.0"` | Proxy imageTag |
-| clusterapioutscale.deployment.containers.imageTag | string | `"tilt-57aa823188a28a72"` | Outscale provider image tag |
+| clusterapioutscale.deployment.containers.imageTag | string | `"v0.1.0"` | Outscale provider image tag |
 | clusterapioutscale.deployment.containers.pullPolicy | string | `"IfNotPresent"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
 | clusterapioutscale.deployment.containers.resources.cpu.limits | string | `"200m"` | Container cpu limts |
 | clusterapioutscale.deployment.containers.resources.cpu.requests | string | `"100m"` | Container cpu requests |
@@ -29,6 +29,7 @@ Deploy clusterapioutscale. Please look at deploy.md
 | clusterapioutscale.deployment.pods | object | `{"annotations":{"kubectl.kubernetes.io/default-container":"manager"}}` | Additional annotions to use |
 | clusterapioutscale.deployment.registry_credential | string | `"harbor-dockerconfigjson"` | Regitry credential to use |
 | clusterapioutscale.deployment.replicaccount | int | `1` | Number of replica |
+| clusterapioutscale.deployment.verbosity | int | `6` | Verbosity level of plugin |
 | clusterapioutscale.issuer.enable | bool | `true` | enable issuer |
 | clusterapioutscale.leaderElectionRole.enable | bool | `true` | enable leaderElectionRole |
 | clusterapioutscale.leaderElectionRoleBinding.enable | bool | `true` | enable leaderElectionRoleBinding |
