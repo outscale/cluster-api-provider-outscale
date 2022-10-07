@@ -8,7 +8,7 @@
     - You can use a container with [kind][kind]. 
     - You can use a rke cluster with [osc-rke][osc-rke].
 - Look at cluster-api note ([cluster-api][cluster-api])
-# Kubernetes cluster
+# Deploy Cluster Api
 
 If you use your own cluster for production (with backup, disaster recovery, ...) and expose it:
 ```
@@ -31,7 +31,7 @@ You can install clusterctl for linux with:
 ```
 
 ## Initialize clusterctl
-You can enable clusterResourceSet with 
+You can enable [clusterresourceset][clusterresourceset] with 
 ```bash
 export EXP_CLUSTER_RESOURCE_SET=true
 ```
@@ -46,17 +46,18 @@ providers:
 
 You can initialize clusterctl with credential with:
 ```
-export OSC_ACCESS_KEY_ID=<your-access-key>
+export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
 make credential
 clusterctl init --infrastructure outscale
 ```
 
+# Create our cluster
 
 ## Launch your stack with clusterctl
 
 You can create a keypair before if you want.
-It is open to shell inside nodes only if you really need (with [openlens][openlens], [lens][lens], ...)
+You can access nodes shell (with [openlens][openlens], [lens][lens], ...)
 You have to set:
 ```
 export OSC_IOPS=<osc-iops>
@@ -72,7 +73,7 @@ Then you will generate:
 clusterctl generate cluster <cluster-name>   --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
 
-You can then change getstared as you want base on doc.
+You can then change to get what you want base on doc.
 Then apply:
 ```
 kubectl apply -f getstarted.yaml
@@ -115,9 +116,52 @@ default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-contr
 default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-md-0            95m
 
 ```
+## Get kubeconfig
 
+In order to get kubeconfig please use:
+[kubeconfig][kubeconfig] 
+
+## Node Ready
+
+In order to have node ready, you must have a CNI and CCM.
+
+You can use [clusterresourceset][clusterresourceset] with label **clustername** + **crs-cni** and label **clustername** + **crs-ccm** where clustername is the name of your cluster.
+
+To install cni you can use helm charts or clusteresourceset.
+
+To install helm,please follow [helm][helm]
+
+A list of cni:
+* To install [calico][calico]
+* To install [cillium][cillium]
+* To install [canal][canal]
+
+To install ccm, you can use helm charts or clusteresourceset.
+
+* [cloud-provider-outscale][cloud-provider-outscale]
+
+# Delete Cluster api
+
+## Delete cluster
+
+To delete our cluster:
+```
+kubectl delete -f getstarted.yaml
+```
+
+To delete cluster-api:
+```
+clusterctl delete --all
+```
 <!-- References -->
+[canal]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/flannel/flannel
+[cillium]: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-helm/
+[calico]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/helm
+[kubeconfig]: https://cluster-api.sigs.k8s.io/clusterctl/commands/get-kubeconfig.html
+[cloud-provider-outscale]: https://github.com/outscale-dev/cloud-provider-osc/blob/OSC-MIGRATION/deploy/README.md
 [kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[helm]: https://helm.sh/docs/intro/install/
+[clusterresourceset]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-resource-set.html
 [kind]: https://github.com/kubernetes-sigs/kind#installation-and-usage
 [kubeadm]: https://kubernetes.io/fr/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
