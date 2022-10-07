@@ -17,6 +17,7 @@ REGISTRY ?= outscale
 IMAGE_NAME ?= cluster-api-provider-osc
 TAG ?= dev
 RELEASE_TAG ?= v0.1.0
+VERSION ?= DEV
 IMG ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 IMG_RELEASE ?= $(REGISTRY)/$(IMAGE_NAME):$(RELEASE_TAG)
 OSC_ACCESS_KEY ?= access
