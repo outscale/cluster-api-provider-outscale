@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issue that you might see.
+Common issues that you might see.
 
 ### Missing credentials
 
@@ -41,6 +41,6 @@ If your vm is never in running phase and but still in provisonned phase, please 
 ### Clean Stack
 If your vm never reach running, you can use 
 ```bash
-make testclean
+ClusterToClean=my-cluster-name make testclean
 ```
 to clean you stack

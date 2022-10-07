@@ -1,9 +1,9 @@
 # Summary
 - [Introduction](./introduction.md)
 - [Topics](./topics/topics.md)
-    - [Ami](./topics/ami.md)
-    - [Getting Start with clusterctl](./topics/get-started-with-clusterctl.md)
-    - [Getting Started with kubectl](./topics/get-started-with-kubectl.md)
+    - [Omi](./topics/omi.md)
+    - [Get Started with clusterctl](./topics/get-started-with-clusterctl.md)
+    - [Get Started with kubectl](./topics/get-started-with-kubectl.md)
     - [Troubleshooting](./topics/troubleshooting.md)
     - [Cluster-Autoscaler](./topics/cluster-autoscaler.md)
     - [How to config](./topics/config.md)
