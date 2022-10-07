@@ -52,7 +52,6 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
-
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -117,7 +116,6 @@ unit-test:
 	go test -v -coverprofile=apicovers.out  ./api/v1beta1
 	go tool cover -func=apicovers.out -o apicovers.txt
 	go tool cover -html=apicovers.out -o apicovers.html
-	
 
 .PHONY: cloud-init-secret
 cloud-init-secret:
@@ -180,7 +178,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: # Build docker image with the manager
-	docker build -t ${IMG} .
+	docker build --build-arg VERSION=$(VERSION) -t ${IMG} .
 
 .PHONY: docker-build-dev
 docker-build-dev: ## Generate and Build docker image with the manager

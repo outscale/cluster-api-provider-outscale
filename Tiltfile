@@ -18,10 +18,10 @@ else:
     allow_k8s_contexts(os.getenv('K8S_CONTEXT', 'phandalin'))
 
 if "controller_image" in settings:
-   docker_build(settings.get("controller_image"), '.')
+   docker_build(settings.get("controller_image"),"", dockerfile="./Dockerfile", build_args={"VERSION": "DEV"})
    capo_cmd = "img=" + settings.get("controller_image") + ":latest make create-capm" 
 else:
-   docker_build(os.getenv('CONTROLLER_IMAGE', ''), '.')
+   docker_build(os.getenv('CONTROLLER_IMAGE', ''), "", dockerfile="./Dockerfile", build_args={"VERSION": "DEV"})
    capo_cmd = "IMG=" + os.getenv('CONTROLLER_IMAGE','') + ":latest make create-capm"
 
 def deploy_capi():
