@@ -42,7 +42,7 @@ func newOscClient() (*OscClient, error) {
 	}
 	version := os.Getenv("VERSION")
 	if version == "" {
-		return nil, errors.New("Version is required")
+		version = "DEV"
 	}
 	config := osc.NewConfiguration()
 	config.Debug = true
