@@ -33,17 +33,17 @@ jobs:
         run: cp website.json ./book 
         shell: bash
         working-directory: cluster-api-provider-outscale/docs/       
-      - run: aws s3 cp ./book s3://cluster-api --acl public-read --recursive  --endpoint https://oos.eu-west-2.outscale.com  
+      - run: aws s3 cp ./book s3://cluster-api-outscale --acl public-read --recursive  --endpoint https://oos.eu-west-2.outscale.com --recursive
         shell: bash
         working-directory: cluster-api-provider-outscale/docs/
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.OSC_ACCESS_KEY}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.OSC_SECRET_KEY}}
           AWS_DEFAULT_REGION: ${{secrets.OSC_REGION}}
-      - run: aws s3 cp ./theme s3://cluster-api --acl public-read --recursive  --endpoint https://oos.eu-west-2.outscale.com
+      - run: aws s3 cp ./theme s3://cluster-api-outscale --acl public-read --recursive  --endpoint https://oos.eu-west-2.outscale.com  --recursive
         shell: bash
         working-directory: cluster-api-provider-outscale/docs/
         env:
-          AWS_ACCESS_KEY_ID: ${{secrets.OSC_ACCESS_KEY}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.OSC_SECRET_KEY}}
-          AWS_DEFAULT_REGION: ${{secrets.OSC_REGION}}
+          AWS_ACCESS_KEY_ID: ${{secrets.OSC_OPENSOURCE_ACCESS_KEY}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.OSC_OPENSOURCE_SECRET_KEY}}
+          AWS_DEFAULT_REGION: ${{secrets.OSC_OPENSOURCE_REGION}}

@@ -75,3 +75,5 @@ make release-changelog
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [release]: https://github.com/outscale-dev/cluster-api-provider-outscale/blob/main/.github/workflows/release.yml 
+[registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
+
