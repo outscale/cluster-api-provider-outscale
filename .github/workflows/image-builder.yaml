@@ -33,7 +33,7 @@ jobs:
         make deps-osc
         groupadd -r packer && useradd -m -s /bin/bash -r -g packer packer
         chown -R packer:packer ${{ github.workspace }}/add-outscale-image
-        runuser -l packer -c "export LANG=C.UTF-8; export LC_ALL=C.UTF-8; export PACKER_LOG=1; export PATH=~packer/.local/bin/:$GITHUB_WORKSPACE/image-builder/images/capi/.local/bin:$PATH; export OSC_ACCESS_KEY=${OSC_ACCESS_KEY}; export OSC_SECRET_KEY=${OSC_SECRET_KEY}; export OUTSCALE_REGION=${OUTSCALE_REGION}; cd $GITHUB_WORKSPACE/add-outscale-image/images/capi;  ./scripts/ci-outscale-nightly.sh"
+        runuser -l packer -c "export LANG=C.UTF-8; export LC_ALL=C.UTF-8; export PACKER_LOG=1; export PATH=~packer/.local/bin/:$GITHUB_WORKSPACE/image-builder/images/capi/.local/bin:$PATH; export OSC_ACCESS_KEY=${OSC_ACCESS_KEY}; export OSC_SECRET_KEY=${OSC_SECRET_KEY}; export OSC_REGION=${OSC_REGION}; cd $GITHUB_WORKSPACE/add-outscale-image/images/capi;  ./scripts/ci-outscale-nightly.sh"
       shell: bash
       working-directory: "${{ github.workspace }}/add-outscale-image/images/capi"
       env:
