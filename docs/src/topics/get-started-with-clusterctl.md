@@ -48,6 +48,7 @@ You can initialize clusterctl with credential with:
 ```
 export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
+export OSC_REGION=<your-region>
 make credential
 clusterctl init --infrastructure outscale
 ```

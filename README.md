@@ -32,7 +32,7 @@ Please look at [Contribution](CONTRIBUTING.md)
 
 # cluster api outscale site
 
-You can see all documentation in [cluster-api-outscale]https://cluster-api-outscale.oos-website.eu-west-2.outscale.com)
+You can see all documentation in [cluster-api-outscale](https://cluster-api-outscale.oos-website.eu-west-2.outscale.com)
 
 # License
 
