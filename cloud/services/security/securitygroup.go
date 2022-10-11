@@ -228,7 +228,7 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 	} else if securityGroupMemberId != "" && ipRanges != "" {
 		return nil, errors.New("Get Both IpRange and securityGroupMemberId")
 	} else {
-		fmt.Printf("Have IpRange and no securityGroupMemberId\n")
+		fmt.Printf("Have IpRange and no securityGroupMemberId \n")
 	}
 
 	oscApiClient := s.scope.GetApi()

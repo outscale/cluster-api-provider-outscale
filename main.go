@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/opentracing"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -45,6 +46,7 @@ var (
 	scheme           = runtime.NewScheme()
 	setupLog         = ctrl.Log.WithName("setup")
 	reconcileTimeout time.Duration
+	enableTracing    bool
 )
 
 func init() {
@@ -64,6 +66,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&enableTracing, "enable-tracing", false, "Enable tracing to the opentelemetry-collector service in the same namespace.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -99,7 +102,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := ctrl.SetupSignalHandler()
+        ctx := ctrl.SetupSignalHandler()
+	if err := opentracing.RegisterTracing(ctx, setupLog); err != nil {
+		setupLog.Error(err, "unable to initialize tracing")
+		os.Exit(1)
+	}
+
+	if err := opentracing.RegisterMetrics(); err != nil {
+		setupLog.Error(err, "unable to initiliaze metrics")
+		os.Exit(1)
+	}
 
 	if err = (&controllers.OscMachineReconciler{
 		Client:           mgr.GetClient(),

@@ -26,6 +26,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
@@ -111,6 +112,15 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
 	defer cancel()
 
+	ctx, _, done := tele.StartSpanWithLogger(
+		ctx,
+		"controllers.OscMachineReconciler.Reconcile",
+		tele.KVP("namespace", req.Namespace),
+		tele.KVP("name", req.Name),
+		tele.KVP("kind", "OscMachine"),
+	)
+	defer done()
+
 	log := ctrl.LoggerFrom(ctx)
 
 	oscMachine := &infrastructurev1beta1.OscMachine{}
@@ -186,6 +196,9 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 // reconcile reconcile the creation of the machine
 func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	machineScope.Info("Reconciling OscMachine")
+	ctx, _, machineDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcile")
+	defer machineDone()
+
 	oscmachine := machineScope.OscMachine
 	if oscmachine.Status.FailureReason != nil || oscmachine.Status.FailureMessage != nil {
 		machineScope.Info("Error state detected, skipping reconciliation")
@@ -276,13 +289,18 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 			return reconcile.Result{}, checkVmVolumeSubregionNameErr
 		}
 	}
-
+	ctx, _, imageDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineController.imageReconcile")
 	imageSvc := r.getImageSvc(ctx, *clusterScope)
+
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile Image")
+		imageDone()
 		return reconcileImage, err
 	}
+	imageDone()
+
+	ctx, _, volumeDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.VolumeReconcile")
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
@@ -291,27 +309,46 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		if err != nil {
 			machineScope.Error(err, "failed to reconcile volume")
 			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+			volumeDone()
 			return reconcileVolume, err
 		}
 	}
+	volumeDone()
+
+	ctx, _, keypairDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.KeypairReconcile")
 
 	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
 	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile keypair")
+		keypairDone()
 		return reconcileKeypair, err
 	}
+	keypairDone()
+
+	ctx, _, publicIpDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.PublicIpReconcile")
 
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
+	publicIpDone()
+	ctx, _, vmDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.VmReconcile")
+
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
+	ctx, _, loadBalancerDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.LoadBalancerReconcile")
+
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	loadBalancerDone()
+	ctx, _, securityGroupDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.SecurityGroupReconcile")
+
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	securityGroupDone()
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+		vmDone()
 		return reconcileVm, err
 	}
+	vmDone()
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
 	vmState := machineScope.GetVmState()
@@ -346,6 +383,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 // reconcileDelete reconcile the deletion of the machine
 func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	machineScope.Info("Reconciling delete OscMachine")
+	ctx, _, reconcileDeleteDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileDelete")
+	defer reconcileDeleteDone()
+
 	oscmachine := machineScope.OscMachine
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
 		machineScope.Info("Find volumes")
@@ -355,25 +395,50 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 			return reconcileDeleteVolume, err
 		}
 	}
+
+	ctx, _, publicIpDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcilePublicIpDelete")
+
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
+	publicIpDone()
+	ctx, _, vmDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileVmDelete")
+
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
+	ctx, _, loadBalancerDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileLoadBalancerDelete")
+
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	loadBalancerDone()
+	ctx, _, securityGroupDone := tele.StartSpanWithLogger(ctx, "controller.OscMachineReconciler.reconcileSecurityGroupDelete")
+
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	securityGroupDone()
 	reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
+		vmDone()
 		return reconcileDeleteVm, err
 	}
+	vmDone()
+
+	ctx, _, keypairDone := tele.StartSpanWithLogger(ctx, "controller.OscMachineReconciler.reconcileKeyypairDelete")
+
 	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
 	reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, keypairSvc)
 	if err != nil {
+		keypairDone()
 		return reconcileDeleteKeyPair, err
 	}
+	keypairDone()
 	controllerutil.RemoveFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
+	ctx, _, done := tele.StartSpanWithLogger(ctx,
+		"controllers.OscMachineReconciler.SetupWithManager",
+		tele.KVP("controller", "OscMachine"),
+	)
+	defer done()
+
 	clusterToObjectFunc, err := util.ClusterToObjectsMapper(r.Client, &infrastructurev1beta1.OscMachineList{}, mgr.GetScheme())
 	if err != nil {
 		return errors.Errorf("failed to create mapper for Cluster to OscMachines: %+v", err)
