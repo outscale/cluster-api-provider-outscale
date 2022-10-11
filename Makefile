@@ -65,6 +65,9 @@ OSC_REGION ?= eu-west-2
 OSC_SUBREGION_NAME ?= eu-west-2a
 ClusterToClean ?= capo-quickstart
 MINIMUM_MDBOOK_VERSION=0.4.21
+TRIVY_IMAGE := aquasec/trivy:latest
+DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./hack/*" )
+LINTER_VERSION := v2.10.0
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -198,6 +201,28 @@ cluster-class-ex: envsubst
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+
+.PHONY: dockerlint
+dockerlint:
+	@echo "Lint images =>  $(DOCKERFILES)"
+	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
+
+.PHONY: trivy-scan
+trivy-scan:
+	docker pull $(TRIVY_IMAGE)
+	docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v ${PWD}/.trivyignore:/root/.trivyignore \
+			-v ${PWD}/.trivyscan/:/root/.trivyscan \
+			$(TRIVY_IMAGE) \
+			image \
+                        --format sarif -o /root/.trivyscan/report.sarif \
+			--ignorefile /root/.trivyignore \
+			$(IMG)
+
+.PHONY: trivy-ignore-check
+trivy-ignore-check:
+	@./hack/verify-trivyignore.sh
 
 ##@ Build
 

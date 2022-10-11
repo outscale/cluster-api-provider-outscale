@@ -1,0 +1,51 @@
+name: docker
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.go"
+      - "**.yaml"
+      - "!capm.yaml"
+      - "!osc-secret.yaml"
+      - "!example/**.yaml"
+      - "!helm/**"
+      - "Makefile"
+      - "!docs/src/**"
+  push:
+    branches:
+      - 'main'
+    paths:
+      - "**.go"
+      - "**.yaml"
+      - "!capm.yaml"
+      - "!osc-secret.yaml"
+      - "!example/**.yaml"
+      - "!helm/**"
+      - "Makefile"
+      - "!docs/src/**" 
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Docker Lint
+      run: bash -c "make dockerlint"
+    - name: Build and Push Docker image
+      run: |
+        make docker-build
+      env:
+        IMG: cluster-api-outscale-controller:${{ github.sha }}
+        DOCKER_BUILDKIT: 1
+    - name: Trivy-Scan
+      run: bash -c "make trivy-scan"
+      env:
+        IMG: cluster-api-outscale-controller:${{ github.sha }}
+    - name: Trivy-Ignore-Check
+      run: bash -c "make trivy-ignore-check"
+      env:
+        IMG: cluster-api-outscale-controller:${{ github.sha }}
+    - name: Upload Scan if errors
+      if: ${{ always() && github.event_name != 'pull_request' }}
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: './.trivyscan/report.sarif'
