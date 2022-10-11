@@ -14,7 +14,7 @@ jobs:
         ref: master
     - uses: actions/setup-go@v3
       with:
-        go-version: '1.18.5'
+        go-version: '1.18.7'
     - uses: actions/checkout@v3
       with:
           repository: outscale-dev/cluster-api-provider-outscale

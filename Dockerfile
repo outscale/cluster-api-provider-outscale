@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # Build the manager binary
-FROM golang:1.18 as builder
+FROM golang:1.18.7-alpine as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+FROM alpine:3.16
 ARG VERSION=${VERSION}
 ENV VERSION=${VERSION}
 WORKDIR /
