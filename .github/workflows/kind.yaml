@@ -27,6 +27,11 @@ jobs:
         go-version: '>=1.17.8'
     - name: Install kustomize
       uses: imranismail/setup-kustomize@v1
+    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
+      with:
+        access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        region: ${{ secrets.OSC_REGION }}
     - name: Install kind
       run: |
         make install-kind
