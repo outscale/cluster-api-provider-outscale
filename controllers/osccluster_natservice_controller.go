@@ -23,6 +23,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -91,7 +92,9 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 	var natService *osc.NatService
 	publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
 	publicIpId, err := getPublicIpResourceId(publicIpName, clusterScope)
+	ctx, _, natServiceDone := tele.StartSpanWithLogger(ctx, "controller.OscClusterControllers.reconcileNatService")
 	if err != nil {
+		natServiceDone()
 		return reconcile.Result{}, err
 	}
 
@@ -99,6 +102,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
+		natServiceDone()
 		return reconcile.Result{}, err
 	}
 	if len(natServiceRef.ResourceMap) == 0 {
@@ -111,6 +115,7 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 		clusterScope.Info("### Get natService Id ###", "natService", natServiceRef.ResourceMap)
 		natService, err = natServiceSvc.GetNatService(natServiceId)
 		if err != nil {
+			natServiceDone()
 			return reconcile.Result{}, err
 		}
 	}
@@ -119,12 +124,14 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 		clusterScope.Info("Create the desired natService", "natServiceName", natServiceName)
 		natService, err := natServiceSvc.CreateNatService(publicIpId, subnetId, natServiceName)
 		if err != nil {
+			natServiceDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not create natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("### Get natService ###", "natService", natService)
 		natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
 		natServiceSpec.ResourceId = natService.GetNatServiceId()
 	}
+	natServiceDone()
 	return reconcile.Result{}, nil
 }
 
@@ -138,19 +145,24 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 	natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 
 	natServiceId := natServiceSpec.ResourceId
+	ctx, _, natServiceDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterReconciler.reconcileDeleteNatService")
 	natService, err := natServiceSvc.GetNatService(natServiceId)
 	if err != nil {
+		natServiceDone()
 		return reconcile.Result{}, err
 	}
 	if natService == nil {
 		clusterScope.Info("the desired natService does not exist anymore", "natServiceName", natServiceName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+		natServiceDone()
 		return reconcile.Result{}, nil
 	}
 	err = natServiceSvc.DeleteNatService(natServiceId)
 	if err != nil {
 		clusterScope.Info("Delete the desired natService", "natServiceName", natServiceName)
+		natServiceDone()
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
+	natServiceDone()
 	return reconcile.Result{}, err
 }

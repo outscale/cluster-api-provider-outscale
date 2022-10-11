@@ -24,6 +24,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -120,8 +121,10 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 		publicIpIds = append(publicIpIds, publicIpId)
 	}
 	clusterScope.Info("Check if the desired publicip exist")
+	ctx, _, publicIpDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.reconcilePublicIp")
 	validPublicIpIds, err := publicIpSvc.ValidatePublicIpIds(publicIpIds)
 	if err != nil {
+		publicIpDone()
 		return reconcile.Result{}, err
 	}
 	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
@@ -143,6 +146,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 		if !Contains(validPublicIpIds, publicIpId) {
 			publicIp, err := publicIpSvc.CreatePublicIp(publicIpName)
 			if err != nil {
+				publicIpDone()
 				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 			clusterScope.Info("### Get publicIp  ###", "publicip", publicIp)
@@ -150,6 +154,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 			publicIpSpec.ResourceId = publicIp.GetPublicIpId()
 		}
 	}
+	publicIpDone()
 	return reconcile.Result{}, nil
 }
 
@@ -176,6 +181,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	ctx, _, publicIpDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterReconciler.reconcileDeletePublicIp")
 	clusterScope.Info("### Check Id  ###", "publicip", publicIpIds)
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpId := publicIpSpec.ResourceId
@@ -184,10 +190,12 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 		clusterScope.Info("### Check validPublicIpIds###", "validPublicIpIds", validPublicIpIds)
 		if !Contains(validPublicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+			publicIpDone()
 			return reconcile.Result{}, nil
 		}
 		err = publicIpSvc.CheckPublicIpUnlink(5, 120, publicIpId)
 		if err != nil {
+			publicIpDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp %s for Osccluster %s/%s", err, publicIpId, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 
@@ -195,9 +203,11 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 		clusterScope.Info("Delete the desired publicip", "publicIpName", publicIpName)
 		err = publicIpSvc.DeletePublicIp(publicIpId)
 		if err != nil {
+			publicIpDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 
 	}
+	publicIpDone()
 	return reconcile.Result{}, nil
 }

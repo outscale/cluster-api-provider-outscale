@@ -24,6 +24,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -71,6 +72,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	if len(netRef.ResourceMap) == 0 {
 		netRef.ResourceMap = make(map[string]string)
 	}
+	ctx, _, netDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.reconcileNet")
 	if netSpec.ResourceId != "" {
 		netRef.ResourceMap[netName] = netSpec.ResourceId
 		netId := netSpec.ResourceId
@@ -78,6 +80,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		clusterScope.Info("### Get netId ###", "net", netRef.ResourceMap)
 		net, err = netSvc.GetNet(netId)
 		if err != nil {
+			netDone()
 			return reconcile.Result{}, err
 		}
 
@@ -86,6 +89,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		clusterScope.Info("Create the desired net", "netName", netName)
 		net, err := netSvc.CreateNet(netSpec, clusterName, netName)
 		if err != nil {
+			netDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("### Get net ###", "net", net)
@@ -94,6 +98,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		netRef.ResourceMap[netName] = net.GetNetId()
 		netSpec.ResourceId = net.GetNetId()
 	}
+	netDone()
 	return reconcile.Result{}, nil
 }
 
@@ -105,21 +110,25 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 	netSpec.SetDefaultValue()
 	netId := netSpec.ResourceId
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-
+	ctx, _, netDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterReconciler.reconcileDeleteNet")
 	clusterScope.Info("Delete net")
 	net, err := netSvc.GetNet(netId)
 	if err != nil {
+		netDone()
 		return reconcile.Result{}, err
 	}
 	if net == nil {
 		clusterScope.Info("The desired net does not exist anymore", "netName", netName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+		netDone()
 		return reconcile.Result{}, nil
 	}
 	err = netSvc.DeleteNet(netId)
 	if err != nil {
 		clusterScope.Info("Delete the desired net", "netName", netName)
+		netDone()
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
+	netDone()
 	return reconcile.Result{}, nil
 }

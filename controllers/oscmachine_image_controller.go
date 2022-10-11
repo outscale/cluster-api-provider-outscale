@@ -23,6 +23,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -71,14 +72,17 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 		imageRef.ResourceMap = make(map[string]string)
 	}
 
+	ctx, _, imageDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineController.reconcileImage")
 	if imageName != "" {
 		machineScope.Info("########### Image Names exist", "imageName", imageName)
 		if imageId, err = imageSvc.GetImageId(imageName); err != nil {
+			imageDone()
 			return reconcile.Result{}, err
 		}
 	} else {
 		machineScope.Info("########### Image Name is empty and we wiqqll try to get it from Id#####", "imageId", imageId)
 		if imageName, err = imageSvc.GetImageName(imageId); err != nil {
+			imageDone()
 			return reconcile.Result{}, err
 		}
 	}
@@ -87,14 +91,16 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	}
 
 	if image, err = imageSvc.GetImage(imageId); err != nil {
+		imageDone()
 		return reconcile.Result{}, err
 	}
 	if image == nil || imageSpec.ResourceId == "" {
 		machineScope.Info("########### Image is nil")
-
+		imageDone()
 		return reconcile.Result{}, err
 	} else {
 		imageRef.ResourceMap[imageName] = imageSpec.ResourceId
 	}
+	imageDone()
 	return reconcile.Result{}, nil
 }

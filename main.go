@@ -102,17 +102,18 @@ func main() {
 		os.Exit(1)
 	}
 
-        ctx := ctrl.SetupSignalHandler()
-	if err := opentracing.RegisterTracing(ctx, setupLog); err != nil {
-		setupLog.Error(err, "unable to initialize tracing")
-		os.Exit(1)
-	}
+	ctx := ctrl.SetupSignalHandler()
+	if enableTracing {
+		if err := opentracing.RegisterTracing(ctx, setupLog); err != nil {
+			setupLog.Error(err, "unable to initialize tracing")
+			os.Exit(1)
+		}
 
-	if err := opentracing.RegisterMetrics(); err != nil {
-		setupLog.Error(err, "unable to initiliaze metrics")
-		os.Exit(1)
+		if err := opentracing.RegisterMetrics(); err != nil {
+			setupLog.Error(err, "unable to initiliaze metrics")
+			os.Exit(1)
+		}
 	}
-
 	if err = (&controllers.OscMachineReconciler{
 		Client:           mgr.GetClient(),
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),

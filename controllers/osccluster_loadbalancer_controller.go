@@ -23,6 +23,7 @@ import (
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -154,18 +155,22 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	clusterScope.Info("Check if the desired loadbalancer exist", "loadBalancerName", loadBalancerName)
+	ctx, _, loadBalancerDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.reconcileLoadBalancer")
 	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
+		loadBalancerDone()
 		return reconcile.Result{}, err
 	}
 	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
+		loadBalancerDone()
 		return reconcile.Result{}, err
 	}
 	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
 	securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
 	if err != nil {
+		loadBalancerDone()
 		return reconcile.Result{}, err
 	}
 	if loadbalancer == nil {
@@ -174,11 +179,13 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		clusterScope.Info("Create the desired loadBalancer", "loadBalancerName", loadBalancerName)
 		_, err := loadBalancerSvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
+			loadBalancerDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not create loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("Configure the desired loadBalancer", "loadBalancerName", loadBalancerName)
 		loadbalancer, err = loadBalancerSvc.ConfigureHealthCheck(loadBalancerSpec)
 		if err != nil {
+			loadBalancerDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not configure healthcheck for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("### Get lb ###", "loadbalancer", loadbalancer)
@@ -193,6 +200,7 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		Host: controlPlaneEndpoint,
 		Port: controlPlanePort,
 	})
+	loadBalancerDone()
 	return reconcile.Result{}, nil
 
 }
@@ -206,25 +214,30 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
-
+	ctx, _, loadBalancerDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterReconciler.reconcileDeleteLoadBalancer")
 	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(loadBalancerSpec)
 	if err != nil {
+		loadBalancerDone()
 		return reconcile.Result{}, err
 	}
 	if loadbalancer == nil {
 		clusterScope.Info("the desired loadBalancer does not exist anymore", "loadBalancerName", loadBalancerName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+		loadBalancerDone()
 		return reconcile.Result{}, nil
 	}
 	err = loadBalancerSvc.CheckLoadBalancerDeregisterVm(5, 120, loadBalancerSpec)
 	if err != nil {
+		loadBalancerDone()
 		return reconcile.Result{}, fmt.Errorf("%w VmBackend is not deregister in loadBalancer %s for OscCluster %s/%s", err, loadBalancerSpec.LoadBalancerName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
 	err = loadBalancerSvc.DeleteLoadBalancer(loadBalancerSpec)
 	if err != nil {
 		clusterScope.Info("Delete the desired loadBalancer", "loadBalancerName", loadBalancerName)
+		loadBalancerDone()
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
+	loadBalancerDone()
 	return reconcile.Result{}, nil
 }

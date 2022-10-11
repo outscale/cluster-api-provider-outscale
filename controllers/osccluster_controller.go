@@ -103,7 +103,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	ctx, _, reconcileDone := tele.StartSpanWithLogger(
 		ctx,
-		"controllers.OscClusterReconciler.Reconcile",
+		"controllers.OscClusterReconciler.reconcile",
 		tele.KVP("namespace", req.Namespace),
 		tele.KVP("name", req.Name),
 		tele.KVP("kind", "OscCluster"),
@@ -301,92 +301,66 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	clusterScope.Info("Set OscCluster status to not ready")
 	clusterScope.SetNotReady()
 	// Reconcile each element of the cluster
-	ctx, _, netDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.netReconcile")
 
 	netSvc := r.getNetSvc(ctx, *clusterScope)
 	reconcileNet, err := reconcileNet(ctx, clusterScope, netSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile net")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NetReadyCondition, infrastructurev1beta1.NetReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		netDone()
 		return reconcileNet, err
 	}
-	netDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
-
-	ctx, _, subnetDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.subnetReconcile")
 
 	subnetSvc := r.getSubnetSvc(ctx, *clusterScope)
 	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope, subnetSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile subnet")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SubnetsReadyCondition, infrastructurev1beta1.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		subnetDone()
 		return reconcileSubnets, err
 	}
-	subnetDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition)
-
-	ctx, _, internetServiceDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.internetServiceReconcile")
 
 	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
 	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetServiceSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile internetService")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		internetServiceDone()
 		return reconcileInternetService, err
 	}
-	internetServiceDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
-
-	ctx, _, publicIpDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.publicIpReconcile")
 
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
 	reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, publicIpSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile publicIp")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.PublicIpsReadyCondition, infrastructurev1beta1.PublicIpsFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		publicIpDone()
 		return reconcilePublicIp, err
 	}
-	publicIpDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
-
-	ctx, _, securityGroupDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.securityGroupReconcile")
 
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
 	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile securityGroup")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		securityGroupDone()
 		return reconcileSecurityGroups, err
 	}
-	securityGroupDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
-
-	ctx, _, routeTableDone := tele.StartSpanWithLogger(ctx, "controller.OscClusterControllers.routeTableReconcile")
 
 	routeTableSvc := r.getRouteTableSvc(ctx, *clusterScope)
 	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile routeTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		routeTableDone()
 		return reconcileRouteTables, err
 	}
-	routeTableDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
-
-	ctx, _, natServiceDone := tele.StartSpanWithLogger(ctx, "controller.OscClusterControllers.natServiceReconcile")
 
 	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
 	reconcileNatService, err := reconcileNatService(ctx, clusterScope, natServiceSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile natservice")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NatServicesReadyCondition, infrastructurev1beta1.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		natServiceDone()
 		return reconcileNatService, nil
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
@@ -395,17 +369,12 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile NatRouteTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-		natServiceDone()
 		return reconcileNatRouteTable, err
 	}
-	natServiceDone()
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
-
-	ctx, _, loadBalancerDone := tele.StartSpanWithLogger(ctx, "controllers.OscClusterControllers.loadBalancerReconcile")
 
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc)
-	loadBalancerDone()
 	clusterScope.Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
 	return reconcile.Result{}, nil
@@ -417,6 +386,15 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	osccluster := clusterScope.OscCluster
 
 	// reconcile deletion of each element of the cluster
+
+	ctx, _, reconcileDone := tele.StartSpanWithLogger(
+		ctx,
+		"controllers.OscClusterReconciler.reconcileDelete",
+		tele.KVP("namespace", clusterScope.GetNamespace()),
+		tele.KVP("name", clusterScope.GetName()),
+		tele.KVP("kind", "OscCluster"),
+	)
+	defer reconcileDone()
 
 	machines, _, err := clusterScope.ListMachines(ctx)
 	if err != nil {
@@ -432,84 +410,53 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	ctx, _, loadBalancerDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileLoadBalancerDelete")
-
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, loadBalancerSvc)
 	if err != nil {
-		loadBalancerDone()
 		return reconcileDeleteLoadBalancer, err
 	}
-	loadBalancerDone()
-
-	ctx, _, natServiceDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileNatServiceDelete")
 
 	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
 	reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, natServiceSvc)
 	if err != nil {
-		natServiceDone()
 		return reconcileDeleteNatService, err
 	}
-	natServiceDone()
 
-	ctx, _, publicIpDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcilePublicIpDelete")
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
 	reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, publicIpSvc)
 	if err != nil {
-		publicIpDone()
 		return reconcileDeletePublicIp, err
 	}
-	publicIpDone()
-
-	ctx, _, routeTableDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileRouteTableDelete")
 
 	routeTableSvc := r.getRouteTableSvc(ctx, *clusterScope)
 	reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, routeTableSvc)
 	if err != nil {
-		routeTableDone()
 		return reconcileDeleteRouteTable, err
 	}
-	routeTableDone()
-
-	ctx, _, securityGroupDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileSecurityGroupDelete")
 
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
 	reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, securityGroupSvc)
 	if err != nil {
-		securityGroupDone()
 		return reconcileDeleteSecurityGroup, err
 	}
-	securityGroupDone()
-
-	ctx, _, internetServiceGroupDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileInternetServiceGroupDelete")
 
 	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
 	reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, internetServiceSvc)
 	if err != nil {
-		internetServiceGroupDone()
 		return reconcileDeleteInternetService, err
 	}
-	internetServiceGroupDone()
-
-	ctx, _, subnetDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileSubnetDelete")
 
 	subnetSvc := r.getSubnetSvc(ctx, *clusterScope)
 	reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, subnetSvc)
 	if err != nil {
-		subnetDone()
 		return reconcileDeleteSubnet, err
 	}
-	subnetDone()
-
-	ctx, _, netDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileNetDelete")
 
 	netSvc := r.getNetSvc(ctx, *clusterScope)
 	reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, netSvc)
 	if err != nil {
-		netDone()
 		return reconcileDeleteNet, err
 	}
-	netDone()
 
 	controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil

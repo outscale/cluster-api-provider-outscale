@@ -26,6 +26,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -78,6 +79,7 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 		keypairRef.ResourceMap = make(map[string]string)
 	}
 	keypairRef.ResourceMap[keypairName] = keypairName
+	ctx, _, keypairDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.reconcileKeypair")
 
 	if keypair, err = keypairSvc.GetKeyPair(keypairName); err != nil {
 		machineScope.Info("######### fail to get keypair #####", "keypair", keypairSpec.Name)
@@ -87,6 +89,7 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 		machineScope.Info("######### key pair will be created #####", "keypair", keypairSpec.Name)
 		_, err := keypairSvc.CreateKeyPair(keypairName)
 		if err != nil {
+			keypairDone()
 			return reconcile.Result{}, err
 		}
 	} else if keypairSpec.ResourceId == "" {
@@ -94,6 +97,7 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 		keypairRef.ResourceMap[keypairName] = keypairName
 	}
 	machineScope.Info("######## Get Keypair after reconcile keypair ######", "keypair", keypairSpec.Name)
+	keypairDone()
 	return reconcile.Result{}, nil
 }
 
@@ -104,12 +108,15 @@ func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScop
 	keypairSpec := machineScope.GetKeypair()
 	keypairName := keypairSpec.Name
 
+	ctx, _, keypairDone := tele.StartSpanWithLogger(ctx, "controller.OscMachineReconciler.reconcileDeleteKeypair")
 	keypair, err := keypairSvc.GetKeyPair(keypairName)
 	if err != nil {
+		keypairDone()
 		return reconcile.Result{}, err
 	}
 	if keypair == nil {
 		controllerutil.RemoveFinalizer(oscmachine, "")
+		keypairDone()
 		return reconcile.Result{}, err
 	}
 	deleteKeypair := machineScope.GetDeleteKeypair()
@@ -117,11 +124,12 @@ func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScop
 		machineScope.Info("Remove keypair")
 		err = keypairSvc.DeleteKeyPair(keypairName)
 		if err != nil {
+			keypairDone()
 			return reconcile.Result{}, fmt.Errorf("Can not delete keypair for OscCluster %s/%s", machineScope.GetNamespace(), machineScope.GetName())
 		}
 	} else {
 		machineScope.Info("Keep keypair")
 	}
-
+	keypairDone()
 	return reconcile.Result{}, nil
 }

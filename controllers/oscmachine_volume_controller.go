@@ -21,11 +21,11 @@ import (
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/tele"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -117,6 +117,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		volumeIds = append(volumeIds, volumeId)
 	}
 
+	ctx, _, volumeDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineControllers.reconcileVolume")
 	machineScope.Info("Check if the desired volumes exist")
 	validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
 	if err != nil {
@@ -135,6 +136,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		if !Contains(validVolumeIds, volumeId) {
 			volume, err := volumeSvc.CreateVolume(volumeSpec, volumeName)
 			if err != nil {
+				volumeDone()
 				return reconcile.Result{}, fmt.Errorf("%w Can not create volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			volumeId := volume.GetVolumeId()
@@ -142,6 +144,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 			if volumeId != "" {
 				err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
 				if err != nil {
+					volumeDone()
 					return reconcile.Result{}, fmt.Errorf("%w Can not get volume available for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 				}
 				machineScope.Info("Volume is available", "volumeId", volumeId)
@@ -151,6 +154,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 			volumeSpec.ResourceId = volume.GetVolumeId()
 		}
 	}
+	volumeDone()
 	return reconcile.Result{}, nil
 }
 
@@ -167,6 +171,7 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 	} else {
 		volumesSpec = machineScope.GetVolume()
 	}
+	ctx, _, volumeDone := tele.StartSpanWithLogger(ctx, "controllers.OscMachineReconciler.reconcileDeleteVolume")
 
 	var volumeIds []string
 	var volumeId string
@@ -176,6 +181,7 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 	}
 	validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
 	if err != nil {
+		volumeDone()
 		return reconcile.Result{}, err
 	}
 	machineScope.Info("### Check Id ###", "volume", volumeIds)
@@ -184,22 +190,26 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
 		if !Contains(validVolumeIds, volumeId) {
 			controllerutil.RemoveFinalizer(oscmachine, "")
+			volumeDone()
 			return reconcile.Result{}, nil
 		}
 		err = volumeSvc.CheckVolumeState(5, 60, "in-use", volumeId)
 		if err != nil {
+			volumeDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 		}
 		machineScope.Info("Volume is in use", "volumeId", volumeId)
 
 		err = volumeSvc.UnlinkVolume(volumeId)
 		if err != nil {
+			volumeDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not unlink volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 		}
 		machineScope.Info("Volume is unlinked", "volumeId", volumeId)
 
 		err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
 		if err != nil {
+			volumeDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 		}
 		machineScope.Info("Volume is available", "volumeId", volumeId)
@@ -207,8 +217,10 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 		machineScope.Info("Delete the desired volume", "volumeName", volumeName)
 		err = volumeSvc.DeleteVolume(volumeId)
 		if err != nil {
+			volumeDone()
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
 	}
+	volumeDone()
 	return reconcile.Result{}, nil
 }
