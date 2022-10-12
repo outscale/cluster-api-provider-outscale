@@ -81,6 +81,7 @@ Please use if you want to launch upgrade/remediation e2etest (it will use kind):
 ```
 export OSC_ACCESS_KEY=<your-osc-acces-key>
 export OSC_SECRET_KEY=<your-osc-secret-key>
+export OSC_REGION=<your-osc-region>
 export IMG=<your-image>
 make e2etestkind
 ```
@@ -89,6 +90,7 @@ Please use if you want to launch conformance e2etest (it will use kind):
 ```
 export OSC_ACCESS_KEY=<your-osc-acces-key>
 export OSC_SECRET_KEY=<your-osc-secret-key>
+export OSC_REGION=<your-osc-region>
 export KUBECONFIG=<your-kubeconfig-path>
 export IMG=<your-image>
 make e2econformance

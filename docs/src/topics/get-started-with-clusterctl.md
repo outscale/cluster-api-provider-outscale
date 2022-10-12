@@ -8,7 +8,15 @@
     - You can use a container with [kind][kind]. 
     - You can use a rke cluster with [osc-rke][osc-rke].
 - Look at cluster-api note ([cluster-api][cluster-api])
+
 # Deploy Cluster Api
+
+## Clone
+
+Please clone the project:
+```
+git clone https://github.com/outscale-dev/cluster-api-provider-outscale
+```
 
 If you use your own cluster for production (with backup, disaster recovery, ...) and expose it:
 ```
@@ -25,9 +33,14 @@ Check cluster is ready:
    kubectl cluster-info
 ```
 # Install clusterctl
-You can install clusterctl for linux with:
+You can install clusterctl for linux with or in clusterctl install section ([cluster-api][cluster-api]):
 ```bash
   make install-clusterctl
+```
+And check version which is installed:
+```bash
+./bin/clusterctl version
+clusterctl version: &version.Info{Major:"1", Minor:"2", GitVersion:"v1.2.4", GitCommit:"8b5cd363e11b023c2b67a1937a2af680ead9e35c", GitTreeState:"clean", BuildDate:"2022-10-17T13:37:39Z", GoVersion:"go1.18.7", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
 ## Initialize clusterctl
@@ -36,12 +49,12 @@ You can enable [clusterresourceset][clusterresourceset] with
 export EXP_CLUSTER_RESOURCE_SET=true
 ```
 
-Please create  $HOME/.cluster-api/clusterctl.yaml:
+Please create  $HOME/.cluster-api/clusterctl.yaml only if clusterctl version is less than 1.2.4:
 ```
 providers:
 - name: outscale
   type: InfrastructureProvider
-  url: https://github.com/outscale-dev/cluster-api-provider-outscale/releases/v0.1.0/infrastructure-components.yaml
+  url: https://github.com/outscale-dev/cluster-api-provider-outscale/releases/v0.1.1/infrastructure-components.yaml
 ```
 
 You can initialize clusterctl with credential with:
@@ -50,7 +63,7 @@ export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
 export OSC_REGION=<your-region>
 make credential
-clusterctl init --infrastructure outscale
+./bin/clusterctl init --infrastructure outscale
 ```
 
 # Create our cluster
@@ -71,10 +84,12 @@ export OSC_IMAGE_NAME=<osc-image-name>
 ```
 Then you will generate:
 ```
-clusterctl generate cluster <cluster-name>   --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
+./bin/clusterctl generate cluster <cluster-name>   --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
+**WARNING**: Kubernetes version must match the kubernetes version which is included in image name in [omi][omi]
 
 You can then change to get what you want base on doc.
+
 Then apply:
 ```
 kubectl apply -f getstarted.yaml
@@ -171,3 +186,4 @@ clusterctl delete --all
 [openlens]: https://github.com/MuhammedKalkan/OpenLens
 [lens]: https://github.com/lensapp/lens
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
+[omi]: ./omi.md
