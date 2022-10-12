@@ -10,9 +10,8 @@ jobs:
     - name: Checkout image-builder
       uses: actions/checkout@v3
       with:
-        repository: 'outscale-vbr/image-builder'
-        path: "add-outscale-image"
-        ref: add-outscale-image
+        repository: 'kubernetes-sigs/image-builder'
+        ref: master
     - uses: actions/setup-go@v3
       with:
         go-version: '1.18.5'
