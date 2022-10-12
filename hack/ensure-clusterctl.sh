@@ -57,7 +57,7 @@ install_clusterctl() {
 }
 
 function copy_binary() {
-      echo "Copy binary in /usr/local/bin which is protected as sudo"
+      echo "Copy binary in ./bin"
       if ! [ -d "${BIN_ROOT}" ]; then
         mkdir -p "${BIN_ROOT}"
       fi
