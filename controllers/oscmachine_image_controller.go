@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-
+	"time"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -45,7 +45,6 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 	}
 	return "", nil
 }
-
 // getImageResourceId return the iamgeName from the resourceMap base on resourceName (tag name + cluster uid)
 func getImageResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
 	imageRef := machineScope.GetImageRef()
@@ -63,7 +62,7 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	imageSpec = machineScope.GetImage()
 	imageRef := machineScope.GetImageRef()
 	imageName := imageSpec.Name
-	imageId := machineScope.GetVm().ImageId
+	imageId := machineScope.GetImageId()
 	var image *osc.Image
 	var err error
 
@@ -82,19 +81,21 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 			return reconcile.Result{}, err
 		}
 	}
-	if imageSpec.ResourceId != "" {
-		imageRef.ResourceMap[imageName] = imageSpec.ResourceId
-	}
-
 	if image, err = imageSvc.GetImage(imageId); err != nil {
 		return reconcile.Result{}, err
 	}
-	if image == nil || imageSpec.ResourceId == "" {
+        if imageSpec.ResourceId != "" {
+                imageRef.ResourceMap[imageName] = imageSpec.ResourceId
+        } else {
+		machineScope.SetImageId(imageId)
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+	
+        }
+	if image == nil {
 		machineScope.Info("########### Image is nil")
-
 		return reconcile.Result{}, err
 	} else {
-		imageRef.ResourceMap[imageName] = imageSpec.ResourceId
+		imageRef.ResourceMap[imageName] = imageId
 	}
 	return reconcile.Result{}, nil
 }
