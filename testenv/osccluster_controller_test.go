@@ -221,7 +221,7 @@ func WaitControlPlaneDnsNameRegister(clusterScope *scope.ClusterScope) {
 	Eventually(func() (bool, error) {
 		controlPlaneDnsName := GetControlPlaneDnsName(clusterScope)
 		return IsControlPlaneDnsNameRegister(controlPlaneDnsName)
-	}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+	}, 2*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // IsControlPlaneEndpointUp validate that control plane is up and running
