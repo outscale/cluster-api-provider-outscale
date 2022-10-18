@@ -1,0 +1,25 @@
+name: clean-image
+
+on:
+  schedule:
+  - cron: "0 6 * * Sun"
+jobs:
+  clean-image:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout cluster-api-outscale
+      uses: actions/checkout@v3
+      with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+    - name: Launch image-builder
+      run: |
+        pip3 install -r  hack/cleanup/requirements.txt
+        python3 hack/cleanup/cleanup_oapi.py --days $DAYS --owner $OWNER  --imageNamePattern "^(ubuntu|centos)-[0-9.]+-[0-9.]+-kubernetes-v[0-9]+.[0-9]{2}.[0-9]+-[0-9]{4}-[0-9]{2}-[0-9]{2}$" --imageNameFilterPath $GITHUB_WORKSPACE/hack/cleanup/keep_image
+      shell: bash
+      env:
+         OSC_ACCESS_KEY: ${{secrets.OSC_OPENSOURCE_ACCESS_KEY}}
+         OSC_SECRET_KEY: ${{secrets.OSC_OPENSOURCE_SECRET_KEY}}   
+         OSC_REGION: ${{secrets.OSC_REGION}}
+         OWNER: ${{secrets.OWNER}}
+         DAYS: ${{secrets.DAYS}}
