@@ -62,7 +62,13 @@ var (
 			},
 		},
 	}
-
+	defaultLinkVmInitialize = infrastructurev1beta1.OscMachineSpec{
+		Node: infrastructurev1beta1.OscNode{
+			Vm: infrastructurev1beta1.OscVm{
+				PublicIpName: "test-publicip",
+			},
+		},
+	}
 	defaultPublicIpReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
@@ -149,6 +155,55 @@ func TestGetPublicIpResourceId(t *testing.T) {
 					assert.Nil(t, pitc.expGetPublicIpResourceIdErr)
 				}
 				t.Logf("Find publicIpResourceId %s\n", publicIpResourceId)
+			}
+		})
+	}
+}
+
+// TestLinkPublicIpResourceId has several tests to cover the code of the function getLinkPublicIpResourceId
+func TestLinkPublicIpResourceId(t *testing.T) {
+	linkPublicIpTestCases := []struct {
+		name                            string
+		clusterSpec                     infrastructurev1beta1.OscClusterSpec
+		machineSpec                     infrastructurev1beta1.OscMachineSpec
+		expLinkPublicIpFound            bool
+		expGetLinkPublicIpResourceIdErr error
+	}{
+		{
+			name:                            "get publicIpId",
+			clusterSpec:                     defaultPublicIpInitialize,
+			machineSpec:                     defaultLinkVmInitialize,
+			expLinkPublicIpFound:            true,
+			expGetLinkPublicIpResourceIdErr: nil,
+		},
+		{
+			name:                            "can not get publicIpId",
+			clusterSpec:                     defaultPublicIpInitialize,
+			machineSpec:                     defaultLinkVmInitialize,
+			expLinkPublicIpFound:            false,
+			expGetLinkPublicIpResourceIdErr: fmt.Errorf("test-publicip does not exist"),
+		},
+	}
+	for _, lpitc := range linkPublicIpTestCases {
+		t.Run(lpitc.name, func(t *testing.T) {
+			_, machineScope := SetupMachine(t, lpitc.name, lpitc.clusterSpec, lpitc.machineSpec)
+			publicIpsSpec := lpitc.clusterSpec.Network.PublicIps
+			vmPublicIpName := lpitc.machineSpec.Node.Vm.PublicIpName
+			for _, publicIpSpec := range publicIpsSpec {
+				publicIpName := publicIpSpec.Name + "-uid"
+				linkPublicIpId := "eipassoc-" + publicIpName
+				linkPublicIpRef := machineScope.GetLinkPublicIpRef()
+				linkPublicIpRef.ResourceMap = make(map[string]string)
+				if lpitc.expLinkPublicIpFound {
+					linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
+				}
+				linkPublicIpResourceId, err := getLinkPublicIpResourceId(vmPublicIpName, machineScope)
+				if err != nil {
+					assert.Equal(t, lpitc.expGetLinkPublicIpResourceIdErr, err, "getLinkPublicIpResourceId() should return the same error")
+				} else {
+					assert.Nil(t, lpitc.expGetLinkPublicIpResourceIdErr)
+				}
+				t.Logf("Find linkPublicIpResourceId %s\n", linkPublicIpResourceId)
 			}
 		})
 	}
