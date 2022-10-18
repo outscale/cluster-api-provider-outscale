@@ -381,6 +381,8 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		clusterSpec                  infrastructurev1beta1.OscClusterSpec
 		machineSpec                  infrastructurev1beta1.OscMachineSpec
 		expReconcileDeleteKeyPairErr error
+		expGetKeyPairErr             error
+		expDeleteKeyPairErr          error
 		expKeyPairFound              bool
 		expKeyPairDelete             bool
 		expKeyPairNotnil             bool
@@ -397,6 +399,8 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			},
 
 			expKeyPairFound:              false,
+			expGetKeyPairErr:             fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
+			expDeleteKeyPairErr:          nil,
 			expReconcileDeleteKeyPairErr: fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
 			expKeyPairDelete:             false,
 			expKeyPairNotnil:             false,
@@ -413,6 +417,8 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			},
 
 			expKeyPairFound:              true,
+			expGetKeyPairErr:             nil,
+			expDeleteKeyPairErr:          fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
 			expReconcileDeleteKeyPairErr: fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
 			expKeyPairDelete:             false,
 			expKeyPairNotnil:             true,
@@ -431,9 +437,50 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			},
 
 			expKeyPairFound:              true,
+			expGetKeyPairErr:             nil,
+			expDeleteKeyPairErr:          nil,
 			expReconcileDeleteKeyPairErr: nil,
 			expKeyPairDelete:             true,
 			expKeyPairNotnil:             true,
+		},
+		{
+			name:        "can not find keypair",
+			clusterSpec: defaultKeyClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						Name:          "test-keypair",
+						PublicKey:     "00",
+						DeleteKeypair: true,
+					},
+				},
+			},
+
+			expKeyPairFound:              false,
+			expGetKeyPairErr:             nil,
+			expDeleteKeyPairErr:          nil,
+			expReconcileDeleteKeyPairErr: nil,
+			expKeyPairDelete:             true,
+			expKeyPairNotnil:             false,
+		},
+		{
+			name:        "keep keypair",
+			clusterSpec: defaultKeyClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						Name:          "test-keypair",
+						PublicKey:     "00",
+						DeleteKeypair: false,
+					},
+				},
+			},
+			expKeyPairFound:              true,
+			expGetKeyPairErr:             nil,
+			expDeleteKeyPairErr:          nil,
+			expReconcileDeleteKeyPairErr: nil,
+			expKeyPairDelete:             true,
+			expKeyPairNotnil:             false,
 		},
 	}
 
@@ -459,19 +506,19 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 				mockOscKeyPairInterface.
 					EXPECT().
 					GetKeyPair(gomock.Eq(keyPairName)).
-					Return(nil, k.expReconcileDeleteKeyPairErr)
+					Return(nil, k.expGetKeyPairErr)
 			}
 			if k.expKeyPairNotnil {
 				if k.expKeyPairDelete {
 					mockOscKeyPairInterface.
 						EXPECT().
 						DeleteKeyPair(gomock.Eq(keyPairName)).
-						Return(k.expReconcileDeleteKeyPairErr)
+						Return(k.expDeleteKeyPairErr)
 				} else {
 					mockOscKeyPairInterface.
 						EXPECT().
 						DeleteKeyPair(gomock.Eq(keyPairName)).
-						Return(k.expReconcileDeleteKeyPairErr)
+						Return(k.expDeleteKeyPairErr)
 				}
 			}
 

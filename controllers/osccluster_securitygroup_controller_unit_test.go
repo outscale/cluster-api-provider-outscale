@@ -66,6 +66,34 @@ var (
 			},
 		},
 	}
+
+	defaultSecurityGroupTagInitialize = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
+			Net: infrastructurev1beta1.OscNet{
+				Name:    "test-net",
+				IpRange: "10.0.0.0/16",
+			},
+			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+				{
+					Name:        "test-securitygroup",
+					Description: "test securitygroup",
+					Tag:         "OscK8sMainSG",
+					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+						{
+							Name:          "test-securitygrouprule",
+							Flow:          "Inbound",
+							IpProtocol:    "tcp",
+							IpRange:       "0.0.0.0/0",
+							FromPortRange: 6443,
+							ToPortRange:   6443,
+						},
+					},
+				},
+			},
+		},
+	}
+
 	defaultSecurityGroupReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			ClusterName: "test-cluster",
@@ -958,6 +986,17 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			name: "create securityGroup",
 
 			spec:                             defaultSecurityGroupInitialize,
+			expSecurityGroupRuleFound:        false,
+			expCreateSecurityGroupRuleFound:  true,
+			expGetSecurityGroupFromNetIdsErr: nil,
+			expCreateSecurityGroupErr:        nil,
+			expGetSecurityGroupRuleErr:       nil,
+			expCreateSecurityGroupRuleErr:    nil,
+			expReconcileSecurityGroupErr:     nil,
+		},
+		{
+			name:                             "create securityGroupTag",
+			spec:                             defaultSecurityGroupTagInitialize,
 			expSecurityGroupRuleFound:        false,
 			expCreateSecurityGroupRuleFound:  true,
 			expGetSecurityGroupFromNetIdsErr: nil,
