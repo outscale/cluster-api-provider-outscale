@@ -18,12 +18,17 @@ IMAGE_NAME ?= cluster-api-provider-osc
 TAG ?= dev
 RELEASE_TAG ?= v0.1.0
 VERSION ?= DEV
+GIT_BRANCH ?= main
 IMG ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 IMG_RELEASE ?= $(REGISTRY)/$(IMAGE_NAME):$(RELEASE_TAG)
 OSC_ACCESS_KEY ?= access
 OSC_SECRET_KEY ?= secret
 OSC_CLUSTER ?= cluster-api
 CLUSTER ?= cluster-api
+GH_ORG_NAME ?= outscale-dev 
+GH_REPO_NAME ?= cluster-api-provider-outscale
+GIT_USERNAME ?= Outscale Bot
+GIT_USEREMAIL ?= opensource+bot@outscale.com
 LOG_TAIL ?= -1
 CAPI_VERSION ?= v1.1.4
 CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system   
@@ -113,6 +118,10 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 .PHONY: mock-generate
 mock-generate: mockgen ## Generate mock
 	go generate ./...
+
+.PHONY: generate-image-docs
+generate-image-docs:
+	./.github/scripts/launch.sh -c ${GIT_BRANCH} -o ${GH_ORG_NAME} -r ${GH_REPO_NAME} -n ${GIT_USERNAME} -e ${GIT_USEREMAIL}
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.

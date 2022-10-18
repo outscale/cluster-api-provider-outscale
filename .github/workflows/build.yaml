@@ -2,6 +2,15 @@ name: build
 on: 
   pull_request:
     branches: [main]
+    paths:
+      - "**.go"
+      - "**.yaml"
+      - "!capm.yaml"
+      - "!osc-secret.yaml"
+      - "!example/**.yaml"
+      - "!helm/**"
+      - "Makefile"
+      - "!docs/src/**"
   push:
     branches:
       - 'main'
