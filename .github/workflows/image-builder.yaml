@@ -2,7 +2,7 @@ name: image-builder
 
 on:
   schedule:
-  - cron: "0 6 * * Sun"
+  - cron: "0 5 1 * *"
 jobs:
   image-builder:
     runs-on: [self-hosted, linux]
@@ -10,8 +10,9 @@ jobs:
     - name: Checkout image-builder
       uses: actions/checkout@v3
       with:
-        repository: 'kubernetes-sigs/image-builder'
-        ref: master
+        repository: 'outscale-vbr/image-builder'
+        path: "add-outscale-image"
+        ref: add-outscale-image
     - uses: actions/setup-go@v3
       with:
         go-version: '1.18.7'
@@ -19,7 +20,16 @@ jobs:
       with:
           repository: outscale-dev/cluster-api-provider-outscale
           ref: main
-          path: cluster-api-provider-outscale 
+          path: cluster-api-provider-outscale
+          token: ${{ secrets.SECRET_GITHUB_TOKEN }}
+    - name: Install gh
+      run: make install-gh
+      working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
+    - name: Generate image docs
+      run: make generate-image-docs
+      env:
+        SECRET_GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
+      working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Install Packer
       run: make install-packer
       shell: bash

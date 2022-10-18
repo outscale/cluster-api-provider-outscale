@@ -17,7 +17,17 @@ on:
       - "!docs/src/**"
   pull_request_target:
     branches: [ main ]
-
+    paths:
+      - "**.go"
+      - "**.yaml"
+      - "!capm.yaml"
+      - "!osc-secret.yaml"
+      - "!example/**.yaml"
+      - "!testclean/**"
+      - "!helm/**"
+      - "Makefile"
+      - "hack/*.sh"
+      - "!docs/src/**"
 jobs:
   testenv:
     runs-on: [self-hosted, linux]
