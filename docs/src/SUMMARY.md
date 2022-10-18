@@ -12,3 +12,4 @@
     - [How to test](./developers/e2e.md)
     - [How to tilt](./developers/tilt-setup.md)
     - [How to release](./developers/releases.md)
+    - [How to release new kubernetes omi](./developers/kubernetes-omi-generation.md)
