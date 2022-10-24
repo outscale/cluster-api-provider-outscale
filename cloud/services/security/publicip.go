@@ -22,7 +22,10 @@ import (
 	"errors"
 	"github.com/benbjohnson/clock"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"k8s.io/apimachinery/pkg/util/wait"
+	_nethttp "net/http"
 	"time"
 )
 
@@ -42,16 +45,43 @@ func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 	publicIpRequest := osc.CreatePublicIpRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	publicIpResponse, httpRes, err := oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
+
+	var publicIpResponse osc.CreatePublicIpResponse
+	createPublicIpCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		publicIpResponse, httpRes, err = oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", publicIpRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, createPublicIpCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	publicIpTag := osc.ResourceTag{
+		Key:   "Name",
+		Value: publicIpName,
 	}
 	resourceIds := []string{*publicIpResponse.PublicIp.PublicIpId}
-	err = tag.AddTag("Name", publicIpName, resourceIds, oscApiClient, oscAuthClient)
+	publicIpTagRequest := osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{publicIpTag},
+	}
+
+	err, httpRes := tag.AddTag(publicIpTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
@@ -70,13 +100,29 @@ func (s *Service) DeletePublicIp(publicIpId string) error {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	deletePublicIpCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deletePublicIpRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deletePublicIpCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
@@ -90,15 +136,33 @@ func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	readPublicIp, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
+
+	var readPublicIpsResponse osc.ReadPublicIpsResponse
+	readPublicIpCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		readPublicIpsResponse, httpRes, err = oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", readPublicIpRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, nil
 	}
-	publicIps, ok := readPublicIp.GetPublicIpsOk()
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readPublicIpCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
 	if !ok {
 		return nil, errors.New("Can not get publicIp")
 	}
@@ -119,16 +183,33 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	readPublicIp, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
+	var readPublicIpsResponse osc.ReadPublicIpsResponse
+	readPublicIpCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		readPublicIpsResponse, httpRes, err = oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", readPublicIpRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, nil
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readPublicIpCallBack)
+	if waitErr != nil {
+		return nil, waitErr
 	}
 	var validPublicIpIds []string
-	publicIps, ok := readPublicIp.GetPublicIpsOk()
+	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
 	if !ok {
 		return nil, errors.New("Can not get publicIp")
 	}
@@ -149,16 +230,32 @@ func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	linkPublicIp, httpRes, err := oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
-
-	if err != nil {
-		if httpRes != nil {
-			return "", fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return "", err
+	var linkPublicIpResponse osc.LinkPublicIpResponse
+	linkPublicIpCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		linkPublicIpResponse, httpRes, err = oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", linkPublicIpRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
 	}
-	linkPublicIpId, ok := linkPublicIp.GetLinkPublicIpIdOk()
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, linkPublicIpCallBack)
+	if waitErr != nil {
+		return "", waitErr
+	}
+	linkPublicIpId, ok := linkPublicIpResponse.GetLinkPublicIpIdOk()
 	if !ok {
 		return "", errors.New("Can not get publicip")
 	}
@@ -172,13 +269,29 @@ func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	unlinkPublicIpCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", unlinkPublicIpRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, unlinkPublicIpCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }

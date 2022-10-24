@@ -20,9 +20,13 @@ import (
 	"fmt"
 
 	"errors"
+	_nethttp "net/http"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/route_mock.go -package mock_security -source ./route.go
@@ -45,16 +49,41 @@ func (s *Service) CreateRouteTable(netId string, clusterName string, routeTableN
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	routeTableResponse, httpRes, err := oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
+	var routeTableResponse osc.CreateRouteTableResponse
+	createRouteTableCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		routeTableResponse, httpRes, err = oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", routeTableRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, createRouteTableCallBack)
+	if waitErr != nil {
+		return nil, waitErr
 	}
 	resourceIds := []string{*routeTableResponse.RouteTable.RouteTableId}
-	err = tag.AddTag("Name", routeTableName, resourceIds, oscApiClient, oscAuthClient)
+	routeTableTag := osc.ResourceTag{
+		Key:   "Name",
+		Value: routeTableName,
+	}
+	routeTableTagRequest := osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{routeTableTag},
+	}
+	err, httpRes := tag.AddTag(routeTableTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -62,7 +91,15 @@ func (s *Service) CreateRouteTable(netId string, clusterName string, routeTableN
 			return nil, err
 		}
 	}
-	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	clusterTag := osc.ResourceTag{
+		Key:   "OscK8sClusterID/" + clusterName,
+		Value: "owned",
+	}
+	clusterRouteTagRequest := osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{clusterTag},
+	}
+	err, httpRes = tag.AddTag(clusterRouteTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -124,13 +161,29 @@ func (s *Service) DeleteRouteTable(routeTableId string) error {
 	deleteRouteTableRequest := osc.DeleteRouteTableRequest{RouteTableId: routeTableId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	deleteRouteCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deleteRouteTableRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteRouteCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
@@ -143,13 +196,29 @@ func (s *Service) DeleteRoute(destinationIpRange string, routeTableId string) er
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %s httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	deleteRouteCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deleteRouteRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteRouteCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
@@ -235,13 +304,30 @@ func (s *Service) LinkRouteTable(routeTableId string, subnetId string) (string, 
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	linkRouteTableResponse, httpRes, err := oscApiClient.RouteTableApi.LinkRouteTable(oscAuthClient).LinkRouteTableRequest(linkRouteTableRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return "", fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return "", err
+	var linkRouteTableResponse osc.LinkRouteTableResponse
+	linkRouteTableCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		linkRouteTableResponse, httpRes, err = oscApiClient.RouteTableApi.LinkRouteTable(oscAuthClient).LinkRouteTableRequest(linkRouteTableRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", linkRouteTableRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, linkRouteTableCallBack)
+	if waitErr != nil {
+		return "", waitErr
 	}
 	routeTable, ok := linkRouteTableResponse.GetLinkRouteTableIdOk()
 	if !ok {
@@ -257,27 +343,44 @@ func (s *Service) UnlinkRouteTable(linkRouteTableId string) error {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+
+	unlinkRouteTableCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", unlinkRouteTableRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, err
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, unlinkRouteTableCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
 
 // GetRouteTableIdsFromNetIds return the routeTable id resource that exist from the net id
 func (s *Service) GetRouteTableIdsFromNetIds(netId string) ([]string, error) {
-	readRouteTableRequest := osc.ReadRouteTablesRequest{
+	readRouteTablesRequest := osc.ReadRouteTablesRequest{
 		Filters: &osc.FiltersRouteTable{
 			NetIds: &[]string{netId},
 		},
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	readRouteTablesResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteTableRequest).Execute()
+	readRouteTablesResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteTablesRequest).Execute()
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

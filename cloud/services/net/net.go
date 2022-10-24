@@ -23,7 +23,10 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"k8s.io/apimachinery/pkg/util/wait"
+	_nethttp "net/http"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/net_mock.go -package mock_net -source ./net.go
@@ -45,16 +48,25 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, clusterName stri
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
+	var netResponse osc.CreateNetResponse
 	netResponse, httpRes, err := oscApiClient.NetApi.CreateNet(oscAuthClient).CreateNetRequest(netRequest).Execute()
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	resourceIds := []string{*netResponse.Net.NetId}
-	err = tag.AddTag("Name", netName, resourceIds, oscApiClient, oscAuthClient)
+	netTag := osc.ResourceTag{
+		Key:   "Name",
+		Value: netName,
+	}
+	netTagRequest := osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{netTag},
+	}
+
+	err, httpRes = tag.AddTag(netTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -62,7 +74,16 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, clusterName stri
 			return nil, err
 		}
 	}
-	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	clusterNetTag := osc.ResourceTag{
+		Key:   "OscK8sClusterID/" + clusterName,
+		Value: "owned",
+	}
+	netTagRequest = osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{clusterNetTag},
+	}
+
+	err, httpRes = tag.AddTag(netTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -80,13 +101,30 @@ func (s *Service) DeleteNet(netId string) error {
 	deleteNetRequest := osc.DeleteNetRequest{NetId: netId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	deleteNetCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deleteNetRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteNetCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
