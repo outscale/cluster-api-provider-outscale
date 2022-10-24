@@ -71,7 +71,7 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-	leaseDuration := 40 * time.Second
+	leaseDuration := 60 * time.Second
 	renewDeadline := 30 * time.Second
 	retryPeriod := 10 * time.Second
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

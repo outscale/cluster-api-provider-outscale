@@ -334,6 +334,24 @@ func TestReconcileImageGet(t *testing.T) {
 			expGetImageErr:       nil,
 			expReconcileImageErr: fmt.Errorf("GetImageId generic error"),
 		},
+		{
+			name: "failed to get ImageId",
+			spec: defaultImageClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Image: infrastructurev1beta1.OscImage{
+						Name: "test-image",
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						Name: "test-vm",
+					},
+				},
+			},
+			expImageFound:        false,
+			expImageNameFound:    true,
+			expImageErr:          false,
+			expReconcileImageErr: fmt.Errorf("GetImageId generic error"),
+		},
 	}
 	for _, itc := range imageTestCases {
 		t.Run(itc.name, func(t *testing.T) {

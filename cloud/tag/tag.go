@@ -20,27 +20,40 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
-
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"net/http"
+	"regexp"
 )
 
 // AddTag add a tag to a resource
-func AddTag(tagKey string, tagValue string, resourceIds []string, api *osc.APIClient, auth context.Context) error {
-	tag := osc.ResourceTag{
-		Key:   tagKey,
-		Value: tagValue,
+//func AddTag(tagKey string, tagValue string, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
+func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
+	var httpRes *http.Response
+	addTagNameCallBack := func() (bool, error) {
+		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				fmt.Printf("Error with http result %s", httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", createTagRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, fmt.Errorf("%w failed to add Tag Name", err)
+		}
+		return true, err
 	}
-	createTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{tag},
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, addTagNameCallBack)
+	if waitErr != nil {
+		return waitErr, httpRes
 	}
-	_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
-	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
-	}
-	return nil
+	return nil, httpRes
 }
 
 // ValidateTagNameValue check that tag name value is a valide name

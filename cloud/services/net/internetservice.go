@@ -20,7 +20,10 @@ import (
 	"fmt"
 
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"k8s.io/apimachinery/pkg/util/wait"
+	_nethttp "net/http"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/internetservice_mock.go -package mock_net -source ./internetservice.go
@@ -37,16 +40,41 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	internetServiceResponse, httpRes, err := oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
+	var internetServiceResponse osc.CreateInternetServiceResponse
+	createInternetServiceCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		internetServiceResponse, httpRes, err = oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", internetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, createInternetServiceCallBack)
+	if waitErr != nil {
+		return nil, waitErr
 	}
 	resourceIds := []string{*internetServiceResponse.InternetService.InternetServiceId}
-	err = tag.AddTag("Name", internetServiceName, resourceIds, oscApiClient, oscAuthClient)
+	internetServiceTag := osc.ResourceTag{
+		Key:   "Name",
+		Value: internetServiceName,
+	}
+	internetServiceTagRequest := osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{internetServiceTag},
+	}
+	err, httpRes := tag.AddTag(internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -66,13 +94,29 @@ func (s *Service) DeleteInternetService(internetServiceId string) error {
 	deleteInternetServiceRequest := osc.DeleteInternetServiceRequest{InternetServiceId: internetServiceId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	deleteInternetServiceCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deleteInternetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteInternetServiceCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
@@ -85,13 +129,29 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	linkInternetServiceCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", linkInternetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, linkInternetServiceCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }
@@ -104,15 +164,30 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return err
+	unlinkInternetServiceCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", unlinkInternetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
 	}
-
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, unlinkInternetServiceCallBack)
+	if waitErr != nil {
+		return waitErr
+	}
 	return nil
 }
 
@@ -125,15 +200,32 @@ func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetSer
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	readInternetServiceResponse, httpRes, err := oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-		} else {
-			return nil, err
+	var readInternetServicesResponse osc.ReadInternetServicesResponse
+	readInternetServiceCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		readInternetServicesResponse, httpRes, err = oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", readInternetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
 	}
-	internetServices, ok := readInternetServiceResponse.GetInternetServicesOk()
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readInternetServiceCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	internetServices, ok := readInternetServicesResponse.GetInternetServicesOk()
 	if !ok {
 		return nil, errors.New("Can not read internetService")
 	}
