@@ -19,9 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -148,7 +150,7 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 }
 
 // reconcileLoadBalancer reconciles the loadBalancer of the cluster.
-func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface) (reconcile.Result, error) {
+func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 
 	clusterScope.Info("Create Loadbalancer")
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -175,6 +177,11 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		_, err := loadBalancerSvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+		clusterScope.Info("Delete default outbound rule for loadBalancer", "loadBalancerName", loadBalancerName)
+		err = securityGroupSvc.DeleteSecurityGroupRule(securityGroupId, "Outbound", "-1", "0.0.0.0/0", "", 0, 0)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w can not empty Outbound sg rules for loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.Info("Configure the desired loadBalancer", "loadBalancerName", loadBalancerName)
 		loadbalancer, err = loadBalancerSvc.ConfigureHealthCheck(loadBalancerSpec)
