@@ -214,6 +214,9 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			time.Sleep(20 * time.Second)
 			buffer := new(strings.Builder)
 			_, err := io.Copy(buffer, httpRes.Body)
+			if err != nil {
+				return reconcile.Result{}, nil
+			}
 			httpResBody := buffer.String()
 			clusterScope.V(4).Info("Find body", "httpResBody", httpResBody)
 			httpResBodyData := []byte(httpResBody)
