@@ -1757,32 +1757,32 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			}
 			securityGroupRuleKubeletKwFlow := "Inbound"
 			securityGroupRuleKubeletKwIpProtocol := "tcp"
-			securityGroupRuleKubeletKwIpRange := "10.0.0.128/26"
+			securityGroupRuleKubeletKwIpRange := "10.0.3.0/24"
 			securityGroupMemberId := ""
 			var securityGroupRuleKubeletKwFromPortRange int32 = 10250
 			var securityGroupRuleKubeletKwToPortRange int32 = 10250
 
 			securityGroupRuleNodeIpKwFlow := "Inbound"
 			securityGroupRuleNodeIpKwIpProtocol := "tcp"
-			securityGroupRuleNodeIpKwIpRange := "10.0.0.128/26"
+			securityGroupRuleNodeIpKwIpRange := "10.0.3.0/24"
 			var securityGroupRuleNodeIpKwFromPortRange int32 = 30000
 			var securityGroupRuleNodeIpKwToPortRange int32 = 32767
 
 			securityGroupRuleNodeIpKcpFlow := "Inbound"
 			securityGroupRuleNodeIpKcpIpProtocol := "tcp"
-			securityGroupRuleNodeIpKcpIpRange := "10.0.0.32/28"
+			securityGroupRuleNodeIpKcpIpRange := "10.0.4.0/24"
 			var securityGroupRuleNodeIpKcpFromPortRange int32 = 30000
 			var securityGroupRuleNodeIpKcpToPortRange int32 = 32767
 
 			securityGroupRuleKubeletKcpFlow := "Inbound"
 			securityGroupRuleKubeletKcpIpProtocol := "tcp"
-			securityGroupRuleKubeletKcpIpRange := "10.0.0.32/28"
+			securityGroupRuleKubeletKcpIpRange := "10.0.4.0/24"
 			var securityGroupRuleKubeletKcpFromPortRange int32 = 10250
 			var securityGroupRuleKubeletKcpToPortRange int32 = 10250
 
 			securityGroupRuleKcpBgpFlow := "Inbound"
 			securityGroupRuleKcpBgpIpProtocol := "tcp"
-			securityGroupRuleKcpBgpIpRange := "10.0.0.0/24"
+			securityGroupRuleKcpBgpIpRange := "10.0.0.0/16"
 			var securityGroupRuleKcpBgpFromPortRange int32 = 179
 			var securityGroupRuleKcpBgpToPortRange int32 = 179
 

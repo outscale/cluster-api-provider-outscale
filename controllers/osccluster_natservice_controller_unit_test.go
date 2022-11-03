@@ -270,7 +270,7 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-nat-uid subnet does not exist in natService"),
+			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-public-uid subnet does not exist in natService"),
 		},
 		{
 			name: "check natService association with subnet",
@@ -288,13 +288,11 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "test-natservice@test",
 						PublicIpName: "test-publicip",
-						SubnetName:   "test-subnet-test",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
-							ResourceId:    "subnet-test-subnet-uid",
 						},
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
@@ -304,7 +302,7 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("test-subnet-test-uid subnet does not exist in natService"),
+			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-public-uid subnet does not exist in natService"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {

@@ -170,11 +170,11 @@ func TestCheckNetFormatParameters(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "test-net",
-						IpRange: "10.0.0.256/16",
+						IpRange: "10.0.0.256/8",
 					},
 				},
 			},
-			expCheckNetFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.256/16"),
+			expCheckNetFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.256/8"),
 		},
 		{
 			name: "check Bad Name Net",
