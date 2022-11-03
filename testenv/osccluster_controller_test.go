@@ -922,24 +922,20 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
-						IpRange: "10.0.0.0/24",
+						IpRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
 							Name:          "cluster-api-subnet-kcp",
-							IpSubnetRange: "10.0.0.32/28",
+							IpSubnetRange: "10.0.4.0/24",
 						},
 						{
 							Name:          "cluster-api-subnet-kw",
-							IpSubnetRange: "10.0.0.128/26",
+							IpSubnetRange: "10.0.3.0/24",
 						},
 						{
 							Name:          "cluster-api-subnet-public",
-							IpSubnetRange: "10.0.0.8/29",
-						},
-						{
-							Name:          "cluster-api-subnet-nat",
-							IpSubnetRange: "10.0.0.0/29",
+							IpSubnetRange: "10.0.2.0/24",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -948,7 +944,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					NatService: infrastructurev1beta1.OscNatService{
 						Name:         "cluster-api-natservice",
 						PublicIpName: "cluster-api-publicip-nat",
-						SubnetName:   "cluster-api-subnet-nat",
+						SubnetName:   "cluster-api-subnet-public",
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
@@ -971,18 +967,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:        "cluster-api-routes-kcp",
 									TargetName:  "cluster-api-natservice",
 									TargetType:  "nat",
-									Destination: "0.0.0.0/0",
-								},
-							},
-						},
-						{
-							Name:       "cluster-api-routetable-nat",
-							SubnetName: "cluster-api-subnet-nat",
-							Routes: []infrastructurev1beta1.OscRoute{
-								{
-									Name:        "cluster-api-routes-nat",
-									TargetName:  "cluster-api-internetservice",
-									TargetType:  "gateway",
 									Destination: "0.0.0.0/0",
 								},
 							},
@@ -1014,7 +998,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-api-kubelet-kw",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.128/26",
+									IpRange:       "10.0.3.0/24",
 									FromPortRange: 10250,
 									ToPortRange:   10250,
 								},
@@ -1022,7 +1006,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-api-kubelet-kcp",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IpRange:       "10.0.4.0/24",
 									FromPortRange: 10250,
 									ToPortRange:   10250,
 								},
@@ -1030,7 +1014,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-nodeip-kw",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.128/26",
+									IpRange:       "10.0.3.0/24",
 									FromPortRange: 30000,
 									ToPortRange:   32767,
 								},
@@ -1038,7 +1022,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-nodeip-kcp",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IpRange:       "10.0.4.0/24",
 									FromPortRange: 30000,
 									ToPortRange:   32767,
 								},
@@ -1052,7 +1036,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-api-kw",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.128/26",
+									IpRange:       "10.0.3.0/24",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -1060,7 +1044,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-api-kcp",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IpRange:       "10.0.4.0/24",
 									FromPortRange: 6443,
 									ToPortRange:   6443,
 								},
@@ -1068,7 +1052,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-etcd",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IpRange:       "10.0.3.0/24",
 									FromPortRange: 2378,
 									ToPortRange:   2379,
 								},
@@ -1076,7 +1060,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									Name:          "cluster-api-securitygrouprule-kubelet-kcp",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
+									IpRange:       "10.0.4.0/24",
 									FromPortRange: 10250,
 									ToPortRange:   10252,
 								},
@@ -1135,7 +1119,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
 							{
 								Name:      "cluster-api-privateip-kcp",
-								PrivateIp: "10.0.0.39",
+								PrivateIp: "10.0.4.10",
 							},
 						},
 					},

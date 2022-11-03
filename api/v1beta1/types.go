@@ -414,12 +414,10 @@ var (
 	DefaultTimeout                            int32  = 5
 	DefaultProtocol                           string = "TCP"
 	DefaultPort                               int32  = 6443
-	DefaultIpRange                            string = "10.0.0.0/24"
-	DefaultIpSubnetRange                      string = "10.0.0.0/24"
-	DefaultIpSubnetKcpRange                   string = "10.0.0.32/28"
-	DefaultIpSubnetKwRange                    string = "10.0.0.128/26"
-	DefaultIpSubnetPublicRange                string = "10.0.0.8/29"
-	DefaultIpSubnetNatRange                   string = "10.0.0.0/29"
+	DefaultIpRange                            string = "10.0.0.0/16"
+	DefaultIpSubnetKcpRange                   string = "10.0.4.0/24"
+	DefaultIpSubnetKwRange                    string = "10.0.3.0/24"
+	DefaultIpSubnetPublicRange                string = "10.0.2.0/24"
 	DefaultTargetType                         string = "gateway"
 	DefaultTargetKwName                       string = "cluster-api-natservice"
 	DefaultTargetKwType                       string = "nat"
@@ -455,25 +453,25 @@ var (
 	DefaultSecurityGroupRuleApiKubeletKwName  string = "cluster-api-securitygrouprule-api-kubelet-kw"
 	DefaultFlowApiKubeletKw                   string = "Inbound"
 	DefaultIpProtocolApiKubeletKw             string = "tcp"
-	DefaultRuleIpRangeApiKubeletKw            string = "10.0.0.128/26"
+	DefaultRuleIpRangeApiKubeletKw            string = "10.0.3.0/24"
 	DefaultFromPortRangeApiKubeletKw          int32  = 10250
 	DefaultToPortRangeApiKubeletKw            int32  = 10250
 	DefaultSecurityGroupRuleApiKubeletKcpName string = "cluster-api-securitygrouprule-api-kubelet-kcp"
 	DefaultFlowApiKubeletKcp                  string = "Inbound"
 	DefaultIpProtocolApiKubeletKcp            string = "tcp"
-	DefaultRuleIpRangeApiKubeletKcp           string = "10.0.0.32/28"
+	DefaultRuleIpRangeApiKubeletKcp           string = "10.0.4.0/24"
 	DefaultFromPortRangeApiKubeletKcp         int32  = 10250
 	DefaultToPortRangeApiKubeletKcp           int32  = 10250
 	DefaultSecurityGroupRuleNodeIpKwName      string = "cluster-api-securitygrouprule-nodeip-kw"
 	DefaultFlowNodeIpKw                       string = "Inbound"
 	DefaultIpProtocolNodeIpKw                 string = "tcp"
-	DefaultRuleIpRangeNodeIpKw                string = "10.0.0.128/26"
+	DefaultRuleIpRangeNodeIpKw                string = "10.0.3.0/24"
 	DefaultFromPortRangeNodeIpKw              int32  = 30000
 	DefaultToPortRangeNodeIpKw                int32  = 32767
 	DefaultSecurityGroupRuleNodeIpKcpName     string = "cluster-api-securitygrouprule-nodeip-kcp"
 	DefaultFlowNodeIpKcp                      string = "Inbound"
 	DefaultIpProtocolNodeIpKcp                string = "tcp"
-	DefaultRuleIpRangeNodeIpKcp               string = "10.0.0.32/28"
+	DefaultRuleIpRangeNodeIpKcp               string = "10.0.4.0/24"
 	DefaultFromPortRangeNodeIpKcp             int32  = 30000
 	DefaultToPortRangeNodeIpKcp               int32  = 32767
 	DefaultSecurityGroupKcpName               string = "cluster-api-securitygroup-kcp"
@@ -481,37 +479,37 @@ var (
 	DefaultSecurityGroupRuleApiKwName         string = "cluster-api-securitygrouprule-api-kw"
 	DefaultFlowApiKw                          string = "Inbound"
 	DefaultIpProtocolApiKw                    string = "tcp"
-	DefaultRuleIpRangeApiKw                   string = "10.0.0.128/26"
+	DefaultRuleIpRangeApiKw                   string = "10.0.3.0/24"
 	DefaultFromPortRangeApiKw                 int32  = 6443
 	DefaultToPortRangeApiKw                   int32  = 6443
 	DefaultSecurityGroupRuleApiKcpName        string = "cluster-api-securitygrouprule-api-kcp"
 	DefaultFlowApiKcp                         string = "Inbound"
 	DefaultIpProtocolApiKcp                   string = "tcp"
-	DefaultRuleIpRangeApiKcp                  string = "10.0.0.32/28"
+	DefaultRuleIpRangeApiKcp                  string = "10.0.4.0/24"
 	DefaultFromPortRangeApiKcp                int32  = 6443
 	DefaultToPortRangeApiKcp                  int32  = 6443
 	DefaultSecurityGroupRuleEtcdName          string = "cluster-api-securitygrouprule-etcd"
 	DefaultFlowEtcd                           string = "Inbound"
 	DefaultIpProtocolEtcd                     string = "tcp"
-	DefaultRuleIpRangeEtcd                    string = "10.0.0.32/28"
+	DefaultRuleIpRangeEtcd                    string = "10.0.4.0/24"
 	DefaultFromPortRangeEtcd                  int32  = 2378
 	DefaultToPortRangeEtcd                    int32  = 2379
 	DefaultSecurityGroupRuleKcpBgpName        string = "cluster-api-securitygrouprule-kcp-bgp"
 	DefaultFlowKcpBgp                         string = "Inbound"
 	DefaultIpProtocolKcpBgp                   string = "tcp"
-	DefaultRuleIpRangeKcpBgp                  string = "10.0.0.0/24"
+	DefaultRuleIpRangeKcpBgp                  string = "10.0.0.0/16"
 	DefaultFromPortRangeKcpBgp                int32  = 179
 	DefaultToPortRangeKcpBgp                  int32  = 179
 	DefaultSecurityGroupRuleKwBgpName         string = "cluster-api-securitygrouprule-kw-bgp"
 	DefaultFlowKwBgp                          string = "Inbound"
 	DefaultIpProtocolKwBgp                    string = "tcp"
-	DefaultRuleIpRangeKwBgp                   string = "10.0.0.0/24"
+	DefaultRuleIpRangeKwBgp                   string = "10.0.0.0/16"
 	DefaultFromPortRangeKwBgp                 int32  = 179
 	DefaultToPortRangeKwBgp                   int32  = 179
 	DefaultSecurityGroupRuleKubeletKcpName    string = "cluster-api-securitygrouprule-kubelet-kcp"
 	DefaultFlowKubeletKcp                     string = "Inbound"
 	DefaultIpProtocolKubeletKcp               string = "tcp"
-	DefaultRuleIpRangeKubeletKcp              string = "10.0.0.32/28"
+	DefaultRuleIpRangeKubeletKcp              string = "10.0.4.0/24"
 	DefaultFromPortRangeKubeletKcp            int32  = 10250
 	DefaultToPortRangeKubeletKcp              int32  = 10252
 	DefaultSecurityGroupLbName                string = "cluster-api-securitygroup-lb"
@@ -715,25 +713,15 @@ func (node *OscNode) SetImageDefaultValue() {
 	}
 }
 
-// SetDefaultValue set the Subnet default values
-func (sub *OscSubnet) SetDefaultValue() {
-	if sub.IpSubnetRange == "" {
-		sub.IpSubnetRange = DefaultIpSubnetRange
-	}
-	if sub.Name == "" {
-		sub.Name = DefaultSubnetName
-	}
-}
-
 // SetDefaultValue set the Nat Service default values
 func (nat *OscNatService) SetDefaultValue() {
 	var natServiceName string = DefaultNatServiceName
 	var publicIpNatName string = DefaultPublicIpNatName
-	var subnetNatName string = DefaultSubnetNatName
+	var subnetNatName string = DefaultSubnetPublicName
 	if nat.ClusterName != "" {
 		natServiceName = strings.Replace(DefaultNatServiceName, DefaultClusterName, nat.ClusterName, -1)
 		publicIpNatName = strings.Replace(DefaultPublicIpNatName, DefaultClusterName, nat.ClusterName, -1)
-		subnetNatName = strings.Replace(DefaultSubnetNatName, DefaultClusterName, nat.ClusterName, -1)
+		subnetNatName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, nat.ClusterName, -1)
 	}
 	if nat.Name == "" {
 		nat.Name = natServiceName
@@ -764,10 +752,6 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 		var routeTablePublicName string = DefaultRouteTablePublicName
 		var subnetPublicName string = DefaultSubnetPublicName
 
-		var routeNatName string = DefaultRouteNatName
-		var targetNatName string = DefaultTargetNatName
-		var routeTableNatName string = DefaultRouteTableNatName
-		var subnetNatName string = DefaultSubnetNatName
 		if network.ClusterName != "" {
 			routeKwName = strings.Replace(DefaultRouteKwName, DefaultClusterName, network.ClusterName, -1)
 			targetKwName = strings.Replace(DefaultTargetKwName, DefaultClusterName, network.ClusterName, -1)
@@ -782,10 +766,6 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 			targetPublicName = strings.Replace(DefaultTargetPublicName, DefaultClusterName, network.ClusterName, -1)
 			routeTablePublicName = strings.Replace(DefaultRouteTablePublicName, DefaultClusterName, network.ClusterName, -1)
 			subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, network.ClusterName, -1)
-			routeNatName = strings.Replace(DefaultRouteNatName, DefaultClusterName, network.ClusterName, -1)
-			targetNatName = strings.Replace(DefaultTargetNatName, DefaultClusterName, network.ClusterName, -1)
-			routeTableNatName = strings.Replace(DefaultRouteTableNatName, DefaultClusterName, network.ClusterName, -1)
-			subnetNatName = strings.Replace(DefaultSubnetNatName, DefaultClusterName, network.ClusterName, -1)
 		}
 
 		routeKw := OscRoute{
@@ -808,19 +788,13 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 			Destination: DefaultDestinationPublic,
 		}
 
-		routeNat := OscRoute{
-			Name:        routeNatName,
-			TargetName:  targetNatName,
-			TargetType:  DefaultTargetNatType,
-			Destination: DefaultDestinationNat,
-		}
-
 		routeTableKw := OscRouteTable{
 			Name:       routeTableKwName,
 			SubnetName: subnetKwName,
 			Routes:     []OscRoute{routeKw},
 		}
 		network.RouteTables = append(network.RouteTables, &routeTableKw)
+
 		routeTableKcp := OscRouteTable{
 			Name:       routeTableKcpName,
 			SubnetName: subnetKcpName,
@@ -834,13 +808,6 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 			Routes:     []OscRoute{routePublic},
 		}
 		network.RouteTables = append(network.RouteTables, &routeTablePublic)
-
-		routeTableNat := OscRouteTable{
-			Name:       routeTableNatName,
-			SubnetName: subnetNatName,
-			Routes:     []OscRoute{routeNat},
-		}
-		network.RouteTables = append(network.RouteTables, &routeTableNat)
 	}
 }
 
@@ -928,7 +895,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		securityGroupKw := OscSecurityGroup{
 			Name:               securityGroupKwName,
 			Description:        DefaultDescriptionKw,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleApiKubeletKw, securityGroupRuleApiKubeletKcp, securityGroupRuleNodeIpKw, securityGroupRuleNodeIpKcp, securityGroupRuleKwBgp},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKwBgp, securityGroupRuleApiKubeletKw, securityGroupRuleApiKubeletKcp, securityGroupRuleNodeIpKw, securityGroupRuleNodeIpKcp},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKw)
 
@@ -980,7 +947,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		securityGroupKcp := OscSecurityGroup{
 			Name:               securityGroupKcpName,
 			Description:        DefaultDescriptionKcp,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleEtcd, securityGroupRuleKubeletKcp, securityGroupRuleKcpBgp},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKcpBgp, securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleEtcd, securityGroupRuleKubeletKcp},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKcp)
 
@@ -1028,12 +995,10 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 		var subnetKcpName string = DefaultSubnetKcpName
 		var subnetKwName string = DefaultSubnetKwName
 		var subnetPublicName string = DefaultSubnetPublicName
-		var subnetNatName string = DefaultSubnetNatName
 		if network.ClusterName != "" {
 			subnetKcpName = strings.Replace(DefaultSubnetKcpName, DefaultClusterName, network.ClusterName, -1)
 			subnetKwName = strings.Replace(DefaultSubnetKwName, DefaultClusterName, network.ClusterName, -1)
 			subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, network.ClusterName, -1)
-			subnetNatName = strings.Replace(DefaultSubnetNatName, DefaultClusterName, network.ClusterName, -1)
 		}
 		subnetKcp := OscSubnet{
 			Name:          subnetKcpName,
@@ -1047,15 +1012,10 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 			Name:          subnetPublicName,
 			IpSubnetRange: DefaultIpSubnetPublicRange,
 		}
-		subnetNat := OscSubnet{
-			Name:          subnetNatName,
-			IpSubnetRange: DefaultIpSubnetNatRange,
-		}
 		network.Subnets = []*OscSubnet{
 			&subnetKcp,
 			&subnetKw,
 			&subnetPublic,
-			&subnetNat,
 		}
 	}
 }
