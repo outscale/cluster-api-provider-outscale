@@ -105,12 +105,16 @@ func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 		resourceNameList = append(resourceNameList, subnetName)
 	}
 	for _, routeTableSpec := range routeTablesSpec {
-		routeTableSubnetName := routeTableSpec.SubnetName + "-" + clusterScope.GetUID()
-		checkOscAssociate := Contains(resourceNameList, routeTableSubnetName)
-		if checkOscAssociate {
-			return nil
-		} else {
-			return fmt.Errorf("%s subnet dooes not exist in routeTable", routeTableSubnetName)
+		routeTableSubnetsSpec := routeTableSpec.Subnets
+		for _, routeTableSubnet := range routeTableSubnetsSpec {
+			routeTableSubnetName := routeTableSubnet + "-" + clusterScope.GetUID()
+			clusterScope.Info("check the desired subnet", "routeTableSubnet", routeTableSubnet)
+			checkOscAssociate := Contains(resourceNameList, routeTableSubnetName)
+			if checkOscAssociate {
+				return nil
+			} else {
+				return fmt.Errorf("%s subnet does not exist in routeTable", routeTableSubnetName)
+			}
 		}
 	}
 	return nil
@@ -274,17 +278,12 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
 		clusterScope.V(4).Info("Check if the desired routeTable existin net", "routeTableName", routeTableName)
 		clusterScope.V(4).Info("### Get routeTable Id ###", "routeTable", routeTablesRef.ResourceMap)
-		subnetName := routeTableSpec.SubnetName + "-" + clusterScope.GetUID()
-		subnetId, err := getSubnetResourceId(subnetName, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
 
 		if len(routeTablesRef.ResourceMap) == 0 {
 			routeTablesRef.ResourceMap = make(map[string]string)
 		}
-		if len(linkRouteTablesRef.ResourceMap) == 0 {
-			linkRouteTablesRef.ResourceMap = make(map[string]string)
+		if len(linkRouteTablesRef) == 0 {
+			linkRouteTablesRef = make(map[string][]string)
 		}
 		if routeTableSpec.ResourceId != "" {
 			routeTablesRef.ResourceMap[routeTableName] = routeTableSpec.ResourceId
@@ -321,16 +320,28 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 			}
 
 			routeTableId := routeTable.GetRouteTableId()
-			clusterScope.V(4).Info("Link the desired routetable with subnet", "routeTableName", routeTableName)
-			linkRouteTableId, err := routeTableSvc.LinkRouteTable(routeTableId, subnetId)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not link routetable with net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-			}
 			clusterScope.V(4).Info("### Get routeTable ###", "routeTable", routeTable)
 			routeTablesRef.ResourceMap[routeTableName] = routeTableId
 			routeTableSpec.ResourceId = routeTableId
-			linkRouteTablesRef.ResourceMap[routeTableName] = linkRouteTableId
+			subnetsSpec := routeTableSpec.Subnets
+			linkRouteTableIdArray := make([]string, 0)
+			for _, subnet := range subnetsSpec {
+				subnetName := subnet + "-" + clusterScope.GetUID()
+				subnetId, err := getSubnetResourceId(subnetName, clusterScope)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				clusterScope.Info("Link the desired routetable with subnet", "routeTableName", routeTableName)
 
+				linkRouteTableId, err := routeTableSvc.LinkRouteTable(routeTableId, subnetId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not link routetable with net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				}
+				linkRouteTableIdArray = append(linkRouteTableIdArray, linkRouteTableId)
+			}
+
+			linkRouteTablesRef[routeTableName] = linkRouteTableIdArray
+			clusterScope.SetLinkRouteTablesRef(linkRouteTablesRef)
 			for _, routeSpec := range *routesSpec {
 				clusterScope.V(2).Info("Set route")
 				clusterScope.V(4).Info("Create route for the desired routetable", "routeTableName", routeTableName)
@@ -346,7 +357,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 // reconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
 func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
-	clusterScope.V(2).Info("Delete RouteTable")
+	clusterScope.Info("Delete RouteTable")
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
 	networkSpec := clusterScope.GetNetwork()
 
@@ -376,14 +387,14 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
-		clusterScope.V(4).Info("### delete routeTable Id ###", "routeTable", routeTableId)
-
+		clusterScope.Info("### delete routeTable Id ###", "routeTable", routeTableId)
+		clusterScope.Info("## Get routetable ###", "routeTable", routeTableName)
 		if !Contains(routeTableIds, routeTableId) {
-			clusterScope.V(4).Info("the desired routeTable does no exist anymore", "routeTableName", routeTableName)
+			clusterScope.Info("the desired routeTable does no exist anymore", "routeTableName", routeTableName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
-		clusterScope.V(2).Info("Remove Route")
+		clusterScope.Info("Remove Route")
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 		for _, routeSpec := range *routesSpec {
 			_, err = reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, routeTableSvc)
@@ -391,13 +402,17 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 				return reconcile.Result{}, err
 			}
 		}
-		clusterScope.V(4).Info("Unlink the desired routeTable", "routeTableName", routeTableName)
-		err = routeTableSvc.UnlinkRouteTable(linkRouteTablesRef.ResourceMap[routeTableName])
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not unlink routeTable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		clusterScope.Info("## Get link ###", "link", len(linkRouteTablesRef))
+
+		for _, linkRouteTableId := range linkRouteTablesRef[routeTableName] {
+			clusterScope.Info("Unlink the desired routeTable", "routeTableName", routeTableName)
+			err = routeTableSvc.UnlinkRouteTable(linkRouteTableId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not unlink routeTable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			}
 		}
 
-		clusterScope.V(4).Info("delete the desired routeTable", "routeTableName", routeTableName)
+		clusterScope.Info("delete the desired routeTable", "routeTableName", routeTableName)
 		err = routeTableSvc.DeleteRouteTable(routeTablesRef.ResourceMap[routeTableName])
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete routeTable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())

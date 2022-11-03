@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.10.1-0.20221125203004-9977a0c0518c
+    controller-gen.kubebuilder.io/version: v0.11.1-0.20230105195159-54a2e9f1ac63
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -234,9 +234,11 @@ spec:
                                 type: string
                             type: object
                           type: array
-                        subnetname:
+                        subnets:
                           description: The subnet tag name associate with a Subnet
-                          type: string
+                          items:
+                            type: string
+                          type: array
                       type: object
                     type: array
                   securityGroups:
@@ -377,13 +379,10 @@ spec:
                         type: object
                     type: object
                   linkroutetableref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
-                    properties:
-                      resourceMap:
-                        additionalProperties:
-                          type: string
-                        type: object
+                    additionalProperties:
+                      items:
+                        type: string
+                      type: array
                     type: object
                   natref:
                     description: Map between NatServiceId  and NatServiceName (Nat
@@ -472,7 +471,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.10.1-0.20221125203004-9977a0c0518c
+    controller-gen.kubebuilder.io/version: v0.11.1-0.20230105195159-54a2e9f1ac63
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -760,7 +759,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.1-0.20221125203004-9977a0c0518c
+    controller-gen.kubebuilder.io/version: v0.11.1-0.20230105195159-54a2e9f1ac63
   creationTimestamp: null
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
@@ -1361,7 +1360,7 @@ spec:
               key: region
               name: cluster-api-provider-outscale
               optional: true
-        image: outscale/cluster-api-provider-osc:dev
+        image: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:latest
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:

@@ -181,8 +181,7 @@ type OscRouteTable struct {
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The subnet tag name associate with a Subnet
-	// +optional
-	SubnetName string `json:"subnetname,omitempty"`
+	Subnets []string `json:"subnets,omitempty"`
 	// The Route configuration
 	// +optional
 	Routes []OscRoute `json:"routes,omitempty"`
@@ -269,38 +268,38 @@ type OscSecurityGroupRule struct {
 }
 
 // Map between resourceId and resourceName (tag Name with cluster UID)
-type OscResourceMapReference struct {
+type OscResourceReference struct {
 	ResourceMap map[string]string `json:"resourceMap,omitempty"`
 }
 
 type OscNetworkResource struct {
 	// Map between LoadbalancerId  and LoadbalancerName (Load Balancer tag Name with cluster UID)
-	LoadbalancerRef OscResourceMapReference `json:"LoadbalancerRef,omitempty"`
+	LoadbalancerRef OscResourceReference `json:"LoadbalancerRef,omitempty"`
 	// Map between NetId  and NetName (Net tag Name with cluster UID)
-	NetRef OscResourceMapReference `json:"netref,omitempty"`
+	NetRef OscResourceReference `json:"netref,omitempty"`
 	// Map between SubnetId  and SubnetName (Subnet tag Name with cluster UID)
-	SubnetRef OscResourceMapReference `json:"subnetref,omitempty"`
+	SubnetRef OscResourceReference `json:"subnetref,omitempty"`
 	// Map between InternetServiceId  and InternetServiceName (Internet Service tag Name with cluster UID)
-	InternetServiceRef OscResourceMapReference `json:"internetserviceref,omitempty"`
+	InternetServiceRef OscResourceReference `json:"internetserviceref,omitempty"`
 	// Map between RouteTablesId  and RouteTablesName (Route Tables tag Name with cluster UID)
-	RouteTablesRef    OscResourceMapReference `json:"routetableref,omitempty"`
-	LinkRouteTableRef OscResourceMapReference `json:"linkroutetableref,omitempty"`
+	RouteTablesRef    OscResourceReference `json:"routetableref,omitempty"`
+	LinkRouteTableRef map[string][]string  `json:"linkroutetableref,omitempty"`
 	// Map between RouteId  and RouteName (Route tag Name with cluster UID)
-	RouteRef OscResourceMapReference `json:"routeref,omitempty"`
+	RouteRef OscResourceReference `json:"routeref,omitempty"`
 	// Map between PublicIpId  and PublicIpName (Public IP tag Name with cluster UID)
-	SecurityGroupsRef    OscResourceMapReference `json:"securitygroupref,omitempty"`
-	SecurityGroupRuleRef OscResourceMapReference `json:"securitygroupruleref,omitempty"`
-	PublicIpRef          OscResourceMapReference `json:"publicipref,omitempty"`
+	SecurityGroupsRef    OscResourceReference `json:"securitygroupref,omitempty"`
+	SecurityGroupRuleRef OscResourceReference `json:"securitygroupruleref,omitempty"`
+	PublicIpRef          OscResourceReference `json:"publicipref,omitempty"`
 	// Map between NatServiceId  and NatServiceName (Nat Service tag Name with cluster UID)
-	NatServiceRef OscResourceMapReference `json:"natref,omitempty"`
+	NatServiceRef OscResourceReference `json:"natref,omitempty"`
 }
 
 type OscNodeResource struct {
-	VolumeRef       OscResourceMapReference `json:"volumeRef,omitempty"`
-	ImageRef        OscResourceMapReference `json:"imageRef,omitempty"`
-	KeypairRef      OscResourceMapReference `json:"keypairRef,omitempty"`
-	VmRef           OscResourceMapReference `json:"vmRef,omitempty"`
-	LinkPublicIpRef OscResourceMapReference `json:"linkPublicIpRef,omitempty"`
+	VolumeRef       OscResourceReference `json:"volumeRef,omitempty"`
+	ImageRef        OscResourceReference `json:"imageRef,omitempty"`
+	KeypairRef      OscResourceReference `json:"keypairRef,omitempty"`
+	VmRef           OscResourceReference `json:"vmRef,omitempty"`
+	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
 }
 
 type OscImage struct {
@@ -788,26 +787,29 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 			Destination: DefaultDestinationPublic,
 		}
 
+		subnetKw := []string{subnetKwName}
+		subnetKcp := []string{subnetKcpName}
+		subnetPublic := []string{subnetPublicName}
 		routeTableKw := OscRouteTable{
-			Name:       routeTableKwName,
-			SubnetName: subnetKwName,
-			Routes:     []OscRoute{routeKw},
+			Name:   routeTableKwName,
+			Routes: []OscRoute{routeKw},
 		}
-		network.RouteTables = append(network.RouteTables, &routeTableKw)
 
+		network.RouteTables = append(network.RouteTables, &routeTableKw)
+		routeTableKw.Subnets = subnetKw
 		routeTableKcp := OscRouteTable{
-			Name:       routeTableKcpName,
-			SubnetName: subnetKcpName,
-			Routes:     []OscRoute{routeKcp},
+			Name:   routeTableKcpName,
+			Routes: []OscRoute{routeKcp},
 		}
 		network.RouteTables = append(network.RouteTables, &routeTableKcp)
+		routeTableKcp.Subnets = subnetKcp
 
 		routeTablePublic := OscRouteTable{
-			Name:       routeTablePublicName,
-			SubnetName: subnetPublicName,
-			Routes:     []OscRoute{routePublic},
+			Name:   routeTablePublicName,
+			Routes: []OscRoute{routePublic},
 		}
 		network.RouteTables = append(network.RouteTables, &routeTablePublic)
+		routeTablePublic.Subnets = subnetPublic
 	}
 }
 

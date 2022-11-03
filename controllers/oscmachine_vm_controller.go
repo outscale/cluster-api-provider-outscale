@@ -315,7 +315,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 	var publicIpId string
 	var vmPublicIpName string
-	var linkPublicIpRef *infrastructurev1beta1.OscResourceMapReference
+	var linkPublicIpRef *infrastructurev1beta1.OscResourceReference
 	if vmSpec.PublicIpName != "" {
 		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
 		publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)

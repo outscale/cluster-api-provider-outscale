@@ -50,8 +50,10 @@ var (
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
-					Name:       "test-routetable",
-					SubnetName: "test-subnet",
+					Name: "test-routetable",
+					Subnets: []string{
+						"test-subnet",
+					},
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
 							Name:        "test-route",
@@ -91,8 +93,10 @@ var (
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
-					Name:       "test-routetable",
-					SubnetName: "test-subnet",
+					Name: "test-routetable",
+					Subnets: []string{
+						"test-subnet",
+					},
 					ResourceId: "rtb-test-routetable-uid",
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
@@ -130,8 +134,10 @@ var (
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
-					Name:       "test-routetable",
-					SubnetName: "test-subnet",
+					Name: "test-routetable",
+					Subnets: []string{
+						"test-subnet",
+					},
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
 							Name:        "test-route",
@@ -172,8 +178,10 @@ var (
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
-					Name:       "test-routetable",
-					SubnetName: "test-subnet",
+					Name: "test-routetable",
+					Subnets: []string{
+						"test-subnet",
+					},
 					ResourceId: "rtb-test-routetable-uid",
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
@@ -211,8 +219,10 @@ var (
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
-					Name:       "test-routetable",
-					SubnetName: "test-subnet",
+					Name: "test-routetable",
+					Subnets: []string{
+						"test-subnet",
+					},
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
 							Name:        "test-route-nat",
@@ -259,8 +269,10 @@ var (
 			},
 			RouteTables: []*infrastructurev1beta1.OscRouteTable{
 				{
-					Name:       "test-routetable",
-					SubnetName: "test-subnet",
+					Name: "test-routetable",
+					Subnets: []string{
+						"test-subnet",
+					},
 					ResourceId: "rtb-test-routetable-uid",
 					Routes: []infrastructurev1beta1.OscRoute{
 						{
@@ -424,8 +436,10 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet-test",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet-test",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -438,7 +452,7 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteTableSubnetOscAssociateResourceNameErr: fmt.Errorf("test-subnet-test-uid subnet dooes not exist in routeTable"),
+			expCheckRouteTableSubnetOscAssociateResourceNameErr: fmt.Errorf("test-subnet-test-uid subnet does not exist in routeTable"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -462,7 +476,7 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 		expCheckRouteTableFormatParametersErr error
 	}{
 		{
-			name: "check work without net, routtable and route spec (with default values)",
+			name: "check work without net, routable and route spec (with default values)",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
@@ -492,8 +506,10 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable@test",
-							SubnetName: "test-subnet",
+							Name: "test-routetable@test",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -561,8 +577,10 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route@test",
@@ -596,8 +614,10 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -631,8 +651,10 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -694,8 +716,10 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -706,8 +730,10 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 							},
 						},
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -779,8 +805,10 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -820,8 +848,10 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -1297,8 +1327,9 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 			routeTablesRef.ResourceMap = make(map[string]string)
 
 			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef.ResourceMap = make(map[string]string)
-
+			if len(linkRouteTableRef) == 0 {
+				linkRouteTableRef = make(map[string][]string)
+			}
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
 
@@ -1331,104 +1362,108 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 				routeTableId := "rtb-" + routeTableName
 				routeTableIds = append(routeTableIds, routeTableId)
 				linkRouteTableId := "eipalloc-" + routeTableName
-				subnetName := routeTableSpec.SubnetName + "-uid"
-				subnetId := "subnet-" + subnetName
-				if rttc.expSubnetFound {
-					subnetRef.ResourceMap[subnetName] = subnetId
-				}
+				subnetsSpec := routeTableSpec.Subnets
+				for _, subnet := range subnetsSpec {
+					subnetName := subnet + "-uid"
+					subnetId := "subnet-" + subnetName
 
-				if rttc.expLinkRouteTableFound {
-					linkRouteTableRef.ResourceMap[routeTableName] = linkRouteTableId
-				}
-
-				routeTable := osc.CreateRouteTableResponse{
-					RouteTable: &osc.RouteTable{
-						RouteTableId: &routeTableId,
-					},
-				}
-
-				linkRouteTable := osc.LinkRouteTableResponse{
-					LinkRouteTableId: &linkRouteTableId,
-				}
-
-				readRouteTables := osc.ReadRouteTablesResponse{
-					RouteTables: &[]osc.RouteTable{
-						*routeTable.RouteTable,
-					},
-				}
-				readRouteTable := *readRouteTables.RouteTables
-				if rttc.expRouteTableFound {
-					mockOscRouteTableInterface.
-						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
-						Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
-				} else {
-					mockOscRouteTableInterface.
-						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
-						Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
-				}
-				if rttc.expCreateRouteTableFound {
-					associateRouteTableId = routeTableId
-					routeTablesRef.ResourceMap[routeTableName] = routeTableId
-					mockOscRouteTableInterface.
-						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
-						Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
-				} else {
-					mockOscRouteTableInterface.
-						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
-						Return(nil, rttc.expCreateRouteTableErr)
-				}
-				if rttc.expLinkRouteTableFound {
-					mockOscRouteTableInterface.
-						EXPECT().
-						LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
-						Return(*linkRouteTable.LinkRouteTableId, rttc.expLinkRouteTableErr)
-				} else {
-					mockOscRouteTableInterface.
-						EXPECT().
-						LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
-						Return("", rttc.expLinkRouteTableErr)
-				}
-
-				routesSpec := routeTableSpec.Routes
-				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
-					resourceType := routeSpec.TargetType
-					if resourceType == "gateway" {
-						resourceId = internetServiceId
-					} else {
-						resourceId = natServiceId
+					if rttc.expSubnetFound {
+						subnetRef.ResourceMap[subnetName] = subnetId
 					}
 
-					route := osc.CreateRouteResponse{
+					if rttc.expLinkRouteTableFound {
+						linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
+					}
+
+					routeTable := osc.CreateRouteTableResponse{
 						RouteTable: &osc.RouteTable{
 							RouteTableId: &routeTableId,
 						},
 					}
-					if rttc.expRouteFound {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
-					} else {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(nil, rttc.expGetRouteTableFromRouteErr)
+
+					linkRouteTable := osc.LinkRouteTableResponse{
+						LinkRouteTableId: &linkRouteTableId,
 					}
-					if rttc.expCreateRouteFound {
+
+					readRouteTables := osc.ReadRouteTablesResponse{
+						RouteTables: &[]osc.RouteTable{
+							*routeTable.RouteTable,
+						},
+					}
+					readRouteTable := *readRouteTables.RouteTables
+					if rttc.expRouteTableFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(route.RouteTable, rttc.expCreateRouteErr)
+							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(nil, rttc.expCreateRouteErr)
+							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
+					}
+					if rttc.expCreateRouteTableFound {
+						associateRouteTableId = routeTableId
+						routeTablesRef.ResourceMap[routeTableName] = routeTableId
+						mockOscRouteTableInterface.
+							EXPECT().
+							CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
+							Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
+					} else {
+						mockOscRouteTableInterface.
+							EXPECT().
+							CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
+							Return(nil, rttc.expCreateRouteTableErr)
+					}
+					if rttc.expLinkRouteTableFound {
+						mockOscRouteTableInterface.
+							EXPECT().
+							LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+							Return(*linkRouteTable.LinkRouteTableId, rttc.expLinkRouteTableErr)
+					} else {
+						mockOscRouteTableInterface.
+							EXPECT().
+							LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+							Return("", rttc.expLinkRouteTableErr)
+					}
+
+					routesSpec := routeTableSpec.Routes
+					for _, routeSpec := range routesSpec {
+						destinationIpRange := routeSpec.Destination
+						resourceType := routeSpec.TargetType
+						if resourceType == "gateway" {
+							resourceId = internetServiceId
+						} else {
+							resourceId = natServiceId
+						}
+
+						route := osc.CreateRouteResponse{
+							RouteTable: &osc.RouteTable{
+								RouteTableId: &routeTableId,
+							},
+						}
+						if rttc.expRouteFound {
+							mockOscRouteTableInterface.
+								EXPECT().
+								GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
+						} else {
+							mockOscRouteTableInterface.
+								EXPECT().
+								GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								Return(nil, rttc.expGetRouteTableFromRouteErr)
+						}
+						if rttc.expCreateRouteFound {
+							mockOscRouteTableInterface.
+								EXPECT().
+								CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								Return(route.RouteTable, rttc.expCreateRouteErr)
+						} else {
+							mockOscRouteTableInterface.
+								EXPECT().
+								CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								Return(nil, rttc.expCreateRouteErr)
+						}
 					}
 					reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 					if err != nil {
@@ -1477,17 +1512,6 @@ func TestReconcileRouteTableGet(t *testing.T) {
 			expNatServiceFound:               false,
 			expGetRouteTableIdsFromNetIdsErr: fmt.Errorf("GetRouteTableIdsFromNetIds generic errors"),
 			expReconcileRouteTableErr:        fmt.Errorf("GetRouteTableIdsFromNetIds generic errors"),
-		},
-		{
-			name:                             "failed to get subnet",
-			spec:                             defaultRouteTableGatewayInitialize,
-			expNetFound:                      true,
-			expSubnetFound:                   false,
-			expRouteTableFound:               true,
-			expInternetServiceFound:          true,
-			expNatServiceFound:               false,
-			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileRouteTableErr:        fmt.Errorf("test-subnet-uid does not exist"),
 		},
 		{
 			name:                             "create routetable with natservice (first time reconcile loop)",
@@ -1542,25 +1566,28 @@ func TestReconcileRouteTableGet(t *testing.T) {
 				routeTableName := routeTableSpec.Name + "-uid"
 				routeTableId := "rtb-" + routeTableName
 				routeTableIds = append(routeTableIds, routeTableId)
-				subnetName := routeTableSpec.SubnetName + "-uid"
-				subnetId := "subnet-" + subnetName
-				if rttc.expSubnetFound {
-					subnetRef.ResourceMap[subnetName] = subnetId
-				}
-				if rttc.expRouteTableFound {
-					routeTablesRef.ResourceMap[routeTableName] = routeTableId
-				}
+				subnetsSpec := routeTableSpec.Subnets
+				for _, subnet := range subnetsSpec {
+					subnetName := subnet + "-uid"
+					subnetId := "subnet-" + subnetName
+					if rttc.expSubnetFound {
+						subnetRef.ResourceMap[subnetName] = subnetId
+					}
+					if rttc.expRouteTableFound {
+						routeTablesRef.ResourceMap[routeTableName] = routeTableId
+					}
 
-				if rttc.expRouteTableFound {
-					mockOscRouteTableInterface.
-						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
-						Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
-				} else {
-					mockOscRouteTableInterface.
-						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
-						Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
+					if rttc.expRouteTableFound {
+						mockOscRouteTableInterface.
+							EXPECT().
+							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
+					} else {
+						mockOscRouteTableInterface.
+							EXPECT().
+							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
+					}
 				}
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 				if err != nil {
@@ -1633,8 +1660,10 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "test-routetable",
-							SubnetName: "test-subnet",
+							Name: "test-routetable",
+							Subnets: []string{
+								"test-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "test-route",
@@ -1675,18 +1704,21 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 				routeTableName := routeTableSpec.Name + "-uid"
 				routeTableId := "rtb-" + routeTableName
 				routeTableIds = append(routeTableIds, routeTableId)
-				subnetName := routeTableSpec.SubnetName + "-uid"
-				subnetId := "subnet-" + subnetName
-				subnetRef.ResourceMap[subnetName] = subnetId
-				mockOscRouteTableInterface.
-					EXPECT().
-					GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
-					Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
+				subnetsSpec := routeTableSpec.Subnets
+				for _, subnet := range subnetsSpec {
+					subnetName := subnet + "-uid"
+					subnetId := "subnet-" + subnetName
+					subnetRef.ResourceMap[subnetName] = subnetId
+					mockOscRouteTableInterface.
+						EXPECT().
+						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 
-				mockOscRouteTableInterface.
-					EXPECT().
-					CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
-					Return(nil, rttc.expCreateRouteTableErr)
+					mockOscRouteTableInterface.
+						EXPECT().
+						CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
+						Return(nil, rttc.expCreateRouteTableErr)
+				}
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 				if err != nil {
 					assert.Equal(t, rttc.expReconcileRouteTableErr.Error(), err.Error(), "reconcileRouteTable() should return the same error")
@@ -1704,6 +1736,8 @@ func TestReconcileRouteTableLink(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
 		spec                             infrastructurev1beta1.OscClusterSpec
+		expSubnetFound                   bool
+		expLinkRouteTableFound           bool
 		expCreateRouteTableErr           error
 		expLinkRouteTableErr             error
 		expGetRouteTableIdsFromNetIdsErr error
@@ -1712,10 +1746,22 @@ func TestReconcileRouteTableLink(t *testing.T) {
 		{
 			name:                             "failed to link routeTable",
 			spec:                             defaultRouteTableGatewayInitialize,
+			expSubnetFound:                   true,
+			expLinkRouteTableFound:           true,
 			expCreateRouteTableErr:           nil,
 			expLinkRouteTableErr:             fmt.Errorf("LinkRouteTable generic error"),
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReconcileRouteTableErr:        fmt.Errorf("LinkRouteTable generic error Can not link routetable with net for Osccluster test-system/test-osc"),
+		},
+		{
+			name:                             "failed to get subnet",
+			spec:                             defaultRouteTableGatewayInitialize,
+			expSubnetFound:                   false,
+			expLinkRouteTableFound:           false,
+			expCreateRouteTableErr:           nil,
+			expLinkRouteTableErr:             nil,
+			expGetRouteTableIdsFromNetIdsErr: nil,
+			expReconcileRouteTableErr:        fmt.Errorf("test-subnet-uid does not exist"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1733,8 +1779,9 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			routeTablesRef.ResourceMap = make(map[string]string)
 
 			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef.ResourceMap = make(map[string]string)
-
+			if len(linkRouteTableRef) == 0 {
+				linkRouteTableRef = make(map[string][]string)
+			}
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
 
@@ -1742,30 +1789,35 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			for _, routeTableSpec := range routeTablesSpec {
 				routeTableName := routeTableSpec.Name + "-uid"
 				routeTableId := "rtb-" + routeTableName
-				subnetName := routeTableSpec.SubnetName + "-uid"
-				subnetId := "subnet-" + subnetName
-				subnetRef.ResourceMap[subnetName] = subnetId
+				subnetsSpec := routeTableSpec.Subnets
+				for _, subnet := range subnetsSpec {
+					subnetName := subnet + "-uid"
+					subnetId := "subnet-" + subnetName
+					if rttc.expSubnetFound {
+						subnetRef.ResourceMap[subnetName] = subnetId
+					}
 
-				routeTable := osc.CreateRouteTableResponse{
-					RouteTable: &osc.RouteTable{
-						RouteTableId: &routeTableId,
-					},
+					routeTable := osc.CreateRouteTableResponse{
+						RouteTable: &osc.RouteTable{
+							RouteTableId: &routeTableId,
+						},
+					}
+
+					mockOscRouteTableInterface.
+						EXPECT().
+						CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
+						Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
+					if rttc.expLinkRouteTableFound {
+						mockOscRouteTableInterface.
+							EXPECT().
+							LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+							Return("", rttc.expLinkRouteTableErr)
+					}
+					mockOscRouteTableInterface.
+						EXPECT().
+						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
 				}
-
-				mockOscRouteTableInterface.
-					EXPECT().
-					CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
-					Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
-				mockOscRouteTableInterface.
-					EXPECT().
-					LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
-					Return("", rttc.expLinkRouteTableErr)
-
-				mockOscRouteTableInterface.
-					EXPECT().
-					GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
-					Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
-
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 				if err != nil {
 					assert.Equal(t, rttc.expReconcileRouteTableErr.Error(), err.Error(), "reconcileRouteTable() should return the same error")
@@ -2155,12 +2207,12 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 			routeTablesRef.ResourceMap = make(map[string]string)
 
 			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef.ResourceMap = make(map[string]string)
-
+			if len(linkRouteTableRef) == 0 {
+				linkRouteTableRef = make(map[string][]string)
+			}
 			var associateRouteTableId string
 			var resourceId string
 			var routeTableIds []string
-
 			routeTableName := "cluster-api-routetable-kw-uid"
 			routeTableId := "rtb-" + routeTableName
 			routeTableIds = append(routeTableIds, routeTableId)
@@ -2168,7 +2220,8 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 			routeTablesRef.ResourceMap[routeTableName] = routeTableId
 			associateRouteTableId = routeTableId
 
-			linkRouteTableRef.ResourceMap[routeTableName] = linkRouteTableId
+			linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
+			clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
 			mockOscRouteTableInterface.
 				EXPECT().
 				GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
@@ -2177,6 +2230,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 				EXPECT().
 				UnlinkRouteTable(gomock.Eq(linkRouteTableId)).
 				Return(rttc.expUnlinkRouteTableErr)
+
 			mockOscRouteTableInterface.
 				EXPECT().
 				DeleteRouteTable(gomock.Eq(routeTableId)).
@@ -2309,7 +2363,9 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 			routeRef.ResourceMap = make(map[string]string)
 
 			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef.ResourceMap = make(map[string]string)
+			if len(linkRouteTableRef) == 0 {
+				linkRouteTableRef = make(map[string][]string)
+			}
 
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
@@ -2330,7 +2386,8 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 				}
 
 				if rttc.expLinkRouteTableFound {
-					linkRouteTableRef.ResourceMap[routeTableName] = linkRouteTableId
+					linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
+					clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
 				}
 
 				if rttc.expRouteTableFound {
@@ -2549,7 +2606,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 			natServiceRef.ResourceMap[natServiceName] = natServiceId
 
 			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef.ResourceMap = make(map[string]string)
+			linkRouteTableRef = make(map[string][]string)
 
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
@@ -2566,8 +2623,8 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 				routeTablesRef.ResourceMap[routeTableName] = routeTableId
 				associateRouteTableId = routeTableId
 
-				linkRouteTableRef.ResourceMap[routeTableName] = linkRouteTableId
-
+				linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
+				clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
 				mockOscRouteTableInterface.
 					EXPECT().
 					GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
@@ -2668,7 +2725,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			routeRef.ResourceMap = make(map[string]string)
 
 			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef.ResourceMap = make(map[string]string)
+			linkRouteTableRef = make(map[string][]string)
 
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
@@ -2683,7 +2740,8 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 				routeTablesRef.ResourceMap[routeTableName] = routeTableId
 				associateRouteTableId = routeTableId
 
-				linkRouteTableRef.ResourceMap[routeTableName] = linkRouteTableId
+				linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
+				clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
 
 				mockOscRouteTableInterface.
 					EXPECT().
