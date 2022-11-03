@@ -188,7 +188,7 @@ func (m *MachineScope) GetVmSecurityGroups() *[]infrastructurev1beta1.OscSecurit
 }
 
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
+func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.LinkPublicIpRef
 }
 
@@ -208,22 +208,22 @@ func (m *MachineScope) GetDeleteKeypair() bool {
 }
 
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceMapReference {
+func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.VolumeRef
 }
 
 // GetVmRef get the status of vm (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceMapReference {
+func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.VmRef
 }
 
 // GetImageRef get the status of image (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetImageRef() *infrastructurev1beta1.OscResourceMapReference {
+func (m *MachineScope) GetImageRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.ImageRef
 }
 
 // GetKeyPairRef get the status of key pair (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetKeypairRef() *infrastructurev1beta1.OscResourceMapReference {
+func (m *MachineScope) GetKeypairRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.KeypairRef
 }
 

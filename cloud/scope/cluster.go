@@ -136,7 +136,7 @@ func (s *ClusterScope) GetInternetService() *infrastructurev1beta1.OscInternetSe
 }
 
 // GetInternetServiceRef get the status of internetService (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetInternetServiceRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetInternetServiceRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.InternetServiceRef
 }
 
@@ -146,7 +146,7 @@ func (s *ClusterScope) GetNatService() *infrastructurev1beta1.OscNatService {
 }
 
 // GetNatServiceRef get the status of natService (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetNatServiceRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetNatServiceRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.NatServiceRef
 }
 
@@ -176,33 +176,38 @@ func (s *ClusterScope) GetSecurityGroups() []*infrastructurev1beta1.OscSecurityG
 }
 
 // GetRouteTablesRef get the status of routeTable (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetRouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetRouteTablesRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.RouteTablesRef
 }
 
 // GetSecurityGroupsRef get the status of securityGroup
-func (s *ClusterScope) GetSecurityGroupsRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetSecurityGroupsRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.SecurityGroupsRef
 }
 
 // GetRouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetRouteRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetRouteRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.RouteRef
 }
 
 // GetSecurityGroupRuleRef get the status of securityGroup rule
-func (s *ClusterScope) GetSecurityGroupRuleRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetSecurityGroupRuleRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.SecurityGroupRuleRef
 }
 
 // PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetPublicIpRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetPublicIpRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.PublicIpRef
 }
 
 // LinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
-func (s ClusterScope) GetLinkRouteTablesRef() *infrastructurev1beta1.OscResourceMapReference {
-	return &s.OscCluster.Status.Network.LinkRouteTableRef
+func (s ClusterScope) GetLinkRouteTablesRef() map[string][]string {
+	return s.OscCluster.Status.Network.LinkRouteTableRef
+}
+
+// SetLinkRouteTableRef set the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
+func (s ClusterScope) SetLinkRouteTablesRef(linkRouteTableRef map[string][]string) {
+	s.OscCluster.Status.Network.LinkRouteTableRef = linkRouteTableRef
 }
 
 // Route return slices of routes associated with routetable Name
@@ -244,7 +249,7 @@ func (s *ClusterScope) GetPublicIp() []*infrastructurev1beta1.OscPublicIp {
 }
 
 // GetLinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetNetRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetNetRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.NetRef
 }
 
@@ -254,7 +259,7 @@ func (s *ClusterScope) GetSubnet() []*infrastructurev1beta1.OscSubnet {
 }
 
 // GetSubnetRef get the subnet (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetSubnetRef() *infrastructurev1beta1.OscResourceMapReference {
+func (s *ClusterScope) GetSubnetRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.SubnetRef
 }
 

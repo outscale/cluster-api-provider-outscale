@@ -59,21 +59,24 @@ spec:
       subnetname: cluster-api-subnet-public
     routeTables:
       - name: cluster-api-routetable-kw
-        subnetname: cluster-api-subnet-kw
+        subnets:
+          - cluster-api-subnet-kw
         routes:
           - name: cluster-api-routes-kw
             targetName: cluster-api-natservice
             targetType: nat
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-kcp
-        subnetname: cluster-api-subnet-kcp
+        subnets:
+          - cluster-api-subnet-kcp
         routes:
           - name: cluster-api-routes-kcp
             targetName: cluster-api-natservice
             targetType: nat
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-public
-        subnetname: cluster-api-subnet-public
+        subnets:
+          - cluster-api-subnet-public
         routes:
           - name: cluster-api-routes-public
             targetName: cluster-api-internetservice

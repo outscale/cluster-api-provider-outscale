@@ -735,8 +735,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "cluster-api-routetable",
-							SubnetName: "cluster-api-subnet",
+							Name: "cluster-api-routetable",
+							Subnets: []string{
+								"cluster-api-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "cluster-api-routes",
@@ -815,8 +817,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "cluster-api-routetable",
-							SubnetName: "cluster-api-subnet",
+							Name: "cluster-api-routetable",
+							Subnets: []string{
+								"cluster-api-subnet",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "cluster-api-routes",
@@ -827,8 +831,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:       "cluster-api-rt",
-							SubnetName: "cluster-api-sub",
+							Name: "cluster-api-rt",
+							Subnets: []string{
+								"cluster-api-sub",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "cluster-api-r",
@@ -948,8 +954,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name:       "cluster-api-routable-kw",
-							SubnetName: "cluster-api-subnet-kw",
+							Name: "cluster-api-routable-kw",
+							Subnets: []string{
+								"cluster-api-subnet-kw",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "cluster-api-routes-kw",
@@ -960,8 +968,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:       "cluster-api-routetable-kcp",
-							SubnetName: "cluster-api-subnet-kcp",
+							Name: "cluster-api-routetable-kcp",
+							Subnets: []string{
+								"cluster-api-subnet-kcp",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "cluster-api-routes-kcp",
@@ -972,8 +982,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:       "cluster-api-routetable-public",
-							SubnetName: "cluster-api-subnet-public",
+							Name: "cluster-api-routetable-public",
+							Subnets: []string{
+								"cluster-api-subnet-public",
+							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
 									Name:        "cluster-api-routes-public",
