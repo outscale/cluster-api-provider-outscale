@@ -14,6 +14,7 @@
 
 # Test 
 
+:warning: Install tools (clusterctl, ...) with makefile you need to have golang install to downloads binaries and GOPATH [golang][golang]
 ## Lint
 Please use format to indent your go and yamlfile:
 ```bash
@@ -107,3 +108,5 @@ make e2econformance
 [Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
+[golang]: https://medium.com/@sherlock297/install-and-set-the-environment-variable-path-for-go-in-kali-linux-446d0f16a338
+

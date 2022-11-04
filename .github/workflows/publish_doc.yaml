@@ -25,10 +25,14 @@ jobs:
         run: make install-mdbook
         shell: bash
         working-directory: cluster-api-provider-outscale
+        env:
+          GOPATH: ${{ github.workspace }}/go
       - name: generate doc
         run: make build 
         shell: bash
         working-directory: cluster-api-provider-outscale/docs/
+        env:
+          GOPATH: ${{ github.workspace }}/go
       - name: Copy website
         run: cp website.json ./book 
         shell: bash

@@ -31,12 +31,14 @@ jobs:
         IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
         VERSION: ${{ env.RELEASE_TAG }}
+        GOPATH: ${{ github.workspace }}/go
         DOCKER_BUILDKIT: 1
     - name: generate artefacts
       run: make release
       env:
         IMG_RELEASE: registry.hub.docker.com/${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
+        GOPATH: ${{ github.workspace }}/go
     - name: gh login
       run: make gh-login
       env:
@@ -61,11 +63,13 @@ jobs:
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
         PREVIOUS_RELEASE_TAG: ${{ env.PREVIOUS_RELEASE_TAG }}
         GH_ORG_NAME: ${{ github.repository_owner }}
-        GH_REPO_NAME: "cluster-api-provider-outscale" 
+        GH_REPO_NAME: "cluster-api-provider-outscale"
+        GOPATH: ${{ github.workspace }}/go
     - name: create release
       run: make create-gh-release
       env:
         IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
         PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
-        GH_REPO: ${{ github.repository }} 
+        GH_REPO: ${{ github.repository }}
+        GOPATH: ${{ github.workspace }}/go

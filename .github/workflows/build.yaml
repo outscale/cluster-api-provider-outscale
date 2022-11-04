@@ -25,15 +25,23 @@ jobs:
       - name: check-gofmt
         run: make checkfmt
         shell: bash
+        env:
+          GOPATH: ${{ github.workspace }}/go
       - name: Lint
         run: make vet
         shell: bash
+        env:
+          GOPATH: ${{ github.workspace }}/go
       - name: check with ShellCheck
         run: make install-shellcheck
         shell: bash
+        env:
+          GOPATH: ${{ github.workspace }}/go
       - name: Check with boilerplate
         run: make verify-boilerplate
         shell: bash
+        env:
+          GOPATH: ${{ github.workspace }}/go
       - name: Install yamllint
         run: pip install yamllint
       - name: check with yamlint

@@ -30,7 +30,7 @@ install_envsubst() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		go install -v github.com/drone/envsubst/v2/cmd/envsubst
-		cp "$HOME/go/bin/envsubst" "${BIN_ROOT}/envsubst"
+		cp "$GOPATH/bin/envsubst" "${BIN_ROOT}/envsubst"
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"

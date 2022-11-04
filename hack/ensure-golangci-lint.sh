@@ -49,8 +49,8 @@ install_golangci_lint() {
 		if ! [ -d "${BIN_ROOT}" ]; then
 			mkdir -p "${BIN_ROOT}"
 		fi
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$HOME/go/bin" "v${MINIMUM_GOLANGCI_LINT_VERSION}"
-		cp "$HOME/go/bin/golangci-lint" ${BIN_ROOT}/golangci-lint
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$GOPATH/bin" "v${MINIMUM_GOLANGCI_LINT_VERSION}"
+		cp "$GOPATH/bin/golangci-lint" ${BIN_ROOT}/golangci-lint
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"

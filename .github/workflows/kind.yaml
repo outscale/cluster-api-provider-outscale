@@ -42,6 +42,7 @@ jobs:
       env:
         IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
         DOCKER_BUILDKIT: 1
+        GOPATH: ${{ github.workspace }}/go
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
       with:
@@ -80,6 +81,7 @@ jobs:
         OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
         IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
         IMG_UPGRADE_TO: ${{ secrets.IMG_UPGRADE_TO }}
+        GOPATH: ${{ github.workspace }}/go
     - name: Destroy cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
       if: ${{ always() }}
