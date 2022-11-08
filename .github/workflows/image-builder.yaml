@@ -1,8 +1,6 @@
 name: image-builder
 
-on:
-  schedule:
-  - cron: "0 6 * * Sun"
+on: push
 jobs:
   image-builder:
     runs-on: [self-hosted, linux]
@@ -17,9 +15,9 @@ jobs:
         go-version: '1.18.7'
     - uses: actions/checkout@v3
       with:
-          repository: outscale-dev/cluster-api-provider-outscale
-          ref: main
-          path: cluster-api-provider-outscale 
+        repository: 'outscale-vbr/image-builder'
+        path: "test-outscale-image"
+        ref: add-outscale-image
     - name: Install Packer
       run: make install-packer
       shell: bash
