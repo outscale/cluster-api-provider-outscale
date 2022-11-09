@@ -917,7 +917,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -984,7 +984,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -1047,7 +1047,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().

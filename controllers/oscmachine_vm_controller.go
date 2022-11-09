@@ -178,19 +178,19 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if err != nil {
 		return vmTagName, err
 	}
+	imageSpec := machineScope.GetImage()
+	imageName := imageSpec.Name
 
-	if vmSpec.ImageId != "" {
-		_, err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
-		if err != nil {
-			return vmTagName, err
-		}
-	} else if machineScope.GetImage().Name != "" {
-		_, err = infrastructurev1beta1.ValidateImageName(vmSpec.ImageId)
+	if imageName != "" {
+		_, err = infrastructurev1beta1.ValidateImageName(imageName)
 		if err != nil {
 			return vmTagName, err
 		}
 	} else {
-		return vmTagName, fmt.Errorf("%s there is no ImageId or ImageName \n", vmTagName)
+		_, err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
+		if err != nil {
+			return vmTagName, err
+		}
 	}
 
 	vmKeypairName := vmSpec.KeypairName
@@ -401,14 +401,14 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 
 		vmID = vm.GetVmId()
-		err = vmSvc.CheckVmState(20, 120, "running", vmID)
+		err = vmSvc.CheckVmState(20, 240, "running", vmID)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
 		machineScope.Info("Vm is running", "vmId", vmID)
 		machineScope.SetVmState(infrastructurev1beta1.VmState("pending"))
 		if vmSpec.VolumeName != "" {
-			err = volumeSvc.CheckVolumeState(20, 120, "available", volumeId)
+			err = volumeSvc.CheckVolumeState(20, 240, "available", volumeId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 			}
@@ -418,13 +418,13 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			machineScope.Info("Volume is linked", "volumeId", volumeId)
-			err = volumeSvc.CheckVolumeState(20, 120, "in-use", volumeId)
+			err = volumeSvc.CheckVolumeState(20, 240, "in-use", volumeId)
 			machineScope.Info("Volume is in-use", "volumeId", volumeId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 			}
 		}
-		err = vmSvc.CheckVmState(20, 120, "running", vmID)
+		err = vmSvc.CheckVmState(20, 240, "running", vmID)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
@@ -438,7 +438,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			machineScope.Info("Link public ip", "linkPublicIpId", linkPublicIpId)
 			linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 
-			err = vmSvc.CheckVmState(20, 120, "running", vmID)
+			err = vmSvc.CheckVmState(20, 240, "running", vmID)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}
@@ -528,18 +528,9 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
-	if vm == nil {
-		machineScope.Info("The desired vm does not exist anymore", "vmName", vmName)
-		controllerutil.RemoveFinalizer(oscmachine, "")
-		return reconcile.Result{}, nil
-	}
 	if vmSpec.PublicIpName != "" {
 		linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		err = vmSvc.CheckVmState(5, 120, "running", vmId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
-		}
 		err = publicIpSvc.UnlinkPublicIp(linkPublicIpRef.ResourceMap[publicIpName])
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
@@ -547,10 +538,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 
 	}
 	if vmSpec.LoadBalancerName != "" {
-		err = vmSvc.CheckVmState(5, 60, "running", vmId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
-		}
 		vmIds := []string{vmId}
 		loadBalancerName := vmSpec.LoadBalancerName
 		err := loadBalancerSvc.UnlinkLoadBalancerBackendMachines(vmIds, loadBalancerName)
@@ -636,11 +623,17 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 	}
 
+	if vm == nil {
+		machineScope.Info("The desired vm does not exist anymore", "vmName", vmName)
+		controllerutil.RemoveFinalizer(oscmachine, "")
+		return reconcile.Result{}, nil
+	}
+
 	err = vmSvc.DeleteVm(vmId)
 	vmSpec.ResourceId = ""
 	machineScope.Info("Delete the desired vm", "vmName", vmName)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("%w Can not delete vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 	}
-	return reconcile.Result{}, nil
+	return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 }
