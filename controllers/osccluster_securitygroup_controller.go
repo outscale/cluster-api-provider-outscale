@@ -206,7 +206,7 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clock_time clock.Clock) (reconcile.Result, error) {
 	clusterScope.Info("Check loadbalancer deletion")
 
-	currentTimeout := clock_time.Now().Add(time.Second * 20)
+	currentTimeout := clock_time.Now().Add(time.Second * 600)
 	var loadbalancer_delete = false
 	for !loadbalancer_delete {
 		err, httpRes := securityGroupSvc.DeleteSecurityGroup(securityGroupId)

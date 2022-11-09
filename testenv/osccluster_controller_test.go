@@ -146,7 +146,7 @@ func deleteObj(ctx context.Context, obj client.Object, key client.ObjectKey, kin
 func deletePatchMachineObj(ctx context.Context, obj client.Object, key client.ObjectKey, kind string, name string) {
 	Eventually(func() error {
 		return k8sClient.Delete(ctx, obj)
-	}, 30*time.Second, 10*time.Second).Should(Succeed())
+	}, 5*time.Minute, 3*time.Second).Should(Succeed())
 	fmt.Fprintf(GinkgoWriter, "Delete Machine pending \n")
 
 	time.Sleep(5 * time.Second)
@@ -271,7 +271,8 @@ func deployCapoMachine(ctx context.Context, name string, namespace string) (clie
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"cluster.x-k8s.io/provider": "infrastructure-outscale",
+				"cluster.x-k8s.io/provider":      "infrastructure-outscale",
+				"cluster.x-k8s.io/control-plane": "",
 			},
 			Finalizers: []string{"oscmachine.infrastructure.cluster.x-k8s.io"},
 		},
