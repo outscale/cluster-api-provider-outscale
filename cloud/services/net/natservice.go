@@ -28,13 +28,13 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_net/natservice_mock.go -package mock_net -source ./natservice.go
 
 type OscNatServiceInterface interface {
-	CreateNatService(publicIpId string, subnetId string, natServiceName string) (*osc.NatService, error)
+	CreateNatService(publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error)
 	DeleteNatService(natServiceId string) error
 	GetNatService(natServiceId string) (*osc.NatService, error)
 }
 
 // CreateNatService create the nat in the public subnet of the net
-func (s *Service) CreateNatService(publicIpId string, subnetId string, natServiceName string) (*osc.NatService, error) {
+func (s *Service) CreateNatService(publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error) {
 	natServiceRequest := osc.CreateNatServiceRequest{
 		PublicIpId: publicIpId,
 		SubnetId:   subnetId,
@@ -48,6 +48,17 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 	}
 	resourceIds := []string{*natServiceResponse.NatService.NatServiceId}
 	err = tag.AddTag("Name", natServiceName, resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+	subnet, err := s.GetSubnet(subnetId)
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+	resourceIds = []string{*subnet.SubnetId}
+	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err

@@ -19,7 +19,6 @@ package security
 import (
 	"fmt"
 
-	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -56,13 +55,6 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 
 	if len(resp.GetKeypairs()) < 1 {
 		return nil, fmt.Errorf("Unable to find key pair, please provide a better query criteria ")
-	}
-
-	resourceIds := []string{*keyPairResponse.Keypair.KeypairName}
-	err = tag.AddTag("Name", keypairName, resourceIds, oscAPIClient, oscAuthClient)
-	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
 	}
 
 	keypair, ok := keyPairResponse.GetKeypairOk()

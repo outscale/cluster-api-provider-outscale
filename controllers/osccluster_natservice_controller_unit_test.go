@@ -32,6 +32,7 @@ import (
 var (
 	defaultNatServiceInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -376,7 +377,7 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			if nstc.expSubnetFound {
 				subnetRef.ResourceMap[subnetName] = subnetId
 			}
-
+			clusterName := nstc.spec.Network.ClusterName + "-uid"
 			natService := osc.CreateNatServiceResponse{
 				NatService: &osc.NatService{
 					NatServiceId: &natServiceId,
@@ -386,12 +387,12 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			if nstc.expCreateNatServiceFound {
 				mockOscNatServiceInterface.
 					EXPECT().
-					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName)).
+					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
 					Return(natService.NatService, nstc.expCreateNatServiceErr)
 			} else {
 				mockOscNatServiceInterface.
 					EXPECT().
-					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName)).
+					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
 					Return(nil, nstc.expCreateNatServiceErr)
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface)

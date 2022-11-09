@@ -12,7 +12,7 @@ write_files:
       chmod +x /tmp/runc.amd64	
       \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       # Add to avoid retrieve controlPlaneEndpoint
-      echo "10.0.0.38 k8smanager" >> /etc/hosts
+      echo "10.0.0.39 k8smanager" >> /etc/hosts
       
 -   path: /run/kubeadm/kubeadm.yaml
     owner: root:root
@@ -39,7 +39,7 @@ write_files:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: osc://'{{ ds.meta_data.instance_id }}'
+          provider-id: aws:///'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
         taints: null
       

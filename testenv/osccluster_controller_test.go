@@ -1102,7 +1102,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
 							{
 								Name:      "cluster-api-privateip-kcp",
-								PrivateIp: "10.0.0.38",
+								PrivateIp: "10.0.0.39",
 							},
 						},
 					},

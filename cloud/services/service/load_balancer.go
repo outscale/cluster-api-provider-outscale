@@ -234,6 +234,7 @@ func (s *Service) CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, c
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	var getLoadBalancerDeregisterVm = false
 	for !getLoadBalancerDeregisterVm {
+		time.Sleep(clockInsideLoop * time.Second)
 		loadBalancer, err := s.GetLoadBalancer(spec)
 		if err != nil {
 			return err
@@ -242,7 +243,6 @@ func (s *Service) CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, c
 		if len(loadBalancerBackendVmIds) == 0 {
 			break
 		}
-		time.Sleep(clockInsideLoop * time.Second)
 		if clock_time.Now().After(currentTimeout) {
 			return errors.New("vm is still register")
 		}

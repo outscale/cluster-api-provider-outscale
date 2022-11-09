@@ -223,7 +223,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	err = loadBalancerSvc.CheckLoadBalancerDeregisterVm(5, 120, loadBalancerSpec)
+	err = loadBalancerSvc.CheckLoadBalancerDeregisterVm(20, 120, loadBalancerSpec)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w VmBackend is not deregister in loadBalancer %s for OscCluster %s/%s", err, loadBalancerSpec.LoadBalancerName, clusterScope.GetNamespace(), clusterScope.GetName())
 	}

@@ -996,6 +996,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		securityGroupNode := OscSecurityGroup{
 			Name:               securityGroupNodeName,
 			Description:        DefaultDescriptionNode,
+			Tag:                "OscK8sMainSG",
 			SecurityGroupRules: []OscSecurityGroupRule{},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupNode)

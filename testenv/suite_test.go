@@ -81,12 +81,17 @@ var _ = BeforeSuite(func() {
 	Expect(infrastructurev1beta1.AddToScheme(scheme.Scheme)).To(Succeed())
 
 	//+kubebuilder:scaffold:scheme
-
+	retryPeriod := 4 * time.Second
+	leaseDuration := 80 * time.Second
+	renewDeadline := 10 * time.Second
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                  scheme.Scheme,
 		LeaderElectionNamespace: "cluster-api-provider-outscale-system",
 		LeaderElection:          true,
 		LeaderElectionID:        "controller-leader-election-capo",
+		LeaseDuration:           &leaseDuration,
+		RenewDeadline:           &renewDeadline,
+		RetryPeriod:             &retryPeriod,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	err = (&controllers.OscClusterReconciler{
