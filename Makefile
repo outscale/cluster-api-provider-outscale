@@ -207,10 +207,6 @@ ccm-cni-ex: envsubst
 cluster-class-ex: envsubst
 	$(ENVSUBST) < $(E2E_CLUSTER_CLASS_FILE_SOURCE) > $(E2E_CLUSTER_CLASS_FILE)
 
-.PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
-
 .PHONY: dockerlint
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
