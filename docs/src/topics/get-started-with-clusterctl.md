@@ -38,6 +38,7 @@ You can install clusterctl for linux with:
 ```bash
   make install-clusterctl
 ```
+Or you can install clustercl with the clusterctl section ([cluster-api][cluster-api]).
 And check version which is installed:
 ```bash
 ./bin/clusterctl version
@@ -50,7 +51,7 @@ You can enable [clusterresourceset][clusterresourceset] with
 export EXP_CLUSTER_RESOURCE_SET=true
 ```
 
-Please create  $HOME/.cluster-api/clusterctl.yaml only if clusterctl version is less than 1.2.4:
+Please create  $HOME/.cluster-api/clusterctl.yaml only if clusterctl version is less than 1.2.4 [cluster-api-config][cluster-api-config]:
 ```
 providers:
 - name: outscale
@@ -187,5 +188,6 @@ clusterctl delete --all
 [openlens]: https://github.com/MuhammedKalkan/OpenLens
 [lens]: https://github.com/lensapp/lens
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
+[cluster-api-config]: https://cluster-api.sigs.k8s.io/clusterctl/configuration.html 
 [omi]: ./omi.md
 [golang]: https://medium.com/@sherlock297/install-and-set-the-environment-variable-path-for-go-in-kali-linux-446d0f16a338

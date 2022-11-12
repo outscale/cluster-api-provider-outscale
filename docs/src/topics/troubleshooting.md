@@ -38,9 +38,28 @@ Node are not ready because they need cni to be ready.
 If your vm is never in running phase and but still in provisonned phase, please look at the cloud init log of your vm.
 
 
+### Trouble with e2etest path
+You should clean a previous installation before launching e2etest:
+```
+make uninstall-clusterapi
+kubectl get crd -A | grep x-k8s.
+```
+
+You should delete all cluster-api's CRD.
+If deletion is blocked, you can use Finalizers to delete crds by patching them one by one
+```
+kubectl patch --namespace=my-namespace my-object my-object--name --patch='{"metadata":{"finalizers":null}}' --type=merge
+
+```
 ### Clean Stack
-If your vm never reach running, you can use 
+If your vm did not reach running state, you can use:
 ```bash
 ClusterToClean=my-cluster-name make testclean
 ```
 to clean you stack
+
+If there is some cluster-api k8s object (such as oscMachineTemplate) still remaning after running the cleaning script, please do:
+```
+kubectl delete oscmachinetemplate --all -A
+kubectl patch --namespace=my-namespace oscmachinetemplate my-object-name --patch='{"metadata":{"finalizers":null}}' --type=merge
+```
