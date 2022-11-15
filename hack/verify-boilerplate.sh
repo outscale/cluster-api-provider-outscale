@@ -30,7 +30,9 @@ run_boilerplate(){
 
 	if [[ ${#boilerplate_file[@]} -gt 0 ]]; then
 	  for file in "${boilerplate_file[@]}"; do
-	    echo "Boilerplate header is wrong for: ${file}" >&2
+	    if [[ "${file}" != *"go/pkg/mod"* ]]; then 	
+   	      echo "Boilerplate header is wrong for: ${file}" >&2
+            fi
   	done
 
   exit 1
