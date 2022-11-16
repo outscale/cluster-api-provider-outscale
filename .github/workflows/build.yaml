@@ -34,16 +34,16 @@ jobs:
       - name: check-gofmt
         run: make checkfmt
         shell: bash
-      - name: Lint
-        run: make vet
+      - name: Check with boilerplate
+        run: make verify-boilerplate
         shell: bash
       - name: check with ShellCheck
         run: make install-shellcheck
-        shell: bash
-      - name: Check with boilerplate
-        run: make verify-boilerplate
         shell: bash
       - name: Install yamllint
         run: pip install yamllint
       - name: check with yamlint
         run: yamllint -c .github/linters/yaml-lint.yaml . --format github
+      - name: Lint
+        run: make vet
+        shell: bash
