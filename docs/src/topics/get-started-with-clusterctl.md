@@ -33,7 +33,8 @@ Check cluster is ready:
    kubectl cluster-info
 ```
 # Install clusterctl
-You can install clusterctl for linux with or in clusterctl install section ([cluster-api][cluster-api]):
+:warning: In order to install tools (clusterctl, ...) with makefile, you need to have installed golang to download binaries [golang][golang]
+You can install clusterctl for linux with:
 ```bash
   make install-clusterctl
 ```
@@ -187,3 +188,4 @@ clusterctl delete --all
 [lens]: https://github.com/lensapp/lens
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
 [omi]: ./omi.md
+[golang]: https://medium.com/@sherlock297/install-and-set-the-environment-variable-path-for-go-in-kali-linux-446d0f16a338
