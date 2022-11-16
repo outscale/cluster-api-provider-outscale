@@ -30,7 +30,7 @@ install_yamlfmt() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		go install "github.com/google/yamlfmt/cmd/yamlfmt@v${MINIMUM_YAMLFMT_VERSION}"
-		cp "$HOME/go/bin/yamlfmt" "${BIN_ROOT}/yamlfmt"
+		cp "$GOPATH/bin/yamlfmt" "${BIN_ROOT}/yamlfmt"
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"

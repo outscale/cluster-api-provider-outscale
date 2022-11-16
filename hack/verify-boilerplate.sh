@@ -30,9 +30,8 @@ run_boilerplate(){
 
 	if [[ ${#boilerplate_file[@]} -gt 0 ]]; then
 	  for file in "${boilerplate_file[@]}"; do
-	    echo "Boilerplate header is wrong for: ${file}" >&2
+   	    echo "Boilerplate header is wrong for: ${file}" >&2
   	done
-
   exit 1
 fi
 }

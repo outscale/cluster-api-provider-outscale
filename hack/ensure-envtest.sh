@@ -50,7 +50,7 @@ install_envtest() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		go install -v sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-		cp "$HOME/go/bin/setup-envtest" "${BIN_ROOT}/envtest"
+		cp "$GOPATH/bin/setup-envtest" "${BIN_ROOT}/envtest"
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"
