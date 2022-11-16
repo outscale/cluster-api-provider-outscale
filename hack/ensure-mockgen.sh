@@ -49,7 +49,7 @@ install_mockgen() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		go install -v "github.com/golang/mock/mockgen@v${MINIMUM_MOCKGEN_VERSION}"
-		cp "$HOME/go/bin/mockgen" "${BIN_ROOT}/mockgen"
+		cp "$GOPATH/bin/mockgen" "${BIN_ROOT}/mockgen"
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"
