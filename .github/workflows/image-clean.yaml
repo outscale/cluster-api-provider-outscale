@@ -20,6 +20,6 @@ jobs:
       env:
          OSC_ACCESS_KEY: ${{secrets.OSC_OPENSOURCE_ACCESS_KEY}}
          OSC_SECRET_KEY: ${{secrets.OSC_OPENSOURCE_SECRET_KEY}}   
-         OSC_REGION: ${{secrets.OSC_REGION}}
+         OSC_REGION: ${{secrets.OSC_OPENSOURCE_REGION}}
          OWNER: ${{secrets.OWNER}}
          DAYS: ${{secrets.DAYS}}
