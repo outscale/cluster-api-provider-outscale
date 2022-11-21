@@ -34,6 +34,7 @@ import (
 var (
 	defaultSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -48,6 +49,7 @@ var (
 	}
 	defaultSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -65,6 +67,7 @@ var (
 
 	defaultMultiSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -83,6 +86,7 @@ var (
 	}
 	defaultMultiSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -358,6 +362,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
+			clusterName := stc.spec.Network.ClusterName + "-uid"
 			if stc.expNetFound {
 				netRef.ResourceMap[netName] = netId
 			}
@@ -379,12 +384,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					subnetRef.ResourceMap[subnetName] = subnetId
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(subnetName)).
+						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
 						Return(subnet.Subnet, stc.expCreateSubnetErr)
 				} else {
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(subnetName)).
+						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
 						Return(nil, stc.expCreateSubnetErr)
 				}
 			}

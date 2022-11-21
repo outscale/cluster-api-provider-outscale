@@ -28,14 +28,14 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_net/subnet_mock.go -package mock_net -source ./subnet.go
 type OscSubnetInterface interface {
-	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error)
+	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error)
 	DeleteSubnet(subnetId string) error
 	GetSubnet(subnetId string) (*osc.Subnet, error)
 	GetSubnetIdsFromNetIds(netId string) ([]string, error)
 }
 
 // CreateSubnet create the subnet associate to the net
-func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, subnetName string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
 	ipSubnetRange, err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
@@ -57,6 +57,12 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
+	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+
 	subnet, ok := subnetResponse.GetSubnetOk()
 	if !ok {
 		return nil, errors.New("Can not create subnet")

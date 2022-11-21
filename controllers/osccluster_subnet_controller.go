@@ -97,6 +97,8 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	subnetsSpec = clusterScope.GetSubnet()
 
 	subnetRef := clusterScope.GetSubnetRef()
+	networkSpec := clusterScope.GetNetwork()
+	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 	clusterScope.Info("Check if the desired subnet exist")
 	clusterScope.Info("### Get subnetId ###", "subnet", subnetRef.ResourceMap)
 	var subnetIds []string
@@ -121,7 +123,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		clusterScope.Info("### Get subnetId ###", "subnetId", subnetId)
 		if !Contains(subnetIds, subnetId) {
 			clusterScope.Info("Create the desired subnet", "subnetName", subnetName)
-			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, subnetName)
+			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, clusterName, subnetName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create subnet for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
