@@ -44,7 +44,7 @@ function github_pr {
      echo "Pr Already exist"
    else
      git checkout "$GIT_USE_BRANCH"
-     result=$(curl -s -X POST -H "Authorization: token $SECRET_GITHUB_TOKEN" -d "{\"head\":\"$GIT_BRANCH\",\"base\":\"main\",\"title\":\"$GIT_TITLE\",\"body\":\"$GIT_CONTENT_BODY\"}" "https://api.github.com/repos/$GH_ORG_NAME/$GH_REPO_NAME/pulls")
+     result=$(curl -s -X POST -H "Authorization: token $SECRET_GITHUB_TOKEN" -d "{\"head\":\"$GH_ORG_NAME:$GIT_BRANCH\",\"base\":\"main\",\"title\":\"$GIT_TITLE\",\"body\":\"$GIT_CONTENT_BODY\"}" "https://api.github.com/repos/$GH_ORG_NAME/$GH_REPO_NAME/pulls")
      errors=$(echo "$result" | jq .errors)
      if [ "$errors" != "null" ]; then
        echo "$errors"
@@ -158,7 +158,7 @@ function check_gh {
 }
         	
  
-optstring=":g:o:r:n:e:t:p:m:b:c:u:"
+optstring=":g:o:r:n:e:t:p:m:b:c:u:f:"
 while getopts ${optstring} arg; do
   case ${arg} in
     g)
@@ -169,6 +169,9 @@ while getopts ${optstring} arg; do
       ;;
     r)
       GH_REPO_NAME=${OPTARG}
+      ;;
+    f)
+      GH_ORG_USERNAME=${OPTARG}
       ;;
     n)
       GIT_USERNAME=${OPTARG}

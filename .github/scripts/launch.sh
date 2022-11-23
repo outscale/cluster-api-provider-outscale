@@ -45,6 +45,7 @@ function check_gh {
     else
         echo "GH_ORG_NAME is set to '$GH_ORG_NAME'"
     fi
+    
     if [ -z "${GH_REPO_NAME}" ]; then
         echo "GH_REPO_NAME is unset":
 	echo "Set default Values";
@@ -117,8 +118,7 @@ function get_name {
       fi
     done
   done
-  echo "-o ${GH_ORG_NAME} -r ${GH_REPO_NAME} -u ${GIT_CURRENT_BRANCH} -n ${GIT_USERNAME} -e ${GIT_USEREMAIL}  -t add_${k8s_version} -b add-k8s-${k8s_version} -m add_${k8s_version} -c add_${k8s_version} -p $GIT_FILE_PATH -g $root/bin/gh"
-  "$root"/.github/scripts/git_command.sh -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -u "${GIT_CURRENT_BRANCH}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -t add_"${k8s_version}" -b add-k8s-"${k8s_version}" -m Update_kubernetes_OMI_""${k8s_version}" -c add_"${k8s_version}" -p "$GIT_FILE_PATH" -g "$root"/bin/gh
+  "$root"/.github/scripts/git_command.sh -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -u "${GIT_CURRENT_BRANCH}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -t add_"${k8s_version}" -b add-k8s-"${k8s_version}" -m Update_kubernetes_OMI_"${k8s_version}" -c add_"${k8s_version}" -p "$GIT_FILE_PATH" -g "$root"/bin/gh
 }
 
 
