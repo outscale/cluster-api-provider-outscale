@@ -14,7 +14,7 @@ jobs:
             osc_access_key: OSC_SEC1_ACCESS_KEY
             osc_secret_key: OSC_SEC1_SECRET_KEY
             osc_region: OSC_SEC1_REGION
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout image-builder
       uses: actions/checkout@v3
