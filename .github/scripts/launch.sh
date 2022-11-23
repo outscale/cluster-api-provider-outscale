@@ -45,6 +45,15 @@ function check_gh {
     else
         echo "GH_ORG_NAME is set to '$GH_ORG_NAME'"
     fi
+    
+    if [ -z "${GH_ORG_USER_NAME}" ]; then
+        echo "GH_ORG_USER_NAME is unset";
+	echo "Set default Values";
+	GH_ORG_USER_NAME="outscale-vbr"
+    else
+        echo "GH_ORG_USER_NAME is set to '$GH_ORG_USER_NAME'"
+    fi
+        
     if [ -z "${GH_REPO_NAME}" ]; then
         echo "GH_REPO_NAME is unset":
 	echo "Set default Values";
@@ -121,7 +130,7 @@ function get_name {
 }
 
 
-optstring=":u:t:c:o:r:n:e:"
+optstring=":u:t:c:o:r:n:e:g:"
 while getopts ${optstring} arg; do
   case ${arg} in
     u)
@@ -135,6 +144,9 @@ while getopts ${optstring} arg; do
       ;;
     o)
       GH_ORG_NAME=${OPTARG}
+      ;;
+    g)
+      GH_ORG_USER_NAME=${OPTARG}
       ;;
     r)
       GH_REPO_NAME=${OPTARG}

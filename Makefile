@@ -25,7 +25,8 @@ OSC_ACCESS_KEY ?= access
 OSC_SECRET_KEY ?= secret
 OSC_CLUSTER ?= cluster-api
 CLUSTER ?= cluster-api
-GH_ORG_NAME ?= outscale-vbr
+GH_ORG_NAME ?= outscale-dev
+GH_ORG_USER_NAME ?= outscale-vbr
 GH_REPO_NAME ?= cluster-api-provider-outscale
 GIT_USERNAME ?= Outscale Bot
 GIT_USEREMAIL ?= opensource+bot@outscale.com
@@ -121,7 +122,7 @@ mock-generate: mockgen ## Generate mock
 
 .PHONY: generate-image-docs
 generate-image-docs:
-	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}"
+	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n "${GIT_USERNAME}" -g "${GH_ORG_USER_NAME}" -e "${GIT_USEREMAIL}"
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
