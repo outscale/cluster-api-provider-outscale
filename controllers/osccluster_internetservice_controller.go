@@ -38,7 +38,7 @@ func getInternetServiceResourceId(resourceName string, clusterScope *scope.Clust
 
 // checkInternetServiceFormatParameters check InternetService parameters format
 func checkInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	clusterScope.Info("Check Internet Service parameters")
+	clusterScope.V(2).Info("Check Internet Service parameters")
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceSpec.SetDefaultValue()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
@@ -51,7 +51,7 @@ func checkInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (str
 
 // ReconcileInternetService reconcile the InternetService of the cluster.
 func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface) (reconcile.Result, error) {
-	clusterScope.Info("Create InternetGateway")
+	clusterScope.V(2).Info("Create InternetGateway")
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
@@ -69,25 +69,25 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	if internetServiceSpec.ResourceId != "" {
 		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
 		internetServiceId := internetServiceSpec.ResourceId
-		clusterScope.Info("Check if the desired internetservice exist", "internetserviceName", internetServiceName)
-		clusterScope.Info("### Get internetServiceId ###", "internetservice", internetServiceRef.ResourceMap)
+		clusterScope.V(2).Info("Check if the desired internetservice exist", "internetserviceName", internetServiceName)
+		clusterScope.V(4).Info("### Get internetServiceId ###", "internetservice", internetServiceRef.ResourceMap)
 		internetService, err = internetServiceSvc.GetInternetService(internetServiceId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 	if internetService == nil || internetServiceSpec.ResourceId == "" {
-		clusterScope.Info("Create the desired internetservice", "internetServiceName", internetServiceName)
+		clusterScope.V(2).Info("Create the desired internetservice", "internetServiceName", internetServiceName)
 		internetService, err := internetServiceSvc.CreateInternetService(internetServiceName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create internetservice for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
-		clusterScope.Info("Link the desired internetservice with a net", "internetServiceName", internetServiceName)
+		clusterScope.V(2).Info("Link the desired internetservice with a net", "internetServiceName", internetServiceName)
 		err = internetServiceSvc.LinkInternetService(*internetService.InternetServiceId, netId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not link internetService with net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
-		clusterScope.Info("### Get internetService ###", "internetservice", internetService)
+		clusterScope.V(4).Info("### Get internetService ###", "internetservice", internetService)
 		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
 		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
 
@@ -99,7 +99,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 
-	clusterScope.Info("Delete internetService")
+	clusterScope.V(2).Info("Delete internetService")
 
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceSpec.SetDefaultValue()
@@ -120,18 +120,18 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 		return reconcile.Result{}, err
 	}
 	if internetService == nil {
-		clusterScope.Info("the desired internetservice does not exist anymore", "internetServiceName", internetServiceName)
+		clusterScope.V(2).Info("the desired internetservice does not exist anymore", "internetServiceName", internetServiceName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
 
 	err = internetServiceSvc.UnlinkInternetService(internetServiceId, netId)
-	clusterScope.Info("Unlink the desired internetservice", "internetServiceName", internetServiceName)
+	clusterScope.V(2).Info("Unlink the desired internetservice", "internetServiceName", internetServiceName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not unlink internetService and net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	err = internetServiceSvc.DeleteInternetService(internetServiceId)
-	clusterScope.Info("Delete the desired internetservice", "internetServiceName", internetServiceName)
+	clusterScope.V(2).Info("Delete the desired internetservice", "internetServiceName", internetServiceName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete internetService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}

@@ -105,7 +105,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	if err := r.Get(ctx, req.NamespacedName, oscCluster); err != nil {
 		if apierrors.IsNotFound(err) {
-			log.Info("object was not found")
+			log.V(2).Info("object was not found")
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
@@ -115,13 +115,13 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return reconcile.Result{}, err
 	}
 	if cluster == nil {
-		log.Info("Cluster Controller has not yet set OwnerRef")
+		log.V(2).Info("Cluster Controller has not yet set OwnerRef")
 		return reconcile.Result{}, nil
 	}
 
 	// Return early if the object or Cluster is paused.
 	if annotations.IsPaused(cluster, oscCluster) {
-		log.Info("oscCluster or linked Cluster is marked as paused. Won't reconcile")
+		log.V(4).Info("oscCluster or linked Cluster is marked as paused. Won't reconcile")
 		return ctrl.Result{}, nil
 	}
 
@@ -146,7 +146,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerSpec.SetDefaultValue()
-	log.Info("Create loadBalancer", "loadBalancerName", loadBalancerSpec.LoadBalancerName)
+	log.V(2).Info("Create loadBalancer", "loadBalancerName", loadBalancerSpec.LoadBalancerName)
 	return r.reconcile(ctx, clusterScope)
 }
 
@@ -175,7 +175,7 @@ func Contains(slice []string, item string) bool {
 
 // reconcile reconcile the creation of the cluster
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	clusterScope.Info("Reconcile OscCluster")
+	clusterScope.V(2).Info("Reconcile OscCluster")
 	osccluster := clusterScope.OscCluster
 	controllerutil.AddFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 	if err := clusterScope.PatchObject(); err != nil {
@@ -287,7 +287,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if checkOscAssociateLoadBalancerSecurityGroupErr != nil {
 		return reconcile.Result{}, checkOscAssociateLoadBalancerSecurityGroupErr
 	}
-	clusterScope.Info("Set OscCluster status to not ready")
+	clusterScope.V(2).Info("Set OscCluster status to not ready")
 	clusterScope.SetNotReady()
 	// Reconcile each element of the cluster
 	netSvc := r.getNetSvc(ctx, *clusterScope)
@@ -364,14 +364,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc, securityGroupSvc)
 
-	clusterScope.Info("Set OscCluster status to ready")
+	clusterScope.V(2).Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
 	return reconcile.Result{}, nil
 }
 
 // reconcileDelete reconcile the deletion of the cluster
 func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	clusterScope.Info("Reconcile OscCluster")
+	clusterScope.V(2).Info("Reconcile OscCluster")
 	osccluster := clusterScope.OscCluster
 
 	// reconcile deletion of each element of the cluster
@@ -386,7 +386,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 			names[i] = fmt.Sprintf("machine/%s", m.Name)
 		}
 		nameMachineList := strings.Join(names, ", ")
-		clusterScope.Info("Machine are still running, postpone oscCluster deletion", "nameMachineList", nameMachineList)
+		clusterScope.V(2).Info("Machine are still running, postpone oscCluster deletion", "nameMachineList", nameMachineList)
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
