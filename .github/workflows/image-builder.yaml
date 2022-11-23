@@ -38,6 +38,7 @@ jobs:
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Generate image docs
       run: make generate-image-docs
+      if: ${{ matrix.environment == 'eu-west-2' }}
       env:
         SECRET_GITHUB_TOKEN: ${{ secrets[matrix.github_token] }}
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
