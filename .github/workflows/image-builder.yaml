@@ -1,10 +1,22 @@
 name: image-builder
-
 on:
   schedule:
   - cron: "0 5 1 * *"
 jobs:
   image-builder:
+    strategy:
+      matrix:
+        include:
+          - environment: eu-west-2
+            osc_access_key: OSC_OPENSOURCE_ACCESS_KEY
+            osc_secret_key: OSC_OPENSOURCE_SECRET_KEY
+            osc_region: OSC_OPENSOURCE_REGION
+            github_token: SECRET_GITHUB_TOKEN
+          - environment: cloudgouv-eu-west-1
+            osc_access_key: OSC_SEC1_ACCESS_KEY
+            osc_secret_key: OSC_SEC1_SECRET_KEY
+            osc_region: OSC_SEC1_REGION
+            github_token: SECRET_GITHUB_TOKEN
     runs-on: [self-hosted, linux]
     steps:
     - name: Checkout image-builder
@@ -21,14 +33,15 @@ jobs:
           repository: outscale-dev/cluster-api-provider-outscale
           ref: main
           path: cluster-api-provider-outscale
-          token: ${{ secrets.SECRET_GITHUB_TOKEN }}
+          token: ${{ secrets[matrix.github_token] }}
     - name: Install gh
       run: make install-gh
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Generate image docs
       run: make generate-image-docs
+      if: ${{ matrix.environment == 'eu-west-2' }}
       env:
-        SECRET_GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
+        SECRET_GITHUB_TOKEN: ${{ secrets[matrix.github_token] }}
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Install Packer
       run: make install-packer
@@ -46,9 +59,9 @@ jobs:
       shell: bash
       working-directory: "${{ github.workspace }}/add-outscale-image/images/capi"
       env:
-         OSC_ACCESS_KEY: ${{secrets.OSC_OPENSOURCE_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_OPENSOURCE_SECRET_KEY}}   
-         OSC_REGION: ${{secrets.OSC_OPENSOURCE_REGION}}
+         OSC_ACCESS_KEY: ${{secrets[matrix.osc_access_key]}}
+         OSC_SECRET_KEY: ${{secrets[matrix.osc_secret_key]}}   
+         OSC_REGION: ${{secrets[matrix.osc_region]}}
          CRYPTOGRAPHY_DONT_BUILD_RUST: 1
          PACKER_LOG: 1 
          LANG: C.UTF-8
