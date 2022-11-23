@@ -16,7 +16,7 @@ jobs:
             osc_secret_key: OSC_SEC1_SECRET_KEY
             osc_region: OSC_SEC1_REGION
             github_token: SECRET_GITHUB_TOKEN
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
     - name: Checkout image-builder
       uses: actions/checkout@v3
