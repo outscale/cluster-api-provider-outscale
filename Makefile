@@ -121,7 +121,7 @@ mock-generate: mockgen ## Generate mock
 
 .PHONY: generate-image-docs
 generate-image-docs:
-	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}"
+	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n '${GIT_USERNAME}' -e "${GIT_USEREMAIL}"
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
