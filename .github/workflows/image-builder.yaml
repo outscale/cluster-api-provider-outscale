@@ -32,14 +32,14 @@ jobs:
           repository: outscale-dev/cluster-api-provider-outscale
           ref: main
           path: cluster-api-provider-outscale
-          token: ${{ secrets[secret_github_token] }}
+          token: ${{ secrets[matrix.secret_github_token] }}
     - name: Install gh
       run: make install-gh
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Generate image docs
       run: make generate-image-docs
       env:
-        SECRET_GITHUB_TOKEN: ${{ secrets[secret_github_token] }}
+        SECRET_GITHUB_TOKEN: ${{ secrets[matrix.secret_github_token] }}
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Install Packer
       run: make install-packer
