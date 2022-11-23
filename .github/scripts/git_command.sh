@@ -3,7 +3,7 @@
 set -e
 root=$(cd "$(dirname "$0")/../.." && pwd)
 function usage {
-        echo "./$(basename "$0") -g GH_PATH -o GH_ORG_NAME -r GH_REPO_NAME -n GIT_USERNAME -t GIT_TITLE -e GIT_USEREMAIL -p GIT_FILE_PATH -m GIT_COMMIT_MESSAGE -b GIT_BRANCH -c GIT_CONTENT_BODY -u GIT_USE_BRANCH --> shows usage"
+        echo "./$(basename "$0") -g GH_PATH -o GH_ORG_NAME -r GH_REPO_NAME -n GIT_USERNAME -t GIT_TITLE -e GIT_USEREMAIL -p GIT_FILE_PATH -m GIT_COMMIT_MESSAGE -b GIT_BRANCH -c GIT_CONTENT_BODY -u GIT_USE_BRANCH -f GIT_ORG_USER_NAME --> shows usage"
 }
 
 # github_login allow to log to github.
@@ -44,7 +44,7 @@ function github_pr {
      echo "Pr Already exist"
    else
      git checkout "$GIT_USE_BRANCH"
-     result=$(curl -s -X POST -H "Authorization: token $SECRET_GITHUB_TOKEN" -d "{\"head\":\"$GIT_BRANCH\",\"base\":\"main\",\"title\":\"$GIT_TITLE\",\"body\":\"$GIT_CONTENT_BODY\"}" "https://api.github.com/repos/$GH_ORG_NAME/$GH_REPO_NAME/pulls")
+     result=$(curl -s -X POST -H "Authorization: token $SECRET_GITHUB_TOKEN" -d "{\"head\":\"$GH_ORG_USER_NAME:$GIT_BRANCH\",\"base\":\"main\",\"title\":\"$GIT_TITLE\",\"body\":\"$GIT_CONTENT_BODY\"}" "https://api.github.com/repos/$GH_ORG_NAME/$GH_REPO_NAME/pulls")
      errors=$(echo "$result" | jq .errors)
      if [ "$errors" != "null" ]; then
        echo "$errors"
@@ -56,7 +56,7 @@ function github_pr {
 # github_push push git branch.
 
 function github_push {
-   git push "https://${SECRET_GITHUB_TOKEN}@github.com/${GH_ORG_NAME}/${GH_REPO_NAME}.git"
+   git push "https://${SECRET_GITHUB_TOKEN}@github.com/${GH_ORG_USER_NAME}/${GH_REPO_NAME}.git"
 }
 
 # github_checkout checkout branch.
@@ -91,6 +91,13 @@ function check_gh {
 	else
 	    echo "GH_ORG_NAME is set to '$GH_ORG_NAME'"
 	fi
+        if [ -z "${GH_ORG_USER_NAME}" ]; then
+            echo "GH_ORG_USER_NAME is unset";
+	    echo "Set Default Values";
+	    GH_ORG_USER_NAME=outscale-vbr
+        else
+	    echo "GH_ORG_USER_NAME is set ti '$GH_ORG_USER_NAME'"
+        fi
 	if [ -z "${GH_REPO_NAME}" ]; then
 	    echo "GH_REPO_NAME is unset";
             echo "Set Default Values";
@@ -158,7 +165,7 @@ function check_gh {
 }
         	
  
-optstring=":g:o:r:n:e:t:p:m:b:c:u:"
+optstring=":g:o:r:n:e:t:p:m:b:c:u:f:"
 while getopts ${optstring} arg; do
   case ${arg} in
     g)
@@ -169,6 +176,9 @@ while getopts ${optstring} arg; do
       ;;
     r)
       GH_REPO_NAME=${OPTARG}
+      ;;
+    f)
+      GH_ORG_USERNAME=${OPTARG}
       ;;
     n)
       GIT_USERNAME=${OPTARG}
