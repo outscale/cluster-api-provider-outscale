@@ -56,7 +56,7 @@ function github_pr {
 # github_push push git branch.
 
 function github_push {
-   git push "https://${SECRET_GITHUB_TOKEN}@github.com/${GH_ORG_NAME}/${GH_REPO_NAME}.git"
+   git push "https://${SECRET_GITHUB_TOKEN}@github.com/${GH_ORG_USER_NAME}/${GH_REPO_NAME}.git"
 }
 
 # github_checkout checkout branch.
