@@ -185,29 +185,29 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 // reconcile reconcile the creation of the machine
 func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	machineScope.Info("Reconciling OscMachine")
+	machineScope.V(2).Info("Reconciling OscMachine")
 	oscmachine := machineScope.OscMachine
 	if oscmachine.Status.FailureReason != nil || oscmachine.Status.FailureMessage != nil {
-		machineScope.Info("Error state detected, skipping reconciliation")
+		machineScope.V(2).Info("Error state detected, skipping reconciliation")
 		return reconcile.Result{}, nil
 	}
 
 	controllerutil.AddFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 
-	machineScope.Info("Set OscMachine status to not ready")
+	machineScope.V(2).Info("Set OscMachine status to not ready")
 	machineScope.SetNotReady()
 	if !machineScope.Cluster.Status.InfrastructureReady {
-		machineScope.Info("Cluster infrastructure is not ready yet")
+		machineScope.V(2).Info("Cluster infrastructure is not ready yet")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	}
-	machineScope.Info("Check bootstrap data")
+	machineScope.V(2).Info("Check bootstrap data")
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
-		machineScope.Info("Bootstrap data secret reference is not yet availablle")
+		machineScope.V(2).Info("Bootstrap data secret reference is not yet availablle")
 		return ctrl.Result{}, nil
 	}
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.Info("Find volumes")
+		machineScope.V(2).Info("Find volumes")
 		volumeName, err := checkVolumeFormatParameters(machineScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create volume %s for OscMachine %s/%s", err, volumeName, machineScope.GetNamespace(), machineScope.GetName())
@@ -225,7 +225,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	}
 
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.Info("Find Volumes")
+		machineScope.V(2).Info("Find Volumes")
 		duplicateResourceVolumeErr := checkVolumeOscDuplicateName(machineScope)
 		if duplicateResourceVolumeErr != nil {
 			return reconcile.Result{}, duplicateResourceVolumeErr
@@ -237,7 +237,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
 	}
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.Info("Find volumes")
+		machineScope.V(2).Info("Find volumes")
 		checkOscAssociateVmVolumeErr := checkVmVolumeOscAssociateResourceName(machineScope)
 		if checkOscAssociateVmVolumeErr != nil {
 			return reconcile.Result{}, checkOscAssociateVmVolumeErr
@@ -286,7 +286,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.Info("Find Volumes")
+		machineScope.V(2).Info("Find Volumes")
 		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc)
 		if err != nil {
 			machineScope.Error(err, "failed to reconcile volume")
@@ -319,23 +319,23 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	switch *vmState {
 	case infrastructurev1beta1.VmStatePending:
 		machineScope.SetNotReady()
-		machineScope.Info("Vm pending", "state", vmState)
+		machineScope.V(4).Info("Vm pending", "state", vmState)
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "")
 	case infrastructurev1beta1.VmStateStopping, infrastructurev1beta1.VmStateStopped:
 		machineScope.SetNotReady()
-		machineScope.Info("Vm stopped", "state", vmState)
+		machineScope.V(4).Info("Vm stopped", "state", vmState)
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmStoppedReason, clusterv1.ConditionSeverityWarning, "")
 	case infrastructurev1beta1.VmStateRunning:
 		machineScope.SetReady()
-		machineScope.Info("Vm running", "state", vmState)
+		machineScope.V(4).Info("Vm running", "state", vmState)
 		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
 	case infrastructurev1beta1.VmStateShuttingDown, infrastructurev1beta1.VmStateTerminated:
 		machineScope.SetNotReady()
-		machineScope.Info("Unexpected vm termination", "state", vmState)
+		machineScope.V(4).Info("Unexpected vm termination", "state", vmState)
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmTerminatedReason, clusterv1.ConditionSeverityError, "")
 	default:
 		machineScope.SetNotReady()
-		machineScope.Info("Vm state is undefined", "state", vmState)
+		machineScope.V(4).Info("Vm state is undefined", "state", vmState)
 		machineScope.SetFailureReason(capierrors.UpdateMachineError)
 		machineScope.SetFailureMessage(errors.Errorf("instance state %+v  is undefined", vmState))
 		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
@@ -345,10 +345,10 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 
 // reconcileDelete reconcile the deletion of the machine
 func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	machineScope.Info("Reconciling delete OscMachine")
+	machineScope.V(2).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.Info("Find volumes")
+		machineScope.V(2).Info("Find volumes")
 		volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
 		reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, volumeSvc)
 		if err != nil {

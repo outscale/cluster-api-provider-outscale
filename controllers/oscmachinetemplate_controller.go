@@ -57,18 +57,18 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			names := make([]string, len(machines))
 			for i, m := range machines {
 				names[i] = fmt.Sprintf("machine/%s", m.Name)
-				machineTemplateScope.Info("Get Machines", "machine", m.Name)
+				machineTemplateScope.V(4).Info("Get Machines", "machine", m.Name)
 				machineLabel := m.Labels
 				for labelKey := range machineLabel {
 					if labelKey == "cluster.x-k8s.io/control-plane" {
-						machineTemplateScope.Info("Get Kcp Machine", "machineKcp", m.Name)
+						machineTemplateScope.V(4).Info("Get Kcp Machine", "machineKcp", m.Name)
 						machineKcpCount++
 						if m.Status.Phase == "Running" || m.Status.Phase == "Provisioned" {
 							machineKcpReady++
 						}
 					}
 					if labelKey == "cluster.x-k8s.io/deployment-name" {
-						machineTemplateScope.Info("Get Kw Machine", "machineKw", m.Name)
+						machineTemplateScope.V(4).Info("Get Kw Machine", "machineKw", m.Name)
 						machineKwCount++
 						if m.Status.Phase == "Running" || m.Status.Phase == "Provisioned" {
 							machineKwReady++
@@ -79,11 +79,11 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 		role := machineTemplateScope.GetRole()
 		if role == "controlplane" && machineKcpReady > 0 && machineKcpCount > 0 {
-			machineTemplateScope.Info("At least one controlplane node ready")
+			machineTemplateScope.V(2).Info("At least one controlplane node ready")
 		} else if role == "" && machineKwReady > 0 && machineKwCount > 0 {
-			machineTemplateScope.Info("At least one worker node ready")
+			machineTemplateScope.V(2).Info("At least one worker node ready")
 		} else {
-			machineTemplateScope.Info("Node is not ready yet")
+			machineTemplateScope.V(2).Info("Node is not ready yet")
 			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {
@@ -91,7 +91,7 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	}
 	clusterName := machineTemplateScope.GetClusterName() + "-" + clusterScope.GetUID()
 	vmType := machineTemplateScope.GetVmType()
-	machineTemplateScope.Info("### Get ClusterName ####", "clusterName", clusterName)
+	machineTemplateScope.V(4).Info("### Get ClusterName ####", "clusterName", clusterName)
 	capacity, err := vmSvc.GetCapacity("OscK8sClusterID/"+clusterName, "owned", vmType)
 	if err != nil {
 		return reconcile.Result{}, err
