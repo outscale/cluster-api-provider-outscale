@@ -1,10 +1,19 @@
 name: image-builder
 
-on:
-  schedule:
-  - cron: "0 5 1 * *"
+on: push
 jobs:
   image-builder:
+    strategy:
+      matrix:
+        include:
+          - environment: eu-west-2
+            osc_access_key: OSC_OPENSOURCE_ACCESS_KEY
+            osc_secret_key: OSC_OPENSOURCE_SECRET_KEY
+            osc_region: OSC_OPENSOURCE_REGION
+          - environment: cloudgouv-eu-west-1
+            osc_access_key: OSC_SEC1_ACCESS_KEY
+            osc_secret_key: OSC_SEC1_SECRET_KEY
+            osc_region: OSC_SEC1_REGION
     runs-on: [self-hosted, linux]
     steps:
     - name: Checkout image-builder
@@ -46,9 +55,9 @@ jobs:
       shell: bash
       working-directory: "${{ github.workspace }}/add-outscale-image/images/capi"
       env:
-         OSC_ACCESS_KEY: ${{secrets.OSC_OPENSOURCE_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_OPENSOURCE_SECRET_KEY}}   
-         OSC_REGION: ${{secrets.OSC_OPENSOURCE_REGION}}
+         OSC_ACCESS_KEY: ${{secrets[matrix.osc_access_key]}}
+         OSC_SECRET_KEY: ${{secrets[matrix.osc_secret_key]}}   
+         OSC_REGION: ${{secrets[matrix.osc_region]}}
          CRYPTOGRAPHY_DONT_BUILD_RUST: 1
          PACKER_LOG: 1 
          LANG: C.UTF-8
