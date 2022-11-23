@@ -19,7 +19,7 @@ jobs:
           repository: outscale-vbr/cluster-api-provider-outscale
           ref: multi-region
           path: cluster-api-provider-outscale
-          token: ${{ secrets[matrix.github_token] }}
+          token: ${{ secrets.SECRET_GITHUB_TOKEN }}
     - name: Install gh
       run: make install-gh
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
