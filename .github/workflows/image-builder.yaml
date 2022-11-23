@@ -10,12 +10,12 @@ jobs:
             osc_access_key: OSC_OPENSOURCE_ACCESS_KEY
             osc_secret_key: OSC_OPENSOURCE_SECRET_KEY
             osc_region: OSC_OPENSOURCE_REGION
-            secret_github_token: SECRET_GITHUB_TOKEN
+            github_token: SECRET_GITHUB_TOKEN
           - environment: cloudgouv-eu-west-1
             osc_access_key: OSC_SEC1_ACCESS_KEY
             osc_secret_key: OSC_SEC1_SECRET_KEY
             osc_region: OSC_SEC1_REGION
-            secret_github_token: SECRET_GITHUB_TOKEN
+            github_token: SECRET_GITHUB_TOKEN
     runs-on: ubuntu-latest
     steps:
     - name: Checkout image-builder
@@ -32,14 +32,14 @@ jobs:
           repository: outscale-dev/cluster-api-provider-outscale
           ref: main
           path: cluster-api-provider-outscale
-          token: ${{ secrets[matrix.secret_github_token] }}
+          token: ${{ secrets[matrix.github_token] }}
     - name: Install gh
       run: make install-gh
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Generate image docs
       run: make generate-image-docs
       env:
-        SECRET_GITHUB_TOKEN: ${{ secrets[matrix.secret_github_token] }}
+        SECRET_GITHUB_TOKEN: ${{ secrets[matrix.github_token] }}
       working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
     - name: Install Packer
       run: make install-packer
