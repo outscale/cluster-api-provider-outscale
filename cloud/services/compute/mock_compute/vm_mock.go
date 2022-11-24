@@ -81,6 +81,21 @@ func (mr *MockOscVmInterfaceMockRecorder) CreateVm(machineScope, spec, subnetId,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), machineScope, spec, subnetId, securityGroupIds, privateIps, vmName)
 }
 
+// CreateVmUserData mocks base method.
+func (m *MockOscVmInterface) CreateVmUserData(userData string, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName string) (*osc.Vm, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateVmUserData", userData, spec, subnetId, securityGroupIds, privateIps, vmName)
+	ret0, _ := ret[0].(*osc.Vm)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateVmUserData indicates an expected call of CreateVmUserData.
+func (mr *MockOscVmInterfaceMockRecorder) CreateVmUserData(userData, spec, subnetId, securityGroupIds, privateIps, vmName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmUserData", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVmUserData), userData, spec, subnetId, securityGroupIds, privateIps, vmName)
+}
+
 // DeleteVm mocks base method.
 func (m *MockOscVmInterface) DeleteVm(vmId string) error {
 	m.ctrl.T.Helper()
