@@ -2007,6 +2007,7 @@ func TestReconcileVm(t *testing.T) {
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 5
+			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 60
 			var firstClockLoop time.Duration = 120
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
@@ -2059,7 +2060,7 @@ func TestReconcileVm(t *testing.T) {
 
 			mockOscVmInterface.
 				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
+				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
 				Return(vtc.expCheckVmStateBootErr)
 
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
@@ -2393,6 +2394,7 @@ func TestReconcileVmLink(t *testing.T) {
 			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
 			var clockInsideLoop time.Duration = 5
+			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 60
 			var firstClockLoop time.Duration = 120
 			if vtc.expCreateVmFound {
@@ -2410,9 +2412,10 @@ func TestReconcileVmLink(t *testing.T) {
 			if vtc.expCheckVmStateBootFound {
 				mockOscVmInterface.
 					EXPECT().
-					CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
+					CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
 					Return(vtc.expCheckVmStateBootErr)
 			}
+
 			if vtc.expCheckVolumeStateAvailableFound {
 				mockOscVolumeInterface.
 					EXPECT().
@@ -2589,6 +2592,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 5
+			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 60
 			var firstClockLoop time.Duration = 120
 
@@ -2618,7 +2622,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 
 			mockOscVmInterface.
 				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
+				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
 				Return(vtc.expCheckVmStateBootErr)
 
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
@@ -2764,6 +2768,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 5
+			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 60
 			var firstClockLoop time.Duration = 120
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
@@ -2795,7 +2800,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 
 			mockOscVmInterface.
 				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
+				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
 				Return(vtc.expCheckVmStateBootErr)
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
 

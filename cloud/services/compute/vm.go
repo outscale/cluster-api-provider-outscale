@@ -240,6 +240,7 @@ func (s *Service) CheckVmState(clockInsideLoop time.Duration, clockLoop time.Dur
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	var getVmState = false
 	for !getVmState {
+		time.Sleep(clockInsideLoop * time.Second)
 		vm, err := s.GetVm(vmId)
 		if err != nil {
 			return err
@@ -251,7 +252,6 @@ func (s *Service) CheckVmState(clockInsideLoop time.Duration, clockLoop time.Dur
 		if *vmState == state {
 			break
 		}
-		time.Sleep(clockInsideLoop * time.Second)
 
 		if clock_time.Now().After(currentTimeout) {
 			return errors.New("Vm still not running")
