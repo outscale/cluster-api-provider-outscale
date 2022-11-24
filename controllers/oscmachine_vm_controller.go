@@ -401,7 +401,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 
 		vmID = vm.GetVmId()
-		err = vmSvc.CheckVmState(5, 120, "running", vmID)
+		err = vmSvc.CheckVmState(20, 120, "running", vmID)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
