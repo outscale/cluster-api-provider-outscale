@@ -4028,3 +4028,112 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 	}
 
 }
+
+// TestReconcileDeleteBastionUnlinkPublicIp has several tests to cover the code of the function reconcileDeleteVm
+func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
+	bastionTestCases := []struct {
+		name                          string
+		clusterSpec                   infrastructurev1beta1.OscClusterSpec
+		expCheckBastionStateBootErr   error
+		expCheckBastionStateBootFound bool
+		expCheckUnlinkPublicIpFound   bool
+		expGetBastionFound            bool
+		expGetBastionErr              error
+		expCheckUnlinkPublicIpErr     error
+		expReconcileDeleteBastionErr  error
+	}{
+		{
+			name:                          "failed vmState",
+			clusterSpec:                   defaultBastionReconcile,
+			expCheckBastionStateBootErr:   fmt.Errorf("CheckVmState generic error"),
+			expCheckBastionStateBootFound: true,
+			expGetBastionFound:            true,
+			expGetBastionErr:              nil,
+			expCheckUnlinkPublicIpFound:   false,
+			expCheckUnlinkPublicIpErr:     nil,
+			expReconcileDeleteBastionErr:  fmt.Errorf("CheckVmState generic error Can not get bastion i-test-bastion-uid running for OscMachine test-system/test-osc"),
+		},
+		{
+			name:                          "failed unlink publicIp",
+			clusterSpec:                   defaultBastionReconcile,
+			expCheckBastionStateBootErr:   nil,
+			expCheckBastionStateBootFound: true,
+			expGetBastionFound:            true,
+			expGetBastionErr:              nil,
+			expCheckUnlinkPublicIpFound:   true,
+			expCheckUnlinkPublicIpErr:     fmt.Errorf("CheckUnlinkPublicIp generic error"),
+			expReconcileDeleteBastionErr:  fmt.Errorf("CheckUnlinkPublicIp generic error Can not unlink publicIp for OscCluster test-system/test-osc"),
+		},
+	}
+	for _, btc := range bastionTestCases {
+		t.Run(btc.name, func(t *testing.T) {
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
+			vmId := "i-" + bastionName
+			vmState := "running"
+
+			publicIpName := btc.clusterSpec.Network.Bastion.PublicIpName + "-uid"
+			linkPublicIpId := "eipassoc-" + publicIpName
+			linkPublicIpRef := clusterScope.GetLinkPublicIpRef()
+			linkPublicIpRef.ResourceMap = make(map[string]string)
+			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
+
+			var securityGroupIds []string
+			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
+			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+			securityGroupsRef.ResourceMap = make(map[string]string)
+			for _, bastionSecurityGroup := range *bastionSecurityGroups {
+				securityGroupName := bastionSecurityGroup.Name + "-uid"
+				securityGroupId := "sg-" + securityGroupName
+				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
+				securityGroupIds = append(securityGroupIds, securityGroupId)
+			}
+			var clockInsideLoop time.Duration = 5
+			var firstClockLoop time.Duration = 120
+
+			createVms := osc.CreateVmsResponse{
+				Vms: &[]osc.Vm{
+					{
+						VmId: &vmId,
+					},
+				},
+			}
+
+			createVm := *createVms.Vms
+			bastion := &createVm[0]
+
+			if btc.expGetBastionFound {
+				mockOscVmInterface.
+					EXPECT().
+					GetVm(gomock.Eq(vmId)).
+					Return(bastion, btc.expGetBastionErr)
+			} else {
+				mockOscVmInterface.
+					EXPECT().
+					GetVm(gomock.Eq(vmId)).
+					Return(nil, btc.expGetBastionErr)
+			}
+			if btc.expCheckBastionStateBootFound {
+				mockOscVmInterface.
+					EXPECT().
+					CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
+					Return(btc.expCheckBastionStateBootErr)
+			}
+
+			if btc.expCheckUnlinkPublicIpFound {
+				mockOscPublicIpInterface.
+					EXPECT().
+					UnlinkPublicIp(gomock.Eq(linkPublicIpId)).
+					Return(btc.expCheckUnlinkPublicIpErr)
+			}
+			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
+			if err != nil {
+				assert.Equal(t, btc.expReconcileDeleteBastionErr.Error(), err.Error(), "reconcileDeleteBastion() should return the same error")
+			} else {
+				assert.Nil(t, btc.expReconcileDeleteBastionErr)
+			}
+
+			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)
+		})
+	}
+}

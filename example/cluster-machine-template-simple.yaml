@@ -58,6 +58,22 @@ spec:
       name: cluster-api-natservice
       publicipname: cluster-api-publicip-nat
       subnetname: cluster-api-subnet-nat
+    bastion:
+      clusterName: cluster-api
+      enable: true
+      name: cluster-api-vm-bastion
+      keypairName: cluster-api
+      deviceName: /dev/sda1
+      imageId: ami-bb490c7e
+      rootDisk:
+        rootDiskSize: 15
+        rootDiskIops: 1000
+        rootDiskType: io1
+      subnetName: cluster-api-subnet-public
+      subregionName: eu-west-2a
+      securityGroupNames:
+        - name: cluster-api-securitygroup-lb
+      vmType: "tinav4.c2r4p2"
     routeTables:
       - name: cluster-api-routetable-kw
         subnetname: cluster-api-subnet-kw

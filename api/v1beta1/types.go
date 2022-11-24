@@ -53,13 +53,14 @@ type OscNetwork struct {
 	NatService OscNatService `json:"natService,omitempty"`
 	// The Route Table configuration
 	// +optional
-	RouteTables []*OscRouteTable `json:"routeTables,omitempty"`
-
+	RouteTables    []*OscRouteTable    `json:"routeTables,omitempty"`
 	SecurityGroups []*OscSecurityGroup `json:"securityGroups,omitempty"`
 	// The Public Ip configuration
 	// +optional
 	PublicIps   []*OscPublicIp `json:"publicIps,omitempty"`
 	ClusterName string         `json:"clusterName,omitempty"`
+	Image       OscImage       `json:"image,omitempty"`
+	Bastion     OscBastion     `json:"bastion,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -287,7 +288,9 @@ type OscNetworkResource struct {
 	SecurityGroupRuleRef OscResourceMapReference `json:"securitygroupruleref,omitempty"`
 	PublicIpRef          OscResourceMapReference `json:"publicipref,omitempty"`
 	// Map between NatServiceId  and NatServiceName (Nat Service tag Name with cluster UID)
-	NatServiceRef OscResourceMapReference `json:"natref,omitempty"`
+	NatServiceRef   OscResourceMapReference `json:"natref,omitempty"`
+	BastionRef      OscResourceMapReference `json:"bastionref,omitempty"`
+	LinkPublicIpRef OscResourceMapReference `json:"linkPublicIpRef,omitempty"`
 }
 
 type OscNodeResource struct {
@@ -341,6 +344,23 @@ type OscVm struct {
 	Replica            int32                     `json:"replica,omitempty"`
 }
 
+type OscBastion struct {
+	Name               string                    `json:"name,omitempty"`
+	ImageId            string                    `json:"imageId,omitempty"`
+	KeypairName        string                    `json:"keypairName,omitempty"`
+	VmType             string                    `json:"vmType,omitempty"`
+	DeviceName         string                    `json:"deviceName,omitempty"`
+	SubnetName         string                    `json:"subnetName,omitempty"`
+	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
+	PublicIpName       string                    `json:"publicIpName,omitempty"`
+	SubregionName      string                    `json:"subregionName,omitempty"`
+	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
+	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
+	ResourceId         string                    `json:"resourceId,omitempty"`
+	ClusterName        string                    `json:"clusterName,omitempty"`
+	Enable             bool                      `json:"enable,omitempty"`
+}
+
 type OscRootDisk struct {
 	RootDiskIops int32  `json:"rootDiskIops,omitempty"`
 	RootDiskSize int32  `json:"rootDiskSize,omitempty"`
@@ -361,22 +381,24 @@ var (
 
 	DefaultKeypairName string = "cluster-api-keypair"
 
-	DefaultVmName             string = "cluster-api-vm"
-	DefaultVmSubregionName    string = "eu-west-2a"
-	DefaultVmImageId          string = "ami-e1a786f1"
-	DefaultVmKeypairName      string = "cluster-api"
-	DefaultVmType             string = "tinav5.c4r8p1"
-	DefaultVmDeviceName       string = "/dev/sda1"
-	DefaultVmPrivateIpKwName  string = "cluster-api-privateip-kw"
-	DefaultVmPrivateIpKcpName string = "cluster-api-privateip-kcp"
-	DefaultVmPrivateIpKcp     string = "10.0.0.38"
-	DefaultVmPrivateIpKw      string = "10.0.0.138"
+	DefaultVmName          string = "cluster-api-vm"
+	DefaultVmSubregionName string = "eu-west-2a"
+	DefaultVmImageId       string = "ami-e1a786f1"
 
-	DefaultVmKwName  string = "cluster-api-vm-kw"
-	DefaultVmKwType  string = "tinav5.c4r8p1"
-	DefaultVmKcpName string = "cluster-api-vm-kcp"
-	DefaultVmKcpType string = "tinav5.c4r8p1"
+	DefaultVmKeypairName string = "cluster-api"
+	DefaultVmType        string = "tinav5.c4r8p1"
+	DefaultVmDeviceName  string = "/dev/sda1"
 
+	DefaultVmBastionImageId       string = "ami-bb490c7e"
+	DefaultVmBastionKeypairName   string = "cluster-api"
+	DefaultVmBastionSubregionName string = "eu-west-2a"
+
+	DefaultVmKwName               string = "cluster-api-vm-kw"
+	DefaultVmKwType               string = "tinav5.c4r8p1"
+	DefaultVmKcpName              string = "cluster-api-vm-kcp"
+	DefaultVmKcpType              string = "tinav5.c4r8p1"
+	DefaultVmBastionName          string = "cluster-api-vm-bastion"
+	DefaultVmBastionType          string = "tinav5.c2r2p1"
 	DefaultVolumeKcpName          string = "cluster-api-volume-kcp"
 	DefaultVolumeKcpIops          int32  = 1000
 	DefaultVolumeKcpSize          int32  = 30
@@ -391,6 +413,9 @@ var (
 	DefaultRootDiskKcpSize int32  = 60
 	DefaultRootDiskKcpIops int32  = 1500
 
+	DefaultRootDiskBastionType   string = "io1"
+	DefaultRootDiskBastionSize   int32  = 15
+	DefaultRootDiskBastionIops   int32  = 1000
 	DefaultVolumeKwName          string = "cluster-api-volume-kw"
 	DefaultVolumeKwIops          int32  = 1000
 	DefaultVolumeKwSize          int32  = 30
@@ -509,7 +534,7 @@ var (
 	DefaultRuleIpRangeKubeletKcp              string = "10.0.0.32/28"
 	DefaultFromPortRangeKubeletKcp            int32  = 10250
 	DefaultToPortRangeKubeletKcp              int32  = 10252
-	DefaultSecurityGroupLbName                string = "cluster-api-securitygroup-lb"
+	DefaultSecurityGroupPublicName            string = "cluster-api-securitygroup-lb"
 	DefaultDescriptionLb                      string = "Security Group Lb with cluster-api"
 	DefaultSecurityGroupRuleLbName            string = "cluster-api-securitygrouprule-lb"
 	DefaultFlowLb                             string = "Inbound"
@@ -703,6 +728,53 @@ func (vm *OscVm) SetDefaultValue() {
 
 }
 
+// SetDefaultValue set the bastion default values
+func (bastion *OscBastion) SetDefaultValue() {
+	var vmBastionName string = DefaultVmBastionName
+	var subnetPublicName string = DefaultSubnetPublicName
+	var securityGroupPublicName string = DefaultSecurityGroupPublicName
+	if bastion.Enable {
+		if bastion.ClusterName != "" {
+			vmBastionName = strings.Replace(DefaultVmBastionName, DefaultClusterName, bastion.ClusterName, -1)
+			subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, bastion.ClusterName, -1)
+			securityGroupPublicName = strings.Replace(DefaultSecurityGroupPublicName, DefaultClusterName, bastion.ClusterName, -1)
+		}
+		if bastion.Name == "" {
+			bastion.Name = vmBastionName
+		}
+		if bastion.VmType == "" {
+			bastion.VmType = DefaultVmBastionType
+		}
+		if bastion.RootDisk.RootDiskIops == 0 && bastion.RootDisk.RootDiskType == "io1" {
+			bastion.RootDisk.RootDiskIops = DefaultRootDiskBastionIops
+		}
+		if bastion.RootDisk.RootDiskType == "" {
+			bastion.RootDisk.RootDiskType = DefaultRootDiskBastionType
+		}
+		if bastion.SubnetName == "" {
+			bastion.SubnetName = subnetPublicName
+		}
+		if len(bastion.SecurityGroupNames) == 0 {
+			securityGroupPublic := OscSecurityGroupElement{
+				Name: securityGroupPublicName,
+			}
+			bastion.SecurityGroupNames = []OscSecurityGroupElement{securityGroupPublic}
+		}
+		if bastion.ImageId == "" {
+			bastion.ImageId = DefaultVmBastionImageId
+		}
+		if bastion.KeypairName == "" {
+			bastion.KeypairName = DefaultVmBastionKeypairName
+		}
+		if bastion.DeviceName == "" {
+			bastion.DeviceName = DefaultVmDeviceName
+		}
+		if bastion.SubregionName == "" {
+			bastion.SubregionName = DefaultVmBastionSubregionName
+		}
+	}
+}
+
 // SetDefaultValue set the image default values
 func (node *OscNode) SetImageDefaultValue() {
 	if node.Image.Name == "" {
@@ -855,7 +927,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		var securityGroupRuleKubeletKcpName string = DefaultSecurityGroupRuleKubeletKcpName
 		var securityGroupKcpName string = DefaultSecurityGroupKcpName
 		var securityGroupRuleLbName string = DefaultSecurityGroupRuleLbName
-		var securityGroupLbName string = DefaultSecurityGroupLbName
+		var securityGroupLbName string = DefaultSecurityGroupPublicName
 		var securityGroupNodeName string = DefaultSecurityGroupNodeName
 		if network.ClusterName != "" {
 			securityGroupRuleApiKubeletKwName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKwName, DefaultClusterName, network.ClusterName, -1)
@@ -871,7 +943,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			securityGroupRuleKubeletKcpName = strings.Replace(DefaultSecurityGroupRuleKubeletKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupKcpName = strings.Replace(DefaultSecurityGroupKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleLbName = strings.Replace(DefaultSecurityGroupRuleLbName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupLbName = strings.Replace(DefaultSecurityGroupLbName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupLbName = strings.Replace(DefaultSecurityGroupPublicName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupNodeName = strings.Replace(DefaultSecurityGroupNodeName, DefaultClusterName, network.ClusterName, -1)
 
 		}
@@ -1057,10 +1129,10 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 // SetDefaultValue set the LoadBalancer Service default values
 func (lb *OscLoadBalancer) SetDefaultValue() {
 	var subnetPublicName string = DefaultSubnetPublicName
-	var securityGroupLbName string = DefaultSecurityGroupLbName
+	var securityGroupLbName string = DefaultSecurityGroupPublicName
 	if lb.ClusterName != "" {
 		subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, lb.ClusterName, -1)
-		securityGroupLbName = strings.Replace(DefaultSecurityGroupLbName, DefaultClusterName, lb.ClusterName, -1)
+		securityGroupLbName = strings.Replace(DefaultSecurityGroupPublicName, DefaultClusterName, lb.ClusterName, -1)
 	}
 	if lb.LoadBalancerName == "" {
 		lb.LoadBalancerName = DefaultLoadBalancerName
