@@ -408,7 +408,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		machineScope.Info("Vm is running", "vmId", vmID)
 		machineScope.SetVmState(infrastructurev1beta1.VmState("pending"))
 		if vmSpec.VolumeName != "" {
-			err = volumeSvc.CheckVolumeState(5, 60, "available", volumeId)
+			err = volumeSvc.CheckVolumeState(20, 120, "available", volumeId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 			}
@@ -418,13 +418,13 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			machineScope.Info("Volume is linked", "volumeId", volumeId)
-			err = volumeSvc.CheckVolumeState(5, 60, "in-use", volumeId)
+			err = volumeSvc.CheckVolumeState(20, 120, "in-use", volumeId)
 			machineScope.Info("Volume is in-use", "volumeId", volumeId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
 			}
 		}
-		err = vmSvc.CheckVmState(5, 60, "running", vmID)
+		err = vmSvc.CheckVmState(20, 120, "running", vmID)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
@@ -438,7 +438,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			machineScope.Info("Link public ip", "linkPublicIpId", linkPublicIpId)
 			linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 
-			err = vmSvc.CheckVmState(5, 60, "running", vmID)
+			err = vmSvc.CheckVmState(20, 120, "running", vmID)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 			}

@@ -2006,9 +2006,9 @@ func TestReconcileVm(t *testing.T) {
 
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var firstClockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 60
+			var clockLoop time.Duration = 120
 			var firstClockLoop time.Duration = 120
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
 			loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -2393,9 +2393,9 @@ func TestReconcileVmLink(t *testing.T) {
 			vm := &createVm[0]
 			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var firstClockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 60
+			var clockLoop time.Duration = 120
 			var firstClockLoop time.Duration = 120
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
@@ -2591,9 +2591,9 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			}
 
 			vmSpec := vtc.machineSpec.Node.Vm
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var firstClockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 60
+			var clockLoop time.Duration = 120
 			var firstClockLoop time.Duration = 120
 
 			createVms := osc.CreateVmsResponse{
@@ -2767,9 +2767,9 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var firstClockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 60
+			var clockLoop time.Duration = 120
 			var firstClockLoop time.Duration = 120
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
 
