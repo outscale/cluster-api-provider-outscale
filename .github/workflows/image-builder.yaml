@@ -28,7 +28,7 @@ jobs:
         go-version: '1.18.7'
     - uses: actions/checkout@v3
       with:
-          repository: outscale-dev/cluster-api-provider-outscale
+          repository: outscale-vbr/cluster-api-provider-outscale
           ref: multi-region-clean 
           path: cluster-api-provider-outscale
           token: ${{ secrets[matrix.github_token] }}
