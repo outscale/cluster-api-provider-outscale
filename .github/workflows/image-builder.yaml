@@ -1,7 +1,5 @@
 name: image-builder
-on:
-  schedule:
-  - cron: "0 5 1 * *"
+on: push
 jobs:
   image-builder:
     strategy:
@@ -31,7 +29,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
           repository: outscale-dev/cluster-api-provider-outscale
-          ref: main
+          ref: multi-region-clean 
           path: cluster-api-provider-outscale
           token: ${{ secrets[matrix.github_token] }}
     - name: Install gh
