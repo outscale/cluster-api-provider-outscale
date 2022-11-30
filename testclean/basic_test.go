@@ -65,10 +65,16 @@ var _ = Describe("[Basic] tools to check", func() {
 				ListOptions: &client.ListOptions{LabelSelector: cluster_name},
 			})
 
+			WaitForOscInfraMachineTemplateListAvailable(ctx, OscInfraMachineTemplateListInput{
+				Lister:      k8sClient,
+				ListOptions: &client.ListOptions{Namespace: cluster_namespace},
+			})
+
 			WaitForCapoMachineDeploymentListAvailable(ctx, CapoMachineDeploymentListInput{
 				Lister:      k8sClient,
 				ListOptions: &client.ListOptions{LabelSelector: cluster_name},
 			})
+
 			WaitForCapoKubeAdmControlPLaneListAvailable(ctx, CapoKubeAdmControlPlaneListInput{
 				Lister:      k8sClient,
 				ListOptions: &client.ListOptions{LabelSelector: cluster_name},
@@ -87,10 +93,15 @@ var _ = Describe("[Basic] tools to check", func() {
 				Deleter:     k8sClient,
 				ListOptions: &client.ListOptions{LabelSelector: cluster_name},
 			})
+			WaitForOscInfraMachineTemplateListDelete(ctx, OscInfraMachineTemplateListDeleteInput{
+				Deleter:     k8sClient,
+				ListOptions: &client.ListOptions{Namespace: cluster_namespace},
+			})
 			WaitForOscInfraMachineListDelete(ctx, OscInfraMachineListDeleteInput{
 				Deleter:     k8sClient,
 				ListOptions: &client.ListOptions{LabelSelector: cluster_name},
 			})
+
 			WaitForOscInfraClusterListDelete(ctx, OscInfraClusterDeleteListInput{
 				Deleter:     k8sClient,
 				ListOptions: &client.ListOptions{LabelSelector: cluster_name},

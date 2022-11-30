@@ -93,10 +93,12 @@ func DeleteOscInfraMachineList(ctx context.Context, input OscInfraMachineListDel
 		}
 		Eventually(func() error {
 			return input.Deleter.Delete(ctx, oscInfraMachineGet)
-		}, 30*time.Second, 10*time.Second).Should(Succeed())
-		if !oscInfraMachine.Status.Ready {
-			fmt.Fprintf(GinkgoWriter, "Delete OscMachine pending \n")
-			time.Sleep(15 * time.Second)
+		}, 10*time.Minute, 3*time.Minute).Should(Succeed())
+		fmt.Fprintf(GinkgoWriter, "Delete OscMachine pending \n")
+		time.Sleep(2 * time.Minute)
+		if err := input.Deleter.Get(ctx, key, oscInfraMachineGet); err != nil {
+			By(fmt.Sprintf("Can not find %s continue\n", err))
+		} else {
 			oscInfraMachineGet.ObjectMeta.Finalizers = nil
 			Expect(input.Deleter.Update(ctx, oscInfraMachineGet)).Should(Succeed())
 			fmt.Fprintf(GinkgoWriter, "Patch machine \n")
