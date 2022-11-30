@@ -91,14 +91,22 @@ func DeleteOscInfraClusterList(ctx context.Context, input OscInfraClusterDeleteL
 			By(fmt.Sprintf("Can not find %s\n", err))
 			return false
 		}
-		time.Sleep(10 * time.Second)
 		Eventually(func() error {
 			return input.Deleter.Delete(ctx, oscInfraClusterGet)
-		}, 30*time.Second, 10*time.Second).Should(Succeed())
+		}, 20*time.Minute, 8*time.Minute).Should(Succeed())
+		time.Sleep(2 * time.Minute)
+		if err := input.Deleter.Get(ctx, key, oscInfraClusterGet); err != nil {
+			By(fmt.Sprintf("Can not find %s, continue \n", err))
+		} else {
+			time.Sleep(30 * time.Second)
+			oscInfraClusterGet.ObjectMeta.Finalizers = nil
+			Expect(input.Deleter.Update(ctx, oscInfraClusterGet)).Should(Succeed())
+			fmt.Fprintf(GinkgoWriter, "Patch oscCluster \n")
+		}
 		EventuallyWithOffset(1, func() error {
-			fmt.Fprintf(GinkgoWriter, "Wait oscInfraCluster %s in namspacce %s to be deleted  \n", oscInfraCluster.Name, oscInfraCluster.Namespace)
+			fmt.Fprintf(GinkgoWriter, "Wait oscInfraCluster %s in namspace %s to be deleted  \n", oscInfraCluster.Name, oscInfraCluster.Namespace)
 			return input.Deleter.Get(ctx, key, oscInfraClusterGet)
-		}, 1*time.Minute, 5*time.Second).ShouldNot(Succeed())
+		}, 5*time.Minute, 10*time.Second).ShouldNot(Succeed())
 	}
 	return true
 }

@@ -75,12 +75,13 @@ func DeleteCapoKubeAdmControlPlaneList(ctx context.Context, input CapoKubeAdmCon
 		fmt.Fprintf(GinkgoWriter, "Delete KubeAdmControlPlane pending \n")
 		time.Sleep(20 * time.Second)
 		if err := input.Deleter.Get(ctx, key, capoKubeAdmControlPlaneGet); err != nil {
-			By(fmt.Sprintf("Can not find %s\n", err))
-			return false
+			By(fmt.Sprintf("Can not find %s, continue\n", err))
+		} else {
+			capoKubeAdmControlPlaneGet.ObjectMeta.Finalizers = nil
+			Expect(input.Deleter.Update(ctx, capoKubeAdmControlPlaneGet)).Should(Succeed())
+			fmt.Fprintf(GinkgoWriter, "Patch machine \n")
 		}
-		capoKubeAdmControlPlaneGet.ObjectMeta.Finalizers = nil
-		Expect(input.Deleter.Update(ctx, capoKubeAdmControlPlaneGet)).Should(Succeed())
-		fmt.Fprintf(GinkgoWriter, "Patch machine \n")
+
 		capoKubeAdmControlPlaneGet = &controlplanev1.KubeadmControlPlane{}
 		EventuallyWithOffset(1, func() error {
 			fmt.Fprintf(GinkgoWriter, "Wait %s in namespace %s to be deleted \n", capoKubeAdmControlPlane.Name, capoKubeAdmControlPlane.Namespace)

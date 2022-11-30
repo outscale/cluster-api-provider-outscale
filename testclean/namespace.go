@@ -89,7 +89,7 @@ func WaitForNamespaceListAvailable(ctx context.Context, input NamespaceListInput
 }
 
 func WaitForNamespaceListDelete(ctx context.Context, input NamespaceListDeleteInput) bool {
-	By(fmt.Sprintf("Wait for namespace selected by options too be ready"))
+	By(fmt.Sprintf("Wait for namespace selected by options to be ready"))
 	Eventually(func() bool {
 		isNamespaceListDelete := DeleteNamespaceList(ctx, input)
 		return isNamespaceListDelete
