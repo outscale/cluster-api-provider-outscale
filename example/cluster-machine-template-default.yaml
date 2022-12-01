@@ -39,6 +39,9 @@ spec:
       clusterName: capo-quickstart      
     natService:
       clusterName: capo-quickstart
+    bastion:
+      clusterName: capo-quickstart
+      enable: false
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment

@@ -35,6 +35,9 @@ spec:
       clusterName: "${CLUSTER_NAME}"
     natService:
       clusterName: "${CLUSTER_NAME}"
+    bastion:
+      clusterName: "${CLUSTER_NAME}"
+      enable: false
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate

@@ -58,6 +58,7 @@ spec:
       name: cluster-api-natservice
       publicipname: cluster-api-publicip-nat
       subnetname: cluster-api-subnet-nat
+      
     bastion:
       clusterName: cluster-api
       enable: true
@@ -76,28 +77,32 @@ spec:
       vmType: "tinav4.c2r4p2"
     routeTables:
       - name: cluster-api-routetable-kw
-        subnetname: cluster-api-subnet-kw
+        subnets:
+        - cluster-api-subnet-kw
         routes:
           - name: cluster-api-routes-kw
             targetName: cluster-api-natservice
             targetType: nat
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-kcp
-        subnetname: cluster-api-subnet-kcp
+        subnets:
+        - cluster-api-subnet-kcp
         routes:
           - name: cluster-api-routes-kcp
             targetName: cluster-api-natservice	
             targetType: nat
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-nat
-        subnetname: cluster-api-subnet-nat
+        subnets: 
+        - cluster-api-subnet-nat
         routes:
           - name: cluster-api-routes-nat
             targetName: cluster-api-internetservice
             targetType: gateway
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-public
-        subnetname: cluster-api-subnet-public
+        subnets:
+        - cluster-api-subnet-public
         routes:
           - name: cluster-api-routes-public
             targetName: cluster-api-internetservice
