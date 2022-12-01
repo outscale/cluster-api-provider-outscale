@@ -243,6 +243,11 @@ func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta
 	return nil
 }
 
+// GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with bastion uid associate with resource response id)
+func (s *ClusterScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceReference {
+	return &s.OscCluster.Status.Network.LinkPublicIpRef
+}
+
 // GetPublicIp return the public ip of the cluster
 func (s *ClusterScope) GetPublicIp() []*infrastructurev1beta1.OscPublicIp {
 	return s.OscCluster.Spec.Network.PublicIps
@@ -301,6 +306,36 @@ func (s *ClusterScope) InfraCluster() cloud.ClusterObject {
 // ClusterObj return the cluster object
 func (s *ClusterScope) ClusterObj() cloud.ClusterObject {
 	return s.Cluster
+}
+
+// GetBastion return the vm bastion
+func (s *ClusterScope) GetBastion() *infrastructurev1beta1.OscBastion {
+	return &s.OscCluster.Spec.Network.Bastion
+}
+
+// GetBastionRef get the bastion (a Map with cluster uid associate with resource response id)
+func (s *ClusterScope) GetBastionRef() *infrastructurev1beta1.OscResourceReference {
+	return &s.OscCluster.Status.Network.BastionRef
+}
+
+// GetBastionPrivateIps return the bastion privateIps
+func (s *ClusterScope) GetBastionPrivateIps() *[]infrastructurev1beta1.OscPrivateIpElement {
+	return &s.GetBastion().PrivateIps
+}
+
+// GetBastionSecurityGroups return the bastion securityGroups
+func (s *ClusterScope) GetBastionSecurityGroups() *[]infrastructurev1beta1.OscSecurityGroupElement {
+	return &s.GetBastion().SecurityGroupNames
+}
+
+// GetImage return the image
+func (s *ClusterScope) GetImage() *infrastructurev1beta1.OscImage {
+	return &s.OscCluster.Spec.Network.Image
+}
+
+// SetVmState set vmstate
+func (s *ClusterScope) SetVmState(v infrastructurev1beta1.VmState) {
+	s.OscCluster.Status.VmState = &v
 }
 
 // PatchObject keep the cluster configuration and status
