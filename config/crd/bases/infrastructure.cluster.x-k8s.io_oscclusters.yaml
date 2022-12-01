@@ -51,9 +51,71 @@ spec:
                 type: object
               network:
                 properties:
+                  bastion:
+                    properties:
+                      clusterName:
+                        type: string
+                      deviceName:
+                        type: string
+                      enable:
+                        type: boolean
+                      imageId:
+                        type: string
+                      imageName:
+                        type: string
+                      keypairName:
+                        type: string
+                      name:
+                        type: string
+                      privateIps:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            privateIp:
+                              type: string
+                          required:
+                          - privateIp
+                          type: object
+                        type: array
+                      publicIpName:
+                        type: string
+                      resourceId:
+                        type: string
+                      rootDisk:
+                        properties:
+                          rootDiskIops:
+                            format: int32
+                            type: integer
+                          rootDiskSize:
+                            format: int32
+                            type: integer
+                          rootDiskType:
+                            type: string
+                        type: object
+                      securityGroupNames:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                        type: array
+                      subnetName:
+                        type: string
+                      subregionName:
+                        type: string
+                      vmType:
+                        type: string
+                    type: object
                   clusterName:
-                    description: the clusterName
                     type: string
+                  image:
+                    properties:
+                      name:
+                        type: string
+                      resourceId:
+                        type: string
+                    type: object
                   internetService:
                     description: The Internet Service configuration
                     properties:
@@ -286,7 +348,6 @@ spec:
                       type: object
                     type: array
                   subregionName:
-                    description: The subregion Name
                     type: string
                 type: object
             type: object
@@ -350,9 +411,27 @@ spec:
                           type: string
                         type: object
                     type: object
+                  bastionref:
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   internetserviceref:
                     description: Map between InternetServiceId  and InternetServiceName
                       (Internet Service tag Name with cluster UID)
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  linkPublicIpRef:
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -440,6 +519,8 @@ spec:
                 type: object
               ready:
                 type: boolean
+              vmState:
+                type: string
             type: object
         type: object
     served: true
