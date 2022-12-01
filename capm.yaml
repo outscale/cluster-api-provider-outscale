@@ -1443,7 +1443,7 @@ spec:
               key: region
               name: cluster-api-provider-outscale
               optional: true
-        image: core.harbor-dev.148-253-103-215.sslip.io/osc/cluster-api-outscale-controllers:latest
+        image: outscale/cluster-api-provider-osc:dev
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:

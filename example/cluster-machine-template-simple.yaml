@@ -57,6 +57,9 @@ spec:
       name: cluster-api-natservice
       publicipname: cluster-api-publicip-nat
       subnetname: cluster-api-subnet-public
+    bastion:
+      clusterName: cluster-api
+      enable: false
     routeTables:
       - name: cluster-api-routetable-kw
         subnets:
