@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
@@ -94,6 +95,16 @@ func (r *OscClusterReconciler) getPublicIpSvc(ctx context.Context, scope scope.C
 // getLoadBalancerSvc retrieve loadBalancerSvc
 func (r *OscClusterReconciler) getLoadBalancerSvc(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
 	return service.NewService(ctx, &scope)
+}
+
+// getVmSvc retrieve vmSvc
+func (r *OscClusterReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
+	return compute.NewService(ctx, &scope)
+}
+
+// getImageSvc retrieve imageSvc
+func (r *OscClusterReconciler) getImageSvc(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
+	return compute.NewService(ctx, &scope)
 }
 
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -287,6 +298,20 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if checkOscAssociateLoadBalancerSecurityGroupErr != nil {
 		return reconcile.Result{}, checkOscAssociateLoadBalancerSecurityGroupErr
 	}
+	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
+		checkOscAssociateBastionSecurityGroupErr := checkBastionSecurityGroupOscAssociateResourceName(clusterScope)
+		if checkOscAssociateBastionSecurityGroupErr != nil {
+			return reconcile.Result{}, checkOscAssociateBastionSecurityGroupErr
+		}
+		checkOscAssociateBastionSubnetErr := checkBastionSubnetOscAssociateResourceName(clusterScope)
+		if checkOscAssociateBastionSubnetErr != nil {
+			return reconcile.Result{}, checkOscAssociateBastionSubnetErr
+		}
+		bastionName, err := checkBastionFormatParameters(clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not create bastion %s for OscCluster %s/%s", err, bastionName, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+	}
 	clusterScope.V(2).Info("Set OscCluster status to not ready")
 	clusterScope.SetNotReady()
 	// Reconcile each element of the cluster
@@ -363,7 +388,16 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc, securityGroupSvc)
-
+	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
+		vmSvc := r.getVmSvc(ctx, *clusterScope)
+		imageSvc := r.getImageSvc(ctx, *clusterScope)
+		reconcileBastion, err := reconcileBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc, imageSvc)
+		if err != nil {
+			clusterScope.Error(err, "failed to reconcile bastion")
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+			return reconcileBastion, err
+		}
+	}
 	clusterScope.V(2).Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
 	return reconcile.Result{}, nil
@@ -390,6 +424,17 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
+	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
+
+	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+
+	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
+		vmSvc := r.getVmSvc(ctx, *clusterScope)
+		reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc)
+		if err != nil {
+			return reconcileDeleteBastion, err
+		}
+	}
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, loadBalancerSvc)
 	if err != nil {
@@ -402,7 +447,6 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteNatService, err
 	}
 
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
 	reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, publicIpSvc)
 	if err != nil {
 		return reconcileDeletePublicIp, err
@@ -413,7 +457,6 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteRouteTable, err
 	}
 
-	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
 	reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, securityGroupSvc)
 	if err != nil {
 		return reconcileDeleteSecurityGroup, err

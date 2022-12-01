@@ -41,6 +41,7 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
 	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error)
+	CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
 	DeleteVm(vmId string) error
 	GetVm(vmId string) (*osc.Vm, error)
 	GetVmState(vmId string) (string, error)
@@ -149,6 +150,85 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 		Tags:        []osc.ResourceTag{vmTag},
 	}
 	err, httpRes := tag.AddTag(vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	if err != nil {
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
+	}
+	if len(*vms) == 0 {
+		return nil, nil
+	} else {
+		vm := *vms
+		return &vm[0], nil
+	}
+}
+
+// CreateVmUserData create machine vm
+func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
+	keypairName := spec.KeypairName
+	vmType := spec.VmType
+	subregionName := spec.SubregionName
+	rootDiskIops := spec.RootDisk.RootDiskIops
+	rootDiskSize := spec.RootDisk.RootDiskSize
+	rootDiskType := spec.RootDisk.RootDiskType
+	deviceName := spec.DeviceName
+
+	placement := osc.Placement{
+		SubregionName: &subregionName,
+	}
+	userDataEnc := b64.StdEncoding.EncodeToString([]byte(userData))
+	rootDisk := osc.BlockDeviceMappingVmCreation{
+		Bsu: &osc.BsuToCreate{
+			VolumeType: &rootDiskType,
+			VolumeSize: &rootDiskSize,
+		},
+		DeviceName: &deviceName,
+	}
+	if rootDiskType == "io1" {
+		rootDisk.Bsu.SetIops(rootDiskIops)
+	}
+
+	vmOpt := osc.CreateVmsRequest{
+		ImageId:          imageId,
+		KeypairName:      &keypairName,
+		VmType:           &vmType,
+		SubnetId:         &subnetId,
+		SecurityGroupIds: &securityGroupIds,
+		UserData:         &userDataEnc,
+		BlockDeviceMappings: &[]osc.BlockDeviceMappingVmCreation{
+			rootDisk,
+		},
+		Placement: &placement,
+	}
+
+	if len(privateIps) > 0 {
+		vmOpt.SetPrivateIps(privateIps)
+	}
+
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+	vms, ok := vmResponse.GetVmsOk()
+	if !ok {
+		return nil, errors.New("Can not get vm")
+	}
+	vmID := *(*vmResponse.Vms)[0].VmId
+	resourceIds := []string{vmID}
+	vmTag := osc.ResourceTag{
+		Key:   "Name",
+		Value: vmName,
+	}
+	vmTagRequest := osc.CreateTagsRequest{
+		ResourceIds: resourceIds,
+		Tags:        []osc.ResourceTag{vmTag},
+	}
+	err, httpRes = tag.AddTag(vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

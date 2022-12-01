@@ -412,8 +412,8 @@ spec:
                         type: object
                     type: object
                   bastionref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
+                    description: Map between InstanceId  and BastionName (Bastion
+                      tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -430,8 +430,8 @@ spec:
                         type: object
                     type: object
                   linkPublicIpRef:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
+                    description: Map between LinkPublicIpId  and PublicIpName (Public
+                      IP tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -443,6 +443,8 @@ spec:
                       items:
                         type: string
                       type: array
+                    description: Map between LinkRouteTableId and RouteTablesName
+                      (Route Table tag Name with cluster UID)
                     type: object
                   natref:
                     description: Map between NatServiceId  and NatServiceName (Nat
@@ -463,8 +465,8 @@ spec:
                         type: object
                     type: object
                   publicipref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
+                    description: Map between PublicIpId  and PublicIpName (Public
+                      IP tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -490,8 +492,8 @@ spec:
                         type: object
                     type: object
                   securitygroupref:
-                    description: Map between PublicIpId  and PublicIpName (Public
-                      IP tag Name with cluster UID)
+                    description: Map between SecurityGroupId  and SecurityGroupName
+                      (Security Group tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:
@@ -499,8 +501,8 @@ spec:
                         type: object
                     type: object
                   securitygroupruleref:
-                    description: Map between resourceId and resourceName (tag Name
-                      with cluster UID)
+                    description: Map between SecurityGroupRuleId  and SecurityGroupName
+                      (Security Group Rule tag Name with cluster UID)
                     properties:
                       resourceMap:
                         additionalProperties:

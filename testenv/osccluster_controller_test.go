@@ -733,6 +733,9 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						PublicIpName: "cluster-api-publicip",
 						SubnetName:   "cluster-api-subnet",
 					},
+					Bastion: infrastructurev1beta1.OscBastion{
+						Enable: false,
+					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
 							Name: "cluster-api-routetable",
