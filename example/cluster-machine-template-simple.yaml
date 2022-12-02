@@ -277,7 +277,7 @@ spec:
           name: "{{ ds.meta_data.local_hostname }}"
           kubeletExtraArgs:
             cloud-provider: external
-            provider-id: aws:///'{{ ds.meta_data.instance_id }}'
+            provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
       preKubeadmCommands:
         - sh /tmp/set_runc.sh
 ---
@@ -298,7 +298,7 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: aws:///'{{ ds.meta_data.instance_id }}'
+          provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     files:
     - content: |
@@ -313,7 +313,7 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: osc://'{{ ds.meta_data.instance_id }}'
+          provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
   version: "1.22.11"
