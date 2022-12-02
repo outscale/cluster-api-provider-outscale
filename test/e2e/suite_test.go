@@ -131,7 +131,14 @@ func getK8sClient() {
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-	k8sManager, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
+	retryPeriod := 30 * time.Second
+	leaseDuration := 80 * time.Second
+	renewDeadline := 20 * time.Second
+	k8sManager, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		LeaseDuration: &leaseDuration,
+		RenewDeadline: &renewDeadline,
+		RetryPeriod:   &retryPeriod,
+	})
 	Expect(err).ToNot(HaveOccurred())
 	go func() {
 		defer GinkgoRecover()
