@@ -489,7 +489,8 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		machineScope.Info("#### Get Vm ###", "vm", vm)
 		vmRef.ResourceMap[vmName] = vmID
 		vmSpec.ResourceId = vmID
-		machineScope.SetProviderID(vmID)
+		subregionName := vmSpec.SubregionName
+		machineScope.SetProviderID(subregionName, vmID)
 	}
 	return reconcile.Result{}, nil
 }
