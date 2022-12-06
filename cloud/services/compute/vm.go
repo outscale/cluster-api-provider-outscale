@@ -107,8 +107,11 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 	oscAuthClient := s.scope.GetAuth()
 	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	vms, ok := vmResponse.GetVmsOk()
 	if !ok {
@@ -118,8 +121,11 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 	resourceIds := []string{vmID}
 	err = tag.AddTag("Name", vmName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	if len(*vms) == 0 {
 		return nil, nil
@@ -136,8 +142,11 @@ func (s *Service) DeleteVm(vmId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -153,8 +162,11 @@ func (s *Service) GetVm(vmId string) (*osc.Vm, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	vms, ok := readVmsResponse.GetVmsOk()
 	if !ok {
@@ -180,8 +192,11 @@ func (s *Service) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, er
 	oscAuthClient := s.scope.GetAuth()
 	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	vms, ok := readVmsResponse.GetVmsOk()
 	if !ok {

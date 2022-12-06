@@ -56,8 +56,11 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 	oscAuthClient := s.scope.GetAuth()
 	volumeResponse, httpRes, err := oscApiClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	volume, ok := volumeResponse.GetVolumeOk()
 	if !ok {
@@ -66,8 +69,11 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 	resourceIds := []string{*volumeResponse.Volume.VolumeId}
 	err = tag.AddTag("Name", volumeName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 
 	return volume, nil
@@ -84,8 +90,11 @@ func (s *Service) GetVolume(volumeId string) (*osc.Volume, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readVolumesResponse, httpRes, err := oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	volumes, ok := readVolumesResponse.GetVolumesOk()
 	if !ok {
@@ -110,8 +119,11 @@ func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) er
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -125,8 +137,11 @@ func (s *Service) UnlinkVolume(volumeId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -138,8 +153,11 @@ func (s *Service) DeleteVolume(volumeId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -155,8 +173,12 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readVolume, httpRes, err := oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumeRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
+
 	}
 	var validVolumeIds []string
 	volumes, ok := readVolume.GetVolumesOk()
