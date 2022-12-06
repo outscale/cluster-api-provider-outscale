@@ -38,8 +38,11 @@ func (s *Service) GetImage(imageId string) (*osc.Image, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readImageResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	if len(readImageResponse.GetImages()) == 0 {
 		return nil, nil
@@ -58,8 +61,12 @@ func (s *Service) GetImageId(imageName string) (string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readImageResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return "", err
+		if httpRes != nil {
+			return "", fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return "", err
+		}
+
 	}
 	if len(readImageResponse.GetImages()) == 0 {
 		return "", nil
@@ -78,8 +85,11 @@ func (s *Service) GetImageName(imageId string) (string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readImageResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return "", err
+		if httpRes != nil {
+			return "", fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return "", err
+		}
 	}
 	if len(readImageResponse.GetImages()) == 0 {
 		return "", nil

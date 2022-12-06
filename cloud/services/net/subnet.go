@@ -48,19 +48,28 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 	oscAuthClient := s.scope.GetAuth()
 	subnetResponse, httpRes, err := oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	resourceIds := []string{*subnetResponse.Subnet.SubnetId}
 	err = tag.AddTag("Name", subnetName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 
 	subnet, ok := subnetResponse.GetSubnetOk()
@@ -77,8 +86,11 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -94,8 +106,11 @@ func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	subnets, ok := readSubnetsResponse.GetSubnetsOk()
 	if !ok {
@@ -120,8 +135,11 @@ func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	var subnetIds []string
 	subnets, ok := readSubnetsResponse.GetSubnetsOk()

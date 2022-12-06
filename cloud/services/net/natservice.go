@@ -43,25 +43,37 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 	oscAuthClient := s.scope.GetAuth()
 	natServiceResponse, httpRes, err := oscApiClient.NatServiceApi.CreateNatService(oscAuthClient).CreateNatServiceRequest(natServiceRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	resourceIds := []string{*natServiceResponse.NatService.NatServiceId}
 	err = tag.AddTag("Name", natServiceName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	subnet, err := s.GetSubnet(subnetId)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	resourceIds = []string{*subnet.SubnetId}
 	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	natService, ok := natServiceResponse.GetNatServiceOk()
 	if !ok {
@@ -77,8 +89,11 @@ func (s *Service) DeleteNatService(natServiceId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.NatServiceApi.DeleteNatService(oscAuthClient).DeleteNatServiceRequest(deleteNatServiceRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -94,8 +109,11 @@ func (s *Service) GetNatService(natServiceId string) (*osc.NatService, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readNatServiceResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServiceRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	natServices, ok := readNatServiceResponse.GetNatServicesOk()
 	if !ok {

@@ -40,8 +40,11 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 
 	keyPairResponse, httpRes, err := oscAPIClient.KeypairApi.CreateKeypair(oscAuthClient).CreateKeypairRequest(keyPairRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 
 	req := osc.ReadKeypairsRequest{
@@ -75,8 +78,11 @@ func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readKeypairResponse, httpRes, err := oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(readKeypairRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	keypairs, ok := readKeypairResponse.GetKeypairsOk()
 	if !ok {
@@ -99,8 +105,12 @@ func (s *Service) DeleteKeyPair(keyPairName string) error {
 
 	_, httpRes, err := oscAPIClient.KeypairApi.DeleteKeypair(oscAuthClient).DeleteKeypairRequest(deleteKeypairRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
+
 	}
 	return nil
 }

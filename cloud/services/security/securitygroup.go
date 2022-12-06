@@ -60,14 +60,20 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 	resourceIds := []string{*securityGroupResponse.SecurityGroup.SecurityGroupId}
 	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	if securityGroupTag == "OscK8sMainSG" {
 		err = tag.AddTag("OscK8sMainSG/"+clusterName, "True", resourceIds, oscApiClient, oscAuthClient)
 		if err != nil {
-			fmt.Printf("Error with http result %s", httpRes.Status)
-			return nil, err
+			if httpRes != nil {
+				return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			} else {
+				return nil, err
+			}
 		}
 	}
 
@@ -106,8 +112,11 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 	oscAuthClient := s.scope.GetAuth()
 	securityGroupRuleResponse, httpRes, err := oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	securityGroupRule, ok := securityGroupRuleResponse.GetSecurityGroupOk()
 	if !ok {
@@ -147,8 +156,11 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.SecurityGroupRuleApi.DeleteSecurityGroupRule(oscAuthClient).DeleteSecurityGroupRuleRequest(deleteSecurityGroupRuleRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -160,8 +172,10 @@ func (s *Service) DeleteSecurityGroup(securityGroupId string) (error, *http.Resp
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err, httpRes
+		if httpRes != nil {
+			fmt.Printf("Error with http result %s", httpRes.Status)
+			return err, httpRes
+		}
 	}
 	return nil, httpRes
 }
@@ -177,8 +191,11 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -235,8 +252,11 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupRuleResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	securityGroups, ok := readSecurityGroupRuleResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -261,8 +281,11 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) 
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	var securityGroupIds []string
 	securityGroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()

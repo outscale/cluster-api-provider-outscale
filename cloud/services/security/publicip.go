@@ -44,8 +44,11 @@ func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 	oscAuthClient := s.scope.GetAuth()
 	publicIpResponse, httpRes, err := oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	resourceIds := []string{*publicIpResponse.PublicIp.PublicIpId}
 	err = tag.AddTag("Name", publicIpName, resourceIds, oscApiClient, oscAuthClient)
@@ -69,8 +72,11 @@ func (s *Service) DeletePublicIp(publicIpId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -86,8 +92,11 @@ func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readPublicIp, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	publicIps, ok := readPublicIp.GetPublicIpsOk()
 	if !ok {
@@ -112,8 +121,11 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readPublicIp, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	var validPublicIpIds []string
 	publicIps, ok := readPublicIp.GetPublicIpsOk()
@@ -140,8 +152,11 @@ func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
 	linkPublicIp, httpRes, err := oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
 
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return "", err
+		if httpRes != nil {
+			return "", fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return "", err
+		}
 	}
 	linkPublicIpId, ok := linkPublicIp.GetLinkPublicIpIdOk()
 	if !ok {
@@ -159,8 +174,11 @@ func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }

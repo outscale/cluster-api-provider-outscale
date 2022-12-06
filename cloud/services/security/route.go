@@ -47,19 +47,28 @@ func (s *Service) CreateRouteTable(netId string, clusterName string, routeTableN
 	oscAuthClient := s.scope.GetAuth()
 	routeTableResponse, httpRes, err := oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	resourceIds := []string{*routeTableResponse.RouteTable.RouteTableId}
 	err = tag.AddTag("Name", routeTableName, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	err = tag.AddTag("OscK8sClusterID/"+clusterName, "owned", resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 
 	routeTable, ok := routeTableResponse.GetRouteTableOk()
@@ -97,8 +106,11 @@ func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, re
 	oscAuthClient := s.scope.GetAuth()
 	routeResponse, httpRes, err := oscApiClient.RouteApi.CreateRoute(oscAuthClient).CreateRouteRequest(routeRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	route, ok := routeResponse.GetRouteTableOk()
 	if !ok {
@@ -114,8 +126,11 @@ func (s *Service) DeleteRouteTable(routeTableId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -130,8 +145,11 @@ func (s *Service) DeleteRoute(destinationIpRange string, routeTableId string) er
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %s httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -147,8 +165,11 @@ func (s *Service) GetRouteTable(routeTableId []string) (*osc.RouteTable, error) 
 	oscAuthClient := s.scope.GetAuth()
 	readRouteTablesResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteTableRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	var routetable []osc.RouteTable
 	routetables, ok := readRouteTablesResponse.GetRouteTablesOk()
@@ -188,8 +209,11 @@ func (s *Service) GetRouteTableFromRoute(routeTableId string, resourceId string,
 	oscAuthClient := s.scope.GetAuth()
 	readRouteResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	routetables, ok := readRouteResponse.GetRouteTablesOk()
 	if !ok {
@@ -213,8 +237,11 @@ func (s *Service) LinkRouteTable(routeTableId string, subnetId string) (string, 
 	oscAuthClient := s.scope.GetAuth()
 	linkRouteTableResponse, httpRes, err := oscApiClient.RouteTableApi.LinkRouteTable(oscAuthClient).LinkRouteTableRequest(linkRouteTableRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return "", err
+		if httpRes != nil {
+			return "", fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return "", err
+		}
 	}
 	routeTable, ok := linkRouteTableResponse.GetLinkRouteTableIdOk()
 	if !ok {
@@ -232,8 +259,11 @@ func (s *Service) UnlinkRouteTable(linkRouteTableId string) error {
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
+		if httpRes != nil {
+			return fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -249,8 +279,11 @@ func (s *Service) GetRouteTableIdsFromNetIds(netId string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readRouteTablesResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteTableRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
+		if httpRes != nil {
+			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+		} else {
+			return nil, err
+		}
 	}
 	var routetableIds []string
 	routetables, ok := readRouteTablesResponse.GetRouteTablesOk()
