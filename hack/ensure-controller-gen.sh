@@ -51,7 +51,7 @@ install_controller_gen() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@master
-		cp "$HOME/go/bin/controller-gen" "${BIN_ROOT}/controller-gen"
+		cp "$GOPATH/bin/controller-gen" "${BIN_ROOT}/controller-gen"
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"

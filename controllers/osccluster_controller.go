@@ -362,7 +362,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
-	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc)
+	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc, securityGroupSvc)
 
 	clusterScope.Info("Set OscCluster status to ready")
 	clusterScope.SetReady()

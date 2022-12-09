@@ -33,7 +33,8 @@ Check cluster is ready:
    kubectl cluster-info
 ```
 # Install clusterctl
-You can install clusterctl for linux with or in clusterctl install section ([cluster-api][cluster-api]):
+:warning: In order to install tools (clusterctl, ...) with makefile, you need to have installed golang to download binaries [golang][golang]
+You can install clusterctl for linux with:
 ```bash
   make install-clusterctl
 ```
@@ -113,8 +114,8 @@ NAMESPACE   NAME                                                  CLUSTER       
 default     machinedeployment.cluster.x-k8s.io/cluster-api-md-0   cluster-api   1                  1         1             ScalingUp   95m   v1.22.11
 
 NAMESPACE   NAME                                                         CLUSTER       NODENAME                                  PROVIDERID         PHASE      AGE   VERSION
-default     machine.cluster.x-k8s.io/cluster-api-control-plane-4q2s8     cluster-api   ip-10-0-0-45.eu-west-2.compute.internal   osc://i-3b629324    Running    95m   v1.22.11
-default     machine.cluster.x-k8s.io/cluster-api-md-0-7568fb659d-hnkfw   cluster-api   ip-10-0-0-144.eu-west-2.compute.internal   osc://i-add154be   Running    95m   v1.22.11
+default     machine.cluster.x-k8s.io/cluster-api-control-plane-4q2s8     cluster-api   ip-10-0-0-45.eu-west-2.compute.internal   aws://eu-west-2a/i-3b629324    Running    95m   v1.22.11
+default     machine.cluster.x-k8s.io/cluster-api-md-0-7568fb659d-hnkfw   cluster-api   ip-10-0-0-144.eu-west-2.compute.internal   aws://eu-west-2a/i-add154be   Running    95m   v1.22.11
 
 NAMESPACE   NAME                                   PHASE         AGE   VERSION
 default     cluster.cluster.x-k8s.io/cluster-api   Provisioned   95m   
@@ -187,3 +188,4 @@ clusterctl delete --all
 [lens]: https://github.com/lensapp/lens
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
 [omi]: ./omi.md
+[golang]: https://medium.com/@sherlock297/install-and-set-the-environment-variable-path-for-go-in-kali-linux-446d0f16a338

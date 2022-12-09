@@ -22,11 +22,13 @@ import (
 
 	"fmt"
 
+	"time"
+
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"time"
 
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
@@ -112,12 +114,13 @@ var (
 )
 
 // SetupWithLoadBalancerMock set loadBalancerMock with clusterScope and osccluster
-func SetupWithLoadBalancerMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface) {
+func SetupWithLoadBalancerMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscLoadBalancerInterface = mock_service.NewMockOscLoadBalancerInterface(mockCtrl)
+	mockOscSecurityGroupInterface = mock_security.NewMockOscSecurityGroupInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, ctx, mockOscLoadBalancerInterface
+	return clusterScope, ctx, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface
 }
 
 // TestCheckLoadBalancerSubnetOscAssociateResourceName has several tests to cover the code of the function checkLoadBalancerSubnetOscAssociateResourceName
@@ -498,6 +501,8 @@ func TestReconcileLoadBalancer(t *testing.T) {
 		expSecurityGroupFound         bool
 		expCreateLoadBalancerFound    bool
 		expConfigureLoadBalancerFound bool
+		expDeleteOutboundSgRule       bool
+		expDeleteOutboundSgRuleErr    error
 		expDescribeLoadBalancerErr    error
 		expCreateLoadBalancerErr      error
 		expConfigureLoadBalancerErr   error
@@ -511,10 +516,27 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expSecurityGroupFound:         true,
 			expCreateLoadBalancerFound:    true,
 			expConfigureLoadBalancerFound: true,
+			expDeleteOutboundSgRule:       true,
+			expDeleteOutboundSgRuleErr:    nil,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expReconcileLoadBalancerErr:   nil,
+		},
+		{
+			name:                          "failed to delete outbound Sg for loadBalancer",
+			spec:                          defaultLoadBalancerInitialize,
+			expLoadBalancerFound:          false,
+			expSubnetFound:                true,
+			expSecurityGroupFound:         true,
+			expCreateLoadBalancerFound:    true,
+			expConfigureLoadBalancerFound: false,
+			expDeleteOutboundSgRule:       false,
+			expDeleteOutboundSgRuleErr:    fmt.Errorf("DeleteSecurityGroupsRules generic error"),
+			expDescribeLoadBalancerErr:    nil,
+			expCreateLoadBalancerErr:      nil,
+			expConfigureLoadBalancerErr:   nil,
+			expReconcileLoadBalancerErr:   fmt.Errorf("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
 		},
 		{
 			name:                          "failed to configure loadBalancer",
@@ -524,6 +546,8 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expSecurityGroupFound:         true,
 			expCreateLoadBalancerFound:    true,
 			expConfigureLoadBalancerFound: false,
+			expDeleteOutboundSgRule:       true,
+			expDeleteOutboundSgRuleErr:    nil,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   fmt.Errorf("ConfigureLoadBalancer generic error"),
@@ -532,11 +556,10 @@ func TestReconcileLoadBalancer(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
 			loadBalancerDnsName := loadBalancerName + "." + "eu-west-2" + "." + ".lbu.outscale.com"
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
-
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
 			subnetName := lbtc.spec.Network.LoadBalancer.SubnetName + "-uid"
@@ -588,20 +611,33 @@ func TestReconcileLoadBalancer(t *testing.T) {
 					CreateLoadBalancer(gomock.Eq(&loadBalancerSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
 					Return(nil, lbtc.expCreateLoadBalancerErr)
 			}
+
 			if lbtc.expCreateLoadBalancerErr == nil {
-				if lbtc.expConfigureLoadBalancerFound {
-					mockOscLoadBalancerInterface.
+				if lbtc.expDeleteOutboundSgRuleErr == nil {
+					mockOscSecurityGroupInterface.
 						EXPECT().
-						ConfigureHealthCheck(gomock.Eq(&loadBalancerSpec)).
-						Return(loadBalancer.LoadBalancer, lbtc.expConfigureLoadBalancerErr)
+						DeleteSecurityGroupRule(gomock.Eq(securityGroupId), gomock.Eq("Outbound"), gomock.Eq("-1"), gomock.Eq("0.0.0.0/0"), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq(int32(0))).
+						Return(lbtc.expDeleteOutboundSgRuleErr)
+					if lbtc.expConfigureLoadBalancerFound {
+						mockOscLoadBalancerInterface.
+							EXPECT().
+							ConfigureHealthCheck(gomock.Eq(&loadBalancerSpec)).
+							Return(loadBalancer.LoadBalancer, lbtc.expConfigureLoadBalancerErr)
+					} else {
+						mockOscLoadBalancerInterface.
+							EXPECT().
+							ConfigureHealthCheck(gomock.Eq(&loadBalancerSpec)).
+							Return(nil, lbtc.expConfigureLoadBalancerErr)
+					}
+
 				} else {
-					mockOscLoadBalancerInterface.
+					mockOscSecurityGroupInterface.
 						EXPECT().
-						ConfigureHealthCheck(gomock.Eq(&loadBalancerSpec)).
-						Return(nil, lbtc.expConfigureLoadBalancerErr)
+						DeleteSecurityGroupRule(gomock.Eq(securityGroupId), gomock.Eq("Outbound"), gomock.Eq("-1"), gomock.Eq("0.0.0.0/0"), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq(int32(0))).
+						Return(lbtc.expDeleteOutboundSgRuleErr)
 				}
 			}
-			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
+			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
 				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
@@ -656,7 +692,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
 			loadBalancerDnsName := loadBalancerName + "." + "eu-west-2" + "." + ".lbu.outscale.com"
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
@@ -701,7 +737,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 					GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
 					Return(nil, lbtc.expDescribeLoadBalancerErr)
 			}
-			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
+			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
 				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
@@ -734,7 +770,7 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
@@ -757,7 +793,7 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 				EXPECT().
 				CreateLoadBalancer(gomock.Eq(&loadBalancerSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
 				Return(nil, lbtc.expCreateLoadBalancerErr)
-			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
+			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
 				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
@@ -797,7 +833,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
@@ -821,7 +857,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 				EXPECT().
 				GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
-			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
+			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
 				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
@@ -864,7 +900,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, _ := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
 			loadBalancerDnsName := loadBalancerName + ".eu-west-2.lbu.outscale.com"
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
@@ -881,7 +917,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -931,7 +967,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, _ := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 			loadBalancerName := "OscClusterApi-1-uid"
 			loadBalancerDnsName := loadBalancerName + ".eu-west-2.lbu.outscale.com"
 			loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -948,7 +984,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -994,7 +1030,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, _ := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
 			loadBalancerDnsName := loadBalancerName + ".eu-west-2.lbu.outscale.com"
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
@@ -1011,7 +1047,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 				},
 			}
 			readLoadBalancer := *readLoadBalancers.LoadBalancers
-			var clockInsideLoop time.Duration = 5
+			var clockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 120
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -1059,7 +1095,7 @@ func TestReconcileDeleteLoadBalancerGet(t *testing.T) {
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscLoadBalancerInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
+			clusterScope, ctx, mockOscLoadBalancerInterface, _ := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
 			loadBalancerSpec.SetDefaultValue()
 			mockOscLoadBalancerInterface.

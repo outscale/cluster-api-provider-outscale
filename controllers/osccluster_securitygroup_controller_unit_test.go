@@ -1448,7 +1448,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					wg.Done()
 				}()
 				runtime.Gosched()
-				clock_mock.Add(120 * time.Second)
+				clock_mock.Add(630 * time.Second)
 				wg.Wait()
 				if err != nil {
 					assert.Equal(t, sgtc.expDeleteSecurityGroupError.Error(), err.Error(), "deleteSecurityGroup() should return the same error")

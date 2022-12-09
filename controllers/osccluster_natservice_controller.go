@@ -117,7 +117,9 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 	if natService == nil || natServiceSpec.ResourceId == "" {
 		clusterScope.Info("Create the desired natService", "natServiceName", natServiceName)
-		natService, err := natServiceSvc.CreateNatService(publicIpId, subnetId, natServiceName)
+		networkSpec := clusterScope.GetNetwork()
+		clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
+		natService, err := natServiceSvc.CreateNatService(publicIpId, subnetId, natServiceName, clusterName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}

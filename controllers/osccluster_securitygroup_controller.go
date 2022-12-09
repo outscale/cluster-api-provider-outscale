@@ -206,11 +206,12 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clock_time clock.Clock) (reconcile.Result, error) {
 	clusterScope.Info("Check loadbalancer deletion")
 
-	currentTimeout := clock_time.Now().Add(time.Second * 20)
+	currentTimeout := clock_time.Now().Add(time.Second * 600)
 	var loadbalancer_delete = false
 	for !loadbalancer_delete {
 		err, httpRes := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
 		if err != nil {
+			time.Sleep(20 * time.Second)
 			buffer := new(strings.Builder)
 			_, err := io.Copy(buffer, httpRes.Body)
 			httpResBody := buffer.String()
@@ -233,7 +234,6 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 				return reconcile.Result{}, fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster %s/%s", clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 			clusterScope.Info("Wait until loadBalancer is deleting")
-			time.Sleep(5 * time.Second)
 		} else {
 			loadbalancer_delete = true
 		}

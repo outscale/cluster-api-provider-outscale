@@ -263,8 +263,8 @@ func (m *MachineScope) GetInstanceID() string {
 }
 
 // SetProviderID set the instanceID
-func (m *MachineScope) SetProviderID(vmId string) {
-	pid := fmt.Sprintf("osc://%s", vmId)
+func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
+	pid := fmt.Sprintf("aws://%s/%s", subregionName, vmId)
 	m.OscMachine.Spec.ProviderID = pointer.StringPtr(pid)
 }
 
