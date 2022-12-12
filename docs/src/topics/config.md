@@ -13,6 +13,8 @@ metadata:
   namespace: default
 spec:
   network:
+    clusterName: cluster-api
+    subregionName: eu-west-2a
     loadBalancer:
       loadbalancername: OscSdkExample-7
       subregionname: eu-west-2a
@@ -89,6 +91,7 @@ spec:
 | `name`| `cluster-api-net` | false | the tag name associated with the Net
 | `ipRange` | `172.19.95.128/25` | false | Net Ip range with CIDR notation
 | `clusterName` | `cluster-api` | false | Name of the cluster
+| `subregionName` | `eu-west-2a` | false | The subregionName used for vm and volume
 
 
 ### Subnet

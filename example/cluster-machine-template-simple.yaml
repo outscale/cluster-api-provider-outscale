@@ -29,6 +29,7 @@ metadata:
 spec:
   network:
     clusterName: cluster-api
+    subregionName: eu-west-2a
     loadBalancer:
       loadbalancername: osc-k8s
       loadbalancertype: internet-facing

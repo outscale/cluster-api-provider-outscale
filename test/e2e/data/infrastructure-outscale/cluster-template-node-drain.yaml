@@ -25,6 +25,7 @@ metadata:
 spec:
   network:
     clusterName: "${CLUSTER_NAME}"
+    subregionName: ${OSC_SUBREGION_NAME}
     loadBalancer:
       loadbalancername: "node-drain-again"
       clusterName: "${CLUSTER_NAME}"
