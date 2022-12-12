@@ -20,13 +20,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	network "net"
 	"net/http"
 	"os"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -702,8 +703,18 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 	Context("Reconcile an Outscale cluster", func() {
 		It("should create a simple cluster", func() {
 			ctx := context.Background()
+			osc_region, ok := os.LookupEnv("OSC_REGION")
+			if !ok {
+				osc_region = "eu-west-2"
+			}
+			osc_subregion, ok := os.LookupEnv("OSC_SUBREGION_NAME")
+			if !ok {
+				osc_subregion = osc_region + "a"
+			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
+
 				Network: infrastructurev1beta1.OscNetwork{
+					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
 						IpRange: "10.0.0.0/16",
@@ -769,8 +780,17 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		})
 		It("should create a simple cluster with multi subnet, routeTable, securityGroup", func() {
 			ctx := context.Background()
+			osc_region, ok := os.LookupEnv("OSC_REGION")
+			if !ok {
+				osc_region = "eu-west-2"
+			}
+			osc_subregion, ok := os.LookupEnv("OSC_SUBREGION_NAME")
+			if !ok {
+				osc_subregion = osc_region + "a"
+			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
+					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
 						IpRange: "10.0.0.0/16",
@@ -861,8 +881,17 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		})
 		It("should create a simple cluster with default values", func() {
 			ctx := context.Background()
+			osc_region, ok := os.LookupEnv("OSC_REGION")
+			if !ok {
+				osc_region = "eu-west-2"
+			}
+			osc_subregion, ok := os.LookupEnv("OSC_SUBREGION_NAME")
+			if !ok {
+				osc_subregion = osc_region + "a"
+			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
+					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name: "cluster-api-net",
 					},
@@ -876,8 +905,21 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		})
 		It("Should create cluster with machine", func() {
 			ctx := context.Background()
+			osc_region, ok := os.LookupEnv("OSC_REGION")
+			if !ok {
+				osc_region = "eu-west-2"
+			}
+			osc_subregion, ok := os.LookupEnv("OSC_SUBREGION_NAME")
+			if !ok {
+				osc_subregion = osc_region + "a"
+			}
+			imageId, ok := os.LookupEnv("IMG_UPGRADE_FROM")
+			if !ok {
+				imageId = "ami-e1a786f1"
+			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
+					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
 						IpRange: "10.0.0.0/24",
@@ -1062,15 +1104,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						SecurityGroupName: "cluster-api-securitygroup-lb",
 					},
 				},
-			}
-			osc_region, ok := os.LookupEnv("OSC_REGION")
-			if !ok {
-				osc_region = "eu-west-2"
-			}
-			osc_subregion := osc_region + "a"
-			imageId, ok := os.LookupEnv("IMG_UPGRADE_FROM")
-			if !ok {
-				imageId = "ami-e1a786f1"
 			}
 			infraMachineSpec := infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
