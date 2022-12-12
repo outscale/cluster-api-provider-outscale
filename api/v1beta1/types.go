@@ -58,8 +58,13 @@ type OscNetwork struct {
 	SecurityGroups []*OscSecurityGroup `json:"securityGroups,omitempty"`
 	// The Public Ip configuration
 	// +optional
-	PublicIps   []*OscPublicIp `json:"publicIps,omitempty"`
-	ClusterName string         `json:"clusterName,omitempty"`
+	PublicIps []*OscPublicIp `json:"publicIps,omitempty"`
+	// the clusterName
+	// +optional
+	ClusterName string `json:"clusterName,omitempty"`
+	// The subregion Name
+	// +optional
+	SubregionName string `json:"subregionName,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -391,12 +396,12 @@ var (
 	DefaultRootDiskKcpSize int32  = 60
 	DefaultRootDiskKcpIops int32  = 1500
 
-	DefaultVolumeKwName          string = "cluster-api-volume-kw"
-	DefaultVolumeKwIops          int32  = 1000
-	DefaultVolumeKwSize          int32  = 30
-	DefaultVolumeKwSubregionName string = "eu-west-2a"
-	DefaultVolumeKwType          string = "io1"
-
+	DefaultVolumeKwName                       string = "cluster-api-volume-kw"
+	DefaultVolumeKwIops                       int32  = 1000
+	DefaultVolumeKwSize                       int32  = 30
+	DefaultVolumeKwSubregionName              string = "eu-west-2a"
+	DefaultVolumeKwType                       string = "io1"
+	DefaultSubregionName                      string = "eu-west-2a"
 	DefaultLoadBalancerName                   string = "OscClusterApi-1"
 	DefaultLoadBalancerType                   string = "internet-facing"
 	DefaultBackendPort                        int32  = 6443

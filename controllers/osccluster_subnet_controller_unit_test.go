@@ -34,7 +34,8 @@ import (
 var (
 	defaultSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName: "test-cluster",
+			ClusterName:   "test-cluster",
+			SubregionName: "eu-west-2a",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -49,7 +50,8 @@ var (
 	}
 	defaultSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName: "test-cluster",
+			ClusterName:   "test-cluster",
+			SubregionName: "eu-west-2a",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -67,7 +69,8 @@ var (
 
 	defaultMultiSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName: "test-cluster",
+			ClusterName:   "test-cluster",
+			SubregionName: "eu-west-2a",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -86,7 +89,8 @@ var (
 	}
 	defaultMultiSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName: "test-cluster",
+			ClusterName:   "test-cluster",
+			SubregionName: "eu-west-2a",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -368,6 +372,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			}
 			subnetsSpec := stc.spec.Network.Subnets
 			var subnetIds []string
+			subregionName := stc.spec.Network.SubregionName
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
@@ -384,12 +389,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					subnetRef.ResourceMap[subnetName] = subnetId
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
+						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName), gomock.Eq(subregionName)).
 						Return(subnet.Subnet, stc.expCreateSubnetErr)
 				} else {
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
+						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName), gomock.Eq(subregionName)).
 						Return(nil, stc.expCreateSubnetErr)
 				}
 			}

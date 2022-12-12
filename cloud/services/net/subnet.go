@@ -28,21 +28,22 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_net/subnet_mock.go -package mock_net -source ./subnet.go
 type OscSubnetInterface interface {
-	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error)
+	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string, subregionName string) (*osc.Subnet, error)
 	DeleteSubnet(subnetId string) error
 	GetSubnet(subnetId string) (*osc.Subnet, error)
 	GetSubnetIdsFromNetIds(netId string) ([]string, error)
 }
 
 // CreateSubnet create the subnet associate to the net
-func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string, subregionName string) (*osc.Subnet, error) {
 	ipSubnetRange, err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
 	}
 	subnetRequest := osc.CreateSubnetRequest{
-		IpRange: ipSubnetRange,
-		NetId:   netId,
+		IpRange:       ipSubnetRange,
+		NetId:         netId,
+		SubregionName: &subregionName,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
