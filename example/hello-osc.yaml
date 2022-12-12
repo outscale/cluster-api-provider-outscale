@@ -28,6 +28,7 @@ metadata:
 spec:
   network:
     clusterName: hello-osc
+    subregionName: eu-west-2a
     internetService:
       clusterName: hello-osc
     loadBalancer:

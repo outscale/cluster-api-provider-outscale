@@ -29,6 +29,7 @@ metadata:
 spec:
   network:
     clusterName: capo-quickstart
+    subregionName: eu-west-2a
     loadBalancer:
       loadbalancername: capo-k8s
       clusterName: capo-quickstart
