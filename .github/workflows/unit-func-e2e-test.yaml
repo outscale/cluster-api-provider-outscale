@@ -15,6 +15,11 @@ on:
       - "Makefile"
       - "hack/*.sh"
       - "!docs/src/**"
+      - "!hack/json-format/*.sh"
+      - "!hack/json-format/src/*.rs"
+      - "!hack/json-format/Makefile"
+      - "!hack/json-format/Cargo.*"
+      - "!hack/json-format/tests/*.rs"
   pull_request_target:
     branches: [ main ]
     paths:
@@ -28,6 +33,11 @@ on:
       - "Makefile"
       - "hack/*.sh"
       - "!docs/src/**"
+      - "!hack/json-format/*.sh"
+      - "!hack/json-format/src/*.rs"
+      - "!hack/json-format/Makefile"
+      - "!hack/json-format/Cargo.*"
+      - "!hack/json-format/tests/*.rs"
 jobs:
   testenv:
     runs-on: [self-hosted, linux]
