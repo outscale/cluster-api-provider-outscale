@@ -22,14 +22,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
-	osc "github.com/outscale/osc-sdk-go/v2"
-
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -107,12 +106,13 @@ var (
 )
 
 // SetupWithPublicIpMock set publicIpMock with clusterScope and osccluster
-func SetupWithPublicIpMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface) {
+func SetupWithPublicIpMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscPublicIpInterface = mock_security.NewMockOscPublicIpInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, ctx, mockOscPublicIpInterface
+	return clusterScope, ctx, mockOscPublicIpInterface, mockOscTagInterface
 }
 
 // TestGetPublicIpResourceId has several tests to cover the code of the function getPublicIpResourceId
@@ -383,34 +383,51 @@ func TestReconcilePublicIpGet(t *testing.T) {
 		name                    string
 		spec                    infrastructurev1beta1.OscClusterSpec
 		expPublicIpFound        bool
+		expTagFound             bool
 		expValidatePublicIpsErr error
+		expReadTagErr           error
 		expReconcilePublicIpErr error
 	}{
 		{
 			name:                    "check publicIp exist (second time reconcile loop)",
 			spec:                    defaultPublicIpReconcile,
 			expPublicIpFound:        true,
+			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
 		},
 		{
 			name:                    "check two publicIp exist (second time reconcile loop)",
 			spec:                    defaultMultiPublicIpReconcile,
 			expPublicIpFound:        true,
+			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
 		},
 		{
 			name:                    "failed to validate publicIp",
 			spec:                    defaultPublicIpInitialize,
 			expPublicIpFound:        false,
+			expTagFound:             false,
 			expValidatePublicIpsErr: fmt.Errorf("ValidatePublicIp generic error"),
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: fmt.Errorf("ValidatePublicIp generic error"),
+		},
+		{
+			name:                    "failed to get tag",
+			spec:                    defaultPublicIpReconcile,
+			expPublicIpFound:        true,
+			expTagFound:             false,
+			expValidatePublicIpsErr: nil,
+			expReadTagErr:           fmt.Errorf("ReadTag generic error"),
+			expReconcilePublicIpErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
+			clusterScope, ctx, mockOscPublicIpInterface, mockOscTagInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
 			var publicIpId string
@@ -419,6 +436,26 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId = "eipalloc-" + publicIpName
+
+				tag := osc.Tag{
+					ResourceId: &publicIpId,
+				}
+				if pitc.expPublicIpFound {
+					if pitc.expTagFound {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+							Return(&tag, pitc.expReadTagErr)
+
+					} else {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+							Return(nil, pitc.expReadTagErr)
+
+					}
+				}
+
 				publicIpIds = append(publicIpIds, publicIpId)
 				if pitc.expPublicIpFound {
 					publicIpRef.ResourceMap[publicIpName] = publicIpId
@@ -439,9 +476,9 @@ func TestReconcilePublicIpGet(t *testing.T) {
 					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpsErr)
 			}
-			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
+			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, pitc.expReconcilePublicIpErr, err, "reconcilePublicIp() should return the same error")
+				assert.Equal(t, pitc.expReconcilePublicIpErr.Error(), err.Error(), "reconcilePublicIp() should return the same error")
 			} else {
 				assert.Nil(t, pitc.expReconcilePublicIpErr)
 			}
@@ -456,27 +493,33 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 		name                    string
 		spec                    infrastructurev1beta1.OscClusterSpec
 		expPublicIpFound        bool
+		expTagFound             bool
 		expValidatePublicIpsErr error
 		expCreatePublicIpFound  bool
 		expCreatePublicIpErr    error
+		expReadTagErr           error
 		expReconcilePublicIpErr error
 	}{
 		{
 			name:                    "create publicIp (first time reconcile loop)",
 			spec:                    defaultPublicIpInitialize,
 			expPublicIpFound:        false,
+			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expCreatePublicIpFound:  true,
 			expCreatePublicIpErr:    nil,
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
 		},
 		{
 			name:                    "create two publicIp (first time reconcile loop)",
 			spec:                    defaultMultiPublicIpInitialize,
 			expPublicIpFound:        false,
+			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expCreatePublicIpFound:  true,
 			expCreatePublicIpErr:    nil,
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
 		},
 		{
@@ -495,9 +538,11 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 				},
 			},
 			expPublicIpFound:        false,
+			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expCreatePublicIpFound:  false,
 			expCreatePublicIpErr:    fmt.Errorf("CreatePublicIp generic error"),
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: fmt.Errorf("CreatePublicIp generic error Can not create publicIp for Osccluster test-system/test-osc"),
 		},
 		{
@@ -516,20 +561,36 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 				},
 			},
 			expPublicIpFound:        false,
+			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expCreatePublicIpFound:  true,
 			expCreatePublicIpErr:    nil,
+			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
 		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
+			clusterScope, ctx, mockOscPublicIpInterface, mockOscTagInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
 			for index, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				tag := osc.Tag{
+					ResourceId: &publicIpId,
+				}
+				if pitc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+						Return(&tag, pitc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+						Return(nil, pitc.expReadTagErr)
+				}
 				publicIpIds = append(publicIpIds, publicIpId)
 
 				publicIp := osc.CreatePublicIpResponse{
@@ -569,7 +630,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpsErr)
 			}
-			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
+			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, pitc.expReconcilePublicIpErr.Error(), err.Error(), "reconcilePublicIp() should return the same error")
 			} else {
@@ -600,7 +661,7 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
+			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120
@@ -675,7 +736,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
+			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
@@ -741,7 +802,7 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
+			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
@@ -817,7 +878,7 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
+			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
 			for _, publicIpSpec := range publicIpsSpec {

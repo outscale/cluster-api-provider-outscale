@@ -51,7 +51,7 @@ func checkInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (str
 }
 
 // ReconcileInternetService reconcile the InternetService of the cluster.
-func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface) (reconcile.Result, error) {
+func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
@@ -66,6 +66,12 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	if len(internetServiceRef.ResourceMap) == 0 {
 		internetServiceRef.ResourceMap = make(map[string]string)
 	}
+	tagKey := "Name"
+	tagValue := internetServiceName
+	tag, err := tagSvc.ReadTag(tagKey, tagValue)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+	}
 	if internetServiceSpec.ResourceId != "" {
 		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
 		internetServiceId := internetServiceSpec.ResourceId
@@ -76,7 +82,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 			return reconcile.Result{}, err
 		}
 	}
-	if internetService == nil || internetServiceSpec.ResourceId == "" {
+	if (internetService == nil && tag == nil) || (internetServiceSpec.ResourceId == "" && tag == nil) {
 		clusterScope.V(2).Info("Create the desired internetservice", "internetServiceName", internetServiceName)
 		internetService, err := internetServiceSvc.CreateInternetService(internetServiceName)
 		if err != nil {

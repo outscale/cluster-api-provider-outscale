@@ -531,12 +531,11 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expSecurityGroupFound:         true,
 			expCreateLoadBalancerFound:    true,
 			expConfigureLoadBalancerFound: false,
-			expDeleteOutboundSgRule:       false,
-			expDeleteOutboundSgRuleErr:    fmt.Errorf("DeleteSecurityGroupsRules generic error"),
-			expDescribeLoadBalancerErr:    nil,
-			expCreateLoadBalancerErr:      nil,
-			expConfigureLoadBalancerErr:   nil,
-			expReconcileLoadBalancerErr:   fmt.Errorf("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
+			expDeleteOutboundSgRule:       false, expDeleteOutboundSgRuleErr: fmt.Errorf("DeleteSecurityGroupsRules generic error"),
+			expDescribeLoadBalancerErr:  nil,
+			expCreateLoadBalancerErr:    nil,
+			expConfigureLoadBalancerErr: nil,
+			expReconcileLoadBalancerErr: fmt.Errorf("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
 		},
 		{
 			name:                          "failed to configure loadBalancer",
@@ -560,6 +559,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
 			loadBalancerDnsName := loadBalancerName + "." + "eu-west-2" + "." + ".lbu.outscale.com"
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
+
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
 			subnetName := lbtc.spec.Network.LoadBalancer.SubnetName + "-uid"
@@ -657,10 +657,12 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 		expSubnetFound                bool
 		expSecurityGroupFound         bool
 		expCreateLoadBalancerFound    bool
+		expConfigureLoadBalancerFound bool
+		expTagFound                   bool
 		expCreateLoadBalancerErr      error
 		expDescribeLoadBalancerErr    error
-		expConfigureLoadBalancerFound bool
 		expConfigureLoadBalancerErr   error
+		expReadTagErr                 error
 		expReconcileLoadBalancerErr   error
 	}{
 		{
@@ -671,9 +673,11 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			expSecurityGroupFound:         true,
 			expCreateLoadBalancerFound:    false,
 			expConfigureLoadBalancerFound: false,
+			expTagFound:                   true,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
+			expReadTagErr:                 nil,
 			expReconcileLoadBalancerErr:   nil,
 		},
 		{
@@ -684,9 +688,11 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			expSecurityGroupFound:         false,
 			expCreateLoadBalancerFound:    false,
 			expConfigureLoadBalancerFound: false,
+			expTagFound:                   true,
 			expDescribeLoadBalancerErr:    fmt.Errorf("GetLoadBalancer generic error"),
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
+			expReadTagErr:                 nil,
 			expReconcileLoadBalancerErr:   fmt.Errorf("GetLoadBalancer generic error"),
 		},
 	}
@@ -754,17 +760,21 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
+		expTagFound                 bool
 		expCreateLoadBalancerErr    error
 		expConfigureLoadBalancerErr error
 		expDescribeLoadBalancerErr  error
+		expReadTagErr               error
 		expReconcileLoadBalancerErr error
 	}{
 		{
 			name:                        "failed to create loadBalancer",
 			spec:                        defaultLoadBalancerInitialize,
 			expCreateLoadBalancerErr:    fmt.Errorf("CreateLoadBalancer generic error"),
+			expTagFound:                 false,
 			expConfigureLoadBalancerErr: nil,
 			expDescribeLoadBalancerErr:  nil,
+			expReadTagErr:               nil,
 			expReconcileLoadBalancerErr: fmt.Errorf("CreateLoadBalancer generic error Can not create loadBalancer for Osccluster test-system/test-osc"),
 		},
 	}

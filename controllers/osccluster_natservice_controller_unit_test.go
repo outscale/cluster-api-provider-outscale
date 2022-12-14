@@ -26,6 +26,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -86,12 +87,13 @@ var (
 )
 
 // SetupWithNatServiceMock set natServiceMock with clusterScope and osccluster
-func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNatServiceInterface *mock_net.MockOscNatServiceInterface) {
+func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNatServiceInterface *mock_net.MockOscNatServiceInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscNatServiceInterface = mock_net.NewMockOscNatServiceInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, ctx, mockOscNatServiceInterface
+	return clusterScope, ctx, mockOscNatServiceInterface, mockOscTagInterface
 }
 
 // TestGetNatResourceId has several tests to cover the code of the function getNatResourceId
@@ -325,24 +327,29 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 		spec                      infrastructurev1beta1.OscClusterSpec
 		expPublicIpFound          bool
 		expSubnetFound            bool
+		expTagFound               bool
 		expGetNatServiceErr       error
 		expCreateNatServiceFound  bool
 		expCreateNatServiceErr    error
+		expReadTagErr             error
 		expReconcileNatServiceErr error
 	}{
 		{
 			name:                      "create natService (first time reconcile loop)",
 			spec:                      defaultNatServiceInitialize,
+			expTagFound:               false,
 			expPublicIpFound:          true,
 			expSubnetFound:            true,
 			expGetNatServiceErr:       nil,
 			expCreateNatServiceFound:  true,
 			expCreateNatServiceErr:    nil,
+			expReadTagErr:             nil,
 			expReconcileNatServiceErr: nil,
 		},
 		{
 			name:                      "failed to create natService",
 			spec:                      defaultNatServiceInitialize,
+			expTagFound:               false,
 			expPublicIpFound:          true,
 			expSubnetFound:            true,
 			expGetNatServiceErr:       nil,
@@ -353,13 +360,27 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
+			clusterScope, ctx, mockOscNatServiceInterface, mockOscTagInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
 			natServiceName := nstc.spec.Network.NatService.Name + "-uid"
 			natServiceId := "nat-" + natServiceName
 			natServiceRef := clusterScope.GetNatServiceRef()
 			natServiceRef.ResourceMap = make(map[string]string)
-
+			natServiceRef.ResourceMap[natServiceName] = natServiceId
+			tag := osc.Tag{
+				ResourceId: &natServiceId,
+			}
+			if nstc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					Return(&tag, nstc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					Return(nil, nstc.expReadTagErr)
+			}
 			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
 			publicIpRef := clusterScope.GetPublicIpRef()
@@ -393,7 +414,7 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
 					Return(nil, nstc.expCreateNatServiceErr)
 			}
-			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface)
+			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, nstc.expReconcileNatServiceErr.Error(), err.Error(), "reconcileNatService() should return the same error")
 			} else {
@@ -412,7 +433,9 @@ func TestReconcileNatServiceGet(t *testing.T) {
 		expNatServiceFound        bool
 		expPublicIpFound          bool
 		expSubnetFound            bool
+		expTagFound               bool
 		expGetNatServiceErr       error
+		expReadTagErr             error
 		expReconcileNatServiceErr error
 	}{
 		{
@@ -421,7 +444,9 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			expNatServiceFound:        true,
 			expPublicIpFound:          true,
 			expSubnetFound:            true,
+			expTagFound:               false,
 			expGetNatServiceErr:       nil,
+			expReadTagErr:             nil,
 			expReconcileNatServiceErr: nil,
 		},
 		{
@@ -430,13 +455,15 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			expNatServiceFound:        false,
 			expPublicIpFound:          true,
 			expSubnetFound:            true,
+			expTagFound:               false,
 			expGetNatServiceErr:       fmt.Errorf("GetSubnet generic error"),
+			expReadTagErr:             nil,
 			expReconcileNatServiceErr: fmt.Errorf("GetSubnet generic error"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
+			clusterScope, ctx, mockOscNatServiceInterface, mockOscTagInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
 			natServiceName := nstc.spec.Network.NatService.Name + "-uid"
 			natServiceId := "nat-" + natServiceName
@@ -445,7 +472,20 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			if nstc.expNatServiceFound {
 				natServiceRef.ResourceMap[natServiceName] = natServiceId
 			}
-
+			tag := osc.Tag{
+				ResourceId: &natServiceId,
+			}
+			if nstc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					Return(&tag, nstc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					Return(nil, nstc.expReadTagErr)
+			}
 			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
 			publicIpRef := clusterScope.GetPublicIpRef()
@@ -485,7 +525,7 @@ func TestReconcileNatServiceGet(t *testing.T) {
 					GetNatService(gomock.Eq(natServiceId)).
 					Return(nil, nstc.expGetNatServiceErr)
 			}
-			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface)
+			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, nstc.expReconcileNatServiceErr, err, "reconcileNatService() should return the same error")
 			} else {
@@ -503,6 +543,8 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 		spec                      infrastructurev1beta1.OscClusterSpec
 		expPublicIpFound          bool
 		expSubnetFound            bool
+		expTagFound               bool
+		expReadTagErr             error
 		expReconcileNatServiceErr error
 	}{
 		{
@@ -510,6 +552,8 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			spec:                      defaultNatServiceInitialize,
 			expPublicIpFound:          false,
 			expSubnetFound:            true,
+			expTagFound:               false,
+			expReadTagErr:             nil,
 			expReconcileNatServiceErr: fmt.Errorf("test-publicip-uid does not exist"),
 		},
 		{
@@ -517,17 +561,31 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			spec:                      defaultNatServiceInitialize,
 			expPublicIpFound:          true,
 			expSubnetFound:            false,
+			expTagFound:               false,
+			expReadTagErr:             nil,
 			expReconcileNatServiceErr: fmt.Errorf("test-subnet-uid does not exist"),
+		},
+		{
+			name:                      "Failed to get tag",
+			spec:                      defaultNatServiceReconcile,
+			expPublicIpFound:          true,
+			expSubnetFound:            true,
+			expTagFound:               false,
+			expReadTagErr:             fmt.Errorf("ReadTag generic error"),
+			expReconcileNatServiceErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
+			clusterScope, ctx, mockOscNatServiceInterface, mockOscTagInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
 			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
 			publicIpRef := clusterScope.GetPublicIpRef()
 			publicIpRef.ResourceMap = make(map[string]string)
+			tag := osc.Tag{
+				ResourceId: &publicIpId,
+			}
 			if nstc.expPublicIpFound {
 				publicIpRef.ResourceMap[publicIpName] = publicIpId
 			}
@@ -539,8 +597,22 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			if nstc.expSubnetFound {
 				subnetRef.ResourceMap[subnetName] = subnetId
 			}
+			natServiceName := nstc.spec.Network.NatService.Name + "-uid"
 
-			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface)
+			if nstc.expPublicIpFound && nstc.expSubnetFound {
+				if nstc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+						Return(&tag, nstc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+						Return(nil, nstc.expReadTagErr)
+				}
+			}
+			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, nstc.expReconcileNatServiceErr.Error(), err.Error(), "reconcileNatService() should return the same error")
 			} else {
@@ -569,7 +641,7 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
+			clusterScope, ctx, mockOscNatServiceInterface, _ := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
 			natServiceName := "cluster-api-natservice-uid"
 			natServiceId := "nat-" + natServiceName
@@ -659,7 +731,7 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
+			clusterScope, ctx, mockOscNatServiceInterface, _ := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
 			natServiceName := nstc.spec.Network.NatService.Name + "-uid"
 			natServiceId := "nat-" + natServiceName
@@ -738,7 +810,7 @@ func TestReconcileDeleteNatServiceGet(t *testing.T) {
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscNatServiceInterface := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
+			clusterScope, ctx, mockOscNatServiceInterface, _ := SetupWithNatServiceMock(t, nstc.name, nstc.spec)
 
 			natServiceName := nstc.spec.Network.NatService.Name + "-uid"
 			natServiceId := "nat-" + natServiceName

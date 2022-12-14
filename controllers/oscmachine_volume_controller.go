@@ -105,8 +105,8 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 }
 
 // reconcileVolume reconcile the volume of the machine
-func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volumeSvc storage.OscVolumeInterface) (reconcile.Result, error) {
 
+func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volumeSvc storage.OscVolumeInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	var volumeId string
 	var volumeIds []string
 	var volumesSpec []*infrastructurev1beta1.OscVolume
@@ -130,9 +130,15 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		if volumeSpec.ResourceId != "" {
 			volumeRef.ResourceMap[volumeName] = volumeSpec.ResourceId
 		}
+		tagKey := "Name"
+		tagValue := volumeName
+		tag, err := tagSvc.ReadTag(tagKey, tagValue)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+		}
 		volumeId := volumeRef.ResourceMap[volumeName]
 		machineScope.V(2).Info("Check if the desired volumes exist")
-		if !Contains(validVolumeIds, volumeId) {
+		if !Contains(validVolumeIds, volumeId) && tag == nil {
 			volume, err := volumeSvc.CreateVolume(volumeSpec, volumeName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())

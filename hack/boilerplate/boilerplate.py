@@ -123,7 +123,6 @@ def file_passes(filename, refs, regexs):
             else:
                 print('File %s has the YEAR field, but missing the year of date' % filename, file=verbose_out)
             return False
-
     if not generated:
         # Replace all occurrences of the regex "2014|2015|2016|2017|2018" with "YEAR"
         p = regexs["date"]
@@ -149,7 +148,10 @@ def file_extension(filename):
 
 skipped_dirs = ['Godeps', 'third_party', '_gopath', '_output', '.git', 'cluster/env.sh',
                 "vendor", "test/e2e/generated/bindata.go", "hack/boilerplate/test",
-                "pkg/kubectl/generated/bindata.go", "tilt_modules", "cloud/services/net/mock_net", "cloud/services/security/mock_security", "cloud/services/service/mock_service", "cloud/services/storage/mock_storage", "cloud/services/compute/mock_compute", "api/v1beta1/zz_generated.deepcopy.go"]
+                "pkg/kubectl/generated/bindata.go", "tilt_modules", "cloud/services/net/mock_net",
+                "cloud/services/security/mock_security", "cloud/services/service/mock_service",
+                "cloud/services/storage/mock_storage", "cloud/services/compute/mock_compute",
+                "cloud/tag/mock_tag", "api/v1beta1/zz_generated.deepcopy.go"]
 
 # list all the files contain 'DO NOT EDIT', but are not generated
 skipped_ungenerated_files = ['hack/lib/swagger.sh', 'hack/boilerplate/boilerplate.py']
@@ -218,7 +220,6 @@ def main():
     regexs = get_regexs()
     refs = get_refs()
     filenames = get_files(refs.keys())
-
     for filename in filenames:
         if not file_passes(filename, refs, regexs):
             if sys.version_info[0] < 3:

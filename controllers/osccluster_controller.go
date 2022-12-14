@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
@@ -105,6 +106,11 @@ func (r *OscClusterReconciler) getVmSvc(ctx context.Context, scope scope.Cluster
 // getImageSvc retrieve imageSvc
 func (r *OscClusterReconciler) getImageSvc(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
 	return compute.NewService(ctx, &scope)
+}
+
+// getTagSvc retrieve tagSvc
+func (r *OscClusterReconciler) getTagSvc(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
+	return tag.NewService(ctx, &scope)
 }
 
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -316,7 +322,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	clusterScope.SetNotReady()
 	// Reconcile each element of the cluster
 	netSvc := r.getNetSvc(ctx, *clusterScope)
-	reconcileNet, err := reconcileNet(ctx, clusterScope, netSvc)
+	tagSvc := r.getTagSvc(ctx, *clusterScope)
+	reconcileNet, err := reconcileNet(ctx, clusterScope, netSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile net")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NetReadyCondition, infrastructurev1beta1.NetReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -325,7 +332,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
 
 	subnetSvc := r.getSubnetSvc(ctx, *clusterScope)
-	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope, subnetSvc)
+	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope, subnetSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile subnet")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SubnetsReadyCondition, infrastructurev1beta1.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -334,7 +341,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition)
 
 	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
-	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetServiceSvc)
+	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetServiceSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile internetService")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -343,7 +350,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
 
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
-	reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, publicIpSvc)
+	reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, publicIpSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile publicIp")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.PublicIpsReadyCondition, infrastructurev1beta1.PublicIpsFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -352,7 +359,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
 
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
-	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc)
+	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile securityGroup")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -361,7 +368,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
 	routeTableSvc := r.getRouteTableSvc(ctx, *clusterScope)
-	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc)
+	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile routeTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -370,7 +377,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
 	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
-	reconcileNatService, err := reconcileNatService(ctx, clusterScope, natServiceSvc)
+	reconcileNatService, err := reconcileNatService(ctx, clusterScope, natServiceSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile natservice")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NatServicesReadyCondition, infrastructurev1beta1.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -378,7 +385,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
 
-	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc)
+	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
 	if err != nil {
 		clusterScope.Error(err, "failed to reconcile NatRouteTable")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -391,7 +398,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		vmSvc := r.getVmSvc(ctx, *clusterScope)
 		imageSvc := r.getImageSvc(ctx, *clusterScope)
-		reconcileBastion, err := reconcileBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc, imageSvc)
+		reconcileBastion, err := reconcileBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc, imageSvc, tagSvc)
 		if err != nil {
 			clusterScope.Error(err, "failed to reconcile bastion")
 			conditions.MarkFalse(osccluster, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())

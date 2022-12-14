@@ -83,7 +83,7 @@ func checkSubnetOscDuplicateName(clusterScope *scope.ClusterScope) error {
 }
 
 // reconcileSubnet reconcile the subnet of the cluster.
-func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
+func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
@@ -108,6 +108,12 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	clusterScope.V(4).Info("Number of subnet", "subnet_length", len(subnetsSpec))
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
+		tagKey := "Name"
+		tagValue := subnetName
+		tag, err := tagSvc.ReadTag(tagKey, tagValue)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
 		subnetId := subnetSpec.ResourceId
 		clusterScope.V(4).Info("Get subnetId", "subnetId", subnetId)
 		if len(subnetRef.ResourceMap) == 0 {
@@ -120,7 +126,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		if resourceMapExist {
 			subnetSpec.ResourceId = subnetRef.ResourceMap[subnetName]
 		}
-		if !Contains(subnetIds, subnetId) {
+		if !Contains(subnetIds, subnetId) && tag == nil {
 			clusterScope.V(2).Info("Create the desired subnet", "subnetName", subnetName)
 			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, clusterName, subnetName, subregionName)
 			if err != nil {

@@ -27,6 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 )
@@ -256,15 +257,16 @@ var (
 )
 
 // SetupWithBastionMock set vmMock with clusterScope, machineScope and oscMachine
-func SetupWithBastionMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscImageInterface *mock_compute.MockOscImageInterface) {
+func SetupWithBastionMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscImageInterface *mock_compute.MockOscImageInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, clusterSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscVmInterface = mock_compute.NewMockOscVmInterface(mockCtrl)
 	mockOscPublicIpInterface = mock_security.NewMockOscPublicIpInterface(mockCtrl)
 	mockOscSecurityGroupInterface = mock_security.NewMockOscSecurityGroupInterface(mockCtrl)
 	mockOscImageInterface = mock_compute.NewMockOscImageInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface
+	return clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface
 }
 
 // TestGetBastionResourceId has several tests to cover the code of the function getBastionResourceId
@@ -1676,9 +1678,11 @@ func TestReconcileBastion(t *testing.T) {
 		expLinkPublicIpFound         bool
 		expCheckVmStateBootFound     bool
 		expCheckVmStatePublicIpFound bool
+		expTagFound                  bool
 		expCheckVmStateBootErr       error
 		expCheckVmStatePublicIpErr   error
 		expCreateVmErr               error
+		expReadTagErr                error
 		expReconcileBastionErr       error
 		expLinkPublicIpErr           error
 	}{
@@ -1689,10 +1693,12 @@ func TestReconcileBastion(t *testing.T) {
 			expLinkPublicIpFound:         true,
 			expCheckVmStateBootFound:     true,
 			expCheckVmStatePublicIpFound: true,
+			expTagFound:                  false,
 			expCheckVmStateBootErr:       nil,
 			expCheckVmStatePublicIpErr:   nil,
 			expCreateVmErr:               nil,
 			expLinkPublicIpErr:           nil,
+			expReadTagErr:                nil,
 			expReconcileBastionErr:       nil,
 		},
 		{
@@ -1702,10 +1708,12 @@ func TestReconcileBastion(t *testing.T) {
 			expLinkPublicIpFound:         false,
 			expCheckVmStateBootFound:     true,
 			expCheckVmStatePublicIpFound: false,
+			expTagFound:                  false,
 			expCheckVmStateBootErr:       fmt.Errorf("CheckVmStateBoot generic error"),
 			expCheckVmStatePublicIpErr:   nil,
 			expCreateVmErr:               nil,
 			expLinkPublicIpErr:           nil,
+			expReadTagErr:                nil,
 			expReconcileBastionErr:       fmt.Errorf("CheckVmStateBoot generic error Can not get vm i-test-bastion-uid running for OscCluster test-system/test-osc"),
 		},
 		{
@@ -1715,16 +1723,18 @@ func TestReconcileBastion(t *testing.T) {
 			expLinkPublicIpFound:         true,
 			expCheckVmStateBootFound:     true,
 			expCheckVmStatePublicIpFound: true,
+			expTagFound:                  false,
 			expCheckVmStateBootErr:       nil,
 			expCheckVmStatePublicIpErr:   fmt.Errorf("CheckVmStatePublicIp generic error"),
 			expCreateVmErr:               nil,
 			expLinkPublicIpErr:           nil,
+			expReadTagErr:                nil,
 			expReconcileBastionErr:       fmt.Errorf("CheckVmStatePublicIp generic error Can not get vm i-test-bastion-uid running for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 			vmState := "running"
@@ -1780,6 +1790,21 @@ func TestReconcileBastion(t *testing.T) {
 			}
 
 			createVm := *createVms.Vms
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+
+			if btc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(&tag, btc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(nil, btc.expReadTagErr)
+			}
 			linkPublicIp := osc.LinkPublicIpResponse{
 				LinkPublicIpId: &linkPublicIpId,
 			}
@@ -1815,7 +1840,7 @@ func TestReconcileBastion(t *testing.T) {
 					Return(btc.expCheckVmStatePublicIpErr)
 			}
 
-			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface)
+			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
 			} else {
@@ -1833,7 +1858,9 @@ func TestReconcileCreateBastion(t *testing.T) {
 		clusterSpec            infrastructurev1beta1.OscClusterSpec
 		expCreateVmFound       bool
 		expLinkPublicIpFound   bool
+		expTagFound            bool
 		expCreateVmErr         error
+		expReadTagErr          error
 		expReconcileBastionErr error
 	}{
 		{
@@ -1841,13 +1868,15 @@ func TestReconcileCreateBastion(t *testing.T) {
 			clusterSpec:            defaultBastionInitialize,
 			expCreateVmFound:       false,
 			expCreateVmErr:         fmt.Errorf("CreateVmUserData generic error"),
+			expTagFound:            false,
 			expLinkPublicIpFound:   true,
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("CreateVmUserData generic error Can not create bastion for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 
@@ -1901,6 +1930,20 @@ func TestReconcileCreateBastion(t *testing.T) {
 			}
 
 			createVm := *createVms.Vms
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if btc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(&tag, btc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(nil, btc.expReadTagErr)
+			}
 			bastion := &createVm[0]
 			if btc.expCreateVmFound {
 				mockOscVmInterface.
@@ -1914,7 +1957,7 @@ func TestReconcileCreateBastion(t *testing.T) {
 					Return(nil, btc.expCreateVmErr)
 			}
 
-			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface)
+			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
 			} else {
@@ -1934,11 +1977,13 @@ func TestReconcileLinkBastion(t *testing.T) {
 		expLinkPublicIpFound         bool
 		expCheckVmStateBootFound     bool
 		expCheckVmStatePublicIpFound bool
+		expTagFound                  bool
 		expCreateVmErr               error
 		expReconcileBastionErr       error
 		expCheckVmStateBootErr       error
 		expCheckVmStatePublicIpErr   error
 		expLinkPublicIpErr           error
+		expReadTagErr                error
 	}{
 		{
 			name:                         "failed to linkPublicIp",
@@ -1947,10 +1992,12 @@ func TestReconcileLinkBastion(t *testing.T) {
 			expLinkPublicIpFound:         true,
 			expCheckVmStateBootFound:     true,
 			expCheckVmStatePublicIpFound: false,
+			expTagFound:                  false,
 			expCheckVmStateBootErr:       nil,
 			expCheckVmStatePublicIpErr:   nil,
 			expCreateVmErr:               nil,
 			expLinkPublicIpErr:           fmt.Errorf("linkPublicIp generic error"),
+			expReadTagErr:                nil,
 			expReconcileBastionErr:       fmt.Errorf("linkPublicIp generic error Can not link publicIp eipalloc-test-publicip-uid with i-test-bastion-uid for OscCluster test-system/test-osc"),
 		},
 		{
@@ -1960,10 +2007,12 @@ func TestReconcileLinkBastion(t *testing.T) {
 			expLinkPublicIpFound:         true,
 			expCheckVmStateBootFound:     true,
 			expCheckVmStatePublicIpFound: true,
+			expTagFound:                  false,
 			expCheckVmStateBootErr:       nil,
 			expCheckVmStatePublicIpErr:   nil,
 			expCreateVmErr:               nil,
 			expLinkPublicIpErr:           nil,
+			expReadTagErr:                nil,
 			expReconcileBastionErr:       nil,
 		},
 		{
@@ -1973,16 +2022,18 @@ func TestReconcileLinkBastion(t *testing.T) {
 			expLinkPublicIpFound:         true,
 			expCheckVmStateBootFound:     true,
 			expCheckVmStatePublicIpFound: true,
+			expTagFound:                  false,
 			expCheckVmStateBootErr:       nil,
 			expCheckVmStatePublicIpErr:   nil,
 			expCreateVmErr:               nil,
 			expLinkPublicIpErr:           nil,
+			expReadTagErr:                nil,
 			expReconcileBastionErr:       nil,
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 			vmState := "running"
@@ -2040,6 +2091,20 @@ func TestReconcileLinkBastion(t *testing.T) {
 			}
 
 			createVm := *createVms.Vms
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if btc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(&tag, btc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(nil, btc.expReadTagErr)
+			}
 			linkPublicIp := osc.LinkPublicIpResponse{
 				LinkPublicIpId: &linkPublicIpId,
 			}
@@ -2076,7 +2141,7 @@ func TestReconcileLinkBastion(t *testing.T) {
 					Return(btc.expCheckVmStatePublicIpErr)
 			}
 
-			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface)
+			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
 			} else {
@@ -2094,8 +2159,10 @@ func TestReconcileBastionGet(t *testing.T) {
 		clusterSpec            infrastructurev1beta1.OscClusterSpec
 		expGetVmFound          bool
 		expGetVmStateFound     bool
+		expTagFound            bool
 		expGetVmErr            error
 		expGetVmStateErr       error
+		expReadTagErr          error
 		expReconcileBastionErr error
 	}{
 		{
@@ -2103,8 +2170,10 @@ func TestReconcileBastionGet(t *testing.T) {
 			clusterSpec:            defaultBastionReconcile,
 			expGetVmFound:          true,
 			expGetVmStateFound:     true,
+			expTagFound:            false,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
+			expReadTagErr:          nil,
 			expReconcileBastionErr: nil,
 		},
 		{
@@ -2112,8 +2181,10 @@ func TestReconcileBastionGet(t *testing.T) {
 			clusterSpec:            defaultBastionReconcile,
 			expGetVmFound:          true,
 			expGetVmStateFound:     false,
+			expTagFound:            false,
 			expGetVmErr:            fmt.Errorf("GetVm generic error"),
 			expGetVmStateErr:       nil,
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("GetVm generic error"),
 		},
 		{
@@ -2121,14 +2192,16 @@ func TestReconcileBastionGet(t *testing.T) {
 			clusterSpec:            defaultBastionReconcile,
 			expGetVmFound:          true,
 			expGetVmStateFound:     true,
+			expTagFound:            false,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       fmt.Errorf("GetVmState generic error"),
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("GetVmState generic error Can not get bastion i-test-bastion-uid state for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 			vmState := "running"
@@ -2175,6 +2248,20 @@ func TestReconcileBastionGet(t *testing.T) {
 				},
 			}
 			readVm := *readVms.Vms
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if btc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(&tag, btc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(nil, btc.expReadTagErr)
+			}
 			vm := &readVm[0]
 			if btc.expGetVmFound {
 				mockOscVmInterface.
@@ -2193,7 +2280,7 @@ func TestReconcileBastionGet(t *testing.T) {
 					GetVmState(gomock.Eq(vmId)).
 					Return(vmState, btc.expGetVmStateErr)
 			}
-			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface)
+			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
 			} else {
@@ -2214,7 +2301,9 @@ func TestReconcileBastionResourceId(t *testing.T) {
 		expSubnetFound         bool
 		expPublicIpFound       bool
 		expSecurityGroupFound  bool
+		expTagFound            bool
 		expGetImageIdErr       error
+		expReadTagErr          error
 		expReconcileBastionErr error
 	}{
 		{
@@ -2225,7 +2314,9 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expPublicIpFound:       false,
 			expLinkPublicIpFound:   true,
 			expSecurityGroupFound:  true,
+			expTagFound:            false,
 			expGetImageIdErr:       nil,
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("test-publicip-uid does not exist"),
 		},
 		{
@@ -2237,6 +2328,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expLinkPublicIpFound:   true,
 			expSecurityGroupFound:  true,
 			expGetImageIdErr:       nil,
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("test-subnet-uid does not exist"),
 		},
 		{
@@ -2248,6 +2340,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expLinkPublicIpFound:   false,
 			expSecurityGroupFound:  false,
 			expGetImageIdErr:       nil,
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("test-securitygroup-uid does not exist"),
 		},
 		{
@@ -2259,12 +2352,27 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expLinkPublicIpFound:   false,
 			expSecurityGroupFound:  false,
 			expGetImageIdErr:       fmt.Errorf("GetImageId generic error"),
+			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("GetImageId generic error"),
+		},
+		{
+			name:                   "failed to get tag",
+			clusterSpec:            defaultBastionInitialize,
+			expGetImageNameFound:   false,
+			expSubnetFound:         true,
+			expPublicIpFound:       true,
+			expLinkPublicIpFound:   true,
+			expSecurityGroupFound:  true,
+			expGetImageIdErr:       nil,
+			expReadTagErr:          fmt.Errorf("ReadTag generic error"),
+			expReconcileBastionErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
+			vmId := "i-" + bastionName
 
 			subnetName := btc.clusterSpec.Network.Bastion.SubnetName + "-uid"
 			subnetId := "subnet-" + subnetName
@@ -2311,18 +2419,36 @@ func TestReconcileBastionResourceId(t *testing.T) {
 				}
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
+
 			if btc.expGetImageNameFound {
 				mockOscImageInterface.
 					EXPECT().
 					GetImageId(gomock.Eq(imageName)).
 					Return(imageId, btc.expGetImageIdErr)
 			}
-			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface)
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if btc.expSubnetFound && btc.expPublicIpFound && btc.expLinkPublicIpFound && btc.expSecurityGroupFound {
+				if btc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+						Return(&tag, btc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(bastionName)).
+						Return(nil, btc.expReadTagErr)
+				}
+			}
+			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, btc.expReconcileBastionErr, err, "reconcileBastion() should return the same error")
+				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
 			} else {
 				assert.Nil(t, btc.expReconcileBastionErr)
 			}
+
 			t.Logf("find reconcileBastion %v\n", reconcileBastion)
 		})
 	}
@@ -2363,7 +2489,7 @@ func TestReconcileDeleteBastion(t *testing.T) {
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 			bastionRef := clusterScope.GetBastionRef()
@@ -2484,7 +2610,7 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 			bastionRef := clusterScope.GetBastionRef()
@@ -2608,7 +2734,7 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 
@@ -2701,7 +2827,7 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
+			clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, _, _ := SetupWithBastionMock(t, btc.name, btc.clusterSpec)
 			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
 			vmId := "i-" + bastionName
 

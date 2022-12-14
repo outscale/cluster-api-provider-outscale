@@ -22,6 +22,7 @@ import (
 
 	"testing"
 
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
@@ -55,7 +56,7 @@ var (
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net",
+				ResourceId: "vpc-test-net-uid",
 			},
 			Subnets: []*infrastructurev1beta1.OscSubnet{
 				{
@@ -113,12 +114,13 @@ var (
 )
 
 // SetupWithSubnetMock set subnetMock with clusterScope and osccluster
-func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSubnetInterface *mock_net.MockOscSubnetInterface) {
+func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSubnetInterface *mock_net.MockOscSubnetInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscSubnetInterface = mock_net.NewMockOscSubnetInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, ctx, mockOscSubnetInterface
+	return clusterScope, ctx, mockOscSubnetInterface, mockOscTagInterface
 }
 
 // TestGetSubnetResourceId has several tests to cover the code of the function getSubnetResourceId
@@ -313,39 +315,47 @@ func TestReconcileSubnetCreate(t *testing.T) {
 		spec                  infrastructurev1beta1.OscClusterSpec
 		expSubnetFound        bool
 		expNetFound           bool
+		expTagFound           bool
 		expCreateSubnetFound  bool
 		expCreateSubnetErr    error
 		expGetSubnetIdsErr    error
 		expReconcileSubnetErr error
+		expReadTagErr         error
 	}{
 		{
 			name:                  "create Subnet (first time reconcile loop)",
 			spec:                  defaultSubnetInitialize,
 			expSubnetFound:        false,
 			expNetFound:           true,
+			expTagFound:           false,
 			expCreateSubnetFound:  true,
 			expCreateSubnetErr:    nil,
 			expGetSubnetIdsErr:    nil,
 			expReconcileSubnetErr: nil,
+			expReadTagErr:         nil,
 		},
 		{
 			name:                  "create two Subnets (first time reconcile loop)",
 			spec:                  defaultMultiSubnetInitialize,
 			expSubnetFound:        false,
 			expNetFound:           true,
+			expTagFound:           false,
 			expCreateSubnetFound:  true,
 			expCreateSubnetErr:    nil,
 			expGetSubnetIdsErr:    nil,
 			expReconcileSubnetErr: nil,
+			expReadTagErr:         nil,
 		},
 		{
 			name:                  "failed to create subnet",
 			spec:                  defaultSubnetInitialize,
 			expSubnetFound:        false,
 			expNetFound:           true,
+			expTagFound:           false,
 			expCreateSubnetFound:  false,
 			expCreateSubnetErr:    fmt.Errorf("CreateSubnet generic error"),
 			expGetSubnetIdsErr:    nil,
+			expReadTagErr:         nil,
 			expReconcileSubnetErr: fmt.Errorf("CreateSubnet generic error Can not create subnet for Osccluster test-system/test-osc"),
 		},
 		{
@@ -353,20 +363,23 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			spec:                  defaultSubnetReconcile,
 			expSubnetFound:        false,
 			expNetFound:           true,
+			expTagFound:           false,
 			expCreateSubnetFound:  true,
 			expCreateSubnetErr:    nil,
 			expGetSubnetIdsErr:    nil,
+			expReadTagErr:         nil,
 			expReconcileSubnetErr: nil,
 		},
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, mockOscTagInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
 			netName := stc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			clusterName := stc.spec.Network.ClusterName + "-uid"
+
 			if stc.expNetFound {
 				netRef.ResourceMap[netName] = netId
 			}
@@ -376,6 +389,20 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
+				tag := osc.Tag{
+					ResourceId: &subnetId,
+				}
+				if stc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+						Return(&tag, stc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+						Return(nil, stc.expReadTagErr)
+				}
 				subnetIds = append(subnetIds, subnetId)
 				subnet := osc.CreateSubnetResponse{
 					Subnet: &osc.Subnet{
@@ -409,7 +436,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
-			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface)
+			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, stc.expReconcileSubnetErr.Error(), err.Error(), "reconcileSubnet() should return the same error")
 			} else {
@@ -427,7 +454,9 @@ func TestReconcileSubnetGet(t *testing.T) {
 		spec                  infrastructurev1beta1.OscClusterSpec
 		expSubnetFound        bool
 		expNetFound           bool
+		expTagFound           bool
 		expGetSubnetIdsErr    error
+		expReadTagErr         error
 		expReconcileSubnetErr error
 	}{
 		{
@@ -435,7 +464,9 @@ func TestReconcileSubnetGet(t *testing.T) {
 			spec:                  defaultSubnetReconcile,
 			expSubnetFound:        true,
 			expNetFound:           true,
+			expTagFound:           true,
 			expGetSubnetIdsErr:    nil,
+			expReadTagErr:         nil,
 			expReconcileSubnetErr: nil,
 		},
 		{
@@ -443,7 +474,9 @@ func TestReconcileSubnetGet(t *testing.T) {
 			spec:                  defaultMultiSubnetReconcile,
 			expSubnetFound:        true,
 			expNetFound:           true,
+			expTagFound:           true,
 			expGetSubnetIdsErr:    nil,
+			expReadTagErr:         nil,
 			expReconcileSubnetErr: nil,
 		},
 		{
@@ -451,13 +484,15 @@ func TestReconcileSubnetGet(t *testing.T) {
 			spec:                  defaultSubnetReconcile,
 			expSubnetFound:        false,
 			expNetFound:           true,
+			expTagFound:           true,
 			expGetSubnetIdsErr:    fmt.Errorf("GetSubnet generic error"),
+			expReadTagErr:         nil,
 			expReconcileSubnetErr: fmt.Errorf("GetSubnet generic error"),
 		},
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, mockOscTagInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
 			netName := stc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
@@ -470,6 +505,22 @@ func TestReconcileSubnetGet(t *testing.T) {
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
+				tag := osc.Tag{
+					ResourceId: &subnetId,
+				}
+				if stc.expSubnetFound {
+					if stc.expTagFound {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+							Return(&tag, stc.expReadTagErr)
+					} else {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+							Return(nil, stc.expReadTagErr)
+					}
+				}
 				subnetIds = append(subnetIds, subnetId)
 
 			}
@@ -484,7 +535,7 @@ func TestReconcileSubnetGet(t *testing.T) {
 					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
-			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface)
+			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, stc.expReconcileSubnetErr, err, "ReconcileSubnet() should return the same error")
 			} else {
@@ -500,23 +551,68 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
 		spec                  infrastructurev1beta1.OscClusterSpec
+		expTagFound           bool
+		expNetFound           bool
+		expReadTagErr         error
+		expGetSubnetIdsErr    error
 		expReconcileSubnetErr error
 	}{
 		{
 			name:                  "Net does not exist",
 			spec:                  defaultSubnetReconcile,
+			expTagFound:           false,
+			expNetFound:           false,
+			expReadTagErr:         nil,
+			expGetSubnetIdsErr:    nil,
 			expReconcileSubnetErr: fmt.Errorf("test-net-uid does not exist"),
+		},
+		{
+			name:                  "failed to get tag",
+			spec:                  defaultSubnetReconcile,
+			expTagFound:           true,
+			expNetFound:           true,
+			expReadTagErr:         fmt.Errorf("ReadTag generic error"),
+			expGetSubnetIdsErr:    nil,
+			expReconcileSubnetErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, mockOscTagInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
 
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
-			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface)
+			subnetsSpec := stc.spec.Network.Subnets
+			netName := stc.spec.Network.Net.Name + "-uid"
+			netId := "vpc-" + netName
+			if stc.expNetFound {
+				netRef.ResourceMap[netName] = netId
+			}
+			var subnetIds []string
+			for _, subnetSpec := range subnetsSpec {
+				subnetName := subnetSpec.Name + "-uid"
+				subnetId := "subnet-" + subnetName
+				subnetIds = append(subnetIds, subnetId)
+				var subnetIds []string
+				tag := osc.Tag{
+					ResourceId: &subnetId,
+				}
+				if stc.expTagFound {
+					mockOscSubnetInterface.
+						EXPECT().
+						GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+						Return(subnetIds, stc.expGetSubnetIdsErr)
+
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+						Return(&tag, stc.expReadTagErr)
+				}
+			}
+
+			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, stc.expReconcileSubnetErr, err, "reconcileSubnet() should return the same error")
+				assert.Equal(t, stc.expReconcileSubnetErr.Error(), err.Error(), "reconcileSubnet() should return the same error")
 			} else {
 				assert.Nil(t, stc.expReconcileSubnetErr)
 			}
@@ -554,7 +650,7 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, _ := SetupWithSubnetMock(t, stc.name, stc.spec)
 			netName := stc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
@@ -610,7 +706,7 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, _ := SetupWithSubnetMock(t, stc.name, stc.spec)
 			netName := "cluster-api-net-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
@@ -685,7 +781,7 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, _ := SetupWithSubnetMock(t, stc.name, stc.spec)
 			netName := stc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
@@ -749,7 +845,7 @@ func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSubnetInterface := SetupWithSubnetMock(t, stc.name, stc.spec)
+			clusterScope, ctx, mockOscSubnetInterface, _ := SetupWithSubnetMock(t, stc.name, stc.spec)
 
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
