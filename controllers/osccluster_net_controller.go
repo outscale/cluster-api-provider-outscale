@@ -58,16 +58,23 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 }
 
 // reconcileNet reconcile the Net of the cluster.
-func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface) (reconcile.Result, error) {
+func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netRef := clusterScope.GetNetRef()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	clusterName := netSpec.ClusterName + "-" + clusterScope.GetUID()
+
 	var net *osc.Net
 	var err error
 	if len(netRef.ResourceMap) == 0 {
 		netRef.ResourceMap = make(map[string]string)
+	}
+	tagKey := "Name"
+	tagValue := netName
+	tag, err := tagSvc.ReadTag(tagKey, tagValue)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	if netSpec.ResourceId != "" {
 		netRef.ResourceMap[netName] = netSpec.ResourceId
@@ -78,9 +85,8 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-
 	}
-	if net == nil || netSpec.ResourceId == "" {
+	if (net == nil && tag == nil) || (netSpec.ResourceId == "" && tag == nil) {
 		clusterScope.V(2).Info("Create the desired net", "netName", netName)
 		net, err := netSvc.CreateNet(netSpec, clusterName, netName)
 		if err != nil {

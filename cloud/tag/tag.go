@@ -27,6 +27,11 @@ import (
 	"regexp"
 )
 
+//go:generate ../../bin/mockgen -destination mock_tag/tag_mock.go -package mock_tag -source ./tag.go
+type OscTagInterface interface {
+	ReadTag(tagKey string, tagValue string) (*osc.Tag, error)
+}
+
 // AddTag add a tag to a resource
 func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
 	var httpRes *http.Response
@@ -53,6 +58,33 @@ func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *o
 		return waitErr, httpRes
 	}
 	return nil, httpRes
+}
+
+// ReadTag read a tag of a resource
+func (s *Service) ReadTag(tagKey string, tagValue string) (*osc.Tag, error) {
+	readTagsRequest := osc.ReadTagsRequest{
+		Filters: &osc.FiltersTag{
+			Keys:   &[]string{tagKey},
+			Values: &[]string{tagValue},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	readTagsResponse, httpRes, err := oscApiClient.TagApi.ReadTags(oscAuthClient).ReadTagsRequest(readTagsRequest).Execute()
+	if err != nil {
+		fmt.Printf("Error with http result %s", httpRes.Status)
+		return nil, err
+	}
+	tags, ok := readTagsResponse.GetTagsOk()
+	if !ok {
+		return nil, errors.New("Can not get tag")
+	}
+	if len(*tags) == 0 {
+		return nil, nil
+	} else {
+		tag := *tags
+		return &tag[0], nil
+	}
 }
 
 // ValidateTagNameValue check that tag name value is a valide name

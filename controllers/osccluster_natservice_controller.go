@@ -80,7 +80,7 @@ func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 }
 
 // reconcileNatService reconcile the NatService of the cluster.
-func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface) (reconcile.Result, error) {
+func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 
 	natServiceSpec := clusterScope.GetNatService()
 
@@ -102,6 +102,12 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 	if len(natServiceRef.ResourceMap) == 0 {
 		natServiceRef.ResourceMap = make(map[string]string)
 	}
+	tagKey := "Name"
+	tagValue := natServiceName
+	tag, err := tagSvc.ReadTag(tagKey, tagValue)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+	}
 	if natServiceSpec.ResourceId != "" {
 		natServiceRef.ResourceMap[natServiceName] = natServiceSpec.ResourceId
 		natServiceId := natServiceSpec.ResourceId
@@ -112,8 +118,8 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 			return reconcile.Result{}, err
 		}
 	}
-
-	if natService == nil || natServiceSpec.ResourceId == "" {
+	if (natService == nil && tag == nil) || (natServiceSpec.ResourceId == "" && tag == nil) {
+		clusterScope.V(4).Info("Create the desired natService", "natServiceName", natServiceName)
 		networkSpec := clusterScope.GetNetwork()
 		clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 		clusterScope.V(2).Info("Create the desired natService", "natServiceName", natServiceName)

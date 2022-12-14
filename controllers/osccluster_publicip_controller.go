@@ -108,13 +108,14 @@ func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 }
 
 // reconcilePublicIp reconcile the PublicIp of the cluster.
-func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface) (reconcile.Result, error) {
+func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	publicIpsSpec = clusterScope.GetPublicIp()
 	var publicIpId string
 	publicIpRef := clusterScope.GetPublicIpRef()
 	var publicIpIds []string
+
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpId = publicIpSpec.ResourceId
 		publicIpIds = append(publicIpIds, publicIpId)
@@ -129,6 +130,12 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 	clusterScope.V(4).Info("Number of publicIp", "publicIpLength", len(publicIpsSpec))
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
+		tagKey := "Name"
+		tagValue := publicIpName
+		tag, err := tagSvc.ReadTag(tagKey, tagValue)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
 		if len(publicIpRef.ResourceMap) == 0 {
 			publicIpRef.ResourceMap = make(map[string]string)
 		}
@@ -141,7 +148,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 		}
 
 		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		if !Contains(validPublicIpIds, publicIpId) {
+		if !Contains(validPublicIpIds, publicIpId) && tag == nil {
 			publicIp, err := publicIpSvc.CreatePublicIp(publicIpName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())

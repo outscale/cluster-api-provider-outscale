@@ -19,6 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
@@ -31,8 +34,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"time"
 )
 
 // getVmResourceId return the vmId from the resourceMap base on resourceName (tag name + cluster uid)
@@ -297,7 +298,7 @@ func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
 }
 
 // reconcileVm reconcile the vm of the machine
-func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	vmSpec := machineScope.GetVm()
 	vmRef := machineScope.GetVmRef()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
@@ -363,6 +364,12 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	if len(vmRef.ResourceMap) == 0 {
 		vmRef.ResourceMap = make(map[string]string)
 	}
+	tagKey := "Name"
+	tagValue := vmName
+	tag, err := tagSvc.ReadTag(tagKey, tagValue)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+	}
 	machineScope.V(4).Info("Get ResourceId", "resourceId", vmSpec.ResourceId)
 	machineScope.V(4).Info("Get ResourceMap", "resourceMap", vmRef.ResourceMap)
 	if vmSpec.ResourceId != "" {
@@ -403,7 +410,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		machineScope.SetVmState(infrastructurev1beta1.VmState(vmState))
 		machineScope.V(4).Info("Get vm state", "vmState", vmState)
 	}
-	if vm == nil || vmSpec.ResourceId == "" {
+	if (vm == nil && tag == nil) || (vmSpec.ResourceId == "" && tag == nil) {
 		machineScope.V(4).Info("Create the desired vm", "vmName", vmName)
 		imageId := vmSpec.ImageId
 		machineScope.V(4).Info("Info ImageId", "imageId", imageId)
@@ -500,6 +507,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 					return reconcile.Result{}, fmt.Errorf("%w Can not create inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 				}
 			}
+
 		}
 
 		machineScope.V(2).Info("Get Vm", "vm", vm)

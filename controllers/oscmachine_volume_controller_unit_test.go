@@ -27,6 +27,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage/mock_storage"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -180,12 +181,13 @@ func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.O
 }
 
 // SetupWithVolumeMock set publicIpMock with clusterScope, machineScope and oscmachine
-func SetupWithVolumeMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface) {
+func SetupWithVolumeMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope, machineScope = SetupMachine(t, name, clusterSpec, machineSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscVolumeInterface = mock_storage.NewMockOscVolumeInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, machineScope, ctx, mockOscVolumeInterface
+	return clusterScope, machineScope, ctx, mockOscVolumeInterface, mockOscTagInterface
 }
 
 // TestGetVolumeResourceId has several tests to cover the code of the function getVolumeResourceId
@@ -289,163 +291,182 @@ func TestCheckVolumeOscDuplicateName(t *testing.T) {
 	}
 }
 
-// TestCheckVolumeFormatParameters has several tests to cover the code of the function checkVolumeFormatParameters
-func TestCheckVolumeFormatParameters(t *testing.T) {
-	volumeTestCases := []struct {
+// TestReconcileVolumeResourceId has several tests to cover the code of the function reconcileVolume
+func TestReconcileVolumeResourceId(t *testing.T) {
+	vmTestCases := []struct {
 		name                              string
 		clusterSpec                       infrastructurev1beta1.OscClusterSpec
 		machineSpec                       infrastructurev1beta1.OscMachineSpec
-		expCheckVolumeFormatParametersErr error
+		expVolumeFound                    bool
+		expSubnetFound                    bool
+		expTagFound                       bool
+		expPublicIpFound                  bool
+		expLinkPublicIpFound              bool
+		expSecurityGroupFound             bool
+		expLoadBalancerSecurityGroupFound bool
+		expReadTagErr                     error
+		expReconcileVmErr                 error
 	}{
 		{
-			name:                              "check volume format",
-			clusterSpec:                       defaultClusterInitialize,
-			machineSpec:                       defaultVolumeInitialize,
-			expCheckVolumeFormatParametersErr: nil,
+			name:                              "Volume does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmVolumeInitialize,
+			expVolumeFound:                    false,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-volume-uid does not exist"),
 		},
 		{
-			name:        "Check work without spec (with default values)",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
-			},
-			expCheckVolumeFormatParametersErr: nil,
+			name:                              "Volume does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    false,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-subnet-uid does not exist"),
 		},
 		{
-			name:        "Check Bad name volume",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume@test",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			name:                              "PublicIp does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  false,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-publicip-uid does not exist"),
 		},
 		{
-			name:        "Check Bad Iops volume",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          13001,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid iops"),
+			name:                              "SecurityGroup does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             false,
+			expLoadBalancerSecurityGroupFound: false,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist"),
 		},
 		{
-			name:        "Check Bad size volume",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          14902,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid size"),
-		},
-		{
-			name:        "Check Bad SubregionName",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2c",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid subregionName"),
-		},
-		{
-			name:        "Check Bad volumeType",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "gp3",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: fmt.Errorf("Invalid volumeType"),
-		},
-		{
-			name:        "Check standard volumeType",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Size:          50,
-							VolumeType:    "standard",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: nil,
-		},
-		{
-			name:        "Check gp2 volumeType",
-			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Size:          50,
-							VolumeType:    "gp2",
-							SubregionName: "eu-west-2a",
-						},
-					},
-				},
-			},
-			expCheckVolumeFormatParametersErr: nil,
+			name:                              "failed to get tag",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       true,
+			expReadTagErr:                     fmt.Errorf("ReadTag generic error"),
+			expReconcileVmErr:                 fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
 		},
 	}
-	for _, vtc := range volumeTestCases {
+	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			volumeName, err := checkVolumeFormatParameters(machineScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVolumeFormatParametersErr, err, "checkVolumeFormatParameters() should return the same error")
-			} else {
-				assert.Nil(t, vtc.expCheckVolumeFormatParametersErr)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
+			vmId := "i-" + vmName
+			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
+			volumeId := "vol-" + volumeName
+			volumeRef := machineScope.GetVolumeRef()
+			volumeRef.ResourceMap = make(map[string]string)
+			if vtc.expVolumeFound {
+				volumeRef.ResourceMap[volumeName] = volumeId
 			}
-			t.Logf("find volumeName %s\n", volumeName)
+
+			subnetName := vtc.machineSpec.Node.Vm.SubnetName + "-uid"
+			subnetId := "subnet-" + subnetName
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
+			if vtc.expSubnetFound {
+				subnetRef.ResourceMap[subnetName] = subnetId
+			}
+
+			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
+			publicIpId := "eipalloc-" + publicIpName
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
+			if vtc.expPublicIpFound {
+				publicIpRef.ResourceMap[publicIpName] = publicIpId
+			}
+
+			linkPublicIpId := "eipassoc-" + publicIpName
+			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
+			linkPublicIpRef.ResourceMap = make(map[string]string)
+			if vtc.expLinkPublicIpFound {
+				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
+			}
+
+			var privateIps []string
+			vmPrivateIps := machineScope.GetVmPrivateIps()
+			for _, vmPrivateIp := range *vmPrivateIps {
+				privateIp := vmPrivateIp.PrivateIp
+				privateIps = append(privateIps, privateIp)
+			}
+
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expVolumeFound && vtc.expSubnetFound && vtc.expPublicIpFound && vtc.expLinkPublicIpFound && vtc.expSecurityGroupFound {
+				if vtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						Return(&tag, vtc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						Return(nil, vtc.expReadTagErr)
+				}
+			}
+
+			var securityGroupIds []string
+			vmSecurityGroups := machineScope.GetVmSecurityGroups()
+			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+			securityGroupsRef.ResourceMap = make(map[string]string)
+			for _, vmSecurityGroup := range *vmSecurityGroups {
+				securityGroupName := vmSecurityGroup.Name + "-uid"
+				securityGroupId := "sg-" + securityGroupName
+				if vtc.expSecurityGroupFound {
+					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
+				}
+				securityGroupIds = append(securityGroupIds, securityGroupId)
+			}
+
+			loadBalancerSpec := clusterScope.GetLoadBalancer()
+			loadBalancerSpec.SetDefaultValue()
+			loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
+			loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-uid"
+			loadBalancerSecurityGroupId := "sg-" + loadBalancerSecurityGroupClusterScopeName
+			if vtc.expLoadBalancerSecurityGroupFound {
+				securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName] = loadBalancerSecurityGroupId
+			}
+
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			if err != nil {
+				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+			} else {
+				assert.Nil(t, vtc.expReconcileVmErr)
+			}
+			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
 	}
 }
@@ -460,9 +481,11 @@ func TestReconcileVolumeCreate(t *testing.T) {
 		expCheckVolumeStateAvailableFound bool
 		expCreateVolumeFound              bool
 		expUserDeleteVolumeFound          bool
+		expTagFound                       bool
 		expCreateVolumeErr                error
 		expCheckVolumeStateAvailableErr   error
 		expValidateVolumeIdsErr           error
+		expReadTagErr                     error
 		expReconcileVolumeErr             error
 	}{
 		{
@@ -471,11 +494,13 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			machineSpec:                       defaultVolumeInitialize,
 			expVolumeFound:                    false,
 			expUserDeleteVolumeFound:          false,
+			expTagFound:                       false,
 			expCheckVolumeStateAvailableFound: true,
 			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeFound:              true,
 			expCreateVolumeErr:                nil,
 			expCheckVolumeStateAvailableErr:   nil,
+			expReadTagErr:                     nil,
 			expReconcileVolumeErr:             nil,
 		},
 		{
@@ -485,10 +510,12 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expVolumeFound:                    false,
 			expUserDeleteVolumeFound:          false,
 			expCheckVolumeStateAvailableFound: true,
-			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeFound:              true,
+			expTagFound:                       false,
+			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeErr:                nil,
 			expCheckVolumeStateAvailableErr:   nil,
+			expReadTagErr:                     nil,
 			expReconcileVolumeErr:             nil,
 		},
 		{
@@ -498,10 +525,12 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expVolumeFound:                    false,
 			expUserDeleteVolumeFound:          false,
 			expCheckVolumeStateAvailableFound: false,
-			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeFound:              false,
+			expTagFound:                       false,
+			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeErr:                fmt.Errorf("CreateVolume generic error"),
 			expCheckVolumeStateAvailableErr:   nil,
+			expReadTagErr:                     nil,
 			expReconcileVolumeErr:             fmt.Errorf("CreateVolume generic error Can not create volume for OscMachine test-system/test-osc"),
 		},
 		{
@@ -511,10 +540,12 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expVolumeFound:                    false,
 			expCheckVolumeStateAvailableFound: true,
 			expUserDeleteVolumeFound:          true,
-			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeFound:              true,
+			expTagFound:                       false,
+			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeErr:                nil,
 			expCheckVolumeStateAvailableErr:   nil,
+			expReadTagErr:                     nil,
 			expReconcileVolumeErr:             nil,
 		},
 		{
@@ -528,12 +559,13 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expCreateVolumeFound:              true,
 			expCreateVolumeErr:                nil,
 			expCheckVolumeStateAvailableErr:   fmt.Errorf("CheckVolumeStateAvailable generic error"),
+			expReadTagErr:                     nil,
 			expReconcileVolumeErr:             fmt.Errorf("CheckVolumeStateAvailable generic error Can not get volume available for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			_, machineScope, ctx, mockOscVolumeInterface, mockOscTagInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
 			var volumesIds []string
 			var clockInsideLoop time.Duration = 5
@@ -542,6 +574,20 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			for index, volumeSpec := range volumesSpec {
 				volumeName := volumeSpec.Name + "-uid"
 				volumeId := "volume-" + volumeName
+				tag := osc.Tag{
+					ResourceId: &volumeId,
+				}
+				if vtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+						Return(&tag, vtc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+						Return(nil, vtc.expReadTagErr)
+				}
 				volumesIds = append(volumesIds, volumeId)
 				volume := osc.CreateVolumeResponse{
 					Volume: &osc.Volume{
@@ -592,7 +638,7 @@ func TestReconcileVolumeCreate(t *testing.T) {
 				}
 			}
 
-			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface)
+			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVolumeErr.Error(), err.Error(), "reconcileVolume should return the same error")
 			} else {
@@ -610,7 +656,9 @@ func TestReconcileVolumeGet(t *testing.T) {
 		clusterSpec             infrastructurev1beta1.OscClusterSpec
 		machineSpec             infrastructurev1beta1.OscMachineSpec
 		expVolumeFound          bool
+		expTagFound             bool
 		expValidateVolumeIdsErr error
+		expReadTagErr           error
 		expReconcileVolumeErr   error
 	}{
 		{
@@ -618,7 +666,9 @@ func TestReconcileVolumeGet(t *testing.T) {
 			clusterSpec:             defaultClusterReconcile,
 			machineSpec:             defaultVolumeReconcile,
 			expVolumeFound:          true,
+			expTagFound:             true,
 			expValidateVolumeIdsErr: nil,
+			expReadTagErr:           nil,
 			expReconcileVolumeErr:   nil,
 		},
 		{
@@ -626,7 +676,9 @@ func TestReconcileVolumeGet(t *testing.T) {
 			clusterSpec:             defaultClusterReconcile,
 			machineSpec:             defaultMultiVolumeReconcile,
 			expVolumeFound:          true,
+			expTagFound:             true,
 			expValidateVolumeIdsErr: nil,
+			expReadTagErr:           nil,
 			expReconcileVolumeErr:   nil,
 		},
 		{
@@ -634,18 +686,46 @@ func TestReconcileVolumeGet(t *testing.T) {
 			clusterSpec:             defaultClusterReconcile,
 			machineSpec:             defaultVolumeReconcile,
 			expVolumeFound:          false,
+			expTagFound:             true,
 			expValidateVolumeIdsErr: fmt.Errorf("ValidateVolumeIds generic error"),
+			expReadTagErr:           nil,
 			expReconcileVolumeErr:   fmt.Errorf("ValidateVolumeIds generic error"),
+		},
+		{
+			name:                    "failed to get tag",
+			clusterSpec:             defaultClusterReconcile,
+			machineSpec:             defaultVolumeReconcile,
+			expVolumeFound:          true,
+			expTagFound:             false,
+			expValidateVolumeIdsErr: nil,
+			expReadTagErr:           fmt.Errorf("ReadTag generic error"),
+			expReconcileVolumeErr:   fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			_, machineScope, ctx, mockOscVolumeInterface, mockOscTagInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
 			var volumesIds []string
 			for _, volumeSpec := range volumesSpec {
 				volumeName := volumeSpec.Name + "-uid"
 				volumeId := "volume-" + volumeName
+				tag := osc.Tag{
+					ResourceId: &volumeId,
+				}
+				if vtc.expVolumeFound {
+					if vtc.expTagFound {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+							Return(&tag, vtc.expReadTagErr)
+					} else {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+							Return(nil, vtc.expReadTagErr)
+					}
+				}
 				volumesIds = append(volumesIds, volumeId)
 				volumeRef := machineScope.GetVolumeRef()
 				volumeRef.ResourceMap = make(map[string]string)
@@ -664,9 +744,9 @@ func TestReconcileVolumeGet(t *testing.T) {
 					Return(nil, vtc.expValidateVolumeIdsErr)
 			}
 
-			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface)
+			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileVolumeErr, err, "reconcileVolume should return the same error")
+				assert.Equal(t, vtc.expReconcileVolumeErr.Error(), err.Error(), "reconcileVolume should return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileVolumeErr)
 			}
@@ -728,7 +808,7 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 	}
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			_, machineScope, ctx, mockOscVolumeInterface, _ := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
 			volumeStateAvailable := "available"
 			volumeStateUse := "in-use"
@@ -825,7 +905,7 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			_, machineScope, ctx, mockOscVolumeInterface, _ := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
 			var volumesIds []string
 			for _, volumeSpec := range volumesSpec {
@@ -886,7 +966,7 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			_, machineScope, ctx, mockOscVolumeInterface, _ := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			var volumesIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 60
@@ -1043,7 +1123,7 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope, ctx, mockOscVolumeInterface := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			_, machineScope, ctx, mockOscVolumeInterface, _ := SetupWithVolumeMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			volumesSpec := vtc.machineSpec.Node.Volumes
 			volumeStateAvailable := "available"
 			volumeStateUse := "in-use"

@@ -32,6 +32,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage/mock_storage"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -308,7 +309,7 @@ var (
 )
 
 // SetupWithVmMock set vmMock with clusterScope, machineScope and oscmachine
-func SetupWithVmMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface) {
+func SetupWithVmMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope, machineScope = SetupMachine(t, name, clusterSpec, machineSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscVmInterface = mock_compute.NewMockOscVmInterface(mockCtrl)
@@ -316,8 +317,9 @@ func SetupWithVmMock(t *testing.T, name string, clusterSpec infrastructurev1beta
 	mockOscPublicIpInterface = mock_security.NewMockOscPublicIpInterface(mockCtrl)
 	mockOscLoadBalancerInterface = mock_service.NewMockOscLoadBalancerInterface(mockCtrl)
 	mockOscSecurityGroupInterface = mock_security.NewMockOscSecurityGroupInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface
+	return clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface
 }
 
 // TestGetVmResourceId has several tests to cover the code of the function getVmResourceId
@@ -1785,6 +1787,7 @@ func TestReconcileVm(t *testing.T) {
 		expCreateOutboundSecurityGroupRuleFound bool
 		expGetOutboundSecurityGroupRuleFound    bool
 		expGetInboundSecurityGroupRuleFound     bool
+		expTagFound                             bool
 		expCreateVmErr                          error
 		expReconcileVmErr                       error
 		expCheckVmStateBootErr                  error
@@ -1798,6 +1801,7 @@ func TestReconcileVm(t *testing.T) {
 		expGetOutboundSecurityGroupRuleErr      error
 		expLinkPublicIpErr                      error
 		expCheckVmStatePublicIpErr              error
+		expReadTagErr                           error
 		expLinkLoadBalancerBackendMachineErr    error
 	}{
 		{
@@ -1810,6 +1814,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: true,
 			expGetOutboundSecurityGroupRuleFound:    false,
+			expTagFound:                             false,
 			expCreateVmErr:                          nil,
 			expCheckVmStateBootErr:                  nil,
 			expCheckVolumeStateAvailableErr:         nil,
@@ -1823,6 +1828,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       nil,
 		},
 		{
@@ -1835,6 +1841,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: true,
 			expGetOutboundSecurityGroupRuleFound:    false,
+			expTagFound:                             false,
 			expCreateVmErr:                          nil,
 			expCheckVmStateBootErr:                  nil,
 			expCheckVolumeStateAvailableErr:         nil,
@@ -1848,6 +1855,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       nil,
 		},
 		{
@@ -1860,6 +1868,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: true,
 			expGetOutboundSecurityGroupRuleFound:    false,
+			expTagFound:                             false,
 			expCreateVmErr:                          nil,
 			expCheckVmStateBootErr:                  nil,
 			expCheckVolumeStateAvailableErr:         nil,
@@ -1873,6 +1882,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       nil,
 		},
 		{
@@ -1885,6 +1895,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: true,
 			expGetOutboundSecurityGroupRuleFound:    false,
+			expTagFound:                             false,
 			expCreateVmErr:                          nil,
 			expCheckVmStateBootErr:                  nil,
 			expCheckVolumeStateAvailableErr:         nil,
@@ -1898,6 +1909,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetOutboundSecurityGroupRuleErr:      nil,
 			expCreateInboundSecurityGroupRuleErr:    nil,
 			expGetInboundSecurityGroupRuleErr:       nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       fmt.Errorf("CreateSecurityGroupRule generic error Can not create outbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
@@ -1910,6 +1922,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: false,
 			expGetOutboundSecurityGroupRuleFound:    true,
+			expTagFound:                             false,
 			expCreateVmErr:                          nil,
 			expCheckVmStateBootErr:                  nil,
 			expCheckVolumeStateAvailableErr:         nil,
@@ -1923,6 +1936,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetOutboundSecurityGroupRuleErr:      fmt.Errorf("GetSecurityGroupRule generic error"),
 			expCreateInboundSecurityGroupRuleErr:    nil,
 			expGetInboundSecurityGroupRuleErr:       nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       fmt.Errorf("GetSecurityGroupRule generic error Can not get outbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
@@ -1935,6 +1949,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: false,
 			expGetOutboundSecurityGroupRuleFound:    false,
+			expTagFound:                             false,
 			expCreateVmErr:                          nil,
 			expCheckVmStateBootErr:                  nil,
 			expCheckVolumeStateAvailableErr:         nil,
@@ -1948,6 +1963,7 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       fmt.Errorf("CreateSecurityGroupRule generic error Can not create inbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
@@ -1973,14 +1989,15 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleErr:       fmt.Errorf("GetSecurityGroupRule generic error"),
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       fmt.Errorf("GetSecurityGroupRule generic error Can not get inbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
-			name:             "linkPublicIp does not exist",
-			clusterSpec:      defaultVmClusterInitialize,
-			machineSpec:      defaultVmInitialize,
-			expCreateVmFound: true,
-
+			name:                                   "linkPublicIp does not exist",
+			clusterSpec:                            defaultVmClusterInitialize,
+			machineSpec:                            defaultVmInitialize,
+			expCreateVmFound:                       true,
+			expTagFound:                            false,
 			expLinkPublicIpFound:                   false,
 			expCreateInboundSecurityGroupRuleFound: true,
 			expGetInboundSecurityGroupRuleFound:    false,
@@ -2000,12 +2017,13 @@ func TestReconcileVm(t *testing.T) {
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
+			expReadTagErr:                           nil,
 			expReconcileVmErr:                       nil,
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
@@ -2082,6 +2100,20 @@ func TestReconcileVm(t *testing.T) {
 			}
 
 			createVm := *createVms.Vms
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(&tag, vtc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(nil, vtc.expReadTagErr)
+			}
 			linkPublicIp := osc.LinkPublicIpResponse{
 				LinkPublicIpId: &linkPublicIpId,
 			}
@@ -2215,7 +2247,7 @@ func TestReconcileVm(t *testing.T) {
 					Return(nil, vtc.expCreateInboundSecurityGroupRuleErr)
 
 			}
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2233,7 +2265,9 @@ func TestReconcileVmCreate(t *testing.T) {
 		clusterSpec       infrastructurev1beta1.OscClusterSpec
 		machineSpec       infrastructurev1beta1.OscMachineSpec
 		expCreateVmFound  bool
+		expTagFound       bool
 		expCreateVmErr    error
+		expReadTagErr     error
 		expReconcileVmErr error
 	}{
 		{
@@ -2241,18 +2275,21 @@ func TestReconcileVmCreate(t *testing.T) {
 			clusterSpec:       defaultVmClusterInitialize,
 			machineSpec:       defaultVmInitialize,
 			expCreateVmFound:  false,
+			expTagFound:       false,
 			expCreateVmErr:    fmt.Errorf("CreateVm generic error"),
+			expReadTagErr:     nil,
 			expReconcileVmErr: fmt.Errorf("CreateVm generic error Can not create vm for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
+
 			volumeRef := machineScope.GetVolumeRef()
 			volumeRef.ResourceMap = make(map[string]string)
 			volumeRef.ResourceMap[volumeName] = volumeId
@@ -2291,6 +2328,20 @@ func TestReconcileVmCreate(t *testing.T) {
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(&tag, vtc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(nil, vtc.expReadTagErr)
+			}
 			vmSpec := vtc.machineSpec.Node.Vm
 			createVms := osc.CreateVmsResponse{
 				Vms: &[]osc.Vm{
@@ -2314,7 +2365,7 @@ func TestReconcileVmCreate(t *testing.T) {
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2335,10 +2386,12 @@ func TestReconcileVmLink(t *testing.T) {
 		expLinkVolumeFound                bool
 		expCheckVmStateBootFound          bool
 		expCheckVolumeStateAvailableFound bool
+		expTagFound                       bool
 		expCreateVmErr                    error
 		expReconcileVmErr                 error
 		expCheckVmStateBootErr            error
 		expCheckVolumeStateAvailableErr   error
+		expReadTagErr                     error
 		expLinkVolumeErr                  error
 	}{
 		{
@@ -2352,7 +2405,9 @@ func TestReconcileVmLink(t *testing.T) {
 			expCheckVolumeStateAvailableFound: true,
 			expCheckVolumeStateAvailableErr:   nil,
 			expLinkVolumeFound:                true,
+			expTagFound:                       false,
 			expLinkVolumeErr:                  fmt.Errorf("LinkVolume generic error"),
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("LinkVolume generic error Can not link volume vol-test-volume-uid with vm i-test-vm-uid for OscMachine test-system/test-osc"),
 		},
 		{
@@ -2367,6 +2422,8 @@ func TestReconcileVmLink(t *testing.T) {
 			expCheckVolumeStateAvailableErr:   nil,
 			expLinkVolumeFound:                false,
 			expLinkVolumeErr:                  nil,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("checkVmState generic error Can not get vm i-test-vm-uid running for OscMachine test-system/test-osc"),
 		},
 		{
@@ -2380,13 +2437,15 @@ func TestReconcileVmLink(t *testing.T) {
 			expCheckVolumeStateAvailableFound: true,
 			expCheckVolumeStateAvailableErr:   fmt.Errorf("checkVolumeState generic error"),
 			expLinkVolumeFound:                false,
+			expTagFound:                       false,
 			expLinkVolumeErr:                  nil,
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("checkVolumeState generic error Can not get volume vol-test-volume-uid available for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
@@ -2443,6 +2502,20 @@ func TestReconcileVmLink(t *testing.T) {
 			}
 			createVm := *createVms.Vms
 			vm := &createVm[0]
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(&tag, vtc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(nil, vtc.expReadTagErr)
+			}
 			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
 			var clockInsideLoop time.Duration = 20
@@ -2482,7 +2555,7 @@ func TestReconcileVmLink(t *testing.T) {
 					Return(vtc.expLinkVolumeErr)
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2504,6 +2577,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 		expCheckVmStateVolumeFound      bool
 		expCheckVmStatePublicIpFound    bool
 		expLinkPublicIpFound            bool
+		expTagFound                     bool
 		expCreateVmErr                  error
 		expReconcileVmErr               error
 		expCheckVmStateBootErr          error
@@ -2513,6 +2587,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 		expCheckVmStateVolumeErr        error
 		expLinkPublicIpErr              error
 		expCheckVmStatePublicIpErr      error
+		expReadTagErr                   error
 	}{
 		{
 			name:                            "failed linkPublicIp",
@@ -2523,6 +2598,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVolumeStateUseFound:     false,
 			expCheckVmStateVolumeFound:      true,
 			expCheckVmStatePublicIpFound:    false,
+			expTagFound:                     false,
 			expCreateVmErr:                  nil,
 			expCheckVmStateBootErr:          nil,
 			expCheckVolumeStateAvailableErr: nil,
@@ -2531,6 +2607,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVmStateVolumeErr:        nil,
 			expLinkPublicIpErr:              fmt.Errorf("linkPublicIp generic error"),
 			expCheckVmStatePublicIpErr:      nil,
+			expReadTagErr:                   nil,
 			expReconcileVmErr:               fmt.Errorf("linkPublicIp generic error Can not link publicIp  eipalloc-test-publicip-uid with i-test-vm-uid for OscCluster test-system/test-osc"),
 		},
 		{
@@ -2542,6 +2619,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVolumeStateUseFound:     false,
 			expCheckVmStateVolumeFound:      true,
 			expCheckVmStatePublicIpFound:    true,
+			expTagFound:                     false,
 			expCreateVmErr:                  nil,
 			expCheckVmStateBootErr:          nil,
 			expCheckVolumeStateAvailableErr: nil,
@@ -2550,6 +2628,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVmStateVolumeErr:        nil,
 			expLinkPublicIpErr:              nil,
 			expCheckVmStatePublicIpErr:      fmt.Errorf("CheckVmState generic error"),
+			expReadTagErr:                   nil,
 			expReconcileVmErr:               fmt.Errorf("CheckVmState generic error Can not get vm i-test-vm-uid running for OscMachine test-system/test-osc"),
 		},
 		{
@@ -2561,6 +2640,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVolumeStateUseFound:     true,
 			expCheckVmStateVolumeFound:      false,
 			expCheckVmStatePublicIpFound:    false,
+			expTagFound:                     false,
 			expCreateVmErr:                  nil,
 			expCheckVmStateBootErr:          nil,
 			expCheckVolumeStateAvailableErr: nil,
@@ -2569,6 +2649,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVmStateVolumeErr:        nil,
 			expLinkPublicIpErr:              nil,
 			expCheckVmStatePublicIpErr:      nil,
+			expReadTagErr:                   nil,
 			expReconcileVmErr:               fmt.Errorf("CheckVolumeState generic error Can not get volume vol-test-volume-uid in use for OscMachine test-system/test-osc"),
 		},
 		{
@@ -2580,6 +2661,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVolumeStateUseFound:     false,
 			expCheckVmStateVolumeFound:      true,
 			expCheckVmStatePublicIpFound:    false,
+			expTagFound:                     false,
 			expCreateVmErr:                  nil,
 			expCheckVmStateBootErr:          nil,
 			expCheckVolumeStateAvailableErr: nil,
@@ -2588,12 +2670,13 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expCheckVmStateVolumeErr:        fmt.Errorf("CheckVmState generic error"),
 			expLinkPublicIpErr:              nil,
 			expCheckVmStatePublicIpErr:      nil,
+			expReadTagErr:                   nil,
 			expReconcileVmErr:               fmt.Errorf("CheckVmState generic error Can not get vm i-test-vm-uid running for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
@@ -2658,6 +2741,20 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 
 			createVm := *createVms.Vms
 			vm := &createVm[0]
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(&tag, vtc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(nil, vtc.expReadTagErr)
+			}
 			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
 			if vtc.expCreateVmFound {
@@ -2715,7 +2812,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 					Return(vtc.expCheckVmStatePublicIpErr)
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2735,6 +2832,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 		expCreateVmFound                     bool
 		expLinkPublicIpFound                 bool
 		expCreateSecurityGroupRuleFound      bool
+		expTagFound                          bool
 		expCreateVmErr                       error
 		expReconcileVmErr                    error
 		expCheckVmStateBootErr               error
@@ -2745,6 +2843,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 		expCreateSecurityGroupRuleErr        error
 		expLinkPublicIpErr                   error
 		expCheckVmStatePublicIpErr           error
+		expReadTagErr                        error
 		expLinkLoadBalancerBackendMachineErr error
 	}{
 		{
@@ -2754,6 +2853,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			expCreateVmFound:                     true,
 			expLinkPublicIpFound:                 true,
 			expCreateSecurityGroupRuleFound:      false,
+			expTagFound:                          false,
 			expCreateVmErr:                       nil,
 			expCheckVmStateBootErr:               nil,
 			expCheckVolumeStateAvailableErr:      nil,
@@ -2769,10 +2869,25 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
+
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(&tag, vtc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(nil, vtc.expReadTagErr)
+			}
 
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
@@ -2899,7 +3014,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 				LinkLoadBalancerBackendMachines(gomock.Eq(vmIds), gomock.Eq(loadBalancerName)).
 				Return(vtc.expLinkLoadBalancerBackendMachineErr)
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2921,11 +3036,13 @@ func TestReconcileVmGet(t *testing.T) {
 		expAddCcmTagFound      bool
 		expPrivateDnsNameFound bool
 		expPrivateIpFound      bool
+		expTagFound            bool
 		expGetVmStateErr       error
 		expGetVmErr            error
 		expAddCcmTagErr        error
 		expPrivateDnsNameErr   error
 		expPrivateIpErr        error
+		expReadTagErr          error
 		expReconcileVmErr      error
 	}{
 		{
@@ -2935,6 +3052,7 @@ func TestReconcileVmGet(t *testing.T) {
 			expGetVmFound:          true,
 			expGetVmStateFound:     true,
 			expAddCcmTagFound:      true,
+			expTagFound:            false,
 			expPrivateDnsNameFound: true,
 			expPrivateIpFound:      true,
 			expGetVmErr:            nil,
@@ -2942,6 +3060,7 @@ func TestReconcileVmGet(t *testing.T) {
 			expAddCcmTagErr:        nil,
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
+			expReadTagErr:          nil,
 			expReconcileVmErr:      nil,
 		},
 		{
@@ -2953,11 +3072,13 @@ func TestReconcileVmGet(t *testing.T) {
 			expAddCcmTagFound:      false,
 			expPrivateDnsNameFound: true,
 			expPrivateIpFound:      true,
+			expTagFound:            false,
 			expGetVmErr:            fmt.Errorf("GetVm generic error"),
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
+			expReadTagErr:          nil,
 			expReconcileVmErr:      fmt.Errorf("GetVm generic error"),
 		},
 		{
@@ -2969,11 +3090,13 @@ func TestReconcileVmGet(t *testing.T) {
 			expAddCcmTagFound:      true,
 			expPrivateDnsNameFound: true,
 			expPrivateIpFound:      true,
+			expTagFound:            false,
 			expGetVmErr:            nil,
 			expAddCcmTagErr:        nil,
 			expGetVmStateErr:       fmt.Errorf("GetVmState generic error"),
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
+			expReadTagErr:          nil,
 			expReconcileVmErr:      fmt.Errorf("GetVmState generic error Can not get vm i-test-vm-uid state for OscMachine test-system/test-osc"),
 		},
 		{
@@ -2985,11 +3108,13 @@ func TestReconcileVmGet(t *testing.T) {
 			expAddCcmTagFound:      true,
 			expPrivateDnsNameFound: true,
 			expPrivateIpFound:      true,
+			expTagFound:            false,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        fmt.Errorf("AddCcmTag generic error"),
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
+			expReadTagErr:          nil,
 			expReconcileVmErr:      fmt.Errorf("AddCcmTag generic error can not add ccm tag test-system/test-osc"),
 		},
 		{
@@ -3001,10 +3126,12 @@ func TestReconcileVmGet(t *testing.T) {
 			expPrivateIpFound:      true,
 			expAddCcmTagFound:      false,
 			expPrivateDnsNameFound: false,
+			expTagFound:            false,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
 			expPrivateIpErr:        nil,
+			expReadTagErr:          nil,
 			expPrivateDnsNameErr:   fmt.Errorf("GetPrivateDnsNameok generic error"),
 			expReconcileVmErr:      fmt.Errorf("Can not found privateDnsName test-system/test-osc"),
 		},
@@ -3027,11 +3154,25 @@ func TestReconcileVmGet(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
 
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expTagFound {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(&tag, vtc.expReadTagErr)
+			} else {
+				mockOscTagInterface.
+					EXPECT().
+					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+					Return(nil, vtc.expReadTagErr)
+			}
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
 			volumeRef := machineScope.GetVolumeRef()
@@ -3125,7 +3266,7 @@ func TestReconcileVmGet(t *testing.T) {
 					AddCcmTag(gomock.Eq(clusterName), gomock.Eq(privateDnsName), gomock.Eq(vmId)).
 					Return(vtc.expAddCcmTagErr)
 			}
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -3145,10 +3286,12 @@ func TestReconcileVmResourceId(t *testing.T) {
 		machineSpec                       infrastructurev1beta1.OscMachineSpec
 		expVolumeFound                    bool
 		expSubnetFound                    bool
+		expTagFound                       bool
 		expPublicIpFound                  bool
 		expLinkPublicIpFound              bool
 		expSecurityGroupFound             bool
 		expLoadBalancerSecurityGroupFound bool
+		expReadTagErr                     error
 		expReconcileVmErr                 error
 	}{
 		{
@@ -3161,6 +3304,8 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-volume-uid does not exist"),
 		},
 		{
@@ -3173,6 +3318,8 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-subnet-uid does not exist"),
 		},
 		{
@@ -3185,6 +3332,8 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-publicip-uid does not exist"),
 		},
 		{
@@ -3197,14 +3346,30 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             false,
 			expLoadBalancerSecurityGroupFound: false,
+			expTagFound:                       false,
+			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist"),
+		},
+		{
+			name:                              "failed to get tag",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       true,
+			expReadTagErr:                     fmt.Errorf("ReadTag generic error"),
+			expReconcileVmErr:                 fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
-
+			vmId := "i-" + vmName
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
 			volumeRef := machineScope.GetVolumeRef()
@@ -3243,6 +3408,23 @@ func TestReconcileVmResourceId(t *testing.T) {
 				privateIps = append(privateIps, privateIp)
 			}
 
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expVolumeFound && vtc.expSubnetFound && vtc.expPublicIpFound && vtc.expLinkPublicIpFound && vtc.expSecurityGroupFound {
+				if vtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						Return(&tag, vtc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						Return(nil, vtc.expReadTagErr)
+				}
+			}
+
 			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
@@ -3265,9 +3447,9 @@ func TestReconcileVmResourceId(t *testing.T) {
 				securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName] = loadBalancerSecurityGroupId
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileVmErr, err, "reconcileVm() should return the same error")
+				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileVmErr)
 			}
@@ -3329,7 +3511,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()
@@ -3455,7 +3637,7 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()
@@ -3586,7 +3768,7 @@ func TestReconcileDeleteVmLoadBalancer(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()
@@ -3714,7 +3896,7 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()
@@ -3793,7 +3975,7 @@ func TestReconcileDeleteVmAlready(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()
@@ -3853,7 +4035,7 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := "cluster-api-vm-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()
@@ -3970,7 +4152,7 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, _ := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmRef := machineScope.GetVmRef()

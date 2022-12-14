@@ -19,12 +19,15 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,7 +46,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -106,6 +108,10 @@ func (r *OscMachineReconciler) getKeyPairSvc(ctx context.Context, scope scope.Cl
 	return security.NewService(ctx, &scope)
 }
 
+// getTagSvc retrieve tagSvc
+func (r *OscMachineReconciler) getTagSvc(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
+	return tag.NewService(ctx, &scope)
+}
 func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	_ = log.FromContext(ctx)
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
@@ -285,9 +291,10 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	}
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
+	tagSvc := r.getTagSvc(ctx, *clusterScope)
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
 		machineScope.V(2).Info("Find Volumes")
-		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc)
+		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
 		if err != nil {
 			machineScope.Error(err, "failed to reconcile volume")
 			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
@@ -306,7 +313,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
-	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
+	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())

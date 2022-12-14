@@ -32,7 +32,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
-
 	"testing"
 )
 
@@ -254,7 +253,6 @@ func TestReconcileKeyPairGet(t *testing.T) {
 				},
 			}
 			keyPairSpec.ResourceId = keyPairName
-
 			mockOscKeyPairInterface.
 				EXPECT().
 				GetKeyPair(gomock.Eq(keyPairName)).

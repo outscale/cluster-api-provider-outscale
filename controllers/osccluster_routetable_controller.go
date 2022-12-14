@@ -107,7 +107,6 @@ func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 		for _, routeTableSubnet := range routeTableSubnetsSpec {
 			routeTableSubnetName := routeTableSubnet + "-" + clusterScope.GetUID()
 			clusterScope.V(2).Info("Check the desired subnet", "routeTableSubnet", routeTableSubnet)
-
 			checkOscAssociate := Contains(resourceNameList, routeTableSubnetName)
 			if checkOscAssociate {
 				return nil
@@ -249,7 +248,7 @@ func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope,
 }
 
 // reconcileRouteTable reconcile the RouteTable and the Route of the cluster.
-func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
+func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 
 	routeTablesSpec := clusterScope.GetRouteTables()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
@@ -276,6 +275,12 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		clusterScope.V(2).Info("Check if the desired routeTable exist in net", "routeTableName", routeTableName)
 		clusterScope.V(4).Info("Get routeTable Id", "routeTable", routeTablesRef.ResourceMap)
 
+		tagKey := "Name"
+		tagValue := routeTableName
+		tag, err := tagSvc.ReadTag(tagKey, tagValue)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
 		if len(routeTablesRef.ResourceMap) == 0 {
 			routeTablesRef.ResourceMap = make(map[string]string)
 		}
@@ -293,12 +298,13 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		var natRouteTable bool = false
 
-		if !Contains(routeTableIds, routeTableId) {
+		if !Contains(routeTableIds, routeTableId) && tag == nil {
 			clusterScope.V(2).Info("Check Nat RouteTable")
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 			clusterScope.V(4).Info("Number of route", "routeLength", len(*routesSpec))
 			for _, routeSpec := range *routesSpec {
 				resourceType := routeSpec.TargetType
+				clusterScope.V(4).Info("Get resourceType", "ResourceType", resourceType)
 				if resourceType == "nat" {
 					natServiceRef := clusterScope.GetNatServiceRef()
 					clusterScope.V(4).Info("Get Nat", "Nat", natServiceRef.ResourceMap)

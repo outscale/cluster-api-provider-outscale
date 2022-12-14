@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1-0.20230105195159-54a2e9f1ac63
+    controller-gen.kubebuilder.io/version: v0.11.1-0.20230203165829-9084e41bb752
   creationTimestamp: null
   name: oscclusters.infrastructure.cluster.x-k8s.io
 spec:
@@ -52,6 +52,7 @@ spec:
               network:
                 properties:
                   bastion:
+                    description: The bastion configuration
                     properties:
                       clusterName:
                         type: string
@@ -108,8 +109,10 @@ spec:
                         type: string
                     type: object
                   clusterName:
+                    description: The name of the cluster
                     type: string
                   image:
+                    description: The image configuration
                     properties:
                       name:
                         type: string
@@ -120,6 +123,7 @@ spec:
                     description: The Internet Service configuration
                     properties:
                       clusterName:
+                        description: the name of the cluster
                         type: string
                       name:
                         description: The tag name associate with the Subnet
@@ -199,6 +203,7 @@ spec:
                     description: The Nat Service configuration
                     properties:
                       clusterName:
+                        description: The name of the cluster
                         type: string
                       name:
                         description: The tag name associate with the Nat Service
@@ -218,6 +223,7 @@ spec:
                     description: The Net configuration
                     properties:
                       clusterName:
+                        description: the name of the cluster
                         type: string
                       ipRange:
                         description: the net ip range with CIDR notation
@@ -348,6 +354,7 @@ spec:
                       type: object
                     type: array
                   subregionName:
+                    description: The subregion name
                     type: string
                 type: object
             type: object

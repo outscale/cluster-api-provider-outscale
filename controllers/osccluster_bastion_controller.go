@@ -199,7 +199,7 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 }
 
 // reconcileBastion reconcile the bastion of cluster.
-func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, securityGroupSvc security.OscSecurityGroupInterface, imageSvc compute.OscImageInterface) (reconcile.Result, error) {
+func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, securityGroupSvc security.OscSecurityGroupInterface, imageSvc compute.OscImageInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	bastionSpec := clusterScope.GetBastion()
 	bastionRef := clusterScope.GetBastionRef()
 	bastionName := bastionSpec.Name + "-" + clusterScope.GetUID()
@@ -258,6 +258,12 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 		bastionRef.ResourceMap = make(map[string]string)
 	}
 	clusterScope.V(4).Info("Get ResourceId", "resourceId", bastionSpec.ResourceId)
+	tagKey := "Name"
+	tagValue := bastionName
+	tag, err := tagSvc.ReadTag(tagKey, tagValue)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+	}
 	if bastionSpec.ResourceId != "" {
 		bastionRef.ResourceMap[bastionName] = bastionSpec.ResourceId
 		vmId := bastionSpec.ResourceId
@@ -275,7 +281,7 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 		clusterScope.SetVmState(infrastructurev1beta1.VmState(vmState))
 		clusterScope.V(4).Info("Get bastion state", "vmState", vmState)
 	}
-	if bastion == nil || bastionSpec.ResourceId == "" {
+	if (bastion == nil && tag == nil) || (bastionSpec.ResourceId == "" && tag == nil) {
 		clusterScope.V(4).Info("Create the desired bastion", "bastionName", bastionName)
 		keypairName := bastionSpec.KeypairName
 		clusterScope.V(4).Info("Get keypairName", "keypairName", keypairName)

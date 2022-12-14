@@ -29,11 +29,11 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -122,12 +122,13 @@ var (
 )
 
 // SetupWithSecurityGroupMock set securityGroupMock with clusterScope and osccluster
-func SetupWithSecurityGroupMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface) {
+func SetupWithSecurityGroupMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscSecurityGroupInterface = mock_security.NewMockOscSecurityGroupInterface(mockCtrl)
+	mockOscTagInterface = mock_tag.NewMockOscTagInterface(mockCtrl)
 	ctx = context.Background()
-	return clusterScope, ctx, mockOscSecurityGroupInterface
+	return clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface
 }
 
 // TestGetSecurityGroupResourceId has several tests to cover the code of the function getSecurityGrouptResourceId
@@ -690,36 +691,52 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 		name                                        string
 		spec                                        infrastructurev1beta1.OscClusterSpec
 		expCreateSecurityGroupRuleFound             bool
+		expTagFound                                 bool
 		expGetSecurityGroupFromSecurityGroupRuleErr error
 		expCreateSecurityGroupRuleErr               error
+		expReadTagErr                               error
 		expReconcileSecurityGroupRuleErr            error
 	}{
 		{
 			name:                            "create securityGroupRule  (first time reconcileloop)",
 			spec:                            defaultSecurityGroupInitialize,
 			expCreateSecurityGroupRuleFound: true,
+			expTagFound:                     false,
 			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
 			expCreateSecurityGroupRuleErr:               nil,
+			expReadTagErr:                               nil,
 			expReconcileSecurityGroupRuleErr:            nil,
 		},
 		{
 			name:                            "failed to create securityGroupRule",
 			spec:                            defaultSecurityGroupInitialize,
 			expCreateSecurityGroupRuleFound: false,
+			expTagFound:                     false,
 			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
 			expCreateSecurityGroupRuleErr:               fmt.Errorf("CreateSecurityGroupRule generic errors"),
+			expReadTagErr:                               nil,
 			expReconcileSecurityGroupRuleErr:            fmt.Errorf("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
 			securityGroupsSpec := sgrtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
+				tag := osc.Tag{
+					ResourceId: &securityGroupId,
+				}
+				if sgrtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(&tag, sgrtc.expReadTagErr)
+				}
+
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
 				for _, securityGroupRuleSpec := range securityGroupRulesSpec {
@@ -770,35 +787,52 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 		name                                        string
 		spec                                        infrastructurev1beta1.OscClusterSpec
 		expSecurityGroupRuleFound                   bool
+		expTagFound                                 bool
 		expGetSecurityGroupFromSecurityGroupRuleErr error
+		expReadTagErr                               error
 		expReconcileSecurityGroupRuleErr            error
 	}{
 		{
 			name:                      "get securityGroupRule ((second time reconcile loop)",
 			spec:                      defaultSecurityGroupReconcile,
 			expSecurityGroupRuleFound: true,
+			expTagFound:               false,
 			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
-			expReconcileSecurityGroupRuleErr:            nil,
+			expReadTagErr:                    nil,
+			expReconcileSecurityGroupRuleErr: nil,
 		},
 		{
 			name:                      "failed to get securityGroup",
 			spec:                      defaultSecurityGroupReconcile,
 			expSecurityGroupRuleFound: true,
+			expTagFound:               false,
+			expReadTagErr:             nil,
 			expGetSecurityGroupFromSecurityGroupRuleErr: fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
 			expReconcileSecurityGroupRuleErr:            fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
 			securityGroupsSpec := sgrtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
+				tag := osc.Tag{
+					ResourceId: &securityGroupId,
+				}
+				if sgrtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(&tag, sgrtc.expReadTagErr)
+				}
+
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
+
 				for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 					securityGroupRuleFlow := securityGroupRuleSpec.Flow
 					securityGroupRuleIpProtocol := securityGroupRuleSpec.IpProtocol
@@ -863,7 +897,7 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
 			securityGroupsSpec := sgrtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -924,7 +958,8 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 			name: "failed to get securityGroupRule",
 			spec: defaultSecurityGroupReconcile,
 			expGetSecurityGroupfromSecurityGroupRuleErr: fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
-			expReconcileDeleteSecurityGroupRuleErr:      fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
+
+			expReconcileDeleteSecurityGroupRuleErr: fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
 		},
 		{
 			name: "remove finalizer (user delete securityGroup without cluster-api)",
@@ -935,7 +970,7 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
 			securityGroupsSpec := sgrtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -975,23 +1010,26 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 		spec                             infrastructurev1beta1.OscClusterSpec
 		expSecurityGroupRuleFound        bool
 		expCreateSecurityGroupRuleFound  bool
+		expTagFound                      bool
 		expGetSecurityGroupFromNetIdsErr error
 		expCreateSecurityGroupErr        error
 		expGetSecurityGroupRuleErr       error
 		expCreateSecurityGroupRuleErr    error
-
-		expReconcileSecurityGroupErr error
+		expReadTagErr                    error
+		expReconcileSecurityGroupErr     error
 	}{
 		{
 			name: "create securityGroup",
 
 			spec:                             defaultSecurityGroupInitialize,
+			expTagFound:                      false,
 			expSecurityGroupRuleFound:        false,
 			expCreateSecurityGroupRuleFound:  true,
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expCreateSecurityGroupErr:        nil,
 			expGetSecurityGroupRuleErr:       nil,
 			expCreateSecurityGroupRuleErr:    nil,
+			expReadTagErr:                    nil,
 			expReconcileSecurityGroupErr:     nil,
 		},
 		{
@@ -999,10 +1037,12 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			spec:                             defaultSecurityGroupTagInitialize,
 			expSecurityGroupRuleFound:        false,
 			expCreateSecurityGroupRuleFound:  true,
+			expTagFound:                      false,
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expCreateSecurityGroupErr:        nil,
 			expGetSecurityGroupRuleErr:       nil,
 			expCreateSecurityGroupRuleErr:    nil,
+			expReadTagErr:                    nil,
 			expReconcileSecurityGroupErr:     nil,
 		},
 		{
@@ -1011,16 +1051,18 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			spec:                             defaultSecurityGroupInitialize,
 			expSecurityGroupRuleFound:        false,
 			expCreateSecurityGroupRuleFound:  false,
+			expTagFound:                      false,
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expCreateSecurityGroupErr:        nil,
 			expGetSecurityGroupRuleErr:       nil,
 			expCreateSecurityGroupRuleErr:    fmt.Errorf("CreateSecurityGroupRule generic errors"),
+			expReadTagErr:                    nil,
 			expReconcileSecurityGroupErr:     fmt.Errorf("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			clusterName := sgtc.spec.Network.ClusterName + "-uid"
 			netName := sgtc.spec.Network.Net.Name + "-uid"
@@ -1037,6 +1079,20 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
+				tag := osc.Tag{
+					ResourceId: &securityGroupId,
+				}
+				if sgtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(&tag, sgtc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(nil, sgtc.expReadTagErr)
+				}
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupDescription := securityGroupSpec.Description
 				securityGroupTag := securityGroupSpec.Tag
@@ -1103,7 +1159,7 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 							}
 						}
 					}
-					reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
+					reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 					if err != nil {
 						assert.Equal(t, sgtc.expReconcileSecurityGroupErr.Error(), err.Error(), "reconcileSecurityGroup() should return the same error")
 					} else {
@@ -1123,16 +1179,21 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 		name                             string
 		spec                             infrastructurev1beta1.OscClusterSpec
 		expSecurityGroupFound            bool
+		expTagFound                      bool
+		expNetFound                      bool
 		expGetSecurityGroupFromNetIdsErr error
-
-		expReconcileSecurityGroupErr error
+		expReadTagErr                    error
+		expReconcileSecurityGroupErr     error
 	}{
 		{
 			name: "failed to get securityGroup",
 
 			spec:                             defaultSecurityGroupReconcile,
 			expSecurityGroupFound:            false,
+			expTagFound:                      false,
+			expNetFound:                      true,
 			expGetSecurityGroupFromNetIdsErr: fmt.Errorf("GetSecurityGroup generic error"),
+			expReadTagErr:                    nil,
 			expReconcileSecurityGroupErr:     fmt.Errorf("GetSecurityGroup generic error"),
 		},
 		{
@@ -1140,20 +1201,25 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 
 			spec:                             defaultSecurityGroupReconcile,
 			expSecurityGroupFound:            true,
+			expTagFound:                      false,
+			expNetFound:                      true,
 			expGetSecurityGroupFromNetIdsErr: nil,
+			expReadTagErr:                    nil,
 			expReconcileSecurityGroupErr:     nil,
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			netName := sgtc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
-
+			if sgtc.expNetFound {
+				netRef.ResourceMap[netName] = netId
+			}
 			securityGroupsSpec := sgtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -1162,6 +1228,22 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
+				tag := osc.Tag{
+					ResourceId: &securityGroupId,
+				}
+				if sgtc.expSecurityGroupFound {
+					if sgtc.expSecurityGroupFound {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+							Return(&tag, sgtc.expReadTagErr)
+					} else {
+						mockOscTagInterface.
+							EXPECT().
+							ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+							Return(nil, sgtc.expReadTagErr)
+					}
+				}
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				if sgtc.expSecurityGroupFound {
@@ -1175,7 +1257,7 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 						GetSecurityGroupIdsFromNetIds(gomock.Eq(netId)).
 						Return(nil, sgtc.expGetSecurityGroupFromNetIdsErr)
 				}
-				reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
+				reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 				if err != nil {
 					assert.Equal(t, sgtc.expReconcileSecurityGroupErr, err, "reconcileSecurityGroup() should return the same error")
 				} else {
@@ -1193,8 +1275,10 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                             string
 		spec                             infrastructurev1beta1.OscClusterSpec
+		expTagFound                      bool
 		expGetSecurityGroupFromNetIdsErr error
 		expCreateSecurityGroupErr        error
+		expReadTagErr                    error
 		expReconcileSecurityGroupErr     error
 	}{
 		{
@@ -1224,13 +1308,15 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 				},
 			},
 			expGetSecurityGroupFromNetIdsErr: nil,
+			expTagFound:                      false,
 			expCreateSecurityGroupErr:        fmt.Errorf("CreateSecurityGroup generic error"),
+			expReadTagErr:                    nil,
 			expReconcileSecurityGroupErr:     fmt.Errorf("CreateSecurityGroup generic error Can not create securityGroup for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			netName := sgtc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
@@ -1247,6 +1333,21 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
+				tag := osc.Tag{
+					ResourceId: &securityGroupId,
+				}
+				if sgtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(&tag, sgtc.expReadTagErr)
+
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(nil, sgtc.expReadTagErr)
+				}
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupTag := securityGroupSpec.Tag
 				securityGroupDescription := securityGroupSpec.Description
@@ -1264,7 +1365,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 					CreateSecurityGroup(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(securityGroupName), gomock.Eq(securityGroupDescription), gomock.Eq(securityGroupTag)).
 					Return(securityGroup.SecurityGroup, sgtc.expCreateSecurityGroupErr)
 			}
-			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
+			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, sgtc.expReconcileSecurityGroupErr.Error(), err.Error(), "reconcileSecurityGroup() should return the same error")
 			} else {
@@ -1279,25 +1380,69 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 // TestReconcileCreateSecurityGroupResourceId has several tests to cover the code of the function reconcileCreateSecurityGroup
 func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 	securityGroupTestCases := []struct {
-		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
-		expReconcileSecurityGroupErr error
+		name                             string
+		spec                             infrastructurev1beta1.OscClusterSpec
+		expTagFound                      bool
+		expNetFound                      bool
+		expReadTagErr                    error
+		expGetSecurityGroupIdsFromNetIds error
+		expReconcileSecurityGroupErr     error
 	}{
 		{
 			name: "net does not exist",
 
-			spec:                         defaultSecurityGroupReconcile,
-			expReconcileSecurityGroupErr: fmt.Errorf("test-net-uid does not exist"),
+			spec:                             defaultSecurityGroupReconcile,
+			expTagFound:                      false,
+			expNetFound:                      false,
+			expReadTagErr:                    nil,
+			expGetSecurityGroupIdsFromNetIds: nil,
+			expReconcileSecurityGroupErr:     fmt.Errorf("test-net-uid does not exist"),
+		},
+		{
+			name:                             "failed to get tag",
+			spec:                             defaultSecurityGroupReconcile,
+			expTagFound:                      true,
+			expNetFound:                      true,
+			expGetSecurityGroupIdsFromNetIds: nil,
+			expReadTagErr:                    fmt.Errorf("ReadTag generic error"),
+			expReconcileSecurityGroupErr:     fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
+
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
-			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
+			netName := sgtc.spec.Network.Net.Name + "-uid"
+			netId := "vpc-" + netName
+			if sgtc.expNetFound {
+				netRef.ResourceMap[netName] = netId
+			}
+			securityGroupsSpec := sgtc.spec.Network.SecurityGroups
+			var securityGroupIds []string
+
+			if sgtc.expTagFound {
+				for _, securityGroupSpec := range securityGroupsSpec {
+					securityGroupName := securityGroupSpec.Name + "-uid"
+					securityGroupId := "sg-" + securityGroupName
+					securityGroupIds = append(securityGroupIds, securityGroupId)
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
+						Return(nil, sgtc.expReadTagErr)
+				}
+
+				mockOscSecurityGroupInterface.
+					EXPECT().
+					GetSecurityGroupIdsFromNetIds(gomock.Eq(netId)).
+					Return(securityGroupIds, sgtc.expGetSecurityGroupIdsFromNetIds)
+
+			}
+
+			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, sgtc.expReconcileSecurityGroupErr, err, "reconcileSecurityGroup() should return the same error")
+				assert.Equal(t, sgtc.expReconcileSecurityGroupErr.Error(), err.Error(), "reconcileSecurityGroup() should return the same error")
 			} else {
 				assert.Nil(t, sgtc.expReconcileSecurityGroupErr)
 			}
@@ -1357,7 +1502,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 			var err error
 			var deleteSg reconcile.Result
 			var wg sync.WaitGroup
@@ -1492,7 +1637,7 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
@@ -1611,7 +1756,7 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
@@ -1730,7 +1875,7 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
@@ -1892,7 +2037,7 @@ func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
@@ -1962,7 +2107,7 @@ func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
+			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			netRef := clusterScope.GetNetRef()

@@ -248,8 +248,7 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 }
 
 // reconcileSecurityGroup reconcile the securityGroup of the cluster.
-func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
-
+func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
 
 	netSpec := clusterScope.GetNet()
@@ -274,10 +273,18 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		clusterScope.V(2).Info("Check if the desired securityGroup exist in net", "securityGroupName", securityGroupName)
 		securityGroupDescription := securityGroupSpec.Description
+
+		tagKey := "Name"
+		tagValue := securityGroupName
+		tag, err := tagSvc.ReadTag(tagKey, tagValue)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
 		securityGroupTag := securityGroupSpec.Tag
 		if len(securityGroupsRef.ResourceMap) == 0 {
 			securityGroupsRef.ResourceMap = make(map[string]string)
 		}
+
 		if securityGroupSpec.ResourceId != "" {
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
 		}
@@ -287,7 +294,8 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		}
 		var securityGroup *osc.SecurityGroup
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		if !Contains(securityGroupIds, securityGroupId) {
+
+		if !Contains(securityGroupIds, securityGroupId) && tag == nil {
 			clusterScope.V(2).Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
 			if securityGroupTag == "OscK8sMainSG" {
 				securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "OscK8sMainSG")
