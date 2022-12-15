@@ -1,5 +1,4 @@
 # Summary
-- [Introduction](./introduction.md)
 - [Topics](./topics/topics.md)
     - [Omi](./topics/omi.md)
     - [Get Started with clusterctl](./topics/get-started-with-clusterctl.md)
