@@ -1,4 +1,5 @@
 # Kubernetes Cluster Api Provider Outscale
+[![Project Graduated](https://docs.outscale.com/fr/userguide/_images/Project-Graduated-green.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
 
 Kubernetes-native declarative infrastructure for Outscale
 
