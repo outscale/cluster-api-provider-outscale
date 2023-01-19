@@ -86,7 +86,7 @@ spec:
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
-            rootDiskType: "io1"
+            rootDiskType: "gp2"
           keypairName: cluster-api-test
           subregionName: eu-west-2a
           vmType: "tinav4.c2r4p2"
@@ -113,7 +113,7 @@ spec:
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
-            rootDiskType: "io1"
+            rootDiskType: "gp2"
           role: controlplane
           loadBalancerName: capo-k8s
           vmType: "tinav5.c4r8p1"

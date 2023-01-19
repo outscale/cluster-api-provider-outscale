@@ -220,7 +220,7 @@ spec:
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
-            rootDiskType: io1
+            rootDiskType: gp2
           subnetName: cluster-api-subnet-kw
           subregionName: eu-west-2a
           securityGroupNames:
@@ -250,7 +250,7 @@ spec:
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
-            rootDiskType: io1
+            rootDiskType: gp2
           deviceName: /dev/sda1
           subregionName: eu-west-2a
           subnetName: cluster-api-subnet-kcp

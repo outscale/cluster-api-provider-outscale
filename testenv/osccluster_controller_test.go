@@ -1115,10 +1115,9 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						KeypairName:   "cluster-api-testenv",
 						SubregionName: osc_subregion,
 						RootDisk: infrastructurev1beta1.OscRootDisk{
-
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
-							RootDiskType: "io1",
+							RootDiskType: "gp2",
 						},
 						SubnetName:       "cluster-api-subnet-kcp",
 						LoadBalancerName: "osc-k8s-machine",
