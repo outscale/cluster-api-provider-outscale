@@ -175,6 +175,23 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			expValidateCreateErr: nil,
 		},
 		{
+			name: "create with bad io1 ratio size iops",
+			machineSpec: OscMachineSpec{
+				Node: OscNode{
+					Volumes: []*OscVolume{
+						{
+							Name:          "test-webhook",
+							Iops:          2000,
+							Size:          20,
+							VolumeType:    "io1",
+							SubregionName: "eu-west-2a",
+						},
+					},
+				},
+			},
+			expValidateCreateErr: nil,
+		},
+		{
 			name: "create with good gp2 volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
