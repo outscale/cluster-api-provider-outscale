@@ -270,6 +270,15 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if err != nil {
 		return vmTagName, err
 	}
+
+	if vmSpec.RootDisk.RootDiskType == "io1" && vmSpec.RootDisk.RootDiskIops != 0 && vmSpec.RootDisk.RootDiskSize != 0 {
+		ratioRootDiskSizeIops := vmSpec.RootDisk.RootDiskIops / vmSpec.RootDisk.RootDiskSize
+		machineScope.V(4).Info("check ratio rootdisk size iops", "ratioRootDiskSizeIops", ratioRootDiskSizeIops)
+		_, err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
+		if err != nil {
+			return vmTagName, err
+		}
+	}
 	return "", nil
 }
 
