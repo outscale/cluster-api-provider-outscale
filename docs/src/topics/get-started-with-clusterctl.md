@@ -51,12 +51,12 @@ You can enable [clusterresourceset][clusterresourceset] with
 export EXP_CLUSTER_RESOURCE_SET=true
 ```
 
-Please create  $HOME/.cluster-api/clusterctl.yaml only if clusterctl version is less than 1.2.4 [cluster-api-config][cluster-api-config]:
+Please create  $HOME/.cluster-api/clusterctl.yaml: 
 ```
 providers:
 - name: outscale
   type: InfrastructureProvider
-  url: https://github.com/outscale-dev/cluster-api-provider-outscale/releases/v0.1.1/infrastructure-components.yaml
+  url: https://github.com/outscale/cluster-api-provider-outscale/releases/latest/infrastructure-components.yaml
 ```
 
 You can initialize clusterctl with credential with:
