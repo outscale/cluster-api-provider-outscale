@@ -29,7 +29,6 @@ import (
 
 // checkImageFormatParameters check keypair format
 func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error) {
-	machineScope.V(2).Info("Check Image parameters")
 	var err error
 	var imageSpec *infrastructurev1beta1.OscImage
 	nodeSpec := machineScope.GetNode()
@@ -39,6 +38,7 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 		imageSpec = machineScope.GetImage()
 	}
 	imageName := imageSpec.Name
+	machineScope.V(2).Info("Check Image parameters")
 	imageName, err = infrastructurev1beta1.ValidateImageName(imageName)
 	if err != nil {
 		return imageName, err
@@ -58,7 +58,6 @@ func getImageResourceId(resourceName string, machineScope *scope.MachineScope) (
 
 // reconcileImage reconcile the image of the machine
 func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, imageSvc compute.OscImageInterface) (reconcile.Result, error) {
-	machineScope.V(2).Info("Create image or add existing one")
 	var imageSpec *infrastructurev1beta1.OscImage
 	imageSpec = machineScope.GetImage()
 	imageRef := machineScope.GetImageRef()
@@ -72,12 +71,12 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	}
 
 	if imageName != "" {
-		machineScope.V(2).Info("########### Image Names exist", "imageName", imageName)
+		machineScope.V(2).Info("Image Name exist", "imageName", imageName)
 		if imageId, err = imageSvc.GetImageId(imageName); err != nil {
 			return reconcile.Result{}, err
 		}
 	} else {
-		machineScope.V(4).Info("########### Image Name is empty and we will try to get it from Id#####", "imageId", imageId)
+		machineScope.V(4).Info("Image Name is empty and we will try to get it from Id", "imageId", imageId)
 		if imageName, err = imageSvc.GetImageName(imageId); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -93,7 +92,7 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 
 	}
 	if image == nil {
-		machineScope.V(2).Info("########### Image is nil")
+		machineScope.V(2).Info("Image is nil")
 		return reconcile.Result{}, err
 	} else {
 		imageRef.ResourceMap[imageName] = imageId
