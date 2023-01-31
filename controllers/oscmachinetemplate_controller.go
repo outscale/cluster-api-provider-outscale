@@ -43,9 +43,9 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			return reconcile.Result{}, fmt.Errorf("%w Can not get ListMachine", err)
 		}
 		machineSize = len(machines)
-		clusterScope.Info("Get info OscMachine", "machineSize", machineSize)
+		clusterScope.V(4).Info("Get OscMachine Size", "machineSize", machineSize)
 	} else {
-		clusterScope.Info("Do not wait for OscMachine")
+		clusterScope.V(2).Info("Do not wait for OscMachine")
 		machineSize = 1
 		machineKcpReady = 1
 		machineKcpCount = 1
@@ -53,7 +53,6 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 
 	if machineSize > 0 {
 		if vmReplica != 1 {
-			clusterScope.Info("Get  MachineList")
 			names := make([]string, len(machines))
 			for i, m := range machines {
 				names[i] = fmt.Sprintf("machine/%s", m.Name)
@@ -90,8 +89,8 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 	clusterName := machineTemplateScope.GetClusterName() + "-" + clusterScope.GetUID()
+	machineTemplateScope.V(4).Info("Get ClusterName", "clusterName", clusterName)
 	vmType := machineTemplateScope.GetVmType()
-	machineTemplateScope.V(4).Info("### Get ClusterName ####", "clusterName", clusterName)
 	capacity, err := vmSvc.GetCapacity("OscK8sClusterID/"+clusterName, "owned", vmType)
 	if err != nil {
 		return reconcile.Result{}, err
