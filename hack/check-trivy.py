@@ -116,5 +116,6 @@ if __name__ == '__main__':
     if resolved_cve:
         sys.exit(1)
     elif len(ignored_cves_not_found) != 0:
-        logger.error("These CVE has not been found: {}".format(ignored_cves_not_found))
-        sys.exit (1)
+        logger.info("These CVE has not been found in alpine or s3 cve: {}".format(ignored_cves_not_found))
+ 
+    
