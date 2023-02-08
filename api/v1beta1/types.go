@@ -501,13 +501,15 @@ var (
 	DefaultRuleIpRangeApiKubeletKcp           string = "10.0.4.0/24"
 	DefaultFromPortRangeApiKubeletKcp         int32  = 10250
 	DefaultToPortRangeApiKubeletKcp           int32  = 10250
-	DefaultSecurityGroupRuleNodeIpKwName      string = "cluster-api-securitygrouprule-nodeip-kw"
+	DefaultSecurityGroupRuleKwNodeIpKwName    string = "cluster-api-securitygrouprule-kw-nodeip-kw"
+	DefaultSecurityGroupRuleKcpNodeIpKwName   string = "cluster-api-securitygrouprule-kcp-nodeip-kw"
 	DefaultFlowNodeIpKw                       string = "Inbound"
 	DefaultIpProtocolNodeIpKw                 string = "tcp"
 	DefaultRuleIpRangeNodeIpKw                string = "10.0.3.0/24"
 	DefaultFromPortRangeNodeIpKw              int32  = 30000
 	DefaultToPortRangeNodeIpKw                int32  = 32767
-	DefaultSecurityGroupRuleNodeIpKcpName     string = "cluster-api-securitygrouprule-nodeip-kcp"
+	DefaultSecurityGroupRuleKcpNodeIpKcpName  string = "cluster-api-securitugrouprule-kcp-nodeip-kcp"
+	DefaultSecurityGroupRuleKwNodeIpKcpName   string = "cluster-api-securitygrouprule-kw-nodeip-kcp"
 	DefaultFlowNodeIpKcp                      string = "Inbound"
 	DefaultIpProtocolNodeIpKcp                string = "tcp"
 	DefaultRuleIpRangeNodeIpKcp               string = "10.0.4.0/24"
@@ -905,8 +907,10 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 	if len(network.SecurityGroups) == 0 {
 		var securityGroupRuleApiKubeletKwName string = DefaultSecurityGroupRuleApiKubeletKwName
 		var securityGroupRuleApiKubeletKcpName string = DefaultSecurityGroupRuleApiKubeletKcpName
-		var securityGroupRuleNodeIpKwName string = DefaultSecurityGroupRuleNodeIpKwName
-		var securityGroupRuleNodeIpKcpName string = DefaultSecurityGroupRuleNodeIpKcpName
+		var securityGroupRuleKwNodeIpKwName string = DefaultSecurityGroupRuleKwNodeIpKwName
+		var securityGroupRuleKcpNodeIpKwName string = DefaultSecurityGroupRuleKcpNodeIpKwName
+		var securityGroupRuleKcpNodeIpKcpName string = DefaultSecurityGroupRuleKcpNodeIpKcpName
+		var securityGroupRuleKwNodeIpKcpName string = DefaultSecurityGroupRuleKwNodeIpKcpName
 		var securityGroupKwName string = DefaultSecurityGroupKwName
 		var securityGroupRuleApiKwName string = DefaultSecurityGroupRuleApiKwName
 		var securityGroupRuleApiKcpName string = DefaultSecurityGroupRuleApiKcpName
@@ -921,8 +925,10 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		if network.ClusterName != "" {
 			securityGroupRuleApiKubeletKwName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKwName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleApiKubeletKcpName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleNodeIpKwName = strings.Replace(DefaultSecurityGroupRuleNodeIpKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleNodeIpKcpName = strings.Replace(DefaultSecurityGroupRuleNodeIpKcpName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupRuleKwNodeIpKwName = strings.Replace(DefaultSecurityGroupRuleKwNodeIpKwName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupRuleKcpNodeIpKwName = strings.Replace(DefaultSecurityGroupRuleKcpNodeIpKwName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupRuleKcpNodeIpKcpName = strings.Replace(DefaultSecurityGroupRuleKcpNodeIpKcpName, DefaultClusterName, network.ClusterName, -1)
+			securityGroupRuleKwNodeIpKcpName = strings.Replace(DefaultSecurityGroupRuleKwNodeIpKcpName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupKwName = strings.Replace(DefaultSecurityGroupKwName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleApiKwName = strings.Replace(DefaultSecurityGroupRuleApiKwName, DefaultClusterName, network.ClusterName, -1)
 			securityGroupRuleApiKcpName = strings.Replace(DefaultSecurityGroupRuleApiKcpName, DefaultClusterName, network.ClusterName, -1)
@@ -954,8 +960,8 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			ToPortRange:   DefaultToPortRangeApiKubeletKcp,
 		}
 
-		securityGroupRuleNodeIpKw := OscSecurityGroupRule{
-			Name:          securityGroupRuleNodeIpKwName,
+		securityGroupRuleKwNodeIpKw := OscSecurityGroupRule{
+			Name:          securityGroupRuleKwNodeIpKwName,
 			Flow:          DefaultFlowNodeIpKw,
 			IpProtocol:    DefaultIpProtocolNodeIpKw,
 			IpRange:       DefaultRuleIpRangeNodeIpKw,
@@ -963,8 +969,8 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			ToPortRange:   DefaultToPortRangeNodeIpKw,
 		}
 
-		securityGroupRuleNodeIpKcp := OscSecurityGroupRule{
-			Name:          securityGroupRuleNodeIpKcpName,
+		securityGroupRuleKwNodeIpKcp := OscSecurityGroupRule{
+			Name:          securityGroupRuleKwNodeIpKcpName,
 			Flow:          DefaultFlowNodeIpKcp,
 			IpProtocol:    DefaultIpProtocolNodeIpKcp,
 			IpRange:       DefaultRuleIpRangeNodeIpKcp,
@@ -984,7 +990,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		securityGroupKw := OscSecurityGroup{
 			Name:               securityGroupKwName,
 			Description:        DefaultDescriptionKw,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKwBgp, securityGroupRuleApiKubeletKw, securityGroupRuleApiKubeletKcp, securityGroupRuleNodeIpKw, securityGroupRuleNodeIpKcp},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKwBgp, securityGroupRuleApiKubeletKw, securityGroupRuleKwNodeIpKcp, securityGroupRuleApiKubeletKcp, securityGroupRuleKwNodeIpKw},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKw)
 
@@ -1033,10 +1039,28 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			ToPortRange:   DefaultToPortRangeKcpBgp,
 		}
 
+		securityGroupRuleKcpNodeIpKw := OscSecurityGroupRule{
+			Name:          securityGroupRuleKcpNodeIpKwName,
+			Flow:          DefaultFlowNodeIpKw,
+			IpProtocol:    DefaultIpProtocolNodeIpKw,
+			IpRange:       DefaultRuleIpRangeNodeIpKw,
+			FromPortRange: DefaultFromPortRangeNodeIpKw,
+			ToPortRange:   DefaultToPortRangeNodeIpKw,
+		}
+
+		securityGroupRuleKcpNodeIpKcp := OscSecurityGroupRule{
+			Name:          securityGroupRuleKcpNodeIpKcpName,
+			Flow:          DefaultFlowNodeIpKcp,
+			IpProtocol:    DefaultIpProtocolNodeIpKcp,
+			IpRange:       DefaultRuleIpRangeNodeIpKcp,
+			FromPortRange: DefaultFromPortRangeNodeIpKcp,
+			ToPortRange:   DefaultToPortRangeNodeIpKcp,
+		}
+
 		securityGroupKcp := OscSecurityGroup{
 			Name:               securityGroupKcpName,
 			Description:        DefaultDescriptionKcp,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKcpBgp, securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleEtcd, securityGroupRuleKubeletKcp},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKcpBgp, securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleKcpNodeIpKw, securityGroupRuleEtcd, securityGroupRuleKubeletKcp, securityGroupRuleKcpNodeIpKcp},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKcp)
 

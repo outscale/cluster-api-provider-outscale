@@ -27,6 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -377,6 +378,19 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		if !ok {
 			return reconcile.Result{}, fmt.Errorf("Can not found privateDnsName %s/%s", machineScope.GetNamespace(), machineScope.GetName())
 		}
+		privateIp, ok := vm.GetPrivateIpOk()
+		if !ok {
+			return reconcile.Result{}, fmt.Errorf("Can not found privateIp %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+		}
+		addresses := []corev1.NodeAddress{}
+		addresses = append(
+			addresses,
+			corev1.NodeAddress{
+				Type:    corev1.NodeInternalIP,
+				Address: *privateIp,
+			},
+		)
+		machineScope.SetAddresses(addresses)
 		err = vmSvc.AddCcmTag(clusterName, *privateDnsName, vmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w can not add ccm tag %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
