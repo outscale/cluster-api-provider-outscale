@@ -2920,10 +2920,12 @@ func TestReconcileVmGet(t *testing.T) {
 		expGetVmStateFound     bool
 		expAddCcmTagFound      bool
 		expPrivateDnsNameFound bool
+		expPrivateIpFound      bool
 		expGetVmStateErr       error
 		expGetVmErr            error
 		expAddCcmTagErr        error
 		expPrivateDnsNameErr   error
+		expPrivateIpErr        error
 		expReconcileVmErr      error
 	}{
 		{
@@ -2934,10 +2936,12 @@ func TestReconcileVmGet(t *testing.T) {
 			expGetVmStateFound:     true,
 			expAddCcmTagFound:      true,
 			expPrivateDnsNameFound: true,
+			expPrivateIpFound:      true,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
 			expPrivateDnsNameErr:   nil,
+			expPrivateIpErr:        nil,
 			expReconcileVmErr:      nil,
 		},
 		{
@@ -2948,10 +2952,12 @@ func TestReconcileVmGet(t *testing.T) {
 			expGetVmStateFound:     false,
 			expAddCcmTagFound:      false,
 			expPrivateDnsNameFound: true,
+			expPrivateIpFound:      true,
 			expGetVmErr:            fmt.Errorf("GetVm generic error"),
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
 			expPrivateDnsNameErr:   nil,
+			expPrivateIpErr:        nil,
 			expReconcileVmErr:      fmt.Errorf("GetVm generic error"),
 		},
 		{
@@ -2962,10 +2968,12 @@ func TestReconcileVmGet(t *testing.T) {
 			expGetVmStateFound:     true,
 			expAddCcmTagFound:      true,
 			expPrivateDnsNameFound: true,
+			expPrivateIpFound:      true,
 			expGetVmErr:            nil,
 			expAddCcmTagErr:        nil,
 			expGetVmStateErr:       fmt.Errorf("GetVmState generic error"),
 			expPrivateDnsNameErr:   nil,
+			expPrivateIpErr:        nil,
 			expReconcileVmErr:      fmt.Errorf("GetVmState generic error Can not get vm i-test-vm-uid state for OscMachine test-system/test-osc"),
 		},
 		{
@@ -2976,10 +2984,12 @@ func TestReconcileVmGet(t *testing.T) {
 			expGetVmStateFound:     false,
 			expAddCcmTagFound:      true,
 			expPrivateDnsNameFound: true,
+			expPrivateIpFound:      true,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        fmt.Errorf("AddCcmTag generic error"),
 			expPrivateDnsNameErr:   nil,
+			expPrivateIpErr:        nil,
 			expReconcileVmErr:      fmt.Errorf("AddCcmTag generic error can not add ccm tag test-system/test-osc"),
 		},
 		{
@@ -2988,13 +2998,31 @@ func TestReconcileVmGet(t *testing.T) {
 			machineSpec:            defaultVmReconcile,
 			expGetVmFound:          true,
 			expGetVmStateFound:     false,
+			expPrivateIpFound:      true,
 			expAddCcmTagFound:      false,
 			expPrivateDnsNameFound: false,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
+			expPrivateIpErr:        nil,
 			expPrivateDnsNameErr:   fmt.Errorf("GetPrivateDnsNameok generic error"),
 			expReconcileVmErr:      fmt.Errorf("Can not found privateDnsName test-system/test-osc"),
+		},
+		{
+			name:                   "Failed to retrieve privateIp",
+			clusterSpec:            defaultVmClusterReconcile,
+			machineSpec:            defaultVmReconcile,
+			expGetVmFound:          true,
+			expGetVmStateFound:     false,
+			expPrivateIpFound:      false,
+			expAddCcmTagFound:      false,
+			expPrivateDnsNameFound: true,
+			expGetVmErr:            nil,
+			expGetVmStateErr:       nil,
+			expAddCcmTagErr:        nil,
+			expPrivateIpErr:        fmt.Errorf("GetPrivateIpOk generic error"),
+			expPrivateDnsNameErr:   nil,
+			expReconcileVmErr:      fmt.Errorf("Can not found privateIp test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -3045,6 +3073,7 @@ func TestReconcileVmGet(t *testing.T) {
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 			var privateDnsName string
+			var privateIp string
 			var readVms osc.ReadVmsResponse
 			if vtc.expPrivateDnsNameFound {
 				privateDnsName = "ip-0-0-0-0.eu-west-2.compute.internal"
@@ -3067,6 +3096,10 @@ func TestReconcileVmGet(t *testing.T) {
 			}
 			readVm := *readVms.Vms
 			vm := &readVm[0]
+			privateIp = "0.0.0.0"
+			if vtc.expPrivateIpFound {
+				vm.PrivateIp = &privateIp
+			}
 			if vtc.expGetVmFound {
 				mockOscVmInterface.
 					EXPECT().
