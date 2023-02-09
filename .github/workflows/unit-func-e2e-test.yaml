@@ -113,6 +113,7 @@ jobs:
         command: curl http://127.0.0.1:4242/v2
     - name: Build and Push Docker image 
       run: |
+        sudo apt install -y docker-buildx-plugin 
         make docker-build
         make docker-push
         docker image prune -a -f
@@ -268,6 +269,7 @@ jobs:
         command: curl http://127.0.0.1:4242/v2
     - name: Build and Push Docker image 
       run: |
+        sudo apt install -y docker-buildx-plugin 
         make docker-build
         make docker-push
         docker image prune -a -f
