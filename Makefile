@@ -243,6 +243,10 @@ run: manifests generate fmt vet ## Run a controller from your host.
 docker-build: # Build docker image with the manager
 	docker build --build-arg VERSION=$(VERSION) -t ${IMG} .
 
+.PHONY: docker-buildx
+docker-buildx: # Build docker image with the manager
+	docker buildx build --build-arg VERSION=$(VERSION) --load -t ${IMG} .	
+
 .PHONY: docker-build-dev
 docker-build-dev: ## Generate and Build docker image with the manager
 	generate docker-build

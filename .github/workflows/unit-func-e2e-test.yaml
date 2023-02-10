@@ -65,6 +65,8 @@ jobs:
         go-version: '>=1.17.8'
     - name: Install kustomize
       uses: imranismail/setup-kustomize@v1
+      with:
+        kustomize-version: v4.5.7
     - uses: outscale-dev/frieza-github-actions/frieza-clean@master
       with:
         access_key: ${{ secrets.OSC_ACCESS_KEY }}
@@ -113,8 +115,9 @@ jobs:
         command: curl http://127.0.0.1:4242/v2
     - name: Build and Push Docker image 
       run: |
+        sudo apt-get update
         sudo apt install -y docker-buildx-plugin 
-        make docker-build
+        make docker-buildx
         make docker-push
         docker image prune -a -f
       env:
@@ -221,6 +224,8 @@ jobs:
         go-version: '>=1.17.8'
     - name: Install kustomize
       uses: imranismail/setup-kustomize@v1
+      with:
+        kustomize-version: v4.5.7
     - uses: outscale-dev/frieza-github-actions/frieza-clean@master
       with:
         access_key: ${{ secrets.OSC_ACCESS_KEY }}
@@ -269,8 +274,9 @@ jobs:
         command: curl http://127.0.0.1:4242/v2
     - name: Build and Push Docker image 
       run: |
+        sudo apt-get update
         sudo apt install -y docker-buildx-plugin 
-        make docker-build
+        make docker-buildx
         make docker-push
         docker image prune -a -f
       env:
