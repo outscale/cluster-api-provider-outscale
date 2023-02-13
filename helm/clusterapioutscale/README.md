@@ -11,6 +11,9 @@ Deploy clusterapioutscale. Please look at deploy.md
 | clusterapioutscale.certificate.enable | bool | `true` | enable certificate |
 | clusterapioutscale.configmap.enable | bool | `true` | enable configmap |
 | clusterapioutscale.crd.enable | bool | `true` | enable crd |
+| clusterapioutscale.deployment.backoff_duration | string | `"1"` | Initial duraction of backoff |
+| clusterapioutscale.deployment.backoff_factor | string | `"2.0"` | Factor multiplied by Duration for each iteration |
+| clusterapioutscale.deployment.backoff_steps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
 | clusterapioutscale.deployment.containers.image | string | `"registry.hub.docker.com/outscale/cluster-api-outscale-controllers"` | Outscale provider image |
 | clusterapioutscale.deployment.containers.imageProxy | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
 | clusterapioutscale.deployment.containers.imageProxyTag | string | `"v0.8.0"` | Proxy imageTag |
@@ -29,7 +32,7 @@ Deploy clusterapioutscale. Please look at deploy.md
 | clusterapioutscale.deployment.pods | object | `{"annotations":{"kubectl.kubernetes.io/default-container":"manager"}}` | Additional annotions to use |
 | clusterapioutscale.deployment.registry_credential | string | `"harbor-dockerconfigjson"` | Regitry credential to use |
 | clusterapioutscale.deployment.replicaccount | int | `1` | Number of replica |
-| clusterapioutscale.deployment.verbosity | int | `6` | Verbosity level of plugin |
+| clusterapioutscale.deployment.verbosity | int | `10` | Verbosity level of plugin |
 | clusterapioutscale.issuer.enable | bool | `true` | enable issuer |
 | clusterapioutscale.leaderElectionRole.enable | bool | `true` | enable leaderElectionRole |
 | clusterapioutscale.leaderElectionRoleBinding.enable | bool | `true` | enable leaderElectionRoleBinding |

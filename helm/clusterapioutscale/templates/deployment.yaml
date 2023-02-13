@@ -59,6 +59,7 @@ spec:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
+        - --zap-log-level={{ .verbosity }}
         command:
         - /manager
         env:
@@ -75,11 +76,17 @@ spec:
               name: cluster-api-provider-outscale
               optional: true
         - name: OSC_REGION
-	  valueFrom:
-	    secretKeyRef:
+          valueFrom:
+            secretKeyRef:
               key: region
               name: cluster-api-provider-outscale
-	      optional: true	
+              optional: true 
+        - name: BACKOFF_DURATION
+          value: "{{ .backoff_duration }}"
+        - name: BACKOFF_FACTOR
+          value: "{{ .backoff_factor }}"
+        - name: BACKOFF_STEPS
+          value: "{{ .backoff_steps }}"
         image: {{ .containers.image }}:{{ .containers.imageTag }}
         imagePullPolicy: {{ .containers.pullPolicy }}
         livenessProbe:

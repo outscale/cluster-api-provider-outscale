@@ -1,4 +1,5 @@
 clusterapioutscale:
+
   deployment:
     # -- Enable deployment
     enable: true
@@ -7,8 +8,16 @@ clusterapioutscale:
     # -- Regitry credential to use
     registry_credential: harbor-dockerconfigjson
     # -- Verbosity level of plugin
-    verbosity: 6
-
+    verbosity: 10
+    # integer in second defining initial duration
+    # -- Initial duraction of backoff
+    backoff_duration: "1"
+    # float define the factor multiplied by Duration each iteration
+    # -- Factor multiplied by Duration for each iteration
+    backoff_factor: "2.0"
+    # integer defining the remaining number of iterations in which the duration parameter may change
+    # -- Remaining number of iterations in which the duration parameter may change
+    backoff_steps: "20"
     # -- Additional annotions to use
     pods:
       annotations:
