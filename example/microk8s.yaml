@@ -1,0 +1,142 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: microk8s-osc
+  namespace: default
+spec:
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: MicroK8sControlPlane
+    name: microk8s-osc-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: microk8s-osc
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: microk8s-osc
+  namespace: default
+spec:
+  network:
+    clusterName: microk8s-osc
+    loadBalancer:
+      loadbalancername: microk8s
+      clusterName: microk8s-osc
+    net:
+      clusterName: microk8s-osc
+    internetService:
+      clusterName: microk8s-osc     
+    natService:
+      clusterName: microk8s-osc
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: MicroK8sControlPlane
+metadata:
+  name: microk8s-osc-control-plane
+  namespace: default
+spec:
+  controlPlaneConfig:
+    clusterConfiguration:
+      portCompatibilityRemap: true
+    initConfiguration:
+      IPinIP: true
+      addons:
+      - dns
+      - ingress
+      joinTokenTTLInSecs: 900000
+  machineTemplate:
+    infrastructureTemplate:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: OscMachineTemplate
+      name: microk8s-osc-control-plane
+  replicas: 1
+  version: v1.25.0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "microk8s-osc-md-0"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: microk8s-osc
+        image:
+          name: Ubuntu-22.04-2022.12.06-0
+        keypair:
+          name: microK8s-test
+          deleteKeypair: true
+        vm:
+          clusterName: microk8s-osc
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: "io1"
+          keypairName: microK8s-test
+          subregionName: eu-west-2a
+          vmType: "tinav4.c2r4p2"
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: microk8s-osc-md-0
+  namespace: default
+spec:
+  clusterName: microk8s-osc
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: MicroK8sConfigTemplate
+          name: microk8s-osc-md-0
+      clusterName: microk8s-osc
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta
+        kind: OscMachineTemplate
+        name: microk8s-osc-md-0
+      version: 1.25.0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "microk8s-osc-control-plane"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: microk8s-osc
+        image:
+          name: Ubuntu-22.04-2022.12.06-0
+        keypair:
+          name: microK8s-test
+          deleteKeypair: true
+        vm:
+          clusterName: microk8s-osc
+          keypairName: microK8s-test
+          subregionName: eu-west-2a
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: "io1"
+          role: controlplane
+          loadBalancerName: microk8s
+          vmType: "tinav5.c4r8p1"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: MicroK8sConfigTemplate
+metadata:
+  name: microk8s-osc-md-0
+  namespace: default
+spec:
+  template:
+    spec:        
+      clusterConfiguration:
+        portCompatibilityRemap: true
