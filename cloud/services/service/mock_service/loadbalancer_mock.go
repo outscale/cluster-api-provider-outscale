@@ -80,6 +80,20 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancer(spec, sub
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLoadBalancer", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CreateLoadBalancer), spec, subnetId, securityGroupId)
 }
 
+// CreateLoadBalancerTag mocks base method.
+func (m *MockOscLoadBalancerInterface) CreateLoadBalancerTag(spec *v1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLoadBalancerTag", spec, loadBalancerTag)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateLoadBalancerTag indicates an expected call of CreateLoadBalancerTag.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancerTag(spec, loadBalancerTag interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLoadBalancerTag", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CreateLoadBalancerTag), spec, loadBalancerTag)
+}
+
 // DeleteLoadBalancer mocks base method.
 func (m *MockOscLoadBalancerInterface) DeleteLoadBalancer(spec *v1beta1.OscLoadBalancer) error {
 	m.ctrl.T.Helper()
@@ -92,6 +106,20 @@ func (m *MockOscLoadBalancerInterface) DeleteLoadBalancer(spec *v1beta1.OscLoadB
 func (mr *MockOscLoadBalancerInterfaceMockRecorder) DeleteLoadBalancer(spec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLoadBalancer", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).DeleteLoadBalancer), spec)
+}
+
+// DeleteLoadBalancerTag mocks base method.
+func (m *MockOscLoadBalancerInterface) DeleteLoadBalancerTag(spec *v1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteLoadBalancerTag", spec, loadBalancerTag)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteLoadBalancerTag indicates an expected call of DeleteLoadBalancerTag.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) DeleteLoadBalancerTag(spec, loadBalancerTag interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLoadBalancerTag", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).DeleteLoadBalancerTag), spec, loadBalancerTag)
 }
 
 // GetLoadBalancer mocks base method.
@@ -107,6 +135,21 @@ func (m *MockOscLoadBalancerInterface) GetLoadBalancer(spec *v1beta1.OscLoadBala
 func (mr *MockOscLoadBalancerInterfaceMockRecorder) GetLoadBalancer(spec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLoadBalancer", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).GetLoadBalancer), spec)
+}
+
+// GetLoadBalancerTag mocks base method.
+func (m *MockOscLoadBalancerInterface) GetLoadBalancerTag(spec *v1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLoadBalancerTag", spec)
+	ret0, _ := ret[0].(*osc.LoadBalancerTag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLoadBalancerTag indicates an expected call of GetLoadBalancerTag.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) GetLoadBalancerTag(spec interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLoadBalancerTag", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).GetLoadBalancerTag), spec)
 }
 
 // LinkLoadBalancerBackendMachines mocks base method.
