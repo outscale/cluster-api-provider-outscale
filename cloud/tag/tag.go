@@ -28,7 +28,6 @@ import (
 )
 
 // AddTag add a tag to a resource
-//func AddTag(tagKey string, tagValue string, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
 func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
 	var httpRes *http.Response
 	addTagNameCallBack := func() (bool, error) {
