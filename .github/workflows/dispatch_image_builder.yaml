@@ -7,15 +7,19 @@ jobs:
     runs-on: [self-hosted, linux]
     strategy:
       matrix:
-        version: ${{ github.event.client_payload.versions }}
         include:
           - environment: eu-west-2
-          - environment: cloudgouv-eu-west-1 
-    environment: ${{ matrix.environment }}
+            version: ${{ github.event.client_payload.versions }}
+          - environment: cloudgouv-eu-west-1
+            version: ${{ github.event.client_payload.versions }}
+          - environment: ap-northeast-1
+            version: ${{ github.event.client_payload.versions }}
+    environment:
+      name: ${{ matrix.environment }}
     steps:
     - uses: actions/checkout@v3
       with:
-        repository: outscale-dev/cluster-api-provider-outscale
+        repository: outscale/cluster-api-provider-outscale
         ref: main
         path: cluster-api-provider-outscale
     - name: Use rust with rustfmt
@@ -74,3 +78,12 @@ jobs:
          PACKER_LOG: 1 
          LANG: C.UTF-8
          LC_ALL: C.UTF-8
+    - name: Install gh
+      run: make install-gh
+      working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
+    - name: Generate image docs
+      if: ${{ matrix.environment == 'eu-west-2' }}
+      run: K8S_VERSION=${{ matrix.version[0] }} make generate-image-docs
+      env:
+        SECRET_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+      working-directory: ${{ github.workspace }}/cluster-api-provider-outscale
