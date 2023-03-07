@@ -67,62 +67,37 @@ function check_gh {
     else 
         echo "GIT_USEREMAIL is set to '$GIT_USEREMAIL'"
     fi
-  }
-
-# get_file return image file version
-function get_file {
-    if curl --head --silent -i --fail "$IMAGE_URL/$1" 2>/dev/null;
-    then
-        echo "$IMAGE_URL/$1 exist"
-        curl "$IMAGE_URL/$1" -o "$1"
+    if [ -z "${K8S_VERSION}" ]; then
+        echo "K8S_VERSION is unset";
+        echo "Set Default Values";
+        K8S_VERSION="v1.26.2"
     else
-        echo "$IMAGE_URL/$1 does not exist"
-    fi
-}
-
-# get_version return kubernetes version.
-function get_version {
-    if [ -f "$1" ];
-    then
-        version=$(jq .kubernetes_semver "$1")
-        echo "$version"
-        rm -f "$1"
-    else
-        echo "the file $1 does not exist"
+        echo "K8S_VERSION is set to '$K8S_VERSION'"
     fi
 }
 
 # get_name return version name.
 function get_name {
   declare -A hashmap
-  hashmap["centos-7"]="7.7"
   hashmap["ubuntu-2004"]="2004"
   date=$(get_date)
   echo "$date"
   for os_target in "${IMAGE_TARGET[@]}"
   do
-    for version in {21..25}
-    do
-      get_file overwrite-1-"${version}".json
-      k8s_version=$(get_version overwrite-1-"${version}".json | tr -d '"')
-      image_version="${os_target}-${hashmap[$os_target]}-${k8s_version}-${date}"
+      image_version="${os_target}-${hashmap[$os_target]}-${K8S_VERSION}-${date}"
       echo "${image_version}"
-      if [[ "$os_target" == "centos-7" ]]
-      then
-        sed -i "/^centos:/a - ${image_version}" "$root"/$GIT_FILE_PATH
-      elif [[ "$os_target" == "ubuntu-2004" ]]
+      if [[ "$os_target" == "ubuntu-2004" ]]
       then
         sed -i "/^ubuntu:/a - ${image_version}"  "$root"/$GIT_FILE_PATH
       else
         echo "os version not found"
       fi
-    done
   done
-  "$root"/.github/scripts/git_command.sh -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -u "${GIT_CURRENT_BRANCH}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -t add_"${k8s_version}" -b add-k8s-"${k8s_version}" -m Update_kubernetes_OMI_"${k8s_version}" -c add_"${k8s_version}" -p "$GIT_FILE_PATH" -g "$root"/bin/gh
+  "$root"/.github/scripts/git_command.sh -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -u "${GIT_CURRENT_BRANCH}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -t add_"${K8S_VERSION}" -b add-k8s-"${K8S_VERSION}" -m Update_kubernetes_OMI_"${K8S_VERSION}" -c add_"${K8S_VERSION}" -p "$GIT_FILE_PATH" -g "$root"/bin/gh
 }
 
 
-optstring=":u:t:c:o:r:n:e:"
+optstring=":u:t:c:o:r:n:e:k:"
 while getopts ${optstring} arg; do
   case ${arg} in
     u)
@@ -145,6 +120,9 @@ while getopts ${optstring} arg; do
       ;;
     e)
       GIT_USEREMAIL=${OPTARG}
+      ;;
+    k)
+      K8S_VERSION=${OPTARG}
       ;;
     *)
       echo "showing usage!"
