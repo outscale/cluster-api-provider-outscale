@@ -20,7 +20,7 @@ on:
       - "!hack/json-format/Makefile"
       - "!hack/json-format/Cargo.*"
       - "!hack/json-format/tests/*.rs"
-  pull_request_target:
+  pull_request:
     branches: [ main ]
     paths:
       - "**.go"
