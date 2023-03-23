@@ -38,6 +38,9 @@ type OscLoadBalancerInterface interface {
 	LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
 	UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
 	CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
+	GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error)
+	CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error
+	DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
 }
 
 // GetName return the name of the loadBalancer
@@ -250,6 +253,92 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 	}
 }
 
+// GetLoadBalancerTag retrieve loadBalancer object from spec
+func (s *Service) GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
+	loadBalancerName, err := s.GetName(spec)
+	if err != nil {
+		return nil, err
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	readLoadBalancerTagRequest := osc.ReadLoadBalancerTagsRequest{
+		LoadBalancerNames: []string{loadBalancerName},
+	}
+	var readLoadBalancerTagsResponse osc.ReadLoadBalancerTagsResponse
+	readLoadBalancerTagCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		readLoadBalancerTagsResponse, httpRes, err = oscApiClient.LoadBalancerApi.ReadLoadBalancerTags(oscAuthClient).ReadLoadBalancerTagsRequest(readLoadBalancerTagRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", readLoadBalancerTagRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, fmt.Errorf("%w failed to read Tag Name", err)
+		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readLoadBalancerTagCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	var tag []osc.LoadBalancerTag
+	tags, ok := readLoadBalancerTagsResponse.GetTagsOk()
+	if !ok {
+		return nil, errors.New("Can not get tags")
+	}
+	if len(*tags) == 0 {
+		return nil, nil
+	} else {
+		tag = append(tag, *tags...)
+		return &tag[0], nil
+	}
+}
+
+// CreateLoadBalancerTag create the load balancer tag
+func (s *Service) CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
+	loadBalancerName, err := s.GetName(spec)
+	if err != nil {
+		return err
+	}
+	createLoadBalancerTagRequest := osc.CreateLoadBalancerTagsRequest{
+		LoadBalancerNames: []string{loadBalancerName},
+		Tags:              []osc.ResourceTag{loadBalancerTag},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	createLoadBalancerTagCallBack := func() (bool, error) {
+		_, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancerTags(oscAuthClient).CreateLoadBalancerTagsRequest(createLoadBalancerTagRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				fmt.Printf("Error with http result %s", httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", createLoadBalancerTagRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, fmt.Errorf("%w failed to add Tag", err)
+		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, createLoadBalancerTagCallBack)
+	if waitErr != nil {
+		return waitErr
+	}
+	return nil
+}
+
 // CreateLoadBalancer create the load balancer
 func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
 	loadBalancerName, err := s.GetName(spec)
@@ -347,6 +436,45 @@ func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	}
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, deleteLoadBalancerCallBack)
+	if waitErr != nil {
+		return waitErr
+	}
+	return nil
+}
+
+// DeleteLoadBalancerTag delete the loadbalancerTag
+func (s *Service) DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
+	loadBalancerName, err := s.GetName(spec)
+	if err != nil {
+		return err
+	}
+	deleteLoadBalancerTagRequest := osc.DeleteLoadBalancerTagsRequest{
+		LoadBalancerNames: []string{loadBalancerName},
+		Tags:              []osc.ResourceLoadBalancerTag{loadBalancerTag},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	deleteLoadBalancerTagCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		_, httpRes, err = oscApiClient.LoadBalancerApi.DeleteLoadBalancerTags(oscAuthClient).DeleteLoadBalancerTagsRequest(deleteLoadBalancerTagRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deleteLoadBalancerTagRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteLoadBalancerTagCallBack)
 	if waitErr != nil {
 		return waitErr
 	}
