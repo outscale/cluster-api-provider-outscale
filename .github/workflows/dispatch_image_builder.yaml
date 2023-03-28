@@ -48,8 +48,8 @@ jobs:
     - name: generate file
       shell: bash
       run: |
-        kubernetes_series=`echo ${{ matrix.version }} | cut -d "." -f1-2`
-        kubernetes_semver=`echo ${{ matrix.version }}`
+        kubernetes_series=`echo ${{ matrix.version[0] }} | cut -d "." -f1-2`
+        kubernetes_semver=`echo ${{ matrix.version[0] }}`
         ./json_format -r ${kubernetes_semver} -v ${kubernetes_series} -o overwrite-k8s.json 
         cat overwrite-k8s.json 
         cp overwrite-k8s.json  $GITHUB_WORKSPACE/add-outscale-image/images/capi
