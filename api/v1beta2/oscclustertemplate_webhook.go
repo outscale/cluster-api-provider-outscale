@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta2
 
 import (
 	"reflect"
@@ -39,7 +39,8 @@ func (r *OscClusterTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclustertemplates,verbs=create;update,versions=v1beta1,name=moscclustertemplate.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta2-oscclustertemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclustertemplates,verbs=create;update,versions=v1beta2,name=moscclustertemplate.kb.io,admissionReviewVersions=v1;v1beta1
+//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta2-oscclustertemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclustertemplates,verbs=create;update,versions=v1beta2,name=voscclustertemplate.kb.io,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Defaulter = &OscClusterTemplate{}
 
@@ -47,9 +48,6 @@ func (r *OscClusterTemplate) Default() {
 	oscClusterTemplateLog.Info("default", "name", r.Name)
 
 }
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclustertemplates,verbs=create;update,versions=v1beta1,name=voscclustertemplate.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &OscClusterTemplate{}
 

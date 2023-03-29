@@ -25,7 +25,7 @@ import (
 
 	"github.com/Jeffail/gabs"
 	"github.com/benbjohnson/clock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -92,7 +92,7 @@ func checkSecurityGroupRuleOscDuplicateName(clusterScope *scope.ClusterScope) er
 
 // checkSecurityGroupFormatParameters check securityGroup parameters format (Tag format, cidr format, ..)
 func checkSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
+	var securityGroupsSpec []*infrastructurev1beta2.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.SecurityGroups == nil {
 		networkSpec.SetSecurityGroupDefaultValue()
@@ -108,7 +108,7 @@ func checkSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (strin
 			return securityGroupTagName, err
 		}
 		securityGroupDescription := securityGroupSpec.Description
-		_, err = infrastructurev1beta1.ValidateDescription(securityGroupDescription)
+		_, err = infrastructurev1beta2.ValidateDescription(securityGroupDescription)
 		if err != nil {
 			return securityGroupTagName, err
 		}
@@ -118,7 +118,7 @@ func checkSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (strin
 
 // checkFormatParameters check every securityGroupRule parameters format (Tag format, cidr format, ..)
 func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
+	var securityGroupsSpec []*infrastructurev1beta2.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.SecurityGroups == nil {
 		networkSpec.SetSecurityGroupDefaultValue()
@@ -136,27 +136,27 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleFlow := securityGroupRuleSpec.Flow
-			_, err = infrastructurev1beta1.ValidateFlow(securityGroupRuleFlow)
+			_, err = infrastructurev1beta2.ValidateFlow(securityGroupRuleFlow)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleIpProtocol := securityGroupRuleSpec.IpProtocol
-			_, err = infrastructurev1beta1.ValidateIpProtocol(securityGroupRuleIpProtocol)
+			_, err = infrastructurev1beta2.ValidateIpProtocol(securityGroupRuleIpProtocol)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
-			_, err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
+			_, err = infrastructurev1beta2.ValidateCidr(securityGroupRuleIpRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
-			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleFromPortRange)
+			_, err = infrastructurev1beta2.ValidatePort(securityGroupRuleFromPortRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
-			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleToPortRange)
+			_, err = infrastructurev1beta2.ValidatePort(securityGroupRuleToPortRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
@@ -167,7 +167,7 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 }
 
 // reconcileSecurityGroupRule reconcile the securityGroupRule of the cluster.
-func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRuleSpec infrastructurev1beta1.OscSecurityGroupRule, securityGroupName string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRuleSpec infrastructurev1beta2.OscSecurityGroupRule, securityGroupName string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	//osccluster := clusterScope.OscCluster
 
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
@@ -325,7 +325,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 }
 
 // ReconcileRoute reconcile the RouteTable and the Route of the cluster.
-func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRuleSpec infrastructurev1beta1.OscSecurityGroupRule, securityGroupName string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRuleSpec infrastructurev1beta2.OscSecurityGroupRule, securityGroupName string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 
@@ -360,7 +360,7 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
+	var securityGroupsSpec []*infrastructurev1beta2.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.SecurityGroups == nil {
 		networkSpec.SetSecurityGroupDefaultValue()

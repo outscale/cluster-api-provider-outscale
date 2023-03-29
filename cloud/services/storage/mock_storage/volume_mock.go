@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	v1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -51,7 +51,7 @@ func (mr *MockOscVolumeInterfaceMockRecorder) CheckVolumeState(clockInsideLoop, 
 }
 
 // CreateVolume mocks base method.
-func (m *MockOscVolumeInterface) CreateVolume(spec *v1beta1.OscVolume, volumeName string) (*osc.Volume, error) {
+func (m *MockOscVolumeInterface) CreateVolume(spec *v1beta2.OscVolume, volumeName string) (*osc.Volume, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateVolume", spec, volumeName)
 	ret0, _ := ret[0].(*osc.Volume)

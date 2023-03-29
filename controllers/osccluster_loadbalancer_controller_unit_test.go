@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
@@ -35,23 +35,23 @@ import (
 )
 
 var (
-	defaultLoadBalancerInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultLoadBalancerInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -63,7 +63,7 @@ var (
 					},
 				},
 			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 				LoadBalancerName:  "test-loadbalancer",
 				LoadBalancerType:  "internet-facing",
 				SubnetName:        "test-subnet",
@@ -72,26 +72,26 @@ var (
 		},
 	}
 
-	defaultLoadBalancerReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultLoadBalancerReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
 					ResourceId:  "sg-test-securitygroup-uid",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -103,7 +103,7 @@ var (
 					},
 				},
 			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 				LoadBalancerName:  "test-loadbalancer",
 				LoadBalancerType:  "internet-facing",
 				SubnetName:        "test-subnet",
@@ -114,7 +114,7 @@ var (
 )
 
 // SetupWithLoadBalancerMock set loadBalancerMock with clusterScope and osccluster
-func SetupWithLoadBalancerMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface) {
+func SetupWithLoadBalancerMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscLoadBalancerInterface = mock_service.NewMockOscLoadBalancerInterface(mockCtrl)
@@ -127,7 +127,7 @@ func SetupWithLoadBalancerMock(t *testing.T, name string, spec infrastructurev1b
 func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                                  string
-		spec                                                  infrastructurev1beta1.OscClusterSpec
+		spec                                                  infrastructurev1beta2.OscClusterSpec
 		expCheckLoadBalancerSubnetOscAssociateResourceNameErr error
 	}{
 		{
@@ -137,23 +137,23 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check loadBalancer association with bad subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -165,7 +165,7 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet-test",
@@ -194,13 +194,13 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                    string
-		spec                                    infrastructurev1beta1.OscClusterSpec
+		spec                                    infrastructurev1beta2.OscClusterSpec
 		expCheckLoadBalancerFormatParametersErr error
 	}{
 		{
 			name: "check success without loadBalancer spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckLoadBalancerFormatParametersErr: nil,
 		},
@@ -211,9 +211,9 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid name loadBalancer",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer@test",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
@@ -225,9 +225,9 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid type loadBalancer",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet",
 						SubnetName:        "test-subnet",
@@ -239,10 +239,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid backend port loadBalancer",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						Listener: infrastructurev1beta1.OscLoadBalancerListener{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						Listener: infrastructurev1beta2.OscLoadBalancerListener{
 							BackendPort:          65537,
 							BackendProtocol:      "TCP",
 							LoadBalancerPort:     6443,
@@ -255,10 +255,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid backend protocol loadBalancer",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						Listener: infrastructurev1beta1.OscLoadBalancerListener{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						Listener: infrastructurev1beta2.OscLoadBalancerListener{
 							BackendPort:          6443,
 							BackendProtocol:      "SCTP",
 							LoadBalancerPort:     6443,
@@ -271,10 +271,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer port",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						Listener: infrastructurev1beta1.OscLoadBalancerListener{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						Listener: infrastructurev1beta2.OscLoadBalancerListener{
 							BackendPort:          6443,
 							BackendProtocol:      "TCP",
 							LoadBalancerPort:     65537,
@@ -287,10 +287,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer protocol",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						Listener: infrastructurev1beta1.OscLoadBalancerListener{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						Listener: infrastructurev1beta2.OscLoadBalancerListener{
 							BackendPort:          6443,
 							BackendProtocol:      "TCP",
 							LoadBalancerPort:     6443,
@@ -303,10 +303,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer health check interval",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						HealthCheck: infrastructurev1beta1.OscLoadBalancerHealthCheck{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
 							CheckInterval:      602,
 							HealthyThreshold:   10,
 							Port:               6443,
@@ -321,10 +321,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer healthcheck healthy threshold",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						HealthCheck: infrastructurev1beta1.OscLoadBalancerHealthCheck{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
 							CheckInterval:      30,
 							HealthyThreshold:   12,
 							Port:               6443,
@@ -339,10 +339,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer healthcheck port",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						HealthCheck: infrastructurev1beta1.OscLoadBalancerHealthCheck{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
 							CheckInterval:      30,
 							HealthyThreshold:   10,
 							Port:               65537,
@@ -357,10 +357,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer healthcheck protocol",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						HealthCheck: infrastructurev1beta1.OscLoadBalancerHealthCheck{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
 							CheckInterval:      30,
 							HealthyThreshold:   10,
 							Port:               6443,
@@ -375,10 +375,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer healthcheck timeout",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						HealthCheck: infrastructurev1beta1.OscLoadBalancerHealthCheck{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
 							CheckInterval:      30,
 							HealthyThreshold:   10,
 							Port:               6443,
@@ -393,10 +393,10 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check invalid loadBalancer healthcheck unhealthy threshold",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						HealthCheck: infrastructurev1beta1.OscLoadBalancerHealthCheck{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
+						HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
 							CheckInterval:      30,
 							HealthyThreshold:   10,
 							Port:               6443,
@@ -429,7 +429,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                                        string
-		spec                                                        infrastructurev1beta1.OscClusterSpec
+		spec                                                        infrastructurev1beta2.OscClusterSpec
 		expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr error
 	}{
 		{
@@ -439,23 +439,23 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check loadBalancer association with bad securitygroup",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -467,7 +467,7 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
@@ -495,7 +495,7 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 func TestReconcileLoadBalancer(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound          bool
 		expSubnetFound                bool
 		expSecurityGroupFound         bool
@@ -691,7 +691,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 func TestReconcileLoadBalancerGet(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound          bool
 		expSubnetFound                bool
 		expSecurityGroupFound         bool
@@ -821,7 +821,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 func TestReconcileLoadBalancerGetTag(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound          bool
 		expSubnetFound                bool
 		expSecurityGroupFound         bool
@@ -985,7 +985,8 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 func TestReconcileLoadBalancerCreate(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
+		expTagFound                 bool
 		expCreateLoadBalancerErr    error
 		expConfigureLoadBalancerErr error
 		expDescribeLoadBalancerErr  error
@@ -1040,7 +1041,7 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 func TestReconcileLoadBalancerResourceId(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
 		expSubnetFound              bool
 		expSecurityGroupFound       bool
 		expDescribeLoadBalancerErr  error
@@ -1104,7 +1105,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                string
-		spec                                infrastructurev1beta1.OscClusterSpec
+		spec                                infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound                bool
 		expGetLoadBalancerTagFound          bool
 		expDeleteLoadBalancerTagFound       bool
@@ -1222,7 +1223,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                  string
-		spec                                  infrastructurev1beta1.OscClusterSpec
+		spec                                  infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound                  bool
 		expGetLoadBalancerTagFound            bool
 		expDeleteLoadBalancerTagFound         bool
@@ -1366,7 +1367,7 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                  string
-		spec                                  infrastructurev1beta1.OscClusterSpec
+		spec                                  infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound                  bool
 		expGetLoadBalancerTagFound            bool
 		expDeleteLoadBalancerTagFound         bool
@@ -1482,7 +1483,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                                  string
-		spec                                  infrastructurev1beta1.OscClusterSpec
+		spec                                  infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound                  bool
 		expGetLoadBalancerTagFound            bool
 		expCheckLoadBalancerDeregisterVmFound bool
@@ -1572,7 +1573,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 func TestReconcileDeleteLoadBalancerGet(t *testing.T) {
 	loadBalancerTestCases := []struct {
 		name                              string
-		spec                              infrastructurev1beta1.OscClusterSpec
+		spec                              infrastructurev1beta2.OscClusterSpec
 		expLoadBalancerFound              bool
 		expDescribeLoadBalancerErr        error
 		expReconcileDeleteLoadBalancerErr error

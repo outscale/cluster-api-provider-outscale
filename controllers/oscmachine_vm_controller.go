@@ -19,10 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
@@ -34,6 +32,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strings"
+	"time"
 )
 
 // getVmResourceId return the vmId from the resourceMap base on resourceName (tag name + cluster uid)
@@ -182,44 +182,44 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	imageName := imageSpec.Name
 
 	if imageName != "" {
-		_, err = infrastructurev1beta1.ValidateImageName(imageName)
+		_, err = infrastructurev1beta2.ValidateImageName(imageName)
 		if err != nil {
 			return vmTagName, err
 		}
 	} else {
-		_, err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
+		_, err = infrastructurev1beta2.ValidateImageId(vmSpec.ImageId)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 
 	vmKeypairName := vmSpec.KeypairName
-	_, err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
+	_, err = infrastructurev1beta2.ValidateKeypairName(vmKeypairName)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmType := vmSpec.VmType
-	_, err = infrastructurev1beta1.ValidateVmType(vmType)
+	_, err = infrastructurev1beta2.ValidateVmType(vmType)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmDeviceName := vmSpec.DeviceName
-	_, err = infrastructurev1beta1.ValidateDeviceName(vmDeviceName)
+	_, err = infrastructurev1beta2.ValidateDeviceName(vmDeviceName)
 	if err != nil {
 		return vmTagName, err
 	}
 	if vmSpec.VolumeDeviceName != "" {
 		vmVolumeDeviceName := vmSpec.VolumeDeviceName
-		_, err = infrastructurev1beta1.ValidateDeviceName(vmVolumeDeviceName)
+		_, err = infrastructurev1beta2.ValidateDeviceName(vmVolumeDeviceName)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 
 	vmSubregionName := vmSpec.SubregionName
-	_, err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
+	_, err = infrastructurev1beta2.ValidateSubregionName(vmSubregionName)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -228,7 +228,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	machineScope.V(4).Info("Get vmSubnetName", "vmSubnetName", vmSubnetName)
 	ipSubnetRange := clusterScope.GetIpSubnetRange(vmSubnetName)
 	vmPrivateIps := machineScope.GetVmPrivateIps()
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
+	var subnetsSpec []*infrastructurev1beta2.OscSubnet
 	networkSpec := clusterScope.GetNetwork()
 	networkSpec.SetSubnetDefaultValue()
 	subnetsSpec = networkSpec.Subnets
@@ -250,21 +250,21 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if vmSpec.RootDisk.RootDiskIops != 0 {
 		rootDiskIops := vmSpec.RootDisk.RootDiskIops
 		machineScope.V(4).Info("Check rootDiskIops", "rootDiskIops", rootDiskIops)
-		_, err := infrastructurev1beta1.ValidateIops(rootDiskIops)
+		_, err := infrastructurev1beta2.ValidateIops(rootDiskIops)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 	rootDiskSize := vmSpec.RootDisk.RootDiskSize
 	machineScope.V(4).Info("Check rootDiskSize", "rootDiskSize", rootDiskSize)
-	_, err = infrastructurev1beta1.ValidateSize(rootDiskSize)
+	_, err = infrastructurev1beta2.ValidateSize(rootDiskSize)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	rootDiskType := vmSpec.RootDisk.RootDiskType
 	machineScope.V(4).Info("Check rootDiskType", "rootDiskTyp", rootDiskType)
-	_, err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
+	_, err = infrastructurev1beta2.ValidateVolumeType(rootDiskType)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -272,7 +272,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if vmSpec.RootDisk.RootDiskType == "io1" && vmSpec.RootDisk.RootDiskIops != 0 && vmSpec.RootDisk.RootDiskSize != 0 {
 		ratioRootDiskSizeIops := vmSpec.RootDisk.RootDiskIops / vmSpec.RootDisk.RootDiskSize
 		machineScope.V(4).Info("Check ratio rootdisk size iops", "ratioRootDiskSizeIops", ratioRootDiskSizeIops)
-		_, err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
+		_, err = infrastructurev1beta2.ValidateRatioSizeIops(ratioRootDiskSizeIops)
 		if err != nil {
 			return vmTagName, err
 		}
@@ -321,7 +321,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 	var publicIpId string
 	var vmPublicIpName string
-	var linkPublicIpRef *infrastructurev1beta1.OscResourceReference
+	var linkPublicIpRef *infrastructurev1beta2.OscResourceReference
 	if vmSpec.PublicIpName != "" {
 		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
 		publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)
@@ -404,10 +404,10 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 		vmState, err := vmSvc.GetVmState(vmId)
 		if err != nil {
-			machineScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
+			machineScope.SetVmState(infrastructurev1beta2.VmState("unknown"))
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s state for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
 		}
-		machineScope.SetVmState(infrastructurev1beta1.VmState(vmState))
+		machineScope.SetVmState(infrastructurev1beta2.VmState(vmState))
 		machineScope.V(4).Info("Get vm state", "vmState", vmState)
 	}
 	if (vm == nil && tag == nil) || (vmSpec.ResourceId == "" && tag == nil) {
@@ -430,7 +430,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
 		}
 		machineScope.V(4).Info("Vm is running", "vmId", vmID)
-		machineScope.SetVmState(infrastructurev1beta1.VmState("pending"))
+		machineScope.SetVmState(infrastructurev1beta2.VmState("pending"))
 		if vmSpec.VolumeName != "" {
 			err = volumeSvc.CheckVolumeState(20, 240, "available", volumeId)
 			if err != nil {

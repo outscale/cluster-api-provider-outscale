@@ -26,7 +26,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -36,35 +36,35 @@ import (
 )
 
 var (
-	defaultKeyClusterInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultKeyClusterInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
 		},
 	}
-	defaultKeyClusterReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultKeyClusterReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
 		},
 	}
-	defaultKeyPairInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			KeyPair: infrastructurev1beta1.OscKeypair{
+	defaultKeyPairInitialize = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			KeyPair: infrastructurev1beta2.OscKeypair{
 				Name:      "test-keypair",
 				PublicKey: generateSSHPublicKey(),
 			},
 		},
 	}
 
-	defaultKeyPairReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			KeyPair: infrastructurev1beta1.OscKeypair{
+	defaultKeyPairReconcile = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			KeyPair: infrastructurev1beta2.OscKeypair{
 				Name:       "test-keypair",
 				PublicKey:  generateSSHPublicKey(),
 				ResourceId: "test-keypair-uid",
@@ -83,8 +83,8 @@ func generateSSHPublicKey() string {
 }
 
 // SetupWithKeyPairMock set keyPairMock with clusterScope and osccluster
-func SetupWithKeyPairMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscKeyPairInterface *mock_security.MockOscKeyPairInterface) {
-	clusterScope, machineScope = SetupMachine(t, name, spec, machineSpec)
+func SetupWithKeyPairMock(t *testing.T, name string, clusterSpec infrastructurev1beta2.OscClusterSpec, machineSpec infrastructurev1beta2.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscKeyPairInterface *mock_security.MockOscKeyPairInterface) {
+	clusterScope, machineScope = SetupMachine(t, name, clusterSpec, machineSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscKeyPairInterface = mock_security.NewMockOscKeyPairInterface(mockCtrl)
 	ctx = context.Background()
@@ -95,8 +95,8 @@ func SetupWithKeyPairMock(t *testing.T, name string, spec infrastructurev1beta1.
 func TestGetKeyPairResourceId(t *testing.T) {
 	keyPairTestCases := []struct {
 		name                       string
-		spec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                infrastructurev1beta1.OscMachineSpec
+		spec                       infrastructurev1beta2.OscClusterSpec
+		machineSpec                infrastructurev1beta2.OscMachineSpec
 		expKeyPairFound            bool
 		expGetKeyPairResourceIdErr error
 	}{
@@ -110,8 +110,8 @@ func TestGetKeyPairResourceId(t *testing.T) {
 		{
 			name: "can not get keyPairID",
 			spec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expKeyPairFound:            false,
 			expGetKeyPairResourceIdErr: fmt.Errorf(" does not exist"),
@@ -143,16 +143,16 @@ func TestGetKeyPairResourceId(t *testing.T) {
 func TestCheckKeyPairFormatParameters(t *testing.T) {
 	keypairTestCases := []struct {
 		name                               string
-		clusterSpec                        infrastructurev1beta1.OscClusterSpec
-		machineSpec                        infrastructurev1beta1.OscMachineSpec
+		clusterSpec                        infrastructurev1beta2.OscClusterSpec
+		machineSpec                        infrastructurev1beta2.OscMachineSpec
 		expCheckKeyPairFormatParametersErr error
 	}{
 		{
 			name:        "check keypair format",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						Name:      "test-keypair",
 						PublicKey: generateSSHPublicKey(),
 					},
@@ -163,17 +163,17 @@ func TestCheckKeyPairFormatParameters(t *testing.T) {
 		{
 			name:        "Check work without spec (with default values)",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expCheckKeyPairFormatParametersErr: nil,
 		},
 		{
 			name:        "Check Bad name keypair",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						Name:      "!test-keypair@Name",
 						PublicKey: generateSSHPublicKey(),
 					},
@@ -200,8 +200,8 @@ func TestCheckKeyPairFormatParameters(t *testing.T) {
 func TestReconcileKeyPairGet(t *testing.T) {
 	keypairTestCases := []struct {
 		name                   string
-		spec                   infrastructurev1beta1.OscClusterSpec
-		machineSpec            infrastructurev1beta1.OscMachineSpec
+		spec                   infrastructurev1beta2.OscClusterSpec
+		machineSpec            infrastructurev1beta2.OscMachineSpec
 		expKeyPairFound        bool
 		expValidateKeyPairs    bool
 		expReconcileKeyPairErr error
@@ -209,9 +209,9 @@ func TestReconcileKeyPairGet(t *testing.T) {
 		{
 			name: "check keypair exist",
 			spec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						Name:      "test-keypairValid",
 						PublicKey: "00",
 					},
@@ -224,8 +224,8 @@ func TestReconcileKeyPairGet(t *testing.T) {
 		{
 			name: "failed to get keypair",
 			spec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
@@ -280,8 +280,8 @@ func TestReconcileKeyPairGet(t *testing.T) {
 func TestReconcileKeyPairCreate(t *testing.T) {
 	keypairTestCases := []struct {
 		name                   string
-		spec                   infrastructurev1beta1.OscClusterSpec
-		machineSpec            infrastructurev1beta1.OscMachineSpec
+		spec                   infrastructurev1beta2.OscClusterSpec
+		machineSpec            infrastructurev1beta2.OscMachineSpec
 		expKeyPairFound        bool
 		expValidateKeyPairs    bool
 		expGetKeyPairErr       error
@@ -292,8 +292,8 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 		{
 			name: "failed to create keypair ",
 			spec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expValidateKeyPairs:    false,
 			expCreateKeyPairFound:  false,
@@ -304,8 +304,8 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 		{
 			name: "create keypair (first time reconcile loop)",
 			spec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
@@ -318,8 +318,8 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 		{
 			name: "user delete keypair without cluster-api",
 			spec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
@@ -376,8 +376,8 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 func TestReconcileDeleteKeyPairGet(t *testing.T) {
 	keypairTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
-		machineSpec                  infrastructurev1beta1.OscMachineSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
+		machineSpec                  infrastructurev1beta2.OscMachineSpec
 		expReconcileDeleteKeyPairErr error
 		expGetKeyPairErr             error
 		expDeleteKeyPairErr          error
@@ -388,9 +388,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		{
 			name:        "failed to delete keypair removed outside cluster api ",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						DeleteKeypair: true,
 					},
 				},
@@ -406,9 +406,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		{
 			name:        "failed to delete keypair ",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						DeleteKeypair: true,
 					},
 				},
@@ -424,9 +424,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		{
 			name:        "delete keypair ",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						Name:          "test-keypair",
 						PublicKey:     "00",
 						DeleteKeypair: true,
@@ -444,9 +444,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		{
 			name:        "can not find keypair",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						Name:          "test-keypair",
 						PublicKey:     "00",
 						DeleteKeypair: true,
@@ -464,9 +464,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 		{
 			name:        "keep keypair",
 			clusterSpec: defaultKeyClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					KeyPair: infrastructurev1beta1.OscKeypair{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					KeyPair: infrastructurev1beta2.OscKeypair{
 						Name:          "test-keypair",
 						PublicKey:     "00",
 						DeleteKeypair: false,

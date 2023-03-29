@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -50,7 +50,7 @@ func getRouteResourceId(resourceName string, clusterScope *scope.ClusterScope) (
 
 // checkRouteFormatParameters check Route parameters format (Tag format, cidr format, ..)
 func checkRouteTableFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+	var routeTablesSpec []*infrastructurev1beta2.OscRouteTable
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.RouteTables == nil {
 		networkSpec.SetRouteTableDefaultValue()
@@ -71,7 +71,7 @@ func checkRouteTableFormatParameters(clusterScope *scope.ClusterScope) (string, 
 
 // checkRouteFormatParameters check Route parameters format (Tag format, cidr format, ..)
 func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+	var routeTablesSpec []*infrastructurev1beta2.OscRouteTable
 	routeTablesSpec = clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
@@ -83,7 +83,7 @@ func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error
 			}
 			clusterScope.V(2).Info("Check route destination IpRange parameters")
 			destinationIpRange := routeSpec.Destination
-			_, err = infrastructurev1beta1.ValidateCidr(destinationIpRange)
+			_, err = infrastructurev1beta2.ValidateCidr(destinationIpRange)
 			if err != nil {
 				return routeTagName, err
 			}
@@ -155,7 +155,7 @@ func checkRouteOscDuplicateName(clusterScope *scope.ClusterScope) error {
 }
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
-func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta1.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
+func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta2.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
 	routeRef := clusterScope.GetRouteRef()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
 	resourceName := routeSpec.TargetName + "-" + clusterScope.GetUID()
@@ -199,7 +199,7 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 }
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
-func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta1.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
+func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta2.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 
 	routeTablesRef := clusterScope.GetRouteTablesRef()
@@ -359,7 +359,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 // reconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
 func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
+	var routeTablesSpec []*infrastructurev1beta2.OscRouteTable
 	networkSpec := clusterScope.GetNetwork()
 
 	if networkSpec.RouteTables == nil {

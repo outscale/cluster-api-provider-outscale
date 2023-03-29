@@ -26,40 +26,40 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 )
 
 var (
-	defaultImageClusterInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultImageClusterInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
 		},
 	}
-	defaultImageClusterReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultImageClusterReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
 		},
 	}
-	defaultImageInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Image: infrastructurev1beta1.OscImage{
+	defaultImageInitialize = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Image: infrastructurev1beta2.OscImage{
 				Name: "test-image",
 			},
 		},
 	}
 
-	defaultImageReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Image: infrastructurev1beta1.OscImage{
+	defaultImageReconcile = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Image: infrastructurev1beta2.OscImage{
 				Name:       "test-image",
 				ResourceId: "test-image-uid",
 			},
@@ -68,7 +68,7 @@ var (
 )
 
 // SetupWithImageMock set imageMock with clusterScope and osccluster
-func SetupWithImageMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscImageInterface *mock_compute.MockOscImageInterface) {
+func SetupWithImageMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec, machineSpec infrastructurev1beta2.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscImageInterface *mock_compute.MockOscImageInterface) {
 	clusterScope, machineScope = SetupMachine(t, name, spec, machineSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscImageInterface = mock_compute.NewMockOscImageInterface(mockCtrl)
@@ -80,8 +80,8 @@ func SetupWithImageMock(t *testing.T, name string, spec infrastructurev1beta1.Os
 func TestGetImageResourceId(t *testing.T) {
 	imageTestCases := []struct {
 		name                     string
-		spec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec              infrastructurev1beta1.OscMachineSpec
+		spec                     infrastructurev1beta2.OscClusterSpec
+		machineSpec              infrastructurev1beta2.OscMachineSpec
 		expImageFound            bool
 		expGetImageResourceIdErr error
 	}{
@@ -125,16 +125,16 @@ func TestGetImageResourceId(t *testing.T) {
 func TestCheckImageFormatParameters(t *testing.T) {
 	imageTestCases := []struct {
 		name                             string
-		clusterSpec                      infrastructurev1beta1.OscClusterSpec
-		machineSpec                      infrastructurev1beta1.OscMachineSpec
+		clusterSpec                      infrastructurev1beta2.OscClusterSpec
+		machineSpec                      infrastructurev1beta2.OscMachineSpec
 		expCheckImageFormatParametersErr error
 	}{
 		{
 			name:        "check Image format",
 			clusterSpec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name: "test-Image",
 					},
 				},
@@ -144,17 +144,17 @@ func TestCheckImageFormatParameters(t *testing.T) {
 		{
 			name:        "Check work without spec (with default values)",
 			clusterSpec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expCheckImageFormatParametersErr: nil,
 		},
 		{
 			name:        "Check Bad name image",
 			clusterSpec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name: "!test-image@Name",
 					},
 				},
@@ -180,8 +180,8 @@ func TestCheckImageFormatParameters(t *testing.T) {
 func TestReconcileImageGet(t *testing.T) {
 	imageTestCases := []struct {
 		name                 string
-		spec                 infrastructurev1beta1.OscClusterSpec
-		machineSpec          infrastructurev1beta1.OscMachineSpec
+		spec                 infrastructurev1beta2.OscClusterSpec
+		machineSpec          infrastructurev1beta2.OscMachineSpec
 		expImageFound        bool
 		expImageNameFound    bool
 		expImageErr          bool
@@ -193,9 +193,9 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "check image exist",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name: "test-image",
 					},
 				},
@@ -211,13 +211,13 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "reconcile image",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name:       "test-image",
 						ResourceId: "test-image-uid",
 					},
-					Vm: infrastructurev1beta1.OscVm{
+					Vm: infrastructurev1beta2.OscVm{
 						Name:    "test-vm",
 						ImageId: "omi-image",
 					},
@@ -234,13 +234,13 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "failed to get image",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name:       "test-image",
 						ResourceId: "test-image-uid",
 					},
-					Vm: infrastructurev1beta1.OscVm{
+					Vm: infrastructurev1beta2.OscVm{
 						Name:    "test-vm",
 						ImageId: "omi-image",
 					},
@@ -257,13 +257,13 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "find no image",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name:       "test-image",
 						ResourceId: "test-image-uid",
 					},
-					Vm: infrastructurev1beta1.OscVm{
+					Vm: infrastructurev1beta2.OscVm{
 						Name:    "test-vm",
 						ImageId: "omi-image",
 					},
@@ -280,9 +280,9 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "failed to get imageName",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Vm: infrastructurev1beta2.OscVm{
 						ImageId: "omi-image",
 					},
 				},
@@ -298,9 +298,9 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "failed to get image",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Vm: infrastructurev1beta2.OscVm{
 						ImageId: "omi-image",
 					},
 				},
@@ -316,12 +316,12 @@ func TestReconcileImageGet(t *testing.T) {
 		{
 			name: "failed to get ImageId",
 			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Image: infrastructurev1beta2.OscImage{
 						Name: "test-image",
 					},
-					Vm: infrastructurev1beta1.OscVm{
+					Vm: infrastructurev1beta2.OscVm{
 						Name: "test-vm",
 					},
 				},

@@ -30,7 +30,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
@@ -41,18 +41,18 @@ import (
 )
 
 var (
-	defaultSecurityGroupInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultSecurityGroupInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -67,19 +67,19 @@ var (
 		},
 	}
 
-	defaultSecurityGroupTagInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultSecurityGroupTagInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
 					Tag:         "OscK8sMainSG",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -94,18 +94,18 @@ var (
 		},
 	}
 
-	defaultSecurityGroupReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultSecurityGroupReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{Name: "test-net",
+			Net: infrastructurev1beta2.OscNet{Name: "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{Name: "test-securitygroup",
 					Description: "test securitygroup",
 					ResourceId:  "sg-test-securitygroup-uid",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -122,7 +122,7 @@ var (
 )
 
 // SetupWithSecurityGroupMock set securityGroupMock with clusterScope and osccluster
-func SetupWithSecurityGroupMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithSecurityGroupMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscSecurityGroupInterface = mock_security.NewMockOscSecurityGroupInterface(mockCtrl)
@@ -136,7 +136,7 @@ func SetupWithSecurityGroupMock(t *testing.T, name string, spec infrastructurev1
 func TestGetSecurityGroupResourceId(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupsFound           bool
 		expGetSecurityGroupResourceIdErr error
 	}{
@@ -182,7 +182,7 @@ func TestGetSecurityGroupResourceId(t *testing.T) {
 func TestGetSecurityGroupRuleResourceId(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                 string
-		spec                                 infrastructurev1beta1.OscClusterSpec
+		spec                                 infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupRuleFound            bool
 		expGetSecurityGroupRuleResourceIdErr error
 	}{
@@ -231,7 +231,7 @@ func TestGetSecurityGroupRuleResourceId(t *testing.T) {
 func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                                     string
-		spec                                     infrastructurev1beta1.OscClusterSpec
+		spec                                     infrastructurev1beta2.OscClusterSpec
 		expCheckSecurityGroupOscDuplicateNameErr error
 	}{
 		{
@@ -241,17 +241,17 @@ func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "get duplicate securitygroup Name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -265,7 +265,7 @@ func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -299,7 +299,7 @@ func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 func TestCheckSecurityGroupRuleOscDuplicateName(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                         string
-		spec                                         infrastructurev1beta1.OscClusterSpec
+		spec                                         infrastructurev1beta2.OscClusterSpec
 		expCheckSecurityGroupRuleOscDuplicateNameErr error
 	}{
 		{
@@ -309,24 +309,24 @@ func TestCheckSecurityGroupRuleOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "get no securityGroup name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckSecurityGroupRuleOscDuplicateNameErr: nil,
 		},
 		{
 			name: " get securityGroup duplicate Name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -368,13 +368,13 @@ func TestCheckSecurityGroupRuleOscDuplicateName(t *testing.T) {
 func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                                     string
-		spec                                     infrastructurev1beta1.OscClusterSpec
+		spec                                     infrastructurev1beta2.OscClusterSpec
 		expCheckSecurityGroupFormatParametersErr error
 	}{
 		{
 			name: "check success without net and securityGroup spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckSecurityGroupFormatParametersErr: nil,
 		},
@@ -385,17 +385,17 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check securityGroup bad name format",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup@test",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -413,17 +413,17 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check securityGroup bad description format",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup λ",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -458,13 +458,13 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                         string
-		spec                                         infrastructurev1beta1.OscClusterSpec
+		spec                                         infrastructurev1beta2.OscClusterSpec
 		expCheckSecurityGroupRuleFormatParametersErr error
 	}{
 		{
 			name: "check work without net  and routetable (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckSecurityGroupRuleFormatParametersErr: nil,
 		},
@@ -475,17 +475,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name SecurityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule@test",
 									Flow:          "Inbound",
@@ -503,17 +503,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Flow SecurityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Nobound",
@@ -531,17 +531,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad IpProtocol SecurityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -559,17 +559,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range Prefix securityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -587,17 +587,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range Ip securityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -615,17 +615,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check bad FromPortRange securityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -643,17 +643,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check bad ToPortRange securityGroupRule",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -689,7 +689,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expCreateSecurityGroupRuleFound             bool
 		expTagFound                                 bool
 		expGetSecurityGroupFromSecurityGroupRuleErr error
@@ -785,7 +785,7 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupRuleFound                   bool
 		expTagFound                                 bool
 		expGetSecurityGroupFromSecurityGroupRuleErr error
@@ -875,7 +875,7 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expGetSecurityGroupfromSecurityGroupRuleErr error
 		expDeleteSecurityGroupRuleErr               error
 		expReconcileDeleteSecurityGroupRuleErr      error
@@ -950,7 +950,7 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expGetSecurityGroupfromSecurityGroupRuleErr error
 		expReconcileDeleteSecurityGroupRuleErr      error
 	}{
@@ -1007,7 +1007,7 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupRuleFound        bool
 		expCreateSecurityGroupRuleFound  bool
 		expTagFound                      bool
@@ -1177,7 +1177,7 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupFound            bool
 		expTagFound                      bool
 		expNetFound                      bool
@@ -1274,7 +1274,7 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expTagFound                      bool
 		expGetSecurityGroupFromNetIdsErr error
 		expCreateSecurityGroupErr        error
@@ -1283,17 +1283,17 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 	}{
 		{
 			name: "failed to create securityGroup",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1381,7 +1381,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expTagFound                      bool
 		expNetFound                      bool
 		expReadTagErr                    error
@@ -1456,7 +1456,7 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 func TestDeleteSecurityGroup(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                                      string
-		spec                                      infrastructurev1beta1.OscClusterSpec
+		spec                                      infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupFound                     bool
 		expLoadBalancerResourceConflict           bool
 		expInvalidDeleteSecurityGroupJsonResponse bool
@@ -1610,7 +1610,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 func TestReconcileDeleteSecurityGroup(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expNetFound                                 bool
 		expSecurityGroupFound                       bool
 		expSecurityGroupRuleFound                   bool
@@ -1725,7 +1725,7 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expSecurityGroupFound                       bool
 		expGetSecurityGroupFromNetIdsErr            error
 		expGetSecurityGroupfromSecurityGroupRuleErr error
@@ -1857,7 +1857,7 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expGetSecurityGroupfromSecurityGroupRuleErr error
 		expGetSecurityGroupFromNetIdsErr            error
 		expDeleteSecurityGroupRuleErr               error
@@ -2012,7 +2012,7 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                               string
-		spec                               infrastructurev1beta1.OscClusterSpec
+		spec                               infrastructurev1beta2.OscClusterSpec
 		expNetFound                        bool
 		expSecurityGroupFound              bool
 		expGetSecurityGroupFromNetIdsErr   error
@@ -2086,7 +2086,7 @@ func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                               string
-		spec                               infrastructurev1beta1.OscClusterSpec
+		spec                               infrastructurev1beta2.OscClusterSpec
 		expNetFound                        bool
 		expReconcileDeleteSecurityGroupErr error
 	}{
@@ -2098,8 +2098,8 @@ func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 		},
 		{
 			name: "check failed without net and securityGroup spec (retrieve default values cluster-api)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expNetFound:                        false,
 			expReconcileDeleteSecurityGroupErr: fmt.Errorf("cluster-api-net-uid does not exist"),

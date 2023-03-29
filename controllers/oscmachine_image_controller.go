@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -30,7 +30,7 @@ import (
 // checkImageFormatParameters check keypair format
 func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error) {
 	var err error
-	var imageSpec *infrastructurev1beta1.OscImage
+	var imageSpec *infrastructurev1beta2.OscImage
 	nodeSpec := machineScope.GetNode()
 	if nodeSpec.Image.Name == "" {
 		return "", nil
@@ -39,7 +39,7 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 	}
 	imageName := imageSpec.Name
 	machineScope.V(2).Info("Check Image parameters")
-	imageName, err = infrastructurev1beta1.ValidateImageName(imageName)
+	imageName, err = infrastructurev1beta2.ValidateImageName(imageName)
 	if err != nil {
 		return imageName, err
 	}
@@ -58,7 +58,7 @@ func getImageResourceId(resourceName string, machineScope *scope.MachineScope) (
 
 // reconcileImage reconcile the image of the machine
 func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, imageSvc compute.OscImageInterface) (reconcile.Result, error) {
-	var imageSpec *infrastructurev1beta1.OscImage
+	var imageSpec *infrastructurev1beta2.OscImage
 	imageSpec = machineScope.GetImage()
 	imageRef := machineScope.GetImageRef()
 	imageName := imageSpec.Name

@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -40,7 +40,7 @@ func getSubnetResourceId(resourceName string, clusterScope *scope.ClusterScope) 
 
 // checkSubnetFormatParameters check Subnet parameters format (Tag format, cidr format, ..)
 func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
+	var subnetsSpec []*infrastructurev1beta2.OscSubnet
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.Subnets == nil {
 		networkSpec.SetSubnetDefaultValue()
@@ -57,7 +57,7 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 		}
 		subnetIpRange := subnetSpec.IpSubnetRange
 		clusterScope.V(2).Info("Check subnet ipsubnetrange parameters")
-		_, err = infrastructurev1beta1.ValidateCidr(subnetIpRange)
+		_, err = infrastructurev1beta2.ValidateCidr(subnetIpRange)
 		if err != nil {
 			return subnetTagName, err
 		}
@@ -91,7 +91,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
+	var subnetsSpec []*infrastructurev1beta2.OscSubnet
 	subnetsSpec = clusterScope.GetSubnet()
 
 	subnetRef := clusterScope.GetSubnetRef()

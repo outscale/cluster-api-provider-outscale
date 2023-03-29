@@ -35,7 +35,6 @@ type OscMachineTemplateStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=oscmachinetemplates,scope=Namespaced,categories=cluster-api
-// +kubebuilder:storageversion
 
 // OscMachineTemplate is the Schema for the OscMachineTemplate API
 type OscMachineTemplate struct {

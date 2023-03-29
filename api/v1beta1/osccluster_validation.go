@@ -41,9 +41,10 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	var allErrs field.ErrorList
 
 	if spec.Network.LoadBalancer.LoadBalancerName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerName, field.NewPath("loadBalancerName"), ValidateLoadBalancerName); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
+		/*	if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerName, field.NewPath("loadBalancerName"), ValidateLoadBalancerName); len(errs) > 0 {
+				allErrs = append(allErrs, errs...)
+			}
+		*/
 	}
 
 	return allErrs

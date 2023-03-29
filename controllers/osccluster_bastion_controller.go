@@ -21,7 +21,7 @@ import (
 
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
@@ -120,37 +120,37 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	imageName := bastionSpec.ImageName
 	clusterScope.V(2).Info("Check Bastion parameters")
 	if imageName != "" {
-		_, err := infrastructurev1beta1.ValidateImageName(imageName)
+		_, err := infrastructurev1beta2.ValidateImageName(imageName)
 		if err != nil {
 			return bastionTagName, err
 		}
 	} else {
-		_, err := infrastructurev1beta1.ValidateImageId(bastionSpec.ImageId)
+		_, err := infrastructurev1beta2.ValidateImageId(bastionSpec.ImageId)
 		if err != nil {
 			return bastionTagName, err
 		}
 	}
 
 	bastionKeypairName := bastionSpec.KeypairName
-	_, err = infrastructurev1beta1.ValidateKeypairName(bastionKeypairName)
+	_, err = infrastructurev1beta2.ValidateKeypairName(bastionKeypairName)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	vmType := bastionSpec.VmType
-	_, err = infrastructurev1beta1.ValidateVmType(vmType)
+	_, err = infrastructurev1beta2.ValidateVmType(vmType)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	bastionDeviceName := bastionSpec.DeviceName
-	_, err = infrastructurev1beta1.ValidateDeviceName(bastionDeviceName)
+	_, err = infrastructurev1beta2.ValidateDeviceName(bastionDeviceName)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	bastionSubregionName := bastionSpec.SubregionName
-	_, err = infrastructurev1beta1.ValidateSubregionName(bastionSubregionName)
+	_, err = infrastructurev1beta2.ValidateSubregionName(bastionSubregionName)
 	if err != nil {
 		return bastionTagName, err
 	}
@@ -176,7 +176,7 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	if bastionSpec.RootDisk.RootDiskIops != 0 {
 		rootDiskIops := bastionSpec.RootDisk.RootDiskIops
 		clusterScope.V(4).Info("Check rootDiskIops", "rootDiskIops", rootDiskIops)
-		_, err := infrastructurev1beta1.ValidateIops(rootDiskIops)
+		_, err := infrastructurev1beta2.ValidateIops(rootDiskIops)
 		if err != nil {
 			return bastionTagName, err
 		}
@@ -184,14 +184,14 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 
 	rootDiskSize := bastionSpec.RootDisk.RootDiskSize
 	clusterScope.V(4).Info("Check rootDiskSize", "rootDiskSize", rootDiskSize)
-	_, err = infrastructurev1beta1.ValidateSize(rootDiskSize)
+	_, err = infrastructurev1beta2.ValidateSize(rootDiskSize)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	rootDiskType := bastionSpec.RootDisk.RootDiskType
 	clusterScope.V(4).Info("Check rootDiskType", "rootDiskType", rootDiskType)
-	_, err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
+	_, err = infrastructurev1beta2.ValidateVolumeType(rootDiskType)
 	if err != nil {
 		return bastionTagName, err
 	}
@@ -219,7 +219,7 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 
 	var publicIpId string
 	var bastionPublicIpName string
-	var linkPublicIpRef *infrastructurev1beta1.OscResourceReference
+	var linkPublicIpRef *infrastructurev1beta2.OscResourceReference
 	if bastionSpec.PublicIpName != "" {
 		bastionPublicIpName := bastionSpec.PublicIpName + "-" + clusterScope.GetUID()
 		publicIpId, err = getPublicIpResourceId(bastionPublicIpName, clusterScope)
@@ -275,10 +275,10 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 		clusterScope.V(2).Info("Get VmState")
 		vmState, err := vmSvc.GetVmState(vmId)
 		if err != nil {
-			clusterScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
+			clusterScope.SetVmState(infrastructurev1beta2.VmState("unknown"))
 			return reconcile.Result{}, fmt.Errorf("%w Can not get bastion %s state for OscCluster %s/%s", err, vmId, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
-		clusterScope.SetVmState(infrastructurev1beta1.VmState(vmState))
+		clusterScope.SetVmState(infrastructurev1beta2.VmState(vmState))
 		clusterScope.V(4).Info("Get bastion state", "vmState", vmState)
 	}
 	if (bastion == nil && tag == nil) || (bastionSpec.ResourceId == "" && tag == nil) {
@@ -298,7 +298,7 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscCluster %s/%s", err, vmID, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.V(4).Info("Bastion is running", "vmID", vmID)
-		clusterScope.SetVmState(infrastructurev1beta1.VmState("pending"))
+		clusterScope.SetVmState(infrastructurev1beta2.VmState("pending"))
 		if bastionSpec.PublicIpName != "" {
 			linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmID)
 			if err != nil {

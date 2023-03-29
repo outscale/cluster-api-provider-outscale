@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta2
 
 import (
-	"reflect"
+	//	"reflect"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	//	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/validation/field"
+	//	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -36,7 +36,9 @@ func (r *OscCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta1,name=mosccluster.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta2-osccluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta2,name=mosccluster.kb.io,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta2-osccluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta2,name=vosccluster.kb.io,admissionReviewVersions=v1;v1beta1
+
 var _ webhook.Defaulter = &OscCluster{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
@@ -45,23 +47,22 @@ func (m *OscCluster) Default() {
 
 }
 
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta1,name=vosccluster.kb.io,admissionReviewVersions=v1
-
 var _ webhook.Validator = &OscCluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (m *OscCluster) ValidateCreate() error {
-	oscMachineLog.Info("validate create", "name", m.Name)
-	if allErrs := ValidateOscClusterSpec(m.Spec); len(allErrs) > 0 {
-		oscClusterLog.Info("validate error", "error", allErrs)
-		return apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), m.Name, allErrs)
-	}
+	/*	oscMachineLog.Info("validate create", "name", m.Name)
+		if allErrs := ValidateOscClusterSpec(m.Spec); len(allErrs) > 0 {
+			oscClusterLog.Info("validate error", "error", allErrs)
+			return apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), m.Name, allErrs)
+		}
+	*/
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) error {
-	oscClusterLog.Info("validate update", "name", r.Name)
+	/*oscClusterLog.Info("validate update", "name", r.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscCluster)
 
@@ -78,6 +79,8 @@ func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) error {
 		return nil
 	}
 	return apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), r.Name, allErrs)
+	*/
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

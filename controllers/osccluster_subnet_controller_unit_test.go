@@ -26,22 +26,22 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 var (
-	defaultSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultSubnetInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName:   "test-cluster",
 			SubregionName: "eu-west-2a",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
@@ -49,16 +49,16 @@ var (
 			},
 		},
 	}
-	defaultSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultSubnetReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName:   "test-cluster",
 			SubregionName: "eu-west-2a",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
@@ -68,15 +68,15 @@ var (
 		},
 	}
 
-	defaultMultiSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultMultiSubnetInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName:   "test-cluster",
 			SubregionName: "eu-west-2a",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet-first",
 					IpSubnetRange: "10.0.0.0/24",
@@ -88,16 +88,16 @@ var (
 			},
 		},
 	}
-	defaultMultiSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultMultiSubnetReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName:   "test-cluster",
 			SubregionName: "eu-west-2a",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet-first",
 					IpSubnetRange: "10.0.0.0/24",
@@ -114,7 +114,7 @@ var (
 )
 
 // SetupWithSubnetMock set subnetMock with clusterScope and osccluster
-func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSubnetInterface *mock_net.MockOscSubnetInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSubnetInterface *mock_net.MockOscSubnetInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscSubnetInterface = mock_net.NewMockOscSubnetInterface(mockCtrl)
@@ -127,7 +127,7 @@ func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta1.O
 func TestGetSubnetResourceId(t *testing.T) {
 	subnetTestCases := []struct {
 		name                      string
-		spec                      infrastructurev1beta1.OscClusterSpec
+		spec                      infrastructurev1beta2.OscClusterSpec
 		expSubnetFound            bool
 		expGetSubnetResourceIdErr error
 	}{
@@ -173,7 +173,7 @@ func TestGetSubnetResourceId(t *testing.T) {
 func TestCheckSubnetOscDuplicateName(t *testing.T) {
 	subnetTestCases := []struct {
 		name                              string
-		spec                              infrastructurev1beta1.OscClusterSpec
+		spec                              infrastructurev1beta2.OscClusterSpec
 		expCheckSubnetOscDuplicateNameErr error
 	}{
 
@@ -184,13 +184,13 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "get duplicate Name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet-first",
 							IpSubnetRange: "10.0.0.0/24",
@@ -223,13 +223,13 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 func TestCheckSubnetFormatParameters(t *testing.T) {
 	subnetTestCases := []struct {
 		name                              string
-		spec                              infrastructurev1beta1.OscClusterSpec
+		spec                              infrastructurev1beta2.OscClusterSpec
 		expCheckSubnetFormatParametersErr error
 	}{
 		{
 			name: "Check work without spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckSubnetFormatParametersErr: nil,
 		},
@@ -240,13 +240,13 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet@test",
 							IpSubnetRange: "10.0.0.0/24",
@@ -258,13 +258,13 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range Prefix subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/36",
@@ -276,13 +276,13 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range Ip subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.256/16",
@@ -312,7 +312,7 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 func TestReconcileSubnetCreate(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
-		spec                  infrastructurev1beta1.OscClusterSpec
+		spec                  infrastructurev1beta2.OscClusterSpec
 		expSubnetFound        bool
 		expNetFound           bool
 		expTagFound           bool
@@ -451,7 +451,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 func TestReconcileSubnetGet(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
-		spec                  infrastructurev1beta1.OscClusterSpec
+		spec                  infrastructurev1beta2.OscClusterSpec
 		expSubnetFound        bool
 		expNetFound           bool
 		expTagFound           bool
@@ -550,7 +550,7 @@ func TestReconcileSubnetGet(t *testing.T) {
 func TestReconcileSubnetResourceId(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
-		spec                  infrastructurev1beta1.OscClusterSpec
+		spec                  infrastructurev1beta2.OscClusterSpec
 		expTagFound           bool
 		expNetFound           bool
 		expReadTagErr         error
@@ -625,7 +625,7 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 func TestReconcileDeleteSubnetGet(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
 		expSubnetFound              bool
 		expNetFound                 bool
 		expGetSubnetIdsErr          error
@@ -692,7 +692,7 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
 		expDeleteSubnetErr          error
 		expGetSubnetIdsErr          error
 		expReconcileDeleteSubnetErr error
@@ -744,7 +744,7 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeleteSubnetDelete(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
 		expSubnetFound              bool
 		expNetFound                 bool
 		expDeleteSubnetErr          error
@@ -827,7 +827,7 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
 		expReconcileDeleteSubnetErr error
 	}{
 		{
@@ -837,8 +837,8 @@ func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 		},
 		{
 			name: "check failed without net and subnet spec (retrieve default values cluster-api)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expReconcileDeleteSubnetErr: fmt.Errorf("cluster-api-net-uid does not exist"),
 		},

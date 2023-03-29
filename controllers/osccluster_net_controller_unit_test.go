@@ -26,7 +26,7 @@ import (
 	"k8s.io/klog/v2/klogr"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
@@ -36,18 +36,18 @@ import (
 )
 
 var (
-	defaultNetInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultNetInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
 		},
 	}
 
-	defaultNetReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultNetReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
@@ -57,10 +57,10 @@ var (
 )
 
 // Setup set osccluster and clusterScope
-func Setup(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope) {
+func Setup(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope) {
 	t.Logf("Validate to %s", name)
 
-	oscCluster := infrastructurev1beta1.OscCluster{
+	oscCluster := infrastructurev1beta2.OscCluster{
 		Spec: spec,
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       "uid",
@@ -84,7 +84,7 @@ func Setup(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec)
 }
 
 // SetupWithNetMock set netMock with clusterScope and osccluster
-func SetupWithNetMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNetInterface *mock_net.MockOscNetInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithNetMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNetInterface *mock_net.MockOscNetInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscNetInterface = mock_net.NewMockOscNetInterface(mockCtrl)
@@ -97,7 +97,7 @@ func SetupWithNetMock(t *testing.T, name string, spec infrastructurev1beta1.OscC
 func TestGetNetResourceId(t *testing.T) {
 	netTestCases := []struct {
 		name                   string
-		spec                   infrastructurev1beta1.OscClusterSpec
+		spec                   infrastructurev1beta2.OscClusterSpec
 		expNetFound            bool
 		expGetNetResourceIdErr error
 	}{
@@ -139,13 +139,13 @@ func TestGetNetResourceId(t *testing.T) {
 func TestCheckNetFormatParameters(t *testing.T) {
 	netTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expCheckNetFormatParametersErr error
 	}{
 		{
 			name: "check work without net spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckNetFormatParametersErr: nil,
 		},
@@ -156,9 +156,9 @@ func TestCheckNetFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range Prefix Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/36",
 					},
@@ -168,9 +168,9 @@ func TestCheckNetFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range IP Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.256/8",
 					},
@@ -180,9 +180,9 @@ func TestCheckNetFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name Net",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net@test",
 						IpRange: "10.0.0.0/16",
 					},
@@ -209,7 +209,7 @@ func TestCheckNetFormatParameters(t *testing.T) {
 func TestReconcileNetCreate(t *testing.T) {
 	netTestCases := []struct {
 		name               string
-		spec               infrastructurev1beta1.OscClusterSpec
+		spec               infrastructurev1beta2.OscClusterSpec
 		expNetFound        bool
 		expCreateNetFound  bool
 		expTagFound        bool
@@ -293,7 +293,7 @@ func TestReconcileNetCreate(t *testing.T) {
 func TestReconcileNetGet(t *testing.T) {
 	netTestCases := []struct {
 		name               string
-		spec               infrastructurev1beta1.OscClusterSpec
+		spec               infrastructurev1beta2.OscClusterSpec
 		expNetFound        bool
 		expTagFound        bool
 		expCreateNetFound  bool
@@ -384,7 +384,7 @@ func TestReconcileNetGet(t *testing.T) {
 func TestReconcileNetResourceId(t *testing.T) {
 	netTestCases := []struct {
 		name               string
-		spec               infrastructurev1beta1.OscClusterSpec
+		spec               infrastructurev1beta2.OscClusterSpec
 		expTagFound        bool
 		expCreateNetErr    error
 		expReadTagErr      error
@@ -465,7 +465,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 func TestReconcileDeleteNetDelete(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
-		spec                     infrastructurev1beta1.OscClusterSpec
+		spec                     infrastructurev1beta2.OscClusterSpec
 		expNetFound              bool
 		expDeleteNetErr          error
 		expDescribeNetErr        error
@@ -536,7 +536,7 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
-		spec                     infrastructurev1beta1.OscClusterSpec
+		spec                     infrastructurev1beta2.OscClusterSpec
 		expNetFound              bool
 		expDeleteNetErr          error
 		expDescribeNetErr        error
@@ -592,7 +592,7 @@ func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeleteNetGet(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
-		spec                     infrastructurev1beta1.OscClusterSpec
+		spec                     infrastructurev1beta2.OscClusterSpec
 		expNetFound              bool
 		expDescribeNetErr        error
 		expReconcileDeleteNetErr error

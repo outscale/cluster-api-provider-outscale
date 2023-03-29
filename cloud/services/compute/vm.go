@@ -28,7 +28,7 @@ import (
 	_nethttp "net/http"
 
 	"github.com/benbjohnson/clock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
@@ -40,8 +40,8 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error)
-	CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
+	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta2.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error)
+	CreateVmUserData(userData string, spec *infrastructurev1beta2.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
 	DeleteVm(vmId string) error
 	GetVm(vmId string) (*osc.Vm, error)
 	GetVmState(vmId string) (string, error)
@@ -62,7 +62,7 @@ func ValidateIpAddrInCidr(ipAddr string, cidr string) (string, error) {
 }
 
 // CreateVm create machine vm
-func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error) {
+func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta2.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error) {
 	imageId := spec.ImageId
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
@@ -166,7 +166,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 }
 
 // CreateVmUserData create machine vm
-func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
+func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta2.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
 	subregionName := spec.SubregionName

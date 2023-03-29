@@ -22,7 +22,7 @@ import (
 	_nethttp "net/http"
 
 	"github.com/benbjohnson/clock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -32,7 +32,7 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
 type OscVolumeInterface interface {
-	CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error)
+	CreateVolume(spec *infrastructurev1beta2.OscVolume, volumeName string) (*osc.Volume, error)
 	DeleteVolume(volumeId string) error
 	GetVolume(volumeId string) (*osc.Volume, error)
 	ValidateVolumeIds(volumeIds []string) ([]string, error)
@@ -42,7 +42,7 @@ type OscVolumeInterface interface {
 }
 
 // CreateVolume create machine volume
-func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error) {
+func (s *Service) CreateVolume(spec *infrastructurev1beta2.OscVolume, volumeName string) (*osc.Volume, error) {
 	size := spec.Size
 	subregionName := spec.SubregionName
 	volumeType := spec.VolumeType

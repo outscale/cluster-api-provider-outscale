@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
@@ -119,7 +119,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	log := ctrl.LoggerFrom(ctx)
 
-	oscMachine := &infrastructurev1beta1.OscMachine{}
+	oscMachine := &infrastructurev1beta2.OscMachine{}
 	if err := r.Get(ctx, req.NamespacedName, oscMachine); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -143,7 +143,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	log = log.WithValues("machine", machine.Name)
-	oscCluster := &infrastructurev1beta1.OscCluster{}
+	oscCluster := &infrastructurev1beta2.OscCluster{}
 	oscClusterNamespacedName := client.ObjectKey{
 		Namespace: oscMachine.Namespace,
 		Name:      cluster.Spec.InfrastructureRef.Name,
@@ -204,7 +204,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	machineScope.SetNotReady()
 	if !machineScope.Cluster.Status.InfrastructureReady {
 		machineScope.V(2).Info("Cluster infrastructure is not ready yet")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	}
 	machineScope.V(2).Info("Check bootstrap data")
@@ -297,7 +297,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
 		if err != nil {
 			machineScope.Error(err, "failed to reconcile volume")
-			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+			conditions.MarkFalse(oscmachine, infrastructurev1beta2.VolumeReadyCondition, infrastructurev1beta2.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
 			return reconcileVolume, err
 		}
 	}
@@ -316,36 +316,36 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcileVm, err
 	}
-	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
+	conditions.MarkTrue(oscmachine, infrastructurev1beta2.VolumeReadyCondition)
 
 	vmState := machineScope.GetVmState()
 
 	switch *vmState {
-	case infrastructurev1beta1.VmStatePending:
+	case infrastructurev1beta2.VmStatePending:
 		machineScope.SetNotReady()
 		machineScope.V(4).Info("Vm pending", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "")
-	case infrastructurev1beta1.VmStateStopping, infrastructurev1beta1.VmStateStopped:
+		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "")
+	case infrastructurev1beta2.VmStateStopping, infrastructurev1beta2.VmStateStopped:
 		machineScope.SetNotReady()
 		machineScope.V(4).Info("Vm stopped", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmStoppedReason, clusterv1.ConditionSeverityWarning, "")
-	case infrastructurev1beta1.VmStateRunning:
+		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmStoppedReason, clusterv1.ConditionSeverityWarning, "")
+	case infrastructurev1beta2.VmStateRunning:
 		machineScope.SetReady()
 		machineScope.V(4).Info("Vm running", "state", vmState)
-		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
-	case infrastructurev1beta1.VmStateShuttingDown, infrastructurev1beta1.VmStateTerminated:
+		conditions.MarkTrue(oscmachine, infrastructurev1beta2.VmReadyCondition)
+	case infrastructurev1beta2.VmStateShuttingDown, infrastructurev1beta2.VmStateTerminated:
 		machineScope.SetNotReady()
 		machineScope.V(4).Info("Unexpected vm termination", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmTerminatedReason, clusterv1.ConditionSeverityError, "")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmTerminatedReason, clusterv1.ConditionSeverityError, "")
 	default:
 		machineScope.SetNotReady()
 		machineScope.V(4).Info("Vm state is undefined", "state", vmState)
 		machineScope.SetFailureReason(capierrors.UpdateMachineError)
 		machineScope.SetFailureMessage(errors.Errorf("instance state %+v  is undefined", vmState))
-		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
+		conditions.MarkUnknown(oscmachine, infrastructurev1beta2.VmReadyCondition, "", "")
 	}
 	return reconcile.Result{}, nil
 }
@@ -381,18 +381,18 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
-	clusterToObjectFunc, err := util.ClusterToObjectsMapper(r.Client, &infrastructurev1beta1.OscMachineList{}, mgr.GetScheme())
+	clusterToObjectFunc, err := util.ClusterToObjectsMapper(r.Client, &infrastructurev1beta2.OscMachineList{}, mgr.GetScheme())
 	if err != nil {
 		return errors.Errorf("failed to create mapper for Cluster to OscMachines: %+v", err)
 	}
 	err = ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructurev1beta1.OscMachine{}).
+		For(&infrastructurev1beta2.OscMachine{}).
 		Watches(
 			&source.Kind{Type: &clusterv1.Machine{}},
-			handler.EnqueueRequestsFromMapFunc(util.MachineToInfrastructureMapFunc(infrastructurev1beta1.GroupVersion.WithKind("OscMachine"))),
+			handler.EnqueueRequestsFromMapFunc(util.MachineToInfrastructureMapFunc(infrastructurev1beta2.GroupVersion.WithKind("OscMachine"))),
 		).
 		Watches(
-			&source.Kind{Type: &infrastructurev1beta1.OscCluster{}},
+			&source.Kind{Type: &infrastructurev1beta2.OscCluster{}},
 			handler.EnqueueRequestsFromMapFunc(r.OscClusterToOscMachines(ctx)),
 		).
 		Watches(
@@ -415,7 +415,7 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 		result := []ctrl.Request{}
 		log := log.FromContext(ctx)
 
-		c, ok := o.(*infrastructurev1beta1.OscCluster)
+		c, ok := o.(*infrastructurev1beta2.OscCluster)
 		if !ok {
 			log.Error(fmt.Errorf("expected a OscCluster but got a %T", o), "failed to get OscMachine for OscCluster")
 			return nil

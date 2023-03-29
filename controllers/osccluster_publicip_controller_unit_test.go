@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
@@ -32,26 +32,26 @@ import (
 )
 
 var (
-	defaultPublicIpInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultPublicIpInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name: "test-publicip",
 				},
 			},
 		},
 	}
-	defaultMultiPublicIpInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultMultiPublicIpInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name: "test-publicip-first",
 				},
@@ -61,21 +61,21 @@ var (
 			},
 		},
 	}
-	defaultLinkVmInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Vm: infrastructurev1beta1.OscVm{
+	defaultLinkVmInitialize = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Vm: infrastructurev1beta2.OscVm{
 				PublicIpName: "test-publicip",
 			},
 		},
 	}
-	defaultPublicIpReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultPublicIpReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name:       "test-publicip",
 					ResourceId: "eipalloc-test-publicip-uid",
@@ -84,14 +84,14 @@ var (
 		},
 	}
 
-	defaultMultiPublicIpReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultMultiPublicIpReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name:       "test-publicip-first",
 					ResourceId: "eipalloc-test-publicip-first-uid",
@@ -106,7 +106,7 @@ var (
 )
 
 // SetupWithPublicIpMock set publicIpMock with clusterScope and osccluster
-func SetupWithPublicIpMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithPublicIpMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscPublicIpInterface = mock_security.NewMockOscPublicIpInterface(mockCtrl)
@@ -119,7 +119,7 @@ func SetupWithPublicIpMock(t *testing.T, name string, spec infrastructurev1beta1
 func TestGetPublicIpResourceId(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                        string
-		spec                        infrastructurev1beta1.OscClusterSpec
+		spec                        infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound            bool
 		expGetPublicIpResourceIdErr error
 	}{
@@ -164,8 +164,8 @@ func TestGetPublicIpResourceId(t *testing.T) {
 func TestLinkPublicIpResourceId(t *testing.T) {
 	linkPublicIpTestCases := []struct {
 		name                            string
-		clusterSpec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec                     infrastructurev1beta1.OscMachineSpec
+		clusterSpec                     infrastructurev1beta2.OscClusterSpec
+		machineSpec                     infrastructurev1beta2.OscMachineSpec
 		expLinkPublicIpFound            bool
 		expGetLinkPublicIpResourceIdErr error
 	}{
@@ -213,13 +213,13 @@ func TestLinkPublicIpResourceId(t *testing.T) {
 func TestCheckPublicIpFormatParameters(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                                string
-		spec                                infrastructurev1beta1.OscClusterSpec
+		spec                                infrastructurev1beta2.OscClusterSpec
 		expCheckPublicIpFormatParametersErr error
 	}{
 		{
 			name: "check work without publicIp spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckPublicIpFormatParametersErr: nil,
 		},
@@ -230,13 +230,13 @@ func TestCheckPublicIpFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name publicip",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip@test",
 						},
@@ -264,23 +264,23 @@ func TestCheckPublicIpFormatParameters(t *testing.T) {
 func TestCheckPublicIpOscAssociateResourceName(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
+		spec                                        infrastructurev1beta2.OscClusterSpec
 		expCheckPublicIpOscAssociateResourceNameErr error
 	}{
 		{
 			name: "check natservice association with publicIp",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice",
 						PublicIpName: "test-publicip",
 						SubnetName:   "test-subnet",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -291,18 +291,18 @@ func TestCheckPublicIpOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check natService association with bad publicIp",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice",
 						PublicIpName: "test-publicip-test",
 						SubnetName:   "test-subnet",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -329,7 +329,7 @@ func TestCheckPublicIpOscAssociateResourceName(t *testing.T) {
 func TestCheckPublicIpOscDuplicateName(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                                string
-		spec                                infrastructurev1beta1.OscClusterSpec
+		spec                                infrastructurev1beta2.OscClusterSpec
 		expCheckPublicIpOscDuplicateNameErr error
 	}{
 		{
@@ -339,18 +339,18 @@ func TestCheckPublicIpOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "get duplicate Name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice",
 						PublicIpName: "test-publicip",
 						SubnetName:   "test-subnet",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip-first",
 						},
@@ -381,7 +381,7 @@ func TestCheckPublicIpOscDuplicateName(t *testing.T) {
 func TestReconcilePublicIpGet(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                    string
-		spec                    infrastructurev1beta1.OscClusterSpec
+		spec                    infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound        bool
 		expTagFound             bool
 		expValidatePublicIpsErr error
@@ -491,7 +491,7 @@ func TestReconcilePublicIpGet(t *testing.T) {
 func TestReconcilePublicIpCreate(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                    string
-		spec                    infrastructurev1beta1.OscClusterSpec
+		spec                    infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound        bool
 		expTagFound             bool
 		expValidatePublicIpsErr error
@@ -524,13 +524,13 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 		},
 		{
 			name: "failed to create publicIp",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -547,13 +547,13 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 		},
 		{
 			name: "user delete publicIp without cluster-api",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -645,7 +645,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expValidatePublicIpIdsErr     error
 		expCheckPublicIpUnlinkErr     error
 		expDeletePublicIpErr          error
@@ -699,7 +699,7 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeletePublicIpDelete(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound              bool
 		expValidatePublicIpIdsErr     error
 		expCheckPublicIpUnlinkErr     error
@@ -785,7 +785,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 func TestReconcileDeletePublicIpCheck(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound              bool
 		expValidatePublicIpIdsErr     error
 		expCheckPublicIpUnlinkErr     error
@@ -847,15 +847,15 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 func TestReconcileDeletePublicIpGet(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound              bool
 		expValidatePublicIpIdsErr     error
 		expReconcileDeletePublicIpErr error
 	}{
 		{
 			name: "check work without publicIp spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expPublicIpFound:              false,
 			expValidatePublicIpIdsErr:     nil,

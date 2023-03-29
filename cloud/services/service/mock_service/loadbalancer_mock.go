@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	v1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -37,7 +37,7 @@ func (m *MockOscLoadBalancerInterface) EXPECT() *MockOscLoadBalancerInterfaceMoc
 }
 
 // CheckLoadBalancerDeregisterVm mocks base method.
-func (m *MockOscLoadBalancerInterface) CheckLoadBalancerDeregisterVm(clockInsideLoop, clockLoop time.Duration, spec *v1beta1.OscLoadBalancer) error {
+func (m *MockOscLoadBalancerInterface) CheckLoadBalancerDeregisterVm(clockInsideLoop, clockLoop time.Duration, spec *v1beta2.OscLoadBalancer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckLoadBalancerDeregisterVm", clockInsideLoop, clockLoop, spec)
 	ret0, _ := ret[0].(error)
@@ -51,7 +51,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerDeregisterV
 }
 
 // ConfigureHealthCheck mocks base method.
-func (m *MockOscLoadBalancerInterface) ConfigureHealthCheck(spec *v1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+func (m *MockOscLoadBalancerInterface) ConfigureHealthCheck(spec *v1beta2.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureHealthCheck", spec)
 	ret0, _ := ret[0].(*osc.LoadBalancer)
@@ -66,7 +66,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) ConfigureHealthCheck(spec in
 }
 
 // CreateLoadBalancer mocks base method.
-func (m *MockOscLoadBalancerInterface) CreateLoadBalancer(spec *v1beta1.OscLoadBalancer, subnetId, securityGroupId string) (*osc.LoadBalancer, error) {
+func (m *MockOscLoadBalancerInterface) CreateLoadBalancer(spec *v1beta2.OscLoadBalancer, subnetId, securityGroupId string) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLoadBalancer", spec, subnetId, securityGroupId)
 	ret0, _ := ret[0].(*osc.LoadBalancer)
@@ -81,7 +81,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancer(spec, sub
 }
 
 // CreateLoadBalancerTag mocks base method.
-func (m *MockOscLoadBalancerInterface) CreateLoadBalancerTag(spec *v1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
+func (m *MockOscLoadBalancerInterface) CreateLoadBalancerTag(spec *v1beta2.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLoadBalancerTag", spec, loadBalancerTag)
 	ret0, _ := ret[0].(error)
@@ -95,7 +95,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancerTag(spec, 
 }
 
 // DeleteLoadBalancer mocks base method.
-func (m *MockOscLoadBalancerInterface) DeleteLoadBalancer(spec *v1beta1.OscLoadBalancer) error {
+func (m *MockOscLoadBalancerInterface) DeleteLoadBalancer(spec *v1beta2.OscLoadBalancer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteLoadBalancer", spec)
 	ret0, _ := ret[0].(error)
@@ -109,7 +109,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) DeleteLoadBalancer(spec inte
 }
 
 // DeleteLoadBalancerTag mocks base method.
-func (m *MockOscLoadBalancerInterface) DeleteLoadBalancerTag(spec *v1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
+func (m *MockOscLoadBalancerInterface) DeleteLoadBalancerTag(spec *v1beta2.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteLoadBalancerTag", spec, loadBalancerTag)
 	ret0, _ := ret[0].(error)
@@ -123,7 +123,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) DeleteLoadBalancerTag(spec, 
 }
 
 // GetLoadBalancer mocks base method.
-func (m *MockOscLoadBalancerInterface) GetLoadBalancer(spec *v1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+func (m *MockOscLoadBalancerInterface) GetLoadBalancer(spec *v1beta2.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLoadBalancer", spec)
 	ret0, _ := ret[0].(*osc.LoadBalancer)
@@ -138,7 +138,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) GetLoadBalancer(spec interfa
 }
 
 // GetLoadBalancerTag mocks base method.
-func (m *MockOscLoadBalancerInterface) GetLoadBalancerTag(spec *v1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
+func (m *MockOscLoadBalancerInterface) GetLoadBalancerTag(spec *v1beta2.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLoadBalancerTag", spec)
 	ret0, _ := ret[0].(*osc.LoadBalancerTag)

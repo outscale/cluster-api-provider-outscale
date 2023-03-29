@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-logr/logr"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2/klogr"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -33,7 +33,7 @@ type MachineTemplateScopeParams struct {
 	OscClient          *OscClient
 	Client             client.Client
 	Logger             logr.Logger
-	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
+	OscMachineTemplate *infrastructurev1beta2.OscMachineTemplate
 }
 
 // NewMachineScope create new machineScope from parameters which is called at each reconciliation iteration
@@ -78,7 +78,7 @@ type MachineTemplateScope struct {
 	logr.Logger
 	client             client.Client
 	patchHelper        *patch.Helper
-	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
+	OscMachineTemplate *infrastructurev1beta2.OscMachineTemplate
 }
 
 // Close closes the scope of the machine configuration and status

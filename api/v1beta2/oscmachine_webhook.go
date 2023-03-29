@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta2
 
 import (
 	"reflect"
@@ -34,7 +34,8 @@ func (r *OscMachine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta1,name=moscmachine.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta2-oscmachine,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta2,name=moscmachine.kb.io,admissionReviewVersions=v1;v1beta1
+//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta2-oscmachine,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta2,name=voscmachine.kb.io,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Defaulter = &OscMachine{}
 
@@ -44,17 +45,16 @@ func (m *OscMachine) Default() {
 
 }
 
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta1,name=voscmachine.kb.io,admissionReviewVersions=v1
-
 var _ webhook.Validator = &OscMachine{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (m *OscMachine) ValidateCreate() error {
 	oscMachineLog.Info("validate create", "name", m.Name)
-	if allErrs := ValidateOscMachineSpec(m.Spec); len(allErrs) > 0 {
+	/*if allErrs := ValidateOscMachineSpec(m.Spec); len(allErrs) > 0 {
 		oscMachineLog.Info("validate error", "error", allErrs)
 		return apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 	}
+	*/
 	return nil
 }
 

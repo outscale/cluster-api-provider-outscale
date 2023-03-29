@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -57,7 +57,7 @@ func checkVolumeOscDuplicateName(machineScope *scope.MachineScope) error {
 
 // checkVolumeFormatParameters check Volume parameters format
 func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, error) {
-	var volumesSpec []*infrastructurev1beta1.OscVolume
+	var volumesSpec []*infrastructurev1beta2.OscVolume
 	nodeSpec := machineScope.GetNode()
 	if nodeSpec.Volumes == nil {
 		nodeSpec.SetVolumeDefaultValue()
@@ -77,7 +77,7 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 
 		if volumeSpec.Iops != 0 {
 			volumeIops := volumeSpec.Iops
-			_, err = infrastructurev1beta1.ValidateIops(volumeIops)
+			_, err = infrastructurev1beta2.ValidateIops(volumeIops)
 			if err != nil {
 				return volumeTagName, err
 			}
@@ -85,18 +85,18 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 
 		volumeSize := volumeSpec.Size
 		machineScope.V(4).Info("Check volume size", "volumeSize", volumeSize)
-		_, err = infrastructurev1beta1.ValidateSize(volumeSize)
+		_, err = infrastructurev1beta2.ValidateSize(volumeSize)
 		if err != nil {
 			return volumeTagName, err
 		}
 
 		volumeSubregionName := volumeSpec.SubregionName
-		_, err = infrastructurev1beta1.ValidateSubregionName(volumeSubregionName)
+		_, err = infrastructurev1beta2.ValidateSubregionName(volumeSubregionName)
 		if err != nil {
 			return volumeTagName, err
 		}
 		volumeType := volumeSpec.VolumeType
-		_, err = infrastructurev1beta1.ValidateVolumeType(volumeType)
+		_, err = infrastructurev1beta2.ValidateVolumeType(volumeType)
 		if err != nil {
 			return volumeTagName, err
 		}
@@ -109,7 +109,7 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volumeSvc storage.OscVolumeInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	var volumeId string
 	var volumeIds []string
-	var volumesSpec []*infrastructurev1beta1.OscVolume
+	var volumesSpec []*infrastructurev1beta2.OscVolume
 	volumesSpec = machineScope.GetVolume()
 	volumeRef := machineScope.GetVolumeRef()
 	for _, volumeSpec := range volumesSpec {
@@ -164,7 +164,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope, volumeSvc storage.OscVolumeInterface) (reconcile.Result, error) {
 	oscmachine := machineScope.OscMachine
 
-	var volumesSpec []*infrastructurev1beta1.OscVolume
+	var volumesSpec []*infrastructurev1beta2.OscVolume
 	nodeSpec := machineScope.GetNode()
 	if nodeSpec.Volumes == nil {
 		nodeSpec.SetVolumeDefaultValue()

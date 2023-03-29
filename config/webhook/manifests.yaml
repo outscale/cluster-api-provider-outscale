@@ -7,18 +7,40 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-osccluster
+  failurePolicy: Fail
+  name: mosccluster.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-oscclustertemplate
   failurePolicy: Fail
   name: moscclustertemplate.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -27,18 +49,19 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-oscmachine
   failurePolicy: Fail
   name: moscmachine.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -47,18 +70,19 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-oscmachinetemplate
   failurePolicy: Fail
   name: moscmachinetemplate.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -74,18 +98,19 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-osccluster
   failurePolicy: Fail
   name: vosccluster.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -94,18 +119,19 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-oscclustertemplate
   failurePolicy: Fail
   name: voscclustertemplate.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -114,18 +140,19 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-oscmachine
   failurePolicy: Fail
   name: voscmachine.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -134,18 +161,19 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta2-oscmachinetemplate
   failurePolicy: Fail
   name: voscmachinetemplate.kb.io
   rules:
   - apiGroups:
     - infrastructure.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE

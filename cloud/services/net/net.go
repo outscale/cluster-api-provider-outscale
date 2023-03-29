@@ -21,7 +21,7 @@ import (
 
 	"errors"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -32,14 +32,14 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_net/net_mock.go -package mock_net -source ./net.go
 
 type OscNetInterface interface {
-	CreateNet(spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error)
+	CreateNet(spec *infrastructurev1beta2.OscNet, clusterName string, netName string) (*osc.Net, error)
 	DeleteNet(netId string) error
 	GetNet(netId string) (*osc.Net, error)
 }
 
 // CreateNet create the net from spec (in order to retrieve ip range)
-func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error) {
-	ipRange, err := infrastructurev1beta1.ValidateCidr(spec.IpRange)
+func (s *Service) CreateNet(spec *infrastructurev1beta2.OscNet, clusterName string, netName string) (*osc.Net, error) {
+	ipRange, err := infrastructurev1beta2.ValidateCidr(spec.IpRange)
 	if err != nil {
 		return nil, err
 	}

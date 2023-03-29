@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
@@ -33,29 +33,29 @@ import (
 )
 
 var (
-	defaultRouteTableGatewayInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultRouteTableGatewayInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name: "test-internetservice",
 			},
-			RouteTables: []*infrastructurev1beta1.OscRouteTable{
+			RouteTables: []*infrastructurev1beta2.OscRouteTable{
 				{
 					Name: "test-routetable",
 					Subnets: []string{
 						"test-subnet",
 					},
-					Routes: []infrastructurev1beta1.OscRoute{
+					Routes: []infrastructurev1beta2.OscRoute{
 						{
 							Name:        "test-route",
 							TargetName:  "test-internetservice",
@@ -67,39 +67,39 @@ var (
 			},
 		},
 	}
-	defaultRouteTableGatewayReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultRouteTableGatewayReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name:       "test-internetservice",
 				ResourceId: "igw-test-interneetservice-uid",
 			},
-			NatService: infrastructurev1beta1.OscNatService{
+			NatService: infrastructurev1beta2.OscNatService{
 				Name:         "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet",
 				ResourceId:   "nat-test-natservice-uid",
 			},
-			RouteTables: []*infrastructurev1beta1.OscRouteTable{
+			RouteTables: []*infrastructurev1beta2.OscRouteTable{
 				{
 					Name: "test-routetable",
 					Subnets: []string{
 						"test-subnet",
 					},
 					ResourceId: "rtb-test-routetable-uid",
-					Routes: []infrastructurev1beta1.OscRoute{
+					Routes: []infrastructurev1beta2.OscRoute{
 						{
 							Name:        "test-route",
 							TargetName:  "test-natservice",
@@ -112,34 +112,34 @@ var (
 		},
 	}
 
-	defaultRouteTableNatInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultRouteTableNatInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name: "test-internetservice",
 			},
-			NatService: infrastructurev1beta1.OscNatService{
+			NatService: infrastructurev1beta2.OscNatService{
 				Name:         "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet",
 			},
-			RouteTables: []*infrastructurev1beta1.OscRouteTable{
+			RouteTables: []*infrastructurev1beta2.OscRouteTable{
 				{
 					Name: "test-routetable",
 					Subnets: []string{
 						"test-subnet",
 					},
-					Routes: []infrastructurev1beta1.OscRoute{
+					Routes: []infrastructurev1beta2.OscRoute{
 						{
 							Name:        "test-route",
 							TargetName:  "test-natservice",
@@ -152,39 +152,39 @@ var (
 		},
 	}
 
-	defaultRouteTableNatReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultRouteTableNatReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name:       "test-internetservice",
 				ResourceId: "igw-test-interneetservice-uid",
 			},
-			NatService: infrastructurev1beta1.OscNatService{
+			NatService: infrastructurev1beta2.OscNatService{
 				Name:         "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet",
 				ResourceId:   "nat-test-natservice-uid",
 			},
-			RouteTables: []*infrastructurev1beta1.OscRouteTable{
+			RouteTables: []*infrastructurev1beta2.OscRouteTable{
 				{
 					Name: "test-routetable",
 					Subnets: []string{
 						"test-subnet",
 					},
 					ResourceId: "rtb-test-routetable-uid",
-					Routes: []infrastructurev1beta1.OscRoute{
+					Routes: []infrastructurev1beta2.OscRoute{
 						{
 							Name:        "test-route",
 							TargetName:  "test-natservice",
@@ -197,34 +197,34 @@ var (
 		},
 	}
 
-	defaultRouteTableGatewayNatInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultRouteTableGatewayNatInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name: "test-internetservice",
 			},
-			NatService: infrastructurev1beta1.OscNatService{
+			NatService: infrastructurev1beta2.OscNatService{
 				Name:         "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet",
 			},
-			RouteTables: []*infrastructurev1beta1.OscRouteTable{
+			RouteTables: []*infrastructurev1beta2.OscRouteTable{
 				{
 					Name: "test-routetable",
 					Subnets: []string{
 						"test-subnet",
 					},
-					Routes: []infrastructurev1beta1.OscRoute{
+					Routes: []infrastructurev1beta2.OscRoute{
 						{
 							Name:        "test-route-nat",
 							TargetName:  "test-natservice",
@@ -243,39 +243,39 @@ var (
 		},
 	}
 
-	defaultRouteTableGatewayNatReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultRouteTableGatewayNatReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name:       "test-internetservice",
 				ResourceId: "igw-test-internetservice-uid",
 			},
-			NatService: infrastructurev1beta1.OscNatService{
+			NatService: infrastructurev1beta2.OscNatService{
 				Name:         "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet",
 				ResourceId:   "nat-test-natservice-uid",
 			},
-			RouteTables: []*infrastructurev1beta1.OscRouteTable{
+			RouteTables: []*infrastructurev1beta2.OscRouteTable{
 				{
 					Name: "test-routetable",
 					Subnets: []string{
 						"test-subnet",
 					},
 					ResourceId: "rtb-test-routetable-uid",
-					Routes: []infrastructurev1beta1.OscRoute{
+					Routes: []infrastructurev1beta2.OscRoute{
 						{
 							Name:        "test-route-nat",
 							TargetName:  "test-natservice",
@@ -296,7 +296,7 @@ var (
 )
 
 // SetupWithRouteTableMock set routeTableMock with clusterScope and osccluster
-func SetupWithRouteTableMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscRouteTableInterface *mock_security.MockOscRouteTableInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithRouteTableMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscRouteTableInterface *mock_security.MockOscRouteTableInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscRouteTableInterface = mock_security.NewMockOscRouteTableInterface(mockCtrl)
@@ -309,7 +309,7 @@ func SetupWithRouteTableMock(t *testing.T, name string, spec infrastructurev1bet
 func TestGetRouteTableResourceId(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
+		spec                          infrastructurev1beta2.OscClusterSpec
 		expRouteTablesFound           bool
 		expGetRouteTableResourceIdErr error
 	}{
@@ -355,7 +355,7 @@ func TestGetRouteTableResourceId(t *testing.T) {
 func TestGetRouteResourceId(t *testing.T) {
 	routeTestCases := []struct {
 		name                     string
-		spec                     infrastructurev1beta1.OscClusterSpec
+		spec                     infrastructurev1beta2.OscClusterSpec
 		expRouteFound            bool
 		expGetRouteResourceIdErr error
 	}{
@@ -404,13 +404,13 @@ func TestGetRouteResourceId(t *testing.T) {
 func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                                                string
-		spec                                                infrastructurev1beta1.OscClusterSpec
+		spec                                                infrastructurev1beta2.OscClusterSpec
 		expCheckRouteTableSubnetOscAssociateResourceNameErr error
 	}{
 		{
 			name: "check work without net, routetable and route spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckRouteTableSubnetOscAssociateResourceNameErr: nil,
 		},
@@ -421,28 +421,28 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check routetable association with bad subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet-test",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -474,13 +474,13 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 func TestCheckRouteTableFormatParameters(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                                  string
-		spec                                  infrastructurev1beta1.OscClusterSpec
+		spec                                  infrastructurev1beta2.OscClusterSpec
 		expCheckRouteTableFormatParametersErr error
 	}{
 		{
 			name: "check work without net, routable and route spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckRouteTableFormatParametersErr: nil,
 		},
@@ -491,28 +491,28 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name routetable",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable@test",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -545,13 +545,13 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 func TestCheckRouteFormatParameters(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expCheckRouteFormatParametersErr error
 	}{
 		{
 			name: "check work without net, routetable and route spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckRouteFormatParametersErr: nil,
 		},
@@ -562,28 +562,28 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name route",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route@test",
 									TargetName:  "test-internetservice",
@@ -599,28 +599,28 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range IP route",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -636,28 +636,28 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Ip Range IP route",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -691,7 +691,7 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                                  string
-		spec                                  infrastructurev1beta1.OscClusterSpec
+		spec                                  infrastructurev1beta2.OscClusterSpec
 		expCheckRouteTableOscDuplicateNameErr error
 	}{
 		{
@@ -701,28 +701,28 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "get duplicate routeTable Name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -736,7 +736,7 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -768,13 +768,13 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 func TestCheckRouteOscDuplicateName(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expCheckRouteOscDuplicateNameErr error
 	}{
 		{
 			name: "check work without net, routetable and route spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckRouteOscDuplicateNameErr: nil,
 		},
@@ -790,28 +790,28 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "check route duplicate  internet service name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -833,28 +833,28 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "check route duplicate  nat service name",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-natservice",
@@ -876,22 +876,22 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 		},
 		{
 			name: "check no routetable",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{},
 					},
 				},
@@ -916,7 +916,7 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 func TestReconcilerRouteCreate(t *testing.T) {
 	routeTestCases := []struct {
 		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
+		spec                         infrastructurev1beta2.OscClusterSpec
 		expRouteFound                bool
 		expTagFound                  bool
 		expInternetServiceFound      bool
@@ -1098,7 +1098,7 @@ func TestReconcilerRouteCreate(t *testing.T) {
 func TestReconcileRouteGet(t *testing.T) {
 	routeTestCases := []struct {
 		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
+		spec                         infrastructurev1beta2.OscClusterSpec
 		expRouteFound                bool
 		expTagFound                  bool
 		expInternetServiceFound      bool
@@ -1233,7 +1233,7 @@ func TestReconcileRouteGet(t *testing.T) {
 func TestReconcileRouteResourceId(t *testing.T) {
 	routeTestCases := []struct {
 		name                    string
-		spec                    infrastructurev1beta1.OscClusterSpec
+		spec                    infrastructurev1beta2.OscClusterSpec
 		expInternetServiceFound bool
 		expNatServiceFound      bool
 		expTagFound             bool
@@ -1311,7 +1311,7 @@ func TestReconcileRouteResourceId(t *testing.T) {
 func TestReconcileRouteTableCreate(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expNetFound                      bool
 		expSubnetFound                   bool
 		expRouteFound                    bool
@@ -1559,7 +1559,7 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 func TestReconcileRouteTableGet(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expNetFound                      bool
 		expTagFound                      bool
 		expSubnetFound                   bool
@@ -1702,7 +1702,7 @@ func TestReconcileRouteTableGet(t *testing.T) {
 func TestReconcileRouteTableResourceId(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expTagFound                      bool
 		expNetFound                      bool
 		expReadTagErr                    error
@@ -1773,7 +1773,7 @@ func TestReconcileRouteTableResourceId(t *testing.T) {
 func TestReconcileCreateRouteTable(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expTagFound                      bool
 		expCreateRouteTableErr           error
 		expGetRouteTableIdsFromNetIdsErr error
@@ -1782,28 +1782,28 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 	}{
 		{
 			name: "failed to create routeTable",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice",
 					},
-					RouteTables: []*infrastructurev1beta1.OscRouteTable{
+					RouteTables: []*infrastructurev1beta2.OscRouteTable{
 						{
 							Name: "test-routetable",
 							Subnets: []string{
 								"test-subnet",
 							},
-							Routes: []infrastructurev1beta1.OscRoute{
+							Routes: []infrastructurev1beta2.OscRoute{
 								{
 									Name:        "test-route",
 									TargetName:  "test-internetservice",
@@ -1891,7 +1891,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 func TestReconcileRouteTableLink(t *testing.T) {
 	routeTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expSubnetFound                   bool
 		expTagFound                      bool
 		expLinkRouteTableFound           bool
@@ -2010,7 +2010,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 func TestReconcileDeleteRouteDelete(t *testing.T) {
 	routeTestCases := []struct {
 		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
+		spec                         infrastructurev1beta2.OscClusterSpec
 		expRouteFound                bool
 		expInternetServiceFound      bool
 		expNatServiceFound           bool
@@ -2151,7 +2151,7 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 func TestReconcileDeleteRouteGet(t *testing.T) {
 	routeTestCases := []struct {
 		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
+		spec                         infrastructurev1beta2.OscClusterSpec
 		expRouteFound                bool
 		expInternetServiceFound      bool
 		expNatServiceFound           bool
@@ -2265,7 +2265,7 @@ func TestReconcileDeleteRouteGet(t *testing.T) {
 func TestReconcileDeleteRouteResourceId(t *testing.T) {
 	routeTestCases := []struct {
 		name                       string
-		spec                       infrastructurev1beta1.OscClusterSpec
+		spec                       infrastructurev1beta2.OscClusterSpec
 		expInternetServiceFound    bool
 		expNatServiceFound         bool
 		expReconcileDeleteRouteErr error
@@ -2336,7 +2336,7 @@ func TestReconcileDeleteRouteResourceId(t *testing.T) {
 func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expUnlinkRouteTableErr           error
 		expDeleteRouteErr                error
 		expDeleteRouteTableErr           error
@@ -2460,7 +2460,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expNetFound                      bool
 		expRouteFound                    bool
 		expRouteTableFound               bool
@@ -2645,7 +2645,7 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 func TestReconcileDeleteRouteTableGet(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expNetFound                      bool
 		expRouteFound                    bool
 		expRouteTableFound               bool
@@ -2742,7 +2742,7 @@ func TestReconcileDeleteRouteTableGet(t *testing.T) {
 func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expUnlinkRouteTableErr           error
 		expDeleteRouteErr                error
 		expGetRouteTableFromRouteErr     error
@@ -2861,7 +2861,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                             string
-		spec                             infrastructurev1beta1.OscClusterSpec
+		spec                             infrastructurev1beta2.OscClusterSpec
 		expDeleteRouteErr                error
 		expGetRouteTableFromRouteErr     error
 		expGetRouteTableIdsFromNetIdsErr error
@@ -2974,14 +2974,14 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 func TestReconcileDeleteRouteTableResourceId(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                            string
-		spec                            infrastructurev1beta1.OscClusterSpec
+		spec                            infrastructurev1beta2.OscClusterSpec
 		expNetFound                     bool
 		expReconcileDeleteRouteTableErr error
 	}{
 		{
 			name: "check work without net, routeTable and route spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expNetFound:                     false,
 			expReconcileDeleteRouteTableErr: fmt.Errorf("cluster-api-net-uid does not exist"),

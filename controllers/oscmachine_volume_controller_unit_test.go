@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage/mock_storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
@@ -36,26 +36,26 @@ import (
 )
 
 var (
-	defaultClusterInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultClusterInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
 		},
 	}
-	defaultClusterReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultClusterReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
 		},
 	}
-	defaultVolumeInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
+	defaultVolumeInitialize = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Volumes: []*infrastructurev1beta2.OscVolume{
 				{
 					Name:          "test-volume",
 					Iops:          1000,
@@ -66,9 +66,9 @@ var (
 			},
 		},
 	}
-	defaultVolumeReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
+	defaultVolumeReconcile = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Volumes: []*infrastructurev1beta2.OscVolume{
 				{
 					Name:          "test-volume",
 					Iops:          1000,
@@ -80,9 +80,9 @@ var (
 			},
 		},
 	}
-	defaultMultiVolumeInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
+	defaultMultiVolumeInitialize = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Volumes: []*infrastructurev1beta2.OscVolume{
 				{
 					Name:          "test-volume-first",
 					Iops:          1000,
@@ -101,9 +101,9 @@ var (
 		},
 	}
 
-	defaultMultiVolumeReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
+	defaultMultiVolumeReconcile = infrastructurev1beta2.OscMachineSpec{
+		Node: infrastructurev1beta2.OscNode{
+			Volumes: []*infrastructurev1beta2.OscVolume{
 				{
 					Name:          "test-volume-first",
 					Iops:          1000,
@@ -126,10 +126,10 @@ var (
 )
 
 // Setup set osccluster, oscmachine, machineScope and clusterScope
-func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
+func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta2.OscClusterSpec, machineSpec infrastructurev1beta2.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
 	t.Logf("Validate to %s", name)
 
-	oscCluster := infrastructurev1beta1.OscCluster{
+	oscCluster := infrastructurev1beta2.OscCluster{
 		Spec: clusterSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       "uid",
@@ -137,7 +137,7 @@ func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.O
 			Namespace: "test-system",
 		},
 	}
-	oscMachine := infrastructurev1beta1.OscMachine{
+	oscMachine := infrastructurev1beta2.OscMachine{
 		Spec: machineSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       "uid",
@@ -181,7 +181,7 @@ func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.O
 }
 
 // SetupWithVolumeMock set publicIpMock with clusterScope, machineScope and oscmachine
-func SetupWithVolumeMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithVolumeMock(t *testing.T, name string, clusterSpec infrastructurev1beta2.OscClusterSpec, machineSpec infrastructurev1beta2.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope, machineScope = SetupMachine(t, name, clusterSpec, machineSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscVolumeInterface = mock_storage.NewMockOscVolumeInterface(mockCtrl)
@@ -194,8 +194,8 @@ func SetupWithVolumeMock(t *testing.T, name string, clusterSpec infrastructurev1
 func TestGetVolumeResourceId(t *testing.T) {
 	volumeTestCases := []struct {
 		name                      string
-		clusterSpec               infrastructurev1beta1.OscClusterSpec
-		machineSpec               infrastructurev1beta1.OscMachineSpec
+		clusterSpec               infrastructurev1beta2.OscClusterSpec
+		machineSpec               infrastructurev1beta2.OscMachineSpec
 		expVolumeFound            bool
 		expGetVolumeResourceIdErr error
 	}{
@@ -242,8 +242,8 @@ func TestGetVolumeResourceId(t *testing.T) {
 func TestCheckVolumeOscDuplicateName(t *testing.T) {
 	volumeTestCases := []struct {
 		name                              string
-		clusterSpec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                       infrastructurev1beta1.OscMachineSpec
+		clusterSpec                       infrastructurev1beta2.OscClusterSpec
+		machineSpec                       infrastructurev1beta2.OscMachineSpec
 		expCheckVolumeOscDuplicateNameErr error
 	}{
 		{
@@ -255,9 +255,9 @@ func TestCheckVolumeOscDuplicateName(t *testing.T) {
 		{
 			name:        "get duplicate Name",
 			clusterSpec: defaultClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Volumes: []*infrastructurev1beta2.OscVolume{
 						{
 							Name:          "test-volume",
 							Iops:          1000,
@@ -295,8 +295,8 @@ func TestCheckVolumeOscDuplicateName(t *testing.T) {
 func TestReconcileVolumeResourceId(t *testing.T) {
 	vmTestCases := []struct {
 		name                              string
-		clusterSpec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                       infrastructurev1beta1.OscMachineSpec
+		clusterSpec                       infrastructurev1beta2.OscClusterSpec
+		machineSpec                       infrastructurev1beta2.OscMachineSpec
 		expVolumeFound                    bool
 		expSubnetFound                    bool
 		expTagFound                       bool
@@ -475,8 +475,8 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 func TestReconcileVolumeCreate(t *testing.T) {
 	volumeTestCases := []struct {
 		name                              string
-		clusterSpec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                       infrastructurev1beta1.OscMachineSpec
+		clusterSpec                       infrastructurev1beta2.OscClusterSpec
+		machineSpec                       infrastructurev1beta2.OscMachineSpec
 		expVolumeFound                    bool
 		expCheckVolumeStateAvailableFound bool
 		expCreateVolumeFound              bool
@@ -653,8 +653,8 @@ func TestReconcileVolumeCreate(t *testing.T) {
 func TestReconcileVolumeGet(t *testing.T) {
 	volumeTestCases := []struct {
 		name                    string
-		clusterSpec             infrastructurev1beta1.OscClusterSpec
-		machineSpec             infrastructurev1beta1.OscMachineSpec
+		clusterSpec             infrastructurev1beta2.OscClusterSpec
+		machineSpec             infrastructurev1beta2.OscMachineSpec
 		expVolumeFound          bool
 		expTagFound             bool
 		expValidateVolumeIdsErr error
@@ -759,8 +759,8 @@ func TestReconcileVolumeGet(t *testing.T) {
 func TestReconcileDeleteVolumeDelete(t *testing.T) {
 	volumeTestCases := []struct {
 		name                            string
-		clusterSpec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec                     infrastructurev1beta1.OscMachineSpec
+		clusterSpec                     infrastructurev1beta2.OscClusterSpec
+		machineSpec                     infrastructurev1beta2.OscMachineSpec
 		expVolumeFound                  bool
 		expValidateVolumeIdsErr         error
 		expCheckVolumeStateAvailableErr error
@@ -869,8 +869,8 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 func TestReconcileDeleteVolumeGet(t *testing.T) {
 	volumeTestCases := []struct {
 		name                        string
-		clusterSpec                 infrastructurev1beta1.OscClusterSpec
-		machineSpec                 infrastructurev1beta1.OscMachineSpec
+		clusterSpec                 infrastructurev1beta2.OscClusterSpec
+		machineSpec                 infrastructurev1beta2.OscMachineSpec
 		expVolumeFound              bool
 		expValidateVolumeIdsErr     error
 		expReconcileDeleteVolumeErr error
@@ -878,8 +878,8 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 		{
 			name:        "check work without volume spec (with default values)",
 			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{},
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{},
 			},
 			expVolumeFound:              false,
 			expValidateVolumeIdsErr:     nil,
@@ -943,8 +943,8 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 	volumeTestCases := []struct {
 		name                            string
-		clusterSpec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec                     infrastructurev1beta1.OscMachineSpec
+		clusterSpec                     infrastructurev1beta2.OscClusterSpec
+		machineSpec                     infrastructurev1beta2.OscMachineSpec
 		expValidateVolumeIdsErr         error
 		expDeleteVolumeErr              error
 		expCheckVolumeStateAvailableErr error
@@ -1018,8 +1018,8 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 	volumeTestCases := []struct {
 		name                              string
-		clusterSpec                       infrastructurev1beta1.OscClusterSpec
-		machineSpec                       infrastructurev1beta1.OscMachineSpec
+		clusterSpec                       infrastructurev1beta2.OscClusterSpec
+		machineSpec                       infrastructurev1beta2.OscMachineSpec
 		expVolumeFound                    bool
 		expValidateVolumeIdsErr           error
 		expCheckVolumeStateAvailableFound bool
@@ -1035,9 +1035,9 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 		{
 			name:        "failed VmVolumeStateUse",
 			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Volumes: []*infrastructurev1beta2.OscVolume{
 						{
 							Name:          "test-volume",
 							Iops:          1000,
@@ -1064,9 +1064,9 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 		{
 			name:        "failed to unlink volume",
 			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Volumes: []*infrastructurev1beta2.OscVolume{
 						{
 							Name:          "test-volume",
 							Iops:          1000,
@@ -1093,9 +1093,9 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 		{
 			name:        "failed to delete volume",
 			clusterSpec: defaultClusterReconcile,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
+			machineSpec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Volumes: []*infrastructurev1beta2.OscVolume{
 						{
 							Name:          "test-volume",
 							Iops:          1000,

@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
@@ -31,25 +31,25 @@ import (
 )
 
 var (
-	defaultNatServiceInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
+	defaultNatServiceInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			NatService: infrastructurev1beta1.OscNatService{
+			NatService: infrastructurev1beta2.OscNatService{
 				Name:         "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name: "test-publicip",
 				},
@@ -57,26 +57,26 @@ var (
 		},
 	}
 
-	defaultNatServiceReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultNatServiceReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			NatService: infrastructurev1beta1.OscNatService{Name: "test-natservice",
+			NatService: infrastructurev1beta2.OscNatService{Name: "test-natservice",
 				PublicIpName: "test-publicip",
 				SubnetName:   "test-subnet-test",
 				ResourceId:   "nat-test-natservice-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name:       "test-publicip",
 					ResourceId: "eipalloc-test-publicip-uid",
@@ -87,7 +87,7 @@ var (
 )
 
 // SetupWithNatServiceMock set natServiceMock with clusterScope and osccluster
-func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNatServiceInterface *mock_net.MockOscNatServiceInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscNatServiceInterface *mock_net.MockOscNatServiceInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscNatServiceInterface = mock_net.NewMockOscNatServiceInterface(mockCtrl)
@@ -100,7 +100,7 @@ func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1bet
 func TestGetNatResourceId(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                   string
-		spec                   infrastructurev1beta1.OscClusterSpec
+		spec                   infrastructurev1beta2.OscClusterSpec
 		expNatServiceFound     bool
 		expGetNatResourceIdErr error
 	}{
@@ -145,13 +145,13 @@ func TestGetNatResourceId(t *testing.T) {
 func TestCheckNatFormatParameters(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expCheckNatFormatParametersErr error
 	}{
 		{
 			name: "Check work without natService spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckNatFormatParametersErr: nil,
 		},
@@ -162,24 +162,24 @@ func TestCheckNatFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad name natService",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice@test",
 						PublicIpName: "test-publicip",
 						SubnetName:   "test-subnet",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -190,24 +190,24 @@ func TestCheckNatFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad name publicIp",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice",
 						PublicIpName: "test-publicip@test",
 						SubnetName:   "test-subnet",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -218,25 +218,25 @@ func TestCheckNatFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check BadName subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice",
 						PublicIpName: "test-publicip",
 						SubnetName:   "test-subnet@test",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 							ResourceId:    "subnet-test-subnet-uid",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -264,13 +264,13 @@ func TestCheckNatFormatParameters(t *testing.T) {
 func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                                         string
-		spec                                         infrastructurev1beta1.OscClusterSpec
+		spec                                         infrastructurev1beta2.OscClusterSpec
 		expCheckNatSubnetOscAssociateResourceNameErr error
 	}{
 		{
 			name: "check work without natService spec (with default values) ",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-public-uid subnet does not exist in natService"),
 		},
@@ -281,23 +281,23 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "Check natService association with bad subnet",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					NatService: infrastructurev1beta1.OscNatService{
+					NatService: infrastructurev1beta2.OscNatService{
 						Name:         "test-natservice@test",
 						PublicIpName: "test-publicip",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
@@ -324,7 +324,7 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 func TestReconcileNatServiceCreate(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                      string
-		spec                      infrastructurev1beta1.OscClusterSpec
+		spec                      infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound          bool
 		expSubnetFound            bool
 		expTagFound               bool
@@ -429,7 +429,7 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 func TestReconcileNatServiceGet(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                      string
-		spec                      infrastructurev1beta1.OscClusterSpec
+		spec                      infrastructurev1beta2.OscClusterSpec
 		expNatServiceFound        bool
 		expPublicIpFound          bool
 		expSubnetFound            bool
@@ -540,7 +540,7 @@ func TestReconcileNatServiceGet(t *testing.T) {
 func TestReconcileNatServiceResourceId(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                      string
-		spec                      infrastructurev1beta1.OscClusterSpec
+		spec                      infrastructurev1beta2.OscClusterSpec
 		expPublicIpFound          bool
 		expSubnetFound            bool
 		expTagFound               bool
@@ -627,7 +627,7 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                            string
-		spec                            infrastructurev1beta1.OscClusterSpec
+		spec                            infrastructurev1beta2.OscClusterSpec
 		expGetNatServiceErr             error
 		expDeleteNatServiceErr          error
 		expReconcileDeleteNatServiceErr error
@@ -700,7 +700,7 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                            string
-		spec                            infrastructurev1beta1.OscClusterSpec
+		spec                            infrastructurev1beta2.OscClusterSpec
 		expSubnetFound                  bool
 		expPublicIpFound                bool
 		expNatServiceFound              bool
@@ -782,7 +782,7 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 func TestReconcileDeleteNatServiceGet(t *testing.T) {
 	natServiceTestCases := []struct {
 		name                            string
-		spec                            infrastructurev1beta1.OscClusterSpec
+		spec                            infrastructurev1beta2.OscClusterSpec
 		expSubnetFound                  bool
 		expPublicIpFound                bool
 		expNatServiceFound              bool
