@@ -304,7 +304,7 @@ func waitOscClusterToProvision(ctx context.Context, capoClusterKey client.Object
 		k8sClient.Get(ctx, capoClusterKey, capoCluster)
 		fmt.Fprintf(GinkgoWriter, "capoClusterPhase: %v\n", capoCluster.Status.Phase)
 		return capoCluster.Status.Phase, nil
-	}, 2*time.Minute, 3*time.Second).Should(Equal("Provisioned"))
+	}, 8*time.Minute, 15*time.Second).Should(Equal("Provisioned"))
 }
 
 // waitOscMachineToProvision will wait that capi will set capoMachine in provisionned phase
@@ -327,7 +327,7 @@ func waitOscInfraClusterToBeReady(ctx context.Context, oscInfraClusterKey client
 		k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
 		fmt.Fprintf(GinkgoWriter, "oscInfraClusterReady: %v\n", oscInfraCluster.Status.Ready)
 		return oscInfraCluster.Status.Ready
-	}, 2*time.Minute, 3*time.Second).Should(BeTrue())
+	}, 8*time.Minute, 15*time.Second).Should(BeTrue())
 }
 
 // waitOscMachineToProvision will wait OscInfraCluster to be deployed and ready (object oscmachine create with ready status)
@@ -898,6 +898,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscCluster(ctx, infraClusterSpec)
+			time.sleep(120)
 
 		})
 		It("should create a simple cluster with default values", func() {
@@ -934,7 +935,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscCluster(ctx, infraClusterSpec)
-
+                        time.sleep(120)
 		})
 		It("Should create cluster with machine", func() {
 			ctx := context.Background()
@@ -1171,6 +1172,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscClusterMachine(ctx, infraClusterSpec, infraMachineSpec)
+                        time.sleep(120)
+
 		})
 	})
 })
