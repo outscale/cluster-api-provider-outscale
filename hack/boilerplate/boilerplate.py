@@ -123,6 +123,7 @@ def file_passes(filename, refs, regexs):
             else:
                 print('File %s has the YEAR field, but missing the year of date' % filename, file=verbose_out)
             return False
+
     if not generated:
         # Replace all occurrences of the regex "2014|2015|2016|2017|2018" with "YEAR"
         p = regexs["date"]
@@ -219,6 +220,7 @@ def main():
     regexs = get_regexs()
     refs = get_refs()
     filenames = get_files(refs.keys())
+
     for filename in filenames:
         if not file_passes(filename, refs, regexs):
             if sys.version_info[0] < 3:

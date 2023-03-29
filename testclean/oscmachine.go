@@ -20,7 +20,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -45,7 +45,7 @@ type OscInfraMachineListDeleteInput struct {
 func GetOscInfraMachine(ctx context.Context, input OscInfraMachineInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in GetOscInfraMachine")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in GetOscInfraMachine")
-	oscInfraMachine := &infrastructurev1beta1.OscMachine{}
+	oscInfraMachine := &infrastructurev1beta2.OscMachine{}
 	key := client.ObjectKey{
 		Namespace: input.Namespace,
 		Name:      input.Name,
@@ -60,7 +60,7 @@ func GetOscInfraMachine(ctx context.Context, input OscInfraMachineInput) bool {
 
 // GetOscInfraMachineList get oscMachine.
 func GetOscInfraMachineList(ctx context.Context, input OscInfraMachineListInput) bool {
-	oscInfraMachineList := &infrastructurev1beta1.OscMachineList{}
+	oscInfraMachineList := &infrastructurev1beta2.OscMachineList{}
 	if err := input.Lister.List(ctx, oscInfraMachineList, input.ListOptions); err != nil {
 		By(fmt.Sprintf("Can not list OscInfraMachineList %s\n", err))
 		return false
@@ -73,16 +73,16 @@ func GetOscInfraMachineList(ctx context.Context, input OscInfraMachineListInput)
 
 // DeleteOscInfraMachineList delete oscMachine.
 func DeleteOscInfraMachineList(ctx context.Context, input OscInfraMachineListDeleteInput) bool {
-	oscInfraMachineList := &infrastructurev1beta1.OscMachineList{}
+	oscInfraMachineList := &infrastructurev1beta2.OscMachineList{}
 	if err := input.Deleter.List(ctx, oscInfraMachineList, input.ListOptions); err != nil {
 		By(fmt.Sprintf("Can not list infraMachine %s", err))
 		return false
 	}
 	var key client.ObjectKey
-	var oscInfraMachineGet *infrastructurev1beta1.OscMachine
+	var oscInfraMachineGet *infrastructurev1beta2.OscMachine
 	for _, oscInfraMachine := range oscInfraMachineList.Items {
 		By(fmt.Sprintf("Find oscInfraMachine %s in namespace %s to be deleted \n", oscInfraMachine.Name, oscInfraMachine.Namespace))
-		oscInfraMachineGet = &infrastructurev1beta1.OscMachine{}
+		oscInfraMachineGet = &infrastructurev1beta2.OscMachine{}
 		key = client.ObjectKey{
 			Namespace: oscInfraMachine.Namespace,
 			Name:      oscInfraMachine.Name,
@@ -103,7 +103,7 @@ func DeleteOscInfraMachineList(ctx context.Context, input OscInfraMachineListDel
 			Expect(input.Deleter.Update(ctx, oscInfraMachineGet)).Should(Succeed())
 			fmt.Fprintf(GinkgoWriter, "Patch machine \n")
 		}
-		oscInfraMachineGet = &infrastructurev1beta1.OscMachine{}
+		oscInfraMachineGet = &infrastructurev1beta2.OscMachine{}
 		EventuallyWithOffset(1, func() error {
 			fmt.Fprintf(GinkgoWriter, "Wait OscInfraMachine %s in namespace %s to be deleted \n", oscInfraMachine.Name, oscInfraMachine.Namespace)
 			return input.Deleter.Get(ctx, key, oscInfraMachineGet)

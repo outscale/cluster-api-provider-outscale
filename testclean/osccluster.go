@@ -20,7 +20,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -45,7 +45,7 @@ type OscInfraClusterDeleteListInput struct {
 func GetOscInfraCluster(ctx context.Context, input OscInfraClusterInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in GetOscInfraCluster")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in GetOscInfraCluster")
-	oscInfraCluster := &infrastructurev1beta1.OscCluster{}
+	oscInfraCluster := &infrastructurev1beta2.OscCluster{}
 	key := client.ObjectKey{
 		Namespace: input.Namespace,
 		Name:      input.Name,
@@ -60,7 +60,7 @@ func GetOscInfraCluster(ctx context.Context, input OscInfraClusterInput) bool {
 
 // GetOscInfraClusterList get oscCluster.
 func GetOscInfraClusterList(ctx context.Context, input OscInfraClusterListInput) bool {
-	oscInfraClusterList := &infrastructurev1beta1.OscClusterList{}
+	oscInfraClusterList := &infrastructurev1beta2.OscClusterList{}
 	if err := input.Lister.List(ctx, oscInfraClusterList, input.ListOptions); err != nil {
 		By(fmt.Sprintf("Can not list OscInfraClusterList %s\n", err))
 		return false
@@ -73,16 +73,16 @@ func GetOscInfraClusterList(ctx context.Context, input OscInfraClusterListInput)
 
 // DeleteOscInfraClusterList delete oscCluster.
 func DeleteOscInfraClusterList(ctx context.Context, input OscInfraClusterDeleteListInput) bool {
-	oscInfraClusterList := &infrastructurev1beta1.OscClusterList{}
+	oscInfraClusterList := &infrastructurev1beta2.OscClusterList{}
 	if err := input.Deleter.List(ctx, oscInfraClusterList, input.ListOptions); err != nil {
 		By(fmt.Sprintf("Can not list oscInfraClusterList %s", err))
 		return false
 	}
 	var key client.ObjectKey
-	var oscInfraClusterGet *infrastructurev1beta1.OscCluster
+	var oscInfraClusterGet *infrastructurev1beta2.OscCluster
 	for _, oscInfraCluster := range oscInfraClusterList.Items {
 		By(fmt.Sprintf("Find oscInfraCluster %s in namespace to be deleted %s\n", oscInfraCluster.Name, oscInfraCluster.Namespace))
-		oscInfraClusterGet = &infrastructurev1beta1.OscCluster{}
+		oscInfraClusterGet = &infrastructurev1beta2.OscCluster{}
 		key = client.ObjectKey{
 			Namespace: oscInfraCluster.Namespace,
 			Name:      oscInfraCluster.Name,

@@ -21,13 +21,15 @@ spec:
     name: "cluster-api-control-plane"
     namespace: default
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscCluster
 metadata:
   name: cluster-api
   namespace: default
 spec:
   network:
+    bastion:
+      enable: false
     clusterName: cluster-api
     subregionName: eu-west-2a
     loadBalancer:
@@ -214,7 +216,7 @@ spec:
         kind: OscMachineTemplate
         namespace: default
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cluster-api-md-0"
@@ -245,7 +247,7 @@ spec:
             - name: cluster-api-securitygroups-node
           vmType: "tinav4.c2r4p2"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cluster-api-control-plane"

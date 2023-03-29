@@ -21,7 +21,7 @@ spec:
     name: "capo-quickstart-control-plane"
     namespace: default
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscCluster
 metadata:
   name:  capo-quickstart
@@ -94,7 +94,7 @@ spec:
           subregionName: eu-west-2a
           vmType: "tinav4.c2r4p2"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "capo-quickstart-control-plane"

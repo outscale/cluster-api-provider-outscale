@@ -1,0 +1,8 @@
+providers:
+- name: "k3s"
+  url: /home/outscale/cluster-api-k3s/samples/deployment/bootstrap-k3s/v1.2.2/bootstrap-components.yaml
+  type: "BootstrapProvider"
+- name: "k3s"
+  url: /home/outscale/cluster-api-k3s/samples/deployment/control-plane-k3s/v1.2.2/control-plane-components.yaml
+  type: "ControlPlaneProvider"
+# override a pre-defined provider

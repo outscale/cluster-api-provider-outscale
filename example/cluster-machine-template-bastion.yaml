@@ -21,44 +21,13 @@ spec:
     name: "cluster-api-control-plane"
     namespace: default
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscCluster
 metadata:
   name: cluster-api
   namespace: default
 spec:
   network:
-    clusterName: cluster-api
-    loadBalancer:
-      loadbalancername: osc-k8s
-      loadbalancertype: internet-facing
-      subnetname: cluster-api-subnet-public
-      securitygroupname: cluster-api-securitygroup-lb
-      clusterName: cluster-api
-    net:
-      name: cluster-api-net
-      clusterName: cluster-api
-      ipRange: "10.0.0.0/24"
-    subnets:
-      - name: cluster-api-subnet-kcp
-        ipSubnetRange: "10.0.0.32/28"
-      - name: cluster-api-subnet-kw
-        ipSubnetRange: "10.0.0.128/26"
-      - name: cluster-api-subnet-public
-        ipSubnetRange: "10.0.0.8/29"
-      - name: cluster-api-subnet-nat
-        ipSubnetRange: "10.0.0.0/29"
-    publicIps:
-      - name: cluster-api-publicip-nat
-    internetService:
-      clusterName: cluster-api
-      name: cluster-api-internetservice
-    natService:
-      clusterName: cluster-api
-      name: cluster-api-natservice
-      publicipname: cluster-api-publicip-nat
-      subnetname: cluster-api-subnet-nat
-      
     bastion:
       clusterName: cluster-api
       enable: true
@@ -75,10 +44,42 @@ spec:
       securityGroupNames:
         - name: cluster-api-securitygroup-lb
       vmType: "tinav4.c2r4p2"
+    clusterName: cluster-api
+    subregionName: eu-west-2a
+    loadBalancer:
+      loadbalancername: osc-k8s
+      loadbalancertype: internet-facing
+      subnetname: cluster-api-subnet-public
+      securitygroupname: cluster-api-securitygroup-lb
+      clusterName: cluster-api
+    net:
+      name: cluster-api-net
+      clusterName: cluster-api
+      ipRange: "10.0.0.0/16"
+    subnets:
+      - name: cluster-api-subnet-kcp
+        ipSubnetRange: "10.0.4.0/24"
+      - name: cluster-api-subnet-kw
+        ipSubnetRange: "10.0.3.0/24"
+      - name: cluster-api-subnet-public
+        ipSubnetRange: "10.0.2.0/24"
+    publicIps:
+      - name: cluster-api-publicip-nat
+    internetService:
+      clusterName: cluster-api
+      name: cluster-api-internetservice
+    natService:
+      clusterName: cluster-api
+      name: cluster-api-natservice
+      publicipname: cluster-api-publicip-nat
+      subnetname: cluster-api-subnet-public
+    bastion:
+      clusterName: cluster-api
+      enable: false
     routeTables:
       - name: cluster-api-routetable-kw
         subnets:
-        - cluster-api-subnet-kw
+          - cluster-api-subnet-kw
         routes:
           - name: cluster-api-routes-kw
             targetName: cluster-api-natservice
@@ -86,23 +87,15 @@ spec:
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-kcp
         subnets:
-        - cluster-api-subnet-kcp
+          - cluster-api-subnet-kcp
         routes:
           - name: cluster-api-routes-kcp
-            targetName: cluster-api-natservice	
+            targetName: cluster-api-natservice
             targetType: nat
-            destination: "0.0.0.0/0"
-      - name: cluster-api-routetable-nat
-        subnets: 
-        - cluster-api-subnet-nat
-        routes:
-          - name: cluster-api-routes-nat
-            targetName: cluster-api-internetservice
-            targetType: gateway
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-public
         subnets:
-        - cluster-api-subnet-public
+          - cluster-api-subnet-public
         routes:
           - name: cluster-api-routes-public
             targetName: cluster-api-internetservice
@@ -116,30 +109,36 @@ spec:
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.128/26"
+            ipRange: "10.0.3.0/24"
             fromPortRange: 10250
             toPortRange: 10250
           - name: cluster-api-securitygrouprule-api-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.32/28"
+            ipRange: "10.0.4.0/24"
             fromPortRange: 10250
             toPortRange: 10250
-          - name: cluster-api-securitygrouprule-nodeip-kw
+          - name: cluster-api-securitygrouprule-kcp-nodeip-kw
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.128/26"
+            ipRange: "10.0.3.0/24"
             fromPortRange: 30000
             toPortRange: 32767
-          - name: cluster-api-securitygrouprule-nodeip-kcp
+          - name: cluster-api-securitygrouprule-kcp-nodeip-kcp
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.32/28"
+            ipRange: "10.0.4.0/24"
             fromPortRange: 30000
             toPortRange: 32767
+          - name: cluster-api-securitygrouprule-kw-bgp
+            flow: Inbound
+            ipProtocol: tcp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 179
+            toPortRange: 179
       - name: cluster-api-securitygroups-kcp
         description: Security Group with cluster-api
         securityGroupRules:
@@ -147,30 +146,50 @@ spec:
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.128/26"
+            ipRange: "10.0.3.0/24"
             fromPortRange: 6443
             toPortRange: 6443
           - name: cluster-api-securitygrouprule-api-kcp
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.32/28"
+            ipRange: "10.0.4.0/24"
             fromPortRange: 6443
             toPortRange: 6443
           - name: cluster-api-securitygrouprule-etcd
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.32/28"
+            ipRange: "10.0.4.0/24"
             fromPortRange: 2378
             toPortRange: 2379
           - name: cluster-api-securitygrouprule-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.0.32/28"
+            ipRange: "10.0.4.0/24"
             fromPortRange: 10250
             toPortRange: 10252
+          - name: cluster-api-securitygrouprule-kcp-bgp
+            flow: Inbound
+            ipProtocol: tcp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 179
+            toPortRange: 179
+          - name: cluster-api-securitygrouprule-kw-nodeip-kw
+            flow: Inbound
+            ipProtocol: tcp
+# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            ipRange: "10.0.3.0/24"
+            fromPortRange: 30000
+            toPortRange: 32767
+          - name: cluster-api-securitygrouprule-kw-nodeip-kcp
+            flow: Inbound
+            ipProtocol: tcp
+# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            ipRange: "10.0.4.0/24"
+            fromPortRange: 30000
+            toPortRange: 32767
       - name: cluster-api-securitygroup-lb
         description: Security Group lb with cluster-api
         securityGroupRules:
@@ -184,6 +203,7 @@ spec:
       - name: cluster-api-securitygroups-node
         description: Security Group node with cluster-api
         tag: OscK8sMainSG 
+
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -211,7 +231,7 @@ spec:
         kind: OscMachineTemplate
         namespace: default
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cluster-api-md-0"
@@ -242,7 +262,7 @@ spec:
             - name: cluster-api-securitygroups-node
           vmType: "tinav4.c2r4p2"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cluster-api-control-plane"
@@ -298,7 +318,7 @@ spec:
           name: "{{ ds.meta_data.local_hostname }}"
           kubeletExtraArgs:
             cloud-provider: external
-            provider-id: osc://'{{ ds.meta_data.instance_id }}'
+            provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
       preKubeadmCommands:
         - sh /tmp/set_runc.sh
 ---
@@ -319,7 +339,7 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: osc://'{{ ds.meta_data.instance_id }}'
+          provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     files:
     - content: |
@@ -334,7 +354,7 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: osc://'{{ ds.meta_data.instance_id }}'
+          provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
   version: "1.22.11"

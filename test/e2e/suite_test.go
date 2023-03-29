@@ -122,7 +122,7 @@ func TestE2E(t *testing.T) {
 
 func getK8sClient() {
 	if os.Getenv(kubeconfigEnvVar) == "" {
-		kubeconfig := filepath.Join("/root", ".kube", "config")
+		kubeconfig := filepath.Join("/home", "outscale", ".kube", "config")
 		os.Setenv(kubeconfigEnvVar, kubeconfig)
 	}
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
