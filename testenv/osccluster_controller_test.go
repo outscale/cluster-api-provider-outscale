@@ -24,10 +24,10 @@ import (
 	network "net"
 	"net/http"
 	"os"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 
 	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -898,7 +898,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscCluster(ctx, infraClusterSpec)
-			time.sleep(120)
 
 		})
 		It("should create a simple cluster with default values", func() {
@@ -935,7 +934,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscCluster(ctx, infraClusterSpec)
-                        time.sleep(120)
 		})
 		It("Should create cluster with machine", func() {
 			ctx := context.Background()
@@ -1172,7 +1170,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				},
 			}
 			createCheckDeleteOscClusterMachine(ctx, infraClusterSpec, infraMachineSpec)
-                        time.sleep(120)
 
 		})
 	})
