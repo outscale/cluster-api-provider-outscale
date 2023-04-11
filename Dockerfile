@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # Build the manager binary
-FROM golang:1.18.7-alpine as builder
+FROM golang:1.19-alpine3.17 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
