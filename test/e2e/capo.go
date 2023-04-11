@@ -29,7 +29,6 @@ import (
 	. "github.com/onsi/gomega"
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/kubernetes/test/e2e/framework/log"
 	"k8s.io/utils/pointer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -75,9 +74,6 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 	Expect(input.ConfigCluster.ControlPlaneMachineCount).ToNot(BeNil())
 	Expect(input.ConfigCluster.WorkerMachineCount).ToNot(BeNil())
 
-	log.Logf("Creating the workload cluster with name %q using the %q template (Kubernetes %s, %d control-plane machines, %d worker machines)",
-		input.ConfigCluster.ClusterName, input.ConfigCluster.Flavor, input.ConfigCluster.KubernetesVersion, *input.ConfigCluster.ControlPlaneMachineCount, *input.ConfigCluster.WorkerMachineCount)
-	log.Logf("Getting the cluster template yaml")
 	workloadClusterTemplate := clusterctl.ConfigCluster(ctx, clusterctl.ConfigClusterInput{
 		KubeconfigPath:           input.ConfigCluster.KubeconfigPath,
 		ClusterctlConfigPath:     input.ConfigCluster.ClusterctlConfigPath,
@@ -91,12 +87,10 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 		LogFolder:                input.ConfigCluster.LogFolder,
 	})
 	Expect(workloadClusterTemplate).ToNot(BeNil(), "Failed to get the cluster template")
-	log.Logf("Applying the cluster template yaml to the cluster")
 	Eventually(func() error {
 		return input.ClusterProxy.Apply(ctx, workloadClusterTemplate, input.Args...)
 	}, 10*time.Second).Should(Succeed(), "Failed to apply the cluster template")
 
-	log.Logf("Waiting for the cluster infrastructure to be provisioned")
 	result.Cluster = framework.DiscoveryAndWaitForCluster(ctx, framework.DiscoveryAndWaitForClusterInput{
 		Getter:    input.ClusterProxy.GetClient(),
 		Namespace: input.ConfigCluster.Namespace,
