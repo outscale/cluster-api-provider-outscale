@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -49,7 +49,7 @@ func getLinkPublicIpResourceId(resourceName string, machineScope *scope.MachineS
 
 // checkPublicIpFormatParameters check PublicIp parameters format (Tag format, cidr format, ..)
 func checkPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	var publicIpsSpec []*infrastructurev1beta2.OscPublicIp
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.PublicIps == nil {
 		networkSpec.SetPublicIpDefaultValue()
@@ -74,7 +74,7 @@ func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) err
 	natServiceSpec := clusterScope.GetNatService()
 	natServiceSpec.SetDefaultValue()
 	natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	var publicIpsSpec []*infrastructurev1beta2.OscPublicIp
 	networkSpec := clusterScope.GetNetwork()
 	publicIpsSpec = networkSpec.PublicIps
 	for _, publicIpSpec := range publicIpsSpec {
@@ -110,7 +110,7 @@ func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 // reconcilePublicIp reconcile the PublicIp of the cluster.
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	var publicIpsSpec []*infrastructurev1beta2.OscPublicIp
 	publicIpsSpec = clusterScope.GetPublicIp()
 	var publicIpId string
 	publicIpRef := clusterScope.GetPublicIpRef()
@@ -164,7 +164,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 // reconcileDeletePublicIp reconcile the destruction of the PublicIp of the cluster.
 func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	var publicIpsSpec []*infrastructurev1beta2.OscPublicIp
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.PublicIps == nil {
 		networkSpec.SetPublicIpDefaultValue()

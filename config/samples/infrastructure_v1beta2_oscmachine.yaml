@@ -1,0 +1,12 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscMachine
+metadata:
+  labels:
+    app.kubernetes.io/name: oscmachine
+    app.kubernetes.io/instance: oscmachine-sample
+    app.kubernetes.io/part-of: cluster-api-provider-outscale
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: cluster-api-provider-outscale
+  name: oscmachine-sample
+spec:
+  # TODO(user): Add fields here

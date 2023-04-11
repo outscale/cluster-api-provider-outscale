@@ -20,7 +20,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -45,7 +45,7 @@ type OscInfraMachineTemplateListDeleteInput struct {
 func GetOscInfraMachineTemplate(ctx context.Context, input OscInfraMachineTemplateInput) bool {
 	Expect(input.Namespace).ToNot(BeNil(), "Need a namespace in GetOscInfraMachineTemplate")
 	Expect(input.Name).ToNot(BeNil(), "Need a name in GetOscInfraMachineTemplate")
-	oscInfraMachineTemplate := &infrastructurev1beta1.OscMachineTemplate{}
+	oscInfraMachineTemplate := &infrastructurev1beta2.OscMachineTemplate{}
 	key := client.ObjectKey{
 		Namespace: input.Namespace,
 		Name:      input.Name,
@@ -60,7 +60,7 @@ func GetOscInfraMachineTemplate(ctx context.Context, input OscInfraMachineTempla
 
 // GetOscInfraMachineTemplateList get oscMachineTemplate
 func GetOscInfraMachineTemplateList(ctx context.Context, input OscInfraMachineTemplateListInput) bool {
-	oscInfraMachineTemplateList := &infrastructurev1beta1.OscMachineTemplateList{}
+	oscInfraMachineTemplateList := &infrastructurev1beta2.OscMachineTemplateList{}
 	if err := input.Lister.List(ctx, oscInfraMachineTemplateList, input.ListOptions); err != nil {
 		By(fmt.Sprintf("Can not list OscInfraMachineTemplateList %s\n", err))
 		return false
@@ -73,16 +73,16 @@ func GetOscInfraMachineTemplateList(ctx context.Context, input OscInfraMachineTe
 
 // DeleteOscInfraMachineTemplateList delete oscMachineTemplate
 func DeleteOscInfraMachineTemplateList(ctx context.Context, input OscInfraMachineTemplateListDeleteInput) bool {
-	oscInfraMachineTemplateList := &infrastructurev1beta1.OscMachineTemplateList{}
+	oscInfraMachineTemplateList := &infrastructurev1beta2.OscMachineTemplateList{}
 	if err := input.Deleter.List(ctx, oscInfraMachineTemplateList, input.ListOptions); err != nil {
 		By(fmt.Sprintf("Can not list infraMachine %s", err))
 		return false
 	}
 	var key client.ObjectKey
-	var oscInfraMachineTemplateGet *infrastructurev1beta1.OscMachineTemplate
+	var oscInfraMachineTemplateGet *infrastructurev1beta2.OscMachineTemplate
 	for _, oscInfraMachineTemplate := range oscInfraMachineTemplateList.Items {
 		By(fmt.Sprintf("Find oscInfraMachineTemplate %s in namespaace %s to be deleted \n", oscInfraMachineTemplate.Name, oscInfraMachineTemplate.Namespace))
-		oscInfraMachineTemplateGet = &infrastructurev1beta1.OscMachineTemplate{}
+		oscInfraMachineTemplateGet = &infrastructurev1beta2.OscMachineTemplate{}
 		key = client.ObjectKey{
 			Namespace: oscInfraMachineTemplate.Namespace,
 			Name:      oscInfraMachineTemplate.Name,
@@ -104,7 +104,7 @@ func DeleteOscInfraMachineTemplateList(ctx context.Context, input OscInfraMachin
 			Expect(input.Deleter.Update(ctx, oscInfraMachineTemplateGet)).Should(Succeed())
 			fmt.Fprintf(GinkgoWriter, "Patch machineTemplate \n")
 		}
-		oscInfraMachineTemplateGet = &infrastructurev1beta1.OscMachineTemplate{}
+		oscInfraMachineTemplateGet = &infrastructurev1beta2.OscMachineTemplate{}
 		EventuallyWithOffset(1, func() error {
 			fmt.Fprintf(GinkgoWriter, "Wait OscInfraMachineTemplate %s in namespace %s to be deleted \n", oscInfraMachineTemplate.Name, oscInfraMachineTemplate.Namespace)
 			return input.Deleter.Get(ctx, key, oscInfraMachineTemplateGet)

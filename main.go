@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -52,6 +53,7 @@ func init() {
 	utilruntime.Must(clusterv1.AddToScheme(scheme))
 	utilruntime.Must(bootstrapv1.AddToScheme(scheme))
 	utilruntime.Must(infrastructurev1beta1.AddToScheme(scheme))
+	utilruntime.Must(infrastructurev1beta2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -118,7 +120,7 @@ func main() {
 	}
 
 	setUpWebhookWithManager(mgr)
-	if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
+	/*if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
 		os.Exit(1)
 	}
@@ -132,6 +134,24 @@ func main() {
 	}
 	if err = (&infrastructurev1beta1.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OscCluster")
+		os.Exit(1)
+	}
+	*/
+	if err = (&infrastructurev1beta2.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscCluster")
+		os.Exit(1)
+	}
+
+	if err = (&infrastructurev1beta2.OscMachineTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscClusterTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
@@ -153,7 +173,7 @@ func main() {
 }
 
 func setUpWebhookWithManager(mgr ctrl.Manager) {
-	if err := (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
+	if err := (&infrastructurev1beta2.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
 		os.Exit(1)
 	}

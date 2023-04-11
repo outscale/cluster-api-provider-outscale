@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	v1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -36,7 +36,7 @@ func (m *MockOscSubnetInterface) EXPECT() *MockOscSubnetInterfaceMockRecorder {
 }
 
 // CreateSubnet mocks base method.
-func (m *MockOscSubnetInterface) CreateSubnet(spec *v1beta1.OscSubnet, netId, clusterName, subnetName, subregionName string) (*osc.Subnet, error) {
+func (m *MockOscSubnetInterface) CreateSubnet(spec *v1beta2.OscSubnet, netId, clusterName, subnetName, subregionName string) (*osc.Subnet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSubnet", spec, netId, clusterName, subnetName, subregionName)
 	ret0, _ := ret[0].(*osc.Subnet)

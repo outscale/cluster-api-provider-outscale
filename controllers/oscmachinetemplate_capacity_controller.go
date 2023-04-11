@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/pkg/errors"
@@ -53,7 +53,7 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 	log := ctrl.LoggerFrom(ctx).WithValues("oscmachinetemplate", req.NamespacedName)
 	log.V(2).Info("Reconcile OscMachineTemplate")
 
-	machineTemplate := &infrastructurev1beta1.OscMachineTemplate{}
+	machineTemplate := &infrastructurev1beta2.OscMachineTemplate{}
 	if err := r.Get(ctx, req.NamespacedName, machineTemplate); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -87,7 +87,7 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	}
-	oscCluster := &infrastructurev1beta1.OscCluster{}
+	oscCluster := &infrastructurev1beta2.OscCluster{}
 	oscClusterName := client.ObjectKey{
 		Namespace: machineTemplate.Namespace,
 		Name:      cluster.Spec.InfrastructureRef.Name,
@@ -146,6 +146,6 @@ func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, mach
 func (r *OscMachineTemplateReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
-		For(&infrastructurev1beta1.OscMachineTemplate{}).
+		For(&infrastructurev1beta2.OscMachineTemplate{}).
 		Complete(r)
 }

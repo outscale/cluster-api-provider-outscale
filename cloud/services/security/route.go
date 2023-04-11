@@ -22,7 +22,7 @@ import (
 	"errors"
 	_nethttp "net/http"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -118,7 +118,7 @@ func (s *Service) CreateRouteTable(netId string, clusterName string, routeTableN
 // CreateRoute create the route associated with the routetable and the net
 func (s *Service) CreateRoute(destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
-	valideDestinationIpRange, err := infrastructurev1beta1.ValidateCidr(destinationIpRange)
+	valideDestinationIpRange, err := infrastructurev1beta2.ValidateCidr(destinationIpRange)
 	if err != nil {
 		return nil, err
 	}

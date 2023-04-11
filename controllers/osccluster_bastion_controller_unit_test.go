@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
@@ -33,24 +33,24 @@ import (
 )
 
 var (
-	defaultBastionInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultBastionInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:        "test-net",
 				IpRange:     "10.0.0.0/16",
 				ClusterName: "test-cluster",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -62,25 +62,25 @@ var (
 					},
 				},
 			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 				LoadBalancerName:  "test-loadbalancer",
 				LoadBalancerType:  "internet-facing",
 				SubnetName:        "test-subnet",
 				SecurityGroupName: "test-securitygroup",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name: "test-publicip",
 				},
 			},
-			Bastion: infrastructurev1beta1.OscBastion{
+			Bastion: infrastructurev1beta2.OscBastion{
 				Enable:      true,
 				ClusterName: "test-cluster",
 				Name:        "test-bastion",
 				ImageId:     "ami-00000000",
 				DeviceName:  "/dev/xvdb",
 				KeypairName: "rke",
-				RootDisk: infrastructurev1beta1.OscRootDisk{
+				RootDisk: infrastructurev1beta2.OscRootDisk{
 
 					RootDiskSize: 30,
 					RootDiskIops: 1500,
@@ -90,12 +90,12 @@ var (
 				SubnetName:    "test-subnet",
 				VmType:        "tinav4.c2r4p2",
 				PublicIpName:  "test-publicip",
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+				SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
 					},
 				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+				PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 					{
 						Name:      "test-privateip",
 						PrivateIp: "10.0.0.17",
@@ -105,24 +105,24 @@ var (
 		},
 	}
 
-	defaultBastionImageInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultBastionImageInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:        "test-net",
 				IpRange:     "10.0.0.0/16",
 				ClusterName: "test-cluster",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -134,18 +134,18 @@ var (
 					},
 				},
 			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 				LoadBalancerName:  "test-loadbalancer",
 				LoadBalancerType:  "internet-facing",
 				SubnetName:        "test-subnet",
 				SecurityGroupName: "test-securitygroup",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name: "test-publicip",
 				},
 			},
-			Bastion: infrastructurev1beta1.OscBastion{
+			Bastion: infrastructurev1beta2.OscBastion{
 				Enable:      true,
 				ClusterName: "test-cluster",
 				Name:        "test-bastion",
@@ -153,7 +153,7 @@ var (
 				ImageName:   "ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23",
 				DeviceName:  "/dev/xvdb",
 				KeypairName: "rke",
-				RootDisk: infrastructurev1beta1.OscRootDisk{
+				RootDisk: infrastructurev1beta2.OscRootDisk{
 
 					RootDiskSize: 30,
 					RootDiskIops: 1500,
@@ -163,12 +163,12 @@ var (
 				SubnetName:    "test-subnet",
 				VmType:        "tinav4.c2r4p2",
 				PublicIpName:  "test-publicip",
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+				SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
 					},
 				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+				PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 					{
 						Name:      "test-privateip",
 						PrivateIp: "10.0.0.17",
@@ -178,27 +178,27 @@ var (
 		},
 	}
 
-	defaultBastionReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultBastionReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:        "test-net",
 				IpRange:     "10.0.0.0/16",
 				ClusterName: "test-cluster",
 				ResourceId:  "vpc-test-net-uid",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
 					ResourceId:  "sg-test-securitygroup-uid",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -210,26 +210,26 @@ var (
 					},
 				},
 			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 				LoadBalancerName:  "test-loadbalancer",
 				LoadBalancerType:  "internet-facing",
 				SubnetName:        "test-subnet",
 				SecurityGroupName: "test-securitygroup",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name:       "test-publicip",
 					ResourceId: "test-publicip-uid",
 				},
 			},
-			Bastion: infrastructurev1beta1.OscBastion{
+			Bastion: infrastructurev1beta2.OscBastion{
 				Enable:      true,
 				ClusterName: "test-cluster",
 				Name:        "test-bastion",
 				ImageId:     "ami-00000000",
 				DeviceName:  "/dev/xvdb",
 				KeypairName: "rke",
-				RootDisk: infrastructurev1beta1.OscRootDisk{
+				RootDisk: infrastructurev1beta2.OscRootDisk{
 
 					RootDiskSize: 30,
 					RootDiskIops: 1500,
@@ -240,12 +240,12 @@ var (
 				VmType:        "tinav4.c2r4p2",
 				ResourceId:    "i-test-bastion-uid",
 				PublicIpName:  "test-publicip",
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+				SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 					{
 						Name: "test-securitygroup",
 					},
 				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+				PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 					{
 						Name:      "test-privateip",
 						PrivateIp: "10.0.0.17",
@@ -257,7 +257,7 @@ var (
 )
 
 // SetupWithBastionMock set vmMock with clusterScope, machineScope and oscMachine
-func SetupWithBastionMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscImageInterface *mock_compute.MockOscImageInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithBastionMock(t *testing.T, name string, clusterSpec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscImageInterface *mock_compute.MockOscImageInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, clusterSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscVmInterface = mock_compute.NewMockOscVmInterface(mockCtrl)
@@ -273,7 +273,7 @@ func SetupWithBastionMock(t *testing.T, name string, clusterSpec infrastructurev
 func TestGetBastionResourceId(t *testing.T) {
 	bastionTestCases := []struct {
 		name                       string
-		clusterSpec                infrastructurev1beta1.OscClusterSpec
+		clusterSpec                infrastructurev1beta2.OscClusterSpec
 		expBastionFound            bool
 		expGetBastionResourceIdErr error
 	}{
@@ -315,7 +315,7 @@ func TestGetBastionResourceId(t *testing.T) {
 func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 	bastionTestCases := []struct {
 		name                                                    string
-		clusterSpec                                             infrastructurev1beta1.OscClusterSpec
+		clusterSpec                                             infrastructurev1beta2.OscClusterSpec
 		expCheckBastionSecurityGroupOscAssociateResourceNameErr error
 	}{
 		{
@@ -325,9 +325,9 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check work with bastion spec (with default value)",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Bastion: infrastructurev1beta1.OscBastion{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable: true,
 					},
 				},
@@ -336,24 +336,24 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check Bad security group name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -365,25 +365,25 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -393,12 +393,12 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup@test",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -427,7 +427,7 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 	bastionTestCases := []struct {
 		name                                          string
-		clusterSpec                                   infrastructurev1beta1.OscClusterSpec
+		clusterSpec                                   infrastructurev1beta2.OscClusterSpec
 		expCheckBastionSubnetAssociateResourceNameErr error
 	}{
 		{
@@ -437,9 +437,9 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check work with bastion spec (with default values)",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Bastion: infrastructurev1beta1.OscBastion{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable: true,
 					},
 				},
@@ -448,24 +448,24 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check Bad subnet name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -477,25 +477,25 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -505,12 +505,12 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 						SubnetName:    "test-subnet@test",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -539,7 +539,7 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 	bastionTestCases := []struct {
 		name                                               string
-		clusterSpec                                        infrastructurev1beta1.OscClusterSpec
+		clusterSpec                                        infrastructurev1beta2.OscClusterSpec
 		expCheckBastionPublicIpOscAssociateResourceNameErr error
 	}{
 		{
@@ -549,9 +549,9 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check work with bastion spec (with default values)",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Bastion: infrastructurev1beta1.OscBastion{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:       true,
 						PublicIpName: "cluster-api-publicip",
 					},
@@ -561,24 +561,24 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 		},
 		{
 			name: "check Bad PublicIp  name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -590,25 +590,25 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -618,12 +618,12 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -652,7 +652,7 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 func TestCheckBastionFormatParameters(t *testing.T) {
 	bastionTestCases := []struct {
 		name                               string
-		clusterSpec                        infrastructurev1beta1.OscClusterSpec
+		clusterSpec                        infrastructurev1beta2.OscClusterSpec
 		expCheckBastionFormatParametersErr error
 	}{
 		{
@@ -662,24 +662,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad name vm",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -691,25 +691,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion@test",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -719,12 +719,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -738,24 +738,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 
 		{
 			name: "check Bad imageId",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -767,25 +767,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "omi-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -795,12 +795,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -813,24 +813,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check empty imageId and imagename",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -842,25 +842,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -870,12 +870,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -888,9 +888,9 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad ImageName",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Bastion: infrastructurev1beta1.OscBastion{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:    true,
 						ImageName: "!test-image@Name",
 					},
@@ -900,24 +900,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad keypairname",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -929,25 +929,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke λ",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -957,12 +957,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -975,24 +975,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check empty imageId",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1004,27 +1004,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Image: infrastructurev1beta1.OscImage{
-						Name: "omi-000",
-					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1034,12 +1031,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1052,24 +1049,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad device name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1081,25 +1078,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/sdab1",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1109,12 +1106,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1127,24 +1124,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check empty device name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1156,24 +1153,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1183,12 +1180,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1201,24 +1198,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check Bad VmType",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1230,25 +1227,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1258,12 +1255,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "awsv4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1276,24 +1273,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check Bad IpAddr",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1305,25 +1302,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1333,12 +1330,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.245.0.17",
@@ -1351,24 +1348,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check Bad subregionname",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1380,25 +1377,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1408,12 +1405,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1426,24 +1423,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check Bad root device size",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1455,25 +1452,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: -30,
 							RootDiskIops: 1500,
@@ -1483,12 +1480,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1501,24 +1498,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check Bad rootDeviceIops",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1530,25 +1527,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: -15,
@@ -1558,12 +1555,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1576,24 +1573,24 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 		},
 		{
 			name: "Check bad rootDiskType",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:        "test-net",
 						IpRange:     "10.0.0.0/16",
 						ClusterName: "test-cluster",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							Name:        "test-securitygroup",
 							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+							SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 								{
 									Name:          "test-securitygrouprule",
 									Flow:          "Inbound",
@@ -1605,25 +1602,25 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							},
 						},
 					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 						LoadBalancerName:  "test-loadbalancer",
 						LoadBalancerType:  "internet-facing",
 						SubnetName:        "test-subnet",
 						SecurityGroupName: "test-securitygroup",
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							Name: "test-publicip",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -1633,12 +1630,12 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						SubnetName:    "test-subnet",
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -1673,7 +1670,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 func TestReconcileBastion(t *testing.T) {
 	bastionTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
 		expCreateVmFound             bool
 		expLinkPublicIpFound         bool
 		expCheckVmStateBootFound     bool
@@ -1855,7 +1852,7 @@ func TestReconcileBastion(t *testing.T) {
 func TestReconcileCreateBastion(t *testing.T) {
 	bastionTestCases := []struct {
 		name                   string
-		clusterSpec            infrastructurev1beta1.OscClusterSpec
+		clusterSpec            infrastructurev1beta2.OscClusterSpec
 		expCreateVmFound       bool
 		expLinkPublicIpFound   bool
 		expTagFound            bool
@@ -1972,7 +1969,7 @@ func TestReconcileCreateBastion(t *testing.T) {
 func TestReconcileLinkBastion(t *testing.T) {
 	bastionTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
 		expCreateVmFound             bool
 		expLinkPublicIpFound         bool
 		expCheckVmStateBootFound     bool
@@ -2156,7 +2153,7 @@ func TestReconcileLinkBastion(t *testing.T) {
 func TestReconcileBastionGet(t *testing.T) {
 	bastionTestCases := []struct {
 		name                   string
-		clusterSpec            infrastructurev1beta1.OscClusterSpec
+		clusterSpec            infrastructurev1beta2.OscClusterSpec
 		expGetVmFound          bool
 		expGetVmStateFound     bool
 		expTagFound            bool
@@ -2295,7 +2292,7 @@ func TestReconcileBastionGet(t *testing.T) {
 func TestReconcileBastionResourceId(t *testing.T) {
 	bastionTestCases := []struct {
 		name                   string
-		clusterSpec            infrastructurev1beta1.OscClusterSpec
+		clusterSpec            infrastructurev1beta2.OscClusterSpec
 		expLinkPublicIpFound   bool
 		expGetImageNameFound   bool
 		expSubnetFound         bool
@@ -2458,7 +2455,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 func TestReconcileDeleteBastion(t *testing.T) {
 	bastionTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
 		expDeleteBastionErr          error
 		expGetBastionErr             error
 		expGetBastionFound           bool
@@ -2564,7 +2561,7 @@ func TestReconcileDeleteBastion(t *testing.T) {
 func TestReconcileDeleteBastionResourceId(t *testing.T) {
 	bastionTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
 		expGetBastionFound           bool
 		expGetBastionErr             error
 		expGetImageIdErr             error
@@ -2660,7 +2657,7 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 	bastionTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
 		expCheckBastionStateBootErr  error
 		expDeleteBastionErr          error
 		expGetBastionErr             error
@@ -2671,35 +2668,35 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 	}{
 		{
 			name: "delete bastion without spec",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			clusterSpec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 
 						ResourceId: "vpc-test-net-uid",
 					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
+					Subnets: []*infrastructurev1beta2.OscSubnet{
 						{
 							ResourceId: "subnet-test-subnet-uid",
 						},
 					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+					SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 						{
 							ResourceId: "sg-test-securitygroup-uid",
 						},
 					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
+					PublicIps: []*infrastructurev1beta2.OscPublicIp{
 						{
 							ResourceId: "test-publicip-uid",
 						},
 					},
-					Bastion: infrastructurev1beta1.OscBastion{
+					Bastion: infrastructurev1beta2.OscBastion{
 						Enable:      true,
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						ImageId:     "ami-00000000",
 						DeviceName:  "/dev/xvdb",
 						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -2710,12 +2707,12 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 						VmType:        "tinav4.c2r4p2",
 						PublicIpName:  "test-publicip",
 						ResourceId:    "i-test-bastion-uid",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -2808,7 +2805,7 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 	bastionTestCases := []struct {
 		name                         string
-		clusterSpec                  infrastructurev1beta1.OscClusterSpec
+		clusterSpec                  infrastructurev1beta2.OscClusterSpec
 		expCheckUnlinkPublicIpFound  bool
 		expGetVmFound                bool
 		expGetVmErr                  error

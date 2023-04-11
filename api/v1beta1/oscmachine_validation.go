@@ -34,7 +34,7 @@ const (
 // ValidateOscMachineSpec validate each parameters of OscMachine spec
 func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	var allErrs field.ErrorList
-	if spec.Node.Vm.KeypairName != "" {
+	/*if spec.Node.Vm.KeypairName != "" {
 		if errs := ValidateAndReturnErrorList(spec.Node.Vm.KeypairName, field.NewPath("keypairName"), ValidateKeypairName); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
@@ -74,12 +74,6 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 					allErrs = append(allErrs, errs...)
 				}
 			}
-			if volumeSpec.Iops != 0 && volumeSpec.Size != 0 && volumeSpec.VolumeType == "io1" {
-				ratioIopsSize := volumeSpec.Iops / volumeSpec.Size
-				if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("size"), ValidateRatioSizeIops); len(errs) > 0 {
-					allErrs = append(allErrs, errs...)
-				}
-			}
 			if volumeSpec.SubregionName != "" {
 				if errs := ValidateAndReturnErrorList(volumeSpec.SubregionName, field.NewPath("subregionName"), ValidateSubregionName); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
@@ -102,12 +96,7 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 			allErrs = append(allErrs, errs...)
 		}
 	}
-	if spec.Node.Vm.RootDisk.RootDiskIops != 0 && spec.Node.Vm.RootDisk.RootDiskSize != 0 && spec.Node.Vm.RootDisk.RootDiskType == "io1" {
-		ratioIopsSize := spec.Node.Vm.RootDisk.RootDiskIops / spec.Node.Vm.RootDisk.RootDiskSize
-		if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("size"), ValidateRatioSizeIops); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
+	*/
 	return allErrs
 }
 
@@ -129,16 +118,6 @@ func ValidateImageId(imageId string) (string, error) {
 	default:
 		return imageId, errors.New("Invalid imageId")
 	}
-}
-
-// ValidateRatioSizeIops check that Ratio iops size should not exceed 300
-func ValidateRatioSizeIops(ratioIopsSize int32) (int32, error) {
-	if ratioIopsSize < 300 {
-		return ratioIopsSize, nil
-	} else {
-		return ratioIopsSize, errors.New("Invalid ratio Iops size that exceed 300")
-	}
-
 }
 
 // ValidateIamegName check that Image name is a valide name

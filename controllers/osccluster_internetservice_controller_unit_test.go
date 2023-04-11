@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 
@@ -35,26 +35,26 @@ import (
 )
 
 var (
-	defaultInternetServiceInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultInternetServiceInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name: "test-internetservice",
 			},
 		},
 	}
 
-	defaultInternetServiceReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultInternetServiceReconcile = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
-			InternetService: infrastructurev1beta1.OscInternetService{
+			InternetService: infrastructurev1beta2.OscInternetService{
 				Name:       "test-internetservice",
 				ResourceId: "igw-test-internetservice-uid",
 			},
@@ -63,7 +63,7 @@ var (
 )
 
 // SetupWithInternetServiceMock set internetServiceMock with clusterScope and oscCluster
-func SetupWithInternetServiceMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscInternetServiceInterface *mock_net.MockOscInternetServiceInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
+func SetupWithInternetServiceMock(t *testing.T, name string, spec infrastructurev1beta2.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscInternetServiceInterface *mock_net.MockOscInternetServiceInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
 	mockCtrl := gomock.NewController(t)
 	mockOscInternetServiceInterface = mock_net.NewMockOscInternetServiceInterface(mockCtrl)
@@ -76,7 +76,7 @@ func SetupWithInternetServiceMock(t *testing.T, name string, spec infrastructure
 func TestGetInternetServiceResourceId(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                               string
-		spec                               infrastructurev1beta1.OscClusterSpec
+		spec                               infrastructurev1beta2.OscClusterSpec
 		expInternetServiceFound            bool
 		expGetInternetServiceResourceIdErr error
 	}{
@@ -118,13 +118,13 @@ func TestGetInternetServiceResourceId(t *testing.T) {
 func TestCheckInternetServiceFormatParameters(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                       string
-		spec                                       infrastructurev1beta1.OscClusterSpec
+		spec                                       infrastructurev1beta2.OscClusterSpec
 		expCheckInternetServiceFormatParametersErr error
 	}{
 		{
 			name: "check work without net and internetservice spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expCheckInternetServiceFormatParametersErr: nil,
 		},
@@ -135,13 +135,13 @@ func TestCheckInternetServiceFormatParameters(t *testing.T) {
 		},
 		{
 			name: "check Bad Name  internetService",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
+					Net: infrastructurev1beta2.OscNet{
 						Name:    "test-net",
 						IpRange: "10.0.0.0/16",
 					},
-					InternetService: infrastructurev1beta1.OscInternetService{
+					InternetService: infrastructurev1beta2.OscInternetService{
 						Name: "test-internetservice@test",
 					},
 				},
@@ -167,7 +167,7 @@ func TestCheckInternetServiceFormatParameters(t *testing.T) {
 func TestReconcileInternetServiceLink(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expNetFound                    bool
 		expTagFound                    bool
 		expInternetServiceFound        bool
@@ -264,7 +264,7 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 func TestReconcileInternetServiceDelete(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expTagFound                    bool
 		expCreateInternetServiceErr    error
 		expDescribeInternetServiceErr  error
@@ -342,7 +342,7 @@ func TestReconcileInternetServiceDelete(t *testing.T) {
 func TestReconcileDeleteInternetServiceDeleteWithoutSpec(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
-		spec                                 infrastructurev1beta1.OscClusterSpec
+		spec                                 infrastructurev1beta2.OscClusterSpec
 		expDeleteInternetServiceErr          error
 		expDescribeInternetServiceErr        error
 		expUnlinkInternetServiceErr          error
@@ -411,7 +411,7 @@ func TestReconcileDeleteInternetServiceDeleteWithoutSpec(t *testing.T) {
 func TestReconcileInternetServiceGet(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expNetFound                    bool
 		expInternetServiceFound        bool
 		expTagFound                    bool
@@ -508,7 +508,7 @@ func TestReconcileInternetServiceGet(t *testing.T) {
 func TestReconcileInternetServiceCreate(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expTagFound                    bool
 		expCreateInternetServiceErr    error
 		expReadTagErr                  error
@@ -568,7 +568,7 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 func TestReconcileInternetServiceResourceId(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                           string
-		spec                           infrastructurev1beta1.OscClusterSpec
+		spec                           infrastructurev1beta2.OscClusterSpec
 		expTagFound                    bool
 		expNetFound                    bool
 		expReadTagErr                  error
@@ -633,7 +633,7 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
-		spec                                 infrastructurev1beta1.OscClusterSpec
+		spec                                 infrastructurev1beta2.OscClusterSpec
 		expNetFound                          bool
 		expInternetServiceFound              bool
 		expDescribeInternetServiceErr        error
@@ -709,7 +709,7 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
-		spec                                 infrastructurev1beta1.OscClusterSpec
+		spec                                 infrastructurev1beta2.OscClusterSpec
 		expDescribeInternetServiceErr        error
 		expUnlinkInternetServiceErr          error
 		expReconcileDeleteInternetServiceErr error
@@ -770,7 +770,7 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
-		spec                                 infrastructurev1beta1.OscClusterSpec
+		spec                                 infrastructurev1beta2.OscClusterSpec
 		expNetFound                          bool
 		expInternetServiceFound              bool
 		expDeleteInternetServiceErr          error
@@ -861,13 +861,13 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
-		spec                                 infrastructurev1beta1.OscClusterSpec
+		spec                                 infrastructurev1beta2.OscClusterSpec
 		expReconcileDeleteInternetServiceErr error
 	}{
 		{
 			name: "check net failed without net and internetservice spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
+			spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{},
 			},
 			expReconcileDeleteInternetServiceErr: fmt.Errorf("cluster-api-net-uid does not exist"),
 		},

@@ -26,7 +26,7 @@ import (
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 	"github.com/stretchr/testify/assert"
@@ -34,24 +34,24 @@ import (
 )
 
 var (
-	defaultVmMachineTemplateClusterInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
+	defaultVmMachineTemplateClusterInitialize = infrastructurev1beta2.OscClusterSpec{
+		Network: infrastructurev1beta2.OscNetwork{
+			Net: infrastructurev1beta2.OscNet{
 				Name:        "test-net",
 				IpRange:     "10.0.0.0/16",
 				ClusterName: "test-cluster",
 			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
+			Subnets: []*infrastructurev1beta2.OscSubnet{
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
 				},
 			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+			SecurityGroups: []*infrastructurev1beta2.OscSecurityGroup{
 				{
 					Name:        "test-securitygroup",
 					Description: "test securitygroup",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 						{
 							Name:          "test-securitygrouprule",
 							Flow:          "Inbound",
@@ -63,13 +63,13 @@ var (
 					},
 				},
 			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+			LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 				LoadBalancerName:  "test-loadbalancer",
 				LoadBalancerType:  "internet-facing",
 				SubnetName:        "test-subnet",
 				SecurityGroupName: "test-securitygroup",
 			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+			PublicIps: []*infrastructurev1beta2.OscPublicIp{
 				{
 					Name: "test-publicip",
 				},
@@ -77,11 +77,11 @@ var (
 		},
 	}
 
-	defaultVmMachineTemplateInitialize = infrastructurev1beta1.OscMachineTemplateSpec{
-		Template: infrastructurev1beta1.OscMachineTemplateResource{
-			Spec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
+	defaultVmMachineTemplateInitialize = infrastructurev1beta2.OscMachineTemplateSpec{
+		Template: infrastructurev1beta2.OscMachineTemplateResource{
+			Spec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Volumes: []*infrastructurev1beta2.OscVolume{
 						{
 							Name:          "test-volume",
 							Iops:          1000,
@@ -90,13 +90,13 @@ var (
 							SubregionName: "eu-west-2a",
 						},
 					},
-					Vm: infrastructurev1beta1.OscVm{
+					Vm: infrastructurev1beta2.OscVm{
 						ClusterName: "test-cluster",
 						Name:        "test-vm",
 						ImageId:     "ami-00000000",
 						Role:        "controlplane",
 						DeviceName:  "/dev/sda1",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
 							RootDiskType: "io1",
@@ -108,12 +108,12 @@ var (
 						PublicIpName:     "test-publicip",
 						VmType:           "tinav4.c2r4p2",
 						Replica:          1,
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -127,10 +127,10 @@ var (
 )
 
 // Setup set osccluster, oscmachine, machineScope and clusterScope
-func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineTemplateSpec) (clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope) {
+func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev1beta2.OscClusterSpec, machineSpec infrastructurev1beta2.OscMachineTemplateSpec) (clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope) {
 	t.Logf("Validate to %s", name)
 
-	oscCluster := infrastructurev1beta1.OscCluster{
+	oscCluster := infrastructurev1beta2.OscCluster{
 		Spec: clusterSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       "uid",
@@ -138,7 +138,7 @@ func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev
 			Namespace: "test-system",
 		},
 	}
-	oscMachineTemplate := infrastructurev1beta1.OscMachineTemplate{
+	oscMachineTemplate := infrastructurev1beta2.OscMachineTemplate{
 		Spec: machineSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       "uid",
@@ -167,7 +167,7 @@ func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev
 }
 
 // SetupWithVmCapacityMock set vmMock with clusterScope, machineScope and oscmachine
-func SetupWithVmCapacityMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineTemplateSpec infrastructurev1beta1.OscMachineTemplateSpec) (clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface) {
+func SetupWithVmCapacityMock(t *testing.T, name string, clusterSpec infrastructurev1beta2.OscClusterSpec, machineTemplateSpec infrastructurev1beta2.OscMachineTemplateSpec) (clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface) {
 	clusterScope, machineTemplateScope = SetupMachineTemplate(t, name, clusterSpec, machineTemplateSpec)
 	mockCtrl := gomock.NewController(t)
 	mockOscVmInterface = mock_compute.NewMockOscVmInterface(mockCtrl)
@@ -179,8 +179,8 @@ func SetupWithVmCapacityMock(t *testing.T, name string, clusterSpec infrastructu
 func TestReconcileCapacity(t *testing.T) {
 	capacityTestCases := []struct {
 		name                    string
-		clusterSpec             infrastructurev1beta1.OscClusterSpec
-		machineTemplateSpec     infrastructurev1beta1.OscMachineTemplateSpec
+		clusterSpec             infrastructurev1beta2.OscClusterSpec
+		machineTemplateSpec     infrastructurev1beta2.OscMachineTemplateSpec
 		expGetCapacityFound     bool
 		expGetCapacityErr       error
 		expReconcileCapacityErr error

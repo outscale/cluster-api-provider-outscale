@@ -22,7 +22,7 @@ import (
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -32,7 +32,7 @@ import (
 
 // checkKeypairFormatParameters check keypair format
 func checkKeypairFormatParameters(machineScope *scope.MachineScope) (string, error) {
-	var keypairSpec *infrastructurev1beta1.OscKeypair
+	var keypairSpec *infrastructurev1beta2.OscKeypair
 	nodeSpec := machineScope.GetNode()
 	if nodeSpec.KeyPair.Name == "" {
 		nodeSpec.SetKeyPairDefaultValue()
@@ -63,7 +63,7 @@ func getKeyPairResourceId(resourceName string, machineScope *scope.MachineScope)
 
 // reconcileKeypair reconcile the keypair of the machine
 func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, keypairSvc security.OscKeyPairInterface) (reconcile.Result, error) {
-	var keypairSpec *infrastructurev1beta1.OscKeypair
+	var keypairSpec *infrastructurev1beta2.OscKeypair
 	keypairSpec = machineScope.GetKeypair()
 	keypairRef := machineScope.GetKeypairRef()
 	keypairName := keypairSpec.Name

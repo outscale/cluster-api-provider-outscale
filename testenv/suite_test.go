@@ -36,7 +36,7 @@ import (
 	"testing"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -68,7 +68,7 @@ const kubeconfigEnvVar = "KUBECONFIG"
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	utilruntime.Must(infrastructurev1beta1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(infrastructurev1beta2.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{}
@@ -78,7 +78,7 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	Expect(clusterv1.AddToScheme(scheme.Scheme)).To(Succeed())
-	Expect(infrastructurev1beta1.AddToScheme(scheme.Scheme)).To(Succeed())
+	Expect(infrastructurev1beta2.AddToScheme(scheme.Scheme)).To(Succeed())
 
 	//+kubebuilder:scaffold:scheme
 	retryPeriod := 4 * time.Second

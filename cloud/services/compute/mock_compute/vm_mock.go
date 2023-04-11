@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	v1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	scope "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	v1 "k8s.io/api/core/v1"
@@ -67,7 +67,7 @@ func (mr *MockOscVmInterfaceMockRecorder) CheckVmState(clockInsideLoop, clockLoo
 }
 
 // CreateVm mocks base method.
-func (m *MockOscVmInterface) CreateVm(machineScope *scope.MachineScope, spec *v1beta1.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string) (*osc.Vm, error) {
+func (m *MockOscVmInterface) CreateVm(machineScope *scope.MachineScope, spec *v1beta2.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateVm", machineScope, spec, subnetId, securityGroupIds, privateIps, vmName)
 	ret0, _ := ret[0].(*osc.Vm)
@@ -82,7 +82,7 @@ func (mr *MockOscVmInterfaceMockRecorder) CreateVm(machineScope, spec, subnetId,
 }
 
 // CreateVmUserData mocks base method.
-func (m *MockOscVmInterface) CreateVmUserData(userData string, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, imageId string) (*osc.Vm, error) {
+func (m *MockOscVmInterface) CreateVmUserData(userData string, spec *v1beta2.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, imageId string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateVmUserData", userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
 	ret0, _ := ret[0].(*osc.Vm)

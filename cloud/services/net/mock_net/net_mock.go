@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	v1beta2 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta2"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -36,7 +36,7 @@ func (m *MockOscNetInterface) EXPECT() *MockOscNetInterfaceMockRecorder {
 }
 
 // CreateNet mocks base method.
-func (m *MockOscNetInterface) CreateNet(spec *v1beta1.OscNet, clusterName, netName string) (*osc.Net, error) {
+func (m *MockOscNetInterface) CreateNet(spec *v1beta2.OscNet, clusterName, netName string) (*osc.Net, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNet", spec, clusterName, netName)
 	ret0, _ := ret[0].(*osc.Net)
