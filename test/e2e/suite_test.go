@@ -20,16 +20,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	"k8s.io/client-go/rest"
 	"os"
-	"path"
 	"path/filepath"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
+	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -97,6 +95,10 @@ var (
 
 	// useCIArtifacts specifies whether or not to use the latest build from the main branch of the Kubernetes repository
 	useCIArtifacts bool
+
+	// alsoLogToFile enables additional logging to the 'ginkgo-log.txt' file in the artifact folder.
+	// These logs also contain timestamps.
+	alsoLogToFile bool
 )
 
 func init() {
@@ -113,11 +115,17 @@ func init() {
 }
 
 func TestE2E(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitPath := path.Join(artifactFolder, fmt.Sprintf("junit.e2e_suite.%d.xml", config.GinkgoConfig.ParallelNode))
-	junitReporter := reporters.NewJUnitReporter(junitPath)
+	g := NewWithT(t)
 
-	RunSpecsWithDefaultAndCustomReporters(t, "capdo-e2e", []Reporter{junitReporter})
+	RegisterFailHandler(Fail)
+
+	if alsoLogToFile {
+		w, err := ginkgoextensions.EnableFileLogging(filepath.Join(artifactFolder, "ginkgo-log.txt"))
+		g.Expect(err).ToNot(HaveOccurred())
+		defer w.Close()
+	}
+
+	RunSpecs(t, "capo-e2e")
 }
 
 func getK8sClient() {

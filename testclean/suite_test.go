@@ -18,7 +18,7 @@ package test
 
 import (
 	"flag"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -27,8 +27,10 @@ import (
 	"k8s.io/klog/v2/klogr"
 	//	"os"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"path/filepath"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -50,6 +52,8 @@ var (
 	testEnv          *envtest.Environment
 	reconcileTimeout time.Duration
 	clusterToClean   string
+	artifactFolder   string
+	alsoLogToFile    bool
 )
 
 func init() {
@@ -60,9 +64,17 @@ func init() {
 }
 
 func TestAPIs(t *testing.T) {
+	g := NewWithT(t)
+
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Controller Suite")
+	if alsoLogToFile {
+		w, err := ginkgoextensions.EnableFileLogging(filepath.Join(artifactFolder, "ginkgo-log.txt"))
+		g.Expect(err).ToNot(HaveOccurred())
+		defer w.Close()
+	}
+
+	RunSpecs(t, "capo testclean")
 }
 
 const kubeconfigEnvVar = "KUBECONFIG"
@@ -105,7 +117,7 @@ var _ = BeforeSuite(func() {
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

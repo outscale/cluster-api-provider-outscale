@@ -18,7 +18,7 @@ package test
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"

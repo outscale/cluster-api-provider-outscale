@@ -17,16 +17,17 @@ limitations under the License.
 package test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
-	//	"os"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"path/filepath"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -47,6 +48,8 @@ var (
 	k8sClient        client.Client
 	testEnv          *envtest.Environment
 	reconcileTimeout time.Duration
+	alsoLogToFile    bool
+	artifactFolder   string
 )
 
 func init() {
@@ -56,10 +59,17 @@ func init() {
 }
 
 func TestAPIs(t *testing.T) {
+	g := NewWithT(t)
+
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t,
-		"Controller Suite")
+	if alsoLogToFile {
+		w, err := ginkgoextensions.EnableFileLogging(filepath.Join(artifactFolder, "ginkgo-log.txt"))
+		g.Expect(err).ToNot(HaveOccurred())
+		defer w.Close()
+	}
+
+	RunSpecs(t, "capo testenv")
 }
 
 const kubeconfigEnvVar = "KUBECONFIG"
@@ -106,7 +116,7 @@ var _ = BeforeSuite(func() {
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
