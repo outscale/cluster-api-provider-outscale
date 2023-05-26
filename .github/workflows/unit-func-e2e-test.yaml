@@ -106,13 +106,10 @@ jobs:
         KUBECONFIG: rke/kube_config_cluster.yml
         ANSIBLE_CONFIG: ansible.cfg
       working-directory: rke-cluster-for-cluster-api
-    - name: Wait to access registry
-      uses: nick-invision/retry@v2
+    - name: Wait registry up
+      uses: GuillaumeFalourd/wait-sleep-action@v1
       with:
-        timeout_seconds: 30
-        max_attempts: 10
-        retry_wait_seconds: 1
-        command: curl http://127.0.0.1:4242/v2
+        time: '2m'
     - name: Build and Push Docker image 
       run: |
         sudo apt-get update
@@ -265,13 +262,10 @@ jobs:
         KUBECONFIG: rke/kube_config_cluster.yml
         ANSIBLE_CONFIG: ansible.cfg
       working-directory: rke-cluster-for-cluster-api
-    - name: Wait to access registry
-      uses: nick-invision/retry@v2
+    - name: Wait registry up
+      uses: GuillaumeFalourd/wait-sleep-action@v1
       with:
-        timeout_seconds: 30
-        max_attempts: 10
-        retry_wait_seconds: 1
-        command: curl http://127.0.0.1:4242/v2
+        time: '2m'
     - name: Build and Push Docker image 
       run: |
         sudo apt-get update

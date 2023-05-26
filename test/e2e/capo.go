@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -213,11 +213,6 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
 			Getter:    k8sClient,
 			Name:      "cluster-api-provider-outscale-manager-config",
-			Namespace: "cluster-api-provider-outscale-system",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "controller-leader-election-capo",
 			Namespace: "cluster-api-provider-outscale-system",
 		})
 		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
