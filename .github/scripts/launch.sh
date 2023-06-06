@@ -84,7 +84,7 @@ function get_name {
   echo "$date"
   for os_target in "${IMAGE_TARGET[@]}"
   do
-      image_version="${os_target}-${hashmap[$os_target]}-${K8S_VERSION}-${date}"
+      image_version="${os_target}-${hashmap[$os_target]}-kubernetes-${K8S_VERSION}-${date}"
       echo "${image_version}"
       if [[ "$os_target" == "ubuntu-2004" ]]
       then
