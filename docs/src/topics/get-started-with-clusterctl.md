@@ -38,8 +38,8 @@ You can install clusterctl for linux with:
 ```bash
   make install-clusterctl
 ```
-Or you can install clustercl with the clusterctl section ([cluster-api][cluster-api]).
-And check version which is installed:
+Or you can install clusterctl with the clusterctl section ([cluster-api][cluster-api]).
+And check version which is already installed:
 ```bash
 ./bin/clusterctl version
 clusterctl version: &version.Info{Major:"1", Minor:"2", GitVersion:"v1.2.4", GitCommit:"8b5cd363e11b023c2b67a1937a2af680ead9e35c", GitTreeState:"clean", BuildDate:"2022-10-17T13:37:39Z", GoVersion:"go1.18.7", Compiler:"gc", Platform:"linux/amd64"}
@@ -90,7 +90,7 @@ Then you will generate:
 ```
 **WARNING**: Kubernetes version must match the kubernetes version which is included in image name in [omi][omi]
 
-You can then change to get what you want base on doc.
+You can then change to get what you want which is based on doc.
 
 Then apply:
 ```
