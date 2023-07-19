@@ -72,7 +72,7 @@ variables:
   OSC_VOLUME_TYPE: "gp2"
   OSC_KEYPAIR_NAME: "cluster-api-keypair"
   OSC_SUBREGION_NAME: "${OSC_SUBREGION_NAME:us-east-2a}"
-  OSC_VM_TYPE: "tinav3.c2r2p1"
+  OSC_VM_TYPE: "tinav4.c4r8p1"
   OSC_LOADBALANCER_NAME: "capo-e2e-k8s"
   WORKER_MACHINE_COUNT: 1
   CONTROL_PLANE_MACHINE_COUNT: 1
