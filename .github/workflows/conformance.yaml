@@ -75,7 +75,7 @@ jobs:
         command: curl http://127.0.0.1:4242/v2
     - name: Build and Push Docker image 
       run: |
-        make docker-build
+        make docker-buildx
         make docker-push
         docker image prune -a -f
       env:

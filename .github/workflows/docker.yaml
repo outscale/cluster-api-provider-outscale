@@ -42,7 +42,7 @@ jobs:
       run: bash -c "make dockerlint"
     - name: Build and Push Docker image
       run: |
-        make docker-build
+        make docker-buildx
       env:
         IMG: cluster-api-outscale-controller:${{ github.sha }}
         DOCKER_BUILDKIT: 1

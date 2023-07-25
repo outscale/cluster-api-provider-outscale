@@ -38,7 +38,7 @@ jobs:
         make envtest
         make install-kubebuildertool
     - name: Build image
-      run: make docker-build
+      run: make docker-buildx
       env:
         IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
         DOCKER_BUILDKIT: 1
