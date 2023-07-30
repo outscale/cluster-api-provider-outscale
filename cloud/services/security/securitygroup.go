@@ -99,7 +99,7 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 	if securityGroupTag == "OscK8sMainSG" {
 		mainTag := osc.ResourceTag{
 			Key:   "OscK8sMainSG/" + clusterName,
-			Value: "owned",
+			Value: "True",
 		}
 		mainSecurityGroupTagRequest := osc.CreateTagsRequest{
 			ResourceIds: resourceIds,
