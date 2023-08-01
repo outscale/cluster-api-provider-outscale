@@ -429,140 +429,182 @@ var (
 	DefaultRootDiskKwSize int32  = 60
 	DefaultRootDiskKwIops int32  = 1500
 
-	DefaultRootDiskKcpType                    string = "io1"
-	DefaultRootDiskKcpSize                    int32  = 60
-	DefaultRootDiskKcpIops                    int32  = 1500
-	DefaultRootDiskBastionType                string = "io1"
-	DefaultRootDiskBastionSize                int32  = 15
-	DefaultRootDiskBastionIops                int32  = 1000
-	DefaultVolumeKwName                       string = "cluster-api-volume-kw"
-	DefaultVolumeKwIops                       int32  = 1000
-	DefaultVolumeKwSize                       int32  = 30
-	DefaultVolumeKwSubregionName              string = "eu-west-2a"
-	DefaultVolumeKwType                       string = "io1"
-	DefaultSubregionName                      string = "eu-west-2a"
-	DefaultLoadBalancerName                   string = "OscClusterApi-1"
-	DefaultLoadBalancerType                   string = "internet-facing"
-	DefaultBackendPort                        int32  = 6443
-	DefaultBackendProtocol                    string = "TCP"
-	DefaultLoadBalancerPort                   int32  = 6443
-	DefaultLoadBalancerProtocol               string = "TCP"
-	DefaultCheckInterval                      int32  = 5
-	DefaultHealthyThreshold                   int32  = 5
-	DefaultUnhealthyThreshold                 int32  = 2
-	DefaultTimeout                            int32  = 5
-	DefaultProtocol                           string = "TCP"
-	DefaultPort                               int32  = 6443
-	DefaultIpRange                            string = "10.0.0.0/16"
-	DefaultIpSubnetKcpRange                   string = "10.0.4.0/24"
-	DefaultIpSubnetKwRange                    string = "10.0.3.0/24"
-	DefaultIpSubnetPublicRange                string = "10.0.2.0/24"
-	DefaultTargetType                         string = "gateway"
-	DefaultTargetKwName                       string = "cluster-api-natservice"
-	DefaultTargetKwType                       string = "nat"
-	DefaultDestinationKw                      string = "0.0.0.0/0"
-	DefaultRouteTableKwName                   string = "cluster-api-routetable-kw"
-	DefaultRouteKwName                        string = "cluster-api-route-kw"
-	DefaultTargetKcpName                      string = "cluster-api-natservice"
-	DefaultTargetKcpType                      string = "nat"
-	DefaultDestinationKcp                     string = "0.0.0.0/0"
-	DefaultRouteTableKcpName                  string = "cluster-api-routetable-kcp"
-	DefaultRouteKcpName                       string = "cluster-api-route-kcp"
-	DefaultTargetPublicName                   string = "cluster-api-internetservice"
-	DefaultTargetPublicType                   string = "gateway"
-	DefaultDestinationPublic                  string = "0.0.0.0/0"
-	DefaultRouteTablePublicName               string = "cluster-api-routetable-public"
-	DefaultRoutePublicName                    string = "cluster-api-route-public"
-	DefaultTargetNatName                      string = "cluster-api-internetservice"
-	DefaultTargetNatType                      string = "gateway"
-	DefaultDestinationNat                     string = "0.0.0.0/0"
-	DefaultRouteTableNatName                  string = "cluster-api-routetable-nat"
-	DefaultRouteNatName                       string = "cluster-api-route-nat"
-	DefaultPublicIpNatName                    string = "cluster-api-publicip-nat"
-	DefaultNatServiceName                     string = "cluster-api-natservice"
-	DefaultSubnetName                         string = "cluster-api-subnet"
-	DefaultSubnetKcpName                      string = "cluster-api-subnet-kcp"
-	DefaultSubnetKwName                       string = "cluster-api-subnet-kw"
-	DefaultSubnetPublicName                   string = "cluster-api-subnet-public"
-	DefaultSubnetNatName                      string = "cluster-api-subnet-nat"
-	DefaultNetName                            string = "cluster-api-net"
-	DefaultInternetServiceName                string = "cluster-api-internetservice"
-	DefaultSecurityGroupKwName                string = "cluster-api-securitygroup-kw"
-	DefaultDescriptionKw                      string = "Security Group Kw with cluster-api"
-	DefaultSecurityGroupRuleApiKubeletKwName  string = "cluster-api-securitygrouprule-api-kubelet-kw"
-	DefaultFlowApiKubeletKw                   string = "Inbound"
-	DefaultIpProtocolApiKubeletKw             string = "tcp"
-	DefaultRuleIpRangeApiKubeletKw            string = "10.0.3.0/24"
-	DefaultFromPortRangeApiKubeletKw          int32  = 10250
-	DefaultToPortRangeApiKubeletKw            int32  = 10250
-	DefaultSecurityGroupRuleApiKubeletKcpName string = "cluster-api-securitygrouprule-api-kubelet-kcp"
-	DefaultFlowApiKubeletKcp                  string = "Inbound"
-	DefaultIpProtocolApiKubeletKcp            string = "tcp"
-	DefaultRuleIpRangeApiKubeletKcp           string = "10.0.4.0/24"
-	DefaultFromPortRangeApiKubeletKcp         int32  = 10250
-	DefaultToPortRangeApiKubeletKcp           int32  = 10250
-	DefaultSecurityGroupRuleKwNodeIpKwName    string = "cluster-api-securitygrouprule-kw-nodeip-kw"
-	DefaultSecurityGroupRuleKcpNodeIpKwName   string = "cluster-api-securitygrouprule-kcp-nodeip-kw"
-	DefaultFlowNodeIpKw                       string = "Inbound"
-	DefaultIpProtocolNodeIpKw                 string = "tcp"
-	DefaultRuleIpRangeNodeIpKw                string = "10.0.3.0/24"
-	DefaultFromPortRangeNodeIpKw              int32  = 30000
-	DefaultToPortRangeNodeIpKw                int32  = 32767
-	DefaultSecurityGroupRuleKcpNodeIpKcpName  string = "cluster-api-securitugrouprule-kcp-nodeip-kcp"
-	DefaultSecurityGroupRuleKwNodeIpKcpName   string = "cluster-api-securitygrouprule-kw-nodeip-kcp"
-	DefaultFlowNodeIpKcp                      string = "Inbound"
-	DefaultIpProtocolNodeIpKcp                string = "tcp"
-	DefaultRuleIpRangeNodeIpKcp               string = "10.0.4.0/24"
-	DefaultFromPortRangeNodeIpKcp             int32  = 30000
-	DefaultToPortRangeNodeIpKcp               int32  = 32767
-	DefaultSecurityGroupKcpName               string = "cluster-api-securitygroup-kcp"
-	DefaultDescriptionKcp                     string = "Security Group Kcp with cluster-api"
-	DefaultSecurityGroupRuleApiKwName         string = "cluster-api-securitygrouprule-api-kw"
-	DefaultFlowApiKw                          string = "Inbound"
-	DefaultIpProtocolApiKw                    string = "tcp"
-	DefaultRuleIpRangeApiKw                   string = "10.0.3.0/24"
-	DefaultFromPortRangeApiKw                 int32  = 6443
-	DefaultToPortRangeApiKw                   int32  = 6443
-	DefaultSecurityGroupRuleApiKcpName        string = "cluster-api-securitygrouprule-api-kcp"
-	DefaultFlowApiKcp                         string = "Inbound"
-	DefaultIpProtocolApiKcp                   string = "tcp"
-	DefaultRuleIpRangeApiKcp                  string = "10.0.4.0/24"
-	DefaultFromPortRangeApiKcp                int32  = 6443
-	DefaultToPortRangeApiKcp                  int32  = 6443
-	DefaultSecurityGroupRuleEtcdName          string = "cluster-api-securitygrouprule-etcd"
-	DefaultFlowEtcd                           string = "Inbound"
-	DefaultIpProtocolEtcd                     string = "tcp"
-	DefaultRuleIpRangeEtcd                    string = "10.0.4.0/24"
-	DefaultFromPortRangeEtcd                  int32  = 2378
-	DefaultToPortRangeEtcd                    int32  = 2379
-	DefaultSecurityGroupRuleKcpBgpName        string = "cluster-api-securitygrouprule-kcp-bgp"
-	DefaultFlowKcpBgp                         string = "Inbound"
-	DefaultIpProtocolKcpBgp                   string = "tcp"
-	DefaultRuleIpRangeKcpBgp                  string = "10.0.0.0/16"
-	DefaultFromPortRangeKcpBgp                int32  = 179
-	DefaultToPortRangeKcpBgp                  int32  = 179
-	DefaultSecurityGroupRuleKwBgpName         string = "cluster-api-securitygrouprule-kw-bgp"
-	DefaultFlowKwBgp                          string = "Inbound"
-	DefaultIpProtocolKwBgp                    string = "tcp"
-	DefaultRuleIpRangeKwBgp                   string = "10.0.0.0/16"
-	DefaultFromPortRangeKwBgp                 int32  = 179
-	DefaultToPortRangeKwBgp                   int32  = 179
-	DefaultSecurityGroupRuleKubeletKcpName    string = "cluster-api-securitygrouprule-kubelet-kcp"
-	DefaultFlowKubeletKcp                     string = "Inbound"
-	DefaultIpProtocolKubeletKcp               string = "tcp"
-	DefaultRuleIpRangeKubeletKcp              string = "10.0.4.0/24"
-	DefaultFromPortRangeKubeletKcp            int32  = 10250
-	DefaultToPortRangeKubeletKcp              int32  = 10252
-	DefaultSecurityGroupPublicName            string = "cluster-api-securitygroup-lb"
-	DefaultDescriptionLb                      string = "Security Group Lb with cluster-api"
-	DefaultSecurityGroupRuleLbName            string = "cluster-api-securitygrouprule-lb"
-	DefaultFlowLb                             string = "Inbound"
-	DefaultIpProtocolLb                       string = "tcp"
-	DefaultRuleIpRangeLb                      string = "0.0.0.0/0"
-	DefaultFromPortRangeLb                    int32  = 6443
-	DefaultToPortRangeLb                      int32  = 6443
-	DefaultSecurityGroupNodeName              string = "cluster-api-securitygroup-node"
-	DefaultDescriptionNode                    string = "Security Group Node with cluster-api"
+	DefaultRootDiskKcpType                      string = "io1"
+	DefaultRootDiskKcpSize                      int32  = 60
+	DefaultRootDiskKcpIops                      int32  = 1500
+	DefaultRootDiskBastionType                  string = "io1"
+	DefaultRootDiskBastionSize                  int32  = 15
+	DefaultRootDiskBastionIops                  int32  = 1000
+	DefaultVolumeKwName                         string = "cluster-api-volume-kw"
+	DefaultVolumeKwIops                         int32  = 1000
+	DefaultVolumeKwSize                         int32  = 30
+	DefaultVolumeKwSubregionName                string = "eu-west-2a"
+	DefaultVolumeKwType                         string = "io1"
+	DefaultSubregionName                        string = "eu-west-2a"
+	DefaultLoadBalancerName                     string = "OscClusterApi-1"
+	DefaultLoadBalancerType                     string = "internet-facing"
+	DefaultBackendPort                          int32  = 6443
+	DefaultBackendProtocol                      string = "TCP"
+	DefaultLoadBalancerPort                     int32  = 6443
+	DefaultLoadBalancerProtocol                 string = "TCP"
+	DefaultCheckInterval                        int32  = 5
+	DefaultHealthyThreshold                     int32  = 5
+	DefaultUnhealthyThreshold                   int32  = 2
+	DefaultTimeout                              int32  = 5
+	DefaultProtocol                             string = "TCP"
+	DefaultPort                                 int32  = 6443
+	DefaultIpRange                              string = "10.0.0.0/16"
+	DefaultIpSubnetKcpRange                     string = "10.0.4.0/24"
+	DefaultIpSubnetKwRange                      string = "10.0.3.0/24"
+	DefaultIpSubnetPublicRange                  string = "10.0.2.0/24"
+	DefaultTargetType                           string = "gateway"
+	DefaultTargetKwName                         string = "cluster-api-natservice"
+	DefaultTargetKwType                         string = "nat"
+	DefaultDestinationKw                        string = "0.0.0.0/0"
+	DefaultRouteTableKwName                     string = "cluster-api-routetable-kw"
+	DefaultRouteKwName                          string = "cluster-api-route-kw"
+	DefaultTargetKcpName                        string = "cluster-api-natservice"
+	DefaultTargetKcpType                        string = "nat"
+	DefaultDestinationKcp                       string = "0.0.0.0/0"
+	DefaultRouteTableKcpName                    string = "cluster-api-routetable-kcp"
+	DefaultRouteKcpName                         string = "cluster-api-route-kcp"
+	DefaultTargetPublicName                     string = "cluster-api-internetservice"
+	DefaultTargetPublicType                     string = "gateway"
+	DefaultDestinationPublic                    string = "0.0.0.0/0"
+	DefaultRouteTablePublicName                 string = "cluster-api-routetable-public"
+	DefaultRoutePublicName                      string = "cluster-api-route-public"
+	DefaultTargetNatName                        string = "cluster-api-internetservice"
+	DefaultTargetNatType                        string = "gateway"
+	DefaultDestinationNat                       string = "0.0.0.0/0"
+	DefaultRouteTableNatName                    string = "cluster-api-routetable-nat"
+	DefaultRouteNatName                         string = "cluster-api-route-nat"
+	DefaultPublicIpNatName                      string = "cluster-api-publicip-nat"
+	DefaultNatServiceName                       string = "cluster-api-natservice"
+	DefaultSubnetName                           string = "cluster-api-subnet"
+	DefaultSubnetKcpName                        string = "cluster-api-subnet-kcp"
+	DefaultSubnetKwName                         string = "cluster-api-subnet-kw"
+	DefaultSubnetPublicName                     string = "cluster-api-subnet-public"
+	DefaultSubnetNatName                        string = "cluster-api-subnet-nat"
+	DefaultNetName                              string = "cluster-api-net"
+	DefaultInternetServiceName                  string = "cluster-api-internetservice"
+	DefaultSecurityGroupKwName                  string = "cluster-api-securitygroup-kw"
+	DefaultDescriptionKw                        string = "Security Group Kw with cluster-api"
+	DefaultSecurityGroupRuleApiKubeletKwName    string = "cluster-api-securitygrouprule-api-kubelet-kw"
+	DefaultFlowApiKubeletKw                     string = "Inbound"
+	DefaultIpProtocolApiKubeletKw               string = "tcp"
+	DefaultRuleIpRangeApiKubeletKw              string = "10.0.3.0/24"
+	DefaultFromPortRangeApiKubeletKw            int32  = 10250
+	DefaultToPortRangeApiKubeletKw              int32  = 10250
+	DefaultSecurityGroupRuleApiKubeletKcpName   string = "cluster-api-securitygrouprule-api-kubelet-kcp"
+	DefaultFlowApiKubeletKcp                    string = "Inbound"
+	DefaultIpProtocolApiKubeletKcp              string = "tcp"
+	DefaultRuleIpRangeApiKubeletKcp             string = "10.0.4.0/24"
+	DefaultFromPortRangeApiKubeletKcp           int32  = 10250
+	DefaultToPortRangeApiKubeletKcp             int32  = 10250
+	DefaultSecurityGroupRuleKwNodeIpKwName      string = "cluster-api-securitygrouprule-kw-nodeip-kw"
+	DefaultSecurityGroupRuleKcpNodeIpKwName     string = "cluster-api-securitygrouprule-kcp-nodeip-kw"
+	DefaultFlowNodeIpKw                         string = "Inbound"
+	DefaultIpProtocolNodeIpKw                   string = "tcp"
+	DefaultRuleIpRangeNodeIpKw                  string = "10.0.3.0/24"
+	DefaultFromPortRangeNodeIpKw                int32  = 30000
+	DefaultToPortRangeNodeIpKw                  int32  = 32767
+	DefaultSecurityGroupRuleKcpNodeIpKcpName    string = "cluster-api-securitugrouprule-kcp-nodeip-kcp"
+	DefaultSecurityGroupRuleKwNodeIpKcpName     string = "cluster-api-securitygrouprule-kw-nodeip-kcp"
+	DefaultFlowNodeIpKcp                        string = "Inbound"
+	DefaultIpProtocolNodeIpKcp                  string = "tcp"
+	DefaultRuleIpRangeNodeIpKcp                 string = "10.0.4.0/24"
+	DefaultFromPortRangeNodeIpKcp               int32  = 30000
+	DefaultToPortRangeNodeIpKcp                 int32  = 32767
+	DefaultSecurityGroupKcpName                 string = "cluster-api-securitygroup-kcp"
+	DefaultDescriptionKcp                       string = "Security Group Kcp with cluster-api"
+	DefaultSecurityGroupRuleApiKwName           string = "cluster-api-securitygrouprule-api-kw"
+	DefaultFlowApiKw                            string = "Inbound"
+	DefaultIpProtocolApiKw                      string = "tcp"
+	DefaultRuleIpRangeApiKw                     string = "10.0.3.0/24"
+	DefaultFromPortRangeApiKw                   int32  = 6443
+	DefaultToPortRangeApiKw                     int32  = 6443
+	DefaultSecurityGroupRuleApiKcpName          string = "cluster-api-securitygrouprule-api-kcp"
+	DefaultFlowApiKcp                           string = "Inbound"
+	DefaultIpProtocolApiKcp                     string = "tcp"
+	DefaultRuleIpRangeApiKcp                    string = "10.0.4.0/24"
+	DefaultFromPortRangeApiKcp                  int32  = 6443
+	DefaultToPortRangeApiKcp                    int32  = 6443
+	DefaultSecurityGroupRuleEtcdName            string = "cluster-api-securitygrouprule-etcd"
+	DefaultFlowEtcd                             string = "Inbound"
+	DefaultIpProtocolEtcd                       string = "tcp"
+	DefaultRuleIpRangeEtcd                      string = "10.0.4.0/24"
+	DefaultFromPortRangeEtcd                    int32  = 2378
+	DefaultToPortRangeEtcd                      int32  = 2379
+	DefaultSecurityGroupRuleKcpBgpName          string = "cluster-api-securitygrouprule-kcp-bgp"
+	DefaultFlowKcpBgp                           string = "Inbound"
+	DefaultIpProtocolKcpBgp                     string = "tcp"
+	DefaultRuleIpRangeKcpBgp                    string = "10.0.0.0/16"
+	DefaultFromPortRangeKcpBgp                  int32  = 179
+	DefaultToPortRangeKcpBgp                    int32  = 179
+	DefaultSecurityGroupRuleKwBgpName           string = "cluster-api-securitygrouprule-kw-bgp"
+	DefaultFlowKwBgp                            string = "Inbound"
+	DefaultIpProtocolKwBgp                      string = "tcp"
+	DefaultRuleIpRangeKwBgp                     string = "10.0.0.0/16"
+	DefaultFromPortRangeKwBgp                   int32  = 179
+	DefaultToPortRangeKwBgp                     int32  = 179
+	DefaultSecurityGroupRuleKubeletKcpName      string = "cluster-api-securitygrouprule-kubelet-kcp"
+	DefaultFlowKubeletKcp                       string = "Inbound"
+	DefaultIpProtocolKubeletKcp                 string = "tcp"
+	DefaultRuleIpRangeKubeletKcp                string = "10.0.4.0/24"
+	DefaultFromPortRangeKubeletKcp              int32  = 10250
+	DefaultToPortRangeKubeletKcp                int32  = 10252
+	DefaultSecurityGroupPublicName              string = "cluster-api-securitygroup-lb"
+	DefaultDescriptionLb                        string = "Security Group Lb with cluster-api"
+	DefaultSecurityGroupRuleLbName              string = "cluster-api-securitygrouprule-lb"
+	DefaultFlowLb                               string = "Inbound"
+	DefaultIpProtocolLb                         string = "tcp"
+	DefaultRuleIpRangeLb                        string = "0.0.0.0/0"
+	DefaultFromPortRangeLb                      int32  = 6443
+	DefaultToPortRangeLb                        int32  = 6443
+	DefaultSecurityGroupNodeName                string = "cluster-api-securitygroup-node"
+	DefaultDescriptionNode                      string = "Security Group Node with cluster-api"
+	DefaultSecurityGroupRuleCalicoVxlanName     string = "cluster-api-securitygroup-calico-vxlan"
+	DefaultFlowCalicoVxlan                      string = "Inbound"
+	DefaultIpProtocolCalicoVxlan                string = "udp"
+	DefaultRuleIpRangeCalicoVxlan               string = "10.0.0.0/16"
+	DefaultFromPortRangeCalicoVxlan             int32  = 4789
+	DefaultToPortRangeCalicoVxlan               int32  = 4789
+	DefaultSecurityGroupRuleCalicoTypha         string = "cluster-api-securitygroup-typha"
+	DefaultFlowCalicoTypha                      string = "Inbound"
+	DefaultIpProtocolCalicoTypha                string = "udp"
+	DefaultRuleIpRangeCalicoTypha               string = "10.0.0.0/16"
+	DefaultFromPortRangeCalicoTypha             int32  = 5473
+	DefaultToPortRangeCalicoTypha               int32  = 5473
+	DefaultSecurityGroupRuleCalicoWireguard     string = "cluster-api-securitygroup-wireguard"
+	DefaultFlowCalicoWireguard                  string = "Inbound"
+	DefaultIpProtocolCalicoWireguard            string = "udp"
+	DefaultRuleIpRangeCalicoWireguard           string = "10.0.0.0/16"
+	DefaultFromPortRangeCalicoWireguard         int32  = 51820
+	DefaultToPortRangeCalicoWireguard           int32  = 51820
+	DefaultSecurityGroupRuleCalicoWireguardIpv6 string = "cluster-api-securitygroup-wireguard-ipv6"
+	DefaultFlowCalicoWireguardIpv6              string = "Inbound"
+	DefaultIpProtocolCalicoWireguardIpv6        string = "udp"
+	DefaultRuleIpRangeCalicoWireguardIpv6       string = "10.0.0.0/16"
+	DefaultFromPortRangeCalicoWireguardIpv6     int32  = 51821
+	DefaultToPortRangeCalicoWireguardIpv6       int32  = 51821
+	DefaultSecurityGroupRuleFlannel             string = "cluster-api-securitygroup-flannel"
+	DefaultFlowFlannel                          string = "Inbound"
+	DefaultIpProtocolFlannel                    string = "udp"
+	DefaultRuleIpRangeFlannel                   string = "10.0.0.0/16"
+	DefaultFromPortRangeFlannel                 int32  = 4789
+	DefaultToPortRangeFlannel                   int32  = 4789
+	DefaultSecurityGroupRuleFlannelUdp          string = "cluster-api-securitygroup-flannel-udp"
+	DefaultFlowFlannelUdp                       string = "Inbound"
+	DefaultIpProtocolFlannelUdp                 string = "udp"
+	DefaultRuleIpRangeFlannelUdp                string = "10.0.0.0/16"
+	DefaultFromPortRangeFlannelUdp              int32  = 8285
+	DefaultToPortRangeFlannelUdp                int32  = 8285
+	DefaultSecurityGroupRuleFlannelVxlan        string = "cluster-api-securityrgroup-flannel-vxlan"
+	DefaultFlowFlannelVxlan                     string = "Inbound"
+	DefaultIpProtocolFlannelVxlan               string = "udp"
+	DefaultRuleIpRangeFlannelVxlan              string = "10.0.0.0/16"
+	DefaultFromPortRangeFlannelVxlan            int32  = 8472
+	DefaultToPortRangeFlannelVxlan              int32  = 8472
 )
 
 // SetDefaultValue set the Net default values
@@ -1077,12 +1119,75 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			Description:        DefaultDescriptionLb,
 			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleLb},
 		}
+
+		securityGroupRuleCalicoVxlan := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleCalicoVxlanName,
+			Flow:          DefaultFlowCalicoVxlan,
+			IpProtocol:    DefaultIpProtocolCalicoVxlan,
+			IpRange:       DefaultRuleIpRangeCalicoVxlan,
+			FromPortRange: DefaultFromPortRangeCalicoVxlan,
+			ToPortRange:   DefaultToPortRangeCalicoVxlan,
+		}
+
+		securityGroupRuleCalicoTypha := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleCalicoTypha,
+			Flow:          DefaultFlowCalicoTypha,
+			IpProtocol:    DefaultIpProtocolCalicoTypha,
+			IpRange:       DefaultRuleIpRangeCalicoTypha,
+			FromPortRange: DefaultFromPortRangeCalicoTypha,
+			ToPortRange:   DefaultToPortRangeCalicoTypha,
+		}
+
+		securityGroupRuleCalicoWireguard := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleCalicoWireguard,
+			Flow:          DefaultFlowCalicoWireguard,
+			IpProtocol:    DefaultIpProtocolCalicoWireguard,
+			IpRange:       DefaultRuleIpRangeCalicoWireguard,
+			FromPortRange: DefaultFromPortRangeCalicoWireguard,
+			ToPortRange:   DefaultToPortRangeCalicoWireguard,
+		}
+
+		securityGroupRuleCalicoWireguardIpv6 := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleCalicoWireguardIpv6,
+			Flow:          DefaultFlowCalicoWireguardIpv6,
+			IpProtocol:    DefaultIpProtocolCalicoWireguardIpv6,
+			IpRange:       DefaultRuleIpRangeCalicoWireguardIpv6,
+			FromPortRange: DefaultFromPortRangeCalicoWireguardIpv6,
+			ToPortRange:   DefaultToPortRangeCalicoWireguardIpv6,
+		}
+
+		securityGroupRuleFlannel := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleFlannel,
+			Flow:          DefaultFlowFlannel,
+			IpProtocol:    DefaultIpProtocolFlannel,
+			IpRange:       DefaultRuleIpRangeFlannel,
+			FromPortRange: DefaultFromPortRangeFlannel,
+			ToPortRange:   DefaultToPortRangeFlannel,
+		}
+
+		securityGroupRuleFlannelUdp := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleFlannelUdp,
+			Flow:          DefaultFlowFlannelUdp,
+			IpProtocol:    DefaultIpProtocolFlannelUdp,
+			IpRange:       DefaultRuleIpRangeFlannelUdp,
+			FromPortRange: DefaultFromPortRangeFlannelUdp,
+			ToPortRange:   DefaultToPortRangeFlannelUdp,
+		}
+
+		securityGroupRuleFlannelVxlan := OscSecurityGroupRule{
+			Name:          DefaultSecurityGroupRuleFlannelVxlan,
+			Flow:          DefaultFlowFlannelVxlan,
+			IpProtocol:    DefaultIpProtocolFlannelVxlan,
+			IpRange:       DefaultRuleIpRangeFlannelVxlan,
+			FromPortRange: DefaultFromPortRangeFlannelVxlan,
+			ToPortRange:   DefaultToPortRangeFlannelVxlan,
+		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupLb)
 		securityGroupNode := OscSecurityGroup{
 			Name:               securityGroupNodeName,
 			Description:        DefaultDescriptionNode,
 			Tag:                "OscK8sMainSG",
-			SecurityGroupRules: []OscSecurityGroupRule{},
+			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleCalicoVxlan, securityGroupRuleCalicoTypha, securityGroupRuleCalicoWireguard, securityGroupRuleCalicoWireguardIpv6, securityGroupRuleFlannel, securityGroupRuleFlannelUdp, securityGroupRuleFlannelVxlan},
 		}
 		network.SecurityGroups = append(network.SecurityGroups, &securityGroupNode)
 	}
