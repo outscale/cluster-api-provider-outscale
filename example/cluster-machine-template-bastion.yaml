@@ -184,6 +184,49 @@ spec:
       - name: cluster-api-securitygroups-node
         description: Security Group node with cluster-api
         tag: OscK8sMainSG 
+        securityGroupRules:
+          - name: cluster-api-securitygrouprule-calico-vxlan
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 4789
+            toPortRange: 4789
+          - name: cluster-api-securitygrouprule-calico-typha
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 5473
+            toPortRange: 5473
+          - name: cluster-api-securitygrouprule-calico-wireguard
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 51820
+            toPortRange: 51820
+          - name: cluster-api-securitygrouprule-calico-wireguard-ipv6
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 51821
+            toPortRange: 51821
+          - name: cluster-api-securitygrouprule-flannel
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 4789
+            toPortRange: 4789
+          - name: cluster-api-securitygrouperule-flannel-udp
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 8285
+            toPortRange: 8285
+          - name: cluster-api-securitygroup-flannel-vxlan
+            flow: Inbound
+            ipProtocol: udp
+            ipRange: "10.0.0.0/16"
+            fromPortRange: 8472
+            toPortRange: 8472     
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
