@@ -456,7 +456,7 @@ func (s *Service) AddCcmTag(clusterName string, hostname string, vmId string) er
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	nodeTag := osc.ResourceTag{
-		Key:   "OscK8SNodeName",
+		Key:   "OscK8sNodeName",
 		Value: hostname,
 	}
 	nodeTagRequest := osc.CreateTagsRequest{
