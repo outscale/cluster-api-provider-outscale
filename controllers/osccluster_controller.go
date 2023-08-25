@@ -198,6 +198,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if err := clusterScope.PatchObject(); err != nil {
 		return reconcile.Result{}, err
 	}
+	clusterScope.EnsureExplicitUID()
 	// Check that every element of the cluster spec has the good format (CIDR, Tag, ...)
 	netName, err := checkNetFormatParameters(clusterScope)
 	if err != nil {
