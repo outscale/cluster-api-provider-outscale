@@ -34,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const clusterUIDLabel = "outscale.com/clusterUID"
+
 // ClusterScopeParams is a collection of input parameters to create a new scope
 type ClusterScopeParams struct {
 	OscClient  *OscClient
@@ -117,7 +119,20 @@ func (s *ClusterScope) GetNamespace() string {
 
 // GetUID return the uid of the cluster
 func (s *ClusterScope) GetUID() string {
-	return string(s.Cluster.UID)
+	explicitUID, hasExplicitUID := s.OscCluster.Labels[clusterUIDLabel]
+	if hasExplicitUID {
+		return explicitUID
+	} else {
+		return string(s.Cluster.UID)
+	}
+}
+
+// EnsureExplicitUID creates the cluster UID label if missing
+func (s *ClusterScope) EnsureExplicitUID() {
+	_, hasExplicitUID := s.OscCluster.Labels[clusterUIDLabel]
+	if !hasExplicitUID {
+		s.OscCluster.Labels[clusterUIDLabel] = string(s.Cluster.UID)
+	}
 }
 
 // GetAuth return outscale api context
