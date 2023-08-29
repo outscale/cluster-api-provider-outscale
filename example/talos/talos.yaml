@@ -1,0 +1,255 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: capu-cluster
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  labels:
+    ccm: kapi-crs-ccm
+    cni: kapi-crs-cni
+  name: kapi
+  namespace: capu-cluster
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 10.42.0.0/16
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: TalosControlPlane
+    name: kapi-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: kapi
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: kapi
+  namespace: capu-cluster
+spec:
+  network:
+    clusterName: kapi
+    internetService:
+      clusterName: kapi
+    loadBalancer:
+      clusterName: kapi
+      loadbalancername: kapi-k8s
+      securitygroupname: kapi-load-balancer
+    natService:
+      clusterName: kapi
+    net:
+      clusterName: kapi
+    subregionName: eu-west-2a
+    securityGroups:
+    - name: kapi-talos-control-plane
+      description: Talos control plane nodes.
+      securityGroupRules:
+      - name: talos-control-plane-apid-from-cp
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "10.0.4.0/24"
+        fromPortRange: 50000
+        toPortRange: 50000
+      - name: talos-control-plane-trustd-from-workers
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "10.0.3.0/24"
+        fromPortRange: 50001
+        toPortRange: 50001
+      - name: talos-control-plane-trustd-from-cp
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "10.0.4.0/24"
+        fromPortRange: 50001
+        toPortRange: 50001
+    - name: kapi-talos-workers
+      description: Talos worker nodes.
+      securityGroupRules:
+      - name: talos-workers-apid-from-cp
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "10.0.4.0/24"
+        fromPortRange: 50000
+        toPortRange: 50000
+    - name: kapi-load-balancer
+      description: Kubernetes api load balancer.
+      securityGroupRules:
+      - name: kubernetes-api
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "0.0.0.0/0"
+        fromPortRange: 6443
+        toPortRange: 6443
+    - name: kapi-talos-nodes
+      description: Common rules for kubernetes nodes.
+      securityGroupRules:
+      # TODO
+      - name: icmp
+        flow: Inbound
+        ipProtocol: icmp
+        ipRange: "0.0.0.0/0"
+        fromPortRange: 1
+        toPortRange: 1
+      - name: open-all-udp
+        flow: Inbound
+        ipProtocol: udp
+        ipRange: "10.0.0.0/16"
+        fromPortRange: 3000
+        toPortRange: 60000
+      - name: open-all-tcp
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "10.0.0.0/16"
+        fromPortRange: 3000
+        toPortRange: 60000
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: kapi-worker
+  namespace: capu-cluster
+spec:
+  clusterName: kapi
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: TalosConfigTemplate
+          name: kapi-worker
+      clusterName: kapi
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+        name: kapi-worker
+      version: 1.27.4
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: kapi-worker
+  namespace: capu-cluster
+spec:
+  template:
+    spec:
+      node:
+        clusterName: kapi
+        image:
+          name: bootstrapper-talos
+        keypair:
+          name: bootstrap
+        vm:
+          clusterName: kapi
+          keypairName: bootstrap
+          rootDisk:
+            rootDiskIops: 1500
+            rootDiskSize: 100
+            rootDiskType: gp2
+          subregionName: eu-west-2a
+          vmType: tinav5.c4r16p1
+          securityGroupNames:
+          - name: kapi-talos-nodes
+          - name: kapi-talos-workers
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: kapi-control-plane
+  namespace: capu-cluster
+spec:
+  template:
+    spec:
+      node:
+        clusterName: kapi
+        image:
+          name: bootstrapper-talos
+        keypair:
+          name: bootstrap
+        vm:
+          clusterName: kapi
+          keypairName: bootstrap
+          loadBalancerName: kapi-k8s
+          role: controlplane
+          rootDisk:
+            rootDiskIops: 1500
+            rootDiskSize: 100
+            rootDiskType: gp2
+          subregionName: eu-west-2a
+          vmType: tinav5.c4r16p1
+          securityGroupNames:
+          - name: kapi-talos-nodes
+          - name: kapi-talos-control-plane
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: TalosConfigTemplate
+metadata:
+  name: kapi-worker
+  namespace: capu-cluster
+spec:
+  template:
+    spec:
+      generateType: worker
+      talosVersion: v1.4
+      configPatches:
+      - op: add
+        path: /cluster/externalCloudProvider
+        value:
+          enabled: true
+          manifests:
+          - "https://raw.githubusercontent.com/outscale/cloud-provider-osc/v0.2.3/deploy/osc-ccm-manifest.yml"
+      - op: add
+        path: /machine/kubelet/extraArgs
+        value:
+          cloud-provider: external
+      - op: add
+        path: /machine/network
+        value:
+          disableSearchDomain: true
+      - op: add
+        path: /machine/kubelet/registerWithFQDN
+        value: true
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: TalosControlPlane
+metadata:
+  name: kapi-control-plane
+  namespace: capu-cluster
+spec:
+  controlPlaneConfig:
+    controlplane:
+      generateType: controlplane
+      talosVersion: v1.4
+      configPatches:
+      - op: add
+        path: /cluster/externalCloudProvider
+        value:
+          enabled: true
+          manifests:
+          - "https://raw.githubusercontent.com/outscale/cloud-provider-osc/v0.2.0/deploy/osc-ccm-manifest.yml"
+      - op: add
+        path: /machine/kubelet/extraArgs
+        value:
+          cloud-provider: external
+      - op: add
+        path: /machine/network
+        value:
+          disableSearchDomain: true
+      - op: add
+        path: /machine/kubelet/registerWithFQDN
+        value: true
+      - op: replace
+        path: /cluster/allowSchedulingOnControlPlanes
+        value: false
+  infrastructureTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscMachineTemplate
+    name: kapi-control-plane
+  replicas: 1
+  version: 1.27.4
