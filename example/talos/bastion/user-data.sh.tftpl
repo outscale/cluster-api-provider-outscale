@@ -1,0 +1,44 @@
+#!/bin/bash
+set -eu
+
+umask 077
+
+vpn_subnet_24_prefix=10.0.5
+wg_privkey='${wg_privkey}'
+wg_listen_port='${wg_listen_port}'
+wg_peer_pubkey='${wg_peer_pubkey}'
+
+# Configuring WireGuard
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y wireguard-tools
+
+cat <<EOF > /etc/wireguard/wg0.conf
+[Interface]
+PrivateKey = $wg_privkey
+Address = $vpn_subnet_24_prefix.1/24
+ListenPort = $wg_listen_port
+
+[Peer]
+PublicKey = $wg_peer_pubkey
+AllowedIPs = $vpn_subnet_24_prefix.2/32
+PersistentKeepalive = 25
+EOF
+
+systemctl enable --now wg-quick@wg0
+
+# Enabling packet forwarding
+
+cat <<'EOF' > /etc/sysctl.d/50-ip-forward.conf
+net.ipv4.ip_forward=1
+EOF
+
+sysctl --system
+
+# NAT  (TODO: persist)
+
+nft add table nat
+nft -- add chain nat prerouting { type nat hook prerouting priority -100 \; }
+nft add chain nat postrouting { type nat hook postrouting priority 100 \; }
+nft add rule nat postrouting oifname "eth0" masquerade
