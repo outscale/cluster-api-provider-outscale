@@ -88,7 +88,7 @@ var (
 				},
 				SubregionName: "eu-west-2a",
 				SubnetName:    "test-subnet",
-				VmType:        "tinav4.c2r4p2",
+				VmType:        "tinav3.c2r4p2",
 				PublicIpName:  "test-publicip",
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
@@ -161,7 +161,7 @@ var (
 				},
 				SubregionName: "eu-west-2a",
 				SubnetName:    "test-subnet",
-				VmType:        "tinav4.c2r4p2",
+				VmType:        "tinav3.c2r4p2",
 				PublicIpName:  "test-publicip",
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
@@ -237,7 +237,7 @@ var (
 				},
 				SubregionName: "eu-west-2a",
 				SubnetName:    "test-subnet",
-				VmType:        "tinav4.c2r4p2",
+				VmType:        "tinav3.c2r4p2",
 				ResourceId:    "i-test-bastion-uid",
 				PublicIpName:  "test-publicip",
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
@@ -391,7 +391,7 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -503,7 +503,7 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet@test",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -616,7 +616,7 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -717,7 +717,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -793,7 +793,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -868,7 +868,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -955,7 +955,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1032,7 +1032,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1107,7 +1107,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1181,7 +1181,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1331,7 +1331,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1406,7 +1406,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2c",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1481,7 +1481,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1556,7 +1556,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1631,7 +1631,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -2707,7 +2707,7 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 						},
 						SubregionName: "eu-west-2a",
 						SubnetName:    "test-subnet",
-						VmType:        "tinav4.c2r4p2",
+						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip",
 						ResourceId:    "i-test-bastion-uid",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{

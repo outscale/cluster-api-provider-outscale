@@ -154,7 +154,7 @@ var (
 				SubnetName:       "test-subnet",
 				LoadBalancerName: "test-loadbalancer",
 				PublicIpName:     "test-publicip",
-				VmType:           "tinav4.c2r4p2",
+				VmType:           "tinav3.c2r4p2",
 				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
@@ -197,7 +197,7 @@ var (
 				SubnetName:       "test-subnet",
 				LoadBalancerName: "test-loadbalancer",
 				PublicIpName:     "test-publicip",
-				VmType:           "tinav4.c2r4p2",
+				VmType:           "tinav3.c2r4p2",
 				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
@@ -239,7 +239,7 @@ var (
 				SubregionName:    "eu-west-2a",
 				SubnetName:       "test-subnet",
 				LoadBalancerName: "test-loadbalancer",
-				VmType:           "tinav4.c2r4p2",
+				VmType:           "tinav3.c2r4p2",
 				PublicIpName:     "test-publicip",
 				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
@@ -288,7 +288,7 @@ var (
 				SubregionName:    "eu-west-2a",
 				SubnetName:       "test-subnet",
 				LoadBalancerName: "test-loadbalancer",
-				VmType:           "tinav4.c2r4p2",
+				VmType:           "tinav3.c2r4p2",
 				ResourceId:       "i-test-vm-uid",
 				PublicIpName:     "test-publicip",
 				Replica:          1,
@@ -423,7 +423,7 @@ func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -515,7 +515,7 @@ func TestCheckVmLoadBalancerOscAssociateResourceName(t *testing.T) {
 							RootDiskIops: 1500,
 							RootDiskType: "io1",
 						},
-						VmType:       "tinav4.c2r4p2",
+						VmType:       "tinav3.c2r4p2",
 						PublicIpName: "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -603,7 +603,7 @@ func TestCheckVmSecurityGroupOscAssociateResourceName(t *testing.T) {
 						},
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -695,7 +695,7 @@ func TestCheckVmPublicIpOscAssociateResourceName(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip@test",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -775,7 +775,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -823,7 +823,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -871,7 +871,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -921,7 +921,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -969,7 +969,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1019,7 +1019,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1067,7 +1067,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1114,7 +1114,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1210,7 +1210,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1258,7 +1258,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2c",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1306,7 +1306,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1354,7 +1354,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1402,7 +1402,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1450,7 +1450,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1541,7 +1541,7 @@ func TestCheckVmSubnetAssociateResourceName(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet@test",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1621,7 +1621,7 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1695,7 +1695,7 @@ func TestCheckVmVolumeSubregionName(t *testing.T) {
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
@@ -1743,7 +1743,7 @@ func TestCheckVmVolumeSubregionName(t *testing.T) {
 						SubregionName:    "eu-west-2b",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						PublicIpName:     "test-publicip",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{

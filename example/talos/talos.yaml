@@ -153,7 +153,7 @@ spec:
             rootDiskSize: 100
             rootDiskType: gp2
           subregionName: eu-west-2a
-          vmType: tinav5.c4r16p1
+          vmType: tinav6.c4r16p1
           securityGroupNames:
           - name: kapi-talos-nodes
           - name: kapi-talos-workers
@@ -182,7 +182,7 @@ spec:
             rootDiskSize: 100
             rootDiskType: gp2
           subregionName: eu-west-2a
-          vmType: tinav5.c4r16p1
+          vmType: tinav6.c4r16p1
           securityGroupNames:
           - name: kapi-talos-nodes
           - name: kapi-talos-control-plane
