@@ -52,6 +52,11 @@ jobs:
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
         image_id: ${{ secrets.OMI_ID }}
+        control_plane_vm_type: ${{ secrets.CP_VMTYPE }}
+        bastion_vm_type:  ${{ secrets.BASTION_VMTYPE }}
+        worker_vm_type: ${{ secrets.WORKER_VMTYPE }}
+        rke_version: ${{ secrets.RKE_VERSION }}
+        kubernetes_version: ${{ secrets.KUBERNETES_VERSION }}
     - name: Wait Kubernetes control plane is up and running
       uses: nick-invision/retry@v2
       with:

@@ -198,7 +198,7 @@ spec:
           subregionName: eu-west-2a
           securityGroupNames:
             - name: cluster-api-securitygroups-kw
-          vmType: "tinav4.c2r4p2"
+          vmType: "tinav6.c2r4p2"
 ```
 
 ### OscImage
@@ -230,7 +230,7 @@ spec:
 | `subnetName` | `cluster-api-subnet-kw` | false |  The Subnet associated to your vm
 | `subregionName` | `eu-west-2a` | false | The subregionName used for vm and volume
 | `securityGroupNames` | `cluster-api-securitygroups-kw` | false | The securityGroupName which is associated with vm
-| `vmType` | `tinav4.c2r4p2` | false |  The vmType use for the vm
+| `vmType` | `tinav6.c2r4p2` | false |  The vmType use for the vm
 | `imageId` | `` | false |  The vmType use for the vm
 
 

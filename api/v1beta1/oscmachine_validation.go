@@ -202,7 +202,7 @@ func ValidateDeviceName(deviceName string) (string, error) {
 
 // ValidateVmType check that vmType is a valid vmType
 func ValidateVmType(vmType string) (string, error) {
-	isValidateVmType := regexp.MustCompile(`^tinav[1-5].c[0-9]+r[0-9]+p[1-3]$`).MatchString
+	isValidateVmType := regexp.MustCompile(`^tinav[3-6].c[0-9]+r[0-9]+p[1-3]$`).MatchString
 	switch {
 	case isValidateVmType(vmType):
 		return vmType, nil

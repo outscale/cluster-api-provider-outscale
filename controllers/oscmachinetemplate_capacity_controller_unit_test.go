@@ -106,7 +106,7 @@ var (
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
 						PublicIpName:     "test-publicip",
-						VmType:           "tinav4.c2r4p2",
+						VmType:           "tinav3.c2r4p2",
 						Replica:          1,
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{

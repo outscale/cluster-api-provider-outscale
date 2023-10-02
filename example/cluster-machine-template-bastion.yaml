@@ -74,7 +74,7 @@ spec:
       subregionName: eu-west-2a
       securityGroupNames:
         - name: cluster-api-securitygroup-lb
-      vmType: "tinav4.c2r4p2"
+      vmType: "tinav6.c4r8p2"
     routeTables:
       - name: cluster-api-routetable-kw
         subnets:
@@ -283,7 +283,7 @@ spec:
           securityGroupNames:
             - name: cluster-api-securitygroups-kw
             - name: cluster-api-securitygroups-node
-          vmType: "tinav4.c2r4p2"
+          vmType: "tinav6.c4r8p2"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate

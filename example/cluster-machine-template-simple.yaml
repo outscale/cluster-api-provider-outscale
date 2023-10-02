@@ -286,7 +286,7 @@ spec:
           securityGroupNames:
             - name: cluster-api-securitygroups-kw
             - name: cluster-api-securitygroups-node
-          vmType: "tinav4.c2r4p2"
+          vmType: "tinav6.c4r8p2"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -319,7 +319,7 @@ spec:
           securityGroupNames:
             - name: cluster-api-securitygroups-kcp
             - name: cluster-api-securitygroups-node
-          vmType: "tinav5.c4r8p1"
+          vmType: "tinav6.c4r8p1"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate

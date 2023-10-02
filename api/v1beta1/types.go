@@ -406,7 +406,7 @@ var (
 	DefaultVmImageId       string = "ami-e1a786f1"
 
 	DefaultVmKeypairName string = "cluster-api"
-	DefaultVmType        string = "tinav5.c4r8p1"
+	DefaultVmType        string = "tinav3.c4r8p1"
 	DefaultVmDeviceName  string = "/dev/sda1"
 
 	DefaultVmBastionImageId       string = "ami-bb490c7e"
@@ -414,11 +414,11 @@ var (
 	DefaultVmBastionSubregionName string = "eu-west-2a"
 
 	DefaultVmKwName               string = "cluster-api-vm-kw"
-	DefaultVmKwType               string = "tinav5.c4r8p1"
+	DefaultVmKwType               string = "tinav3.c4r8p1"
 	DefaultVmKcpName              string = "cluster-api-vm-kcp"
-	DefaultVmKcpType              string = "tinav5.c4r8p1"
+	DefaultVmKcpType              string = "tinav3.c4r8p1"
 	DefaultVmBastionName          string = "cluster-api-vm-bastion"
-	DefaultVmBastionType          string = "tinav5.c2r2p1"
+	DefaultVmBastionType          string = "tinav3.c2r2p1"
 	DefaultVolumeKcpName          string = "cluster-api-volume-kcp"
 	DefaultVolumeKcpIops          int32  = 1000
 	DefaultVolumeKcpSize          int32  = 30
