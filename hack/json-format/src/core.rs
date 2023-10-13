@@ -35,9 +35,9 @@ impl DataTrait for KubernetesImage {
                 .as_deref()
                 .unwrap_or("v1.22.1"),
         );
-        let kubernetes_deb_version = String::from(&kubernetes_version.replace("v", "")) + "-00";
+        let kubernetes_deb_version = String::from(&kubernetes_version.replace("v", "")) + "-1.1";
         self.kubernetes_deb_version = Some(kubernetes_deb_version);
-        let kubernetes_rpm_version = String::from(&kubernetes_version.replace("v", "")) + "-0";
+        let kubernetes_rpm_version = String::from(&kubernetes_version.replace("v", ""));
         self.kubernetes_rpm_version = Some(kubernetes_rpm_version);
         println!(
             "kubernetes json build timestamp: {}",
@@ -67,14 +67,14 @@ impl DataTrait for KubernetesImage {
             self.kubernetes_rpm_version
                 .to_owned()
                 .as_deref()
-                .unwrap_or("1.22.1-00")
+                .unwrap_or("1.22.1-1.1")
         );
         println!(
             "kubernetes deb version: {:?}",
             self.kubernetes_deb_version
                 .to_owned()
                 .as_deref()
-                .unwrap_or("1.22.1-0")
+                .unwrap_or("1.22.1")
         );
         Ok(())
     }
@@ -153,7 +153,7 @@ mod datas_test {
             println!("value: {:#?}", kubernetes);
             assert_eq!(
                 kubernetes.kubernetes_rpm_version,
-                Some("1.22.1-0".to_string())
+                Some("1.22.1".to_string())
             )
         }
     }

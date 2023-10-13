@@ -50,13 +50,13 @@ function check_content() {
 	echo "$kubernetes_rpm_version"
 	kubernetes_semver=$(jq .kubernetes_semver "$ROOT"/"$check_output")
 	kubernetes_series=$(jq .kubernetes_series "$ROOT"/"$check_output")
-	if [[ $kubernetes_deb_version == '"1.22.1-00"' ]]; then
+	if [[ $kubernetes_deb_version == '"1.22.1-1.1"' ]]; then
 		echo "Find kubernetes_deb_version"
 	else
 		echo "Can not find kubernetes_deb_version"
 		exit 1
 	fi
-	if [[ $kubernetes_rpm_version == '"1.22.1-0"' ]]; then	
+	if [[ $kubernetes_rpm_version == '"1.22.1"' ]]; then	
 		echo "Find kubernetes_rpm_version"
 	else	
 		echo "Can not find kubernetes_rpm_version"
