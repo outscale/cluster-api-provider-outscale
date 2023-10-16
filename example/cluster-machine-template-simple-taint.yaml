@@ -320,10 +320,10 @@ spec:
   kubeadmConfigSpec:
     initConfiguration:
       nodeRegistration:
-       taints:
-       - key: "key1"
-         value: "value1"
-         effect: "NoSchedule"
+        taints:
+        - key: "key1"
+          value: "value1"
+          effect: "NoSchedule"
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
@@ -339,10 +339,10 @@ spec:
       permissions: "0744"
     joinConfiguration:
       nodeRegistration:
-       taints:
-       - key: "key1"
-         value: "value1"
-         effect: "NoSchedule"
+        taints:
+        - key: "key1"
+          value: "value1"
+          effect: "NoSchedule"
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
