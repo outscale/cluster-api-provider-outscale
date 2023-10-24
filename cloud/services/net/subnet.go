@@ -21,32 +21,37 @@ import (
 
 	"errors"
 
+	_nethttp "net/http"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	_nethttp "net/http"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/subnet_mock.go -package mock_net -source ./subnet.go
 type OscSubnetInterface interface {
-	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string, subregionName string) (*osc.Subnet, error)
+	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error)
 	DeleteSubnet(subnetId string) error
 	GetSubnet(subnetId string) (*osc.Subnet, error)
 	GetSubnetIdsFromNetIds(netId string) ([]string, error)
 }
 
 // CreateSubnet create the subnet associate to the net
-func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string, subregionName string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
 	ipSubnetRange, err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
+	if err != nil {
+		return nil, err
+	}
+	subregionName, err := infrastructurev1beta1.ValidateSubregionName(spec.SubregionName)
 	if err != nil {
 		return nil, err
 	}
 	subnetRequest := osc.CreateSubnetRequest{
 		IpRange:       ipSubnetRange,
 		NetId:         netId,
-		SubregionName: &subregionName,
+		SubregionName: subregionName,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()

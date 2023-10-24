@@ -164,6 +164,9 @@ type OscSubnet struct {
 	// Subnet Ip range with CIDR notation
 	// +optional
 	IpSubnetRange string `json:"ipSubnetRange,omitempty"`
+	// The subregion name of the Subnet
+	// +optional
+	SubregionName string `json:"SubregionName,omitempty"`
 	// The Subnet Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
@@ -1213,10 +1216,11 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 		var subnetKcpName string = DefaultSubnetKcpName
 		var subnetKwName string = DefaultSubnetKwName
 		var subnetPublicName string = DefaultSubnetPublicName
+
 		if network.ClusterName != "" {
-			subnetKcpName = strings.Replace(DefaultSubnetKcpName, DefaultClusterName, network.ClusterName, -1)
-			subnetKwName = strings.Replace(DefaultSubnetKwName, DefaultClusterName, network.ClusterName, -1)
-			subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, network.ClusterName, -1)
+			subnetKcpName = strings.Replace(subnetKcpName, DefaultClusterName, network.ClusterName, -1)
+			subnetKwName = strings.Replace(subnetKwName, DefaultClusterName, network.ClusterName, -1)
+			subnetPublicName = strings.Replace(subnetPublicName, DefaultClusterName, network.ClusterName, -1)
 		}
 		subnetKcp := OscSubnet{
 			Name:          subnetKcpName,
@@ -1234,6 +1238,19 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 			&subnetKcp,
 			&subnetKw,
 			&subnetPublic,
+		}
+	}
+}
+
+// SetSubnetSubregionNameValue set the Subnet Subregion Name values from OscNetwork configuration
+func (network *OscNetwork) SetSubnetSubregionNameDefaultValue() {
+	var defaultSubregionName string = DefaultSubregionName
+	if network.SubregionName != "" {
+		defaultSubregionName = network.SubregionName
+	}
+	for _, subnet := range network.Subnets {
+		if subnet.SubregionName == "" {
+			subnet.SubregionName = defaultSubregionName
 		}
 	}
 }

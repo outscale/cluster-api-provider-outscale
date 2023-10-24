@@ -35,8 +35,7 @@ import (
 var (
 	defaultSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName:   "test-cluster",
-			SubregionName: "eu-west-2a",
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -45,14 +44,14 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 		},
 	}
 	defaultSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName:   "test-cluster",
-			SubregionName: "eu-west-2a",
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -62,6 +61,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -70,8 +70,7 @@ var (
 
 	defaultMultiSubnetInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName:   "test-cluster",
-			SubregionName: "eu-west-2a",
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:    "test-net",
 				IpRange: "10.0.0.0/16",
@@ -80,18 +79,19 @@ var (
 				{
 					Name:          "test-subnet-first",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 				{
 					Name:          "test-subnet-second",
 					IpSubnetRange: "10.0.1.0/24",
+					SubregionName: "eu-west-2b",
 				},
 			},
 		},
 	}
 	defaultMultiSubnetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
-			ClusterName:   "test-cluster",
-			SubregionName: "eu-west-2a",
+			ClusterName: "test-cluster",
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
@@ -101,11 +101,13 @@ var (
 				{
 					Name:          "test-subnet-first",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-first-uid",
 				},
 				{
 					Name:          "test-subnet-second",
 					IpSubnetRange: "10.0.1.0/24",
+					SubregionName: "eu-west-2b",
 					ResourceId:    "subnet-test-subnet-second-uid",
 				},
 			},
@@ -194,10 +196,12 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 						{
 							Name:          "test-subnet-first",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 						{
 							Name:          "test-subnet-first",
 							IpSubnetRange: "10.0.1.0/24",
+							SubregionName: "eu-west-2b",
 						},
 					},
 				},
@@ -250,6 +254,7 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet@test",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 				},
@@ -268,6 +273,7 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/36",
+							SubregionName: "eu-west-2a",
 						},
 					},
 				},
@@ -286,6 +292,7 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.256/16",
+							SubregionName: "eu-west-2a",
 						},
 					},
 				},

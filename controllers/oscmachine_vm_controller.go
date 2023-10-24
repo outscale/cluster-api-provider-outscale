@@ -129,7 +129,7 @@ func checkVmSecurityGroupOscAssociateResourceName(machineScope *scope.MachineSco
 	return nil
 }
 
-// checkVmSubnetOscAssociateResourceName check that Subnet dependancies tag name in both resource configuration are the same.
+// checkVmSubnetOscAssociateResourceName check that Subnet dependencies tag name in both resource configuration are the same.
 func checkVmSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	vmSpec := machineScope.GetVm()

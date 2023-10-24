@@ -714,7 +714,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 
 				Network: infrastructurev1beta1.OscNetwork{
-					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
 						IpRange: "10.0.0.0/16",
@@ -723,6 +722,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						{
 							Name:          "cluster-api-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: osc_subregion,
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -795,7 +795,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
-					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
 						IpRange: "10.0.0.0/16",
@@ -804,10 +803,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						{
 							Name:          "cluster-api-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: osc_subregion,
 						},
 						{
 							Name:          "cluster-api-sub",
 							IpSubnetRange: "10.0.1.0/24",
+							SubregionName: osc_subregion,
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -900,7 +901,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
-					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name: "cluster-api-net",
 					},
@@ -928,7 +928,6 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
-					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name:    "cluster-api-net",
 						IpRange: "10.0.0.0/16",
@@ -937,14 +936,17 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						{
 							Name:          "cluster-api-subnet-kcp",
 							IpSubnetRange: "10.0.4.0/24",
+							SubregionName: osc_subregion,
 						},
 						{
 							Name:          "cluster-api-subnet-kw",
 							IpSubnetRange: "10.0.3.0/24",
+							SubregionName: osc_subregion,
 						},
 						{
 							Name:          "cluster-api-subnet-public",
 							IpSubnetRange: "10.0.2.0/24",
+							SubregionName: osc_subregion,
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{

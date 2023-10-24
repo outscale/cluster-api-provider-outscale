@@ -19,8 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -47,6 +48,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			PublicIps: []*infrastructurev1beta1.OscPublicIp{
@@ -73,6 +75,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -177,6 +180,7 @@ func TestCheckNatFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
@@ -205,6 +209,7 @@ func TestCheckNatFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
@@ -233,6 +238,7 @@ func TestCheckNatFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 							ResourceId:    "subnet-test-subnet-uid",
 						},
 					},
@@ -295,6 +301,7 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
