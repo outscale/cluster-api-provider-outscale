@@ -44,6 +44,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -116,6 +117,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -190,6 +192,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -347,6 +350,7 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -459,6 +463,7 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -572,6 +577,7 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -673,6 +679,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -749,6 +756,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -824,6 +832,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -911,6 +920,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -986,6 +996,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1063,6 +1074,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1138,6 +1150,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1212,6 +1225,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1287,6 +1301,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1362,6 +1377,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1437,6 +1453,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1512,6 +1529,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -1587,6 +1605,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{

@@ -48,6 +48,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -92,6 +93,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},

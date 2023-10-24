@@ -291,6 +291,9 @@ spec:
                         resourceId:
                           description: The Subnet Id response
                           type: string
+                        subregionName:
+                          description: The subregion name of the Subnet
+                          type: string
                       type: object
                     type: array
                 type: object

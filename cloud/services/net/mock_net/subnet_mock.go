@@ -36,18 +36,18 @@ func (m *MockOscSubnetInterface) EXPECT() *MockOscSubnetInterfaceMockRecorder {
 }
 
 // CreateSubnet mocks base method.
-func (m *MockOscSubnetInterface) CreateSubnet(spec *v1beta1.OscSubnet, netId, clusterName, subnetName, subregionName string) (*osc.Subnet, error) {
+func (m *MockOscSubnetInterface) CreateSubnet(spec *v1beta1.OscSubnet, netId, clusterName, subnetName) (*osc.Subnet, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSubnet", spec, netId, clusterName, subnetName, subregionName)
+	ret := m.ctrl.Call(m, "CreateSubnet", spec, netId, clusterName, subnetName)
 	ret0, _ := ret[0].(*osc.Subnet)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSubnet indicates an expected call of CreateSubnet.
-func (mr *MockOscSubnetInterfaceMockRecorder) CreateSubnet(spec, netId, clusterName, subnetName, subregionName interface{}) *gomock.Call {
+func (mr *MockOscSubnetInterfaceMockRecorder) CreateSubnet(spec, netId, clusterName, subnetName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSubnet", reflect.TypeOf((*MockOscSubnetInterface)(nil).CreateSubnet), spec, netId, clusterName, subnetName, subregionName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSubnet", reflect.TypeOf((*MockOscSubnetInterface)(nil).CreateSubnet), spec, netId, clusterName, subnetName)
 }
 
 // DeleteSubnet mocks base method.

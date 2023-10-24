@@ -48,6 +48,7 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 	} else {
 		subnetsSpec = clusterScope.GetSubnet()
 	}
+	networkSpec.SetSubnetSubregionNameDefaultValue()
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		clusterScope.V(2).Info("Check subnet name parameters")
@@ -61,9 +62,14 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 		if err != nil {
 			return subnetTagName, err
 		}
+		subnetSubregionName := subnetSpec.SubregionName
+		clusterScope.V(2).Info("Check subnet subregion parameters")
+		_, err = infrastructurev1beta1.ValidateSubregionName(subnetSubregionName)
+		if err != nil {
+			return subnetTagName, err
+		}
 	}
 	return "", nil
-
 }
 
 // checkSubnetOscDuplicateName check that there are not the same name for subnet
@@ -104,7 +110,6 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	subregionName := networkSpec.SubregionName
 	clusterScope.V(4).Info("Number of subnet", "subnet_length", len(subnetsSpec))
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
@@ -128,7 +133,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		}
 		if !Contains(subnetIds, subnetId) && tag == nil {
 			clusterScope.V(2).Info("Create the desired subnet", "subnetName", subnetName)
-			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, clusterName, subnetName, subregionName)
+			subnet, err := subnetSvc.CreateSubnet(subnetSpec, netId, clusterName, subnetName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create subnet for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}

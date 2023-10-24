@@ -44,6 +44,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
@@ -79,6 +80,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -123,6 +125,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
@@ -164,6 +167,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -208,6 +212,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 				},
 			},
 			InternetService: infrastructurev1beta1.OscInternetService{
@@ -255,6 +260,7 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -431,6 +437,7 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -501,6 +508,7 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -572,6 +580,7 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -609,6 +618,7 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -646,6 +656,7 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -711,6 +722,7 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -800,6 +812,7 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -843,6 +856,7 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -886,6 +900,7 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
@@ -1792,6 +1807,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 						{
 							Name:          "test-subnet",
 							IpSubnetRange: "10.0.0.0/24",
+							SubregionName: "eu-west-2a",
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
