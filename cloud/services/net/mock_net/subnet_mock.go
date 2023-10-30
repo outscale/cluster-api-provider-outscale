@@ -36,7 +36,7 @@ func (m *MockOscSubnetInterface) EXPECT() *MockOscSubnetInterfaceMockRecorder {
 }
 
 // CreateSubnet mocks base method.
-func (m *MockOscSubnetInterface) CreateSubnet(spec *v1beta1.OscSubnet, netId, clusterName, subnetName) (*osc.Subnet, error) {
+func (m *MockOscSubnetInterface) CreateSubnet(spec *v1beta1.OscSubnet, netId, clusterName, subnetName string) (*osc.Subnet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSubnet", spec, netId, clusterName, subnetName)
 	ret0, _ := ret[0].(*osc.Subnet)

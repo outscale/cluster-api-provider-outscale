@@ -51,7 +51,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 	subnetRequest := osc.CreateSubnetRequest{
 		IpRange:       ipSubnetRange,
 		NetId:         netId,
-		SubregionName: subregionName,
+		SubregionName: &subregionName,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()

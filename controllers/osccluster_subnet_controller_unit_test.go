@@ -392,7 +392,6 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			}
 			subnetsSpec := stc.spec.Network.Subnets
 			var subnetIds []string
-			subregionName := stc.spec.Network.SubregionName
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
@@ -423,12 +422,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					subnetRef.ResourceMap[subnetName] = subnetId
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName), gomock.Eq(subregionName)).
+						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
 						Return(subnet.Subnet, stc.expCreateSubnetErr)
 				} else {
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName), gomock.Eq(subregionName)).
+						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
 						Return(nil, stc.expCreateSubnetErr)
 				}
 			}
