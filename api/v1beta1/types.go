@@ -166,7 +166,7 @@ type OscSubnet struct {
 	IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 	// The subregion name of the Subnet
 	// +optional
-	SubregionName string `json:"SubregionName,omitempty"`
+	SubregionName string `json:"subregionName,omitempty"`
 	// The Subnet Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`

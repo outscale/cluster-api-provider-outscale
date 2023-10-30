@@ -43,10 +43,10 @@ spec:
       enable: false
     subnets:
     - name: cluster-api-multi-az-eu-west-2a
-      ipSubnetRange: ["10.42.0.0/24"]
+      ipSubnetRange: "10.42.0.0/24"
       subregionName: eu-west-2a
     - name: cluster-api-multi-az-eu-west-2b
-      ipSubnetRange: ["10.42.1.0/24"]
+      ipSubnetRange: "10.42.1.0/24"
       subregionName: eu-west-2b
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
