@@ -13,6 +13,10 @@ test/e2e/config/*.-envsubst.yaml
 *.test
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+apicovers.txt
+covers.txt
+apicovers.html
+covers.html
 
 secret.*
 *.kubeconfig
