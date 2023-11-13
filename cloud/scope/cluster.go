@@ -160,6 +160,11 @@ func (s *ClusterScope) GetNatService() *infrastructurev1beta1.OscNatService {
 	return &s.OscCluster.Spec.Network.NatService
 }
 
+// GetNatServices return the natServices of the cluster
+func (s *ClusterScope) GetNatServices() []*infrastructurev1beta1.OscNatService {
+	return s.OscCluster.Spec.Network.NatServices
+}
+
 // GetNatServiceRef get the status of natService (a Map with tag name with cluster uid associate with resource response id)
 func (s *ClusterScope) GetNatServiceRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.NatServiceRef

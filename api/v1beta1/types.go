@@ -51,6 +51,9 @@ type OscNetwork struct {
 	// The Nat Service configuration
 	// +optional
 	NatService OscNatService `json:"natService,omitempty"`
+	// The Nat Services configuration
+	// +optional
+	NatServices []*OscNatService `json:"natServices,omitempty"`
 	// The Route Table configuration
 	// +optional
 	RouteTables    []*OscRouteTable    `json:"routeTables,omitempty"`
