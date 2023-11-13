@@ -36,6 +36,7 @@ spec:
       clusterName: cluster-api-multi-az
     internetService:
       clusterName: cluster-api-multi-az
+    # TODO: use multiple nat services and set correct sg's
     natService:
       clusterName: cluster-api-multi-az
     bastion:
@@ -48,6 +49,17 @@ spec:
     - name: cluster-api-multi-az-eu-west-2b
       ipSubnetRange: "10.42.1.0/24"
       subregionName: eu-west-2b
+    routetables:
+    - name: cluster-api-multi-az-eu-west-2a
+      subnets:
+      - cluster-api-multi-az-eu-west-2a
+      routes:
+      - name: local
+
+    securityGroups:
+    - name: cluster-api-multi-az-eu-west-2a
+      securityGroupRules:
+      -
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
