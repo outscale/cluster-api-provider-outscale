@@ -37,8 +37,11 @@ spec:
     internetService:
       clusterName: cluster-api-multi-az
     # TODO: use multiple nat services and set correct sg's
-    natService:
-      clusterName: cluster-api-multi-az
+    natservices:
+      - name: cluster-api-multi-az-eu-west-2a
+        clusterName: cluster-api-multi-az
+      - name: cluster-api-multi-az-eu-west-2b
+        clusterName: cluster-api-multi-az
     bastion:
       clusterName: cluster-api-multi-az
       enable: false
@@ -55,7 +58,6 @@ spec:
       - cluster-api-multi-az-eu-west-2a
       routes:
       - name: local
-
     securityGroups:
     - name: cluster-api-multi-az-eu-west-2a
       securityGroupRules:
@@ -166,7 +168,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
-  name: "cluster-api-multi-az-control-plane"
+  name: "cluster-api-multi-az-control-plane-eu-west-2a"
   namespace: default
 spec:
   template:
@@ -182,6 +184,33 @@ spec:
           clusterName: cluster-api-multi-az
           keypairName: cluster-api-test
           subnetName: cluster-api-multi-az-eu-west-2a
+          rootDisk:
+            rootDiskSize: 30
+            rootDiskIops: 1500
+            rootDiskType: "gp2"
+          role: controlplane
+          loadBalancerName: capo-k8s
+          vmType: "tinav6.c4r8p1"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "cluster-api-multi-az-control-plane-eu-west-2b"
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: cluster-api-multi-az
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api-test
+          deleteKeypair: true
+        vm:
+          clusterName: cluster-api-multi-az
+          keypairName: cluster-api-test
+          subnetName: cluster-api-multi-az-eu-west-2b
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
@@ -220,14 +249,50 @@ spec:
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
-  name: "cluster-api-multi-az-control-plane"
+  name: "cluster-api-multi-az-control-plane-eu-west-2a"
 spec:
   replicas: 1
   machineTemplate:
     infrastructureRef:
       kind: OscMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-      name: "cluster-api-multi-az-control-plane"
+      name: "cluster-api-multi-az-control-plane-eu-west-2a"
+      namespace: default
+  kubeadmConfigSpec:
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
+    files:
+    - content: |
+        #!/bin/bash
+        curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+        chmod +x /tmp/runc.amd64
+        \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+      owner: root:root
+      path: /tmp/set_runc.sh
+      permissions: "0744"
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+    preKubeadmCommands:
+      - sh /tmp/set_runc.sh
+  version: "1.22.11"
+---
+kind: KubeadmControlPlane
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+metadata:
+  name: "cluster-api-multi-az-control-plane-eu-west-2b"
+spec:
+  replicas: 1
+  machineTemplate:
+    infrastructureRef:
+      kind: OscMachineTemplate
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      name: "cluster-api-multi-az-control-plane-eu-west-2b"
       namespace: default
   kubeadmConfigSpec:
     initConfiguration:
