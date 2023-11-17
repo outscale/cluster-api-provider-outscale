@@ -71,24 +71,37 @@ func checkPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, er
 // checkPublicIpOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
 func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
-	natServiceSpec := clusterScope.GetNatService()
-	natServiceSpec.SetDefaultValue()
-	natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+	var natServicesSpec []*infrastructurev1beta1.OscNatService
 	networkSpec := clusterScope.GetNetwork()
-	publicIpsSpec = networkSpec.PublicIps
-	for _, publicIpSpec := range publicIpsSpec {
-		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
-		resourceNameList = append(resourceNameList, publicIpName)
-	}
-	clusterScope.V(2).Info("Check match public ip with nat service")
-
-	checkOscAssociate := Contains(resourceNameList, natPublicIpName)
-	if checkOscAssociate {
-		return nil
+	if networkSpec.NatServices == nil {
+		// Add backwards compatibility with NatService parameter that used single NatService
+		natServiceSpec := clusterScope.GetNatService()
+		natServiceSpec.SetDefaultValue()
+		natServicesSpec = append(natServicesSpec, natServiceSpec)
 	} else {
-		return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
+		natServicesSpec = clusterScope.GetNatServices()
 	}
+
+	for _, natServiceSpec := range natServicesSpec {
+		natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
+
+		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
+		networkSpec := clusterScope.GetNetwork()
+		publicIpsSpec = networkSpec.PublicIps
+		for _, publicIpSpec := range publicIpsSpec {
+			publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
+			resourceNameList = append(resourceNameList, publicIpName)
+		}
+		clusterScope.V(2).Info("Check match public ip with nat service")
+
+		checkOscAssociate := Contains(resourceNameList, natPublicIpName)
+		if checkOscAssociate {
+			return nil
+		} else {
+			return fmt.Errorf("publicIp %s does not exist in natService ", natPublicIpName)
+		}
+	}
+	return nil
 }
 
 // checkPublicIpOscDuplicateName check that there are not the same name for PublicIp resource.
