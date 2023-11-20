@@ -171,7 +171,6 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 			clusterScope.V(4).Info("Create the desired natService", "natServiceName", natServiceName)
 			networkSpec := clusterScope.GetNetwork()
 			clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
-			clusterScope.V(2).Info("Create the desired natService", "natServiceName", natServiceName)
 			natService, err := natServiceSvc.CreateNatService(publicIpId, subnetId, natServiceName, clusterName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("%w Can not create natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())

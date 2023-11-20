@@ -9,7 +9,9 @@ metadata:
 spec:
   clusterNetwork:
     pods:
-      cidrBlocks: ["10.42.0.0/16"]
+      cidrBlocks: ["10.233.64.0/18"]
+    services:
+      cidrBlocks: ["10.233.0.0/18"]
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: OscCluster
@@ -18,7 +20,7 @@ spec:
   controlPlaneRef:
     kind: KubeadmControlPlane
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-    name: "cluster-api-multi-az-control-plane"
+    name: "cluster-api-multi-az-control-plane-2a"
     namespace: capo-test
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -30,231 +32,154 @@ spec:
   network:
     clusterName: cluster-api-multi-az
     loadBalancer:
-      loadbalancername: capo-k8s
+      loadbalancername: cluster-api-multi-az-lb
       clusterName: cluster-api-multi-az
+      loadbalancertype: internet-facing
+      subnetname: cluster-api-multi-az-subnet-2a-private
+      securitygroupname: cluster-api-multi-az-securitygroup-lb
     net:
+      name: cluster-api-multi-az-net
       clusterName: cluster-api-multi-az
+      ipRange: "10.0.0.0/16"
     internetService:
+      name: cluster-api-multi-az-igw
       clusterName: cluster-api-multi-az
-    # TODO: use multiple nat services and set correct sg's
+    subnets:
+    - name: cluster-api-multi-az-subnet-2a-private
+      ipSubnetRange: "10.0.0.0/24"
+      subregionName: eu-west-2a
+    - name: cluster-api-multi-az-subnet-2b-private
+      ipSubnetRange: "10.0.1.0/24"
+      subregionName: eu-west-2b
+    - name: cluster-api-multi-az-subnet-2a-public
+      ipSubnetRange: "10.0.2.0/24"
+      subregionName: eu-west-2a
+    - name: cluster-api-multi-az-subnet-2b-public
+      ipSubnetRange: "10.0.3.0/24"
+      subregionName: eu-west-2b
     natServices:
-      - name: cluster-api-multi-az-eu-west-2a
+    - name: cluster-api-multi-az-2a-nat
+      clusterName: cluster-api-multi-az
+      publicipname: cluster-api-multi-az-publicip-2a-nat
+      subnetname: cluster-api-multi-az-subnet-2a-public
+    - name: cluster-api-multi-az-2b-nat
+      clusterName: cluster-api-multi-az
+      publicipname: cluster-api-multi-az-publicip-2b-nat
+      subnetname: cluster-api-multi-az-subnet-2b-public
+    publicIps:
+      - name: cluster-api-multi-az-publicip-2a-nat
         clusterName: cluster-api-multi-az
-      - name: cluster-api-multi-az-eu-west-2b
+      - name: cluster-api-multi-az-publicip-2b-nat
         clusterName: cluster-api-multi-az
+    routeTables:
+    - name: cluster-api-multi-az-rtb-2a-private
+      subnets:
+      - cluster-api-multi-az-subnet-2a-private
+      routes:
+      - name: cluster-api-multi-az-route-2a-nat
+        targetName: cluster-api-multi-az-2a-nat
+        targetType: nat
+        destination: "0.0.0.0/0"
+    - name: cluster-api-multi-az-rtb-2b-private
+      subnets:
+      - cluster-api-multi-az-subnet-2b-private
+      routes:
+      - name: cluster-api-multi-az-route-2b-nat
+        targetName: cluster-api-multi-az-2b-nat
+        targetType: nat
+        destination: "0.0.0.0/0"
+    - name: cluster-api-multi-az-rtb-2a-public
+      subnets:
+      - cluster-api-multi-az-subnet-2a-public
+      routes:
+      - name: cluster-api-multi-az-route-2a-igw
+        targetName: cluster-api-multi-az-igw
+        targetType: gateway
+        destination: "0.0.0.0/0"
+    - name: cluster-api-multi-az-rtb-2b-public
+      subnets:
+      - cluster-api-multi-az-subnet-2b-public
+      routes:
+      - name: cluster-api-multi-az-route-2b-igw
+        targetName: cluster-api-multi-az-igw
+        targetType: gateway
+        destination: "0.0.0.0/0"
+    securityGroups:
+    - name: cluster-api-multi-az-securitygroup-lb
+      description: Cluster-api Load Balancer Security Group
+      securityGroupRules:
+      - name: cluster-api-securitygrouprule-calico-vxlan
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "0.0.0.0/0"
+        fromPortRange: 6443
+        toPortRange: 6443
+    - name: cluster-api-multi-az-securitygroup-control-plane
+      description: Cluster-api Control Plane Security Group
+      securityGroupRules:
+      - name: cluster-api-securitygrouprule-nodes
+        flow: Inbound
+        ipProtocol: "-1"
+        ipRange: "10.0.0.0/16"
+        fromPortRange: 1
+        toPortRange: 65535
+    - name: cluster-api-multi-az-securitygroup-worker
+      description: Cluster-api Worker Security Group
+      securityGroupRules:
+      - name: cluster-api-securitygrouprule-nodes
+        flow: Inbound
+        ipProtocol: "-1"
+        ipRange: "10.0.0.0/16"
+        fromPortRange: 1
+        toPortRange: 65535
     bastion:
       clusterName: cluster-api-multi-az
       enable: false
-    subnets:
-    - name: cluster-api-multi-az-eu-west-2a
-      ipSubnetRange: "10.42.0.0/24"
-      subregionName: eu-west-2a
-    - name: cluster-api-multi-az-eu-west-2b
-      ipSubnetRange: "10.42.1.0/24"
-      subregionName: eu-west-2b
-    routeTables:
-    - name: cluster-api-multi-az-eu-west-2a
-      subnets:
-      - cluster-api-multi-az-eu-west-2a
-      routes:
-      - name: local
-    securityGroups:
-    - name: cluster-api-multi-az-eu-west-2a
-# ---
-# apiVersion: cluster.x-k8s.io/v1beta1
-# kind: MachineDeployment
-# metadata:
-#   name: "cluster-api-multi-az-md-0-eu-west-2a"
-#   namespace: capo-test
-# spec:
-#   clusterName: "cluster-api-multi-az"
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#   template:
-#     spec:
-#       clusterName: "cluster-api-multi-az"
-#       version: "1.22.11"
-#       bootstrap:
-#         configRef:
-#           name: "cluster-api-multi-az-md-0"
-#           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-#           kind: KubeadmConfigTemplate
-#           namespace: capo-test
-#       infrastructureRef:
-#         name: "cluster-api-multi-az-md-0-eu-west-2a"
-#         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-#         kind: OscMachineTemplate
-#         namespace: capo-test
-# ---
-# apiVersion: cluster.x-k8s.io/v1beta1
-# kind: MachineDeployment
-# metadata:
-#   name: "cluster-api-multi-az-md-0-eu-west-2b"
-#   namespace: capo-test
-# spec:
-#   clusterName: "cluster-api-multi-az"
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#   template:
-#     spec:
-#       clusterName: "cluster-api-multi-az"
-#       version: "1.22.11"
-#       bootstrap:
-#         configRef:
-#           name: "cluster-api-multi-az-md-0"
-#           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-#           kind: KubeadmConfigTemplate
-#           namespace: capo-test
-#       infrastructureRef:
-#         name: "cluster-api-multi-az-md-0-eu-west-2b"
-#         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-#         kind: OscMachineTemplate
-#         namespace: capo-test
-# ---
-# apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-# kind: OscMachineTemplate
-# metadata:
-#   name: "cluster-api-multi-az-md-0-eu-west-2a"
-#   namespace: capo-test
-# spec:
-#   template:
-#     spec:
-#       node:
-#         clusterName: cluster-api-multi-az
-#         image:
-#           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
-#         keypair:
-#           name: cluster-api-test
-#           deleteKeypair: true
-#         vm:
-#           clusterName: cluster-api-multi-az
-#           rootDisk:
-#             rootDiskSize: 30
-#             rootDiskIops: 1500
-#             rootDiskType: "gp2"
-#           keypairName: cluster-api-test
-#           subnetName: cluster-api-multi-az-eu-west-2a
-#           vmType: "tinav6.c2r4p2"
-# ---
-# apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-# kind: OscMachineTemplate
-# metadata:
-#   name: "cluster-api-multi-az-md-0-eu-west-2b"
-#   namespace: capo-test
-# spec:
-#   template:
-#     spec:
-#       node:
-#         clusterName: cluster-api-multi-az
-#         image:
-#           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
-#         keypair:
-#           name: cluster-api-test
-#           deleteKeypair: true
-#         vm:
-#           clusterName: cluster-api-multi-az
-#           rootDisk:
-#             rootDiskSize: 30
-#             rootDiskIops: 1500
-#             rootDiskType: "gp2"
-#           keypairName: cluster-api-test
-#           subnetName: cluster-api-multi-az-eu-west-2b
-#           vmType: "tinav6.c2r4p2"
-# ---
-# apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-# kind: OscMachineTemplate
-# metadata:
-#   name: "cluster-api-multi-az-control-plane-eu-west-2a"
-#   namespace: capo-test
-# spec:
-#   template:
-#     spec:
-#       node:
-#         clusterName: cluster-api-multi-az
-#         image:
-#           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
-#         keypair:
-#           name: cluster-api-test
-#           deleteKeypair: true
-#         vm:
-#           clusterName: cluster-api-multi-az
-#           keypairName: cluster-api-test
-#           subnetName: cluster-api-multi-az-eu-west-2a
-#           rootDisk:
-#             rootDiskSize: 30
-#             rootDiskIops: 1500
-#             rootDiskType: "gp2"
-#           role: controlplane
-#           loadBalancerName: capo-k8s
-#           vmType: "tinav6.c4r8p1"
-# ---
-# apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-# kind: OscMachineTemplate
-# metadata:
-#   name: "cluster-api-multi-az-control-plane-eu-west-2b"
-#   namespace: capo-test
-# spec:
-#   template:
-#     spec:
-#       node:
-#         clusterName: cluster-api-multi-az
-#         image:
-#           name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
-#         keypair:
-#           name: cluster-api-test
-#           deleteKeypair: true
-#         vm:
-#           clusterName: cluster-api-multi-az
-#           keypairName: cluster-api-test
-#           subnetName: cluster-api-multi-az-eu-west-2b
-#           rootDisk:
-#             rootDiskSize: 30
-#             rootDiskIops: 1500
-#             rootDiskType: "gp2"
-#           role: controlplane
-#           loadBalancerName: capo-k8s
-#           vmType: "tinav6.c4r8p1"
-# ---
-# apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-# kind: KubeadmConfigTemplate
-# metadata:
-#   name: "cluster-api-multi-az-md-0"
-#   namespace: capo-test
-# spec:
-#   template:
-#     spec:
-#       files:
-#       - content: |
-#           #!/bin/bash
-
-#           curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-#           chmod +x /tmp/runc.amd64
-#           \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-#         owner: root:root
-#         path: /tmp/set_runc.sh
-#         permissions: "0744"
-#       joinConfiguration:
-#         nodeRegistration:
-#           name: "{{ ds.meta_data.local_hostname }}"
-#           kubeletExtraArgs:
-#             cloud-provider: external
-#             provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-#       preKubeadmCommands:
-#         - sh /tmp/set_runc.sh
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: cluster-api-multi-az-control-plane-2a
+  namespace: capo-test
+spec:
+  template:
+    spec:
+      node:
+        clusterName: cluster-api-multi-az
+        image:
+         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api-test
+          deleteKeypair: false
+        vm:
+          clusterName: cluster-api-multi-az
+          name: cluster-api-multi-az-vm-control-plane-2a
+          keypairName: cluster-api-test
+          rootDisk:
+            rootDiskSize: 50
+            rootDiskIops: 1500
+            rootDiskType: gp2
+          deviceName: /dev/sda1
+          subregionName: eu-west-2a
+          subnetName: cluster-api-multi-az-subnet-2a-private
+          role: controlplane
+          loadBalancerName: cluster-api-multi-az-lb
+          securityGroupNames:
+            - name: cluster-api-multi-az-securitygroup-control-plane
+          vmType: "tinav6.c4r8p1"
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
-  name: "cluster-api-multi-az-control-plane-eu-west-2a"
+  name: cluster-api-multi-az-control-plane-2a
+  namespace: capo-test
 spec:
   replicas: 1
   machineTemplate:
     infrastructureRef:
       kind: OscMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-      name: "cluster-api-multi-az-control-plane-eu-west-2a"
+      name: cluster-api-multi-az-control-plane-2a
       namespace: capo-test
   kubeadmConfigSpec:
     initConfiguration:
@@ -279,39 +204,150 @@ spec:
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
   version: "1.22.11"
-# ---
-# kind: KubeadmControlPlane
-# apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-# metadata:
-#   name: "cluster-api-multi-az-control-plane-eu-west-2b"
-# spec:
-#   replicas: 1
-#   machineTemplate:
-#     infrastructureRef:
-#       kind: OscMachineTemplate
-#       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-#       name: "cluster-api-multi-az-control-plane-eu-west-2b"
-#       namespace: capo-test
-#   kubeadmConfigSpec:
-#     initConfiguration:
-#       nodeRegistration:
-#         kubeletExtraArgs:
-#           cloud-provider: external
-#           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-#         name: '{{ ds.meta_data.local_hostname }}'
-#     files:
-#     - content: |
-#         #!/bin/bash
-#         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-#         chmod +x /tmp/runc.amd64
-#         \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-#       owner: root:root
-#       path: /tmp/set_runc.sh
-#       permissions: "0744"
-#     joinConfiguration:
-#       nodeRegistration:
-#         kubeletExtraArgs:
-#           cloud-provider: external
-#     preKubeadmCommands:
-#       - sh /tmp/set_runc.sh
-#   version: "1.22.11"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: cluster-api-multi-az-worker-2a
+  namespace: capo-test
+spec:
+  template:
+    spec:
+      node:
+        clusterName: cluster-api-multi-az
+        image:
+         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api-test
+          deleteKeypair: false
+        vm:
+          clusterName: cluster-api-multi-az
+          name: cluster-api-multi-az-vm-worker-2a
+          keypairName: cluster-api-test
+          rootDisk:
+            rootDiskSize: 50
+            rootDiskIops: 1500
+            rootDiskType: gp2
+          deviceName: /dev/sda1
+          subregionName: eu-west-2a
+          subnetName: cluster-api-multi-az-subnet-2a-private
+          securityGroupNames:
+            - name: cluster-api-multi-az-securitygroup-worker
+          vmType: "tinav6.c4r8p2"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: cluster-api-multi-az-worker-2b
+  namespace: capo-test
+spec:
+  template:
+    spec:
+      node:
+        clusterName: cluster-api-multi-az
+        image:
+         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+        keypair:
+          name: cluster-api-test
+          deleteKeypair: false
+        vm:
+          clusterName: cluster-api-multi-az
+          name: cluster-api-multi-az-vm-worker-2b
+          keypairName: cluster-api-test
+          rootDisk:
+            rootDiskSize: 50
+            rootDiskIops: 1500
+            rootDiskType: gp2
+          deviceName: /dev/sda1
+          subregionName: eu-west-2b
+          subnetName: cluster-api-multi-az-subnet-2b-private
+          securityGroupNames:
+            - name: cluster-api-multi-az-securitygroup-worker
+          vmType: "tinav6.c4r8p2"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: "cluster-api-multi-az-worker-config"
+  namespace: capo-test
+spec:
+  template:
+    spec:
+      files:
+      - content: |
+          #!/bin/sh
+ 
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        owner: root:root
+        path: /tmp/set_runc.sh
+        permissions: "0744"
+      joinConfiguration:
+        nodeRegistration:
+          name: "{{ ds.meta_data.local_hostname }}"
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+      preKubeadmCommands:
+        - sh /tmp/set_runc.sh
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: cluster-api-multi-az-worker-2a-md
+  namespace: capo-test
+spec:
+  clusterName: cluster-api-multi-az
+  replicas: 1
+  selector:
+    matchLabels:
+      node-role: worker
+  template:
+    metadata:
+      labels:
+        node-role: worker
+    spec:
+      clusterName: cluster-api-multi-az
+      version: "1.22.11"
+      bootstrap:
+        configRef:
+          name: cluster-api-multi-az-worker-config
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          namespace: capo-test
+      infrastructureRef:
+        name: cluster-api-multi-az-worker-2a
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+        namespace: capo-test
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: cluster-api-multi-az-worker-2b-md
+  namespace: capo-test
+spec:
+  clusterName: cluster-api-multi-az
+  replicas: 1
+  selector:
+    matchLabels:
+      node-role: worker
+  template:
+    metadata:
+      labels:
+        node-role: worker
+    spec:
+      clusterName: cluster-api-multi-az
+      version: "1.22.11"
+      bootstrap:
+        configRef:
+          name: cluster-api-multi-az-worker-config
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          namespace: capo-test
+      infrastructureRef:
+        name: cluster-api-multi-az-worker-2b
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+        namespace: capo-test
