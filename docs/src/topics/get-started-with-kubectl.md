@@ -155,5 +155,5 @@ make undeploy-clusterapi
 [registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
 [cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [configuration]: config.md
-[bootstrap]: https://cluster-api.sigs.k8s.io/tasks/kubeadm-bootstrap.html 
+[bootstrap]: https://cluster-api.sigs.k8s.io/tasks/bootstrap/kubeadm-bootstrap
 [containerd]: https://github.com/containerd/containerd/releases/tag/v1.6.0
