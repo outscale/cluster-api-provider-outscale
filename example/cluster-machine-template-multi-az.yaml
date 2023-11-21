@@ -1,3 +1,4 @@
+---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
@@ -276,7 +277,6 @@ spec:
       files:
       - content: |
           #!/bin/sh
- 
           curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
           chmod +x /tmp/runc.amd64
           cp -f /tmp/runc.amd64 /usr/local/sbin/runc
