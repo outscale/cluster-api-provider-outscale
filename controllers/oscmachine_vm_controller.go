@@ -149,7 +149,7 @@ func checkVmSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clu
 	}
 }
 
-// checkVmPublicIpOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
+// checkVmPublicIpOscAssociateResourceName check that PublicIp dependencies tag name in both resource configuration are the same.
 func checkVmPublicIpOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	vmSpec := machineScope.GetVm()
@@ -321,12 +321,30 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 	var publicIpId string
 	var vmPublicIpName string
+	var publicIpIdRef *infrastructurev1beta1.OscResourceReference
 	var linkPublicIpRef *infrastructurev1beta1.OscResourceReference
+	if vmSpec.PublicIp && vmSpec.PublicIpName == "" {
+		vmSpec.PublicIpName = vmSpec.Name + "-publicIp"
+		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
+		publicIp, err := publicIpSvc.CreatePublicIp(vmPublicIpName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Vm %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+		clusterScope.V(4).Info("Get publicIp for Vm", "publicip", publicIp)
+		publicIpId = publicIp.GetPublicIpId()
+		publicIpIdRef = machineScope.GetPublicIpIdRef()
+		if len(publicIpIdRef.ResourceMap) == 0 {
+			publicIpIdRef.ResourceMap = make(map[string]string)
+		}
+		publicIpIdRef.ResourceMap[vmPublicIpName] = publicIpId
+	}
 	if vmSpec.PublicIpName != "" {
 		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, err
+		if publicIpId != "" {
+			publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 		linkPublicIpRef = machineScope.GetLinkPublicIpRef()
 		if len(linkPublicIpRef.ResourceMap) == 0 {
@@ -558,7 +576,15 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
-
+	}
+	if vmSpec.PublicIp {
+		publicIpIdRef := machineScope.GetPublicIpIdRef()
+		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
+		clusterScope.V(2).Info("Delete the desired Vm publicip", "publicIpName", publicIpName)
+		err = publicIpSvc.DeletePublicIp(publicIpIdRef.ResourceMap[publicIpName])
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete Vm publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
 	}
 	if vmSpec.LoadBalancerName != "" {
 		vmIds := []string{vmId}
