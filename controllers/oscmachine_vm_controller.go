@@ -154,13 +154,16 @@ func checkVmPublicIpOscAssociateResourceName(machineScope *scope.MachineScope, c
 	var resourceNameList []string
 	vmSpec := machineScope.GetVm()
 	vmSpec.SetDefaultValue()
+	if vmSpec.PublicIp {
+		return nil
+	}
 	vmPublicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
 	publicIpsSpec := clusterScope.GetPublicIp()
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, publicIpName)
 	}
-	machineScope.V(2).Info("Check match publicip with vm")
+	machineScope.V(2).Info("Check match publicip with vm on cluster")
 	checkOscAssociate := Contains(resourceNameList, vmPublicIpName)
 	if checkOscAssociate {
 		return nil
@@ -321,26 +324,30 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 	var publicIpId string
 	var vmPublicIpName string
-	var publicIpIdRef *infrastructurev1beta1.OscResourceReference
 	var linkPublicIpRef *infrastructurev1beta1.OscResourceReference
-	if vmSpec.PublicIp && vmSpec.PublicIpName == "" {
+	if vmSpec.PublicIp {
 		vmSpec.PublicIpName = vmSpec.Name + "-publicIp"
 		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		publicIp, err := publicIpSvc.CreatePublicIp(vmPublicIpName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Vm %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		var ipFound bool
+		publicIpIdRef := machineScope.GetPublicIpIdRef()
+		publicIpId, ipFound = publicIpIdRef.ResourceMap[vmPublicIpName]
+		if !ipFound {
+			publicIp, err := publicIpSvc.CreatePublicIp(vmPublicIpName)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not create publicIp for Vm %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			}
+			clusterScope.V(4).Info("Get publicIp for Vm", "publicip", publicIp)
+			publicIpId = publicIp.GetPublicIpId()
+
+			if len(publicIpIdRef.ResourceMap) == 0 {
+				publicIpIdRef.ResourceMap = make(map[string]string)
+			}
+			publicIpIdRef.ResourceMap[vmPublicIpName] = publicIpId
 		}
-		clusterScope.V(4).Info("Get publicIp for Vm", "publicip", publicIp)
-		publicIpId = publicIp.GetPublicIpId()
-		publicIpIdRef = machineScope.GetPublicIpIdRef()
-		if len(publicIpIdRef.ResourceMap) == 0 {
-			publicIpIdRef.ResourceMap = make(map[string]string)
-		}
-		publicIpIdRef.ResourceMap[vmPublicIpName] = publicIpId
 	}
 	if vmSpec.PublicIpName != "" {
 		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		if publicIpId != "" {
+		if publicIpId == "" {
 			publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)
 			if err != nil {
 				return reconcile.Result{}, err
