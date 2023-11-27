@@ -613,7 +613,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			if machineCount != 1 {
 				machineScope.SetDeleteKeypair(false)
 				machineScope.V(2).Info("Keep Keypair from vm")
-				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 			if machineKcpCount == 1 {
 				machineScope.SetDeleteKeypair(deleteKeypair)
