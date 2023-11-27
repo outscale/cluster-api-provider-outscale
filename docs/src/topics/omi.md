@@ -22,5 +22,7 @@ ubuntu:
 - ubuntu-2004-2004-kubernetes-v1.28.3-2023-10-18
 
 ## Supported Image on CloudGov:
-- ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23
-- ubuntu-2004-2004-kubernetes-v1.23.8-2022-11-23 
+- ubuntu-2004-2004-kubernetes-v1.25.15-2023-10-18
+- ubuntu-2004-2004-kubernetes-v1.26.10-2023-10-18
+- ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
+- ubuntu-2004-2004-kubernetes-v1.28.3-2023-10-18 
