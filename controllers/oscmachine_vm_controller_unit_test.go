@@ -24,6 +24,8 @@ import (
 	"time"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -34,6 +36,10 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage/mock_storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	"github.com/stretchr/testify/assert"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -3462,12 +3468,15 @@ func TestReconcileVmResourceId(t *testing.T) {
 
 // TestReconcileDeleteVm has several tests to cover the code of the function reconcileDeleteVm
 func TestReconcileDeleteVm(t *testing.T) {
+	vmMachine1 := defaultVmReconcile
+	vmMachine1.Node.Vm.Replica = 2
 	vmTestCases := []struct {
 		name                                    string
 		clusterSpec                             infrastructurev1beta1.OscClusterSpec
 		machineSpec                             infrastructurev1beta1.OscMachineSpec
 		expDeleteInboundSecurityGroupRuleFound  bool
 		expDeleteOutboundSecurityGroupRuleFound bool
+		expListMachine                          bool
 		expUnlinkLoadBalancerBackendMachineErr  error
 		expDeleteInboundSecurityGroupRuleErr    error
 		expDeleteOutboundSecurityGroupRuleErr   error
@@ -3484,6 +3493,24 @@ func TestReconcileDeleteVm(t *testing.T) {
 			machineSpec:                             defaultVmReconcile,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
+			expListMachine:                          false,
+			expUnlinkLoadBalancerBackendMachineErr:  nil,
+			expDeleteInboundSecurityGroupRuleErr:    nil,
+			expDeleteOutboundSecurityGroupRuleErr:   nil,
+			expSecurityGroupRuleFound:               true,
+			expDeleteVmErr:                          nil,
+			expGetVmFound:                           true,
+			expGetVmErr:                             nil,
+			expCheckUnlinkPublicIpErr:               nil,
+			expReconcileDeleteVmErr:                 nil,
+		},
+		{
+			name:                                    "delete first vm in group",
+			clusterSpec:                             defaultVmClusterReconcile,
+			machineSpec:                             vmMachine1,
+			expListMachine:                          true,
+			expDeleteInboundSecurityGroupRuleFound:  false,
+			expDeleteOutboundSecurityGroupRuleFound: false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expDeleteInboundSecurityGroupRuleErr:    nil,
 			expDeleteOutboundSecurityGroupRuleErr:   nil,
@@ -3500,6 +3527,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 			machineSpec:                             defaultVmReconcile,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
+			expListMachine:                          false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expSecurityGroupRuleFound:               true,
 			expDeleteVmErr:                          fmt.Errorf("DeleteVm generic error"),
@@ -3572,6 +3600,30 @@ func TestReconcileDeleteVm(t *testing.T) {
 					Return(nil, vtc.expGetVmErr)
 			}
 
+			if vtc.expListMachine {
+				fakeScheme := runtime.NewScheme()
+				_ = clientgoscheme.AddToScheme(fakeScheme)
+				_ = clusterv1.AddToScheme(fakeScheme)
+				_ = apiextensionsv1.AddToScheme(fakeScheme)
+				_ = infrastructurev1beta1.AddToScheme(fakeScheme)
+				clientFake := fake.NewClientBuilder().WithScheme(fakeScheme).WithObjects(
+					&clusterv1.Machine{
+						TypeMeta: v1.TypeMeta{
+							APIVersion: "cluster.x-k8s.io/v1",
+							Kind:       "Machine",
+						},
+						ObjectMeta: v1.ObjectMeta{Name: "Machine1"},
+					},
+					&clusterv1.Machine{
+						TypeMeta: v1.TypeMeta{
+							APIVersion: "cluster.x-k8s.io/v1",
+							Kind:       "Machine",
+						},
+						ObjectMeta: v1.ObjectMeta{Name: "Machine2"},
+					},
+				).Build()
+				clusterScope.Client = clientFake
+			}
 			mockOscPublicIpInterface.
 				EXPECT().
 				UnlinkPublicIp(gomock.Eq(linkPublicIpId)).
