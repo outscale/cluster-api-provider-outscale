@@ -891,6 +891,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		})
 		It("should create a simple cluster with default values", func() {
 			ctx := context.Background()
+			osc_region, ok := os.LookupEnv("OSC_REGION")
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{

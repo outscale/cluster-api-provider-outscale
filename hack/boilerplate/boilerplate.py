@@ -151,7 +151,7 @@ skipped_dirs = ['Godeps', 'third_party', '_gopath', '_output', '.git', 'cluster/
                 "pkg/kubectl/generated/bindata.go", "tilt_modules", "cloud/services/net/mock_net",
                 "cloud/services/security/mock_security", "cloud/services/service/mock_service",
                 "cloud/services/storage/mock_storage", "cloud/services/compute/mock_compute",
-                "cloud/tag/mock_tag", "api/v1beta1/zz_generated.deepcopy.go"]
+                "cloud/tag/mock_tag", "cloud/scope/mock_scope", "api/v1beta1/zz_generated.deepcopy.go"]
 
 # list all the files contain 'DO NOT EDIT', but are not generated
 skipped_ungenerated_files = ['hack/lib/swagger.sh', 'hack/boilerplate/boilerplate.py']
