@@ -894,6 +894,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			osc_region, ok := os.LookupEnv("OSC_REGION")
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
+					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name: "cluster-api-net",
 					},
