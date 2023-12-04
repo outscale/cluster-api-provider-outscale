@@ -225,6 +225,14 @@ func (s ClusterScope) GetLinkRouteTablesRef() map[string][]string {
 	return s.OscCluster.Status.Network.LinkRouteTableRef
 }
 
+// SetFailureDomain sets the infrastructure provider failure domain key to the spec given as input.
+func (s *ClusterScope) SetFailureDomain(id string, spec clusterv1.FailureDomainSpec) {
+	if s.OscCluster.Status.FailureDomains == nil {
+		s.OscCluster.Status.FailureDomains = make(clusterv1.FailureDomains)
+	}
+	s.OscCluster.Status.FailureDomains[id] = spec
+}
+
 // SetLinkRouteTableRef set the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
 func (s ClusterScope) SetLinkRouteTablesRef(linkRouteTableRef map[string][]string) {
 	s.OscCluster.Status.Network.LinkRouteTableRef = linkRouteTableRef

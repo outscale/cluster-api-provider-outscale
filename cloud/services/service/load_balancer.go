@@ -222,14 +222,15 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 		readLoadBalancersResponse, httpRes, err = oscApiClient.LoadBalancerApi.ReadLoadBalancers(oscAuthClient).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", readLoadBalancerRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", readLoadBalancerRequest)
+				if reconciler.KeepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					reconciler.ThrottlingErrors) {
+					return false, nil
+				} else {
+					return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				}
 			}
 			return false, err
 		}

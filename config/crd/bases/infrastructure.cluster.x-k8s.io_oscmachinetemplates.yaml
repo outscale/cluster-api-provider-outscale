@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.1-0.20220825130208-40db49591af1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.13.1-0.20231113150709-881ffb4682cb
   name: oscmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -86,6 +85,12 @@ spec:
                   spec:
                     description: OscMachineSpec defines the desired state of OscMachine
                     properties:
+                      failureDomain:
+                        description: FailureDomain is the failure domain unique identifier
+                          this Machine should be attached to, as defined in Cluster
+                          API. For this infrastructure provider, the ID is equivalent
+                          to a subnet name.
+                        type: string
                       node:
                         properties:
                           clusterName:

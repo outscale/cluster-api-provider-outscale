@@ -87,7 +87,7 @@ spec:
             destination: "0.0.0.0/0"
     securityGroups:
       - name: cluster-api-securitygroups-kw
-        description: Security Group with cluster-api   
+        description: Security Group with cluster-api
         securityGroupRules:
           - name: cluster-api-securitygrouprule-api-kubelet-kw
             flow: Inbound
@@ -332,7 +332,7 @@ spec:
       files:
       - content: |
           #!/bin/sh
- 
+
           curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
           chmod +x /tmp/runc.amd64
           cp -f /tmp/runc.amd64 /usr/local/sbin/runc
@@ -371,7 +371,7 @@ spec:
     - content: |
         #!/bin/sh
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-        chmod +x /tmp/runc.amd64	
+        chmod +x /tmp/runc.amd64
         cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       owner: root:root
       path: /tmp/set_runc.sh
@@ -381,6 +381,7 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
   version: "1.22.11"
