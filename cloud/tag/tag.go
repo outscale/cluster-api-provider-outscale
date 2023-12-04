@@ -20,11 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
+
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"net/http"
-	"regexp"
 )
 
 //go:generate ../../bin/mockgen -destination mock_tag/tag_mock.go -package mock_tag -source ./tag.go
@@ -72,7 +73,9 @@ func (s *Service) ReadTag(tagKey string, tagValue string) (*osc.Tag, error) {
 	oscAuthClient := s.scope.GetAuth()
 	readTagsResponse, httpRes, err := oscApiClient.TagApi.ReadTags(oscAuthClient).ReadTagsRequest(readTagsRequest).Execute()
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
+		if httpRes != nil {
+			fmt.Printf("Error with http result %s", httpRes.Status)
+		}
 		return nil, err
 	}
 	tags, ok := readTagsResponse.GetTagsOk()

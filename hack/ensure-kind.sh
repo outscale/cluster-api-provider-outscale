@@ -39,7 +39,7 @@ EOF
 }
 
 install_kind() {
-	if [[ "${OSTYPE}" == "linux"* ]]; then
+	if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin22"* ]]; then
 		curl -sLo "kind" "https://github.com/kubernetes-sigs/kind/releases/download/${MINIMUM_KIND_VERSION}/kind-linux-amd64"
 		copy_binary
 	else

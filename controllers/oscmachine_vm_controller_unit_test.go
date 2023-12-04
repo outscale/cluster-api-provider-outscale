@@ -43,6 +43,8 @@ import (
 )
 
 var (
+	failureDomainSubnet        = "test-failure-domain-subnet"
+	failureDomainSubregion     = "test-failure-domain-subregion"
 	defaultVmClusterInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
@@ -134,6 +136,54 @@ var (
 			},
 		},
 	}
+	failureDomainClusterInitialize = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:        "test-net",
+				IpRange:     "10.0.0.0/16",
+				ClusterName: "test-cluster",
+			},
+			Subnets: []*infrastructurev1beta1.OscSubnet{
+				{
+					Name:          "test-subnet",
+					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
+				},
+				{
+					Name:          failureDomainSubnet,
+					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: failureDomainSubregion,
+				},
+			},
+			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+				{
+					Name:        "test-securitygroup",
+					Description: "test securitygroup",
+					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+						{
+							Name:          "test-securitygrouprule",
+							Flow:          "Inbound",
+							IpProtocol:    "tcp",
+							IpRange:       "0.0.0.0/0",
+							FromPortRange: 6443,
+							ToPortRange:   6443,
+						},
+					},
+				},
+			},
+			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+				LoadBalancerName:  "test-loadbalancer",
+				LoadBalancerType:  "internet-facing",
+				SubnetName:        "test-subnet",
+				SecurityGroupName: "test-securitygroup",
+			},
+			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+				{
+					Name: "test-publicip",
+				},
+			},
+		},
+	}
 	defaultVmVolumeInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
@@ -221,6 +271,50 @@ var (
 			},
 		},
 	}
+	defaultFailureDomainVmInitialize = infrastructurev1beta1.OscMachineSpec{
+		Node: infrastructurev1beta1.OscNode{
+			Volumes: []*infrastructurev1beta1.OscVolume{
+				{
+					Name:          "test-volume",
+					Iops:          1000,
+					Size:          50,
+					VolumeType:    "io1",
+					SubregionName: "eu-west-2a",
+				},
+			},
+			Vm: infrastructurev1beta1.OscVm{
+				ClusterName: "test-cluster",
+				Name:        "test-vm",
+				ImageId:     "ami-00000000",
+				Role:        "controlplane",
+				DeviceName:  "/dev/sda1",
+				RootDisk: infrastructurev1beta1.OscRootDisk{
+					RootDiskSize: 30,
+					RootDiskIops: 1500,
+					RootDiskType: "gp2",
+				},
+				KeypairName:      "rke",
+				SubregionName:    "",
+				SubnetName:       "",
+				LoadBalancerName: "test-loadbalancer",
+				PublicIpName:     "test-publicip",
+				VmType:           "tinav3.c2r4p2",
+				Replica:          1,
+				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+					{
+						Name: "test-securitygroup",
+					},
+				},
+				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+					{
+						Name:      "test-privateip",
+						PrivateIp: "10.0.0.17",
+					},
+				},
+			},
+		},
+	}
+
 	defaultMultiVmInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
@@ -1778,6 +1872,56 @@ func TestCheckVmVolumeSubregionName(t *testing.T) {
 				assert.Equal(t, vtc.expCheckVmVolumeSubregionNameErr, err, "checkVmVolumeSubregionName() should return the same error")
 			} else {
 				assert.Nil(t, vtc.expCheckVmVolumeSubregionNameErr)
+			}
+		})
+	}
+}
+
+func TestUseFailureDomain(t *testing.T) {
+	vmTestCases := []struct {
+		name                string
+		clusterSpec         infrastructurev1beta1.OscClusterSpec
+		machineSec          clusterv1.MachineSpec
+		oscMachineSpec      infrastructurev1beta1.OscMachineSpec
+		expFailureDomainSet bool
+	}{
+		{
+			name:                "Default cluster without FailureDomain",
+			clusterSpec:         defaultVmClusterInitialize,
+			machineSec:          clusterv1.MachineSpec{},
+			oscMachineSpec:      defaultVmInitialize,
+			expFailureDomainSet: false,
+		},
+		{
+			name:                "Cluster with FailureDomain not used (Subnet and Subregion provided)",
+			clusterSpec:         failureDomainClusterInitialize,
+			machineSec:          clusterv1.MachineSpec{},
+			oscMachineSpec:      defaultVmInitialize,
+			expFailureDomainSet: false,
+		},
+		{
+			name:        "Cluster with FailureDomain used (Subnet and Subregion not provided)",
+			clusterSpec: failureDomainClusterInitialize,
+			machineSec: clusterv1.MachineSpec{
+				FailureDomain: &failureDomainSubnet,
+			},
+			oscMachineSpec:      defaultFailureDomainVmInitialize,
+			expFailureDomainSet: true,
+		},
+	}
+
+	for _, vtc := range vmTestCases {
+		t.Run(vtc.name, func(t *testing.T) {
+
+			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.oscMachineSpec)
+			machineScope.Machine.Spec = vtc.machineSec
+			UseFailureDomain(clusterScope, machineScope)
+
+			if vtc.expFailureDomainSet {
+				assert.Equal(t, failureDomainSubnet, machineScope.GetVm().SubnetName)
+				assert.Equal(t, failureDomainSubregion, machineScope.GetVm().SubregionName)
+			} else {
+				assert.NotEqual(t, failureDomainSubnet, machineScope.GetVm().SubnetName)
 			}
 		})
 	}
@@ -3474,6 +3618,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 		name                                    string
 		clusterSpec                             infrastructurev1beta1.OscClusterSpec
 		machineSpec                             infrastructurev1beta1.OscMachineSpec
+		expListMachine                          bool
 		expDeleteInboundSecurityGroupRuleFound  bool
 		expDeleteOutboundSecurityGroupRuleFound bool
 		expListMachine                          bool
@@ -3491,9 +3636,26 @@ func TestReconcileDeleteVm(t *testing.T) {
 			name:                                    "delete vm",
 			clusterSpec:                             defaultVmClusterReconcile,
 			machineSpec:                             defaultVmReconcile,
+			expListMachine:                          false,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
-			expListMachine:                          false,
+			expUnlinkLoadBalancerBackendMachineErr:  nil,
+			expDeleteInboundSecurityGroupRuleErr:    nil,
+			expDeleteOutboundSecurityGroupRuleErr:   nil,
+			expSecurityGroupRuleFound:               true,
+			expDeleteVmErr:                          nil,
+			expGetVmFound:                           true,
+			expGetVmErr:                             nil,
+			expCheckUnlinkPublicIpErr:               nil,
+			expReconcileDeleteVmErr:                 nil,
+		},
+		{
+			name:                                    "delete first vm in group",
+			clusterSpec:                             defaultVmClusterReconcile,
+			machineSpec:                             vmMachine1,
+			expListMachine:                          true,
+			expDeleteInboundSecurityGroupRuleFound:  false,
+			expDeleteOutboundSecurityGroupRuleFound: false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expDeleteInboundSecurityGroupRuleErr:    nil,
 			expDeleteOutboundSecurityGroupRuleErr:   nil,
@@ -3525,6 +3687,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 			name:                                    "failed to delete vm",
 			clusterSpec:                             defaultVmClusterReconcile,
 			machineSpec:                             defaultVmReconcile,
+			expListMachine:                          false,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
 			expListMachine:                          false,
@@ -3653,9 +3816,11 @@ func TestReconcileDeleteVm(t *testing.T) {
 				EXPECT().
 				DeleteVm(gomock.Eq(vmId)).
 				Return(vtc.expDeleteVmErr)
+
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconccileDeleteVm() hould return the same error")
+				t.Logf(err.Error())
+				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileDeleteVmErr)
 			}
@@ -3908,7 +4073,7 @@ func TestReconcileDeleteVmLoadBalancer(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconccileDeleteVm() hould return the same error")
+				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconcileDeleteVm() hould return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileDeleteVmErr)
 			}
@@ -4001,7 +4166,7 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr, err, "reconccileDeleteVm() hould return the same error")
+				assert.Equal(t, vtc.expReconcileDeleteVmErr, err, "reconcileDeleteVm() hould return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileDeleteVmErr)
 			}

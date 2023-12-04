@@ -220,6 +220,8 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		}
 	}
 
+	UseFailureDomain(clusterScope, machineScope)
+
 	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
