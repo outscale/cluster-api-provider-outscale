@@ -892,6 +892,13 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		It("should create a simple cluster with default values", func() {
 			ctx := context.Background()
 			osc_region, ok := os.LookupEnv("OSC_REGION")
+			if !ok {
+				osc_region = "eu-west-2"
+			}
+			osc_subregion, ok := os.LookupEnv("OSC_SUBREGION_NAME")
+			if !ok {
+				osc_subregion = osc_region + "a"
+			}
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
 					SubregionName: osc_subregion,
