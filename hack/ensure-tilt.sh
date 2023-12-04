@@ -44,7 +44,7 @@ EOF
 }
 
 install_tilt() {
-	if [[ "${OSTYPE}" == "linux"* ]]; then
+	if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin22"* ]]; then
 		curl -fsSL "https://github.com/tilt-dev/tilt/releases/download/v$MINIMUM_TILT_VERSION/tilt.$MINIMUM_TILT_VERSION.linux.x86_64.tar.gz" | tar -xzv tilt
 		copy_binary
 	else

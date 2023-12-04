@@ -297,6 +297,21 @@ func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
 	}
 }
 
+func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
+	if machineScope.Machine.Spec.FailureDomain != nil && machineScope.GetVm().SubnetName == "" {
+		machineScope.V(2).Info("Find subnet with failureDomain", "failureDomain", *machineScope.Machine.Spec.FailureDomain)
+		machineScope.GetVm().SubnetName = *machineScope.Machine.Spec.FailureDomain
+
+		subnetName := machineScope.GetVm().SubnetName + "-" + clusterScope.GetUID()
+		subnetSpecs := clusterScope.GetSubnet()
+		for _, subnetSpec := range subnetSpecs {
+			if subnetSpec.Name+"-"+clusterScope.GetUID() == subnetName {
+				machineScope.GetVm().SubregionName = subnetSpec.SubregionName
+			}
+		}
+	}
+}
+
 // reconcileVm reconcile the vm of the machine
 func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	vmSpec := machineScope.GetVm()

@@ -42,6 +42,8 @@ type OscNetwork struct {
 	// The Net configuration
 	// +optional
 	Net OscNet `json:"net,omitempty"`
+	// List of subnet to spread controlPlane nodes
+	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
 	// The Subnet configuration
 	// +optional
 	Subnets []*OscSubnet `json:"subnets,omitempty"`

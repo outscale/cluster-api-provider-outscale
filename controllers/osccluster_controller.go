@@ -19,6 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
@@ -26,8 +29,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	"strings"
-	"time"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -340,6 +341,13 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcileSubnets, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition)
+
+	// add failureDomains
+	for _, kpSubnetName := range clusterScope.OscCluster.Spec.Network.ControlPlaneSubnets {
+		clusterScope.SetFailureDomain(kpSubnetName, clusterv1.FailureDomainSpec{
+			ControlPlane: true,
+		})
+	}
 
 	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
 	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetServiceSvc, tagSvc)

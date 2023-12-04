@@ -97,10 +97,20 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 	oscMachineLog.Info("validate update old subregionName", "old subregionName", old.Spec.Node.Vm.SubregionName)
 	oscMachineLog.Info("validate update subregionName", "subregionName", m.Spec.Node.Vm.SubregionName)
 
-	if !reflect.DeepEqual(m.Spec.Node.Vm.SubregionName, old.Spec.Node.Vm.SubregionName) {
+	if old.Spec.Node.Vm.SubregionName != "" && !reflect.DeepEqual(m.Spec.Node.Vm.SubregionName, old.Spec.Node.Vm.SubregionName) {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("spec", "subregionName"),
 				m.Spec.Node.Vm.SubregionName, "field is immutable"),
+		)
+	}
+
+	oscMachineLog.Info("validate update old subnetName", "old subnetName", old.Spec.Node.Vm.SubnetName)
+	oscMachineLog.Info("validate update subnetName", "subnetName", m.Spec.Node.Vm.SubnetName)
+
+	if (old.Spec.Node.Vm.SubnetName != "") && !reflect.DeepEqual(m.Spec.Node.Vm.SubnetName, old.Spec.Node.Vm.SubnetName) {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec", "subnetName"),
+				m.Spec.Node.Vm.SubnetName, "field is immutable"),
 		)
 	}
 	oscMachineLog.Info("validate update old rootDiskSize", "old rootDiskSize", old.Spec.Node.Vm.RootDisk.RootDiskSize)

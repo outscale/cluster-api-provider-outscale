@@ -43,7 +43,7 @@ EOF
 }
 
 install_packer() {
-	if [[ "${OSTYPE}" == "linux"* ]]; then
+	if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin22"* ]]; then
 		curl -sLo "packer.zip" "https://releases.hashicorp.com/packer/${MINIMUM_PACKER_VERSION}/packer_${MINIMUM_PACKER_VERSION}_linux_amd64.zip" && unzip packer.zip -d packer-bin && mv packer-bin/packer . && rm -rf packer.zip packer-bin
 		copy_binary
 	else

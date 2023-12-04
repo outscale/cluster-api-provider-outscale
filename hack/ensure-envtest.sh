@@ -45,7 +45,7 @@ EOF
 }
 
 install_envtest() {
-	if [[ "${OSTYPE}" == "linux"* ]]; then
+	if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin22"* ]]; then
 		if ! [ -d "${BIN_ROOT}" ]; then
 			mkdir -p "${BIN_ROOT}"
 		fi

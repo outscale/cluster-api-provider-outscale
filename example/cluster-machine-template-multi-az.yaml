@@ -3,7 +3,7 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: cluster-api-multi-az
-  namespace: capo-test
+  namespace: default
   labels:
     cni: "cluster-api-multi-az-crs-cni"
     ccm: "cluster-api-multi-az-crs-ccm"
@@ -17,18 +17,18 @@ spec:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: OscCluster
     name:  cluster-api-multi-az
-    namespace: capo-test
+    namespace: default
   controlPlaneRef:
     kind: KubeadmControlPlane
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-    name: "cluster-api-multi-az-control-plane-2a"
-    namespace: capo-test
+    name: "cluster-api-multi-az-control-plane"
+    namespace: default
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
   name:  cluster-api-multi-az
-  namespace: capo-test
+  namespace: default
 spec:
   network:
     clusterName: cluster-api-multi-az
@@ -45,6 +45,9 @@ spec:
     internetService:
       name: cluster-api-multi-az-igw
       clusterName: cluster-api-multi-az
+    controlPlaneSubnets:
+      - cluster-api-multi-az-subnet-2a-private
+      - cluster-api-multi-az-subnet-2b-private
     subnets:
     - name: cluster-api-multi-az-subnet-2a-private
       ipSubnetRange: "10.0.0.0/24"
@@ -140,8 +143,8 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
-  name: cluster-api-multi-az-control-plane-2a
-  namespace: capo-test
+  name: cluster-api-multi-az-control-plane
+  namespace: default
 spec:
   template:
     spec:
@@ -150,19 +153,20 @@ spec:
         image:
          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
         keypair:
-          name: cluster-api-test
+          name: cluster-api
           deleteKeypair: false
         vm:
           clusterName: cluster-api-multi-az
-          name: cluster-api-multi-az-vm-control-plane-2a
-          keypairName: cluster-api-test
+          name: cluster-api-multi-az-vm-control-plane
+          keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
             rootDiskIops: 1500
             rootDiskType: gp2
           deviceName: /dev/sda1
-          subregionName: eu-west-2a
-          subnetName: cluster-api-multi-az-subnet-2a-private
+          # Set at empty to use the failure domain
+          # subregionName: ""
+          # subnetName: ""
           role: controlplane
           loadBalancerName: cluster-api-multi-az-lb
           securityGroupNames:
@@ -172,16 +176,16 @@ spec:
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
-  name: cluster-api-multi-az-control-plane-2a
-  namespace: capo-test
+  name: cluster-api-multi-az-control-plane
+  namespace: default
 spec:
-  replicas: 1
+  replicas: 3
   machineTemplate:
     infrastructureRef:
       kind: OscMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-      name: cluster-api-multi-az-control-plane-2a
-      namespace: capo-test
+      name: cluster-api-multi-az-control-plane
+      namespace: default
   kubeadmConfigSpec:
     initConfiguration:
       nodeRegistration:
@@ -191,10 +195,10 @@ spec:
         name: '{{ ds.meta_data.local_hostname }}'
     files:
     - content: |
-        #!/bin/bash
+        #!/bin/sh
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
         chmod +x /tmp/runc.amd64
-        \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       owner: root:root
       path: /tmp/set_runc.sh
       permissions: "0744"
@@ -202,6 +206,8 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
+          provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
   version: "1.22.11"
@@ -210,7 +216,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
   name: cluster-api-multi-az-worker-2a
-  namespace: capo-test
+  namespace: default
 spec:
   template:
     spec:
@@ -224,7 +230,7 @@ spec:
         vm:
           clusterName: cluster-api-multi-az
           name: cluster-api-multi-az-vm-worker-2a
-          keypairName: cluster-api-test
+          keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
             rootDiskIops: 1500
@@ -240,7 +246,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
   name: cluster-api-multi-az-worker-2b
-  namespace: capo-test
+  namespace: default
 spec:
   template:
     spec:
@@ -254,7 +260,7 @@ spec:
         vm:
           clusterName: cluster-api-multi-az
           name: cluster-api-multi-az-vm-worker-2b
-          keypairName: cluster-api-test
+          keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
             rootDiskIops: 1500
@@ -270,7 +276,7 @@ apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
   name: "cluster-api-multi-az-worker-config"
-  namespace: capo-test
+  namespace: default
 spec:
   template:
     spec:
@@ -296,7 +302,7 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   name: cluster-api-multi-az-worker-2a-md
-  namespace: capo-test
+  namespace: default
 spec:
   clusterName: cluster-api-multi-az
   replicas: 1
@@ -315,18 +321,18 @@ spec:
           name: cluster-api-multi-az-worker-config
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
-          namespace: capo-test
+          namespace: default
       infrastructureRef:
         name: cluster-api-multi-az-worker-2a
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
-        namespace: capo-test
+        namespace: default
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   name: cluster-api-multi-az-worker-2b-md
-  namespace: capo-test
+  namespace: default
 spec:
   clusterName: cluster-api-multi-az
   replicas: 1
@@ -345,9 +351,9 @@ spec:
           name: cluster-api-multi-az-worker-config
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
-          namespace: capo-test
+          namespace: default
       infrastructureRef:
         name: cluster-api-multi-az-worker-2b
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
-        namespace: capo-test
+        namespace: default
