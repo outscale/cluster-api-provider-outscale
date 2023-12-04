@@ -3621,7 +3621,6 @@ func TestReconcileDeleteVm(t *testing.T) {
 		expListMachine                          bool
 		expDeleteInboundSecurityGroupRuleFound  bool
 		expDeleteOutboundSecurityGroupRuleFound bool
-		expListMachine                          bool
 		expUnlinkLoadBalancerBackendMachineErr  error
 		expDeleteInboundSecurityGroupRuleErr    error
 		expDeleteOutboundSecurityGroupRuleErr   error
@@ -3690,7 +3689,6 @@ func TestReconcileDeleteVm(t *testing.T) {
 			expListMachine:                          false,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
-			expListMachine:                          false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expSecurityGroupRuleFound:               true,
 			expDeleteVmErr:                          fmt.Errorf("DeleteVm generic error"),
