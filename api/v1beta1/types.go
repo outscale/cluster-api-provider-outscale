@@ -326,6 +326,7 @@ type OscNodeResource struct {
 	KeypairRef      OscResourceReference `json:"keypairRef,omitempty"`
 	VmRef           OscResourceReference `json:"vmRef,omitempty"`
 	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
+	PublicIpIdRef   OscResourceReference `json:"publicIpIdRef,omitempty"`
 }
 
 type OscImage struct {
@@ -362,6 +363,7 @@ type OscVm struct {
 	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
 	LoadBalancerName   string                    `json:"loadBalancerName,omitempty"`
 	PublicIpName       string                    `json:"publicIpName,omitempty"`
+	PublicIp           bool                      `json:"publicIp,omitempty"`
 	SubregionName      string                    `json:"subregionName,omitempty"`
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`

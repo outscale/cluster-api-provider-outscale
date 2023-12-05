@@ -88,6 +88,8 @@ spec:
                           - privateIp
                           type: object
                         type: array
+                      publicIp:
+                        type: boolean
                       publicIpName:
                         type: string
                       replica:
@@ -241,6 +243,15 @@ spec:
                         type: object
                     type: object
                   linkPublicIpRef:
+                    description: Map between resourceId and resourceName (tag Name
+                      with cluster UID)
+                    properties:
+                      resourceMap:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  publicIpIdRef:
                     description: Map between resourceId and resourceName (tag Name
                       with cluster UID)
                     properties:
