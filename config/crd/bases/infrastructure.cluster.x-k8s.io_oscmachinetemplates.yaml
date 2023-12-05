@@ -140,6 +140,8 @@ spec:
                                   - privateIp
                                   type: object
                                 type: array
+                              publicIp:
+                                type: boolean
                               publicIpName:
                                 type: string
                               replica:
