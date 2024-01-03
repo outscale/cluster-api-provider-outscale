@@ -11,6 +11,7 @@ New OMI will be builded and publish every two weeks for each supported Os Distri
 ## Current available image:
 
 ubuntu:
+- ubuntu-2004-2004-kubernetes-v1.24.16-2024-01-03
 - ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
 - ubuntu-2204-2004-kubernetes-v1.23.8-2023-02-10
 - ubuntu-2004-2004-kubernetes-v1.24.2-2022-10-13
