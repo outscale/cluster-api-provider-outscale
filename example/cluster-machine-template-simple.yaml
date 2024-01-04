@@ -28,6 +28,7 @@ metadata:
   namespace: default
 spec:
   network:
+    extraSecurityGroupRule: true
     clusterName: cluster-api
     subregionName: eu-west-2a
     loadBalancer:

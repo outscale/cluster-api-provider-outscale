@@ -75,6 +75,9 @@ type OscNetwork struct {
 	// The subregion name
 	// + optional
 	SubregionName string `json:"subregionName,omitempty"`
+	// Add SecurityGroup Rule after the cluster is created
+	// + optional
+	ExtraSecurityGroupRule bool `json:"extraSecurityGroupRule,omitempty"`
 }
 
 type OscLoadBalancer struct {

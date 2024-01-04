@@ -4,7 +4,8 @@ There are a relationship between controller
 # Configuration
 
 ## cluster infrastructure controller OscCluster
-example:
+example without bastion:
+
 ```
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
@@ -13,6 +14,8 @@ metadata:
   namespace: default
 spec:
   network:
+    bastion:
+      enable: false
     clusterName: cluster-api
     subregionName: eu-west-2a
     loadBalancer:
@@ -27,6 +30,7 @@ spec:
         ipSubnetRange: "172.19.95.192/27"
     publicIps:
       - name: cluster-api-publicip
+
     internetService:
       clusterName: cluster-api
       name: cluster-api-internetservice
@@ -54,6 +58,83 @@ spec:
             fromPortRange: 22
             toPortRange: 22 
 ```
+
+example with bastion:
+
+```
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name:  cluster-api
+  namespace: default
+spec:
+  network:
+    clusterName: cluster-api
+    loadBalancer:
+      loadbalancername: cluster-api-lb
+      clusterName: cluster-api
+      loadbalancertype: internet-facing
+      subnetname: cluster-api-subnet
+      securitygroupname: cluster-api-securitygroup-lb
+    net:
+      name: cluster-api-net
+      clusterName: cluster-api-az
+      ipRange: "10.0.0.0/16"
+    internetService:
+      name: cluster-api-igw
+      clusterName: cluster-api
+    controlPlaneSubnets:
+      - cluster-api-subnet
+    subnets:
+    - name: cluster-api-subnet
+      ipSubnetRange: "10.0.0.0/24"
+      subregionName: eu-west-2a
+    natServices:
+    - name: cluster-api-nat
+      clusterName: cluster-api
+      publicipname: cluster-api-publicip
+      subnetname: cluster-api-subnet
+    publicIps:
+      - name: cluster-api-publicip
+        clusterName: cluster-api
+    routeTables:
+    - name: cluster-api-rtb
+      subnets:
+      - cluster-api-subnet
+      routes:
+      - name: cluster-api-nat
+        targetName: cluster-api-nat
+        targetType: nat
+        destination: "0.0.0.0/0"
+    securityGroups:
+    - name: cluster-api-securitygroup-lb
+      description: Cluster-api Load Balancer Security Group
+      securityGroupRules:
+      - name: cluster-api-securitygrouprule-calico-vxlan
+        flow: Inbound
+        ipProtocol: tcp
+        ipRange: "0.0.0.0/0"
+        fromPortRange: 6443
+        toPortRange: 6443
+    bastion:
+      clusterName: cluster-api
+      enable: true
+      name: cluster-api-vm-bastion
+      keypairName: cluster-api
+      deviceName: /dev/sda1
+      imageName: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+      rootDisk:
+        rootDiskSize: 15
+        rootDiskIops: 1000
+        rootDiskType: io1
+      subnetName: cluster-api-subnet-public
+      subregionName: eu-west-2a
+      securityGroupNames:
+        - name: cluster-api-securitygroup-lb
+      vmType: "tinav6.c4r8p2"
+
+```
+
 ### loadBalancer
 
 | Name |  Default | Required | Description
@@ -84,6 +165,25 @@ spec:
 | `protocol` | `TCP` | false | The HealthCheck protocol ('HTTP'|'TCP')
 | `timeout` | `5` | false | the Timeout to consider VM unhealthy
 
+
+### Bastion
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `clusterName`| `cluster-api` | false | The cluster name
+| `enable`| `false` | false | Enable to have bastion
+| `name` | `cluster-api-vm-bastion` | false | The name of the bastion
+| `imageName` | `tcp` | false |  the omi
+| `keypairName` | `cluster-api` | false |  The keypair name used to access bastion
+| `deviceName` | `/dev/sda1` | false |  The device name
+| `rootDiskSize` | `15` | false |  The Root Disk Size
+| `rootDiskIops` | `1000` | false |  The Root Disk Iops (only for io1)
+| `rootDiskType` | `io1` | false |  The Root Disk Type (io1, gp2, standard)
+| `subnetName` | `cluster-api-subnet-public` | false |  The Subnet associated to your bastion
+| `subregionName` | `eu-west-2a` | false | The subregionName used for bastion and volume
+| `securityGroupNames` | `cluster-api-securitygroup-lb` | false | The securityGroupName which is associated with bastion
+| `vmType` | `tinav6.c2r4p2` | false |  The vmType use for the bastion
+
 ### Net
 
 | Name |  Default | Required | Description
@@ -92,6 +192,10 @@ spec:
 | `ipRange` | `172.19.95.128/25` | false | Net Ip range with CIDR notation
 | `clusterName` | `cluster-api` | false | Name of the cluster
 | `subregionName` | `eu-west-2a` | false | The subregionName used for vm and volume
+
+### controlPlaneSubnets
+
+List of subnet to spread controlPlane nodes
 
 
 ### Subnet
@@ -124,6 +228,19 @@ spec:
 | `subnetName`| `cluster-api-subnet` | false | The subnet tag name associated with a Subnet
 | `clusterName` | `cluster-api` | false | Name of the cluster
 
+### natServices
+
+List of natServices 
+
+You can have either list of natService (natServices) or one natService (natService)
+
+| Name |  Default | Required | Description
+| --- | --- | --- | ---
+| `name`| `cluster-api-natservice` | false | The tag name associated with the Nat Service
+| `publicIpName` | `cluster-api-publicip` | false | The Public Ip tag name associated wtih a Public Ip
+| `subnetName`| `cluster-api-subnet` | false | The subnet tag name associated with a Subnet
+| `clusterName` | `cluster-api` | false | Name of the cluster
+
 ### routeTables
 
 | Name |  Default | Required | Description
@@ -131,8 +248,6 @@ spec:
 | `name`| `cluster-api-routetable` | false | The tag name associated with the Route Table
 | `subnetName` | `cluster-api-subnet` | false | The subnet tag name associated with a Subnet
 | `route` | `` | false | The route configuration
-
-
 
 ### route
 
@@ -220,9 +335,8 @@ spec:
 | --- | --- | --- | ---
 | `clusterName`| `cluster-api` | false | The cluster name
 | `name` | `cluster-api-vm-kw` | false | The name of the vm
-| `imageId` | `tcp` | false |  The ip protocol name (tcp, udp, icmp or -1)
 | `keypairName` | `cluster-api` | false |  The keypair name used to access vm
-| `DeviceName` | `cluster-api` | false |  The device path to mount root volumes
+| `deviceName` | `cluster-api` | false |  The device path to mount root volumes
 | `rootDiskSize` | `30` | false |  The Root Disk Size
 | `rootDiskIops` | `1500` | false |  The Root Disk Iops (only for io1)
 | `rootDiskType` | `io1` | false |  The Root Disk Type (io1, gp2, standard)
@@ -231,6 +345,4 @@ spec:
 | `subregionName` | `eu-west-2a` | false | The subregionName used for vm and volume
 | `securityGroupNames` | `cluster-api-securitygroups-kw` | false | The securityGroupName which is associated with vm
 | `vmType` | `tinav6.c2r4p2` | false |  The vmType use for the vm
-| `imageId` | `` | false |  The vmType use for the vm
-
-
+| `imageName` | `ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22` | false |  The vmType use for the vm
