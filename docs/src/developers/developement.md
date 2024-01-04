@@ -100,6 +100,15 @@ You can track your docker build and controller log in your web browser.
 NAME                                                              READY   STATUS    RESTARTS   AGE
 cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Running   0          22s
 ```
+## Update api
+In order to test the change of an api, please do:
+
+```    
+make manifest
+make generate
+make capm
+kubectl apply -f capm.yaml
+```
 
 # Develop
 
