@@ -49,8 +49,8 @@ Please set the version you want (Replace 1.22.1 with the kubernetes version you 
   "kubernetes_deb_gpg_key": "https://packages.cloud.google.com/apt/doc/apt-key.gpg",
   "kubernetes_deb_repo": "\"https://apt.kubernetes.io/ kubernetes-xenial\"",
   "kubernetes_deb_version": "1.22.1-00",
-  "kubernetes_rpm_gpg_key": "https://pkgs.k8s.io/core:/stable:/{{ user `kubernetes_series` }}/rpm/repodata/repomd.xml.key",
-  "kubernetes_rpm_repo": "https://pkgs.k8s.io/core:/stable:/{{ user `kubernetes_series` }}/rpm/",
+"kubernetes_rpm_gpg_key": "\"https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\"",
+  "kubernetes_rpm_repo": "https://packages.cloud.google.com/yum/repos/kubernetes-el7-{{user `kubernetes_rpm_repo_arch`}}",
   "kubernetes_rpm_version": "1.22.1",
   "kubernetes_semver": "v1.22.1-0",
   "kubernetes_series": "v1.22"
