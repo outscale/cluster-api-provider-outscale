@@ -112,6 +112,26 @@ spec:
     extraSecurityGroupRule: false
 ```
 
+
+## Add a public ip after bastion is created
+
+You can add a public ip if you set publicIpNameAfterBastion = true after you have already create a cluster with a bastion.
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: cluster-api
+  namespace: default
+spec:
+  network:
+  ...
+    bastion:
+    ..
+      publicIpNameAfterBastion: true
+```
+
+
 ### Get Kubeconfig
 You can then get the status:
 ```

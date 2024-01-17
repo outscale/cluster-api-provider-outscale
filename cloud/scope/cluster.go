@@ -190,6 +190,16 @@ func (s *ClusterScope) SetExtraSecurityGroupRule(extraSecurityGroupRule bool) {
 	s.OscCluster.Spec.Network.ExtraSecurityGroupRule = extraSecurityGroupRule
 }
 
+// GetPublicIpNameAfterBastion return publicIpNameAfterBastion
+func (s *ClusterScope) GetPublicIpNameAfterBastion() bool {
+	return s.OscCluster.Spec.Network.Bastion.PublicIpNameAfterBastion
+}
+
+// SetPublicIpNameAfterBastion set the publicIpNameAfterBastion
+func (s *ClusterScope) SetPublicIpNameAfterBastion(publicIpNameAfterBastion bool) {
+	s.OscCluster.Spec.Network.Bastion.PublicIpNameAfterBastion = publicIpNameAfterBastion
+}
+
 // GetNetwork return the network of the cluster
 func (s *ClusterScope) GetNetwork() *infrastructurev1beta1.OscNetwork {
 	return &s.OscCluster.Spec.Network
