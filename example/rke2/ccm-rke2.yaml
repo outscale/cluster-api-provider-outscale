@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: osc-secret
+  namespace: kube-system
+stringData:
+  key_id: OSC_ACCESS_KEY 
+  access_key: OSC_SECRET_KEY 
+  aws_default_region: eu-west-2
+  aws_availability_zones: MY_AWS_AVAILABILITY_ZONES
+  osc_account_id: MY_OSC_ACCOUNT_ID
+  osc_account_iam: MY_OSC_ACCOUNT_IAM
+  osc_user_id: MY_OSC_USER_ID
+  osc_arn: MY_OSC_ARN
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: ccm
+  namespace: kube-system
+spec:
+  chart: https://github.com/outscale/cloud-provider-osc/releases/download/v0.2.3/osc-cloud-controller-manager-0.3.0.tgz
+  targetNamespace: kube-system
+  bootstrap: true
+  valuesContent: |-
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule 
+        operator: Exists 
+      - key: node-role.kubernetes.io/etcd
+        effect: NoExecute
+
