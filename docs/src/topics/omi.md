@@ -10,23 +10,23 @@ New OMI will be builded and publish every two weeks for each supported Os Distri
 - us-east-2
 - 
 
-## Supported Image on us-east-2:
+## Supported Image on eu-east-2:
 ubuntu:
 - ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.27.9-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.26.12-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.25.16-2024-01-17
-- ubuntu-2204-2204-kubernetes-v1.24.16-2024-01-17
+- ubuntu-2204-2204-kubernetes-v1.24.16-2024-01-23
 - ubuntu-2204-2204-kubernetes-v1.23.17-2024-01-14
 - ubuntu-2204-2204-kubernetes-v1.22.11-2024-01-17
-- ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
-- ubuntu-2204-2004-kubernetes-v1.23.8-2023-02-10
+
 
 ## Supported Image on CloudGov:
 - ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.27.9-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.26.12-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.25.16-2024-01-17
+- ubuntu-2204-2204-kubernetes-v1.24.16-2024-01-23
 - ubuntu-2204-2204-kubernetes-v1.24.16-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.23.17-2024-01-14
 - ubuntu-2204-2204-kubernetes-v1.22.11-2024-01-17
@@ -36,6 +36,6 @@ ubuntu:
 - ubuntu-2204-2204-kubernetes-v1.27.9-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.26.12-2024-01-17
 - ubuntu-2204-2204-kubernetes-v1.25.16-2024-01-17
-- ubuntu-2204-2204-kubernetes-v1.24.16-2024-01-17
+- ubuntu-2204-2204-kubernetes-v1.24.16-2024-01-23
 - ubuntu-2204-2204-kubernetes-v1.23.17-2024-01-14
 - ubuntu-2204-2204-kubernetes-v1.22.11-2024-01-17
