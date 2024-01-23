@@ -21,6 +21,8 @@ make credential
 ./bin/clusterctl init --infrastructure outscale
 ```
 
+Please create an your own omi using this docs (https://www.talos.dev/v1.6/talos-guides/install/cloud-platforms/aws/)
+
 Pease apply talos:
 ```
 kubectl apply -f talos.yaml
