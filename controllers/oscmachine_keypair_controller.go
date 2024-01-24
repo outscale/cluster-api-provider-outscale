@@ -51,6 +51,27 @@ func checkKeypairFormatParameters(machineScope *scope.MachineScope) (string, err
 	return "", nil
 }
 
+// checkKeypairSameName check that keypair name is the same in vm and keypair section
+func checkKeypairSameName(machineScope *scope.MachineScope) error {
+	var keypairSpec *infrastructurev1beta1.OscKeypair
+	nodeSpec := machineScope.GetNode()
+	if nodeSpec.KeyPair.Name == "" {
+		nodeSpec.SetKeyPairDefaultValue()
+		keypairSpec = &nodeSpec.KeyPair
+	} else {
+		keypairSpec = machineScope.GetKeypair()
+	}
+	keypairName := keypairSpec.Name
+	vmSpec := machineScope.GetVm()
+	vmSpec.SetDefaultValue()
+	machineScope.V(2).Info("Check keypair name is the same in vm and keypair section ")
+	vmKeypairName := vmSpec.KeypairName
+	if keypairName != vmKeypairName {
+		return fmt.Errorf("%s is not the same in vm and keypair section", keypairName)
+	}
+	return nil
+}
+
 // getKeyPairResourceId return the keypairName from the resourceMap base on resourceName (tag name + cluster uid)
 func getKeyPairResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
 	keypairRef := machineScope.GetKeypairRef()

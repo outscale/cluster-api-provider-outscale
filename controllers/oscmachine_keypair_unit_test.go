@@ -196,6 +196,74 @@ func TestCheckKeyPairFormatParameters(t *testing.T) {
 	}
 }
 
+func TestCheckKeypairSameName(t *testing.T) {
+	keypairTestCases := []struct {
+		name                       string
+		clusterSpec                infrastructurev1beta1.OscClusterSpec
+		machineSpec                infrastructurev1beta1.OscMachineSpec
+		expCheckKeypairSameNameErr error
+	}{
+		{
+			name:        "check the same keypair name",
+			clusterSpec: defaultKeyClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						Name: "test-keypair",
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-keypair",
+					},
+				},
+			},
+			expCheckKeypairSameNameErr: nil,
+		},
+		{
+			name:        "check not have the same keypair name from keypair section",
+			clusterSpec: defaultKeyClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						Name: "test-bad-keypair",
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-keypair",
+					},
+				},
+			},
+			expCheckKeypairSameNameErr: fmt.Errorf("test-bad-keypair is not the same in vm and keypair section"),
+		},
+		{
+			name:        "check not have the same keypair name from vm section",
+			clusterSpec: defaultKeyClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					KeyPair: infrastructurev1beta1.OscKeypair{
+						Name: "test-keypair",
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-bad-keypair",
+					},
+				},
+			},
+			expCheckKeypairSameNameErr: fmt.Errorf("test-keypair is not the same in vm and keypair section"),
+		},
+	}
+	for _, k := range keypairTestCases {
+		t.Run(k.name, func(t *testing.T) {
+			_, machineScope := SetupMachine(t, k.name, k.clusterSpec, k.machineSpec)
+			err := checkKeypairSameName(machineScope)
+			if err != nil {
+				assert.Equal(t, k.expCheckKeypairSameNameErr, err, "checkKeypairSameName() should return the same error")
+			} else {
+				assert.Nil(t, k.expCheckKeypairSameNameErr)
+			}
+			t.Logf("Got the same keypair name %s in both vm and keypair section \n", k.machineSpec.Node.Vm.KeypairName)
+		})
+	}
+
+}
+
 // TestReconcileKeyPairGet has several tests to cover the code of the function reconcileKeyPair
 func TestReconcileKeyPairGet(t *testing.T) {
 	keypairTestCases := []struct {
