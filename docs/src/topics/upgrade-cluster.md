@@ -162,8 +162,8 @@ kubectl edit machinedeployments.cluster.x-k8s.io <name>
 
 * Change version and infrastructure reference
 ```yaml
-apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-kind: KubeadmControlPlane
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
 spec:
 ...
     spec:
