@@ -114,7 +114,7 @@ spec:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: OscMachineTemplate
-      name: cluster-api-control-plane1-28
+      name: cluster-api-control-plane-1-28
       namespace: default
 ...
   version: v1.28.5
@@ -171,7 +171,7 @@ spec:
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
-        name: cluster-api-md-0
+        name: cluster-api-md-1-28
         namespace: default
       version: v1.28.5
 ```
