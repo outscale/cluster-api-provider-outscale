@@ -208,7 +208,7 @@ clusterctl delete --all
 ```
 <!-- References -->
 [canal]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/flannel/flannel
-[cillium]: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-helm/
+[cillium]: https://docs.cilium.io/en/stable/installation/k8s-toc/
 [calico]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/helm
 [kubeconfig]: https://cluster-api.sigs.k8s.io/clusterctl/commands/get-kubeconfig.html
 [cloud-provider-outscale]: https://github.com/outscale-dev/cloud-provider-osc/blob/OSC-MIGRATION/deploy/README.md
