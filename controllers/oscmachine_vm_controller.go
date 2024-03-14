@@ -437,6 +437,13 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				Address: *privateIp,
 			},
 		)
+		// Expose Public IP if one is set
+		if publicIp, ok := vm.GetPublicIpOk(); ok {
+			addresses = append(addresses, corev1.NodeAddress{
+				Type:    corev1.NodeExternalIP,
+				Address: *publicIp,
+			})
+		}
 		machineScope.SetAddresses(addresses)
 		err = vmSvc.AddCcmTag(clusterName, *privateDnsName, vmId)
 		if err != nil {
