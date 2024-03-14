@@ -5,8 +5,8 @@ metadata:
   name: osc-secret
   namespace: kube-system
 stringData:
-  key_id: OSC_ACCESS_KEY 
-  access_key: OSC_SECRET_KEY 
+  key_id: OSC_ACCESS_KEY
+  access_key: OSC_SECRET_KEY
   aws_default_region: eu-west-2
   aws_availability_zones: MY_AWS_AVAILABILITY_ZONES
   osc_account_id: MY_OSC_ACCOUNT_ID
@@ -26,8 +26,7 @@ spec:
   valuesContent: |-
     tolerations:
       - key: node-role.kubernetes.io/control-plane
-        effect: NoSchedule 
-        operator: Exists 
+        effect: NoSchedule
+        operator: Exists
       - key: node-role.kubernetes.io/etcd
         effect: NoExecute
-

@@ -1,4 +1,3 @@
-
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
@@ -12,7 +11,7 @@ spec:
   clusterNetwork:
     pods:
       cidrBlocks:
-      - 192.168.0.0/16
+        - 192.168.0.0/16
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     kind: RKE2ControlPlane
@@ -96,7 +95,7 @@ spec:
           - name: rke2-osc-securitygrouprule-api-kubelet-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.3.0/24"
             fromPortRange: 10250
             toPortRange: 10250
@@ -115,21 +114,21 @@ spec:
           - name: rke2-osc-securitygrouprule-api-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 10250
             toPortRange: 10250
           - name: rke2-osc-securitygrouprule-kcp-nodeip-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.3.0/24"
             fromPortRange: 30000
             toPortRange: 32767
           - name: rke2-osc-securitygrouprule-kcp-nodeip-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 30000
             toPortRange: 32767
@@ -157,28 +156,28 @@ spec:
           - name: rke2-osc-securitygrouprule-api-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.3.0/24"
             fromPortRange: 6443
             toPortRange: 6443
           - name: rke2-osc-securitygrouprule-api-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 6443
             toPortRange: 6443
           - name: rke2-osc-securitygrouprule-etcd
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 2378
             toPortRange: 2381
           - name: rke2-osc-securitygrouprule-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 10250
             toPortRange: 10252
@@ -191,14 +190,14 @@ spec:
           - name: rke2-osc-securitygrouprule-kw-nodeip-kw
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.3.0/24"
             fromPortRange: 30000
             toPortRange: 32767
           - name: rke2-osc-securitygrouprule-kw-nodeip-kcp
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 30000
             toPortRange: 32767
@@ -208,7 +207,7 @@ spec:
           - name: rke2-osc-securitygrouprule-lb
             flow: Inbound
             ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
+            # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "0.0.0.0/0"
             fromPortRange: 6443
             toPortRange: 6443
@@ -273,7 +272,7 @@ spec:
     name: rke2-osc-control-plane
   nodeDrainTimeout: 2m
   preRKE2Commands:
-  - sudo hostnamectl set-hostname $(curl -s http://169.254.169.254/1.0/meta-data/hostname)
+    - sudo hostnamectl set-hostname $(curl -s http://169.254.169.254/1.0/meta-data/hostname)
   replicas: 1
   serverConfig:
     cloudProviderName: external
@@ -290,7 +289,7 @@ spec:
       node:
         clusterName: rke2-osc
         image:
-         name: ubuntu-2204-2204-rke2-v1.27.9-rke2r1	
+          name: ubuntu-2204-2204-rke2-v1.27.9-rke2r1
         keypair:
           name: rke2-osc
           deleteKeypair: false
@@ -376,7 +375,6 @@ spec:
   template:
     spec:
       preRKE2Commands:
-      - sudo hostnamectl set-hostname $(curl -s http://169.254.169.254/1.0/meta-data/hostname)
+        - sudo hostnamectl set-hostname $(curl -s http://169.254.169.254/1.0/meta-data/hostname)
       agentConfig:
         version: v1.27.9+rke2r1
-
