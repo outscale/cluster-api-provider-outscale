@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -190,6 +191,11 @@ func (m *MachineScope) GetVmSecurityGroups() *[]infrastructurev1beta1.OscSecurit
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.LinkPublicIpRef
+}
+
+// GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
+func (m *MachineScope) GetPublicIpIdRef() *infrastructurev1beta1.OscResourceReference {
+	return &m.OscMachine.Status.Node.PublicIpIdRef
 }
 
 // GetKeyPair return the keypair of the cluster

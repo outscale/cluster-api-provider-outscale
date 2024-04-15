@@ -67,10 +67,10 @@ default        capu-quickstart-md-0   capu-quickstart   1                  1    
 
 #### Change worker node
 
-Please change manager image with the latest version in cluster-api-provider-outscale-controller-manager deployment:
+Please upgrade cluster-api-outscale-controllers to 0.3.1:
 
 ```
-image: outscale/cluster-api-outscale-controllers:v0.x.y
+clusterctl upgrade apply --infrastructure cluster-api-provider-outscale-system/outscale:v0.3.1
 ```
 
 Please drain node [drain][drain].
@@ -104,15 +104,6 @@ Please repeat this procedure for each node.
 
 #### Change master node
 
-
-Please drain [https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/] one node.
-
-ex:
-
-```
-kubectl drain --ignore-daemonsets ip-10-0-4-62           
-```
-
 Replace in KubeadmControlPlane:
 
 ```
@@ -125,17 +116,7 @@ By:
 aws:///
 ```
 
-Then delete previous node
-
-ex:
-
-```
-kubectl delete node capu-quickstart-control-plane-kgx4w
-```
-
-A new node with the new providerId config will be available.
-
-Please repeat this procedure for each node.
+It will rollout control plane node automatically.
 
 
 

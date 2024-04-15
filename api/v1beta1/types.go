@@ -75,6 +75,9 @@ type OscNetwork struct {
 	// The subregion name
 	// + optional
 	SubregionName string `json:"subregionName,omitempty"`
+	// Add SecurityGroup Rule after the cluster is created
+	// + optional
+	ExtraSecurityGroupRule bool `json:"extraSecurityGroupRule,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -326,6 +329,7 @@ type OscNodeResource struct {
 	KeypairRef      OscResourceReference `json:"keypairRef,omitempty"`
 	VmRef           OscResourceReference `json:"vmRef,omitempty"`
 	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
+	PublicIpIdRef   OscResourceReference `json:"publicIpIdRef,omitempty"`
 }
 
 type OscImage struct {
@@ -362,6 +366,7 @@ type OscVm struct {
 	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
 	LoadBalancerName   string                    `json:"loadBalancerName,omitempty"`
 	PublicIpName       string                    `json:"publicIpName,omitempty"`
+	PublicIp           bool                      `json:"publicIp,omitempty"`
 	SubregionName      string                    `json:"subregionName,omitempty"`
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
@@ -372,21 +377,22 @@ type OscVm struct {
 }
 
 type OscBastion struct {
-	Name               string                    `json:"name,omitempty"`
-	ImageId            string                    `json:"imageId,omitempty"`
-	ImageName          string                    `json:"imageName,omitempty"`
-	KeypairName        string                    `json:"keypairName,omitempty"`
-	VmType             string                    `json:"vmType,omitempty"`
-	DeviceName         string                    `json:"deviceName,omitempty"`
-	SubnetName         string                    `json:"subnetName,omitempty"`
-	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
-	PublicIpName       string                    `json:"publicIpName,omitempty"`
-	SubregionName      string                    `json:"subregionName,omitempty"`
-	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
-	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
-	ResourceId         string                    `json:"resourceId,omitempty"`
-	ClusterName        string                    `json:"clusterName,omitempty"`
-	Enable             bool                      `json:"enable,omitempty"`
+	Name                     string                    `json:"name,omitempty"`
+	ImageId                  string                    `json:"imageId,omitempty"`
+	ImageName                string                    `json:"imageName,omitempty"`
+	KeypairName              string                    `json:"keypairName,omitempty"`
+	VmType                   string                    `json:"vmType,omitempty"`
+	DeviceName               string                    `json:"deviceName,omitempty"`
+	SubnetName               string                    `json:"subnetName,omitempty"`
+	RootDisk                 OscRootDisk               `json:"rootDisk,omitempty"`
+	PublicIpName             string                    `json:"publicIpName,omitempty"`
+	SubregionName            string                    `json:"subregionName,omitempty"`
+	PrivateIps               []OscPrivateIpElement     `json:"privateIps,omitempty"`
+	SecurityGroupNames       []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
+	ResourceId               string                    `json:"resourceId,omitempty"`
+	ClusterName              string                    `json:"clusterName,omitempty"`
+	Enable                   bool                      `json:"enable,omitempty"`
+	PublicIpNameAfterBastion bool                      `json:"publicIpNameAfterBastion,omitempty"`
 }
 
 type OscRootDisk struct {

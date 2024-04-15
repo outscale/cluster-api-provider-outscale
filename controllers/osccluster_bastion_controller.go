@@ -203,7 +203,6 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	bastionSpec := clusterScope.GetBastion()
 	bastionRef := clusterScope.GetBastionRef()
 	bastionName := bastionSpec.Name + "-" + clusterScope.GetUID()
-
 	subnetName := bastionSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
@@ -257,6 +256,7 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	if len(bastionRef.ResourceMap) == 0 {
 		bastionRef.ResourceMap = make(map[string]string)
 	}
+	publicIpNameAfterBastion := clusterScope.GetPublicIpNameAfterBastion()
 	clusterScope.V(4).Info("Get ResourceId", "resourceId", bastionSpec.ResourceId)
 	tagKey := "Name"
 	tagValue := bastionName
@@ -315,6 +315,22 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 		bastionRef.ResourceMap[bastionName] = vmID
 		bastionSpec.ResourceId = vmID
 	}
+	if publicIpNameAfterBastion && bastionSpec.PublicIpName != "" && bastionSpec.ResourceId != "" {
+		linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, bastionSpec.ResourceId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp %s with %s for OscCluster %s/%s", err, publicIpId, vmID, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+		err = vmSvc.CheckVmState(5, 120, "running", bastionSpec.ResourceId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscCluster %s/%s", err, vmID, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+		bastionPublicIpName := bastionSpec.PublicIpName + "-" + clusterScope.GetUID()
+		clusterScope.V(4).Info("Get bastionPublicIpName", "bastionPublicIpName", bastionPublicIpName)
+		linkPublicIpRef.ResourceMap[bastionPublicIpName] = linkPublicIpId
+		bastionRef.ResourceMap[bastionName] = bastionSpec.ResourceId
+
+	}
+
 	return reconcile.Result{}, nil
 }
 

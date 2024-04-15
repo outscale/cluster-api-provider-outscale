@@ -42,14 +42,19 @@ spec:
     subnets:
       - name: cluster-api-subnet-kcp
         ipSubnetRange: "10.0.0.32/28"
+        subregionName: cloudgouv-eu-west-1a
       - name: cluster-api-subnet-kw
         ipSubnetRange: "10.0.0.128/26"
+        subregionName: cloudgouv-eu-west-1a
       - name: cluster-api-subnet-public
         ipSubnetRange: "10.0.0.8/29"
+        subregionName: cloudgouv-eu-west-1a
       - name: cluster-api-subnet-nat
         ipSubnetRange: "10.0.0.0/29"
+        subregionName: cloudgouv-eu-west-1a
     publicIps:
       - name: cluster-api-publicip-nat
+      - name: cluster-api-publicip-bastion
     internetService:
       clusterName: cluster-api
       name: cluster-api-internetservice
@@ -58,20 +63,20 @@ spec:
       name: cluster-api-natservice
       publicipname: cluster-api-publicip-nat
       subnetname: cluster-api-subnet-nat
-      
     bastion:
+      publicIpName: cluster-api-publicip-bastion
       clusterName: cluster-api
       enable: true
       name: cluster-api-vm-bastion
       keypairName: cluster-api
       deviceName: /dev/sda1
-      imageName: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+      imageName: ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
       rootDisk:
         rootDiskSize: 15
         rootDiskIops: 1000
-        rootDiskType: io1
+        rootDiskType: gp2
       subnetName: cluster-api-subnet-public
-      subregionName: eu-west-2a
+      subregionName: cloudgouv-eu-west-1a
       securityGroupNames:
         - name: cluster-api-securitygroup-lb
       vmType: "tinav6.c4r8p2"
@@ -241,7 +246,7 @@ spec:
   template:
     spec:
       clusterName: "cluster-api"
-      version: "1.22.11"
+      version: "1.28.5"
       bootstrap:
         configRef:
           name: "cluster-api-md-0"
@@ -265,7 +270,7 @@ spec:
       node:
         clusterName: cluster-api
         image:
-          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+          name: ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -277,9 +282,9 @@ spec:
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
-            rootDiskType: io1
+            rootDiskType: gp2
           subnetName: cluster-api-subnet-kw
-          subregionName: eu-west-2a
+          subregionName: cloudgouv-eu-west-1a
           securityGroupNames:
             - name: cluster-api-securitygroups-kw
             - name: cluster-api-securitygroups-node
@@ -296,7 +301,7 @@ spec:
       node:
         clusterName: cluster-api
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+         name: ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -307,9 +312,9 @@ spec:
           rootDisk:
             rootDiskSize: 30
             rootDiskIops: 1500
-            rootDiskType: io1
+            rootDiskType: gp2
           deviceName: /dev/sda1
-          subregionName: eu-west-2a
+          subregionName: cloudgouv-eu-west-1a
           subnetName: cluster-api-subnet-kcp
           role: controlplane
           loadBalancerName: osc-k8s
@@ -380,4 +385,4 @@ spec:
           provider-id: osc://'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
-  version: "1.22.11"
+  version: "1.28.5"

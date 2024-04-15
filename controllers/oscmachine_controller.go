@@ -252,6 +252,11 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		}
 	}
 
+	checkKeypairSameNameErr := checkKeypairSameName(machineScope)
+	if checkKeypairSameNameErr != nil {
+		return reconcile.Result{}, checkKeypairSameNameErr
+	}
+
 	checkOscAssociateVmSecurityGroupErr := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
 	if checkOscAssociateVmSecurityGroupErr != nil {
 		return reconcile.Result{}, checkOscAssociateVmSecurityGroupErr

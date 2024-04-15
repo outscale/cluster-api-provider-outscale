@@ -315,6 +315,50 @@ var (
 		},
 	}
 
+	defaultVmInitializeWithPublicIp = infrastructurev1beta1.OscMachineSpec{
+		Node: infrastructurev1beta1.OscNode{
+			Volumes: []*infrastructurev1beta1.OscVolume{
+				{
+					Name:          "test-volume",
+					Iops:          1000,
+					Size:          50,
+					VolumeType:    "io1",
+					SubregionName: "eu-west-2a",
+				},
+			},
+			Vm: infrastructurev1beta1.OscVm{
+				ClusterName: "test-cluster",
+				Name:        "test-vm",
+				ImageId:     "ami-00000000",
+				Role:        "controlplane",
+				DeviceName:  "/dev/sda1",
+				RootDisk: infrastructurev1beta1.OscRootDisk{
+					RootDiskSize: 30,
+					RootDiskIops: 1500,
+					RootDiskType: "gp2",
+				},
+				KeypairName:      "rke",
+				SubregionName:    "eu-west-2a",
+				SubnetName:       "test-subnet",
+				LoadBalancerName: "test-loadbalancer",
+				PublicIpName:     "test-publicip",
+				VmType:           "tinav3.c2r4p2",
+				Replica:          1,
+				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+					{
+						Name: "test-securitygroup",
+					},
+				},
+				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+					{
+						Name:      "test-privateip",
+						PrivateIp: "10.0.0.17",
+					},
+				},
+			},
+		},
+	}
+
 	defaultMultiVmInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
@@ -393,6 +437,52 @@ var (
 				VmType:           "tinav3.c2r4p2",
 				ResourceId:       "i-test-vm-uid",
 				PublicIpName:     "test-publicip",
+				Replica:          1,
+				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+					{
+						Name: "test-securitygroup",
+					},
+				},
+				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+					{
+						Name:      "test-privateip",
+						PrivateIp: "10.0.0.17",
+					},
+				},
+			},
+		},
+	}
+	defaultVmReconcileWithDedicatedIp = infrastructurev1beta1.OscMachineSpec{
+		Node: infrastructurev1beta1.OscNode{
+			Volumes: []*infrastructurev1beta1.OscVolume{
+				{
+					Name:          "test-volume",
+					Iops:          1000,
+					Size:          50,
+					VolumeType:    "io1",
+					SubregionName: "eu-west-2a",
+					ResourceId:    "volume-test-volume-uid",
+				},
+			},
+			Vm: infrastructurev1beta1.OscVm{
+				ClusterName: "test-cluster",
+				Name:        "test-vm",
+				ImageId:     "ami-00000000",
+				Role:        "controlplane",
+				DeviceName:  "/dev/xvdb",
+				KeypairName: "rke",
+				RootDisk: infrastructurev1beta1.OscRootDisk{
+
+					RootDiskSize: 30,
+					RootDiskIops: 1500,
+					RootDiskType: "io1",
+				},
+				SubregionName:    "eu-west-2a",
+				SubnetName:       "test-subnet",
+				LoadBalancerName: "test-loadbalancer",
+				VmType:           "tinav3.c2r4p2",
+				ResourceId:       "i-test-vm-uid",
+				PublicIp:         true,
 				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
@@ -3443,6 +3533,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 		expLinkPublicIpFound              bool
 		expSecurityGroupFound             bool
 		expLoadBalancerSecurityGroupFound bool
+		expCreatePublicIpFound            bool
 		expReadTagErr                     error
 		expReconcileVmErr                 error
 	}{
@@ -3457,6 +3548,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
 			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-volume-uid does not exist"),
 		},
@@ -3471,11 +3563,12 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
 			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-subnet-uid does not exist"),
 		},
 		{
-			name:                              "PublicIp does not exist ",
+			name:                              "PublicIp does not exist on clusterScope",
 			clusterSpec:                       defaultVmClusterInitialize,
 			machineSpec:                       defaultVmInitialize,
 			expVolumeFound:                    true,
@@ -3485,6 +3578,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
 			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-publicip-uid does not exist"),
 		},
@@ -3499,6 +3593,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expSecurityGroupFound:             false,
 			expLoadBalancerSecurityGroupFound: false,
 			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
 			expReadTagErr:                     nil,
 			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist"),
 		},
@@ -3513,6 +3608,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       true,
+			expCreatePublicIpFound:            false,
 			expReadTagErr:                     fmt.Errorf("ReadTag generic error"),
 			expReconcileVmErr:                 fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
 		},
@@ -3621,6 +3717,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 		expListMachine                          bool
 		expDeleteInboundSecurityGroupRuleFound  bool
 		expDeleteOutboundSecurityGroupRuleFound bool
+		expDeleteDedicatedPublicIpFound         bool
 		expUnlinkLoadBalancerBackendMachineErr  error
 		expDeleteInboundSecurityGroupRuleErr    error
 		expDeleteOutboundSecurityGroupRuleErr   error
@@ -3638,6 +3735,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 			expListMachine:                          false,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
+			expDeleteDedicatedPublicIpFound:         false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expDeleteInboundSecurityGroupRuleErr:    nil,
 			expDeleteOutboundSecurityGroupRuleErr:   nil,
@@ -3655,6 +3753,23 @@ func TestReconcileDeleteVm(t *testing.T) {
 			expListMachine:                          true,
 			expDeleteInboundSecurityGroupRuleFound:  false,
 			expDeleteOutboundSecurityGroupRuleFound: false,
+			expUnlinkLoadBalancerBackendMachineErr:  nil,
+			expDeleteInboundSecurityGroupRuleErr:    nil,
+			expDeleteOutboundSecurityGroupRuleErr:   nil,
+			expSecurityGroupRuleFound:               true,
+			expDeleteVmErr:                          nil,
+			expGetVmFound:                           true,
+			expGetVmErr:                             nil,
+			expCheckUnlinkPublicIpErr:               nil,
+			expReconcileDeleteVmErr:                 nil,
+		},
+		{
+			name:                                    "delete vm with publicIp",
+			clusterSpec:                             defaultVmClusterReconcile,
+			machineSpec:                             defaultVmReconcileWithDedicatedIp,
+			expDeleteInboundSecurityGroupRuleFound:  true,
+			expDeleteOutboundSecurityGroupRuleFound: true,
+			expDeleteDedicatedPublicIpFound:         true,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expDeleteInboundSecurityGroupRuleErr:    nil,
 			expDeleteOutboundSecurityGroupRuleErr:   nil,
@@ -3689,6 +3804,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 			expListMachine:                          false,
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
+			expDeleteDedicatedPublicIpFound:         false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expSecurityGroupRuleFound:               true,
 			expDeleteVmErr:                          fmt.Errorf("DeleteVm generic error"),
@@ -3721,6 +3837,14 @@ func TestReconcileDeleteVm(t *testing.T) {
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
+
+			if vtc.expDeleteDedicatedPublicIpFound {
+				publicIpName := machineScope.GetName() + "-publicIp"
+				machineScope.OscMachine.Spec.Node.Vm.PublicIpName = publicIpName
+				vtc.machineSpec.Node.Vm.PublicIpName = publicIpName
+				machineScope.GetPublicIpIdRef().ResourceMap = map[string]string{publicIpName + "-uid": "eipassoc-" + publicIpName + "-uid"}
+			}
+
 			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
 			linkPublicIpId := "eipassoc-" + publicIpName
 			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
@@ -3800,6 +3924,12 @@ func TestReconcileDeleteVm(t *testing.T) {
 					EXPECT().
 					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Outbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteOutboundSecurityGroupRuleErr)
+			}
+			if vtc.expDeleteDedicatedPublicIpFound {
+				mockOscPublicIpInterface.
+					EXPECT().
+					DeletePublicIp(gomock.Eq("eipassoc-test-osc-publicIp-uid")).
+					Return(nil)
 			}
 
 			if vtc.expDeleteInboundSecurityGroupRuleFound {

@@ -260,6 +260,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 	}
 	networkSpec := clusterScope.GetNetwork()
 	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
+	extraSecurityGroupRule := clusterScope.GetExtraSecurityGroupRule()
 
 	clusterScope.V(4).Info("Get list of all desired securitygroup in net", "netId", netId)
 	securityGroupIds, err := securityGroupSvc.GetSecurityGroupIdsFromNetIds(netId)
@@ -296,23 +297,45 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 
 		if !Contains(securityGroupIds, securityGroupId) && tag == nil {
-			clusterScope.V(2).Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
-			if securityGroupTag == "OscK8sMainSG" {
-				securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "OscK8sMainSG")
+
+			if extraSecurityGroupRule {
+				clusterScope.V(4).Info("Extra Security Group Rule activated")
 			} else {
-				securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "")
+				clusterScope.V(2).Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
+				if securityGroupTag == "OscK8sMainSG" {
+					securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "OscK8sMainSG")
+				} else {
+					securityGroup, err = securityGroupSvc.CreateSecurityGroup(netId, clusterName, securityGroupName, securityGroupDescription, "")
+				}
+				clusterScope.V(4).Info("Get securityGroup", "securityGroup", securityGroup)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				}
+				securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
+				securityGroupSpec.ResourceId = *securityGroup.SecurityGroupId
+
 			}
-			clusterScope.V(4).Info("Get securityGroup", "securityGroup", securityGroup)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create securityGroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-			}
-			securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
-			securityGroupSpec.ResourceId = *securityGroup.SecurityGroupId
 
 			clusterScope.V(2).Info("Check securityGroupRule")
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
 			clusterScope.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(*securityGroupRulesSpec))
 			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+				clusterScope.V(4).Info("Get sgrule", "sgRuleName", securityGroupRuleSpec.Name)
+				clusterScope.V(4).Info("Create securityGroupRule for the desired securityGroup", "securityGroupName", securityGroupName)
+				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+		}
+
+		if Contains(securityGroupIds, securityGroupId) && extraSecurityGroupRule {
+			clusterScope.V(4).Info("Extra Security Group Rule activated")
+			clusterScope.V(2).Info("Check securityGroupRule")
+			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
+			clusterScope.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(*securityGroupRulesSpec))
+			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+				clusterScope.V(4).Info("Get sgrule", "sgRuleName", securityGroupRuleSpec.Name)
 				clusterScope.V(4).Info("Create securityGroupRule for the desired securityGroup", "securityGroupName", securityGroupName)
 				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
 				if err != nil {
@@ -321,6 +344,8 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 			}
 		}
 	}
+
+	clusterScope.SetExtraSecurityGroupRule(false)
 	return reconcile.Result{}, nil
 }
 

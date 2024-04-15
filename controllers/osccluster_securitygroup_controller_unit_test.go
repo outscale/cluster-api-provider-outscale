@@ -97,12 +97,42 @@ var (
 	defaultSecurityGroupReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			ClusterName: "test-cluster",
-			Net: infrastructurev1beta1.OscNet{Name: "test-net",
+			Net: infrastructurev1beta1.OscNet{
+				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 				{Name: "test-securitygroup",
+					Description: "test securitygroup",
+					ResourceId:  "sg-test-securitygroup-uid",
+					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
+						{
+							Name:          "test-securitygrouprule",
+							Flow:          "Inbound",
+							IpProtocol:    "tcp",
+							IpRange:       "0.0.0.0/0",
+							FromPortRange: 6443,
+							ToPortRange:   6443,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	defaultSecurityGroupReconcileExtraSecurityGroupRule = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			ClusterName:            "test-cluster",
+			ExtraSecurityGroupRule: true,
+			Net: infrastructurev1beta1.OscNet{
+				Name:       "test-net",
+				IpRange:    "10.0.0.0/16",
+				ResourceId: "vpc-test-net-uid",
+			},
+			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+				{
+					Name:        "test-securitygroup",
 					Description: "test securitygroup",
 					ResourceId:  "sg-test-securitygroup-uid",
 					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
@@ -795,6 +825,15 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 		{
 			name:                      "get securityGroupRule ((second time reconcile loop)",
 			spec:                      defaultSecurityGroupReconcile,
+			expSecurityGroupRuleFound: true,
+			expTagFound:               false,
+			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
+			expReadTagErr:                    nil,
+			expReconcileSecurityGroupRuleErr: nil,
+		},
+		{
+			name:                      "get securityGroupRule ((second time reconcile loop)) with extraSecurityGroupRule",
+			spec:                      defaultSecurityGroupReconcileExtraSecurityGroupRule,
 			expSecurityGroupRuleFound: true,
 			expTagFound:               false,
 			expGetSecurityGroupFromSecurityGroupRuleErr: nil,

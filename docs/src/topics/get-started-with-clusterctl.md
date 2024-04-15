@@ -97,6 +97,41 @@ Then apply:
 kubectl apply -f getstarted.yaml
 ```
 
+## Add security group rule after
+
+You can add security group rule if you set extraSecurityGroupRule = true after you have already create a cluster and you want to set new security group rule.
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: cluster-api
+  namespace: default
+spec:
+  network:
+    extraSecurityGroupRule: false
+```
+
+
+## Add a public ip after bastion is created
+
+You can add a public ip if you set publicIpNameAfterBastion = true after you have already create a cluster with a bastion.
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: cluster-api
+  namespace: default
+spec:
+  network:
+  ...
+    bastion:
+    ..
+      publicIpNameAfterBastion: true
+```
+
+
 ### Get Kubeconfig
 You can then get the status:
 ```
@@ -173,7 +208,7 @@ clusterctl delete --all
 ```
 <!-- References -->
 [canal]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/flannel/flannel
-[cillium]: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-helm/
+[cillium]: https://docs.cilium.io/en/stable/installation/k8s-toc/
 [calico]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/helm
 [kubeconfig]: https://cluster-api.sigs.k8s.io/clusterctl/commands/get-kubeconfig.html
 [cloud-provider-outscale]: https://github.com/outscale-dev/cloud-provider-osc/blob/OSC-MIGRATION/deploy/README.md
