@@ -18,7 +18,7 @@ export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
 export OSC_REGION=<your-region>
 make credential
-./bin/clusterctl init --infrastructure outscale
+./bin/clusterctl init -c talos -b talos -i outscale
 ```
 
 Please create an your own omi using this docs (https://www.talos.dev/v1.6/talos-guides/install/cloud-platforms/aws/)
