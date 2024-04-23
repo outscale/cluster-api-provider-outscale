@@ -18,6 +18,7 @@ clusterapioutscale:
     # integer defining the remaining number of iterations in which the duration parameter may change
     # -- Remaining number of iterations in which the duration parameter may change
     backoff_steps: "20"
+    watch_filter: ""
     # -- Additional annotions to use
     pods:
       annotations:

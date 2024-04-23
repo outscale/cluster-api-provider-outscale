@@ -55,6 +55,7 @@ type OscMachineReconciler struct {
 	client.Client
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
+	WatchFilterValue string
 }
 
 //+kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=get;list;watch;create;update;patch;delete
@@ -393,6 +394,7 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		return errors.Errorf("failed to create mapper for Cluster to OscMachines: %+v", err)
 	}
 	err = ctrl.NewControllerManagedBy(mgr).
+		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(ctrl.LoggerFrom(ctx), r.WatchFilterValue)).
 		For(&infrastructurev1beta1.OscMachine{}).
 		Watches(
 			&source.Kind{Type: &clusterv1.Machine{}},

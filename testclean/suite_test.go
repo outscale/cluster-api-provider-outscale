@@ -18,16 +18,22 @@ package test
 
 import (
 	"flag"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
+	"golang.org/x/net/context"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
+
 	//	"os"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"path/filepath"
+	"testing"
+	"time"
+
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
@@ -36,8 +42,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"testing"
-	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	//+kubebuilder:scaffold:imports
@@ -107,7 +111,7 @@ var _ = BeforeSuite(func() {
 		Client:           k8sManager.GetClient(),
 		Recorder:         k8sManager.GetEventRecorderFor("osc-controller"),
 		ReconcileTimeout: reconcileTimeout,
-	}).SetupWithManager(k8sManager)
+	}).SetupWithManager(context.Background(), k8sManager)
 
 	go func() {
 		defer GinkgoRecover()

@@ -40,6 +40,9 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v={{ .verbosity }}
+        {{- if .watch_filter }}
+        - --watch-filter {{ .watch_filter }}
+        {{- end}}
         image: {{ .containers.imageProxy }}:{{ .containers.imageProxyTag }}
         name: kube-rbac-proxy
         ports:
@@ -80,7 +83,7 @@ spec:
             secretKeyRef:
               key: region
               name: cluster-api-provider-outscale
-              optional: true 
+              optional: true
         - name: BACKOFF_DURATION
           value: "{{ .backoff_duration }}"
         - name: BACKOFF_FACTOR

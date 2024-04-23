@@ -6,6 +6,7 @@ metadata:
   labels:
     cni: "cluster-api-crs-cni"
     ccm: "cluster-api-crs-ccm"
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   clusterNetwork:
     pods:
@@ -26,6 +27,8 @@ kind: OscCluster
 metadata:
   name: cluster-api
   namespace: default
+  labels:
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   network:
     extraSecurityGroupRule: true
@@ -237,6 +240,8 @@ kind: MachineDeployment
 metadata:
   name: "cluster-api-md-0"
   namespace: default
+  labels:
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   clusterName: "cluster-api"
   replicas: 1
@@ -263,6 +268,8 @@ kind: OscMachineTemplate
 metadata:
   name: "cluster-api-md-0"
   namespace: default
+  labels:
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   template:
     spec:
@@ -296,6 +303,8 @@ kind: OscMachineTemplate
 metadata:
   name: "cluster-api-control-plane"
   namespace: default
+  labels:
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   template:
     spec:
@@ -329,6 +338,8 @@ kind: KubeadmConfigTemplate
 metadata:
   name: "cluster-api-md-0"
   namespace: default
+  labels:
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   template:
     spec:
@@ -355,6 +366,8 @@ kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
   name: "cluster-api-control-plane"
+  labels:
+    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   replicas: 1
   machineTemplate:
