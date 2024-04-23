@@ -40,6 +40,13 @@ Or you can set with tilt.config:
 }
 ```
 ### Tilt
+We need SSH forwarding in Tilt to securely relay authentication credentials from your local machine to containers running in the Kubernetes cluster managed by Tilt. 
+This enables you to access remote resources that require SSH authentication
+
+A way to enable SSH forwarding in a single line is to do so :
+```
+ssh -f -N -i <private_key_file> <username>@<remote_host> -L <local_port>:<destination_host>:<destination_port>
+```
 Please launch tilt at the project's root folder:
 ```
 [root@cidev-admin cluster-api-provider-outscale]# tilt up
