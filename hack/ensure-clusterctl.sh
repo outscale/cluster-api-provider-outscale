@@ -34,7 +34,7 @@ verify_clusterctl_version() {
 Detected clusterctl version: v${clusterctl_version}.
 Install v${MINIMUM_CLUSTERCTL_VERSION} of clusterctl.
 EOF
-    
+
     echo 'Installing Clusterctl' && install_clusterctl
   else
     cat <<EOF

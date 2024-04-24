@@ -465,8 +465,10 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		machineScope.V(4).Info("Info keypairName", "keypairName", keypairName)
 		vmType := vmSpec.VmType
 		machineScope.V(4).Info("Info vmType", "vmType", vmType)
+		vmTags := vmSpec.Tags
+		machineScope.V(4).Info("Info tags", "tags", vmTags)
 
-		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName)
+		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}

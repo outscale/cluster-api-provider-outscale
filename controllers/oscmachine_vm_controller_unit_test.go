@@ -256,6 +256,7 @@ var (
 				LoadBalancerName: "test-loadbalancer",
 				PublicIpName:     "test-publicip",
 				VmType:           "tinav3.c2r4p2",
+				Tags:             map[string]string{"key1": "value1"},
 				Replica:          1,
 				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 					{
@@ -2269,6 +2270,7 @@ func TestReconcileVm(t *testing.T) {
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
+			vmTags := vtc.machineSpec.Node.Vm.Tags
 
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
@@ -2375,12 +2377,12 @@ func TestReconcileVm(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
@@ -2598,12 +2600,12 @@ func TestReconcileVmCreate(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
@@ -2767,12 +2769,12 @@ func TestReconcileVmLink(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
@@ -3002,12 +3004,12 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
@@ -3198,12 +3200,12 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(nil, vtc.expCreateVmErr)
 			}
 

@@ -70,7 +70,7 @@ spec:
       name: cluster-api-vm-bastion
       keypairName: cluster-api
       deviceName: /dev/sda1
-      imageName: ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
+      imageName: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
       rootDisk:
         rootDiskSize: 15
         rootDiskIops: 1000
@@ -94,11 +94,11 @@ spec:
         - cluster-api-subnet-kcp
         routes:
           - name: cluster-api-routes-kcp
-            targetName: cluster-api-natservice	
+            targetName: cluster-api-natservice
             targetType: nat
             destination: "0.0.0.0/0"
       - name: cluster-api-routetable-nat
-        subnets: 
+        subnets:
         - cluster-api-subnet-nat
         routes:
           - name: cluster-api-routes-nat
@@ -115,7 +115,7 @@ spec:
             destination: "0.0.0.0/0"
     securityGroups:
       - name: cluster-api-securitygroups-kw
-        description: Security Group with cluster-api   
+        description: Security Group with cluster-api
         securityGroupRules:
           - name: cluster-api-securitygrouprule-api-kubelet-kw
             flow: Inbound
@@ -188,7 +188,7 @@ spec:
             toPortRange: 6443
       - name: cluster-api-securitygroups-node
         description: Security Group node with cluster-api
-        tag: OscK8sMainSG 
+        tag: OscK8sMainSG
         securityGroupRules:
           - name: cluster-api-securitygrouprule-calico-vxlan
             flow: Inbound
@@ -231,7 +231,7 @@ spec:
             ipProtocol: udp
             ipRange: "10.0.0.0/16"
             fromPortRange: 8472
-            toPortRange: 8472     
+            toPortRange: 8472
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -270,7 +270,7 @@ spec:
       node:
         clusterName: cluster-api
         image:
-          name: ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
+          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -301,7 +301,7 @@ spec:
       node:
         clusterName: cluster-api
         image:
-         name: ubuntu-2204-2204-kubernetes-v1.28.5-2024-01-17
+         name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -334,7 +334,7 @@ spec:
       files:
       - content: |
           #!/bin/sh
- 
+
           curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
           chmod +x /tmp/runc.amd64
           cp -f /tmp/runc.amd64 /usr/local/sbin/runc
@@ -373,7 +373,7 @@ spec:
     - content: |
         #!/bin/sh
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-        chmod +x /tmp/runc.amd64	
+        chmod +x /tmp/runc.amd64
         cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       owner: root:root
       path: /tmp/set_runc.sh

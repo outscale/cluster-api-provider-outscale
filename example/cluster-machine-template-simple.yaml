@@ -245,7 +245,7 @@ spec:
   template:
     spec:
       clusterName: "cluster-api"
-      version: "1.22.11"
+      version: "1.29.1"
       bootstrap:
         configRef:
           name: "cluster-api-md-0"
@@ -269,7 +269,7 @@ spec:
       node:
         clusterName: cluster-api
         image:
-          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -288,6 +288,8 @@ spec:
             - name: cluster-api-securitygroups-kw
             - name: cluster-api-securitygroups-node
           vmType: "tinav6.c4r8p2"
+          tags:
+              tags.osc.fcu.repulse_server: vm-control-plane
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -300,7 +302,7 @@ spec:
       node:
         clusterName: cluster-api
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+         name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -385,4 +387,4 @@ spec:
         name: '{{ ds.meta_data.local_hostname }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
-  version: "1.22.11"
+  version: "1.29.1"

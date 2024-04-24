@@ -31,6 +31,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/utils"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +41,7 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error)
+	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error)
 	CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
 	DeleteVm(vmId string) error
 	GetVm(vmId string) (*osc.Vm, error)
@@ -62,7 +63,7 @@ func ValidateIpAddrInCidr(ipAddr string, cidr string) (string, error) {
 }
 
 // CreateVm create machine vm
-func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string) (*osc.Vm, error) {
+func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
 	imageId := spec.ImageId
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
@@ -79,7 +80,8 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 	if err != nil {
 		return nil, fmt.Errorf("%w failed to decode bootstrap data", err)
 	}
-	bootstrapDataEnc := b64.StdEncoding.EncodeToString([]byte(bootstrapData))
+	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
+	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
 		Bsu: &osc.BsuToCreate{
 			VolumeType: &rootDiskType,
@@ -97,7 +99,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 		VmType:           &vmType,
 		SubnetId:         &subnetId,
 		SecurityGroupIds: &securityGroupIds,
-		UserData:         &bootstrapDataEnc,
+		UserData:         &mergedUserDataEnc,
 		BlockDeviceMappings: &[]osc.BlockDeviceMappingVmCreation{
 			rootDisk,
 		},

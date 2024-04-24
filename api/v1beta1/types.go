@@ -374,6 +374,7 @@ type OscVm struct {
 	Role               string                    `json:"role,omitempty"`
 	ClusterName        string                    `json:"clusterName,omitempty"`
 	Replica            int32                     `json:"replica,omitempty"`
+	Tags               map[string]string         `json:"tags,omitempty"`
 }
 
 type OscBastion struct {
