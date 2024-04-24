@@ -36,7 +36,7 @@ spec:
     net:
       clusterName: capo-quickstart
     internetService:
-      clusterName: capo-quickstart      
+      clusterName: capo-quickstart
     natService:
       clusterName: capo-quickstart
     bastion:
@@ -56,7 +56,7 @@ spec:
   template:
     spec:
       clusterName: "capo-quickstart"
-      version: "1.22.11"
+      version: "1.29.1"
       bootstrap:
         configRef:
           name: "capo-quickstart-md-0"
@@ -80,7 +80,7 @@ spec:
       node:
         clusterName: capo-quickstart
         image:
-          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
         keypair:
           name: cluster-api-test
           deleteKeypair: true
@@ -105,7 +105,7 @@ spec:
       node:
         clusterName: capo-quickstart
         image:
-          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
         keypair:
           name: cluster-api-test
           deleteKeypair: true
@@ -132,7 +132,7 @@ spec:
       files:
       - content: |
           #!/bin/bash
- 
+
           curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
           chmod +x /tmp/runc.amd64
           \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
@@ -171,7 +171,7 @@ spec:
     - content: |
         #!/bin/bash
         curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-        chmod +x /tmp/runc.amd64	
+        chmod +x /tmp/runc.amd64
         \cp -f /tmp/runc.amd64 /usr/local/sbin/runc
       owner: root:root
       path: /tmp/set_runc.sh

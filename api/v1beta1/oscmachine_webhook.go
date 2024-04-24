@@ -104,6 +104,16 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 		)
 	}
 
+	oscMachineLog.Info("validate update old userData", "old tags", old.Spec.Node.Vm.Tags)
+	oscMachineLog.Info("validate update userData", "tags", m.Spec.Node.Vm.Tags)
+
+	if len(old.Spec.Node.Vm.Tags) > 0 && !reflect.DeepEqual(m.Spec.Node.Vm.Tags, old.Spec.Node.Vm.Tags) {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec", "userData"),
+				m.Spec.Node.Vm.SubregionName, "field is immutable"),
+		)
+	}
+
 	oscMachineLog.Info("validate update old subnetName", "old subnetName", old.Spec.Node.Vm.SubnetName)
 	oscMachineLog.Info("validate update subnetName", "subnetName", m.Spec.Node.Vm.SubnetName)
 

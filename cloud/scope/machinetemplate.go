@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -102,6 +103,9 @@ func (m *MachineTemplateScope) PatchObject() error {
 
 func (m *MachineTemplateScope) GetVmType() string {
 	return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.VmType
+}
+func (m *MachineTemplateScope) GetTags() map[string]string {
+	return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Tags
 }
 
 func (m *MachineTemplateScope) GetReplica() int32 {

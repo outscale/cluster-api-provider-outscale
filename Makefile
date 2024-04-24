@@ -32,8 +32,8 @@ GIT_USEREMAIL ?= opensource+bot@outscale.com
 K8S_VERSION ?= v1.26.2
 LOG_TAIL ?= -1
 CAPI_VERSION ?= v1.1.4
-CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system   
-CAPO_NAMESPACE ?= cluster-api-provider-outscale-system  
+CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
+CAPO_NAMESPACE ?= cluster-api-provider-outscale-system
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 MINIMUM_KUBEBUILDERTOOL_VERSION=1.24.1
@@ -44,7 +44,7 @@ MINIMUM_CLUSTERCTL_VERSION=1.4.4
 MIN_GO_VERSION=1.18.7
 MINIMUM_TILT_VERSION=0.25.3
 MINIMUM_PACKER_VERSION=1.8.1
-MINIMUM_CONTROLLER_GEN_VERSION=0.8.0 
+MINIMUM_CONTROLLER_GEN_VERSION=0.8.0
 MINIMUM_GH_VERSION=2.12.1
 MINIMUM_KIND_USE_VERSION=v0.14.0
 MINIMUM_ENVTEST_VERSION=1.23.3
@@ -134,7 +134,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: format
-format: gofmt gospace yamlspace yamlfmt  
+format: gofmt gospace yamlspace yamlfmt
 
 gofmt: ## Run gofmt
 	find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -w
@@ -156,7 +156,7 @@ checkfmt: ## check gofmt
 	./check-gofmt
 
 .PHONY: unit-test
-unit-test: 
+unit-test:
 	go test -v -coverprofile=covers.out  ./controllers
 	go tool cover -func=covers.out -o covers.txt
 	go tool cover -html=covers.out -o covers.html
@@ -173,7 +173,7 @@ testenv: cloud-init-secret
 	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v -test.timeout 30m
 
 .PHONY: testclean
-testclean: 
+testclean:
 	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.progress -test.v
 
 .PHONY: e2e-conf-file
@@ -190,7 +190,7 @@ e2etestexistingcluster: envsubst e2e-conf-class-file ccm-file
 
 .PHONY: e2etestkind
 e2etestkind: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=false IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=false -ginkgo.v -ginkgo.skip=".*feature.*|.*conformance.*|.*basic.*" -ginkgo.focus=".*first_upgrade.*" -e2e.validate-stack=false  -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE) 
+	USE_EXISTING_CLUSTER=false IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=false -ginkgo.v -ginkgo.skip=".*feature.*|.*conformance.*|.*basic.*" -ginkgo.focus=".*first_upgrade.*" -e2e.validate-stack=false  -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE)
 
 .PHONY: e2econformance
 e2econformance: envsubst e2e-conf-class-file ccm-file
@@ -247,7 +247,7 @@ docker-build: # Build docker image with the manager
 
 .PHONY: docker-buildx
 docker-buildx: # Build docker image with the manager
-	docker buildx build --build-arg VERSION=$(VERSION) --load -t ${IMG} .	
+	docker buildx build --platform=linux/amd64 --build-arg VERSION=$(VERSION) --load -t ${IMG} .
 
 .PHONY: docker-build-dev
 docker-build-dev: ## Generate and Build docker image with the manager
@@ -285,7 +285,7 @@ ifndef KUSTOMIZE
 	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -  
+	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 endif
 
 .PHONY: credential
@@ -295,7 +295,7 @@ credential: ## Set Credentials
 
 .PHONY: clusterclass
 clusterclass: envsubst ## Set Clusterclass
-	@cat ./example/cluster-class.yaml | $(ENVSUBST)| kubectl apply -f - 
+	@cat ./example/cluster-class.yaml | $(ENVSUBST)| kubectl apply -f -
 
 .PHONY: logs-capo
 logs-capo: ## Get logs capo
@@ -357,7 +357,7 @@ release_dir:
 	mkdir -p $(RELEASE_DIR)/
 
 .PHONY: clean-release
-clean-release: 
+clean-release:
 	rm -rf $(RELEASE_DIR)
 
 .PHONY: release
@@ -374,11 +374,11 @@ else
 	$(KUSTOMIZE) build config/default | $(ENVSUBST) > out/infrastructure-components.yaml
 endif
 .PHONY: release-templates
-release-templates: 
+release-templates:
 	cp templates/cluster-template* $(RELEASE_DIR)/
 
-.PHONY: release-binary 
-release-binary: 
+.PHONY: release-binary
+release-binary:
 	docker run \
 		--rm \
 		-e CGO_ENABLED=0 \
@@ -391,7 +391,7 @@ release-binary:
 		-o $(RELEASE_DIR)/$(notdir $(RELEASE_BINARY))-$(GOOS)-$(GOARCH) $(RELEASE_BINARY)
 
 .PHONY: release-tag
-release-tag: 
+release-tag:
 	docker tag $(IMG) $(IMG_RELEASE)
 	docker push $(IMG_RELEASE)
 
@@ -404,13 +404,13 @@ check-release-tag: ## Check if the release tag is set
 	@if [ -z "${RELEASE_TAG}" ]; then echo "RELEASE_TAG is not set"; exit 1; fi
 
 .PHONY: check-github-token
-check-github-token: 
+check-github-token:
 	@if [ -z "${SECRET_GITHUB_TOKEN}" ]; then echo "GITHUB_TOKEN is not set"; exit 1; fi
 
 .PHONY: gh-login
 gh-login: gh check-github-token
 	cat <<< "${SECRET_GITHUB_TOKEN}"  | $(GH)  auth login --with-token
-        
+
 GH = $(shell pwd)/bin/gh
 
 .PHONY: release-changelog
@@ -424,7 +424,7 @@ create-gh-release: gh
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen
-	GOPATH=$(GET_GOPATH) MINIMUM_CONTROLLER_GEN_VERSION=${MINIMUM_CONTROLLER_GEN_VERSION} ./hack/ensure-controller-gen.sh 
+	GOPATH=$(GET_GOPATH) MINIMUM_CONTROLLER_GEN_VERSION=${MINIMUM_CONTROLLER_GEN_VERSION} ./hack/ensure-controller-gen.sh
 
 LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
 .PHONY: install-clusterctl
@@ -457,7 +457,7 @@ install-yamlfmt: ## donwload yaml fmt
 
 .PHONY: install-gh
 install-gh: ## Download gh
-	GOPATH=$(GET_GOPATH) MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh 
+	GOPATH=$(GET_GOPATH) MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh
 
 .PHONY: install-kind
 install-kind: ## Download kind
@@ -518,15 +518,15 @@ mockgen: ## Download mockgen locally if necessary.
 ENVSUBST = $(shell pwd)/bin/envsubst
 .PHONY: envsubst
 envsubst: ## Download envsubst
-	GOPATH=${GET_GOPATH} ./hack/ensure-envsubst.sh 
+	GOPATH=${GET_GOPATH} ./hack/ensure-envsubst.sh
 
 GH = $(shell pwd)/bin/gh
 .PHONY: gh
 gh: ## Download gh
 	GOPATH=${GET_GOPATH} MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh
-	
 
-install-dev-prerequisites: ## Install clusterctl, controller-gen, envsubst, envtest, gh, go, helm, kind, kubectl, kustomize, packer, til 
+
+install-dev-prerequisites: ## Install clusterctl, controller-gen, envsubst, envtest, gh, go, helm, kind, kubectl, kustomize, packer, til
 	@echo "Start install all depencies"
 	$(MAKE) install-clusterctl
 	$(MAKE) controller-gen

@@ -151,7 +151,7 @@ spec:
       node:
         clusterName: cluster-api-multi-az
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+         name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
         keypair:
           name: cluster-api
           deleteKeypair: false
@@ -172,6 +172,8 @@ spec:
           securityGroupNames:
             - name: cluster-api-multi-az-securitygroup-control-plane
           vmType: "tinav6.c4r8p1"
+          tags:
+              tags.osc.fcu.repulse_server: vm-control-plane
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -210,7 +212,7 @@ spec:
         name: '{{ ds.meta_data.local_hostname }}'
     preKubeadmCommands:
       - sh /tmp/set_runc.sh
-  version: "1.22.11"
+  version: "1.29.1"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -223,9 +225,9 @@ spec:
       node:
         clusterName: cluster-api-multi-az
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+         name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
         keypair:
-          name: cluster-api-test
+          name: cluster-api
           deleteKeypair: false
         vm:
           clusterName: cluster-api-multi-az
@@ -253,9 +255,9 @@ spec:
       node:
         clusterName: cluster-api-multi-az
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+         name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
         keypair:
-          name: cluster-api-test
+          name: cluster-api
           deleteKeypair: false
         vm:
           clusterName: cluster-api-multi-az
@@ -315,7 +317,7 @@ spec:
         node-role: worker
     spec:
       clusterName: cluster-api-multi-az
-      version: "1.22.11"
+      version: "1.29.1"
       bootstrap:
         configRef:
           name: cluster-api-multi-az-worker-config
