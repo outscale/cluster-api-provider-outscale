@@ -45,7 +45,7 @@ EOF
 }
 
 install_kubectl() {
-	if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin22"* ]]; then
+	if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin"* ]]; then
 		curl -sLo "kubectl" "https://storage.googleapis.com/kubernetes-release/release/v${MINIMUM_KUBECTL_VERSION}/bin/linux/amd64/kubectl"
 		copy_binary
 	else

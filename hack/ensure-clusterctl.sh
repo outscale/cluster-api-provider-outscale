@@ -34,7 +34,7 @@ verify_clusterctl_version() {
 Detected clusterctl version: v${clusterctl_version}.
 Install v${MINIMUM_CLUSTERCTL_VERSION} of clusterctl.
 EOF
-    
+
     echo 'Installing Clusterctl' && install_clusterctl
   else
     cat <<EOF
@@ -45,7 +45,7 @@ EOF
 }
 
 install_clusterctl() {
-    if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin22"* ]]; then
+    if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin"* ]]; then
       curl -sLo "clusterctl" "https://github.com/kubernetes-sigs/cluster-api/releases/download/v${MINIMUM_CLUSTERCTL_VERSION}/clusterctl-linux-amd64"
       copy_binary
     else
