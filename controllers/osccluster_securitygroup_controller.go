@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -381,7 +382,7 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 	return reconcile.Result{}, nil
 }
 
-// reconcileDeleteSecurityGroup reconcile the deletetion of securityGroup of the cluster.
+// reconicileDeleteSecurityGroup reconcile the deletetion of securityGroup of the cluster.
 func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
 
@@ -408,7 +409,11 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	}
 	clock_time := clock.New()
 	clusterScope.V(4).Info("Number of securitGroup", "securityGroupLength", len(securityGroupsSpec))
-	for _, securityGroupSpec := range securityGroupsSpec {
+	for len(securityGroupsSpec) > 0 {
+		// choose random sg from the list to delete
+		randIndex := rand.Intn(len(securityGroupsSpec))
+		securityGroupSpec := securityGroupsSpec[randIndex]
+
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 		if !Contains(securityGroupIds, securityGroupId) {
@@ -428,6 +433,9 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc, clock_time)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup  for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		} else {
+			// Remove deleted sg from the list
+			securityGroupsSpec = append(securityGroupsSpec[:randIndex], securityGroupsSpec[randIndex+1:]...)
 		}
 	}
 	return reconcile.Result{}, nil
