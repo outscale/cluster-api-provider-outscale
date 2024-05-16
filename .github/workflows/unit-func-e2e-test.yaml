@@ -40,7 +40,6 @@ on:
       - "!hack/json-format/tests/*.rs"
 jobs:
   testenv:
-    environment: eu-west-2
     runs-on: [self-hosted, linux]
     needs: [unit_test]
     steps:
