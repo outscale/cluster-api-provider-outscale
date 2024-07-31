@@ -25,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
@@ -52,17 +53,17 @@ func (m *OscMachineTemplate) Default() {
 var _ webhook.Validator = &OscMachineTemplate{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachineTemplate) ValidateCreate() error {
+func (m *OscMachineTemplate) ValidateCreate() (admission.Warnings, error) {
 	oscMachineTemplateLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscMachineSpec(m.Spec.Template.Spec); len(allErrs) > 0 {
 		oscMachineTemplateLog.Info("validate error", "error", allErrs)
-		return apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
+		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) error {
+func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
 	oscMachineTemplateLog.Info("validate update", "name", m.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscMachineTemplate)
@@ -72,13 +73,13 @@ func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) error {
 		)
 	}
 	if len(allErrs) == 0 {
-		return nil
+		return nil, nil
 	}
-	return apierrors.NewInvalid(GroupVersion.WithKind("OscMachineTemplate").GroupKind(), m.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachineTemplate").GroupKind(), m.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachineTemplate) ValidateDelete() error {
+func (m *OscMachineTemplate) ValidateDelete() (admission.Warnings, error) {
 	oscMachineTemplateLog.Info("validate delete", "name", m.Name)
-	return nil
+	return nil, nil
 }

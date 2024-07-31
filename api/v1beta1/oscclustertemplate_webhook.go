@@ -26,6 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
@@ -54,17 +55,17 @@ func (r *OscClusterTemplate) Default() {
 var _ webhook.Validator = &OscClusterTemplate{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *OscClusterTemplate) ValidateCreate() error {
+func (r *OscClusterTemplate) ValidateCreate() (admission.Warnings, error) {
 	oscClusterTemplateLog.Info("validate create", "name", r.Name)
 	if allErrs := ValidateOscClusterSpec(r.Spec.Template.Spec); len(allErrs) > 0 {
 		oscClusterTemplateLog.Info("validate error", "error", allErrs)
-		return apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemplate").GroupKind(), r.Name, allErrs)
+		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemplate").GroupKind(), r.Name, allErrs)
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) error {
+func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
 	oscClusterTemplateLog.Info("validate update", "name", r.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscClusterTemplate)
@@ -74,13 +75,13 @@ func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) error {
 		)
 	}
 	if len(allErrs) == 0 {
-		return nil
+		return nil, nil
 	}
-	return apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemmplate").GroupKind(), r.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemmplate").GroupKind(), r.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *OscClusterTemplate) ValidateDelete() error {
+func (r *OscClusterTemplate) ValidateDelete() (admission.Warnings, error) {
 	oscClusterTemplateLog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }

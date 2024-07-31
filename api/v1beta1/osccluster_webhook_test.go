@@ -46,7 +46,7 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
 			oscInfraCluster := createOscInfraCluster(ctc.clusterSpec, "webhook-test", "default")
-			err := oscInfraCluster.ValidateCreate()
+			_, err := oscInfraCluster.ValidateCreate()
 			if err != nil {
 				assert.Equal(t, ctc.expValidateCreateErr.Error(), err.Error(), "ValidateCreate() should return the same error")
 			} else {
@@ -164,7 +164,7 @@ func TestOscCluster_ValidateUpdate(t *testing.T) {
 		t.Run(ctc.name, func(t *testing.T) {
 			oscOldInfraCluster := createOscInfraCluster(ctc.oldClusterSpec, "old-webhook-test", "default")
 			oscInfraCluster := createOscInfraCluster(ctc.newClusterSpec, "webhook-test", "default")
-			err := oscInfraCluster.ValidateUpdate(oscOldInfraCluster)
+			_, err := oscInfraCluster.ValidateUpdate(oscOldInfraCluster)
 			if err != nil {
 				assert.Equal(t, ctc.expValidateUpdateErr.Error(), err.Error(), "ValidateUpdate should return the same error")
 			} else {
