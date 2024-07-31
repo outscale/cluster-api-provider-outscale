@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var oscMachineLog = logf.Log.WithName("oscmachine-resource")
@@ -49,17 +50,17 @@ func (m *OscMachine) Default() {
 var _ webhook.Validator = &OscMachine{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachine) ValidateCreate() error {
+func (m *OscMachine) ValidateCreate() (admission.Warnings, error) {
 	oscMachineLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscMachineSpec(m.Spec); len(allErrs) > 0 {
 		oscMachineLog.Info("validate error", "error", allErrs)
-		return apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
+		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
+func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
 	oscMachineLog.Info("validate update", "name", m.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscMachine)
@@ -152,14 +153,14 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) error {
 	}
 
 	if len(allErrs) == 0 {
-		return nil
+		return nil, nil
 	}
-	return apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachine) ValidateDelete() error {
+func (m *OscMachine) ValidateDelete() (admission.Warnings, error) {
 	oscMachineLog.Info("validate delete", "name", m.Name)
 
-	return nil
+	return nil, nil
 }

@@ -25,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var oscClusterLog = logf.Log.WithName("osccluster-resource")
@@ -50,17 +51,17 @@ func (m *OscCluster) Default() {
 var _ webhook.Validator = &OscCluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscCluster) ValidateCreate() error {
+func (m *OscCluster) ValidateCreate() (admission.Warnings, error) {
 	oscMachineLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscClusterSpec(m.Spec); len(allErrs) > 0 {
 		oscClusterLog.Info("validate error", "error", allErrs)
-		return apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), m.Name, allErrs)
+		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), m.Name, allErrs)
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) error {
+func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
 	oscClusterLog.Info("validate update", "name", r.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscCluster)
@@ -75,13 +76,13 @@ func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) error {
 		)
 	}
 	if len(allErrs) == 0 {
-		return nil
+		return nil, nil
 	}
-	return apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), r.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), r.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *OscCluster) ValidateDelete() error {
+func (r *OscCluster) ValidateDelete() (admission.Warnings, error) {
 	oscClusterLog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
