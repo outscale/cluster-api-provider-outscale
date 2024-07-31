@@ -29,7 +29,6 @@ import (
 	"k8s.io/klog/v2/klogr"
 	"k8s.io/utils/pointer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/noderefutil"
 	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -261,7 +260,7 @@ func (m *MachineScope) GetProviderID() string {
 
 // GetInstanceID return the instanceID
 func (m *MachineScope) GetInstanceID() string {
-	parsed, err := noderefutil.NewProviderID(m.GetProviderID())
+	parsed, err := NewProviderID(m.GetProviderID())
 	if err != nil {
 		return ""
 	}
