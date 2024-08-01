@@ -227,7 +227,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 	for _, mtc := range machineTestCases {
 		t.Run(mtc.name, func(t *testing.T) {
 			oscInfraMachine := createOscInfraMachine(mtc.machineSpec, "webhook-test", "default")
-			err := oscInfraMachine.ValidateCreate()
+			_, err := oscInfraMachine.ValidateCreate()
 			if err != nil {
 				assert.Equal(t, mtc.expValidateCreateErr.Error(), err.Error(), "ValidateCreate should return the same errror")
 			} else {
@@ -328,7 +328,7 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 		t.Run(mtc.name, func(t *testing.T) {
 			oscOldInfraMachine := createOscInfraMachine(mtc.oldMachineSpec, "old-webhook-test", "default")
 			oscInfraMachine := createOscInfraMachine(mtc.machineSpec, "webhook-test", "default")
-			err := oscInfraMachine.ValidateUpdate(oscOldInfraMachine)
+			_, err := oscInfraMachine.ValidateUpdate(oscOldInfraMachine)
 			if err != nil {
 				assert.Equal(t, mtc.expValidateUpdateErr.Error(), err.Error(), "ValidateUpdate() should return the same error")
 			} else {
