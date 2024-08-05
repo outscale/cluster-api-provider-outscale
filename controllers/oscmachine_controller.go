@@ -330,6 +330,10 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
 	vmState := machineScope.GetVmState()
+	if vmState == nil {
+		machineScope.V(2).Info("VmState is not yet availablle")
+		return ctrl.Result{}, nil
+	}
 
 	switch *vmState {
 	case infrastructurev1beta1.VmStatePending:
