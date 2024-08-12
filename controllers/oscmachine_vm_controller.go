@@ -603,9 +603,12 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	if vmSpec.PublicIpName != "" {
 		linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		err = publicIpSvc.UnlinkPublicIp(linkPublicIpRef.ResourceMap[publicIpName])
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+		linkPublicIiId := linkPublicIpRef.ResourceMap[publicIpName]
+		if linkPublicIiId != "" {
+			err = publicIpSvc.UnlinkPublicIp(linkPublicIiId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+			}
 		}
 	}
 	if vmSpec.PublicIp {
