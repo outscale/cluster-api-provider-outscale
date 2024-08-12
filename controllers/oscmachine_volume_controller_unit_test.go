@@ -342,7 +342,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expVolumeFound:                    true,
 			expSubnetFound:                    true,
 			expPublicIpFound:                  false,
-			expLinkPublicIpFound:              true,
+			expLinkPublicIpFound:              false,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
