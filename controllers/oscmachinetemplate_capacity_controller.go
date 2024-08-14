@@ -68,6 +68,12 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		Logger:             log,
 		OscMachineTemplate: machineTemplate,
 	})
+
+	if err != nil {
+		log.V(2).Info("Cluster is not available yet")
+		log.Error(err, "failed to get machineTemplate.")
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+	}
 	clusterName := machineTemplateScope.GetClusterName()
 
 	labels := map[string]string{"ccm": clusterName + "-crs-ccm"}
