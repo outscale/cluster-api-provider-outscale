@@ -57,12 +57,12 @@ jobs:
     - name: Install kubectl
       uses: azure/setup-kubectl@v2.0
       with:
-        version: v1.22.7
+        version: v1.30.3
       id: install
     - name: Install golang
       uses: actions/setup-go@v3
       with:
-        go-version: '>=1.17.8'
+        go-version: '>=1.23'
     - name: Install kustomize
       uses: imranismail/setup-kustomize@v1
       with:
@@ -194,7 +194,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
     - uses: actions/setup-go@v3
       with:
-        go-version: '1.19.8'
+        go-version: '1.23'
     - name: unit-test
       run: |
         make unit-test
@@ -218,12 +218,12 @@ jobs:
     - name: Install kubectl
       uses: azure/setup-kubectl@v2.0
       with:
-        version: v1.22.7
+        version: v1.30.3
       id: install
     - name: Install golang
       uses: actions/setup-go@v3
       with:
-        go-version: '>=1.17.8'
+        go-version: '>=1.23'
     - name: Install kustomize
       uses: imranismail/setup-kustomize@v1
       with:
