@@ -37,6 +37,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"testing"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	//+kubebuilder:scaffold:imports
@@ -95,7 +98,10 @@ var _ = BeforeSuite(func() {
 	leaseDuration := 80 * time.Second
 	renewDeadline := 10 * time.Second
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                  scheme.Scheme,
+		Scheme: scheme.Scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
 		LeaderElectionNamespace: "cluster-api-provider-outscale-system",
 		LeaderElection:          true,
 		LeaderElectionID:        "controller-leader-election-capo",
