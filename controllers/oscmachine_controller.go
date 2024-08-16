@@ -45,8 +45,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -113,6 +111,7 @@ func (r *OscMachineReconciler) getKeyPairSvc(ctx context.Context, scope scope.Cl
 func (r *OscMachineReconciler) getTagSvc(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
 	return tag.NewService(ctx, &scope)
 }
+
 func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	_ = log.FromContext(ctx)
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
@@ -393,7 +392,7 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
-	clusterToObjectFunc, err := util.ClusterToObjectsMapper(r.Client, &infrastructurev1beta1.OscMachineList{}, mgr.GetScheme())
+	clusterToObjectFunc, err := util.ClusterToTypedObjectsMapper(r.Client, &infrastructurev1beta1.OscMachineList{}, mgr.GetScheme())
 	if err != nil {
 		return errors.Errorf("failed to create mapper for Cluster to OscMachines: %+v", err)
 	}
@@ -401,15 +400,15 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(ctrl.LoggerFrom(ctx), r.WatchFilterValue)).
 		For(&infrastructurev1beta1.OscMachine{}).
 		Watches(
-			&source.Kind{Type: &clusterv1.Machine{}},
+			&clusterv1.Machine{},
 			handler.EnqueueRequestsFromMapFunc(util.MachineToInfrastructureMapFunc(infrastructurev1beta1.GroupVersion.WithKind("OscMachine"))),
 		).
 		Watches(
-			&source.Kind{Type: &infrastructurev1beta1.OscCluster{}},
+			&infrastructurev1beta1.OscCluster{},
 			handler.EnqueueRequestsFromMapFunc(r.OscClusterToOscMachines(ctx)),
 		).
 		Watches(
-			&source.Kind{Type: &clusterv1.Cluster{}},
+			&clusterv1.Cluster{},
 			handler.EnqueueRequestsFromMapFunc(clusterToObjectFunc),
 			builder.WithPredicates(predicates.ClusterUnpausedAndInfrastructureReady(ctrl.LoggerFrom(ctx))),
 		).
@@ -418,13 +417,12 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 	if err != nil {
 		return errors.Errorf("error creating controller: %+v", err)
 	}
-
-	return nil
+	return err
 }
 
 // OscClusterToOscMachines convert the cluster to machine spec
 func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) handler.MapFunc {
-	return func(o client.Object) []ctrl.Request {
+	return func(ctx context.Context, o client.Object) []ctrl.Request {
 		result := []ctrl.Request{}
 		log := log.FromContext(ctx)
 

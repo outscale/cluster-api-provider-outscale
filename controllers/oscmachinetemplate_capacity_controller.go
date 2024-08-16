@@ -146,7 +146,7 @@ func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTem
 func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	machineTemplateScope.V(2).Info("Reconciling delete OscMachineTemplate")
 	oscmachinetemplate := machineTemplateScope.OscMachineTemplate
-	controllerutil.RemoveFinalizer(oscmachinetemplate, "oscmachine.infrastructure.cluster.x-k8s.io")
+	controllerutil.RemoveFinalizer(oscmachinetemplate, "oscmachinetemplate.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil
 }
 
