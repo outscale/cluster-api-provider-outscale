@@ -22,11 +22,12 @@ import (
 
 	"errors"
 
+	_nethttp "net/http"
+
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	_nethttp "net/http"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
@@ -303,6 +304,13 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 // GetSecurityGroupFromSecurityGroupRule retrieve security group rule object from the security group id
 func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
+	if ipProtocols == "-1" {
+		fromPortRanges = -1
+		toPortRanges = -1
+	}
+	if fromPortRanges == 53 && toPortRanges == 53 {
+		ipProtocols = "udp"
+	}
 	switch {
 	case flow == "Inbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
