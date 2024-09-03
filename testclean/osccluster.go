@@ -18,12 +18,13 @@ package test
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type OscInfraClusterInput struct {
@@ -123,7 +124,7 @@ func WaitForOscInfraClusterAvailable(ctx context.Context, input OscInfraClusterI
 
 // WaitForOscInfraClusterListAvailable wait oscCluster to be available.
 func WaitForOscInfraClusterListAvailable(ctx context.Context, input OscInfraClusterListInput) bool {
-	By(fmt.Sprintf("Waiting for oscInfraCluster selected options to be ready"))
+	By("Waiting for oscInfraCluster selected options to be ready")
 	Eventually(func() bool {
 		isOscInfraClusterListAvailable := GetOscInfraClusterList(ctx, input)
 		return isOscInfraClusterListAvailable
@@ -133,7 +134,7 @@ func WaitForOscInfraClusterListAvailable(ctx context.Context, input OscInfraClus
 
 // WaitForOscInfraClusterListDelete wait oscclustet to be deleted.
 func WaitForOscInfraClusterListDelete(ctx context.Context, input OscInfraClusterDeleteListInput) bool {
-	By(fmt.Sprintf("Wait for oscInfraCluster selected by options to be deleted"))
+	By("Wait for oscInfraCluster selected by options to be deleted")
 	Eventually(func() bool {
 		isOscInfraClusterListDelete := DeleteOscInfraClusterList(ctx, input)
 		return isOscInfraClusterListDelete

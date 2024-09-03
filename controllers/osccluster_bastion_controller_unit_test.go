@@ -2356,13 +2356,6 @@ func TestReconcileBastionGet(t *testing.T) {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 
-			var privateIps []string
-			bastionPrivateIps := clusterScope.GetBastionPrivateIps()
-			for _, bastionPrivateIp := range *bastionPrivateIps {
-				privateIp := bastionPrivateIp.PrivateIp
-				privateIps = append(privateIps, privateIp)
-			}
-
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2547,16 +2540,8 @@ func TestReconcileBastionResourceId(t *testing.T) {
 				linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 			}
 
-			var privateIps []string
-			bastionPrivateIps := clusterScope.GetBastionPrivateIps()
-			for _, bastionPrivateIp := range *bastionPrivateIps {
-				privateIp := bastionPrivateIp.PrivateIp
-				privateIps = append(privateIps, privateIp)
-			}
-
 			imageName := btc.clusterSpec.Network.Bastion.ImageName
 			imageId := "ami-00000000"
-			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2566,7 +2551,6 @@ func TestReconcileBastionResourceId(t *testing.T) {
 				if btc.expSecurityGroupFound {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			if btc.expGetImageNameFound {
@@ -2647,7 +2631,6 @@ func TestReconcileDeleteBastion(t *testing.T) {
 				bastionRef.ResourceMap[bastionName] = vmId
 			}
 
-			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2655,7 +2638,6 @@ func TestReconcileDeleteBastion(t *testing.T) {
 				securityGroupName := bastionSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			publicIpName := btc.clusterSpec.Network.Bastion.PublicIpName + "-uid"
@@ -2775,7 +2757,6 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 					Return(nil, btc.expGetBastionErr)
 			}
 
-			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2785,7 +2766,6 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 				if btc.expSecurityGroupFound {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			publicIpName := btc.clusterSpec.Network.Bastion.PublicIpName + "-uid"
@@ -2914,7 +2894,6 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 					Return(nil, btc.expGetBastionErr)
 			}
 
-			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2924,7 +2903,6 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 				if btc.expSecurityGroupFound {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			publicIpName := btc.clusterSpec.Network.Bastion.PublicIpName + "-uid"
@@ -2986,7 +2964,6 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 
-			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2994,7 +2971,6 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 				securityGroupName := bastionSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			createVms := osc.CreateVmsResponse{

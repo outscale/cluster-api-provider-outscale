@@ -19,11 +19,12 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
+
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -135,8 +136,8 @@ func CapoClusterDeploymentSpec(ctx context.Context, inputGetter func() CapoClust
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
 				KubernetesVersion:        input.E2EConfig.GetVariable(KubernetesVersion),
-				ControlPlaneMachineCount: pointer.Int64Ptr(3),
-				WorkerMachineCount:       pointer.Int64Ptr(1),
+				ControlPlaneMachineCount: pointer.Int64(3),
+				WorkerMachineCount:       pointer.Int64(1),
 			},
 			WaitForClusterIntervals: input.E2EConfig.GetIntervals(specName, "wait-cluster"),
 		}, clusterResources)
@@ -186,8 +187,8 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
 				KubernetesVersion:        input.E2EConfig.GetVariable(KubernetesVersion),
-				ControlPlaneMachineCount: pointer.Int64Ptr(1),
-				WorkerMachineCount:       pointer.Int64Ptr(1),
+				ControlPlaneMachineCount: pointer.Int64(1),
+				WorkerMachineCount:       pointer.Int64(1),
 			},
 			WaitForClusterIntervals:      input.E2EConfig.GetIntervals(specName, "wait-cluster"),
 			WaitForControlPlaneIntervals: input.E2EConfig.GetIntervals(specName, "wait-control-plane"),
@@ -272,6 +273,7 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 		})
 
 		certManager, err := labels.Parse("app.kubernetes.io/component=controller")
+		Expect(err).ToNot(HaveOccurred())
 		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
 			Lister:      k8sClient,
 			ListOptions: &client.ListOptions{LabelSelector: certManager},
