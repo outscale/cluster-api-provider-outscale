@@ -203,7 +203,9 @@ func TestReconcileCapacity(t *testing.T) {
 			vmType := ctc.machineTemplateSpec.Template.Spec.Node.Vm.VmType
 			capacity := make(corev1.ResourceList)
 			memory, err := resource.ParseQuantity("4G")
+			assert.NoError(t, err)
 			cpu, err := resource.ParseQuantity("2")
+			assert.NoError(t, err)
 			capacity[corev1.ResourceMemory] = memory
 			capacity[corev1.ResourceCPU] = cpu
 
