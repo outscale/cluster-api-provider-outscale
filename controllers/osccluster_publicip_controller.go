@@ -152,13 +152,11 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 			publicIpRef.ResourceMap = make(map[string]string)
 		}
 		if publicIpSpec.ResourceId != "" {
-			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
+			// check if IP exist
+			_, err = publicIpSvc.GetPublicIp(publicIpSpec.ResourceId)
+			return reconcile.Result{}, err
 		}
-		_, resourceMapExist := publicIpRef.ResourceMap[publicIpName]
-		if resourceMapExist {
-			publicIpSpec.ResourceId = publicIpRef.ResourceMap[publicIpName]
-		}
-
+		publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
 		publicIpId := publicIpRef.ResourceMap[publicIpName]
 		if !Contains(validPublicIpIds, publicIpId) && tag == nil {
 			publicIp, err := publicIpSvc.CreatePublicIp(publicIpName)
