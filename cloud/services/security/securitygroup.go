@@ -157,6 +157,9 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 		securityGroupRuleResponse, httpRes, err = oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
 		if err != nil {
 			if httpRes != nil {
+				if httpRes.StatusCode == 409 {
+					return true, err
+				}
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
 			}
 			requestStr := fmt.Sprintf("%v", createSecurityGroupRuleRequest)
@@ -177,7 +180,10 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 	}
 	securityGroupRule, ok := securityGroupRuleResponse.GetSecurityGroupOk()
 	if !ok {
-		return nil, errors.New("Can not get securityGroup")
+		// if CreateSecurityGroupRule return 409, the response not contain the conflicted SecurityGroup.
+		// workarround to a Outscale API issue
+		return s.GetSecurityGroup(securityGroupId)
+
 	}
 	return securityGroupRule, nil
 }
