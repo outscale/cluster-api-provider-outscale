@@ -779,8 +779,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 				},
 			}
 			loadBalancerKey := "Name"
-			var loadBalancerValue string
-			loadBalancerValue = loadBalancerName + "-uid"
+			loadBalancerValue := loadBalancerName + "-uid"
 			tag := osc.LoadBalancerTag{
 				Key:              &loadBalancerKey,
 				LoadBalancerName: &loadBalancerName,
@@ -1165,9 +1164,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				},
 			}
 			loadBalancerKey := "Name"
-			var loadBalancerValue string
-
-			loadBalancerValue = loadBalancerName + "-uid"
+			loadBalancerValue := loadBalancerName + "-uid"
 			tag := osc.LoadBalancerTag{
 				Key:              &loadBalancerKey,
 				LoadBalancerName: &loadBalancerName,
@@ -1526,9 +1523,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 				},
 			}
 			loadBalancerKey := "Name"
-			var loadBalancerValue string
-
-			loadBalancerValue = loadBalancerName + "-uid"
+			loadBalancerValue := loadBalancerName + "-uid"
 			tag := osc.LoadBalancerTag{
 				Key:              &loadBalancerKey,
 				LoadBalancerName: &loadBalancerName,

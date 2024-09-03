@@ -305,7 +305,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
 		if err != nil {
 			machineScope.Error(err, "failed to reconcile volume")
-			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 			return reconcileVolume, err
 		}
 	}
@@ -324,7 +324,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileVm, err
 	}
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)

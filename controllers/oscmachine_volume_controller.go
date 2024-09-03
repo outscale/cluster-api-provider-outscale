@@ -109,8 +109,8 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volumeSvc storage.OscVolumeInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	var volumeId string
 	var volumeIds []string
-	var volumesSpec []*infrastructurev1beta1.OscVolume
-	volumesSpec = machineScope.GetVolume()
+
+	volumesSpec := machineScope.GetVolume()
 	volumeRef := machineScope.GetVolumeRef()
 	for _, volumeSpec := range volumesSpec {
 		volumeId = volumeSpec.ResourceId

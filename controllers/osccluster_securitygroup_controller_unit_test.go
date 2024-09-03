@@ -18,9 +18,9 @@ package controllers
 
 import (
 	"context"
+	"io"
 
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"runtime"
 	"strings"
@@ -1114,7 +1114,6 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 
-			var securityGroupIds []string
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
@@ -1132,7 +1131,6 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
 						Return(nil, sgtc.expReadTagErr)
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupDescription := securityGroupSpec.Description
 				securityGroupTag := securityGroupSpec.Tag
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
@@ -1152,7 +1150,6 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 				for _, securityGroupSpec := range securityGroupsSpec {
 					securityGroupName := securityGroupSpec.Name + "-uid"
 					securityGroupId := "sg-" + securityGroupName
-					securityGroupIds = append(securityGroupIds, securityGroupId)
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 					securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
 					for _, securityGroupRuleSpec := range securityGroupRulesSpec {
@@ -1368,7 +1365,6 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 
-			var securityGroupIds []string
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
@@ -1387,7 +1383,6 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
 						Return(nil, sgtc.expReadTagErr)
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupTag := securityGroupSpec.Tag
 				securityGroupDescription := securityGroupSpec.Description
 				securityGroup := osc.CreateSecurityGroupResponse{
@@ -1549,7 +1544,6 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			clock_mock := clock.NewMock()
-			clock_mock.Now().UTC()
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
@@ -1559,7 +1553,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					if sgtc.expLoadBalancerResourceConflict {
 						httpResponse = &http.Response{
 							StatusCode: 9085,
-							Body: ioutil.NopCloser(strings.NewReader(`{
+							Body: io.NopCloser(strings.NewReader(`{
 							"Errors": [
                                                 	        {
                                                 	       	    "Type": "ResourceConflict",
@@ -1575,7 +1569,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					} else {
 						httpResponse = &http.Response{
 							StatusCode: 10014,
-							Body: ioutil.NopCloser(strings.NewReader(`{
+							Body: io.NopCloser(strings.NewReader(`{
                                                         "Errors": [
                                                                 {
                                                                     "Type": "TooManyResources (QuotaExceded)",
@@ -1592,7 +1586,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					if sgtc.expInvalidDeleteSecurityGroupJsonResponse {
 						httpResponse = &http.Response{
 							StatusCode: 0,
-							Body: ioutil.NopCloser(strings.NewReader(`{
+							Body: io.NopCloser(strings.NewReader(`{
                                                         "Errors": [
                                                                 {
                                                                     "Type":Bad,
@@ -1613,7 +1607,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 				} else {
 					httpResponse = &http.Response{
 						StatusCode: 200,
-						Body: ioutil.NopCloser(strings.NewReader(`{
+						Body: io.NopCloser(strings.NewReader(`{
                                                         "ResponseContext": {
                                                                 "RequestId": "aaaaa-bbbbb-ccccc"
                                                         }
@@ -1821,7 +1815,7 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 				if sgtc.expDeleteSecurityGroupErr == nil {
 					httpResponse = &http.Response{
 						StatusCode: 200,
-						Body: ioutil.NopCloser(strings.NewReader(`{
+						Body: io.NopCloser(strings.NewReader(`{
 	                                                "ResponseContext": {
         	                                                "RequestId": "aaaaa-bbbbb-ccccc"
                 	                                }
@@ -1831,7 +1825,7 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 				} else {
 					httpResponse = &http.Response{
 						StatusCode: 10014,
-						Body: ioutil.NopCloser(strings.NewReader(`{
+						Body: io.NopCloser(strings.NewReader(`{
                                                         "Errors": [
                                                                 {
                                                                     "Type": "TooManyResources (QuotaExceded)",
@@ -1930,10 +1924,9 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			securityGroupId := "sg-" + securityGroupName
 			securityGroupIds = append(securityGroupIds, securityGroupId)
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-			var httpResponse *http.Response
-			httpResponse = &http.Response{
+			httpResponse := &http.Response{
 				StatusCode: 200,
-				Body: ioutil.NopCloser(strings.NewReader(`{
+				Body: io.NopCloser(strings.NewReader(`{
 	                                                "ResponseContext": {
         	                                                "RequestId": "aaaaa-bbbbb-ccccc"
                 	                                }

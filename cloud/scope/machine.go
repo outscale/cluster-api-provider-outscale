@@ -271,7 +271,7 @@ func (m *MachineScope) GetInstanceID() string {
 // SetProviderID set the instanceID
 func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
 	pid := fmt.Sprintf("aws:///%s/%s", subregionName, vmId)
-	m.OscMachine.Spec.ProviderID = pointer.StringPtr(pid)
+	m.OscMachine.Spec.ProviderID = pointer.String(pid)
 }
 
 // GetVmState return the vmState
@@ -296,7 +296,7 @@ func (m *MachineScope) SetNotReady() {
 
 // SetFailureMessage set failure message
 func (m *MachineScope) SetFailureMessage(v error) {
-	m.OscMachine.Status.FailureMessage = pointer.StringPtr(v.Error())
+	m.OscMachine.Status.FailureMessage = pointer.String(v.Error())
 }
 
 // SetFailureReason set failure reason

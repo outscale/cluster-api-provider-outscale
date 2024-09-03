@@ -122,9 +122,7 @@ func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 
 // reconcilePublicIp reconcile the PublicIp of the cluster.
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
-
-	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-	publicIpsSpec = clusterScope.GetPublicIp()
+	publicIpsSpec := clusterScope.GetPublicIp()
 	var publicIpId string
 	publicIpRef := clusterScope.GetPublicIpRef()
 	var publicIpIds []string

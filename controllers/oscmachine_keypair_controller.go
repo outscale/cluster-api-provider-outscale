@@ -84,8 +84,8 @@ func getKeyPairResourceId(resourceName string, machineScope *scope.MachineScope)
 
 // reconcileKeypair reconcile the keypair of the machine
 func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, keypairSvc security.OscKeyPairInterface) (reconcile.Result, error) {
-	var keypairSpec *infrastructurev1beta1.OscKeypair
-	keypairSpec = machineScope.GetKeypair()
+
+	keypairSpec := machineScope.GetKeypair()
 	keypairRef := machineScope.GetKeypairRef()
 	keypairName := keypairSpec.Name
 	machineScope.V(2).Info("Get Keypair if existing", "keypair", keypairName)

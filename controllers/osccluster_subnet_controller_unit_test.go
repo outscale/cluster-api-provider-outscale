@@ -594,11 +594,9 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 			if stc.expNetFound {
 				netRef.ResourceMap[netName] = netId
 			}
-			var subnetIds []string
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
-				subnetIds = append(subnetIds, subnetId)
 				var subnetIds []string
 				tag := osc.Tag{
 					ResourceId: &subnetId,
