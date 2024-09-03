@@ -1549,7 +1549,6 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			clock_mock := clock.NewMock()
-			clock_mock.Now().UTC()
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName

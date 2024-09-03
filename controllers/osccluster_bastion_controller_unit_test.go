@@ -2363,7 +2363,6 @@ func TestReconcileBastionGet(t *testing.T) {
 				privateIps = append(privateIps, privateIp)
 			}
 
-			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -2371,7 +2370,6 @@ func TestReconcileBastionGet(t *testing.T) {
 				securityGroupName := bastionSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120

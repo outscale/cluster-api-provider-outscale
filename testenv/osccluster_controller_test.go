@@ -20,7 +20,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	network "net"
 	"net/http"
 	"os"
@@ -240,7 +240,7 @@ func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 
 	defer response.Body.Close()
 
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	var res map[string]interface{}
 	json.Unmarshal([]byte(data), &res)
 	if err != nil {
