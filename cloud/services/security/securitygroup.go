@@ -157,6 +157,9 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 		securityGroupRuleResponse, httpRes, err = oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
 		if err != nil {
 			if httpRes != nil {
+				if httpRes.StatusCode == 409 {
+					return true, nil
+				}
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
 			}
 			requestStr := fmt.Sprintf("%v", createSecurityGroupRuleRequest)
