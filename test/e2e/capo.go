@@ -17,8 +17,10 @@ limitations under the License.
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"path/filepath"
@@ -29,11 +31,15 @@ import (
 	. "github.com/onsi/gomega"
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/pointer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/cluster-api/util/conditions"
 )
 
 type CapoClusterDeploymentSpecInput struct {
@@ -87,15 +93,44 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 		LogFolder:                input.ConfigCluster.LogFolder,
 	})
 	Expect(workloadClusterTemplate).ToNot(BeNil(), "Failed to get the cluster template")
-	Eventually(func() error {
-		return input.ClusterProxy.Apply(ctx, workloadClusterTemplate, input.Args...)
-	}, 10*time.Second).Should(Succeed(), "Failed to apply the cluster template")
+	// Apply the manifests using the Kubernetes client from the ClusterProxy
+	k8sClient := input.ClusterProxy.GetClient()
 
-	result.Cluster = framework.DiscoveryAndWaitForCluster(ctx, framework.DiscoveryAndWaitForClusterInput{
-		Getter:    input.ClusterProxy.GetClient(),
-		Namespace: input.ConfigCluster.Namespace,
-		Name:      input.ConfigCluster.ClusterName,
-	}, input.WaitForClusterIntervals...)
+	reader := bytes.NewReader(workloadClusterTemplate)
+	decoder := yaml.NewYAMLOrJSONDecoder(reader, 4096)
+	for {
+		obj := &unstructured.Unstructured{}
+		err := decoder.Decode(obj)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			Expect(err).NotTo(HaveOccurred(), "Failed to decode cluster template")
+		}
+		gvk := obj.GroupVersionKind()
+		obj.SetGroupVersionKind(gvk)
+		// Set the namespace for namespaced resources
+		if obj.GetNamespace() == "" {
+			obj.SetNamespace(input.ConfigCluster.Namespace)
+		}
+		// Use Create or Update to apply the resource
+		err = k8sClient.Create(ctx, obj)
+		if err != nil {
+			if client.IgnoreNotFound(err) != nil {
+				Expect(err).NotTo(HaveOccurred(), "Failed to apply resource")
+			}
+		}
+	}
+	// Wait for the cluster to be ready
+	Eventually(func() bool {
+		cluster := &clusterv1.Cluster{}
+		key := types.NamespacedName{Namespace: input.ConfigCluster.Namespace, Name: input.ConfigCluster.ClusterName}
+		err := k8sClient.Get(ctx, key, cluster)
+		if err != nil {
+			return false
+		}
+		return conditions.IsTrue(cluster, clusterv1.ReadyCondition)
+	}, 20*time.Minute, 30*time.Second).Should(BeTrue(), "Cluster did not become ready in time")
 }
 
 // CapoClusterDeploymentSpec create infrastructure cluster using its generated config and wait infrastructure cluster to be provisionned
