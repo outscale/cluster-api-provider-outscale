@@ -85,8 +85,6 @@ spec:
                         type: array
                       publicIpName:
                         type: string
-                      publicIpNameAfterBastion:
-                        type: boolean
                       resourceId:
                         type: string
                       rootDisk:

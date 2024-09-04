@@ -322,8 +322,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 			return reconcile.Result{}, fmt.Errorf("%w Can not create bastion %s for OscCluster %s/%s", err, bastionName, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 	}
-	clusterScope.V(2).Info("Set OscCluster status to not ready")
-	clusterScope.SetNotReady()
+
 	// Reconcile each element of the cluster
 	netSvc := r.getNetSvc(ctx, *clusterScope)
 	tagSvc := r.getTagSvc(ctx, *clusterScope)
@@ -418,6 +417,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcileLoadBalancer, err
 	}
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
+		clusterScope.V(4).Info("Reconciling bastion Vm")
 		vmSvc := r.getVmSvc(ctx, *clusterScope)
 		imageSvc := r.getImageSvc(ctx, *clusterScope)
 		reconcileBastion, err := reconcileBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc, imageSvc, tagSvc)
@@ -427,6 +427,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 			return reconcileBastion, err
 		}
 	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.VmReadyCondition)
+
 	clusterScope.V(2).Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
 	return reconcile.Result{}, nil

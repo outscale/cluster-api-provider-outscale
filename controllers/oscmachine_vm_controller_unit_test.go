@@ -2225,7 +2225,6 @@ func TestReconcileVm(t *testing.T) {
 			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
-			vmState := "running"
 			vmTags := vtc.machineSpec.Node.Vm.Tags
 
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
@@ -2277,9 +2276,7 @@ func TestReconcileVm(t *testing.T) {
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 20
-			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 240
-			var firstClockLoop time.Duration = 240
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
 			loadBalancerSpec := clusterScope.GetLoadBalancer()
 			loadBalancerSpec.SetDefaultValue()
@@ -2342,11 +2339,6 @@ func TestReconcileVm(t *testing.T) {
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStateBootErr)
-
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
 				mockOscVolumeInterface.
 					EXPECT().
@@ -2364,11 +2356,6 @@ func TestReconcileVm(t *testing.T) {
 
 			}
 
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStateVolumeErr)
-
 			if vtc.expLinkPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
@@ -2380,11 +2367,6 @@ func TestReconcileVm(t *testing.T) {
 					LinkPublicIp(gomock.Eq(publicIpId), gomock.Eq(vmId)).
 					Return("", vtc.expLinkPublicIpErr)
 			}
-
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStatePublicIpErr)
 
 			vmIds := []string{vmId}
 			mockOscLoadBalancerInterface.
@@ -2648,7 +2630,6 @@ func TestReconcileVmLink(t *testing.T) {
 			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
-			vmState := "running"
 
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
@@ -2719,9 +2700,7 @@ func TestReconcileVmLink(t *testing.T) {
 			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
 			var clockInsideLoop time.Duration = 20
-			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 240
-			var firstClockLoop time.Duration = 240
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
@@ -2732,13 +2711,6 @@ func TestReconcileVmLink(t *testing.T) {
 					EXPECT().
 					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vtc.machineSpec.Node.Vm.Tags)).
 					Return(nil, vtc.expCreateVmErr)
-			}
-
-			if vtc.expCheckVmStateBootFound {
-				mockOscVmInterface.
-					EXPECT().
-					CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-					Return(vtc.expCheckVmStateBootErr)
 			}
 
 			if vtc.expCheckVolumeStateAvailableFound {
@@ -2879,7 +2851,6 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
-			vmState := "running"
 
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
 			volumeId := "vol-" + volumeName
@@ -2927,9 +2898,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 20
-			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 240
-			var firstClockLoop time.Duration = 240
 
 			createVms := osc.CreateVmsResponse{
 				Vms: &[]osc.Vm{
@@ -2969,11 +2938,6 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStateBootErr)
-
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
 				mockOscVolumeInterface.
 					EXPECT().
@@ -2992,24 +2956,12 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
 					Return(vtc.expCheckVolumeStateUseErr)
 			}
-			if vtc.expCheckVmStateVolumeFound {
-				mockOscVmInterface.
-					EXPECT().
-					CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-					Return(vtc.expCheckVmStateVolumeErr)
-			}
 
 			if vtc.expLinkPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
 					LinkPublicIp(gomock.Eq(publicIpId), gomock.Eq(vmId)).
 					Return("", vtc.expLinkPublicIpErr)
-			}
-			if vtc.expCheckVmStatePublicIpFound {
-				mockOscVmInterface.
-					EXPECT().
-					CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-					Return(vtc.expCheckVmStatePublicIpErr)
 			}
 
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
@@ -3072,7 +3024,6 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
-			vmState := "running"
 
 			tag := osc.Tag{
 				ResourceId: &vmId,
@@ -3135,9 +3086,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 20
-			var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 240
-			var firstClockLoop time.Duration = 240
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
 
 			createVms := osc.CreateVmsResponse{
@@ -3165,10 +3114,6 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStateBootErr)
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
 
 				mockOscVolumeInterface.
@@ -3186,10 +3131,6 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
 					Return(vtc.expCheckVolumeStateUseErr)
 			}
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStateVolumeErr)
 
 			if vtc.expLinkPublicIpFound {
 				mockOscPublicIpInterface.
@@ -3202,11 +3143,6 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 					LinkPublicIp(gomock.Eq(publicIpId), gomock.Eq(vmId)).
 					Return("", vtc.expLinkPublicIpErr)
 			}
-
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStatePublicIpErr)
 
 			vmIds := []string{vmId}
 			mockOscLoadBalancerInterface.
