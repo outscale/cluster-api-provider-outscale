@@ -6,7 +6,6 @@ package mock_compute
 
 import (
 	reflect "reflect"
-	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -50,20 +49,6 @@ func (m *MockOscVmInterface) AddCcmTag(clusterName, hostname, vmId string) error
 func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(clusterName, hostname, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), clusterName, hostname, vmId)
-}
-
-// CheckVmState mocks base method.
-func (m *MockOscVmInterface) CheckVmState(clockInsideLoop, clockLoop time.Duration, state, vmId string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckVmState", clockInsideLoop, clockLoop, state, vmId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckVmState indicates an expected call of CheckVmState.
-func (mr *MockOscVmInterfaceMockRecorder) CheckVmState(clockInsideLoop, clockLoop, state, vmId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckVmState", reflect.TypeOf((*MockOscVmInterface)(nil).CheckVmState), clockInsideLoop, clockLoop, state, vmId)
 }
 
 // CreateVm mocks base method.
@@ -123,6 +108,15 @@ func (m *MockOscVmInterface) GetCapacity(tagKey, tagValue, vmType string) (v1.Re
 func (mr *MockOscVmInterfaceMockRecorder) GetCapacity(tagKey, tagValue, vmType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapacity", reflect.TypeOf((*MockOscVmInterface)(nil).GetCapacity), tagKey, tagValue, vmType)
+}
+
+// GetVmListFromTag mocks base method.
+func (m *MockOscVmInterface) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVmListFromTag", tagKey, tagValue)
+	ret0, _ := ret[0].([]osc.Vm)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetVm mocks base method.

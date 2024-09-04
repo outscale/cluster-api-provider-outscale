@@ -190,16 +190,6 @@ func (s *ClusterScope) SetExtraSecurityGroupRule(extraSecurityGroupRule bool) {
 	s.OscCluster.Spec.Network.ExtraSecurityGroupRule = extraSecurityGroupRule
 }
 
-// GetPublicIpNameAfterBastion return publicIpNameAfterBastion
-func (s *ClusterScope) GetPublicIpNameAfterBastion() bool {
-	return s.OscCluster.Spec.Network.Bastion.PublicIpNameAfterBastion
-}
-
-// SetPublicIpNameAfterBastion set the publicIpNameAfterBastion
-func (s *ClusterScope) SetPublicIpNameAfterBastion(publicIpNameAfterBastion bool) {
-	s.OscCluster.Spec.Network.Bastion.PublicIpNameAfterBastion = publicIpNameAfterBastion
-}
-
 // GetNetwork return the network of the cluster
 func (s *ClusterScope) GetNetwork() *infrastructurev1beta1.OscNetwork {
 	return &s.OscCluster.Spec.Network
@@ -336,6 +326,11 @@ func (s *ClusterScope) GetControlPlaneEndpointPort() int32 {
 	return s.OscCluster.Spec.ControlPlaneEndpoint.Port
 }
 
+// GetReady get ready status
+func (s *ClusterScope) GetReady() bool {
+	return s.OscCluster.Status.Ready
+}
+
 // SetNotReady set not ready status
 func (s *ClusterScope) SetNotReady() {
 	s.OscCluster.Status.Ready = false
@@ -384,6 +379,11 @@ func (s *ClusterScope) GetImage() *infrastructurev1beta1.OscImage {
 // SetVmState set vmstate
 func (s *ClusterScope) SetVmState(v infrastructurev1beta1.VmState) {
 	s.OscCluster.Status.VmState = &v
+}
+
+// SetVmState set vmstate
+func (s *ClusterScope) GetVmState() *infrastructurev1beta1.VmState {
+	return s.OscCluster.Status.VmState
 }
 
 // PatchObject keep the cluster configuration and status
