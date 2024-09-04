@@ -200,8 +200,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 
 	controllerutil.AddFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 
-	machineScope.V(2).Info("Set OscMachine status to not ready")
-	machineScope.SetNotReady()
 	if !machineScope.Cluster.Status.InfrastructureReady {
 		machineScope.V(2).Info("Cluster infrastructure is not ready yet")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
@@ -308,6 +306,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 			return reconcileVolume, err
 		}
 	}
+	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
 	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
 	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
@@ -320,20 +319,16 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+
+	machineScope.V(4).Info("Reconciling Vm")
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileVm, err
 	}
-	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
 	vmState := machineScope.GetVmState()
-	if vmState == nil {
-		machineScope.V(2).Info("VmState is not yet availablle")
-		return ctrl.Result{}, nil
-	}
-
 	switch *vmState {
 	case infrastructurev1beta1.VmStatePending:
 		machineScope.SetNotReady()
