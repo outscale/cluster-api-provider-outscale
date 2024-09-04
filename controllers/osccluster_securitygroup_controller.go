@@ -274,6 +274,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		clusterScope.V(2).Info("Check if the desired securityGroup exist in net", "securityGroupName", securityGroupName)
 		securityGroupDescription := securityGroupSpec.Description
+		deleteDefaultOutboundRule := securityGroupSpec.DeleteDefaultOutboundRule
 
 		tagKey := "Name"
 		tagValue := securityGroupName
@@ -340,6 +341,14 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 				if err != nil {
 					return reconcile.Result{}, err
 				}
+			}
+		}
+
+		if deleteDefaultOutboundRule {
+			clusterScope.V(2).Info("Delete default outbound rule for sg", "securityGroupName", securityGroupSpec.Name)
+			err = securityGroupSvc.DeleteSecurityGroupRule(securityGroupId, "Outbound", "-1", "0.0.0.0/0", "", 0, 0)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Cannot delete default Outbound rule for sg %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 		}
 	}

@@ -219,6 +219,9 @@ type OscSecurityGroup struct {
 	// The description of the security group
 	// +optional
 	Description string `json:"description,omitempty"`
+	// The description of the security group
+	// +optional
+	DeleteDefaultOutboundRule bool `json:"deleteDefaultOutboundRule,omitempty"`
 	// The Security Group Rules configuration
 	// +optional
 	SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
