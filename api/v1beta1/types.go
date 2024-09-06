@@ -75,9 +75,6 @@ type OscNetwork struct {
 	// The subregion name
 	// + optional
 	SubregionName string `json:"subregionName,omitempty"`
-	// Add SecurityGroup Rule after the cluster is created
-	// + optional
-	ExtraSecurityGroupRule bool `json:"extraSecurityGroupRule,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -219,6 +216,9 @@ type OscSecurityGroup struct {
 	// The description of the security group
 	// +optional
 	Description string `json:"description,omitempty"`
+	// Should the default allow all outbound rule be deleted
+	// +optional
+	DeleteDefaultOutboundRule bool `json:"deleteDefaultOutboundRule,omitempty"`
 	// The Security Group Rules configuration
 	// +optional
 	SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
@@ -278,6 +278,9 @@ type OscSecurityGroupRule struct {
 	// The ip range of the security group rule
 	// +optional
 	IpRange string `json:"ipRange,omitempty"`
+	// The name of the security group to use as target
+	// +optional
+	TargetSecurityGroupName string `json:"targetSecurityGroupName,omitempty"`
 	// The beginning of the port range
 	// +optional
 	FromPortRange int32 `json:"fromPortRange,omitempty"`
