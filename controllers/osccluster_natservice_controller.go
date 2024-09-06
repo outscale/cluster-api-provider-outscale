@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -198,7 +199,7 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 		clusterScope.V(2).Info("Delete the desired natService", "natServiceName", natServiceName)
 		err = natServiceSvc.DeleteNatService(natServiceId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("%w cannot delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		delete(natServiceRef.ResourceMap, natServiceName)
 	}
