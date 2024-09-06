@@ -158,7 +158,7 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 		if err != nil {
 			if httpRes != nil {
 				if httpRes.StatusCode == 409 {
-					return true, err
+					return true, nil
 				}
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
 			}
