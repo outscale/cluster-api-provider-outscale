@@ -196,23 +196,23 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		clusterScope.V(2).Info("Create the desired loadBalancer", "loadBalancerName", loadBalancerName)
 		_, err := loadBalancerSvc.CreateLoadBalancer(loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w cannot create loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.V(2).Info("Delete default outbound rule for loadBalancer", "loadBalancerName", loadBalancerName)
 		err = securityGroupSvc.DeleteSecurityGroupRule(securityGroupId, "Outbound", "-1", "0.0.0.0/0", "", 0, 0)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w can not empty Outbound sg rules for loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w cannot empty Outbound sg rules for loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		clusterScope.V(2).Info("Configure the desired loadBalancer", "loadBalancerName", loadBalancerName)
 		loadbalancer, err = loadBalancerSvc.ConfigureHealthCheck(loadBalancerSpec)
 		clusterScope.V(4).Info("Get loadbalancer", "loadbalancer", loadbalancer)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not configure healthcheck for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w cannot configure healthcheck for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 		err = loadBalancerSvc.CreateLoadBalancerTag(loadBalancerSpec, nameTag)
 		clusterScope.V(2).Info("Create the desired loadBalancer tag name", "loadBalancerName", loadBalancerName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not tag loadBalancer for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w cannot tag loadBalancer for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 	}
 	controlPlaneEndpoint := *loadbalancer.DnsName
@@ -256,7 +256,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 		return reconcile.Result{}, err
 	}
 	if loadBalancerTag != nil && *loadBalancerTag.Key == nameTag.Key && *loadBalancerTag.Value != nameTag.Value {
-		clusterScope.V(4).Info("Can not delete LoadBalancer that already exists by other cluster", "loadBalancer", loadBalancerName)
+		clusterScope.V(4).Info("cannot delete LoadBalancer that already exists by other cluster", "loadBalancer", loadBalancerName)
 		return reconcile.Result{}, nil
 	}
 
@@ -270,12 +270,12 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 	err = loadBalancerSvc.DeleteLoadBalancerTag(loadBalancerSpec, loadBalancerTagKey)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete loadBalancer Tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("%w cannot delete loadBalancer Tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 
 	err = loadBalancerSvc.DeleteLoadBalancer(loadBalancerSpec)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("%w cannot delete loadBalancer for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, nil
 }
