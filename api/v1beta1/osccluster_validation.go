@@ -52,7 +52,7 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 // ValidateCidr check that the cidr string is a valide CIDR
 func ValidateCidr(cidr string) (string, error) {
 	if !strings.Contains(cidr, "/") {
-		return cidr, errors.New("Invalid Not A CIDR")
+		return cidr, errors.New("invalid Not A CIDR")
 	}
 	_, _, err := net.ParseCIDR(cidr)
 	if err != nil {

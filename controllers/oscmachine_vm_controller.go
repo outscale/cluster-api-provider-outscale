@@ -396,7 +396,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
 		machineScope.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{RequeueAfter: 30 * time.Second}, err
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
