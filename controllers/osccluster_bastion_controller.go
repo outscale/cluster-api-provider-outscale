@@ -368,9 +368,12 @@ func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScop
 	if bastionSpec.PublicIpName != "" {
 		linkPublicIpRef := clusterScope.GetLinkPublicIpRef()
 		publicIpName := bastionSpec.PublicIpName + "-" + clusterScope.GetUID()
-		err = publicIpSvc.UnlinkPublicIp(linkPublicIpRef.ResourceMap[publicIpName])
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		publicIpRef := linkPublicIpRef.ResourceMap[publicIpName]
+		if publicIpRef != "" {
+			err = publicIpSvc.UnlinkPublicIp(publicIpRef)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			}
 		}
 	}
 	err = vmSvc.DeleteVm(vmId)

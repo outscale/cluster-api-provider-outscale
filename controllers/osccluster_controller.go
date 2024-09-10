@@ -405,7 +405,12 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
-	_, err = reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc, securityGroupSvc)
+	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc, securityGroupSvc)
+	if err != nil {
+		clusterScope.Error(err, "failed to reconcile LoadBalancer")
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileLoadBalancer, err
+	}
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		vmSvc := r.getVmSvc(ctx, *clusterScope)
 		imageSvc := r.getImageSvc(ctx, *clusterScope)

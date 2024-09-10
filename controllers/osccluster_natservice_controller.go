@@ -25,7 +25,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -184,28 +183,16 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 // reconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
 func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface) (reconcile.Result, error) {
-	osccluster := clusterScope.OscCluster
-	var natServicesSpec []*infrastructurev1beta1.OscNatService
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.NatServices == nil {
-		// Add backwards compatibility with NatService parameter that used single NatService
-		natServiceSpec := clusterScope.GetNatService()
-		natServiceSpec.SetDefaultValue()
-		natServicesSpec = append(natServicesSpec, natServiceSpec)
-	} else {
-		natServicesSpec = clusterScope.GetNatServices()
-	}
+	natServiceRef := clusterScope.GetNatServiceRef()
 
-	for _, natServiceSpec := range natServicesSpec {
-		natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
-		natServiceId := natServiceSpec.ResourceId
+	for natServiceName, natServiceId := range natServiceRef.ResourceMap {
 		natService, err := natServiceSvc.GetNatService(natServiceId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 		if natService == nil {
 			clusterScope.V(2).Info("The desired natService does not exist anymore", "natServiceName", natServiceName)
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
+			delete(natServiceRef.ResourceMap, natServiceName)
 			return reconcile.Result{}, nil
 		}
 		clusterScope.V(2).Info("Delete the desired natService", "natServiceName", natServiceName)
@@ -213,6 +200,7 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
+		delete(natServiceRef.ResourceMap, natServiceName)
 	}
 	return reconcile.Result{}, nil
 }

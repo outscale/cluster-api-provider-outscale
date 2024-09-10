@@ -297,8 +297,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 
 		if !Contains(securityGroupIds, securityGroupId) && tag == nil {
-
-			if extraSecurityGroupRule {
+			if extraSecurityGroupRule && (len(securityGroupsRef.ResourceMap) == len(securityGroupsSpec)) {
 				clusterScope.V(4).Info("Extra Security Group Rule activated")
 			} else {
 				clusterScope.V(2).Info("Create the desired securitygroup", "securityGroupName", securityGroupName)
