@@ -20,59 +20,59 @@ import clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 const (
 	NetReadyCondition             clusterv1.ConditionType = "NetReady"
-	NetCreationStartedReason                              = "NetCreationStarted"
-	NetReconciliationFailedReason                         = "NetReconciliationFailed"
+	NetCreationStartedReason      string                  = "NetCreationStarted"
+	NetReconciliationFailedReason string                  = "NetReconciliationFailed"
 )
 
 const (
 	SubnetsReadyCondition             clusterv1.ConditionType = "SubnetsReady"
-	SubnetsReconciliationFailedReason                         = "SubnetsReconciliationFailed"
+	SubnetsReconciliationFailedReason string                  = "SubnetsReconciliationFailed"
 )
 
 const (
 	InternetServicesReadyCondition clusterv1.ConditionType = "InternetServiceReady"
-	InternetServicesFailedReason                           = "InternetServiceFailed"
+	InternetServicesFailedReason   string                  = "InternetServiceFailed"
 )
 
 const (
 	NatServicesReadyCondition             clusterv1.ConditionType = "NatServicesReady"
-	NatServicesCreationStartedReason                              = "NatServicesCreationStarted"
-	NatServicesReconciliationFailedReason                         = "NatServicesReconciliationFailed"
+	NatServicesCreationStartedReason      string                  = "NatServicesCreationStarted"
+	NatServicesReconciliationFailedReason string                  = "NatServicesReconciliationFailed"
 )
 
 const (
 	RouteTablesReadyCondition            clusterv1.ConditionType = "RouteTablesReady"
-	RouteTableReconciliationFailedReason                         = "RouteTableReconciliationFailed"
+	RouteTableReconciliationFailedReason string                  = "RouteTableReconciliationFailed"
 )
 
 const (
 	VmReadyCondition                      clusterv1.ConditionType = "VmReady"
-	VmNotFoundReason                                              = "VmNotFound"
-	VmTerminatedReason                                            = "VmTerminated"
-	VmStoppedReason                                               = "VmStopped"
-	VmNotReadyReason                                              = "VmNotReady"
-	VmProvisionStartedReason                                      = "VmProvisionStarted"
-	VmProvisionFailedReason                                       = "VmProvisionFailed"
-	WaitingForClusterInfrastructureReason                         = "WaitingForClusterInfrastructure"
-	WaitingForBootstrapDataReason                                 = "WaitingForBoostrapData"
+	VmNotFoundReason                      string                  = "VmNotFound"
+	VmTerminatedReason                    string                  = "VmTerminated"
+	VmStoppedReason                       string                  = "VmStopped"
+	VmNotReadyReason                      string                  = "VmNotReady"
+	VmProvisionStartedReason              string                  = "VmProvisionStarted"
+	VmProvisionFailedReason               string                  = "VmProvisionFailed"
+	WaitingForClusterInfrastructureReason string                  = "WaitingForClusterInfrastructure"
+	WaitingForBootstrapDataReason         string                  = "WaitingForBoostrapData"
 )
 
 const (
 	SecurityGroupReadyCondition             clusterv1.ConditionType = "SecurityGroupsReady"
-	SecurityGroupReconciliationFailedReason                         = "SecurityGroupReconciliationFailed"
+	SecurityGroupReconciliationFailedReason string                  = "SecurityGroupReconciliationFailed"
 )
 
 const (
 	LoadBalancerReadyCondition clusterv1.ConditionType = "LoadBalancerReady"
-	LoadBalancerFailedReason                           = "LoadBalancerFailed"
+	LoadBalancerFailedReason   string                  = "LoadBalancerFailed"
 )
 
 const (
 	PublicIpsReadyCondition clusterv1.ConditionType = "PublicIpsReady"
-	PublicIpsFailedReason                           = "PublicIpsFailed"
+	PublicIpsFailedReason   string                  = "PublicIpsFailed"
 )
 
 const (
 	VolumeReadyCondition             clusterv1.ConditionType = "VolumeReady"
-	VolumeReconciliationFailedReason                         = "VolumeFailed"
+	VolumeReconciliationFailedReason string                  = "VolumeFailed"
 )

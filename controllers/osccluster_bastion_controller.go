@@ -351,15 +351,13 @@ func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScop
 		return reconcile.Result{}, err
 	}
 
-	var securityGroupIds []string
 	bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 	for _, bastionSecurityGroup := range *bastionSecurityGroups {
 		securityGroupName := bastionSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+		_, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
 	if bastion == nil {
 		clusterScope.V(2).Info("The desired bastion does not exist anymore", "bastionName", bastionName)

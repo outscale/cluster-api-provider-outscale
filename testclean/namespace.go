@@ -18,12 +18,13 @@ package test
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type NamespaceListInput struct {
@@ -80,7 +81,7 @@ func DeleteNamespaceList(ctx context.Context, input NamespaceListDeleteInput) bo
 }
 
 func WaitForNamespaceListAvailable(ctx context.Context, input NamespaceListInput) bool {
-	By(fmt.Sprintf("Waiting for namespace selected by options to be ready"))
+	By("Waiting for namespace selected by options to be ready")
 	Eventually(func() bool {
 		isNamespaceAvailable := GetNamespaceList(ctx, input)
 		return isNamespaceAvailable
@@ -89,7 +90,7 @@ func WaitForNamespaceListAvailable(ctx context.Context, input NamespaceListInput
 }
 
 func WaitForNamespaceListDelete(ctx context.Context, input NamespaceListDeleteInput) bool {
-	By(fmt.Sprintf("Wait for namespace selected by options to be ready"))
+	By("Wait for namespace selected by options to be ready")
 	Eventually(func() bool {
 		isNamespaceListDelete := DeleteNamespaceList(ctx, input)
 		return isNamespaceListDelete

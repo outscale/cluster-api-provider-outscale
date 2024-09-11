@@ -25,6 +25,8 @@ import (
 
 	"fmt"
 
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -32,7 +34,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
-	"testing"
 )
 
 var (
@@ -44,30 +45,12 @@ var (
 			},
 		},
 	}
-	defaultKeyClusterReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
-				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
-			},
-		},
-	}
+
 	defaultKeyPairInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			KeyPair: infrastructurev1beta1.OscKeypair{
 				Name:      "test-keypair",
 				PublicKey: generateSSHPublicKey(),
-			},
-		},
-	}
-
-	defaultKeyPairReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			KeyPair: infrastructurev1beta1.OscKeypair{
-				Name:       "test-keypair",
-				PublicKey:  generateSSHPublicKey(),
-				ResourceId: "test-keypair-uid",
 			},
 		},
 	}
@@ -315,23 +298,11 @@ func TestReconcileKeyPairGet(t *testing.T) {
 					},
 				},
 			}
-			keyPairCreated := osc.CreateKeypairResponse{
-				Keypair: &osc.KeypairCreated{
-					KeypairName: &keyPairName,
-				},
-			}
 			keyPairSpec.ResourceId = keyPairName
 			mockOscKeyPairInterface.
 				EXPECT().
 				GetKeyPair(gomock.Eq(keyPairName)).
 				Return(&(*key.Keypairs)[0], k.expReconcileKeyPairErr)
-
-			if &(*key.Keypairs)[0] == nil {
-				mockOscKeyPairInterface.
-					EXPECT().
-					CreateKeyPair(gomock.Eq(keyPairName)).
-					Return(keyPairCreated.Keypair, k.expReconcileKeyPairErr)
-			}
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
 			if err != nil {

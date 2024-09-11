@@ -18,12 +18,13 @@ package test
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type CapoClusterInput struct {
@@ -115,7 +116,7 @@ func WaitForCapoClusterAvailable(ctx context.Context, input CapoClusterInput) bo
 
 // WaitForCapoClusterListDelete wait capocluster to be deleted.
 func WaitForCapoClusterListDelete(ctx context.Context, input CapoClusterInputDeleteListInput) bool {
-	By(fmt.Sprintf("Wait for capoCluster selected by options to be ready"))
+	By("Wait for capoCluster selected by options to be ready")
 	Eventually(func() bool {
 		isCapoClusterListDelete := DeleteCapoClusterList(ctx, input)
 		return isCapoClusterListDelete
@@ -125,7 +126,7 @@ func WaitForCapoClusterListDelete(ctx context.Context, input CapoClusterInputDel
 
 // WaitForFindingCapoNamespace find capo Namespace.
 func WaitForFindingCapoNamespace(ctx context.Context, input CapoClusterGetNamespaceInput) string {
-	By(fmt.Sprintf("Wait for capoCluster selected by options to be deleted"))
+	By("Wait for capoCluster selected by options to be deleted")
 	Eventually(func() bool {
 		_, isCapoClusterNamespace := GetCapoClusterNamespace(ctx, input)
 		return isCapoClusterNamespace

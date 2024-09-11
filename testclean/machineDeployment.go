@@ -18,12 +18,13 @@ package test
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type CapoMachineDeploymentListInput struct {
@@ -84,7 +85,7 @@ func DeleteCapoMachineDeploymentList(ctx context.Context, input CapoMachineDeplo
 
 // WaitForCapoMachineDeploymentListAvailable wait machine to be available.
 func WaitForCapoMachineDeploymentListAvailable(ctx context.Context, input CapoMachineDeploymentListInput) bool {
-	By(fmt.Sprintf("Waiting for capoMachineDeployment selected by options to be ready"))
+	By("Waiting for capoMachineDeployment selected by options to be ready")
 	Eventually(func() bool {
 		isCapoMachineDeploymentListAvailable := GetCapoMachineDeploymentList(ctx, input)
 		return isCapoMachineDeploymentListAvailable
@@ -94,7 +95,7 @@ func WaitForCapoMachineDeploymentListAvailable(ctx context.Context, input CapoMa
 
 // WaitForCapoMachineDeploymentListDelete  wait machine to be deleted.
 func WaitForCapoMachineDeploymentListDelete(ctx context.Context, input CapoMachineDeploymentDeleteListInput) bool {
-	By(fmt.Sprintf("Wait for capoMachineDeployment selected by options to be deleted"))
+	By("Wait for capoMachineDeployment selected by options to be deleted")
 	Eventually(func() bool {
 		isCapoMachineDeploymentListDelete := DeleteCapoMachineDeploymentList(ctx, input)
 		return isCapoMachineDeploymentListDelete

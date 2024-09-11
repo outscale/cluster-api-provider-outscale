@@ -316,50 +316,6 @@ var (
 		},
 	}
 
-	defaultVmInitializeWithPublicIp = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
-				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-				},
-			},
-			Vm: infrastructurev1beta1.OscVm{
-				ClusterName: "test-cluster",
-				Name:        "test-vm",
-				ImageId:     "ami-00000000",
-				Role:        "controlplane",
-				DeviceName:  "/dev/sda1",
-				RootDisk: infrastructurev1beta1.OscRootDisk{
-					RootDiskSize: 30,
-					RootDiskIops: 1500,
-					RootDiskType: "gp2",
-				},
-				KeypairName:      "rke",
-				SubregionName:    "eu-west-2a",
-				SubnetName:       "test-subnet",
-				LoadBalancerName: "test-loadbalancer",
-				PublicIpName:     "test-publicip",
-				VmType:           "tinav3.c2r4p2",
-				Replica:          1,
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-					{
-						Name: "test-securitygroup",
-					},
-				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-					{
-						Name:      "test-privateip",
-						PrivateIp: "10.0.0.17",
-					},
-				},
-			},
-		},
-	}
-
 	defaultMultiVmInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
@@ -3440,14 +3396,6 @@ func TestReconcileVmGet(t *testing.T) {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 			linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
 
-			var privateIps []string
-			vmPrivateIps := machineScope.GetVmPrivateIps()
-			for _, vmPrivateIp := range *vmPrivateIps {
-				privateIp := vmPrivateIp.PrivateIp
-				privateIps = append(privateIps, privateIp)
-			}
-
-			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -3455,7 +3403,6 @@ func TestReconcileVmGet(t *testing.T) {
 				securityGroupName := vmSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 			var privateDnsName string
 			var privateIp string
@@ -3651,13 +3598,6 @@ func TestReconcileVmResourceId(t *testing.T) {
 				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
 			}
 
-			var privateIps []string
-			vmPrivateIps := machineScope.GetVmPrivateIps()
-			for _, vmPrivateIp := range *vmPrivateIps {
-				privateIp := vmPrivateIp.PrivateIp
-				privateIps = append(privateIps, privateIp)
-			}
-
 			tag := osc.Tag{
 				ResourceId: &vmId,
 			}
@@ -3675,7 +3615,6 @@ func TestReconcileVmResourceId(t *testing.T) {
 				}
 			}
 
-			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -3685,7 +3624,6 @@ func TestReconcileVmResourceId(t *testing.T) {
 				if vtc.expSecurityGroupFound {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -3949,7 +3887,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if err != nil {
-				t.Logf(err.Error())
+				t.Log(err.Error())
 				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
 				assert.Nil(t, vtc.expReconcileDeleteVmErr)
@@ -3995,7 +3933,6 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 				vmRef.ResourceMap[vmName] = vmId
 			}
 
-			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -4003,7 +3940,6 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 				securityGroupName := vmSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
 			linkPublicIpId := "eipassoc-" + publicIpName
@@ -4276,7 +4212,6 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 					Return(nil, vtc.expGetVmErr)
 			}
 
-			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -4286,7 +4221,6 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 				if vtc.expSecurityGroupFound {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
 			linkPublicIpId := "eipassoc-" + publicIpName
@@ -4393,7 +4327,6 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 				vmRef.ResourceMap[vmName] = vmId
 			}
 
-			var securityGroupIds []string
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			securityGroupKwName := "cluster-api-securitygroup-kw-uid"
@@ -4402,8 +4335,6 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 			securityGroupNodeName := "cluster-api-securitygroup-node-uid"
 			securityGroupNodeId := "sg-" + securityGroupNodeName
 			securityGroupsRef.ResourceMap[securityGroupNodeName] = securityGroupNodeId
-			securityGroupIds = append(securityGroupIds, securityGroupKwId)
-			securityGroupIds = append(securityGroupIds, securityGroupNodeId)
 			publicIpName := "cluster-api-publicip-uid"
 			linkPublicIpId := "eipassoc-" + publicIpName
 			linkPublicIpRef := machineScope.GetLinkPublicIpRef()

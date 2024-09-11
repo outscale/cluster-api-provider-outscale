@@ -18,6 +18,8 @@ package utils
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
@@ -25,7 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	podutil "k8s.io/kubectl/pkg/util/podutils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type PodListInput struct {
@@ -55,7 +56,7 @@ func IsPodReady(ctx context.Context, input PodListInput) bool {
 
 // WaitForPodToBeReady wait for pod to be ready
 func WaitForPodToBeReady(ctx context.Context, input PodListInput) {
-	By(fmt.Sprintf("Waiting for pod selected by options to be ready"))
+	By("Waiting for pod selected by options to be ready")
 	Eventually(func() bool {
 		isPodAvailableAndReady := IsPodReady(ctx, input)
 		return isPodAvailableAndReady

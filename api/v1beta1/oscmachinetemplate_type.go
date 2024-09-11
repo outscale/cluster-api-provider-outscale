@@ -50,7 +50,7 @@ type OscMachineTemplate struct {
 // +kubebuilder:object:root=true
 type OscMachineTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitemmpty"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OscMachineTemplate `json:"items"`
 }
 

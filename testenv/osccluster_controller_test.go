@@ -20,7 +20,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	network "net"
 	"net/http"
 	"os"
@@ -35,7 +35,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -240,9 +239,12 @@ func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 
 	defer response.Body.Close()
 
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return false, err
+	}
 	var res map[string]interface{}
-	json.Unmarshal([]byte(data), &res)
+	err = json.Unmarshal([]byte(data), &res)
 	if err != nil {
 		return false, err
 	}
@@ -301,9 +303,9 @@ func waitOscClusterToProvision(ctx context.Context, capoClusterKey client.Object
 	By("Wait capoCluster to be in provisioned phase")
 	Eventually(func() (string, error) {
 		capoCluster := &clusterv1.Cluster{}
-		k8sClient.Get(ctx, capoClusterKey, capoCluster)
+		err := k8sClient.Get(ctx, capoClusterKey, capoCluster)
 		fmt.Fprintf(GinkgoWriter, "capoClusterPhase: %v\n", capoCluster.Status.Phase)
-		return capoCluster.Status.Phase, nil
+		return capoCluster.Status.Phase, err
 	}, 5*time.Minute, 3*time.Second).Should(Equal("Provisioned"))
 }
 
@@ -312,9 +314,9 @@ func waitOscMachineToProvision(ctx context.Context, capoMachineKey client.Object
 	By("Wait capoMachine to be in provisioned phase")
 	Eventually(func() (string, error) {
 		capoMachine := &clusterv1.Machine{}
-		k8sClient.Get(ctx, capoMachineKey, capoMachine)
+		err := k8sClient.Get(ctx, capoMachineKey, capoMachine)
 		fmt.Fprintf(GinkgoWriter, "capoMachinePhase: %v\n", capoMachine.Status.Phase)
-		return capoMachine.Status.Phase, nil
+		return capoMachine.Status.Phase, err
 	}, 8*time.Minute, 15*time.Second).Should(Equal("Provisioned"))
 
 }
@@ -324,7 +326,10 @@ func waitOscInfraClusterToBeReady(ctx context.Context, oscInfraClusterKey client
 	By("Wait OscInfraCluster to be in ready status")
 	EventuallyWithOffset(1, func() bool {
 		oscInfraCluster := &infrastructurev1beta1.OscCluster{}
-		k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+		err := k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+		if err != nil {
+			return false
+		}
 		fmt.Fprintf(GinkgoWriter, "oscInfraClusterReady: %v\n", oscInfraCluster.Status.Ready)
 		return oscInfraCluster.Status.Ready
 	}, 5*time.Minute, 3*time.Second).Should(BeTrue())
@@ -335,7 +340,10 @@ func waitOscInfraMachineToBeReady(ctx context.Context, oscInfraMachineKey client
 	By("Wait OscInfraMachine to be in ready status")
 	EventuallyWithOffset(1, func() bool {
 		oscInfraMachine := &infrastructurev1beta1.OscMachine{}
-		k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
+		err := k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
+		if err != nil {
+			return false
+		}
 		fmt.Fprintf(GinkgoWriter, "oscInfraMachineReady: %v\n", oscInfraMachine.Status.Ready)
 		return oscInfraMachine.Status.Ready
 	}, 8*time.Minute, 15*time.Second).Should(BeTrue())
@@ -457,8 +465,7 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 	By("Check OscPublicIp is provisioned")
 	Eventually(func() error {
 		securitysvc := security.NewService(ctx, clusterScope)
-		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-		publicIpsSpec = clusterScope.GetPublicIp()
+		publicIpsSpec := clusterScope.GetPublicIp()
 		var publicIpId string
 		var publicIpIds []string
 		for _, publicIpSpec := range publicIpsSpec {
@@ -478,36 +485,6 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 			return fmt.Errorf("PublicIpId %s does not exist", publicIpId)
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscPublicIp \n")
-		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
-}
-
-// checkOscVolumeToBeProvisioned will validate that OscVolume is provisionned
-func checkOscVolumeToBeProvisioned(ctx context.Context, oscInfraMachineKey client.ObjectKey, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
-	By("Check OscVolume is provisioned")
-	Eventually(func() error {
-		volumeSvc := storage.NewService(ctx, clusterScope)
-		var volumesSpec []*infrastructurev1beta1.OscVolume
-		volumesSpec = machineScope.GetVolume()
-		var volumeId string
-		var volumeIds []string
-		for _, volumeSpec := range volumesSpec {
-			volumeId = volumeSpec.ResourceId
-			volumeIds = append(volumeIds, volumeId)
-		}
-		validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
-		fmt.Fprintf(GinkgoWriter, "Check VolumeIds has been received %s\n", validVolumeIds)
-		if err != nil {
-			return err
-		}
-		for _, volumeSpec := range volumesSpec {
-			volumeId := volumeSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check VolumeId %s\n", volumeId)
-		}
-		if !controllers.Contains(validVolumeIds, volumeId) {
-			return fmt.Errorf("VolumeId %s does not exist", volumeId)
-		}
-		fmt.Fprintf(GinkgoWriter, "Found OscVolume \n")
 		return nil
 	}, 5*time.Minute, 1*time.Second).Should(BeNil())
 }
@@ -665,28 +642,46 @@ func checkOscLoadBalancerToBeProvisioned(ctx context.Context, oscInfraClusterKey
 func getClusterScope(ctx context.Context, capoClusterKey client.ObjectKey, oscInfraClusterKey client.ObjectKey) (clusterScope *scope.ClusterScope, err error) {
 	By("Get ClusterScope")
 	capoCluster := &clusterv1.Cluster{}
-	k8sClient.Get(ctx, capoClusterKey, capoCluster)
+	err = k8sClient.Get(ctx, capoClusterKey, capoCluster)
+	if err != nil {
+		return
+	}
 	oscInfraCluster := &infrastructurev1beta1.OscCluster{}
-	k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	err = k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	if err != nil {
+		return
+	}
 	clusterScope, err = scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     k8sClient,
 		Cluster:    capoCluster,
 		OscCluster: oscInfraCluster,
 	})
-	return clusterScope, err
+	return
 }
 
 // getMachineScope will setup machinescope use for our functional test
 func getMachineScope(ctx context.Context, capoMachineKey client.ObjectKey, capoClusterKey client.ObjectKey, oscInfraMachineKey client.ObjectKey, oscInfraClusterKey client.ObjectKey) (machineScope *scope.MachineScope, err error) {
 	By("Get MachineScope")
 	capoCluster := &clusterv1.Cluster{}
-	k8sClient.Get(ctx, capoClusterKey, capoCluster)
+	err = k8sClient.Get(ctx, capoClusterKey, capoCluster)
+	if err != nil {
+		return
+	}
 	capoMachine := &clusterv1.Machine{}
-	k8sClient.Get(ctx, capoMachineKey, capoMachine)
+	err = k8sClient.Get(ctx, capoMachineKey, capoMachine)
+	if err != nil {
+		return
+	}
 	oscInfraCluster := &infrastructurev1beta1.OscCluster{}
-	k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	err = k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	if err != nil {
+		return
+	}
 	oscInfraMachine := &infrastructurev1beta1.OscMachine{}
-	k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
+	err = k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
+	if err != nil {
+		return
+	}
 	machineScope, err = scope.NewMachineScope(scope.MachineScopeParams{
 		Client:     k8sClient,
 		Cluster:    capoCluster,

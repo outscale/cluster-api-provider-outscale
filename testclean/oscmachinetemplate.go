@@ -18,12 +18,13 @@ package test
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type OscInfraMachineTemplateInput struct {
@@ -125,7 +126,7 @@ func WaitForOscInfraMachineTemplateAvailable(ctx context.Context, input OscInfra
 
 // WaitForOscInfraMachineTemplateListAvailable wait for oscmachinetemplate to be available
 func WaitForOscInfraMachineTemplateListAvailable(ctx context.Context, input OscInfraMachineTemplateListInput) bool {
-	By(fmt.Sprintf("Waiting for OscInfraMachineTemplate selected options to be ready"))
+	By("Waiting for OscInfraMachineTemplate selected options to be ready")
 	Eventually(func() bool {
 		isOscInfraMachineTemplateListAvailable := GetOscInfraMachineTemplateList(ctx, input)
 		return isOscInfraMachineTemplateListAvailable
@@ -135,7 +136,7 @@ func WaitForOscInfraMachineTemplateListAvailable(ctx context.Context, input OscI
 
 // WaitForOscInfraMachineTemplateListDelete wait for oscMachineTemplate to be deleted.
 func WaitForOscInfraMachineTemplateListDelete(ctx context.Context, input OscInfraMachineTemplateListDeleteInput) bool {
-	By(fmt.Sprintf("Waiting for OscInfraMachineTemplate selected by options to be deleted"))
+	By("Waiting for OscInfraMachineTemplate selected by options to be deleted")
 	Eventually(func() bool {
 		isOscInfraMachineTemplateListDelete := DeleteOscInfraMachineTemplateList(ctx, input)
 		return isOscInfraMachineTemplateListDelete

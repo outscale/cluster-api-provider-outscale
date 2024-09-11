@@ -114,7 +114,7 @@ type OscLoadBalancerListener struct {
 	LoadBalancerPort int32 `json:"loadbalancerport,omitempty"`
 	// the routing protocol ('HTTP'|'TCP')
 	// +optional
-	LoadBalancerProtocol string `json:"loadbalancerprotocol,omiempty"`
+	LoadBalancerProtocol string `json:"loadbalancerprotocol,omitempty"`
 }
 
 type OscLoadBalancerHealthCheck struct {
@@ -129,7 +129,7 @@ type OscLoadBalancerHealthCheck struct {
 	Port int32 `json:"port,omitempty"`
 	// The HealthCheck protocol ('HTTP'|'TCP')
 	// +optional
-	Protocol string `json:"protocol,omitepty"`
+	Protocol string `json:"protocol,omitempty"`
 	// the Timeout to consider VM unhealthy
 	// +optional
 	Timeout int32 `json:"timeout,omitempty"`
@@ -258,7 +258,7 @@ type OscRoute struct {
 
 type OscPrivateIpElement struct {
 	Name      string `json:"name,omitempty"`
-	PrivateIp string `json:"privateIp,omiteempty"`
+	PrivateIp string `json:"privateIp,omitempty"`
 }
 
 type OscSecurityGroupElement struct {

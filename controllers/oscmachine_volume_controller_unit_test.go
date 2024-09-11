@@ -414,13 +414,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
 			}
 
-			var privateIps []string
-			vmPrivateIps := machineScope.GetVmPrivateIps()
-			for _, vmPrivateIp := range *vmPrivateIps {
-				privateIp := vmPrivateIp.PrivateIp
-				privateIps = append(privateIps, privateIp)
-			}
-
 			tag := osc.Tag{
 				ResourceId: &vmId,
 			}
@@ -438,7 +431,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 				}
 			}
 
-			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -448,7 +440,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 				if vtc.expSecurityGroupFound {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
-				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
 			loadBalancerSpec := clusterScope.GetLoadBalancer()

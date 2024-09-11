@@ -20,12 +20,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
-	"k8s.io/client-go/rest"
-	"os"
-	"path/filepath"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,9 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"strings"
-	"testing"
-	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,11 +66,9 @@ var (
 )
 
 var (
-	cfg              *rest.Config
-	k8sClient        client.Client
-	testEnv          *envtest.Environment
-	reconcileTimeout time.Duration
-	cancel           context.CancelFunc
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+	cancel    context.CancelFunc
 )
 
 // Test suite global vars.
@@ -194,7 +192,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	By(fmt.Sprintf("Loading the e2e test configuration from %q", configPath))
 	e2eConfig = loadE2EConfig(ctx, configPath)
 
-	By(fmt.Sprintf("Loading the e2e test"))
+	By("Loading the e2e test")
 	By(fmt.Sprintf("Creating a clusterctl local repositorry into %q", artifactFolder))
 	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"), useCni)
 
@@ -280,7 +278,7 @@ func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2E
 	}
 
 	if useCni {
-		By(fmt.Sprintf("Find CNI"))
+		By("Find CNI")
 		Expect(config.Variables).To(HaveKey(capi_e2e.CNIPath), "Missing %s variable in the config", capi_e2e.CNIPath)
 		cniPath := config.GetVariable(capi_e2e.CNIPath)
 		Expect(cniPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", capi_e2e.CNIPath)
@@ -289,7 +287,7 @@ func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2E
 	}
 
 	if useCcm {
-		By(fmt.Sprintf("Find CCm"))
+		By("Find CCm")
 		Expect(config.Variables).To(HaveKey("CCM"), "Missing %s variable in the config", "CCM")
 		ccmPath := config.GetVariable("CCM")
 		Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", "CCM")

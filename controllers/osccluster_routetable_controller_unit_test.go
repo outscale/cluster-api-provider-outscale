@@ -1956,10 +1956,6 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 
-			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			if len(linkRouteTableRef) == 0 {
-				linkRouteTableRef = make(map[string][]string)
-			}
 			subnetRef := clusterScope.GetSubnetRef()
 			subnetRef.ResourceMap = make(map[string]string)
 
@@ -2797,8 +2793,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 			natServiceRef.ResourceMap = make(map[string]string)
 			natServiceRef.ResourceMap[natServiceName] = natServiceId
 
-			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef = make(map[string][]string)
+			linkRouteTableRef := make(map[string][]string)
 
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
@@ -2916,8 +2911,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			routeRef := clusterScope.GetRouteRef()
 			routeRef.ResourceMap = make(map[string]string)
 
-			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			linkRouteTableRef = make(map[string][]string)
+			linkRouteTableRef := make(map[string][]string)
 
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)

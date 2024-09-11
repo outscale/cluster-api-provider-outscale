@@ -25,9 +25,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 type DeploymentInput struct {
@@ -66,7 +67,7 @@ func CreateDeployment(ctx context.Context, input CreateDeploymentInput) bool {
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32Ptr(1),
+			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": input.Name,

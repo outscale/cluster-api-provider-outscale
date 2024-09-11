@@ -24,7 +24,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 
@@ -51,7 +50,6 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg              *rest.Config
 	k8sClient        client.Client
 	testEnv          *envtest.Environment
 	reconcileTimeout time.Duration
@@ -80,8 +78,6 @@ func TestAPIs(t *testing.T) {
 
 	RunSpecs(t, "capo testclean")
 }
-
-const kubeconfigEnvVar = "KUBECONFIG"
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
@@ -112,6 +108,7 @@ var _ = BeforeSuite(func() {
 		Recorder:         k8sManager.GetEventRecorderFor("osc-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(context.Background(), k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

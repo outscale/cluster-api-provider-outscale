@@ -97,8 +97,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	subnetsSpec = clusterScope.GetSubnet()
+	subnetsSpec := clusterScope.GetSubnet()
 
 	subnetRef := clusterScope.GetSubnetRef()
 	networkSpec := clusterScope.GetNetwork()
@@ -147,12 +146,12 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 // reconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
 func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
 	osccluster := clusterScope.OscCluster
-	subnetsSpec := clusterScope.GetSubnet()
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
 	networkSpec := clusterScope.GetNetwork()
+	var subnetsSpec []*infrastructurev1beta1.OscSubnet
 	if networkSpec.Subnets == nil {
 		networkSpec.SetSubnetDefaultValue()
 		subnetsSpec = networkSpec.Subnets
