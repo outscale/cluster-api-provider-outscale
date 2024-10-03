@@ -5,6 +5,8 @@ on:
     paths:
       - "**.go"
       - "**.yaml"
+      - "**.mod"
+      - "**.sum"
       - "!capm.yaml"
       - "!osc-secret.yaml"
       - "!example/**.yaml"
@@ -37,10 +39,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+	  go-version-file: './go.mod'
       - name: check-gofmt
         run: make checkfmt
         shell: bash
@@ -54,6 +57,6 @@ jobs:
         run: pip install yamllint
       - name: check with yamlint
         run: yamllint -c .github/linters/yaml-lint.yaml . --format github
-      - name: Lint
-        run: make vet
+      - name: Run make build
+        run: make build
         shell: bash
