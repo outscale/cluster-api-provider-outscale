@@ -228,19 +228,19 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			var unexpectedErr bool = true
 
 			if httpResCode == "9085" && httpResType == "ResourceConflict" {
-				clusterScope.V(2).Info("LoadBalancer is not deleting yet")
+				clusterScope.V(2).Info("LoadBalancer is not deleted yet")
 				unexpectedErr = false
 			}
 			if unexpectedErr {
 				return reconcile.Result{}, fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster %s/%s", clusterScope.GetNamespace(), clusterScope.GetName())
 			}
-			clusterScope.V(2).Info("Wait until loadBalancer is deleting")
+			clusterScope.V(2).Info("Wait until loadBalancer is deleted")
 		} else {
 			loadbalancer_delete = true
 		}
 
 		if clock_time.Now().After(currentTimeout) {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup because to waiting loadbalancer to be delete timeout  for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup because to waiting loadbalancer to be delete timeout for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
 
 	}
