@@ -507,12 +507,15 @@ func TestReconcileLoadBalancer(t *testing.T) {
 		expConfigureLoadBalancerFound bool
 		expDeleteOutboundSgRule       bool
 		expCreateLoadBalancerTag      bool
+		expCheckRegisterVmFound       bool
+		expectedVmIds                 []string
+		expReconcileLoadBalancerErr   error
 		expDeleteOutboundSgRuleErr    error
 		expDescribeLoadBalancerErr    error
 		expCreateLoadBalancerErr      error
 		expConfigureLoadBalancerErr   error
 		expCreateLoadbalancerTagErr   error
-		expReconcileLoadBalancerErr   error
+		expCheckRegisterVmErr         error
 	}{
 		{
 			name:                          "create loadBalancer (first time reconcile loop)",
@@ -524,6 +527,9 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expConfigureLoadBalancerFound: true,
 			expDeleteOutboundSgRule:       true,
 			expCreateLoadBalancerTag:      true,
+			expCheckRegisterVmFound:       true,
+			expectedVmIds:                 []string{"vm-123", "vm-456"},
+			expCheckRegisterVmErr:         nil,
 			expDeleteOutboundSgRuleErr:    nil,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
@@ -532,7 +538,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expReconcileLoadBalancerErr:   nil,
 		},
 		{
-			name:                          "create loadBalancer (first time reconcile loop)",
+			name:                          "failed to tag loadBalancer",
 			spec:                          defaultLoadBalancerInitialize,
 			expLoadBalancerFound:          false,
 			expSubnetFound:                true,
@@ -541,6 +547,8 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expConfigureLoadBalancerFound: true,
 			expDeleteOutboundSgRule:       true,
 			expCreateLoadBalancerTag:      true,
+			expCheckRegisterVmFound:       false,
+			expCheckRegisterVmErr:         nil,
 			expDeleteOutboundSgRuleErr:    nil,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
@@ -558,11 +566,13 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expConfigureLoadBalancerFound: false,
 			expDeleteOutboundSgRule:       false,
 			expCreateLoadBalancerTag:      false,
+			expCheckRegisterVmFound:       false,
 			expDeleteOutboundSgRuleErr:    fmt.Errorf("DeleteSecurityGroupsRules generic error"),
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expCreateLoadbalancerTagErr:   nil,
+			expCheckRegisterVmErr:         nil,
 			expReconcileLoadBalancerErr:   fmt.Errorf("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
 		},
 		{
@@ -575,12 +585,29 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expConfigureLoadBalancerFound: false,
 			expDeleteOutboundSgRule:       true,
 			expCreateLoadBalancerTag:      false,
+			expCheckRegisterVmFound:       false,
 			expDeleteOutboundSgRuleErr:    nil,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expCreateLoadbalancerTagErr:   nil,
+			expCheckRegisterVmErr:         nil,
 			expConfigureLoadBalancerErr:   fmt.Errorf("ConfigureLoadBalancer generic error"),
 			expReconcileLoadBalancerErr:   fmt.Errorf("ConfigureLoadBalancer generic error Can not configure healthcheck for Osccluster test-system/test-osc"),
+		},
+		{
+			name:                          "failed to check backend VM registration",
+			spec:                          defaultLoadBalancerInitialize,
+			expLoadBalancerFound:          false,
+			expSubnetFound:                true,
+			expSecurityGroupFound:         true,
+			expCreateLoadBalancerFound:    true,
+			expConfigureLoadBalancerFound: true,
+			expDeleteOutboundSgRule:       true,
+			expCreateLoadBalancerTag:      true,
+			expCheckRegisterVmFound:       true,
+			expectedVmIds:                 []string{"vm-123", "vm-456"},
+			expCheckRegisterVmErr:         fmt.Errorf("CheckRegisterVm generic error"),
+			expReconcileLoadBalancerErr:   fmt.Errorf("Error ensuring all backend VMs are registered: CheckRegisterVm generic error"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -610,6 +637,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 				LoadBalancer: &osc.LoadBalancer{
 					LoadBalancerName: &loadBalancerName,
 					DnsName:          &loadBalancerDnsName,
+					BackendVmIds:     &lbtc.expectedVmIds,
 				},
 			}
 			readLoadBalancers := osc.ReadLoadBalancersResponse{
@@ -678,6 +706,12 @@ func TestReconcileLoadBalancer(t *testing.T) {
 						CreateLoadBalancerTag(gomock.Eq(&loadBalancerSpec), gomock.Eq(nameTag)).
 						Return(lbtc.expCreateLoadbalancerTagErr)
 				}
+				if lbtc.expCheckRegisterVmFound {
+					mockOscLoadBalancerInterface.
+						EXPECT().
+						CheckLoadBalancerRegisterVm(gomock.Any(), gomock.Any(), gomock.Eq(lbtc.expectedVmIds), gomock.Eq(&loadBalancerSpec)).
+						Return(lbtc.expCheckRegisterVmErr)
+				}
 			}
 
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
@@ -703,6 +737,9 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 		expGetLoadBalancerTagFound    bool
 		expCreateLoadBalancerTagFound bool
 		expGetBadLoadBalancerTagFound bool
+		expCheckRegisterVmFound       bool
+		expectedVmIds                 []string
+		expCheckRegisterVmErr         error
 		expCreateLoadBalancerErr      error
 		expDescribeLoadBalancerErr    error
 		expConfigureLoadBalancerErr   error
@@ -719,6 +756,9 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			expCreateLoadBalancerTagFound: false,
 			expGetLoadBalancerTagFound:    true,
 			expGetBadLoadBalancerTagFound: false,
+			expCheckRegisterVmFound:       true,
+			expectedVmIds:                 []string{"vm-123", "vm-456"},
+			expCheckRegisterVmErr:         nil,
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
@@ -735,6 +775,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			expCreateLoadBalancerTagFound: false,
 			expGetLoadBalancerTagFound:    false,
 			expGetBadLoadBalancerTagFound: false,
+			expCheckRegisterVmFound:       false,
 			expDescribeLoadBalancerErr:    fmt.Errorf("GetLoadBalancer generic error"),
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
@@ -771,6 +812,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 				LoadBalancer: &osc.LoadBalancer{
 					LoadBalancerName: &loadBalancerName,
 					DnsName:          &loadBalancerDnsName,
+					BackendVmIds:     &lbtc.expectedVmIds,
 				},
 			}
 			readLoadBalancers := osc.ReadLoadBalancersResponse{
@@ -803,6 +845,12 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 						EXPECT().
 						GetLoadBalancerTag(gomock.Eq(&loadBalancerSpec)).
 						Return(&readLoadBalancerTag[0], lbtc.expGetLoadBalancerTagErr)
+				}
+				if lbtc.expCheckRegisterVmFound {
+					mockOscLoadBalancerInterface.
+						EXPECT().
+						CheckLoadBalancerRegisterVm(gomock.Any(), gomock.Any(), gomock.Eq(lbtc.expectedVmIds), gomock.Eq(&loadBalancerSpec)).
+						Return(lbtc.expCheckRegisterVmErr)
 				}
 			} else {
 				mockOscLoadBalancerInterface.

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -214,6 +215,14 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not tag loadBalancer for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
+	}
+
+	// Define the expected VMs that should be registered with the load balancer.
+	expectedVmIds := loadbalancer.GetBackendVmIds()
+	// Use CheckLoadBalancerRegisterVm to ensure all expected VMs are registered.
+	err = loadBalancerSvc.CheckLoadBalancerRegisterVm(10*time.Second, 5*time.Minute, expectedVmIds, loadBalancerSpec)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("Error ensuring all backend VMs are registered: %w", err)
 	}
 	controlPlaneEndpoint := *loadbalancer.DnsName
 	clusterScope.V(4).Info("Set controlPlaneEndpoint", "endpoint", controlPlaneEndpoint)
