@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -331,6 +332,10 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 			clusterScope.V(4).Info("Create the desired securityGroupRule", "securityGroupRuleName", securityGroupRuleName)
 			securityGroupFromSecurityGroupRule, err := securityGroupSvc.CreateSecurityGroupRule(associateSecurityGroupId, Flow, IpProtocol, IpRange, targetSecurityGroupId, FromPortRange, ToPortRange)
 			if err != nil {
+				if strings.Contains(err.Error(), "409 Conflict") {
+					clusterScope.V(4).Info("Rule already exists, ignoring 409 Conflict", "securityGroupRuleName", securityGroupRuleName)
+					continue
+				}
 				return reconcile.Result{}, fmt.Errorf("%w cannot create securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 			}
 			securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupFromSecurityGroupRule.GetSecurityGroupId()

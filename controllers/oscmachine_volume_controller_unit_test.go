@@ -361,7 +361,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expLoadBalancerSecurityGroupFound: false,
 			expTagFound:                       false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                              "failed to get tag",

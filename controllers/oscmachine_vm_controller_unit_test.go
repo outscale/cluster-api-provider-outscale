@@ -3597,7 +3597,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 			expTagFound:                       false,
 			expCreatePublicIpFound:            false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                              "failed to get tag",
@@ -4231,7 +4231,7 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 			expGetVmFound:           true,
 			expGetVmErr:             nil,
 			expSecurityGroupFound:   false,
-			expReconcileDeleteVmErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileDeleteVmErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                    "failed to get vm",
