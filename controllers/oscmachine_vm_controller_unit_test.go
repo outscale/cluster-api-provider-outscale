@@ -2897,7 +2897,193 @@ func TestReconcileVmGet(t *testing.T) {
 		})
 	}
 }
-*/
+
+// TestReconcileVmResourceId has several tests to cover the code of the function reconcileVm
+func TestReconcileVmResourceId(t *testing.T) {
+	vmTestCases := []struct {
+		name                              string
+		clusterSpec                       infrastructurev1beta1.OscClusterSpec
+		machineSpec                       infrastructurev1beta1.OscMachineSpec
+		expVolumeFound                    bool
+		expSubnetFound                    bool
+		expTagFound                       bool
+		expPublicIpFound                  bool
+		expLinkPublicIpFound              bool
+		expSecurityGroupFound             bool
+		expLoadBalancerSecurityGroupFound bool
+		expCreatePublicIpFound            bool
+		expReadTagErr                     error
+		expReconcileVmErr                 error
+	}{
+		{
+			name:                              "Volume does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmVolumeInitialize,
+			expVolumeFound:                    false,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-volume-uid does not exist"),
+		},
+		{
+			name:                              "Volume does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    false,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-subnet-uid does not exist"),
+		},
+		{
+			name:                              "PublicIp does not exist on clusterScope",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  false,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-publicip-uid does not exist"),
+		},
+		{
+			name:                              "SecurityGroup does not exist ",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             false,
+			expLoadBalancerSecurityGroupFound: false,
+			expTagFound:                       false,
+			expCreatePublicIpFound:            false,
+			expReadTagErr:                     nil,
+			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
+		},
+		{
+			name:                              "failed to get tag",
+			clusterSpec:                       defaultVmClusterInitialize,
+			machineSpec:                       defaultVmInitialize,
+			expVolumeFound:                    true,
+			expSubnetFound:                    true,
+			expPublicIpFound:                  true,
+			expLinkPublicIpFound:              true,
+			expSecurityGroupFound:             true,
+			expLoadBalancerSecurityGroupFound: true,
+			expTagFound:                       true,
+			expCreatePublicIpFound:            false,
+			expReadTagErr:                     fmt.Errorf("ReadTag generic error"),
+			expReconcileVmErr:                 fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
+		},
+	}
+	for _, vtc := range vmTestCases {
+		t.Run(vtc.name, func(t *testing.T) {
+			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
+			vmId := "i-" + vmName
+			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
+			volumeId := "vol-" + volumeName
+			volumeRef := machineScope.GetVolumeRef()
+			volumeRef.ResourceMap = make(map[string]string)
+			if vtc.expVolumeFound {
+				volumeRef.ResourceMap[volumeName] = volumeId
+			}
+
+			subnetName := vtc.machineSpec.Node.Vm.SubnetName + "-uid"
+			subnetId := "subnet-" + subnetName
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
+			if vtc.expSubnetFound {
+				subnetRef.ResourceMap[subnetName] = subnetId
+			}
+
+			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
+			publicIpId := "eipalloc-" + publicIpName
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
+			if vtc.expPublicIpFound {
+				publicIpRef.ResourceMap[publicIpName] = publicIpId
+			}
+
+			linkPublicIpId := "eipassoc-" + publicIpName
+			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
+			linkPublicIpRef.ResourceMap = make(map[string]string)
+			if vtc.expLinkPublicIpFound {
+				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
+			}
+
+			var privateIps []string
+			vmPrivateIps := machineScope.GetVmPrivateIps()
+			for _, vmPrivateIp := range *vmPrivateIps {
+				privateIp := vmPrivateIp.PrivateIp
+				privateIps = append(privateIps, privateIp)
+			}
+
+			tag := osc.Tag{
+				ResourceId: &vmId,
+			}
+			if vtc.expVolumeFound && vtc.expSubnetFound && vtc.expPublicIpFound && vtc.expLinkPublicIpFound && vtc.expSecurityGroupFound {
+				if vtc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						Return(&tag, vtc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						Return(nil, vtc.expReadTagErr)
+				}
+			}
+
+			var securityGroupIds []string
+			vmSecurityGroups := machineScope.GetVmSecurityGroups()
+			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+			securityGroupsRef.ResourceMap = make(map[string]string)
+			for _, vmSecurityGroup := range *vmSecurityGroups {
+				securityGroupName := vmSecurityGroup.Name + "-uid"
+				securityGroupId := "sg-" + securityGroupName
+				if vtc.expSecurityGroupFound {
+					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
+				}
+				securityGroupIds = append(securityGroupIds, securityGroupId)
+			}
+
+			loadBalancerSpec := clusterScope.GetLoadBalancer()
+			loadBalancerSpec.SetDefaultValue()
+			loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
+			loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-uid"
+			loadBalancerSecurityGroupId := "sg-" + loadBalancerSecurityGroupClusterScopeName
+			if vtc.expLoadBalancerSecurityGroupFound {
+				securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName] = loadBalancerSecurityGroupId
+			}
+
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			if err != nil {
+				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+			} else {
+				assert.Nil(t, vtc.expReconcileVmErr)
+			}
+			t.Logf("find reconcileVm %v\n", reconcileVm)
+		})
+	}
+}*/
+
 // TestReconcileDeleteVm has several tests to cover the code of the function reconcileDeleteVm
 func TestReconcileDeleteVm(t *testing.T) {
 	vmMachine1 := defaultVmReconcile
@@ -3260,7 +3446,7 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 			expGetVmFound:           true,
 			expGetVmErr:             nil,
 			expSecurityGroupFound:   false,
-			expReconcileDeleteVmErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileDeleteVmErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                    "failed to get vm",

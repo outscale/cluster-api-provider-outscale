@@ -733,7 +733,7 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 			expNatServiceFound:              true,
 			expGetNatServiceErr:             nil,
 			expDeleteNatServiceErr:          fmt.Errorf("DeleteNatService generic error"),
-			expReconcileDeleteNatServiceErr: fmt.Errorf("DeleteNatService generic error Can not delete natService for Osccluster test-system/test-osc"),
+			expReconcileDeleteNatServiceErr: fmt.Errorf("DeleteNatService generic error cannot delete natService for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
