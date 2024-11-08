@@ -58,8 +58,6 @@ var (
 
 // Setup set osccluster and clusterScope
 func Setup(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope) {
-	t.Logf("Validate to %s", name)
-
 	oscCluster := infrastructurev1beta1.OscCluster{
 		Spec: spec,
 		ObjectMeta: metav1.ObjectMeta{

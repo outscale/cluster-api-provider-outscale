@@ -856,11 +856,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 						{
-							Name:        "cluster-api-securitygroups",
-							Description: "securitygroup",
+							Name:                      "cluster-api-securitygroups",
+							Description:               "Security group for cluster API",
+							DeleteDefaultOutboundRule: false, // Do not delete the default outbound rule
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
-									Name:          "cluster-api-securitygrouprule",
+									Name:          "inbound-kube-api",
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "0.0.0.0/0",
@@ -874,6 +875,13 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									IpRange:       "0.0.0.0/0",
 									FromPortRange: 80,
 									ToPortRange:   80,
+									TargetSecurityGroupName: "cluster-api-securitygroups",
+								},
+								{
+									Name:       "outbound-all",
+									Flow:       "Outbound",
+									IpProtocol: "-1", // All protocols
+									IpRange:    "0.0.0.0/0",
 								},
 							},
 						},
@@ -1011,6 +1019,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						{
 							Name:        "cluster-api-securitygroups-kw",
 							Description: "Security Group with cluster-api",
+							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
 									Name:          "cluster-api-securitygrouprule-api-kubelet-kw",
@@ -1049,6 +1058,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						{
 							Name:        "cluster-api-securitygroups-kcp",
 							Description: "Security Group with cluster-api",
+							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
 									Name:          "cluster-api-securitygrouprule-api-kw",
@@ -1087,6 +1097,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						{
 							Name:        "cluster-api-securitygroup-lb",
 							Description: "Security Group with cluster-api",
+							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
 									Name:          "cluster-api-securitygrouprule-lb",
