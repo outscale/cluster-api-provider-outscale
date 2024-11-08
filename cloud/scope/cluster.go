@@ -270,15 +270,15 @@ func (s *ClusterScope) GetIpSubnetRange(Name string) string {
 	return ""
 }
 
-// GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
+// GetSecurityGroupRule returns slices of securityGroupRule associated with the given securityGroup Name.
+// If no matching securityGroup is found, it returns a pointer to an empty slice.
 func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
-	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
-	for _, securityGroup := range securityGroups {
+	for _, securityGroup := range s.OscCluster.Spec.Network.SecurityGroups {
 		if securityGroup.Name == Name {
 			return &securityGroup.SecurityGroupRules
 		}
 	}
-	return nil
+	return new([]infrastructurev1beta1.OscSecurityGroupRule) // Return pointer to an empty slice
 }
 
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with bastion uid associate with resource response id)
