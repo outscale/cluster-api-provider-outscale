@@ -33,29 +33,61 @@ on:
       - "!hack/json-format/Makefile"
       - "!hack/json-format/Cargo.*"
       - "!hack/json-format/tests/*.rs"
+
 jobs:
   docker:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Docker Lint
-      run: bash -c "make dockerlint"
-    - name: Build and Push Docker image
-      run: |
-        make docker-buildx
-      env:
-        IMG: cluster-api-outscale-controller:${{ github.sha }}
-        DOCKER_BUILDKIT: 1
-    - name: Trivy-Scan
-      run: bash -c "make trivy-scan"
-      env:
-        IMG: cluster-api-outscale-controller:${{ github.sha }}
-    - name: Trivy-Ignore-Check
-      run: bash -c "make trivy-ignore-check"
-      env:
-        IMG: cluster-api-outscale-controller:${{ github.sha }}
-    - name: Upload Scan if errors
-      if: ${{ always() && github.event_name != 'pull_request' }}
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: './.trivyscan/report.sarif'
+      - uses: actions/checkout@v3
+
+      # Cache Trivy Database
+      - name: Cache Trivy DB
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/trivy/db              # This is where Trivy DB will be cached locally
+          key: ${{ runner.os }}-trivy-db       # Unique cache key based on OS
+          restore-keys: |
+            ${{ runner.os }}-trivy-db          # Fallback key if the exact cache key isn't available
+
+      # Download Trivy DB only if cache is missing or outdated
+      - name: Download Trivy DB
+        run: |
+          docker run --rm \
+            -v $HOME/.cache/trivy/db:/root/.cache/trivy/db \
+            aquasec/trivy:latest image --download-db-only
+
+      # Docker Lint
+      - name: Docker Lint
+        run: bash -c "make dockerlint"
+
+      # Build and Push Docker Image
+      - name: Build and Push Docker Image
+        run: |
+          make docker-buildx
+        env:
+          IMG: cluster-api-outscale-controller:${{ github.sha }}
+          DOCKER_BUILDKIT: 1
+
+      # Trivy Scan
+      - name: Trivy Scan
+        run: bash -c "make trivy-scan"
+        env:
+          IMG: cluster-api-outscale-controller:${{ github.sha }}
+        # Mount cached Trivy DB to avoid redundant downloads
+        with:
+          args: |
+            -v $HOME/.cache/trivy/db:/root/.cache/trivy/db
+
+      # Trivy Ignore Check
+      - name: Trivy Ignore Check
+        run: bash -c "make trivy-ignore-check"
+        env:
+          IMG: cluster-api-outscale-controller:${{ github.sha }}
+
+      # Upload Trivy SARIF report if errors
+      - name: Upload Scan if Errors
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: './.trivyscan/report.sarif'
