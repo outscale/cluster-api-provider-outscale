@@ -368,11 +368,18 @@ func reconcileDeleteSecurityGroupsRule(ctx context.Context, clusterScope *scope.
 	IpRange := securityGroupRuleSpec.IpRange
 	FromPortRange := securityGroupRuleSpec.FromPortRange
 	ToPortRange := securityGroupRuleSpec.ToPortRange
-	associateSecurityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-	targetSecurityGroupName := securityGroupRuleSpec.TargetSecurityGroupName
+	associateSecurityGroupId, exists := securityGroupsRef.ResourceMap[securityGroupName]
+	if !exists || associateSecurityGroupId == "" {
+		return reconcile.Result{}, fmt.Errorf("associateSecurityGroupId not found in ResourceMap for securityGroupName %s", securityGroupName)
+	}
 	targetSecurityGroupId := ""
-	if targetSecurityGroupName != "" {
-		targetSecurityGroupId = securityGroupsRef.ResourceMap[targetSecurityGroupName]
+	if targetSecurityGroupName := securityGroupRuleSpec.TargetSecurityGroupName; targetSecurityGroupName != "" {
+		if targetId, ok := securityGroupsRef.ResourceMap[targetSecurityGroupName]; ok && targetId != "" {
+			targetSecurityGroupId = targetId
+		} else {
+			clusterScope.V(2).Info("Target security group not found", "targetSecurityGroupName", targetSecurityGroupName)
+			return reconcile.Result{}, fmt.Errorf("target security group %s does not exist", targetSecurityGroupName)
+		}
 	}
 
 	clusterScope.V(4).Info("Check if the desired securityGroupRule exist", "securityGroupRuleName", securityGroupRuleName)
@@ -396,7 +403,9 @@ func reconcileDeleteSecurityGroupsRule(ctx context.Context, clusterScope *scope.
 // ReconcileRoute reconcile the RouteTable and the Route of the cluster.
 func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
-
+	if securityGroupsRef == nil || securityGroupsRef.ResourceMap == nil {
+		return reconcile.Result{}, fmt.Errorf("securityGroupsRef or its ResourceMap is nil; ensure security groups are reconciled first")
+	}
 	clusterScope.V(4).Info("Check if the securityGroup exists", "securityGroupId", securityGroupId)
 	securityGroup, err := securityGroupSvc.GetSecurityGroup(securityGroupId)
 	if err != nil {
@@ -428,6 +437,9 @@ func reconcileDeleteSecurityGroups(ctx context.Context, clusterScope *scope.Clus
 		securityGroupsSpec = clusterScope.GetSecurityGroups()
 	}
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+	if securityGroupsRef == nil || securityGroupsRef.ResourceMap == nil {
+		return reconcile.Result{}, fmt.Errorf("securityGroupsRef or its ResourceMap is nil; ensure security groups are reconciled first")
+	}
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
