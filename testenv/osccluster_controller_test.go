@@ -869,12 +869,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   6443,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-http",
-									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
-									FromPortRange: 80,
-									ToPortRange:   80,
+									Name:                    "cluster-api-securitygrouprule-http",
+									Flow:                    "Inbound",
+									IpProtocol:              "tcp",
+									IpRange:                 "0.0.0.0/0",
+									FromPortRange:           80,
+									ToPortRange:             80,
 									TargetSecurityGroupName: "cluster-api-securitygroups",
 								},
 								{
