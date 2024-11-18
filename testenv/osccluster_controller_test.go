@@ -1017,8 +1017,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 						{
-							Name:        "cluster-api-securitygroups-kw",
-							Description: "Security Group with cluster-api",
+							Name:                      "cluster-api-securitygroups-kw",
+							Description:               "Security Group with cluster-api",
 							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
@@ -1056,8 +1056,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:        "cluster-api-securitygroups-kcp",
-							Description: "Security Group with cluster-api",
+							Name:                      "cluster-api-securitygroups-kcp",
+							Description:               "Security Group with cluster-api",
 							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
@@ -1095,8 +1095,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:        "cluster-api-securitygroup-lb",
-							Description: "Security Group with cluster-api",
+							Name:                      "cluster-api-securitygroup-lb",
+							Description:               "Security Group with cluster-api",
 							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
