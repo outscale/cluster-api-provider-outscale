@@ -140,6 +140,12 @@ func defaultSecurityGroupSpec() infrastructurev1beta1.OscClusterSpec {
 	}
 }
 
+func missingTargetSecurityGroupSpec() infrastructurev1beta1.OscClusterSpec {
+	spec := defaultSecurityGroupSpec()
+	spec.Network.SecurityGroups[0].SecurityGroupRules[0].TargetSecurityGroupName = "test-securitygroup-target"
+	return spec
+}
+
 // SetupWithSecurityGroupMock set securityGroupMock with clusterScope and osccluster
 func SetupWithSecurityGroupMock(t *testing.T, name string, spec infrastructurev1beta1.OscClusterSpec) (clusterScope *scope.ClusterScope, ctx context.Context, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
 	clusterScope = Setup(t, name, spec)
