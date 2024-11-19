@@ -1190,7 +1190,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 			}
 			if lbtc.expDeleteLoadBalancerTagFound {
 				loadBalancerTagKey := osc.ResourceLoadBalancerTag{
-					Key: tag.Key,
+					Key: *tag.Key,
 				}
 				mockOscLoadBalancerInterface.
 					EXPECT().
@@ -1338,7 +1338,7 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 			}
 			if lbtc.expDeleteLoadBalancerTagFound {
 				loadBalancerTagKey := osc.ResourceLoadBalancerTag{
-					Key: tag.Key,
+					Key: *tag.Key,
 				}
 				mockOscLoadBalancerInterface.
 					EXPECT().
@@ -1450,7 +1450,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 			}
 			if lbtc.expDeleteLoadBalancerTagFound {
 				loadBalancerTagKey := osc.ResourceLoadBalancerTag{
-					Key: tag.Key,
+					Key: *tag.Key,
 				}
 				mockOscLoadBalancerInterface.
 					EXPECT().

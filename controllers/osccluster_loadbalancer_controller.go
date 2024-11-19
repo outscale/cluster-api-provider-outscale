@@ -266,7 +266,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 
 	loadBalancerTagKey := osc.ResourceLoadBalancerTag{
-		Key: &nameTag.Key,
+		Key: nameTag.Key,
 	}
 	err = loadBalancerSvc.DeleteLoadBalancerTag(loadBalancerSpec, loadBalancerTagKey)
 	if err != nil {
