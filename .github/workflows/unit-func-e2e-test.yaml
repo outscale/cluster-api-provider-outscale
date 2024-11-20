@@ -15,13 +15,9 @@ on:
       - "Makefile"
       - "hack/*.sh"
       - "!docs/src/**"
-      - "!hack/json-format/*.sh"
-      - "!hack/json-format/src/*.rs"
-      - "!hack/json-format/Makefile"
-      - "!hack/json-format/Cargo.*"
-      - "!hack/json-format/tests/*.rs"
+      - "!hack/json-format/**"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "**.go"
       - "**.yaml"
@@ -33,315 +29,127 @@ on:
       - "Makefile"
       - "hack/*.sh"
       - "!docs/src/**"
-      - "!hack/json-format/*.sh"
-      - "!hack/json-format/src/*.rs"
-      - "!hack/json-format/Makefile"
-      - "!hack/json-format/Cargo.*"
-      - "!hack/json-format/tests/*.rs"
+      - "!hack/json-format/**"
+
+env:
+  # Global Environment Variables
+  KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+  OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
+  OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
+  OSC_REGION: ${{ secrets.OSC_REGION }}
+  OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
+
 jobs:
+  unit_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.23'
+      - name: Run Unit Tests
+        run: make unit-test
+        shell: bash  
+
   testenv:
     runs-on: [self-hosted, linux]
     needs: [unit_test]
     steps:
-    - name: Checkout cluster-api-outscale
-      uses: actions/checkout@v3
-      with:
+      - name: Checkout Repositories
+        uses: actions/checkout@v3
+        with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-    - name: Checkout osc-k8s-rke-cluster
-      uses: actions/checkout@v3
-      with:
-        repository: 'outscale-dev/osc-k8s-rke-cluster'
-        path: "rke-cluster-for-cluster-api"
-        ref: master
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v2.0
-      with:
-        version: v1.30.3
-      id: install
-    - name: Install golang
-      uses: actions/setup-go@v3
-      with:
-        go-version: '>=1.23'
-    - name: Install kustomize
-      uses: imranismail/setup-kustomize@v1
-      with:
-        kustomize-version: v4.5.7
-    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
-      with:
-        access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        region: ${{ secrets.OSC_REGION }}
-    - name: Deploy Cluster
-      uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
-      with:
-        repository_folder: "rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
-        image_id: ${{ secrets.OMI_ID }}
-        control_plane_vm_type: ${{ secrets.CP_VMTYPE }}
-        bastion_vm_type:  ${{ secrets.BASTION_VMTYPE }}
-        worker_vm_type: ${{ secrets.WORKER_VMTYPE }}
-        rke_version: ${{ secrets.RKE_VERSION }}
-        kubernetes_version: ${{ secrets.KUBERNETES_VERSION }}
-    - name: Wait Kubernetes control plane is up and running
-      uses: nick-invision/retry@v2
-      with:
-        timeout_seconds: 30
-        max_attempts: 20
-        retry_wait_seconds: 30
-        command: kubectl get --raw='/readyz?verbose'
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Wait all infrastructure app are really up and running
-      uses: jupyterhub/action-k8s-await-workloads@v1
-      with:
-        workloads: ""
-        namespace: "" 
-        timeout: 600
-        max-restarts: -1
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Deploy Docker-registry into cluster
-      run: |
-        ansible-playbook addons/docker-registry/playbook.yaml
-        ./addons/docker-registry/start_port_forwarding.sh &
-      env:
-        KUBECONFIG: rke/kube_config_cluster.yml
-        ANSIBLE_CONFIG: ansible.cfg
-      working-directory: rke-cluster-for-cluster-api
-    - name: Wait registry up
-      uses: GuillaumeFalourd/wait-sleep-action@v1
-      with:
-        time: '2m'
-    - name: Build and Push Docker image 
-      run: |
-        sudo apt-get update
-        sudo apt install -y docker-buildx-plugin 
-        make docker-buildx
-        make docker-push
-        docker image prune -a -f
-      env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
-        DOCKER_BUILDKIT: 1
-    - name: Retrieve NodePort Ip and NodePort
-      run: |
-        echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
-        echo nodeport_ip=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")  >> $GITHUB_ENV
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Create ns and set credential
-      run: make credential
-      shell: bash
-      env:
-         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-         OSC_REGION: ${{ secrets.OSC_REGION }}
-    - name: Deploy cluster-api
-      run: make deploy-clusterapi
-      id: deploy-capi
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Deploy cluster-api-outscale
-      run: make deploy
-      shell: bash
-      id: deploy-capo
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        IMG: ${nodeport_ip}:${nodeport_port}/cluster-api-outscale-controller:${{ github.sha }}
-    - name: Launch functional test
-      run: make testenv
-      shell: bash
-      id: func-test
-      env:
-        KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-        OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-        OSC_REGION: ${{ secrets.OSC_REGION }}
-        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
-        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
-    - name: Get log capo master
-      run: make logs-capo
-      if: ${{ failure() && steps.func-test.conclusion == 'failure' }}
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CAPO_NAMESPACE: cluster-api-provider-outscale-system
-    - name: Get log capi
-      run: make logs-capi
-      if: ${{ failure() && steps.func-test.conclusion == 'failure' }}
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CAPO_NAMESPACE: cluster-api-provider-outscale-system
-    - name: Run Cleanup Script
-      run: |
-        chmod +x .github/scripts/cleanup_k8s_crds.sh
-        .github/scripts/cleanup_k8s_crds.sh
-      shell: bash
-      env:
-        KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Destroy cluster
-      uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
-      if: ${{ always() }}
-      with:
-        repository_folder: "./rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
-  unit_test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-    - uses: actions/setup-go@v3
-      with:
-        go-version: '1.23'
-    - name: unit-test
-      run: |
-        make unit-test
-        cat covers.txt
-      shell: bash  
+      - name: Checkout osc-k8s-rke-cluster
+        uses: actions/checkout@v3
+        with:
+          repository: 'outscale-dev/osc-k8s-rke-cluster'
+          path: "rke-cluster-for-cluster-api"
+          ref: master
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubectl docker-buildx-plugin
+      - name: Install golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.23'
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: v4.5.7
+      - name: Deploy Cluster
+        uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
+        with:
+          repository_folder: "rke-cluster-for-cluster-api"
+          osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+          osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+          osc_region: ${{ secrets.OSC_REGION }}
+          image_id: ${{ secrets.OMI_ID }}
+          control_plane_vm_type: ${{ secrets.CP_VMTYPE }}
+          bastion_vm_type:  ${{ secrets.BASTION_VMTYPE }}
+          worker_vm_type: ${{ secrets.WORKER_VMTYPE }}
+          rke_version: ${{ secrets.RKE_VERSION }}
+          kubernetes_version: ${{ secrets.KUBERNETES_VERSION }}
+      - name: Retrieve NodePort Info
+        run: |
+          export NODEPORT_PORT=$(kubectl get svc docker-registry -n default -o jsonpath="{.spec.ports[0].nodePort}")
+          export NODEPORT_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+          echo "NODEPORT_PORT=${NODEPORT_PORT}" >> $GITHUB_ENV
+          echo "NODEPORT_IP=${NODEPORT_IP}" >> $GITHUB_ENV
+      - name: Run Functional Tests
+        run: make testenv
+      - name: Cleanup CRDs
+        if: always()
+        run: |
+          kubectl delete crds --all || true
+          kubectl delete ns --all --force --grace-period=0 || true
+
   e2etest:
     runs-on: [self-hosted, linux]
-    needs: [unit_test, testenv]
+    needs: [testenv]
     steps:
-    - name: Checkout cluster-api-outscales
-      uses: actions/checkout@v3
-      with:
+      - name: Checkout Repositories
+        uses: actions/checkout@v3
+        with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-    - name: Checkout osc-k8s-rke-cluster
-      uses: actions/checkout@v3
-      with:
-        repository: 'outscale-dev/osc-k8s-rke-cluster'
-        path: "rke-cluster-for-cluster-api"
-        ref: master
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v2.0
-      with:
-        version: v1.30.3
-      id: install
-    - name: Install golang
-      uses: actions/setup-go@v3
-      with:
-        go-version: '>=1.23'
-    - name: Install kustomize
-      uses: imranismail/setup-kustomize@v1
-      with:
-        kustomize-version: v4.5.7
-    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
-      with:
-        access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        region: ${{ secrets.OSC_REGION }}
-    - name: Deploy Cluster
-      uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
-      with:
-        repository_folder: "rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
-        image_id: ${{ secrets.OMI_ID }}
-        control_plane_vm_type: ${{ secrets.CP_VMTYPE }}
-        bastion_vm_type:  ${{ secrets.BASTION_VMTYPE }}
-        worker_vm_type: ${{ secrets.WORKER_VMTYPE }}
-        rke_version: ${{ secrets.RKE_VERSION }}
-        kubernetes_version: ${{ secrets.KUBERNETES_VERSION }}
-    - name: Wait Kubernetes control plane is up and running
-      uses: nick-invision/retry@v2
-      with:
-        timeout_seconds: 30
-        max_attempts: 20
-        retry_wait_seconds: 30
-        command: kubectl get --raw='/readyz?verbose'
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Wait all infrastructure app are really up and running
-      uses: jupyterhub/action-k8s-await-workloads@v1
-      with:
-        workloads: ""
-        namespace: "" 
-        timeout: 600
-        max-restarts: -1
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Deploy Docker-registry into cluster
-      run: |
-        ansible-playbook addons/docker-registry/playbook.yaml
-        ./addons/docker-registry/start_port_forwarding.sh &
-      env:
-        KUBECONFIG: rke/kube_config_cluster.yml
-        ANSIBLE_CONFIG: ansible.cfg
-      working-directory: rke-cluster-for-cluster-api
-    - name: Wait registry up
-      uses: GuillaumeFalourd/wait-sleep-action@v1
-      with:
-        time: '2m'
-    - name: Build and Push Docker image 
-      run: |
-        sudo apt-get update
-        sudo apt install -y docker-buildx-plugin 
-        make docker-buildx
-        make docker-push
-        docker image prune -a -f
-      env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
-        DOCKER_BUILDKIT: 1
-    - name: Retrieve NodePort Ip and NodePort
-      run: |
-        echo 'NODEPORT_PORT<<EOF' >> $GITHUB_ENV
-        echo "$(kubectl get --namespace default -o jsonpath='{.spec.ports[0].nodePort}' services docker-registry)" >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-        echo 'NODEPORT_IP<<EOF' >> $GITHUB_ENV
-        echo "$(kubectl get nodes --namespace default -o jsonpath='{.items[0].status.addresses[0].address}')"  >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Create ns and set credential
-      run: make credential
-      shell: bash
-      env:
-         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-         OSC_REGION: ${{ secrets.OSC_REGION }}
-    - name: Launch e2etest
-      run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2etestexistingcluster
-      shell: bash
-      id: e2etest
-      env:
-        IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
-        OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-        OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-        OSC_REGION: ${{ secrets.OSC_REGION }}
-        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
-        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
-        IMG_UPGRADE_TO: ${{ secrets.IMG_UPGRADE_TO }}
-    - name: Get cluster api outscale logs
-      run: make logs-capo
-      if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CAPO_NAMESPACE: cluster-api-provider-outscale-system
-    - name: Get cluster api logs
-      run: make logs-capi
-      if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
-      shell: bash
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
-    - name: Destroy cluster
-      uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
-      if: ${{ always() }}
-      with:
-        repository_folder: "./rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }} 
+      - name: Checkout osc-k8s-rke-cluster
+        uses: actions/checkout@v3
+        with:
+          repository: 'outscale-dev/osc-k8s-rke-cluster'
+          path: "rke-cluster-for-cluster-api"
+          ref: master
+      - name: Deploy Cluster
+        uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
+        with:
+          repository_folder: "rke-cluster-for-cluster-api"
+          osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+          osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+          osc_region: ${{ secrets.OSC_REGION }}
+          image_id: ${{ secrets.OMI_ID }}
+          control_plane_vm_type: ${{ secrets.CP_VMTYPE }}
+          bastion_vm_type:  ${{ secrets.BASTION_VMTYPE }}
+          worker_vm_type: ${{ secrets.WORKER_VMTYPE }}
+          rke_version: ${{ secrets.RKE_VERSION }}
+          kubernetes_version: ${{ secrets.KUBERNETES_VERSION }}
+      - name: Run E2E Tests
+        run: make e2etestexistingcluster
+        env:
+          IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
+      - name: Cleanup CRDs
+        if: always()
+        run: |
+          kubectl delete crds --all || true
+          kubectl delete ns --all --force --grace-period=0 || true
+      - name: Destroy Cluster
+        uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
+        if: always()
+        with:
+          repository_folder: "./rke-cluster-for-cluster-api"
+          osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+          osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+          osc_region: ${{ secrets.OSC_REGION }}
