@@ -177,6 +177,13 @@ jobs:
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
+    - name: Run Cleanup Script
+      run: |
+        chmod +x .github/scripts/cleanup_k8s_crds.sh
+        .github/scripts/cleanup_k8s_crds.sh
+      shell: bash
+      env:
+        KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
     - name: Destroy cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/destroy_cluster/
       if: ${{ always() }}
