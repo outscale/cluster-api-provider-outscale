@@ -23,11 +23,9 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"time"
 
 	_nethttp "net/http"
 
-	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -45,8 +43,8 @@ type OscVmInterface interface {
 	CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
 	DeleteVm(vmId string) error
 	GetVm(vmId string) (*osc.Vm, error)
+	GetVmListFromTag(tagKey string, tagName string) ([]osc.Vm, error)
 	GetVmState(vmId string) (string, error)
-	CheckVmState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, vmId string) error
 	AddCcmTag(clusterName string, hostname string, vmId string) error
 	GetCapacity(tagKey string, tagValue string, vmType string) (corev1.ResourceList, error)
 }
@@ -413,32 +411,6 @@ func (s *Service) GetCapacity(tagKey string, tagValue string, vmType string) (co
 	return capacity, nil
 }
 
-// CheckVmState check the vm state
-func (s *Service) CheckVmState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, vmId string) error {
-	clock_time := clock.New()
-	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	var getVmState = false
-	for !getVmState {
-		time.Sleep(clockInsideLoop * time.Second)
-		vm, err := s.GetVm(vmId)
-		if err != nil {
-			return err
-		}
-		vmState, ok := vm.GetStateOk()
-		if !ok {
-			return errors.New("Can not get vm state")
-		}
-		if *vmState == state {
-			break
-		}
-
-		if clock_time.Now().After(currentTimeout) {
-			return errors.New("Vm still not running")
-		}
-	}
-	return nil
-}
-
 // GetVmState return vm state
 func (s *Service) GetVmState(vmId string) (string, error) {
 	vm, err := s.GetVm(vmId)
@@ -447,7 +419,7 @@ func (s *Service) GetVmState(vmId string) (string, error) {
 	}
 	vmState, ok := vm.GetStateOk()
 	if !ok {
-		return "", errors.New("Can not get vm state")
+		return "", errors.New("cannot get vm state")
 	}
 	return *vmState, nil
 }

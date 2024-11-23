@@ -273,6 +273,11 @@ func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
 	m.OscMachine.Spec.ProviderID = pointer.StringPtr(pid)
 }
 
+// SetVmID set the instanceID
+func (m *MachineScope) SetVmID(vmId string) {
+	m.OscMachine.Spec.Node.Vm.ResourceId = vmId
+}
+
 // GetVmState return the vmState
 func (m *MachineScope) GetVmState() *infrastructurev1beta1.VmState {
 	return m.OscMachine.Status.VmState

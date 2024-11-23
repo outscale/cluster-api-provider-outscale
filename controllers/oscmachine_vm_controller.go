@@ -32,7 +32,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -382,6 +381,13 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 	}
 
+	if vmSpec.KeypairName != "" {
+		_, err = getKeyPairResourceId(vmSpec.KeypairName, machineScope)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	var securityGroupIds []string
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
 	for _, vmSecurityGroup := range *vmSecurityGroups {
@@ -400,64 +406,31 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		vmVolumeDeviceName = vmSpec.VolumeDeviceName
 	}
 	var vm *osc.Vm
-	var vmID string
+	var vmId string
 	if len(vmRef.ResourceMap) == 0 {
 		vmRef.ResourceMap = make(map[string]string)
 	}
-	tagKey := "Name"
-	tagValue := vmName
-	tag, err := tagSvc.ReadTag(tagKey, tagValue)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
-	}
-	machineScope.V(4).Info("Get ResourceId", "resourceId", vmSpec.ResourceId)
-	machineScope.V(4).Info("Get ResourceMap", "resourceMap", vmRef.ResourceMap)
-	if vmSpec.ResourceId != "" {
-		vmRef.ResourceMap[vmName] = vmSpec.ResourceId
-		vmId := vmSpec.ResourceId
-		machineScope.V(4).Info("Check if the desired vm exist", "vmName", vmName)
-		vm, err = vmSvc.GetVm(vmId)
+	vmState := machineScope.GetVmState()
+
+	if vmState == nil {
+		vms, err := vmSvc.GetVmListFromTag("Name", vmName)
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("%w Could not list vms for OscCluster %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
-		clusterName := vmSpec.ClusterName + "-" + clusterScope.GetUID()
-		privateDnsName, ok := vm.GetPrivateDnsNameOk()
-		if !ok {
-			return reconcile.Result{}, fmt.Errorf("Can not found privateDnsName %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+		if len(vms) > 0 {
+			if vmSpec.ResourceId != "" || vmRef.ResourceMap[vmName] != "" { // We should not get in this situation but we sometimes do (To be investigated)
+				machineScope.SetVmState(infrastructurev1beta1.VmStatePending)
+				if vmSpec.ResourceId != "" {
+					vmRef.ResourceMap[vmName] = vmSpec.ResourceId
+				}
+				if vmRef.ResourceMap[vmName] != "" {
+					machineScope.SetVmID(vmRef.ResourceMap[vmName])
+				}
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("%w Vm with Name %s is already created for OscCluster %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			return reconcile.Result{}, fmt.Errorf("%w Vm with Name %s already exists for OscCluster %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
 		}
-		privateIp, ok := vm.GetPrivateIpOk()
-		if !ok {
-			return reconcile.Result{}, fmt.Errorf("Can not found privateIp %s/%s", machineScope.GetNamespace(), machineScope.GetName())
-		}
-		addresses := []corev1.NodeAddress{}
-		addresses = append(
-			addresses,
-			corev1.NodeAddress{
-				Type:    corev1.NodeInternalIP,
-				Address: *privateIp,
-			},
-		)
-		// Expose Public IP if one is set
-		if publicIp, ok := vm.GetPublicIpOk(); ok {
-			addresses = append(addresses, corev1.NodeAddress{
-				Type:    corev1.NodeExternalIP,
-				Address: *publicIp,
-			})
-		}
-		machineScope.SetAddresses(addresses)
-		err = vmSvc.AddCcmTag(clusterName, *privateDnsName, vmId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w can not add ccm tag %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
-		}
-		vmState, err := vmSvc.GetVmState(vmId)
-		if err != nil {
-			machineScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
-			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s state for OscMachine %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
-		}
-		machineScope.SetVmState(infrastructurev1beta1.VmState(vmState))
-		machineScope.V(4).Info("Get vm state", "vmState", vmState)
-	}
-	if (vm == nil && tag == nil) || (vmSpec.ResourceId == "" && tag == nil) {
+
 		machineScope.V(4).Info("Create the desired vm", "vmName", vmName)
 		imageId := vmSpec.ImageId
 		machineScope.V(4).Info("Info ImageId", "imageId", imageId)
@@ -473,122 +446,198 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			return reconcile.Result{}, fmt.Errorf("%w Can not create vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
 
-		vmID = vm.GetVmId()
-		err = vmSvc.CheckVmState(20, 240, "running", vmID)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
-		}
-		machineScope.V(4).Info("Vm is running", "vmId", vmID)
-		machineScope.SetVmState(infrastructurev1beta1.VmState("pending"))
-		if vmSpec.VolumeName != "" {
-			err = volumeSvc.CheckVolumeState(20, 240, "available", volumeId)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
-			}
-			machineScope.V(4).Info("Volume is available", "volumeId", volumeId)
-			err = volumeSvc.LinkVolume(volumeId, vmID, vmVolumeDeviceName)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmID, machineScope.GetNamespace(), machineScope.GetName())
-			}
-			machineScope.V(4).Info("Volume is linked", "volumeId", volumeId)
-			err = volumeSvc.CheckVolumeState(20, 240, "in-use", volumeId)
-			machineScope.V(4).Info("Volume is in-use", "volumeId", volumeId)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
-			}
-		}
-		err = vmSvc.CheckVmState(20, 240, "running", vmID)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
-		}
-		machineScope.V(4).Info("Vm is running again", "vmId", vmID)
-
-		if vmSpec.PublicIpName != "" {
-			linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmID)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with %s for OscCluster %s/%s", err, publicIpId, vmID, machineScope.GetNamespace(), machineScope.GetName())
-			}
-			machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
-			linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
-
-			err = vmSvc.CheckVmState(20, 240, "running", vmID)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
-			}
-		}
-		if vmSpec.LoadBalancerName != "" {
-			loadBalancerName := vmSpec.LoadBalancerName
-			vmIds := []string{vmID}
-			err := loadBalancerSvc.LinkLoadBalancerBackendMachines(vmIds, loadBalancerName)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not link vm %s with loadBalancerName %s for OscCluster %s/%s", err, loadBalancerName, vmID, machineScope.GetNamespace(), machineScope.GetName())
-			}
-			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
-			loadBalancerSpec := clusterScope.GetLoadBalancer()
-			loadBalancerSpec.SetDefaultValue()
-			loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
-			ipProtocol := strings.ToLower(loadBalancerSpec.Listener.BackendProtocol)
-			machineScope.V(4).Info("Get IpProtocol", "IpProtocol", ipProtocol)
-			fromPortRange := loadBalancerSpec.Listener.BackendPort
-			machineScope.V(4).Info("Get fromPortRange", "fromPortRange", fromPortRange)
-			toPortRange := loadBalancerSpec.Listener.BackendPort
-			machineScope.V(4).Info("Get ToPortRange", "ToPortRange", toPortRange)
-			loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-" + clusterScope.GetUID()
-			associateSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
-			machineScope.V(4).Info("Get sg", "associateSecurityGroupId", associateSecurityGroupId)
-			securityGroupFromSecurityGroupOutboundRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not get outbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-			}
-			if securityGroupFromSecurityGroupOutboundRule == nil {
-				_, err = securityGroupSvc.CreateSecurityGroupRule(associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not create outbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-				}
-			}
-			securityGroupFromSecurityGroupInboundRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not get inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-			}
-			if securityGroupFromSecurityGroupInboundRule == nil {
-				_, err = securityGroupSvc.CreateSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not create inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-				}
-			}
-
-		}
-
-		machineScope.V(2).Info("Get Vm", "vm", vm)
-		vmRef.ResourceMap[vmName] = vmID
-		vmSpec.ResourceId = vmID
+		vmId = vm.GetVmId()
+		machineScope.SetVmState(infrastructurev1beta1.VmStatePending)
+		vmState = &infrastructurev1beta1.VmStatePending
+		vmRef.ResourceMap[vmName] = vmId
+		machineScope.SetVmID(vmId)
 		subregionName := vmSpec.SubregionName
-		machineScope.SetProviderID(subregionName, vmID)
+		machineScope.SetProviderID(subregionName, vmId)
+		machineScope.V(4).Info("Vm created", "vmId", vmId)
 	}
+
+	if vmState != nil {
+		if *vmState != infrastructurev1beta1.VmStateRunning {
+			vmId := vmSpec.ResourceId
+			if vmId == "" { // We should not get in this situation but we sometimes do (To be investigated)
+				vmId = vmRef.ResourceMap[vmName]
+				machineScope.SetVmID(vmId)
+				subregionName := vmSpec.SubregionName
+				machineScope.SetProviderID(subregionName, vmId)
+			}
+			machineScope.V(4).Info("Get vmId", "vmId", vmId)
+			_, err = vmSvc.GetVm(vmId)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			machineScope.V(2).Info("Get currentVmState")
+			currentVmState, err := vmSvc.GetVmState(vmId)
+			if err != nil {
+				machineScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
+				return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s state for OscCluster %s/%s", err, vmId, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			machineScope.SetVmState(infrastructurev1beta1.VmState(currentVmState))
+			machineScope.V(4).Info("Vm state", "vmState", currentVmState)
+
+			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
+				machineScope.V(4).Info("Vm is not yet running", "vmId", vmId)
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("vm %s is not yet running for OscCluster %s/%s", vmId, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			vmState = &infrastructurev1beta1.VmStateRunning
+			machineScope.V(4).Info("Vm is running", "vmId", vmId)
+		}
+
+		if *vmState == infrastructurev1beta1.VmStateRunning {
+			vmId := vmSpec.ResourceId
+			if vmId == "" { // We should not get in this situation but we sometimes do (To be investigated)
+				vmId = vmRef.ResourceMap[vmName]
+				machineScope.SetVmID(vmId)
+				subregionName := vmSpec.SubregionName
+				machineScope.SetProviderID(subregionName, vmId)
+			}
+			if vmSpec.VolumeName != "" {
+				err = volumeSvc.CheckVolumeState(20, 240, "available", volumeId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+				}
+				machineScope.V(4).Info("Volume is available", "volumeId", volumeId)
+				err = volumeSvc.LinkVolume(volumeId, vmId, vmVolumeDeviceName)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmId, machineScope.GetNamespace(), machineScope.GetName())
+				}
+				machineScope.V(4).Info("Volume is linked", "volumeId", volumeId)
+				err = volumeSvc.CheckVolumeState(20, 240, "in-use", volumeId)
+				machineScope.V(4).Info("Volume is in-use", "volumeId", volumeId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+				}
+			}
+
+			if vmSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[vmPublicIpName] == "" {
+				linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with %s for OscCluster %s/%s", err, publicIpId, vmId, machineScope.GetNamespace(), machineScope.GetName())
+				}
+				machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
+				linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
+			}
+			if vmSpec.LoadBalancerName != "" {
+				loadBalancerName := vmSpec.LoadBalancerName
+				vmIds := []string{vmId}
+				err := loadBalancerSvc.LinkLoadBalancerBackendMachines(vmIds, loadBalancerName)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not link vm %s with loadBalancerName %s for OscCluster %s/%s", err, vmId, loadBalancerName, machineScope.GetNamespace(), machineScope.GetName())
+				}
+				securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+				loadBalancerSpec := clusterScope.GetLoadBalancer()
+				loadBalancerSpec.SetDefaultValue()
+				loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
+				ipProtocol := strings.ToLower(loadBalancerSpec.Listener.BackendProtocol)
+				machineScope.V(4).Info("Get IpProtocol", "IpProtocol", ipProtocol)
+				fromPortRange := loadBalancerSpec.Listener.BackendPort
+				machineScope.V(4).Info("Get fromPortRange", "fromPortRange", fromPortRange)
+				toPortRange := loadBalancerSpec.Listener.BackendPort
+				machineScope.V(4).Info("Get ToPortRange", "ToPortRange", toPortRange)
+				loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-" + clusterScope.GetUID()
+				associateSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
+				machineScope.V(4).Info("Get sg", "associateSecurityGroupId", associateSecurityGroupId)
+				securityGroupFromSecurityGroupOutboundRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not get outbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				}
+				if securityGroupFromSecurityGroupOutboundRule == nil {
+					_, err = securityGroupSvc.CreateSecurityGroupRule(associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+					if err != nil {
+						return reconcile.Result{}, fmt.Errorf("%w Can not create outbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+					}
+				}
+				securityGroupFromSecurityGroupInboundRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w Can not get inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				}
+				if securityGroupFromSecurityGroupInboundRule == nil {
+					_, err = securityGroupSvc.CreateSecurityGroupRule(securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
+					if err != nil {
+						return reconcile.Result{}, fmt.Errorf("%w Can not create inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+					}
+				}
+			}
+
+			clusterName := vmSpec.ClusterName + "-" + clusterScope.GetUID()
+			vm, err = vmSvc.GetVm(vmId)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			privateDnsName, ok := vm.GetPrivateDnsNameOk()
+			if !ok {
+				return reconcile.Result{}, fmt.Errorf("cannot find privateDnsName %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+			}
+			privateIp, ok := vm.GetPrivateIpOk()
+			if !ok {
+				return reconcile.Result{}, fmt.Errorf("cannot find privateIp %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+			}
+			addresses := []corev1.NodeAddress{}
+			addresses = append(
+				addresses,
+				corev1.NodeAddress{
+					Type:    corev1.NodeInternalIP,
+					Address: *privateIp,
+				},
+			)
+			// Expose Public IP if one is set
+			if publicIp, ok := vm.GetPublicIpOk(); ok {
+				addresses = append(addresses, corev1.NodeAddress{
+					Type:    corev1.NodeExternalIP,
+					Address: *publicIp,
+				})
+			}
+			machineScope.SetAddresses(addresses)
+
+			tag, err := tagSvc.ReadTag("OscK8sNodeName", *privateDnsName)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			if tag == nil {
+				err = vmSvc.AddCcmTag(clusterName, *privateDnsName, vmId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("%w can not add ccm tag %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+				}
+			}
+		}
+	}
+	machineScope.V(4).Info("Vm is reconciled")
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteVm reconcile the destruction of the vm of the machine
 func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
-	oscmachine := machineScope.OscMachine
 	vmSpec := machineScope.GetVm()
+	vmRef := machineScope.GetVmRef()
+	vmName := vmSpec.Name + "-" + machineScope.GetUID()
 	vmSpec.SetDefaultValue()
 	vmId := vmSpec.ResourceId
-	machineScope.V(4).Info("Get VmID", "vmId", vmId)
-	vmName := vmSpec.Name
-	if vmSpec.ResourceId == "" {
-		machineScope.V(2).Info("The desired vm is currently destroyed", "vmName", vmName)
-		controllerutil.RemoveFinalizer(oscmachine, "")
+	if vmId == "" { // We should not get in this situation but we sometimes do (To be investigated)
+		vmId = vmRef.ResourceMap[vmName]
+		machineScope.SetVmID(vmId)
+	}
+	if vmId == "" {
+		machineScope.V(2).Info("The desired vm is already destroyed", "vmName", vmName)
 		return reconcile.Result{}, nil
 	}
-	keypairSpec := machineScope.GetKeypair()
-	machineScope.V(4).Info("Check keypair", "keypair", keypairSpec.Name)
-	deleteKeypair := machineScope.GetDeleteKeypair()
-
+	machineScope.V(4).Info("Get vmId", "vmId", vmId)
 	vm, err := vmSvc.GetVm(vmId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	if vm == nil {
+		machineScope.V(2).Info("The desired vm is already destroyed", "vmName", vmName)
+		return reconcile.Result{}, nil
+	}
+
+	keypairSpec := machineScope.GetKeypair()
+	machineScope.V(4).Info("Check keypair", "keypair", keypairSpec.Name)
+	deleteKeypair := machineScope.GetDeleteKeypair()
 
 	var securityGroupIds []string
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
@@ -600,6 +649,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
+
 	if vmSpec.PublicIpName != "" {
 		linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
@@ -707,15 +757,13 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 
 	if vm == nil {
 		machineScope.V(2).Info("The desired vm does not exist anymore", "vmName", vmName)
-		controllerutil.RemoveFinalizer(oscmachine, "")
 		return reconcile.Result{}, nil
 	}
 
-	err = vmSvc.DeleteVm(vmId)
-	vmSpec.ResourceId = ""
 	machineScope.V(2).Info("Delete the desired vm", "vmName", vmName)
+	err = vmSvc.DeleteVm(vmId)
 	if err != nil {
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("%w Can not delete vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 	}
-	return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+	return reconcile.Result{}, nil
 }
