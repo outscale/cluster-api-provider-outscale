@@ -1,0 +1,211 @@
+# Cluster Configuration
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 10.42.0.0/16
+    services:
+      cidrBlocks:
+        - 10.96.0.0/12
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: hello-osc-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: hello-osc
+---
+# Outscale Cluster Infrastructure
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: hello-osc
+  namespace: default
+spec:
+  network:
+    clusterName: hello-osc
+    subregionName: eu-west-2a
+    internetService:
+      clusterName: hello-osc
+    loadBalancer:
+      clusterName: hello-osc
+      loadbalancername: hello-osc-k8s
+    natService:
+      clusterName: hello-osc
+    net:
+      clusterName: hello-osc
+---
+# Control Plane Configuration
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: hello-osc-control-plane
+  namespace: default
+spec:
+  kubeadmConfigSpec:
+    files:
+      - content: |
+          #!/bin/sh
+
+          # Installer une version mise à jour de runc
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+
+          # Configurer MetalLB
+          cat <<EOF > /tmp/metallb-config.yaml
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: metallb-pool
+            namespace: metallb-system
+          spec:
+            addresses:
+            - 10.0.1.240-10.0.1.250
+          ---
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: l2-advertisement
+            namespace: metallb-system
+          spec: {}
+          EOF
+        owner: root:root
+        path: /tmp/set_runc_and_metallb.sh
+        permissions: "0744"
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+        name: '{{ ds.meta_data.local_hostname }}'
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+    preKubeadmCommands:
+      - sh /tmp/set_runc_and_metallb.sh
+    postKubeadmCommands:
+      - kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/main/config/manifests/metallb-native.yaml
+      - kubectl create namespace metallb-system || true
+      - kubectl apply -f /tmp/metallb-config.yaml
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: OscMachineTemplate
+      name: hello-osc-control-plane
+  replicas: 1
+  version: v1.28.5
+---
+# Worker Nodes Configuration
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: hello-osc-md-0
+  namespace: default
+spec:
+  clusterName: hello-osc
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: hello-osc-md-0
+      clusterName: hello-osc
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+        name: hello-osc-md-0
+      version: v1.28.5
+---
+# Worker Nodes Template
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: hello-osc-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      files:
+        - content: |
+            #!/bin/sh
+
+            # Installer une version mise à jour de runc
+            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+            chmod +x /tmp/runc.amd64
+            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+          owner: root:root
+          path: /tmp/set_runc.sh
+          permissions: "0744"
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+          name: '{{ ds.meta_data.local_hostname }}'
+      preKubeadmCommands:
+        - sh /tmp/set_runc.sh
+---
+# Outscale Machine Template for Control Plane
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: hello-osc-control-plane-v2
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: hello-osc
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.28.5-2022-08-22
+        keypair:
+          name: cluster-api-test
+        vm:
+          clusterName: hello-osc
+          keypairName: cluster-api-test
+          loadBalancerName: hello-osc-k8s
+          role: controlplane
+          rootDisk:
+            rootDiskIops: 2000
+            rootDiskSize: 20
+            rootDiskType: io1
+          subregionName: eu-west-2a
+          vmType: tinav6.c4r8p1
+---
+# Outscale Machine Template for Workers
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: hello-osc-md-0-v2
+  namespace: default
+spec:
+  template:
+    spec:
+      node:
+        clusterName: hello-osc
+        image:
+          name: ubuntu-2004-2004-kubernetes-v1.28.5-2022-08-22
+        keypair:
+          name: cluster-api-test
+        vm:
+          clusterName: hello-osc
+          keypairName: cluster-api-test
+          rootDisk:
+            rootDiskIops: 2000
+            rootDiskSize: 20
+            rootDiskType: io1
+          subregionName: eu-west-2a
+          vmType: tinav6.c4r8p1
