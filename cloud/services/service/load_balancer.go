@@ -37,6 +37,7 @@ type OscLoadBalancerInterface interface {
 	DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) error
 	LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
 	UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
+	CheckLoadBalancerRegisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, expectedVmIds []string, spec *infrastructurev1beta1.OscLoadBalancer) error
 	CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
 	GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error)
 	CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error
@@ -502,4 +503,61 @@ func (s *Service) CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, c
 		}
 	}
 	return nil
+}
+
+// CheckLoadBalancerRegisterVm ensures that all expected VMs are registered with the load balancer.
+func (s *Service) CheckLoadBalancerRegisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, expectedVmIds []string, spec *infrastructurev1beta1.OscLoadBalancer) error {
+	loadBalancerName, err := s.GetName(spec)
+	if err != nil {
+		return err
+	}
+	clock_time := clock.New()
+	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
+
+	for {
+		time.Sleep(clockInsideLoop * time.Second)
+
+		// Retrieve the current state of the load balancer
+		loadBalancer, err := s.GetLoadBalancer(spec)
+		if err != nil {
+			return err
+		}
+
+		// Get the list of registered VM IDs
+		registeredVmIds := loadBalancer.GetBackendVmIds()
+		missingVmIds := findMissingVms(expectedVmIds, registeredVmIds)
+
+		// If all expected VMs are registered, exit the loop
+		if len(missingVmIds) == 0 {
+			break
+		}
+
+		// Attempt to re-register any missing VMs
+		if err := s.LinkLoadBalancerBackendMachines(missingVmIds, loadBalancerName); err != nil {
+			return fmt.Errorf("Failed to re-register missingVmIds %v to load balancer", missingVmIds)
+		}
+
+		// Check if the timeout has been reached
+		if clock_time.Now().After(currentTimeout) {
+			return fmt.Errorf("timeout reached: some VMs are still not registered in the load balancer: %v", missingVmIds)
+		}
+	}
+
+	fmt.Printf("All expected VMs are registered with the load balancer")
+	return nil
+}
+
+// findMissingVms returns a list of VMs that are in expectedVmIds but missing in registeredVmIds
+func findMissingVms(expectedVmIds, registeredVmIds []string) []string {
+	missing := []string{}
+	vmIdMap := make(map[string]bool)
+	for _, id := range registeredVmIds {
+		vmIdMap[id] = true
+	}
+	for _, id := range expectedVmIds {
+		if !vmIdMap[id] {
+			missing = append(missing, id)
+		}
+	}
+	return missing
 }
