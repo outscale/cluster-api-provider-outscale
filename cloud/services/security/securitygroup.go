@@ -19,6 +19,7 @@ package security
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"errors"
 
@@ -135,9 +136,10 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 	} else if securityGroupMemberId != "" && ipRange != "" {
 		return nil, errors.New("Get Both ipRange and securityGroupMemberId")
 	} else {
+		ipRanges := strings.Split(ipRange, ",")
 		rule = osc.SecurityGroupRule{
 			IpProtocol:    &ipProtocol,
-			IpRanges:      &[]string{ipRange},
+			IpRanges:      &ipRanges,
 			FromPortRange: &fromPortRange,
 			ToPortRange:   &toPortRange,
 		}
@@ -202,9 +204,10 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 			ToPortRange:           &toPortRange,
 		}
 	} else {
+		ipRanges := strings.Split(ipRange, ",")
 		rule = osc.SecurityGroupRule{
 			IpProtocol:    &ipProtocol,
-			IpRanges:      &[]string{ipRange},
+			IpRanges:      &ipRanges,
 			FromPortRange: &fromPortRange,
 			ToPortRange:   &toPortRange,
 		}
