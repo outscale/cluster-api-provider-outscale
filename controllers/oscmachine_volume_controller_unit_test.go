@@ -405,6 +405,8 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			publicIpRef.ResourceMap = make(map[string]string)
 			if vtc.expPublicIpFound {
 				publicIpRef.ResourceMap[publicIpName] = publicIpId
+			} else {
+				mockOscPublicIpInterface.EXPECT().GetPublicIp(gomock.Eq(publicIpId))
 			}
 
 			linkPublicIpId := "eipassoc-" + publicIpName
