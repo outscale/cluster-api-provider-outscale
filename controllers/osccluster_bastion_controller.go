@@ -317,7 +317,7 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 			clusterScope.V(4).Info("Bastion is running", "vmId", vmId)
 		}
 
-		if *bastionState == infrastructurev1beta1.VmStateRunning {
+		if bastionState != nil && *bastionState == infrastructurev1beta1.VmStateRunning {
 			vmId := bastionSpec.ResourceId
 
 			if bastionSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[bastionPublicIpName] == "" {
@@ -328,7 +328,10 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 				clusterScope.V(4).Info("Get bastionPublicIpName", "bastionPublicIpName", bastionPublicIpName)
 				linkPublicIpRef.ResourceMap[bastionPublicIpName] = linkPublicIpId
 			}
+		} else {
+			clusterScope.V(4).Info("VM is not running, skipping public IP linking")
 		}
+
 	}
 	clusterScope.V(4).Info("Bastion is reconciled")
 	return reconcile.Result{}, nil
