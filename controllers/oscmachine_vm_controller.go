@@ -481,7 +481,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
 				machineScope.V(4).Info("Vm is not yet running", "vmId", vmId)
-				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("vm %s is not yet running for OscCluster %s/%s", vmId, machineScope.GetNamespace(), machineScope.GetName())
+				return reconcile.Result{RequeueAfter: 180 * time.Second}, fmt.Errorf("vm %s is not yet running for OscCluster %s/%s", vmId, machineScope.GetNamespace(), machineScope.GetName())
 			}
 			vmState = &infrastructurev1beta1.VmStateRunning
 			machineScope.V(4).Info("Vm is running", "vmId", vmId)
@@ -767,3 +767,38 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	}
 	return reconcile.Result{}, nil
 }
+
+/*
+func addTag(clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, api *osc.APIClient, auth context.Context, vm *osc.Vm) error {
+	// Retrieve VM private DNS name
+	privateDnsName, ok := vm.GetPrivateDnsNameOk()
+	if !ok {
+		return fmt.Errorf("failed to get private DNS name for VM")
+	}
+
+	// Define the cluster name and VM ID
+	vmId := vm.GetVmId()
+	vmTag := osc.ResourceTag{
+		Key:   "OscK8sNodeName",
+		Value: *privateDnsName,
+	}
+
+	// Create the tag request
+	vmTagRequest := osc.CreateTagsRequest{
+		ResourceIds: []string{vmId},
+		Tags:        []osc.ResourceTag{vmTag},
+	}
+
+	// Call the AddTag function
+	err, httpRes := tag.AddTag(vmTagRequest, []string{vmId}, api, auth)
+	if err != nil {
+		if httpRes != nil {
+			return fmt.Errorf("failed to add tag: %s, HTTP status: %s", err.Error(), httpRes.Status)
+		}
+		return fmt.Errorf("failed to add tag: %w", err)
+	}
+
+	clusterScope.V(4).Info("Tag successfully added", "vmId", vmId, "tagKey", vmTag.Key, "tagValue", vmTag.Value)
+	return nil
+}
+*/

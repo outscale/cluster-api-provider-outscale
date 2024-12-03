@@ -110,15 +110,6 @@ func (mr *MockOscVmInterfaceMockRecorder) GetCapacity(tagKey, tagValue, vmType i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapacity", reflect.TypeOf((*MockOscVmInterface)(nil).GetCapacity), tagKey, tagValue, vmType)
 }
 
-// GetVmListFromTag mocks base method.
-func (m *MockOscVmInterface) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVmListFromTag", tagKey, tagValue)
-	ret0, _ := ret[0].([]osc.Vm)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
 // GetVm mocks base method.
 func (m *MockOscVmInterface) GetVm(vmId string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
@@ -132,6 +123,21 @@ func (m *MockOscVmInterface) GetVm(vmId string) (*osc.Vm, error) {
 func (mr *MockOscVmInterfaceMockRecorder) GetVm(vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVm", reflect.TypeOf((*MockOscVmInterface)(nil).GetVm), vmId)
+}
+
+// GetVmListFromTag mocks base method.
+func (m *MockOscVmInterface) GetVmListFromTag(tagKey, tagName string) ([]osc.Vm, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVmListFromTag", tagKey, tagName)
+	ret0, _ := ret[0].([]osc.Vm)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVmListFromTag indicates an expected call of GetVmListFromTag.
+func (mr *MockOscVmInterfaceMockRecorder) GetVmListFromTag(tagKey, tagName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmListFromTag", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmListFromTag), tagKey, tagName)
 }
 
 // GetVmState mocks base method.
