@@ -1128,6 +1128,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						SubnetName:       "cluster-api-subnet-kcp",
 						LoadBalancerName: "osc-k8s-machine",
 						VmType:           "tinav6.c4r8p2",
+						Tags:             map[string]string{"key1": "value1"},
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
 								Name: "cluster-api-securitygroups-kcp",
