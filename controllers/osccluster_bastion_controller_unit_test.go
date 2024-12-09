@@ -2492,7 +2492,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expSecurityGroupFound:  false,
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
-			expReconcileBastionErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileBastionErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                   "failed to get ImageId",
@@ -2595,7 +2595,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			}
 			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
+				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "test-securitygroup-uid does not exist (yet)")
 			} else {
 				assert.Nil(t, btc.expReconcileBastionErr)
 			}
@@ -2729,7 +2729,7 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 			expGetImageIdErr:             nil,
 			expGetBastionErr:             nil,
 			expSecurityGroupFound:        false,
-			expReconcileDeleteBastionErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileDeleteBastionErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                         "failed to get bastion",
@@ -2798,7 +2798,7 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
 			if err != nil {
-				assert.Equal(t, btc.expReconcileDeleteBastionErr, err, "reconcileDeleteBastion() should return the same error")
+				assert.Equal(t, btc.expReconcileDeleteBastionErr, err, "test-securitygroup-uid does not exist (yet)")
 			} else {
 				assert.Nil(t, btc.expReconcileDeleteBastionErr)
 			}
