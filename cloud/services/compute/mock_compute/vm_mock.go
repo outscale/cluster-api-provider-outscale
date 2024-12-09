@@ -6,7 +6,6 @@ package mock_compute
 
 import (
 	reflect "reflect"
-	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -50,20 +49,6 @@ func (m *MockOscVmInterface) AddCcmTag(clusterName, hostname, vmId string) error
 func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(clusterName, hostname, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), clusterName, hostname, vmId)
-}
-
-// CheckVmState mocks base method.
-func (m *MockOscVmInterface) CheckVmState(clockInsideLoop, clockLoop time.Duration, state, vmId string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckVmState", clockInsideLoop, clockLoop, state, vmId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckVmState indicates an expected call of CheckVmState.
-func (mr *MockOscVmInterfaceMockRecorder) CheckVmState(clockInsideLoop, clockLoop, state, vmId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckVmState", reflect.TypeOf((*MockOscVmInterface)(nil).CheckVmState), clockInsideLoop, clockLoop, state, vmId)
 }
 
 // CreateVm mocks base method.
@@ -138,6 +123,21 @@ func (m *MockOscVmInterface) GetVm(vmId string) (*osc.Vm, error) {
 func (mr *MockOscVmInterfaceMockRecorder) GetVm(vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVm", reflect.TypeOf((*MockOscVmInterface)(nil).GetVm), vmId)
+}
+
+// GetVmListFromTag mocks base method.
+func (m *MockOscVmInterface) GetVmListFromTag(tagKey, tagName string) ([]osc.Vm, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVmListFromTag", tagKey, tagName)
+	ret0, _ := ret[0].([]osc.Vm)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVmListFromTag indicates an expected call of GetVmListFromTag.
+func (mr *MockOscVmInterfaceMockRecorder) GetVmListFromTag(tagKey, tagName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmListFromTag", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmListFromTag), tagKey, tagName)
 }
 
 // GetVmState mocks base method.
