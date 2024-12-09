@@ -44,9 +44,9 @@ deployment:
       # -- Container cpu limts
       limits: 200m
   # -- Proxy image
-  proxyImage: gcr.io/kubebuilder/kube-rbac-proxy
+  proxyImage: ghcr.io/brancz/kube-rbac-proxy
   # -- Proxy image tag
-  proxyImageTag: "v0.8.0"
+  proxyImageTag: "v0.13.0"
   # -- Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
   proxyResources:
     memory:

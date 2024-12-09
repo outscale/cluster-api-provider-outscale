@@ -21,8 +21,8 @@ Deploy Outscale Cluster API. Please look at deploy.md
 | deployment.imagePullSecrets | list | `[]` | Specify image pull secrets |
 | deployment.imageTag | string | `"v0.1.0"` | Outscale provider image tag |
 | deployment.labels | object | `nil` | Labels to set on pods |
-| deployment.proxyImage | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
-| deployment.proxyImageTag | string | `"v0.8.0"` | Proxy image tag |
+| deployment.proxyImage | string | `"ghcr.io/brancz/kube-rbac-proxy"` | Proxy image |
+| deployment.proxyImageTag | string | `"v0.13.0"` | Proxy image tag |
 | deployment.proxyResources | object | `{"cpu":{"limits":"200m","requests":"100m"},"memory":{"limits":"30Mi","requests":"20Mi"}}` | Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
 | deployment.proxyResources.cpu.limits | string | `"200m"` | Container proxy cpu limits |
 | deployment.proxyResources.cpu.requests | string | `"100m"` | Container proxy cpu requests |
