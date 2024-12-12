@@ -139,7 +139,7 @@ vet: ## Run go vet against code.
 format: gofmt gospace yamlspace yamlfmt
 
 gofmt: ## Run gofmt
-	find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -w
+	find . -name "*.go" | xargs gofmt -s -w
 
 .PHONY: gospace
 gospace: ## Run to remove trailling space
@@ -151,7 +151,7 @@ yamlspace: ## Run to remove trailling space
 
 .PHONY: yamlfmt
 yamlfmt: install-yamlfmt
-	find . -name "*.yaml" -not -path "./helm/*" -not -path "./.github/workflows/*" | grep -v "\/vendor\/" | xargs yamlfmt
+	find . -name "*.yaml" -not -path "./helm/*" -not -path "./.github/workflows/*" | xargs yamlfmt
 
 .PHONY: checkfmt
 checkfmt: ## check gofmt
