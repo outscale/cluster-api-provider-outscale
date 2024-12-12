@@ -72,7 +72,7 @@ OSC_SUBREGION_NAME ?= eu-west-2a
 ClusterToClean ?= capo-quickstart
 MINIMUM_MDBOOK_VERSION=0.4.21
 TRIVY_IMAGE := aquasec/trivy:latest
-DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./hack/*" )
+DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' ! -path "./hack/*" ! -path "./vendor/*")
 LINTER_VERSION := v2.10.0
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -235,7 +235,7 @@ trivy-ignore-check:
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -mod=vendor -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
