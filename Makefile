@@ -36,6 +36,8 @@ CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
 CAPO_NAMESPACE ?= cluster-api-provider-outscale-system
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.30.3
+GOFLAGS=-mod=readonly
+export GOFLAGS
 MINIMUM_KUBEBUILDERTOOL_VERSION=1.30.3
 MINIMUM_ENVTEST_VERSION=1.30.3
 E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
