@@ -131,7 +131,7 @@ fmt: ## Run go fmt against code.
 
 .PHONY: vet
 vet: ## Run go vet against code.
-	go vet ./...
+	go vet -mod=vendor ./...
 
 .PHONY: format
 format: gofmt gospace yamlspace yamlfmt

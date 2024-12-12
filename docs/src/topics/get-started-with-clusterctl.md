@@ -97,21 +97,9 @@ Then apply:
 kubectl apply -f getstarted.yaml
 ```
 
-## Add security group rule after
+## Add a public ip after bastion is created
 
-You can add security group rule if you set extraSecurityGroupRule = true after you have already create a cluster and you want to set new security group rule.
-
-```yaml
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscCluster
-metadata:
-  name: cluster-api
-  namespace: default
-spec:
-  network:
-    extraSecurityGroupRule: false
-```
-
+You can add a public ip if you set publicIpNameAfterBastion = true after you have already create a cluster with a bastion.
 
 ### Get Kubeconfig
 You can then get the status:

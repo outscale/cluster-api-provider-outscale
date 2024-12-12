@@ -180,14 +180,14 @@ func (s *ClusterScope) GetNet() *infrastructurev1beta1.OscNet {
 	return &s.OscCluster.Spec.Network.Net
 }
 
-// GetExtraSecurityGroupRule return the extraSecurityGroupRule
-func (s *ClusterScope) GetExtraSecurityGroupRule() bool {
-	return s.OscCluster.Spec.Network.ExtraSecurityGroupRule
+// GetPublicIpNameAfterBastion return publicIpNameAfterBastion
+func (s *ClusterScope) GetPublicIpNameAfterBastion() bool {
+	return s.OscCluster.Spec.Network.Bastion.PublicIpNameAfterBastion
 }
 
-// SetExtraSecurityGroupRule set the extraSecurityGroupRule
-func (s *ClusterScope) SetExtraSecurityGroupRule(extraSecurityGroupRule bool) {
-	s.OscCluster.Spec.Network.ExtraSecurityGroupRule = extraSecurityGroupRule
+// SetPublicIpNameAfterBastion set the publicIpNameAfterBastion
+func (s *ClusterScope) SetPublicIpNameAfterBastion(publicIpNameAfterBastion bool) {
+	s.OscCluster.Spec.Network.Bastion.PublicIpNameAfterBastion = publicIpNameAfterBastion
 }
 
 // GetNetwork return the network of the cluster
@@ -270,15 +270,15 @@ func (s *ClusterScope) GetIpSubnetRange(Name string) string {
 	return ""
 }
 
-// GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
+// GetSecurityGroupRule returns slices of securityGroupRule associated with the given securityGroup Name.
+// If no matching securityGroup is found, it returns a pointer to an empty slice.
 func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
-	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
-	for _, securityGroup := range securityGroups {
+	for _, securityGroup := range s.OscCluster.Spec.Network.SecurityGroups {
 		if securityGroup.Name == Name {
 			return &securityGroup.SecurityGroupRules
 		}
 	}
-	return nil
+	return new([]infrastructurev1beta1.OscSecurityGroupRule) // Return pointer to an empty slice
 }
 
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with bastion uid associate with resource response id)
