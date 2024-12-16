@@ -36,6 +36,8 @@ CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
 CAPO_NAMESPACE ?= cluster-api-provider-outscale-system
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.30.3
+GOFLAGS=-mod=readonly
+export GOFLAGS
 MINIMUM_KUBEBUILDERTOOL_VERSION=1.30.3
 MINIMUM_ENVTEST_VERSION=1.30.3
 E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
@@ -137,7 +139,7 @@ vet: ## Run go vet against code.
 format: gofmt gospace yamlspace yamlfmt
 
 gofmt: ## Run gofmt
-	find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -w
+	find . -name "*.go" | xargs gofmt -s -w
 
 .PHONY: gospace
 gospace: ## Run to remove trailling space
@@ -149,7 +151,7 @@ yamlspace: ## Run to remove trailling space
 
 .PHONY: yamlfmt
 yamlfmt: install-yamlfmt
-	find . -name "*.yaml" -not -path "./helm/*" -not -path "./.github/workflows/*" | grep -v "\/vendor\/" | xargs yamlfmt
+	find . -name "*.yaml" -not -path "./helm/*" -not -path "./.github/workflows/*" | xargs yamlfmt
 
 .PHONY: checkfmt
 checkfmt: ## check gofmt

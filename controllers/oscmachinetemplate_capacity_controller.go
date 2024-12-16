@@ -92,7 +92,7 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 		if len(clusterList.Items) == 0 {
 			log.V(2).Info("OscCluster is not available yet")
-			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			return reconcile.Result{RequeueAfter: 60 * time.Second}, nil
 		}
 	}
 	oscCluster := &infrastructurev1beta1.OscCluster{}
