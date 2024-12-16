@@ -26,6 +26,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -78,8 +79,10 @@ func deployOscInfraMachine(ctx context.Context, infraMachineSpec infrastructurev
 
 // createCheckDeleteOscCluster will deploy oscInfraCluster (create osccluster object), deploy capoCluster (create cluster object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster)
 func createCheckDeleteOscCluster(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec) {
-	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, "cluster-api-test", "default")
-	capoCluster, capoClusterKey := deployCapoCluster(ctx, "cluster-api-test", "default")
+	uid := uuid.New().String()[:8]
+	clusterName := fmt.Sprintf("cluster-api-test-%s", uid)
+	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, clusterName, "default")
+	capoCluster, capoClusterKey := deployCapoCluster(ctx, clusterName, "default")
 	waitOscInfraClusterToBeReady(ctx, oscInfraClusterKey)
 	waitOscClusterToProvision(ctx, capoClusterKey)
 	clusterScope, err := getClusterScope(ctx, capoClusterKey, oscInfraClusterKey)
@@ -703,6 +706,8 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 	Context("Reconcile an Outscale cluster", func() {
 		It("should create a simple cluster", func() {
 			ctx := context.Background()
+			uid := uuid.New().String()[:2]
+
 			osc_region, ok := os.LookupEnv("OSC_REGION")
 			if !ok {
 				osc_region = "eu-west-2"
@@ -711,41 +716,38 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			if !ok {
 				osc_subregion = osc_region + "a"
 			}
-			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 
+			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
-						Name:    "cluster-api-net",
+						Name:    fmt.Sprintf("cluster-api-net-%s", uid),
 						IpRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
-							Name:          "cluster-api-subnet",
+							Name:          fmt.Sprintf("cluster-api-subnet-%s", uid),
 							IpSubnetRange: "10.0.0.0/24",
 							SubregionName: osc_subregion,
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
-						Name: "cluster-api-internetservice",
+						Name: fmt.Sprintf("cluster-api-internetservice-%s", uid),
 					},
 					NatService: infrastructurev1beta1.OscNatService{
-						Name:         "cluster-api-natservice",
-						PublicIpName: "cluster-api-publicip",
-						SubnetName:   "cluster-api-subnet",
-					},
-					Bastion: infrastructurev1beta1.OscBastion{
-						Enable: false,
+						Name:         fmt.Sprintf("cluster-api-natservice-%s", uid),
+						PublicIpName: fmt.Sprintf("cluster-api-publicip-%s", uid),
+						SubnetName:   fmt.Sprintf("cluster-api-subnet-%s", uid),
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name: "cluster-api-routetable",
+							Name: fmt.Sprintf("cluster-api-routetable-%s", uid),
 							Subnets: []string{
-								"cluster-api-subnet",
+								fmt.Sprintf("cluster-api-subnet-%s", uid),
 							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
-									Name:        "cluster-api-routes",
-									TargetName:  "cluster-api-internetservice",
+									Name:        fmt.Sprintf("cluster-api-route-%s", uid),
+									TargetName:  fmt.Sprintf("cluster-api-internetservice-%s", uid),
 									TargetType:  "gateway",
 									Destination: "0.0.0.0/0",
 								},
@@ -754,16 +756,16 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
 						{
-							Name: "cluster-api-publicip",
+							Name: fmt.Sprintf("cluster-api-publicip-%s", uid),
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 						{
-							Name:        "cluster-api-securitygroups",
-							Description: "securitygroup",
+							Name:        fmt.Sprintf("cluster-api-securitygroup-%s", uid),
+							Description: "Security group for cluster API",
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
-									Name:          "cluster-api-securitygrouprule",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "0.0.0.0/0",
@@ -774,17 +776,19 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						},
 					},
 					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						LoadBalancerName:  "OscSdkExample-8",
+						LoadBalancerName:  fmt.Sprintf("cluster-api-loadbalancer-%s", uid),
 						LoadBalancerType:  "internet-facing",
-						SubnetName:        "cluster-api-subnet",
-						SecurityGroupName: "cluster-api-securitygroups",
+						SubnetName:        fmt.Sprintf("cluster-api-subnet-%s", uid),
+						SecurityGroupName: fmt.Sprintf("cluster-api-securitygroup-%s", uid),
 					},
 				},
 			}
+
 			createCheckDeleteOscCluster(ctx, infraClusterSpec)
 		})
 		It("should create a simple cluster with multi subnet, routeTable, securityGroup", func() {
 			ctx := context.Background()
+			uid := uuid.New().String()[:2]
 			osc_region, ok := os.LookupEnv("OSC_REGION")
 			if !ok {
 				osc_region = "eu-west-2"
@@ -796,53 +800,53 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
-						Name:    "cluster-api-net",
+						Name:    fmt.Sprintf("cluster-api-net-%s", uid),
 						IpRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
-							Name:          "cluster-api-subnet",
+							Name:          fmt.Sprintf("cluster-api-subnet-%s", uid),
 							IpSubnetRange: "10.0.0.0/24",
 							SubregionName: osc_subregion,
 						},
 						{
-							Name:          "cluster-api-sub",
+							Name:          fmt.Sprintf("cluster-api-sub-%s", uid),
 							IpSubnetRange: "10.0.1.0/24",
 							SubregionName: osc_subregion,
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
-						Name: "cluster-api-internetservice",
+						Name: fmt.Sprintf("cluster-api-internetservice-%s", uid),
 					},
 					NatService: infrastructurev1beta1.OscNatService{
-						Name:         "cluster-api-natservice",
-						PublicIpName: "cluster-api-publicip",
-						SubnetName:   "cluster-api-subnet",
+						Name:         fmt.Sprintf("cluster-api-natservice-%s", uid),
+						PublicIpName: fmt.Sprintf("cluster-api-publicip-%s", uid),
+						SubnetName:   fmt.Sprintf("cluster-api-subnet-%s", uid),
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name: "cluster-api-routetable",
+							Name: fmt.Sprintf("cluster-api-routetable-%s", uid),
 							Subnets: []string{
 								"cluster-api-subnet",
 							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
-									Name:        "cluster-api-routes",
-									TargetName:  "cluster-api-internetservice",
+									Name:        fmt.Sprintf("cluster-api-routes-%s", uid),
+									TargetName:  fmt.Sprintf("cluster-api-internetservice-%s", uid),
 									TargetType:  "gateway",
 									Destination: "0.0.0.0/0",
 								},
 							},
 						},
 						{
-							Name: "cluster-api-rt",
+							Name: fmt.Sprintf("cluster-api-rt-%s", uid),
 							Subnets: []string{
-								"cluster-api-sub",
+								fmt.Sprintf("cluster-api-sub-%s", uid),
 							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
-									Name:        "cluster-api-r",
-									TargetName:  "cluster-api-natservice",
+									Name:        fmt.Sprintf("cluster-api-r-%s", uid),
+									TargetName:  fmt.Sprintf("cluster-api-natservice-%s", uid),
 									TargetType:  "nat",
 									Destination: "0.0.0.0/0",
 								},
@@ -851,17 +855,17 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
 						{
-							Name: "cluster-api-publicip",
+							Name: fmt.Sprintf("cluster-api-publicip-%s", uid),
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 						{
-							Name:                      "cluster-api-securitygroups",
+							Name:                      fmt.Sprintf("cluster-api-securitygroups-%s", uid),
 							Description:               "Security group for cluster API",
 							DeleteDefaultOutboundRule: false, // Do not delete the default outbound rule
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
-									Name:          "inbound-kube-api",
+									Name:          fmt.Sprintf("inbound-kube-api-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "0.0.0.0/0",
@@ -869,16 +873,16 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   6443,
 								},
 								{
-									Name:                    "cluster-api-securitygrouprule-http",
+									Name:                    fmt.Sprintf("cluster-api-securitygrouprule-http-%s", uid),
 									Flow:                    "Inbound",
 									IpProtocol:              "tcp",
 									IpRange:                 "0.0.0.0/0",
 									FromPortRange:           80,
 									ToPortRange:             80,
-									TargetSecurityGroupName: "cluster-api-securitygroups",
+									TargetSecurityGroupName: fmt.Sprintf("cluster-api-securitygroups-%s", uid),
 								},
 								{
-									Name:       "outbound-all",
+									Name:       fmt.Sprintf("outbound-all-%s", uid),
 									Flow:       "Outbound",
 									IpProtocol: "-1", // All protocols
 									IpRange:    "0.0.0.0/0",
@@ -887,10 +891,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						},
 					},
 					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						LoadBalancerName:  "OscSdkExample-10",
+						LoadBalancerName:  fmt.Sprintf("OscSdkExample-10-%s", uid),
 						LoadBalancerType:  "internet-facing",
-						SubnetName:        "cluster-api-subnet",
-						SecurityGroupName: "cluster-api-securitygroups",
+						SubnetName:        fmt.Sprintf("cluster-api-subnet-%s", uid),
+						SecurityGroupName: fmt.Sprintf("cluster-api-securitygroups-%s", uid),
 					},
 				},
 			}
@@ -899,6 +903,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		})
 		It("should create a simple cluster with default values", func() {
 			ctx := context.Background()
+			uid := uuid.New().String()[:2]
 			osc_region, ok := os.LookupEnv("OSC_REGION")
 			if !ok {
 				osc_region = "eu-west-2"
@@ -911,10 +916,10 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 				Network: infrastructurev1beta1.OscNetwork{
 					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
-						Name: "cluster-api-net",
+						Name: fmt.Sprintf("cluster-api-net-%s", uid),
 					},
 					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						LoadBalancerName: "OscSdkExample-10",
+						LoadBalancerName: fmt.Sprintf("OscSdkExample-10-%s", uid),
 					},
 				},
 			}
@@ -923,6 +928,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 		})
 		It("Should create cluster with machine", func() {
 			ctx := context.Background()
+			uid := uuid.New().String()[:2]
 			osc_region, ok := os.LookupEnv("OSC_REGION")
 			if !ok {
 				osc_region = "eu-west-2"
@@ -938,72 +944,72 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 			infraClusterSpec := infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{
 					Net: infrastructurev1beta1.OscNet{
-						Name:    "cluster-api-net",
+						Name:    fmt.Sprintf("cluster-api-net-%s", uid),
 						IpRange: "10.0.0.0/16",
 					},
 					Subnets: []*infrastructurev1beta1.OscSubnet{
 						{
-							Name:          "cluster-api-subnet-kcp",
+							Name:          fmt.Sprintf("cluster-api-subnet-kcp-%s", uid),
 							IpSubnetRange: "10.0.4.0/24",
 							SubregionName: osc_subregion,
 						},
 						{
-							Name:          "cluster-api-subnet-kw",
+							Name:          fmt.Sprintf("cluster-api-subnet-kw-%s", uid),
 							IpSubnetRange: "10.0.3.0/24",
 							SubregionName: osc_subregion,
 						},
 						{
-							Name:          "cluster-api-subnet-public",
+							Name:          fmt.Sprintf("cluster-api-subnet-public-%s", uid),
 							IpSubnetRange: "10.0.2.0/24",
 							SubregionName: osc_subregion,
 						},
 					},
 					InternetService: infrastructurev1beta1.OscInternetService{
-						Name: "cluster-api-internetservice",
+						Name: fmt.Sprintf("cluster-api-internetservice-%s", uid),
 					},
 					NatService: infrastructurev1beta1.OscNatService{
-						Name:         "cluster-api-natservice",
-						PublicIpName: "cluster-api-publicip-nat",
-						SubnetName:   "cluster-api-subnet-public",
+						Name:         fmt.Sprintf("cluster-api-natservice-%s", uid),
+						PublicIpName: fmt.Sprintf("cluster-api-publicip-nat-%s", uid),
+						SubnetName:   fmt.Sprintf("cluster-api-subnet-public-%s", uid),
 					},
 					RouteTables: []*infrastructurev1beta1.OscRouteTable{
 						{
-							Name: "cluster-api-routable-kw",
+							Name: fmt.Sprintf("cluster-api-routable-kw-%s", uid),
 							Subnets: []string{
-								"cluster-api-subnet-kw",
+								fmt.Sprintf("cluster-api-subnet-kw-%s", uid),
 							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
-									Name:        "cluster-api-routes-kw",
-									TargetName:  "cluster-api-natservice",
+									Name:        fmt.Sprintf("cluster-api-routes-kw-%s", uid),
+									TargetName:  fmt.Sprintf("cluster-api-natservice-%s", uid),
 									TargetType:  "nat",
 									Destination: "0.0.0.0/0",
 								},
 							},
 						},
 						{
-							Name: "cluster-api-routetable-kcp",
+							Name: fmt.Sprintf("cluster-api-routetable-kcp-%s", uid),
 							Subnets: []string{
-								"cluster-api-subnet-kcp",
+								fmt.Sprintf("cluster-api-subnet-kcp-%s", uid),
 							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
-									Name:        "cluster-api-routes-kcp",
-									TargetName:  "cluster-api-natservice",
+									Name:        fmt.Sprintf("cluster-api-routes-kcp-%s", uid),
+									TargetName:  fmt.Sprintf("cluster-api-natservice-%s", uid),
 									TargetType:  "nat",
 									Destination: "0.0.0.0/0",
 								},
 							},
 						},
 						{
-							Name: "cluster-api-routetable-public",
+							Name: fmt.Sprintf("cluster-api-routetable-public-%s", uid),
 							Subnets: []string{
-								"cluster-api-subnet-public",
+								fmt.Sprintf("cluster-api-subnet-public-%s", uid),
 							},
 							Routes: []infrastructurev1beta1.OscRoute{
 								{
-									Name:        "cluster-api-routes-public",
-									TargetName:  "cluster-api-internetservice",
+									Name:        fmt.Sprintf("cluster-api-routes-public-%s", uid),
+									TargetName:  fmt.Sprintf("cluster-api-internetservice-%s", uid),
 									TargetType:  "gateway",
 									Destination: "0.0.0.0/0",
 								},
@@ -1012,17 +1018,17 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					},
 					PublicIps: []*infrastructurev1beta1.OscPublicIp{
 						{
-							Name: "cluster-api-publicip-nat",
+							Name: fmt.Sprintf("cluster-api-publicip-nat-%s", uid),
 						},
 					},
 					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
 						{
-							Name:                      "cluster-api-securitygroups-kw",
+							Name:                      fmt.Sprintf("cluster-api-securitygroups-kw-%s", uid),
 							Description:               "Security Group with cluster-api",
 							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
-									Name:          "cluster-api-securitygrouprule-api-kubelet-kw",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-api-kubelet-kw-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.3.0/24",
@@ -1030,7 +1036,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   10250,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-api-kubelet-kcp",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-api-kubelet-kcp-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.4.0/24",
@@ -1038,7 +1044,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   10250,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-nodeip-kw",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-nodeip-kw-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.3.0/24",
@@ -1046,7 +1052,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   32767,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-nodeip-kcp",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-nodeip-kcp-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.4.0/24",
@@ -1056,12 +1062,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:                      "cluster-api-securitygroups-kcp",
+							Name:                      fmt.Sprintf("cluster-api-securitygroups-kcp-%s", uid),
 							Description:               "Security Group with cluster-api",
 							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
-									Name:          "cluster-api-securitygrouprule-api-kw",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-api-kw-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.3.0/24",
@@ -1069,7 +1075,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   6443,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-api-kcp",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-api-kcp-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.4.0/24",
@@ -1077,7 +1083,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   6443,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-etcd",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-etcd-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.3.0/24",
@@ -1085,7 +1091,7 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 									ToPortRange:   2379,
 								},
 								{
-									Name:          "cluster-api-securitygrouprule-kubelet-kcp",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-kubelet-kcp-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "10.0.4.0/24",
@@ -1095,12 +1101,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 							},
 						},
 						{
-							Name:                      "cluster-api-securitygroup-lb",
+							Name:                      fmt.Sprintf("cluster-api-securitygroup-lb-%s", uid),
 							Description:               "Security Group with cluster-api",
 							DeleteDefaultOutboundRule: false,
 							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 								{
-									Name:          "cluster-api-securitygrouprule-lb",
+									Name:          fmt.Sprintf("cluster-api-securitygrouprule-lb-%s", uid),
 									Flow:          "Inbound",
 									IpProtocol:    "tcp",
 									IpRange:       "0.0.0.0/0",
@@ -1111,42 +1117,42 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 						},
 					},
 					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						LoadBalancerName:  "osc-k8s-machine",
+						LoadBalancerName:  fmt.Sprintf("osc-k8s-machine-%s", uid),
 						LoadBalancerType:  "internet-facing",
-						SubnetName:        "cluster-api-subnet-public",
-						SecurityGroupName: "cluster-api-securitygroup-lb",
+						SubnetName:        fmt.Sprintf("cluster-api-subnet-public-%s", uid),
+						SecurityGroupName: fmt.Sprintf("cluster-api-securitygroup-lb-%s", uid),
 					},
 				},
 			}
 			infraMachineSpec := infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					KeyPair: infrastructurev1beta1.OscKeypair{
-						Name:          "cluster-api-testenv",
+						Name:          fmt.Sprintf("cluster-api-testenv-%s", uid),
 						DeleteKeypair: false,
 					},
 					Vm: infrastructurev1beta1.OscVm{
-						Name:          "cluster-api-vm-kcp",
+						Name:          fmt.Sprintf("cluster-api-vm-kcp-%s", uid),
 						Role:          "controlplane",
 						ImageId:       imageId,
 						DeviceName:    "/dev/sda1",
-						KeypairName:   "cluster-api-testenv",
+						KeypairName:   fmt.Sprintf("cluster-api-testenv-%s", uid),
 						SubregionName: osc_subregion,
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
 							RootDiskType: "gp2",
 						},
-						SubnetName:       "cluster-api-subnet-kcp",
-						LoadBalancerName: "osc-k8s-machine",
+						SubnetName:       fmt.Sprintf("cluster-api-subnet-kcp-%s", uid),
+						LoadBalancerName: fmt.Sprintf("osc-k8s-machine-%s", uid),
 						VmType:           "tinav6.c4r8p2",
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
-								Name: "cluster-api-securitygroups-kcp",
+								Name: fmt.Sprintf("cluster-api-securitygroups-kcp-%s", uid),
 							},
 						},
 						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
 							{
-								Name:      "cluster-api-privateip-kcp",
+								Name:      fmt.Sprintf("cluster-api-privateip-kcp-%s", uid),
 								PrivateIp: "10.0.4.10",
 							},
 						},
