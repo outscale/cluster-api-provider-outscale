@@ -29,7 +29,7 @@ clusterapioutscale:
       # -- Outscale provider image tag
       imageTag: "v0.1.0"
       # -- Proxy image
-      imageProxy: gcr.io/kubebuilder/kube-rbac-proxy
+      imageProxy: ghcr.io/brancz/kube-rbac-proxy
       # -- Proxy imageTag
       imageProxyTag: "v0.8.0"
       # -- ImagePullPolcy to use (IfNotPresent, Never, Always)

@@ -15,7 +15,7 @@ Deploy clusterapioutscale. Please look at deploy.md
 | clusterapioutscale.deployment.backoff_factor | string | `"2.0"` | Factor multiplied by Duration for each iteration |
 | clusterapioutscale.deployment.backoff_steps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
 | clusterapioutscale.deployment.containers.image | string | `"registry.hub.docker.com/outscale/cluster-api-outscale-controllers"` | Outscale provider image |
-| clusterapioutscale.deployment.containers.imageProxy | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
+| clusterapioutscale.deployment.containers.imageProxy | string | `"ghcr.io/brancz/kube-rbac-proxy"` | Proxy image |
 | clusterapioutscale.deployment.containers.imageProxyTag | string | `"v0.8.0"` | Proxy imageTag |
 | clusterapioutscale.deployment.containers.imageTag | string | `"v0.1.0"` | Outscale provider image tag |
 | clusterapioutscale.deployment.containers.pullPolicy | string | `"IfNotPresent"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
