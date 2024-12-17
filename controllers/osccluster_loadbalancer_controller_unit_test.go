@@ -73,6 +73,27 @@ var (
 		},
 	}
 
+	defaultLoadBalancerWithoutSgInitialize = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:    "test-net",
+				IpRange: "10.0.0.0/16",
+			},
+			Subnets: []*infrastructurev1beta1.OscSubnet{
+				{
+					Name:          "test-subnet",
+					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
+				},
+			},
+			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+				LoadBalancerName: "test-loadbalancer",
+				LoadBalancerType: "internet-facing",
+				SubnetName:       "test-subnet",
+			},
+		},
+	}
+
 	defaultLoadBalancerReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
@@ -1060,11 +1081,11 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 		},
 		{
 			name:                        "securitygroup does not exist",
-			spec:                        defaultLoadBalancerInitialize,
+			spec:                        defaultLoadBalancerWithoutSgInitialize,
 			expSubnetFound:              true,
 			expSecurityGroupFound:       false,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
+			expReconcileLoadBalancerErr: nil,
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {

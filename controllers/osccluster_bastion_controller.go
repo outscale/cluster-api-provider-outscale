@@ -245,9 +245,15 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	for _, bastionSecurityGroup := range *bastionSecurityGroups {
 		clusterScope.V(4).Info("Get bastionSecurityGroup", "bastionSecurityGroup", bastionSecurityGroup)
 		securityGroupName := bastionSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+		securityGroupId, err, requeueResult := getSecurityGroupResourceId(securityGroupName, clusterScope)
 		clusterScope.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
+		// If there was an error, handle requeue or return the error
 		if err != nil {
+			// If requeue is needed, return the requeueResult
+			if requeueResult.Requeue {
+				return requeueResult, nil
+			}
+			// If no requeue, return the error
 			return reconcile.Result{}, err
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
@@ -357,8 +363,15 @@ func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScop
 	bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 	for _, bastionSecurityGroup := range *bastionSecurityGroups {
 		securityGroupName := bastionSecurityGroup.Name + "-" + clusterScope.GetUID()
-		_, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+		_, err, requeueResult := getSecurityGroupResourceId(securityGroupName, clusterScope)
+
+		// If there was an error, handle requeue or return the error
 		if err != nil {
+			// If requeue is needed, return the requeueResult to trigger requeue
+			if requeueResult.Requeue {
+				return requeueResult, nil
+			}
+			// If no requeue is needed, return the error
 			return reconcile.Result{}, err
 		}
 	}

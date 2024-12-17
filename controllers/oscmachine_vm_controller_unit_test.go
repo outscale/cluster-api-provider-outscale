@@ -3446,7 +3446,7 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 			expGetVmFound:           true,
 			expGetVmErr:             nil,
 			expSecurityGroupFound:   false,
-			expReconcileDeleteVmErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
+			expReconcileDeleteVmErr: nil,
 		},
 		{
 			name:                    "failed to get vm",

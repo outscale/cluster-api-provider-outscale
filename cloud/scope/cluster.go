@@ -215,6 +215,11 @@ func (s *ClusterScope) GetSecurityGroupsRef() *infrastructurev1beta1.OscResource
 	return &s.OscCluster.Status.Network.SecurityGroupsRef
 }
 
+// SetSecurityGroupsRef updates the SecurityGroupsRef in the cluster scope
+func (s *ClusterScope) SetSecurityGroupsRef(securityGroupsRef infrastructurev1beta1.OscResourceReference) {
+	s.OscCluster.Status.Network.SecurityGroupsRef = securityGroupsRef
+}
+
 // GetRouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id)
 func (s *ClusterScope) GetRouteRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.RouteRef

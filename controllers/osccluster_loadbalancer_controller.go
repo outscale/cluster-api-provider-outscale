@@ -166,9 +166,18 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		return reconcile.Result{}, err
 	}
 	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
-	securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+	securityGroupId, err, requeueResult := getSecurityGroupResourceId(securityGroupName, clusterScope)
+
+	// Log the result of fetching the security group ID
 	clusterScope.V(4).Info("Get loadBalancer subnetId", "sg", securityGroupId)
+
+	// If there was an error, handle requeue or return the error
 	if err != nil {
+		// If requeue is needed, return the requeueResult to trigger requeue
+		if requeueResult.Requeue {
+			return requeueResult, nil
+		}
+		// If no requeue is needed, return the error
 		return reconcile.Result{}, err
 	}
 	name := loadBalancerName + "-" + clusterScope.GetUID()

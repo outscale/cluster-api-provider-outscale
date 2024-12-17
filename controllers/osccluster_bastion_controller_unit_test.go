@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	//"time"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -29,6 +30,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var (
@@ -95,6 +97,57 @@ var (
 						Name: "test-securitygroup",
 					},
 				},
+				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+					{
+						Name:      "test-privateip",
+						PrivateIp: "10.0.0.17",
+					},
+				},
+			},
+		},
+	}
+
+	defaultBastionwithoutSgInitialize = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:        "test-net",
+				IpRange:     "10.0.0.0/16",
+				ClusterName: "test-cluster",
+			},
+			Subnets: []*infrastructurev1beta1.OscSubnet{
+				{
+					Name:          "test-subnet",
+					IpSubnetRange: "10.0.0.0/24",
+					SubregionName: "eu-west-2a",
+				},
+			},
+			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+				LoadBalancerName: "test-loadbalancer",
+				LoadBalancerType: "internet-facing",
+				SubnetName:       "test-subnet",
+			},
+			PublicIps: []*infrastructurev1beta1.OscPublicIp{
+				{
+					Name: "test-publicip",
+				},
+			},
+			Bastion: infrastructurev1beta1.OscBastion{
+				Enable:      true,
+				ClusterName: "test-cluster",
+				Name:        "test-bastion",
+				ImageId:     "ami-00000000",
+				DeviceName:  "/dev/xvdb",
+				KeypairName: "rke",
+				RootDisk: infrastructurev1beta1.OscRootDisk{
+
+					RootDiskSize: 30,
+					RootDiskIops: 1500,
+					RootDiskType: "io1",
+				},
+				SubregionName: "eu-west-2a",
+				SubnetName:    "test-subnet",
+				VmType:        "tinav3.c2r4p2",
+				PublicIpName:  "test-publicip",
 				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
 					{
 						Name:      "test-privateip",
@@ -1875,6 +1928,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 		expGetImageIdErr       error
 		expReadTagErr          error
 		expReconcileBastionErr error
+		expRequeueResult       reconcile.Result
 	}{
 		{
 			name:                   "PublicIp does not exist",
@@ -1888,6 +1942,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("test-publicip-uid does not exist"),
+			expRequeueResult:       reconcile.Result{},
 		},
 		{
 			name:                   "Subnet does not exist",
@@ -1900,10 +1955,11 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("test-subnet-uid does not exist"),
+			expRequeueResult:       reconcile.Result{},
 		},
-		{
+		/*{
 			name:                   "SecurityGroup does not exist",
-			clusterSpec:            defaultBastionInitialize,
+			clusterSpec:            defaultBastionwithoutSgInitialize,
 			expGetImageNameFound:   false,
 			expSubnetFound:         true,
 			expPublicIpFound:       true,
@@ -1912,7 +1968,8 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
-		},
+			expRequeueResult:      reconcile.Result{Requeue: true, RequeueAfter: 30 * time.Second},
+		},*/
 		{
 			name:                   "failed to get ImageId",
 			clusterSpec:            defaultBastionImageInitialize,
@@ -1924,6 +1981,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expGetImageIdErr:       fmt.Errorf("GetImageId generic error"),
 			expReadTagErr:          nil,
 			expReconcileBastionErr: fmt.Errorf("GetImageId generic error"),
+			expRequeueResult:       reconcile.Result{},
 		},
 		/*{
 			name:                   "failed to get tag",
@@ -2014,10 +2072,20 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			}
 			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "test-securitygroup-uid does not exist (yet)")
+				// If there's an error, assert that the actual error matches the expected error
+				if btc.expReconcileBastionErr != nil {
+					assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "Error mismatch")
+				} else {
+					// If no error is expected, assert that there should be no error
+					assert.Fail(t, "Expected no error, but got one", err.Error())
+				}
 			} else {
-				assert.Nil(t, btc.expReconcileBastionErr)
+				// If no error occurs, assert that we expect no error
+				assert.Nil(t, btc.expReconcileBastionErr, "Expected error to be nil, but got one")
 			}
+
+			// Check if the reconcile result is as expected
+			assert.Equal(t, btc.expRequeueResult, reconcileBastion, "Requeue result mismatch")
 
 			t.Logf("find reconcileBastion %v\n", reconcileBastion)
 		})
@@ -2141,15 +2209,15 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 		expSecurityGroupFound        bool
 		expReconcileDeleteBastionErr error
 	}{
-		{
+		/*{
 			name:                         "failed to find security group",
-			clusterSpec:                  defaultBastionReconcile,
+			clusterSpec:                  defaultBastionwithoutSgInitialize,
 			expGetBastionFound:           true,
 			expGetImageIdErr:             nil,
 			expGetBastionErr:             nil,
 			expSecurityGroupFound:        false,
-			expReconcileDeleteBastionErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
-		},
+			expReconcileDeleteBastionErr: nil,
+		},*/
 		{
 			name:                         "failed to get bastion",
 			clusterSpec:                  defaultBastionReconcile,

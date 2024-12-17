@@ -393,10 +393,19 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	for _, vmSecurityGroup := range *vmSecurityGroups {
 		machineScope.V(4).Info("Get vmSecurityGroup", "vmSecurityGroup", vmSecurityGroup)
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
-		machineScope.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
+		securityGroupId, err, requeueResult := getSecurityGroupResourceId(securityGroupName, clusterScope)
+
+		// Log the result of fetching the security group ID
+		clusterScope.V(4).Info("Get loadBalancer subnetId", "sg", securityGroupId)
+
+		// If there was an error, handle requeue or return the error
 		if err != nil {
-			return reconcile.Result{RequeueAfter: 30 * time.Second}, err
+			// If requeue is needed, return the requeueResult to trigger requeue
+			if requeueResult.Requeue {
+				return requeueResult, nil
+			}
+			// If no requeue is needed, return the error
+			return reconcile.Result{}, err
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
@@ -643,8 +652,18 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
 	for _, vmSecurityGroup := range *vmSecurityGroups {
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+		securityGroupId, err, requeueResult := getSecurityGroupResourceId(securityGroupName, clusterScope)
+
+		// Log the result of fetching the security group ID
+		clusterScope.V(4).Info("Get loadBalancer subnetId", "sg", securityGroupId)
+
+		// If there was an error, handle requeue or return the error
 		if err != nil {
+			// If requeue is needed, return the requeueResult to trigger requeue
+			if requeueResult.Requeue {
+				return requeueResult, nil
+			}
+			// If no requeue is needed, return the error
 			return reconcile.Result{}, err
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
