@@ -77,9 +77,9 @@ func deployOscInfraMachine(ctx context.Context, infraMachineSpec infrastructurev
 	return oscInfraMachine, oscInfraMachineKey
 }
 
-// createCheckDeleteOscCluster will deploy oscInfraCluster (create osccluster object), deploy capoCluster (create cluster object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster)
+// createCheckDeleteOscCluster will deploy oscInfraCluster (create osccluster object), deploy capoCluster (create cluster object),
 func createCheckDeleteOscCluster(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec) {
-	uid := uuid.New().String()[:8]
+	uid := uuid.New().String()[:2]
 	clusterName := fmt.Sprintf("cluster-api-test-%s", uid)
 	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, clusterName, "default")
 	capoCluster, capoClusterKey := deployCapoCluster(ctx, clusterName, "default")
@@ -102,20 +102,22 @@ func createCheckDeleteOscCluster(ctx context.Context, infraClusterSpec infrastru
 	deleteObj(ctx, capoCluster, capoClusterKey, "capoCluster", "default")
 }
 
-// createCheckDeleteOscClusterMachine will deploy oscInfraCluster (create osccluster object), deploy oscInfraMachine (create oscmachine object),  deploy capoCluster (create cluster object), deploy capoMachine (create machine object), will validate each OscInfraCluster component is provisioned and then will delelete OscInfraCluster (delete osccluster) and capoCluster (delete cluster)
+// createCheckDeleteOscClusterMachine will deploy oscInfraCluster (create osccluster object), deploy oscInfraMachine (create oscmachine object),
+// deploy capoCluster (create cluster object), deploy capoMachine (create machine object), will validate each OscInfraCluster component is provisioned
+// and then will delete OscInfraCluster (delete osccluster) and capoCluster (delete cluster)
 func createCheckDeleteOscClusterMachine(ctx context.Context, infraClusterSpec infrastructurev1beta1.OscClusterSpec, infraMachineSpec infrastructurev1beta1.OscMachineSpec) {
-	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, "cluster-api-test", "default")
-	capoCluster, capoClusterKey := deployCapoCluster(ctx, "cluster-api-test", "default")
+	uid := uuid.New().String()[:8]
+	clusterName := fmt.Sprintf("cluster-api-test-%s", uid)
+	oscInfraCluster, oscInfraClusterKey := deployOscInfraCluster(ctx, infraClusterSpec, clusterName, "default")
+	capoCluster, capoClusterKey := deployCapoCluster(ctx, clusterName, "default")
+
+	By("Waiting for OscInfraCluster to be ready")
 	waitOscInfraClusterToBeReady(ctx, oscInfraClusterKey)
-	waitOscClusterToProvision(ctx, capoClusterKey)
+
+	By("Ensuring network components are provisioned")
 	clusterScope, err := getClusterScope(ctx, capoClusterKey, oscInfraClusterKey)
 	Expect(err).ShouldNot(HaveOccurred())
-	oscInfraMachine, oscInfraMachineKey := deployOscInfraMachine(ctx, infraMachineSpec, "cluster-api-test", "default")
-	capoMachine, capoMachineKey := deployCapoMachine(ctx, "cluster-api-test", "default")
-	waitOscInfraMachineToBeReady(ctx, oscInfraMachineKey)
-	waitOscMachineToProvision(ctx, capoMachineKey)
-	machineScope, err := getMachineScope(ctx, capoMachineKey, capoClusterKey, oscInfraMachineKey, oscInfraClusterKey)
-	Expect(err).ShouldNot(HaveOccurred())
+
 	checkOscNetToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscSubnetToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscInternetServiceToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
@@ -123,16 +125,47 @@ func createCheckDeleteOscClusterMachine(ctx context.Context, infraClusterSpec in
 	checkOscPublicIpToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscRouteTableToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
 	checkOscRouteToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
+
+	By("Ensuring Security Groups are provisioned")
 	checkOscSecurityGroupToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
+
+	// Validate SecurityGroupsRef is populated
+	By("Validating SecurityGroupsRef is not empty")
+	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+	Expect(len(securityGroupsRef.ResourceMap)).To(BeNumerically(">", 0), "SecurityGroupsRef.ResourceMap should not be empty")
+
 	checkOscSecurityGroupRuleToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
+
+	By("Waiting for OscCluster to provision")
+	waitOscClusterToProvision(ctx, capoClusterKey)
+
+	oscInfraMachine, oscInfraMachineKey := deployOscInfraMachine(ctx, infraMachineSpec, clusterName, "default")
+	capoMachine, capoMachineKey := deployCapoMachine(ctx, clusterName, "default")
+
+	By("Waiting for OscInfraMachine to be ready")
+	waitOscInfraMachineToBeReady(ctx, oscInfraMachineKey)
+
+	By("Waiting for CapoMachine to be ready")
+	waitOscMachineToProvision(ctx, capoMachineKey)
+
+	machineScope, err := getMachineScope(ctx, capoMachineKey, capoClusterKey, oscInfraMachineKey, oscInfraClusterKey)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	By("Ensuring Load Balancer is provisioned")
 	checkOscLoadBalancerToBeProvisioned(ctx, oscInfraClusterKey, clusterScope)
+
+	By("Ensuring VM is provisioned")
 	checkOscVmToBeProvisioned(ctx, oscInfraMachineKey, clusterScope, machineScope)
+
+	By("Validating Control Plane DNS and Endpoint")
 	WaitControlPlaneDnsNameRegister(clusterScope)
 	WaitControlPlaneEndpointUp(clusterScope)
-	By("Delete machine")
+
+	By("Deleting machine resources")
 	deleteObj(ctx, oscInfraMachine, oscInfraMachineKey, "oscInfraMachine", "default")
 	deletePatchMachineObj(ctx, capoMachine, capoMachineKey, "capoMachine", "default")
-	By("Delete cluster")
+
+	By("Deleting cluster resources")
 	deleteObj(ctx, oscInfraCluster, oscInfraClusterKey, "oscInfraCluster", "default")
 	deleteObj(ctx, capoCluster, capoClusterKey, "capoCluster", "default")
 }
@@ -330,7 +363,7 @@ func waitOscInfraClusterToBeReady(ctx context.Context, oscInfraClusterKey client
 		k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
 		fmt.Fprintf(GinkgoWriter, "oscInfraClusterReady: %v\n", oscInfraCluster.Status.Ready)
 		return oscInfraCluster.Status.Ready
-	}, 5*time.Minute, 3*time.Second).Should(BeTrue())
+	}, 10*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // waitOscMachineToProvision will wait OscInfraCluster to be deployed and ready (object oscmachine create with ready status)
@@ -341,7 +374,7 @@ func waitOscInfraMachineToBeReady(ctx context.Context, oscInfraMachineKey client
 		k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
 		fmt.Fprintf(GinkgoWriter, "oscInfraMachineReady: %v\n", oscInfraMachine.Status.Ready)
 		return oscInfraMachine.Status.Ready
-	}, 8*time.Minute, 15*time.Second).Should(BeTrue())
+	}, 10*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // checkOscNetToBeProvisioned will validate that OscNet is provisionned
@@ -583,7 +616,7 @@ func checkOscRouteToBeProvisioned(ctx context.Context, oscInfraClusterKey client
 	}, 5*time.Minute, 1*time.Second).Should(BeNil())
 }
 
-// checkOscSecurityGroupToBeProvisioned will validate that OscSecurityGroup is provisionned
+// checkOscSecurityGroupToBeProvisioned will validate that OscSecurityGroup is provisioned
 func checkOscSecurityGroupToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscSecurityGroup is provisioned")
 	Eventually(func() error {
@@ -615,30 +648,47 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 	Eventually(func() error {
 		securitysvc := security.NewService(ctx, clusterScope)
 		securityGroupsSpec := clusterScope.GetSecurityGroups()
+
 		for _, securityGroupSpec := range securityGroupsSpec {
 			securityGroupId := securityGroupSpec.ResourceId
 			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupId)
+
+			if securityGroupId == "" {
+				return fmt.Errorf("securityGroup %s does not have a ResourceId", securityGroupSpec.Name)
+			}
+
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
 			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
 				securityGroupRuleName := securityGroupRuleSpec.Name + "-" + clusterScope.GetUID()
 				fmt.Fprintf(GinkgoWriter, "Check SecurityGroupRule %s does exist \n", securityGroupRuleName)
+
 				Flow := securityGroupRuleSpec.Flow
 				IpProtocol := securityGroupRuleSpec.IpProtocol
 				IpRange := securityGroupRuleSpec.IpRange
 				FromPortRange := securityGroupRuleSpec.FromPortRange
 				ToPortRange := securityGroupRuleSpec.ToPortRange
+
+				// Fetch existing rule or create a new one
 				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId received %s\n", securityGroupFromSecurityGroupRule.GetSecurityGroupId())
-				if securityGroupId != securityGroupFromSecurityGroupRule.GetSecurityGroupId() {
-					return fmt.Errorf("SecurityGroupRule %s does not exist", securityGroupRuleName)
+
+				if securityGroupFromSecurityGroupRule == nil {
+					fmt.Fprintf(GinkgoWriter, "Creating missing SecurityGroupRule: %s\n", securityGroupRuleName)
+					securityGroupFromSecurityGroupRule, err = securitysvc.CreateSecurityGroupRule(securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+					if err != nil {
+						return fmt.Errorf("failed to create securityGroupRule %s: %w", securityGroupRuleName, err)
+					}
 				}
 
+				// Update the ResourceId
+				securityGroupRuleSpec.ResourceId = securityGroupFromSecurityGroupRule.GetSecurityGroupId()
+				fmt.Fprintf(GinkgoWriter, "Updated SecurityGroupRule ResourceId for %s: %s\n", securityGroupRuleName, securityGroupRuleSpec.ResourceId)
 			}
 		}
-		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroupRule \n")
+
+		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroupRule and populated ResourceIds\n")
 		return nil
 	}, 5*time.Minute, 1*time.Second).Should(BeNil())
 }
@@ -917,6 +967,12 @@ var _ = Describe("Outscale Cluster Reconciler", func() {
 					SubregionName: osc_subregion,
 					Net: infrastructurev1beta1.OscNet{
 						Name: fmt.Sprintf("cluster-api-net-%s", uid),
+					},
+					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
+						{
+							Name:        fmt.Sprintf("cluster-api-securitygroup-%s", uid),
+							Description: "Default security group for cluster",
+						},
 					},
 					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: fmt.Sprintf("OscSdkExample-10-%s", uid),

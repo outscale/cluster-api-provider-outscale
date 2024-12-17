@@ -98,9 +98,9 @@ run_shellcheck(){
 		SHELLCHECK_DISABLED="$(join_by , "${disabled[@]}")"
 		readonly SHELLCHECK_DISABLED
 		ROOT_PATH=$(git rev-parse --show-toplevel)
-		IGNORE_FILES=$(find "${ROOT_PATH}" -name "*.sh" | grep "tilt_modules")
+		IGNORE_FILES=$(find "${ROOT_PATH}" -name "*.sh" | grep "tilt_modules|vendor")
 		echo "Ignoring shellcheck on ${IGNORE_FILES}"
-		FILES=$(find "${ROOT_PATH}" -name "*.sh" -not -path "./tilt_modules/*")
+		FILES=$(find "${ROOT_PATH}" -name "*.sh" -not -path "./tilt_modules/*" -not -path "./vendor/*")
 		while read -r file; do
 		   "${ROOT_PATH}/bin/shellcheck" "--exclude=${SHELLCHECK_DISABLED}" "--color=auto" -x "$file" >> "${OUT}" 2>&1
 		done <<< "$FILES"

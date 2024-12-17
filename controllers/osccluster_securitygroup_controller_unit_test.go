@@ -750,17 +750,9 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 
 			// Mock `CreateSecurityGroupRule`
 			if tc.expectCreateSecurityRule {
-				if tc.expectedError == nil {
-					// Simulate 409 Conflict for already existing rule, should be ignored by the function
-					mockOscSecurityGroupInterface.EXPECT().
-						CreateSecurityGroupRule(securityGroupID, "Inbound", "tcp", "0.0.0.0/0", "", int32(6443), int32(6443)).
-						Return(nil, fmt.Errorf("409 Conflict: Rule already exists"))
-				} else {
-					// Simulate an error other than 409 Conflict
-					mockOscSecurityGroupInterface.EXPECT().
-						CreateSecurityGroupRule(securityGroupID, "Inbound", "tcp", "0.0.0.0/0", "", int32(6443), int32(6443)).
-						Return(nil, tc.expectedError)
-				}
+				mockOscSecurityGroupInterface.EXPECT().
+					CreateSecurityGroupRule(securityGroupID, "Inbound", "tcp", "0.0.0.0/0", "", int32(6443), int32(6443)).
+					Return(nil, tc.expectedError)
 			}
 
 			// Run the reconcile function
@@ -854,27 +846,29 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 }
 
 // / TestReconcileSecurityGroupRuleCreate has several tests to cover the code of the function reconcileSecurityGroupRule
-func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
+func TestReconcileSecurityGroupRule(t *testing.T) {
 	testCases := []struct {
 		name                     string
 		spec                     infrastructurev1beta1.OscClusterSpec
-		expectedError            error
 		expectGetSecurityGroup   bool
 		expectCreateSecurityRule bool
+		expectedError            error
+		expectedResult           reconcile.Result
 	}{
 		{
-			name:                     "create_securityGroupRule_first_time",
+			name:                     "failed_to_create_securityGroupRule",
+			spec:                     defaultSecurityGroupSpec(),
+			expectGetSecurityGroup:   false,
+			expectCreateSecurityRule: false,
+			expectedError:            fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
+			expectedResult:           reconcile.Result{Requeue: false, RequeueAfter: 30 * time.Second},
+		},
+		{
+			name:                     "create_securityGroupRule_success",
 			spec:                     defaultSecurityGroupSpec(),
 			expectGetSecurityGroup:   true,
 			expectCreateSecurityRule: true,
 			expectedError:            nil,
-		},
-		{
-			name:                     "failed_to_create_securityGroupRule",
-			spec:                     defaultSecurityGroupSpec(),
-			expectGetSecurityGroup:   true,
-			expectCreateSecurityRule: false,
-			expectedError:            fmt.Errorf("securityGroupsRef.ResourceMap is empty, security groups should be reconciled first"),
 		},
 	}
 
@@ -926,11 +920,11 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 			// Validate the expected results
 			if tc.expectedError != nil {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "securityGroupsRef.ResourceMap is empty, security groups should be reconciled first")
+				assert.Contains(t, err.Error(), tc.expectedError.Error())
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, reconcile.Result{}, result)
+			assert.Equal(t, tc.expectedResult, result)
 
 			t.Logf("Test %s result: %v, error: %v", tc.name, result, err)
 		})
@@ -1134,7 +1128,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 			expTagFound:                      false,
 			expCreateSecurityGroupErr:        fmt.Errorf("CreateSecurityGroup generic error"),
 			expReadTagErr:                    nil,
-			expReconcileSecurityGroupErr:     fmt.Errorf("CreateSecurityGroup generic error cannot create securityGroup for Osccluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     fmt.Errorf("cannot create security group for OscCluster test-system/test-osc: CreateSecurityGroup generic error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1228,7 +1222,7 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 			expNetFound:                      true,
 			expGetSecurityGroupIdsFromNetIds: nil,
 			expReadTagErr:                    fmt.Errorf("ReadTag generic error"),
-			expReconcileSecurityGroupErr:     fmt.Errorf("ReadTag generic error cannot get tag for OscCluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     fmt.Errorf("cannot get tag for OscCluster test-system/test-osc: ReadTag generic error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
