@@ -3,7 +3,6 @@ module github.com/outscale-dev/cluster-api-provider-outscale.git
 go 1.23.0
 
 require (
-	github.com/Jeffail/gabs v1.4.0
 	github.com/benbjohnson/clock v1.3.0
 	github.com/go-logr/logr v1.4.2
 	github.com/golang/mock v1.6.0
