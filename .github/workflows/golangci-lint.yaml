@@ -1,0 +1,47 @@
+name: golangci-lint
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  golangci:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full git history for accurate comparisons
+
+      # Step 2: Set up Go environment
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      # Step 3: Cache Go Modules
+      - name: Cache Go Modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # Step 4: Install golangci-lint (if not already cached)
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.3
+
+      # Step 5: Run golangci-lint
+      - name: Run golangci-lint
+        run: |
+          golangci-lint run --new-from-rev=origin/main --timeout=5m
