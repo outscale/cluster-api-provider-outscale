@@ -58,7 +58,7 @@ install_kustomize() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		archive_name="kustomize-v${MINIMUM_KUSTOMIZE_VERSION}.tar.gz"
-		curl -sLo "${BIN_ROOT}/${archive_name}" "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${MINIMUM_KUSTOMIZE_VERSION}/kustomize_v${MINIMUM_KUSTOMIZE_VERSION}_${goos}_${goarch}.tar.gz"
+		curl -sLo "${BIN_ROOT}/${archive_name}" "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${MINIMUM_KUSTOMIZE_VERSION}/kustomize_v${MINIMUM_KUSTOMIZE_VERSION}_${goos}_${goarch}.tar.gz"
 		tar -zvxf "${BIN_ROOT}/${archive_name}" -C "${BIN_ROOT}/"
 		chmod +x "${BIN_ROOT}/kustomize"
 		rm "${BIN_ROOT}/${archive_name}"
