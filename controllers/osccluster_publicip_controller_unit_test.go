@@ -641,60 +641,6 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 	}
 }
 
-// TestReconcileDeletePublicIpDeleteWithoutSpec has several tests to cover the code of the function reconcileDeletePublicIp
-func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
-	publicIpTestCases := []struct {
-		name                          string
-		spec                          infrastructurev1beta1.OscClusterSpec
-		expValidatePublicIpIdsErr     error
-		expCheckPublicIpUnlinkErr     error
-		expDeletePublicIpErr          error
-		expReconcileDeletePublicIpErr error
-	}{
-		{
-			name:                          "delete publicIp without spec (with default values)",
-			expValidatePublicIpIdsErr:     nil,
-			expDeletePublicIpErr:          nil,
-			expCheckPublicIpUnlinkErr:     nil,
-			expReconcileDeletePublicIpErr: nil,
-		},
-	}
-	for _, pitc := range publicIpTestCases {
-		t.Run(pitc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
-			var publicIpIds []string
-			var clockInsideLoop time.Duration = 5
-			var clockLoop time.Duration = 120
-			publicIpName := "cluster-api-publicip-nat-uid"
-			publicIpId := "eipalloc-" + publicIpName
-			publicIpIds = append(publicIpIds, publicIpId)
-			mockOscPublicIpInterface.
-				EXPECT().
-				ValidatePublicIpIds(gomock.Eq(publicIpIds)).
-				Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
-			mockOscPublicIpInterface.
-				EXPECT().
-				CheckPublicIpUnlink(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
-				Return(pitc.expCheckPublicIpUnlinkErr)
-			mockOscPublicIpInterface.
-				EXPECT().
-				DeletePublicIp(gomock.Eq(publicIpId)).
-				Return(pitc.expDeletePublicIpErr)
-			networkSpec := clusterScope.GetNetwork()
-			networkSpec.SetPublicIpDefaultValue()
-			clusterScope.OscCluster.Spec.Network.PublicIps[0].ResourceId = publicIpId
-			reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
-
-			if err != nil {
-				assert.Equal(t, pitc.expReconcileDeletePublicIpErr.Error(), err.Error(), "reconcileDeletePublicIp() should return the same error")
-			} else {
-				assert.Nil(t, pitc.expReconcileDeletePublicIpErr)
-			}
-			t.Logf("Find reconcileDeletePublicIp %v\n", reconcileDeletePublicIp)
-		})
-	}
-}
-
 // TestReconcileDeletePublicIpDelete has several tests to cover the code of the function reconcileDeletePublicIp
 func TestReconcileDeletePublicIpDelete(t *testing.T) {
 	publicIpTestCases := []struct {
@@ -738,13 +684,18 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				publicIpRef.ResourceMap[publicIpName] = publicIpId
 				publicIpIds = append(publicIpIds, publicIpId)
+			}
+			for _, publicIpId := range publicIpRef.ResourceMap {
 				mockOscPublicIpInterface.
 					EXPECT().
 					CheckPublicIpUnlink(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
@@ -804,13 +755,19 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
+
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				publicIpRef.ResourceMap[publicIpName] = publicIpId
 				publicIpIds = append(publicIpIds, publicIpId)
+			}
+			for _, publicIpId := range publicIpRef.ResourceMap {
 				mockOscPublicIpInterface.
 					EXPECT().
 					CheckPublicIpUnlink(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
@@ -853,10 +810,8 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 		expReconcileDeletePublicIpErr error
 	}{
 		{
-			name: "check work without publicIp spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
-			},
+			name:                          "check work with publicIpRef",
+			spec:                          defaultPublicIpReconcile,
 			expPublicIpFound:              false,
 			expValidatePublicIpIdsErr:     nil,
 			expReconcileDeletePublicIpErr: nil,
@@ -880,13 +835,22 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
+
 			var publicIpIds []string
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				publicIpRef.ResourceMap[publicIpName] = publicIpId
 				publicIpIds = append(publicIpIds, publicIpId)
 			}
 			if pitc.expPublicIpFound {
+				if len(publicIpIds) == 0 {
+					// create default publicIpRef
+					publicIpId := "eipalloc-default"
+					publicIpIds = append(publicIpIds, publicIpId)
+				}
 				mockOscPublicIpInterface.
 					EXPECT().
 					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
