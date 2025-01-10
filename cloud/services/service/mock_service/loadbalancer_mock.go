@@ -50,6 +50,20 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerDeregisterV
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLoadBalancerDeregisterVm", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CheckLoadBalancerDeregisterVm), clockInsideLoop, clockLoop, spec)
 }
 
+// CheckLoadBalancerRegisterVm mocks base method.
+func (m *MockOscLoadBalancerInterface) CheckLoadBalancerRegisterVm(clockInsideLoop, clockLoop time.Duration, expectedVmIds []string, spec *v1beta1.OscLoadBalancer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckLoadBalancerRegisterVm", clockInsideLoop, clockLoop, expectedVmIds, spec)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckLoadBalancerRegisterVm indicates an expected call of CheckLoadBalancerRegisterVm.
+func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerRegisterVm(clockInsideLoop, clockLoop, expectedVmIds, spec interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLoadBalancerRegisterVm", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CheckLoadBalancerRegisterVm), clockInsideLoop, clockLoop, expectedVmIds, spec)
+}
+
 // ConfigureHealthCheck mocks base method.
 func (m *MockOscLoadBalancerInterface) ConfigureHealthCheck(spec *v1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
