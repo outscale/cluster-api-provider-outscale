@@ -11,7 +11,7 @@ The Cluster API allows you to deploy kubernetes across multiple cloud provider. 
 
 ## Project Status
  
-Thee project is Work in Progress,  in an Alpha state.
+The project is Work in Progress,  in an Alpha state.
 
 
 ## Compatibility with Cluster API and Kubernetes Versions
@@ -25,7 +25,7 @@ The provider version has currently been tested with the following version of kub
 # To start using Outscale Cluster Api
 Please look at [Deployment](./docs/src/topics/get-started-with-clusterctl.md)
 
-# To start developping Outscale Cluster Api
+# To start developing Outscale Cluster Api
 Please look at [Development](./docs/src/developers/developement.md)
 
 # Contribution
