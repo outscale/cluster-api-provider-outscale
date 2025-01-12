@@ -18,12 +18,14 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	"k8s.io/client-go/rest"
+	"net/http"
 	"os"
 	"path/filepath"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
@@ -129,25 +131,52 @@ func TestE2E(t *testing.T) {
 }
 
 func getK8sClient() {
+	// Set kubeconfig environment variable if not already set
 	if os.Getenv(kubeconfigEnvVar) == "" {
 		kubeconfig := filepath.Join("/root", ".kube", "config")
 		os.Setenv(kubeconfigEnvVar, kubeconfig)
 	}
+
+	// Set up logger
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	// Create context for test environment
 	ctx, cancel = context.WithCancel(context.TODO())
+
+	// Initialize test environment
 	testEnv = &envtest.Environment{}
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
+
+	// Check if TLS settings are provided
+	if cfg != nil {
+		// Set up a custom transport with the necessary TLS configuration
+		transportCfg := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,             // Allow self-signed certificates
+				MinVersion:         tls.VersionTLS12, // Set the minimum TLS version
+			},
+		}
+
+		// Assign the custom transport to the REST config's Transport field
+		cfg.Transport = transportCfg
+	}
+
+	// Configure leader election timings
 	retryPeriod := 30 * time.Second
 	leaseDuration := 80 * time.Second
 	renewDeadline := 20 * time.Second
-	k8sManager, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+
+	// Initialize the Kubernetes manager with the modified REST config
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		LeaseDuration: &leaseDuration,
 		RenewDeadline: &renewDeadline,
 		RetryPeriod:   &retryPeriod,
 	})
 	Expect(err).ToNot(HaveOccurred())
+
+	// Start the manager in a separate goroutine
 	go func() {
 		defer GinkgoRecover()
 		err = k8sManager.Start(ctx)
@@ -155,6 +184,8 @@ func getK8sClient() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 	}()
+
+	// Get the client from the manager
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 }

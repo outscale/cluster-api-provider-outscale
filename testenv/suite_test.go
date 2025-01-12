@@ -17,10 +17,7 @@ limitations under the License.
 package test
 
 import (
-	"path/filepath"
-	"testing"
-	"time"
-
+	"crypto/tls"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
@@ -30,6 +27,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
+	"net/http"
+	"path/filepath"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,6 +37,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"testing"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	//+kubebuilder:scaffold:imports
@@ -81,12 +82,27 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	utilruntime.Must(infrastructurev1beta1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
+
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{}
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
+
+	// Check if TLS settings are provided
+	if cfg != nil {
+		// Set up a custom transport with the necessary TLS configuration
+		transportCfg := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,             // Allow self-signed certificates
+				MinVersion:         tls.VersionTLS12, // Set the minimum TLS version
+			},
+		}
+
+		// Assign the custom transport to the REST config's Transport field
+		cfg.Transport = transportCfg
+	}
 
 	Expect(clusterv1.AddToScheme(scheme.Scheme)).To(Succeed())
 	Expect(infrastructurev1beta1.AddToScheme(scheme.Scheme)).To(Succeed())
@@ -108,20 +124,24 @@ var _ = BeforeSuite(func() {
 		RetryPeriod:             &retryPeriod,
 	})
 	Expect(err).ToNot(HaveOccurred())
+
+	// Set up reconciler
 	err = (&controllers.OscClusterReconciler{
 		Client:           k8sManager.GetClient(),
 		Recorder:         k8sManager.GetEventRecorderFor("osc-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(context.Background(), k8sManager)
 
+	// Start manager in a separate goroutine
 	go func() {
 		defer GinkgoRecover()
 		err := k8sManager.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred())
 	}()
+
+	// Get the client from the manager
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
-
 })
 
 var _ = AfterSuite(func() {
