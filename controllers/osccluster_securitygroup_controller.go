@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -146,12 +147,14 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 				return securityGroupRuleTagName, fmt.Errorf("ipRange or targetSecurityGroupName must be set")
 			}
 			if securityGroupRuleIpRange != "" {
-				_, err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
-				if err != nil {
-					return securityGroupRuleTagName, err
+				ipRanges := strings.Split(securityGroupRuleIpRange, ",")
+				for _, ipRange := range ipRanges {
+					_, err = infrastructurev1beta1.ValidateCidr(ipRange)
+					if err != nil {
+						return securityGroupRuleTagName, err
+					}
 				}
 			}
-
 			securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
 			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleFromPortRange)
 			if err != nil {
