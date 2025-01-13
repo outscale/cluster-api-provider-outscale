@@ -21,11 +21,10 @@ import (
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -67,7 +66,6 @@ func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, erro
 	}
 	machineScope.V(4).Info("Number of volumes", "volumeLength", len(volumesSpec))
 	for _, volumeSpec := range volumesSpec {
-
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
 		machineScope.V(2).Info("Check Volumes parameters")
 		volumeTagName, err := tag.ValidateTagNameValue(volumeName)

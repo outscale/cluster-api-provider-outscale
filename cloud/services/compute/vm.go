@@ -21,10 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
-
-	_nethttp "net/http"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -112,7 +111,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 	oscAuthClient := s.scope.GetAuth()
 	var vmResponse osc.CreateVmsResponse
 	createVmCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		vmResponse, httpRes, err = oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
 		if err != nil {
@@ -250,7 +249,7 @@ func (s *Service) DeleteVm(vmId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteVmsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
 		if err != nil {
@@ -287,7 +286,7 @@ func (s *Service) GetVm(vmId string) (*osc.Vm, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readVmsResponse osc.ReadVmsResponse
 	readVmsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
 		if err != nil {
@@ -335,7 +334,7 @@ func (s *Service) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, er
 	oscAuthClient := s.scope.GetAuth()
 	var readVmsResponse osc.ReadVmsResponse
 	readVmsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
 		if err != nil {
@@ -350,7 +349,6 @@ func (s *Service) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, er
 				return false, nil
 			}
 			return false, err
-
 		}
 		return true, err
 	}
@@ -457,11 +455,10 @@ func (s *Service) AddCcmTag(clusterName string, hostname string, vmId string) er
 		return err
 	}
 	return nil
-
 }
 
 func GetCPUQuantityFromInt(cores int) (resource.Quantity, error) {
-	return resource.ParseQuantity(fmt.Sprintf("%v", cores))
+	return resource.ParseQuantity(strconv.Itoa(cores))
 }
 
 func GetMemoryQuantityFromFloat32(memory float32) (resource.Quantity, error) {

@@ -55,18 +55,18 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		if vmReplica != 1 {
 			names := make([]string, len(machines))
 			for i, m := range machines {
-				names[i] = fmt.Sprintf("machine/%s", m.Name)
+				names[i] = "machine/" + m.Name
 				machineTemplateScope.V(4).Info("Get Machines", "machine", m.Name)
 				machineLabel := m.Labels
 				for labelKey := range machineLabel {
-					if labelKey == "cluster.x-k8s.io/control-plane" {
+					switch labelKey {
+					case "cluster.x-k8s.io/control-plane":
 						machineTemplateScope.V(4).Info("Get Kcp Machine", "machineKcp", m.Name)
 						machineKcpCount++
 						if m.Status.Phase == "Running" || m.Status.Phase == "Provisioned" {
 							machineKcpReady++
 						}
-					}
-					if labelKey == "cluster.x-k8s.io/deployment-name" {
+					case "cluster.x-k8s.io/deployment-name":
 						machineTemplateScope.V(4).Info("Get Kw Machine", "machineKw", m.Name)
 						machineKwCount++
 						if m.Status.Phase == "Running" || m.Status.Phase == "Provisioned" {

@@ -18,9 +18,8 @@ package controllers
 
 import (
 	"context"
-	"time"
-
 	"fmt"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -331,7 +330,6 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 		} else {
 			clusterScope.V(4).Info("VM is not running, skipping public IP linking")
 		}
-
 	}
 	clusterScope.V(4).Info("Bastion is reconciled")
 	return reconcile.Result{}, nil
@@ -339,7 +337,6 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 
 // reconcileDeleteBastion reconcile the destruction of the machine bastion.
 func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
-
 	bastionSpec := clusterScope.GetBastion()
 	bastionSpec.SetDefaultValue()
 	vmId := bastionSpec.ResourceId

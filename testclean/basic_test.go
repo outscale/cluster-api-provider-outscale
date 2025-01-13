@@ -17,11 +17,12 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/exp/slices"
-	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

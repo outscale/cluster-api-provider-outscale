@@ -18,12 +18,12 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
-	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -88,7 +88,6 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		for _, cluster = range clusterList.Items {
 			machineTemplateScope.V(4).Info("Get Cluster", "cluster", cluster.Name)
 			log.V(2).Info("Find cluster")
-
 		}
 		if len(clusterList.Items) == 0 {
 			log.V(2).Info("OscCluster is not available yet")
@@ -111,7 +110,7 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		OscCluster: oscCluster,
 	})
 	if err != nil {
-		return reconcile.Result{}, errors.Errorf("failed to create scope: %+v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 	defer func() {
 		if err := machineTemplateScope.Close(); err != nil && reterr == nil {
@@ -139,7 +138,6 @@ func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTem
 		return reconcileCapacity, err
 	}
 	return reconcileCapacity, nil
-
 }
 
 // reconcileDelete reconcile the deletion of the machine

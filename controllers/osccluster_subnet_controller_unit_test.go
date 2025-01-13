@@ -18,18 +18,16 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-
+	"errors"
 	"testing"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -143,7 +141,7 @@ func TestGetSubnetResourceId(t *testing.T) {
 			name:                      "failed to get Subnet",
 			spec:                      defaultSubnetInitialize,
 			expSubnetFound:            false,
-			expGetSubnetResourceIdErr: fmt.Errorf("test-subnet-uid does not exist"),
+			expGetSubnetResourceIdErr: errors.New("test-subnet-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -159,11 +157,10 @@ func TestGetSubnetResourceId(t *testing.T) {
 					subnetRef.ResourceMap[subnetName] = subnetId
 				}
 				subnetResourceId, err := getSubnetResourceId(subnetName, clusterScope)
-				if err != nil {
-					assert.Equal(t, stc.expGetSubnetResourceIdErr, err, "getSubnetResourceId() should return the same error")
+				if stc.expGetSubnetResourceIdErr != nil {
+					assert.EqualError(t, err, stc.expGetSubnetResourceIdErr.Error(), "getSubnetResourceId() should return the same error")
 				} else {
-					assert.Nil(t, stc.expGetSubnetResourceIdErr)
-
+					assert.NoError(t, err)
 				}
 				t.Logf("Find subnetResourceId %s\n", subnetResourceId)
 			}
@@ -206,17 +203,17 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckSubnetOscDuplicateNameErr: fmt.Errorf("test-subnet-first already exist"),
+			expCheckSubnetOscDuplicateNameErr: errors.New("test-subnet-first already exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
 			clusterScope := Setup(t, stc.name, stc.spec)
-			duplicateResourceSubnetErr := checkSubnetOscDuplicateName(clusterScope)
-			if duplicateResourceSubnetErr != nil {
-				assert.Equal(t, stc.expCheckSubnetOscDuplicateNameErr, duplicateResourceSubnetErr, "checkSubnetOscDupicateName() should return the same error")
+			err := checkSubnetOscDuplicateName(clusterScope)
+			if stc.expCheckSubnetOscDuplicateNameErr != nil {
+				assert.EqualError(t, err, stc.expCheckSubnetOscDuplicateNameErr.Error(), "checkSubnetOscDupicateName() should return the same error")
 			} else {
-				assert.Nil(t, stc.expCheckSubnetOscDuplicateNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -259,7 +256,7 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSubnetFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckSubnetFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
 			name: "check Bad Ip Range Prefix subnet",
@@ -278,7 +275,7 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSubnetFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.0/36"),
+			expCheckSubnetFormatParametersErr: errors.New("invalid CIDR address: 10.0.0.0/36"),
 		},
 		{
 			name: "check Bad Ip Range Ip subnet",
@@ -297,20 +294,19 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSubnetFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.256/16"),
+			expCheckSubnetFormatParametersErr: errors.New("invalid CIDR address: 10.0.0.256/16"),
 		},
 	}
 	for _, stc := range subnetTestCases {
 		t.Run(stc.name, func(t *testing.T) {
 			clusterScope := Setup(t, stc.name, stc.spec)
 			subnetName, err := checkSubnetFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, stc.expCheckSubnetFormatParametersErr.Error(), err.Error(), "checkSubnetFormatParameters() should return the same error")
+			if stc.expCheckSubnetFormatParametersErr != nil {
+				assert.EqualError(t, err, stc.expCheckSubnetFormatParametersErr.Error(), "checkSubnetFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, stc.expCheckSubnetFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find subnetName %s\n", subnetName)
-
 		})
 	}
 }
@@ -360,10 +356,10 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			expNetFound:           true,
 			expTagFound:           false,
 			expCreateSubnetFound:  false,
-			expCreateSubnetErr:    fmt.Errorf("CreateSubnet generic error"),
+			expCreateSubnetErr:    errors.New("CreateSubnet generic error"),
 			expGetSubnetIdsErr:    nil,
 			expReadTagErr:         nil,
-			expReconcileSubnetErr: fmt.Errorf("CreateSubnet generic error Can not create subnet for Osccluster test-system/test-osc"),
+			expReconcileSubnetErr: errors.New("CreateSubnet generic error Can not create subnet for Osccluster test-system/test-osc"),
 		},
 		{
 			name:                  "user delete subnet without cluster-api",
@@ -443,10 +439,10 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileSubnetErr.Error(), err.Error(), "reconcileSubnet() should return the same error")
+			if stc.expReconcileSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "reconcileSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
@@ -491,9 +487,9 @@ func TestReconcileSubnetGet(t *testing.T) {
 			expSubnetFound:        false,
 			expNetFound:           true,
 			expTagFound:           true,
-			expGetSubnetIdsErr:    fmt.Errorf("GetSubnet generic error"),
+			expGetSubnetIdsErr:    errors.New("GetSubnet generic error"),
 			expReadTagErr:         nil,
-			expReconcileSubnetErr: fmt.Errorf("GetSubnet generic error"),
+			expReconcileSubnetErr: errors.New("GetSubnet generic error"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -528,7 +524,6 @@ func TestReconcileSubnetGet(t *testing.T) {
 					}
 				}
 				subnetIds = append(subnetIds, subnetId)
-
 			}
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
@@ -542,10 +537,10 @@ func TestReconcileSubnetGet(t *testing.T) {
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileSubnetErr, err, "ReconcileSubnet() should return the same error")
+			if stc.expReconcileSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "ReconcileSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
@@ -570,16 +565,16 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 			expNetFound:           false,
 			expReadTagErr:         nil,
 			expGetSubnetIdsErr:    nil,
-			expReconcileSubnetErr: fmt.Errorf("test-net-uid does not exist"),
+			expReconcileSubnetErr: errors.New("test-net-uid does not exist"),
 		},
 		{
 			name:                  "failed to get tag",
 			spec:                  defaultSubnetReconcile,
 			expTagFound:           true,
 			expNetFound:           true,
-			expReadTagErr:         fmt.Errorf("ReadTag generic error"),
+			expReadTagErr:         errors.New("ReadTag generic error"),
 			expGetSubnetIdsErr:    nil,
-			expReconcileSubnetErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileSubnetErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -617,10 +612,10 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 			}
 
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileSubnetErr.Error(), err.Error(), "reconcileSubnet() should return the same error")
+			if stc.expReconcileSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "reconcileSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
@@ -642,8 +637,8 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 			spec:                        defaultSubnetReconcile,
 			expSubnetFound:              false,
 			expNetFound:                 true,
-			expGetSubnetIdsErr:          fmt.Errorf("GetSubnet generic error"),
-			expReconcileDeleteSubnetErr: fmt.Errorf("GetSubnet generic error"),
+			expGetSubnetIdsErr:          errors.New("GetSubnet generic error"),
+			expReconcileDeleteSubnetErr: errors.New("GetSubnet generic error"),
 		},
 		{
 			name:                        "Remove finalizer (User delete Subnets without cluster-api)",
@@ -684,10 +679,10 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 			}
 
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileDeleteSubnetErr, err, "reconcileDeleteSubnet() should return the same error")
+			if stc.expReconcileDeleteSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileDeleteSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})
@@ -736,10 +731,10 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 			networkSpec.SetSubnetDefaultValue()
 			clusterScope.OscCluster.Spec.Network.Subnets[0].ResourceId = subnetId
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileDeleteSubnetErr, err, "reconcileDeleteSubnet() should return the same error")
+			if stc.expReconcileDeleteSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileDeleteSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})
@@ -780,9 +775,9 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 			spec:                        defaultSubnetReconcile,
 			expSubnetFound:              true,
 			expNetFound:                 true,
-			expDeleteSubnetErr:          fmt.Errorf("DeleteSubnet generic error"),
+			expDeleteSubnetErr:          errors.New("DeleteSubnet generic error"),
 			expGetSubnetIdsErr:          nil,
-			expReconcileDeleteSubnetErr: fmt.Errorf("DeleteSubnet generic error Can not delete subnet for Osccluster test-system/test-osc"),
+			expReconcileDeleteSubnetErr: errors.New("DeleteSubnet generic error Can not delete subnet for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -819,10 +814,10 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 			}
 
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileDeleteSubnetErr.Error(), err.Error(), "reconcileDeleteSubnet() should return the same error")
+			if stc.expReconcileDeleteSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileDeleteSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})
@@ -839,14 +834,14 @@ func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 		{
 			name:                        "Net does not exist",
 			spec:                        defaultSubnetReconcile,
-			expReconcileDeleteSubnetErr: fmt.Errorf("test-net-uid does not exist"),
+			expReconcileDeleteSubnetErr: errors.New("test-net-uid does not exist"),
 		},
 		{
 			name: "check failed without net and subnet spec (retrieve default values cluster-api)",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteSubnetErr: fmt.Errorf("cluster-api-net-uid does not exist"),
+			expReconcileDeleteSubnetErr: errors.New("cluster-api-net-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -856,10 +851,10 @@ func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
-			if err != nil {
-				assert.Equal(t, stc.expReconcileDeleteSubnetErr, err, "reconcileDeleteSubnet() should return the same error")
+			if stc.expReconcileDeleteSubnetErr != nil {
+				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.Nil(t, stc.expReconcileDeleteSubnetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})

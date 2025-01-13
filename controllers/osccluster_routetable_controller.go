@@ -92,7 +92,7 @@ func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error
 	return "", nil
 }
 
-// checkRouteTableSubnetOscAssociateResourceName check that RouteTable Subnet dependancies tag name in both resource configuration are the same.
+// checkRouteTableSubnetOscAssociateResourceName check that RouteTable Subnet dependencies tag name in both resource configuration are the same.
 func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	routeTablesSpec := clusterScope.GetRouteTables()
@@ -195,7 +195,6 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 
 	routeRef.ResourceMap[routeName] = routeTableFromRoute.GetRouteTableId()
 	return reconcile.Result{}, nil
-
 }
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
@@ -244,12 +243,10 @@ func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope,
 		return reconcile.Result{}, fmt.Errorf("%w Can not delete route for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, nil
-
 }
 
 // reconcileRouteTable reconcile the RouteTable and the Route of the cluster.
 func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
-
 	routeTablesSpec := clusterScope.GetRouteTables()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
 	linkRouteTablesRef := clusterScope.GetLinkRouteTablesRef()

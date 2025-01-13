@@ -18,17 +18,15 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-
+	"errors"
 	"testing"
-
-	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
+	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -97,7 +95,7 @@ func TestGetImageResourceId(t *testing.T) {
 			spec:                     defaultImageClusterInitialize,
 			machineSpec:              defaultImageInitialize,
 			expImageFound:            false,
-			expGetImageResourceIdErr: fmt.Errorf("test-image does not exist"),
+			expGetImageResourceIdErr: errors.New("test-image does not exist"),
 		},
 	}
 	for _, itc := range imageTestCases {
@@ -111,10 +109,10 @@ func TestGetImageResourceId(t *testing.T) {
 				imageRef.ResourceMap[imageName] = imageId
 			}
 			imageResourceId, err := getImageResourceId(imageName, machineScope)
-			if err != nil {
-				assert.Equal(t, itc.expGetImageResourceIdErr.Error(), err.Error(), "GetImageResourceId() should return the same error")
+			if itc.expGetImageResourceIdErr != nil {
+				assert.EqualError(t, err, itc.expGetImageResourceIdErr.Error(), "GetImageResourceId() should return the same error")
 			} else {
-				assert.Nil(t, itc.expGetImageResourceIdErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find imageResourceId %s", imageResourceId)
 		})
@@ -159,17 +157,17 @@ func TestCheckImageFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckImageFormatParametersErr: fmt.Errorf("Invalid Image Name"),
+			expCheckImageFormatParametersErr: errors.New("Invalid Image Name"),
 		},
 	}
 	for _, itc := range imageTestCases {
 		t.Run(itc.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, itc.name, itc.clusterSpec, itc.machineSpec)
 			imageName, err := checkImageFormatParameters(machineScope)
-			if err != nil {
-				assert.Equal(t, itc.expCheckImageFormatParametersErr, err, "checkImageFormatParameters() should return the same error")
+			if itc.expCheckImageFormatParametersErr != nil {
+				assert.EqualError(t, err, itc.expCheckImageFormatParametersErr.Error(), "checkImageFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, itc.expCheckImageFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find imageName %s\n", imageName)
 		})
@@ -250,8 +248,8 @@ func TestReconcileImageGet(t *testing.T) {
 			expImageNameFound:    true,
 			expGetImageIdErr:     nil,
 			expGetImageNameErr:   nil,
-			expGetImageErr:       fmt.Errorf("GetImage generic error"),
-			expReconcileImageErr: fmt.Errorf("GetImage generic error"),
+			expGetImageErr:       errors.New("GetImage generic error"),
+			expReconcileImageErr: errors.New("GetImage generic error"),
 			expImageErr:          true,
 		},
 		{
@@ -290,9 +288,9 @@ func TestReconcileImageGet(t *testing.T) {
 			expImageFound:        false,
 			expImageNameFound:    false,
 			expGetImageIdErr:     nil,
-			expGetImageNameErr:   fmt.Errorf("GetImageName generic error"),
+			expGetImageNameErr:   errors.New("GetImageName generic error"),
 			expGetImageErr:       nil,
-			expReconcileImageErr: fmt.Errorf("GetImageName generic error"),
+			expReconcileImageErr: errors.New("GetImageName generic error"),
 			expImageErr:          false,
 		},
 		{
@@ -309,8 +307,8 @@ func TestReconcileImageGet(t *testing.T) {
 			expImageNameFound:    false,
 			expGetImageIdErr:     nil,
 			expGetImageNameErr:   nil,
-			expGetImageErr:       fmt.Errorf("GetImage generic error"),
-			expReconcileImageErr: fmt.Errorf("GetImage generic error"),
+			expGetImageErr:       errors.New("GetImage generic error"),
+			expReconcileImageErr: errors.New("GetImage generic error"),
 			expImageErr:          false,
 		},
 		{
@@ -329,10 +327,10 @@ func TestReconcileImageGet(t *testing.T) {
 			expImageFound:        false,
 			expImageNameFound:    true,
 			expImageErr:          false,
-			expGetImageIdErr:     fmt.Errorf("GetImageId generic error"),
+			expGetImageIdErr:     errors.New("GetImageId generic error"),
 			expGetImageNameErr:   nil,
 			expGetImageErr:       nil,
-			expReconcileImageErr: fmt.Errorf("GetImageId generic error"),
+			expReconcileImageErr: errors.New("GetImageId generic error"),
 		},
 	}
 	for _, itc := range imageTestCases {
@@ -380,10 +378,10 @@ func TestReconcileImageGet(t *testing.T) {
 			}
 
 			reconcileImage, err := reconcileImage(ctx, machineScope, mockOscimageInterface)
-			if err != nil {
-				assert.Equal(t, itc.expReconcileImageErr.Error(), err.Error(), "reconcileImage() should return the same error")
+			if itc.expReconcileImageErr != nil {
+				assert.EqualError(t, err, itc.expReconcileImageErr.Error(), "reconcileImage() should return the same error")
 			} else {
-				assert.Nil(t, itc.expReconcileImageErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileImage)
 		})

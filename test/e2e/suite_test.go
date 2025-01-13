@@ -20,28 +20,27 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
-	"k8s.io/client-go/rest"
 	"os"
 	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
+	"k8s.io/apimachinery/pkg/runtime"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
+	"sigs.k8s.io/cluster-api/test/framework"
+	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
+	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"strings"
-	"testing"
-	"time"
-
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/cluster-api/test/framework"
-	"sigs.k8s.io/cluster-api/test/framework/bootstrap"
-	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 )
 
 const kubeconfigEnvVar = "KUBECONFIG"
@@ -66,11 +65,9 @@ var (
 )
 
 var (
-	cfg              *rest.Config
-	k8sClient        client.Client
-	testEnv          *envtest.Environment
-	reconcileTimeout time.Duration
-	cancel           context.CancelFunc
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+	cancel    context.CancelFunc
 )
 
 // Test suite global vars.
@@ -295,7 +292,6 @@ func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2E
 		Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", "CCM")
 		By(fmt.Sprintf("Find path %s", ccmPath))
 		createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(ccmPath, "CCM_RESOURCES")
-
 	}
 	clusterctlConfig := CreateRepository(ctx, createRepositoryInput)
 	Expect(clusterctlConfig).To(BeAnExistingFile(), "the clusterctl config file does not exists in the local repository %s", repositoryFolder)

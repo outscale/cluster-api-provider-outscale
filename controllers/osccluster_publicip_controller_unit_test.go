@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -133,7 +133,7 @@ func TestGetPublicIpResourceId(t *testing.T) {
 			name:                        "can not get publicIpId",
 			spec:                        defaultPublicIpInitialize,
 			expPublicIpFound:            false,
-			expGetPublicIpResourceIdErr: fmt.Errorf("test-publicip-uid does not exist"),
+			expGetPublicIpResourceIdErr: errors.New("test-publicip-uid does not exist"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -149,10 +149,10 @@ func TestGetPublicIpResourceId(t *testing.T) {
 					publicIpRef.ResourceMap[publicIpName] = publicIpId
 				}
 				publicIpResourceId, err := getPublicIpResourceId(publicIpName, clusterScope)
-				if err != nil {
-					assert.Equal(t, pitc.expGetPublicIpResourceIdErr, err, "getPublicIpResourceId() should return the same error")
+				if pitc.expGetPublicIpResourceIdErr != nil {
+					assert.EqualError(t, err, pitc.expGetPublicIpResourceIdErr.Error(), "getPublicIpResourceId() should return the same error")
 				} else {
-					assert.Nil(t, pitc.expGetPublicIpResourceIdErr)
+					assert.NoError(t, err)
 				}
 				t.Logf("Find publicIpResourceId %s\n", publicIpResourceId)
 			}
@@ -181,7 +181,7 @@ func TestLinkPublicIpResourceId(t *testing.T) {
 			clusterSpec:                     defaultPublicIpInitialize,
 			machineSpec:                     defaultLinkVmInitialize,
 			expLinkPublicIpFound:            false,
-			expGetLinkPublicIpResourceIdErr: fmt.Errorf("test-publicip does not exist"),
+			expGetLinkPublicIpResourceIdErr: errors.New("test-publicip does not exist"),
 		},
 	}
 	for _, lpitc := range linkPublicIpTestCases {
@@ -198,10 +198,10 @@ func TestLinkPublicIpResourceId(t *testing.T) {
 					linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 				}
 				linkPublicIpResourceId, err := getLinkPublicIpResourceId(vmPublicIpName, machineScope)
-				if err != nil {
-					assert.Equal(t, lpitc.expGetLinkPublicIpResourceIdErr, err, "getLinkPublicIpResourceId() should return the same error")
+				if lpitc.expGetLinkPublicIpResourceIdErr != nil {
+					assert.EqualError(t, err, lpitc.expGetLinkPublicIpResourceIdErr.Error(), "getLinkPublicIpResourceId() should return the same error")
 				} else {
-					assert.Nil(t, lpitc.expGetLinkPublicIpResourceIdErr)
+					assert.NoError(t, err)
 				}
 				t.Logf("Find linkPublicIpResourceId %s\n", linkPublicIpResourceId)
 			}
@@ -243,17 +243,17 @@ func TestCheckPublicIpFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckPublicIpFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckPublicIpFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope := Setup(t, pitc.name, pitc.spec)
 			publicIpName, err := checkPublicIpFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, pitc.expCheckPublicIpFormatParametersErr, err, "checkPublicIpFormatParameters() should return the same error")
+			if pitc.expCheckPublicIpFormatParametersErr != nil {
+				assert.EqualError(t, err, pitc.expCheckPublicIpFormatParametersErr.Error(), "checkPublicIpFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expCheckPublicIpFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find publicIpName %s\n", publicIpName)
 		})
@@ -309,17 +309,17 @@ func TestCheckPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckPublicIpOscAssociateResourceNameErr: fmt.Errorf("publicIp test-publicip-test-uid does not exist in natService "),
+			expCheckPublicIpOscAssociateResourceNameErr: errors.New("publicIp test-publicip-test-uid does not exist in natService "),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope := Setup(t, pitc.name, pitc.spec)
 			err := checkPublicIpOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, pitc.expCheckPublicIpOscAssociateResourceNameErr, err, "checkPublicIpOscAssociateResourceName() should return the same error")
+			if pitc.expCheckPublicIpOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, pitc.expCheckPublicIpOscAssociateResourceNameErr.Error(), "checkPublicIpOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expCheckPublicIpOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -360,21 +360,20 @@ func TestCheckPublicIpOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckPublicIpOscDuplicateNameErr: fmt.Errorf("test-publicip-first already exist"),
+			expCheckPublicIpOscDuplicateNameErr: errors.New("test-publicip-first already exist"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope := Setup(t, pitc.name, pitc.spec)
-			duplicateResourcePublicIpErr := checkPublicIpOscDuplicateName(clusterScope)
-			if duplicateResourcePublicIpErr != nil {
-				assert.Equal(t, pitc.expCheckPublicIpOscDuplicateNameErr, duplicateResourcePublicIpErr, "checkPublicOscDuplicateName() should return the same error")
+			err := checkPublicIpOscDuplicateName(clusterScope)
+			if pitc.expCheckPublicIpOscDuplicateNameErr != nil {
+				assert.EqualError(t, err, pitc.expCheckPublicIpOscDuplicateNameErr.Error(), "checkPublicOscDuplicateName() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expCheckPublicIpOscDuplicateNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
-
 }
 
 // TestReconcilePublicIpGet has several tests to cover the code of the function reconcilePublicIp
@@ -411,9 +410,9 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			spec:                    defaultPublicIpInitialize,
 			expPublicIpFound:        false,
 			expTagFound:             false,
-			expValidatePublicIpsErr: fmt.Errorf("ValidatePublicIp generic error"),
+			expValidatePublicIpsErr: errors.New("ValidatePublicIp generic error"),
 			expReadTagErr:           nil,
-			expReconcilePublicIpErr: fmt.Errorf("ValidatePublicIp generic error"),
+			expReconcilePublicIpErr: errors.New("ValidatePublicIp generic error"),
 		},
 		{
 			name:                    "failed to get tag",
@@ -421,8 +420,8 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			expPublicIpFound:        true,
 			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
-			expReadTagErr:           fmt.Errorf("ReadTag generic error"),
-			expReconcilePublicIpErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReadTagErr:           errors.New("ReadTag generic error"),
+			expReconcilePublicIpErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -446,13 +445,11 @@ func TestReconcilePublicIpGet(t *testing.T) {
 							EXPECT().
 							ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
 							Return(&tag, pitc.expReadTagErr)
-
 					} else {
 						mockOscTagInterface.
 							EXPECT().
 							ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
 							Return(nil, pitc.expReadTagErr)
-
 					}
 				}
 
@@ -460,7 +457,6 @@ func TestReconcilePublicIpGet(t *testing.T) {
 				if pitc.expPublicIpFound {
 					publicIpRef.ResourceMap[publicIpName] = publicIpId
 				}
-
 			}
 			if pitc.expValidatePublicIpsErr != nil {
 				publicIpIds = []string{""}
@@ -477,10 +473,10 @@ func TestReconcilePublicIpGet(t *testing.T) {
 					Return(nil, pitc.expValidatePublicIpsErr)
 			}
 			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, pitc.expReconcilePublicIpErr.Error(), err.Error(), "reconcilePublicIp() should return the same error")
+			if pitc.expReconcilePublicIpErr != nil {
+				assert.EqualError(t, err, pitc.expReconcilePublicIpErr.Error(), "reconcilePublicIp() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expReconcilePublicIpErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcilePublicIp %v\n", reconcilePublicIp)
 		})
@@ -541,9 +537,9 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expCreatePublicIpFound:  false,
-			expCreatePublicIpErr:    fmt.Errorf("CreatePublicIp generic error"),
+			expCreatePublicIpErr:    errors.New("CreatePublicIp generic error"),
 			expReadTagErr:           nil,
-			expReconcilePublicIpErr: fmt.Errorf("CreatePublicIp generic error Can not create publicIp for Osccluster test-system/test-osc"),
+			expReconcilePublicIpErr: errors.New("CreatePublicIp generic error Can not create publicIp for Osccluster test-system/test-osc"),
 		},
 		{
 			name: "user delete publicIp without cluster-api",
@@ -614,7 +610,6 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 						CreatePublicIp(gomock.Eq(publicIpName)).
 						Return(nil, pitc.expCreatePublicIpErr)
 				}
-
 			}
 			if pitc.expCreatePublicIpErr != nil {
 				publicIpIds = []string{""}
@@ -631,10 +626,10 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 					Return(nil, pitc.expValidatePublicIpsErr)
 			}
 			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, pitc.expReconcilePublicIpErr.Error(), err.Error(), "reconcilePublicIp() should return the same error")
+			if pitc.expReconcilePublicIpErr != nil {
+				assert.EqualError(t, err, pitc.expReconcilePublicIpErr.Error(), "reconcilePublicIp() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expReconcilePublicIpErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcilePublicIp %v\n", reconcilePublicIp)
 		})
@@ -685,10 +680,10 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 			clusterScope.OscCluster.Spec.Network.PublicIps[0].ResourceId = publicIpId
 			reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
 
-			if err != nil {
-				assert.Equal(t, pitc.expReconcileDeletePublicIpErr.Error(), err.Error(), "reconcileDeletePublicIp() should return the same error")
+			if pitc.expReconcileDeletePublicIpErr != nil {
+				assert.EqualError(t, err, pitc.expReconcileDeletePublicIpErr.Error(), "reconcileDeletePublicIp() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expReconcileDeletePublicIpErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeletePublicIp %v\n", reconcileDeletePublicIp)
 		})
@@ -730,8 +725,8 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 			expPublicIpFound:              true,
 			expValidatePublicIpIdsErr:     nil,
 			expCheckPublicIpUnlinkErr:     nil,
-			expDeletePublicIpErr:          fmt.Errorf("DeletePublicIp generic error"),
-			expReconcileDeletePublicIpErr: fmt.Errorf("DeletePublicIp generic error Can not delete publicIp for Osccluster test-system/test-osc"),
+			expDeletePublicIpErr:          errors.New("DeletePublicIp generic error"),
+			expReconcileDeletePublicIpErr: errors.New("DeletePublicIp generic error Can not delete publicIp for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -771,10 +766,10 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 
 			reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
 
-			if err != nil {
-				assert.Equal(t, pitc.expReconcileDeletePublicIpErr.Error(), err.Error(), "reconcileDeletePublicIp() should return the same error")
+			if pitc.expReconcileDeletePublicIpErr != nil {
+				assert.EqualError(t, err, pitc.expReconcileDeletePublicIpErr.Error(), "reconcileDeletePublicIp() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expReconcileDeletePublicIpErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeletePublicIp %v\n", reconcileDeletePublicIp)
 		})
@@ -796,8 +791,8 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 			spec:                          defaultPublicIpReconcile,
 			expPublicIpFound:              true,
 			expValidatePublicIpIdsErr:     nil,
-			expCheckPublicIpUnlinkErr:     fmt.Errorf("CheckPublicIpUnlink generic error"),
-			expReconcileDeletePublicIpErr: fmt.Errorf("CheckPublicIpUnlink generic error Can not delete publicIp eipalloc-test-publicip-uid for Osccluster test-system/test-osc"),
+			expCheckPublicIpUnlinkErr:     errors.New("CheckPublicIpUnlink generic error"),
+			expReconcileDeletePublicIpErr: errors.New("CheckPublicIpUnlink generic error Can not delete publicIp eipalloc-test-publicip-uid for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -832,11 +827,10 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 			}
 
 			reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
-
-			if err != nil {
-				assert.Equal(t, pitc.expReconcileDeletePublicIpErr.Error(), err.Error(), "reconcileDeletePublicIp() should return the same error")
+			if pitc.expReconcileDeletePublicIpErr != nil {
+				assert.EqualError(t, err, pitc.expReconcileDeletePublicIpErr.Error(), "reconcileDeletePublicIp() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expReconcileDeletePublicIpErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeletePublicIp %v\n", reconcileDeletePublicIp)
 		})
@@ -865,8 +859,8 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 			name:                          "failed to validate publicIp",
 			spec:                          defaultPublicIpReconcile,
 			expPublicIpFound:              false,
-			expValidatePublicIpIdsErr:     fmt.Errorf("ValidatePublicIp generic error"),
-			expReconcileDeletePublicIpErr: fmt.Errorf("ValidatePublicIp generic error"),
+			expValidatePublicIpIdsErr:     errors.New("ValidatePublicIp generic error"),
+			expReconcileDeletePublicIpErr: errors.New("ValidatePublicIp generic error"),
 		},
 		{
 			name:                          "remove finalizer (user delete publicIp without cluster-api)",
@@ -902,10 +896,10 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 			}
 
 			reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
-			if err != nil {
-				assert.Equal(t, pitc.expReconcileDeletePublicIpErr, err, "reconcileDeletePublicIp() should return the same error")
+			if pitc.expReconcileDeletePublicIpErr != nil {
+				assert.EqualError(t, err, pitc.expReconcileDeletePublicIpErr.Error(), "reconcileDeletePublicIp() should return the same error")
 			} else {
-				assert.Nil(t, pitc.expReconcileDeletePublicIpErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeletePublicIp %v\n", reconcileDeletePublicIp)
 		})

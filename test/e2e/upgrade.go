@@ -18,8 +18,9 @@ package e2e
 
 import (
 	"context"
+
 	. "github.com/onsi/ginkgo/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 )
 
@@ -34,9 +35,9 @@ var _ = Describe("[upgrade] Test Upgrade Kuberneted Version", func() {
 				ArtifactFolder:           artifactFolder,
 				SkipCleanup:              skipCleanup,
 				SkipConformanceTests:     true,
-				ControlPlaneMachineCount: pointer.Int64(1),
-				WorkerMachineCount:       pointer.Int64(1),
-				Flavor:                   pointer.String("upgrade"),
+				ControlPlaneMachineCount: ptr.To(int64(1)),
+				WorkerMachineCount:       ptr.To(int64(1)),
+				Flavor:                   ptr.To("upgrade"),
 			}
 		})
 	})
@@ -47,8 +48,8 @@ var _ = Describe("[upgrade] Test Upgrade Kuberneted Version", func() {
 				ClusterctlConfigPath:     clusterctlConfigPath,
 				BootstrapClusterProxy:    bootstrapClusterProxy,
 				ArtifactFolder:           artifactFolder,
-				ControlPlaneMachineCount: pointer.Int64(3),
-				WorkerMachineCount:       pointer.Int64(0),
+				ControlPlaneMachineCount: ptr.To(int64(3)),
+				WorkerMachineCount:       ptr.To(int64(0)),
 				SkipCleanup:              skipCleanup,
 				SkipConformanceTests:     true,
 			}
@@ -63,9 +64,9 @@ var _ = Describe("[upgrade] Test Upgrade Kuberneted Version", func() {
 				ArtifactFolder:           artifactFolder,
 				SkipCleanup:              skipCleanup,
 				SkipConformanceTests:     true,
-				ControlPlaneMachineCount: pointer.Int64(3),
-				WorkerMachineCount:       pointer.Int64(1),
-				Flavor:                   pointer.String("upgrade-scale-in"),
+				ControlPlaneMachineCount: ptr.To(int64(3)),
+				WorkerMachineCount:       ptr.To(int64(1)),
+				Flavor:                   ptr.To("upgrade-scale-in"),
 			}
 		})
 	})

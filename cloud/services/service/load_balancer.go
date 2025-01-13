@@ -19,7 +19,7 @@ package service
 import (
 	"errors"
 	"fmt"
-	_nethttp "net/http"
+	"net/http"
 	"time"
 
 	"github.com/benbjohnson/clock"
@@ -101,7 +101,7 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 
 	var updateLoadBalancerResponse osc.UpdateLoadBalancerResponse
 	updateLoadBalancerCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		updateLoadBalancerResponse, httpRes, err = oscApiClient.LoadBalancerApi.UpdateLoadBalancer(oscAuthClient).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()
 		if err != nil {
@@ -140,7 +140,7 @@ func (s *Service) LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerNa
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	linkLoadBalancerBackendMachinesCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.LinkLoadBalancerBackendMachines(oscAuthClient).LinkLoadBalancerBackendMachinesRequest(linkLoadBalancerBackendMachinesRequest).Execute()
 		if err != nil {
@@ -176,7 +176,7 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancer
 	oscAuthClient := s.scope.GetAuth()
 
 	unlinkLoadBalancerBackendMachinesCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.UnlinkLoadBalancerBackendMachines(oscAuthClient).UnlinkLoadBalancerBackendMachinesRequest(unlinkLoadBalancerBackendMachinesRequest).Execute()
 		if err != nil {
@@ -217,7 +217,7 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 
 	var readLoadBalancersResponse osc.ReadLoadBalancersResponse
 	readLoadBalancerCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readLoadBalancersResponse, httpRes, err = oscApiClient.LoadBalancerApi.ReadLoadBalancers(oscAuthClient).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
 		if err != nil {
@@ -267,7 +267,7 @@ func (s *Service) GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer
 	}
 	var readLoadBalancerTagsResponse osc.ReadLoadBalancerTagsResponse
 	readLoadBalancerTagCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readLoadBalancerTagsResponse, httpRes, err = oscApiClient.LoadBalancerApi.ReadLoadBalancerTags(oscAuthClient).ReadLoadBalancerTagsRequest(readLoadBalancerTagRequest).Execute()
 		if err != nil {
@@ -375,7 +375,7 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 
 	var loadBalancerResponse osc.CreateLoadBalancerResponse
 	createLoadBalancerCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		loadBalancerResponse, httpRes, err = oscApiClient.LoadBalancerApi.CreateLoadBalancer(oscAuthClient).CreateLoadBalancerRequest(loadBalancerRequest).Execute()
 		if err != nil {
@@ -417,7 +417,7 @@ func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteLoadBalancerCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.DeleteLoadBalancer(oscAuthClient).DeleteLoadBalancerRequest(deleteLoadBalancerRequest).Execute()
 		if err != nil {
@@ -456,7 +456,7 @@ func (s *Service) DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteLoadBalancerTagCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.DeleteLoadBalancerTags(oscAuthClient).DeleteLoadBalancerTagsRequest(deleteLoadBalancerTagRequest).Execute()
 		if err != nil {

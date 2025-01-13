@@ -17,13 +17,14 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type CapoMachineListInput struct {
@@ -53,7 +54,7 @@ func GetCapoMachine(ctx context.Context, input CapoMachineInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find capoMachine %s", input.Name))
+	By("Find capoMachine " + input.Name)
 	return true
 }
 
@@ -124,7 +125,7 @@ func WaitForCapoMachineAvailable(ctx context.Context, input CapoMachineInput) bo
 
 // WaitForCapoMachineListAvailable wait machine to be available.
 func WaitForCapoMachineListAvailable(ctx context.Context, input CapoMachineListInput) bool {
-	By(fmt.Sprintf("Waiting for capoMachine selected by options to be ready"))
+	By("Waiting for capoMachine selected by options to be ready")
 	Eventually(func() bool {
 		isCapoMachineListAvailable := GetCapoMachineList(ctx, input)
 		return isCapoMachineListAvailable
@@ -134,7 +135,7 @@ func WaitForCapoMachineListAvailable(ctx context.Context, input CapoMachineListI
 
 // WaitForCapoMachineListDelete wait machine to be deleted.
 func WaitForCapoMachineListDelete(ctx context.Context, input CapoMachineListDeleteInput) bool {
-	By(fmt.Sprintf("Waiting for capoMachine selected by options to be deleted"))
+	By("Waiting for capoMachine selected by options to be deleted")
 	Eventually(func() bool {
 		isCapoMachineListDelete := DeleteCapoMachineList(ctx, input)
 		return isCapoMachineListDelete

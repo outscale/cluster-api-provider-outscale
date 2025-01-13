@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -95,7 +96,6 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 		}
 		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
 		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
-
 	}
 	return reconcile.Result{}, nil
 }

@@ -19,9 +19,9 @@ package scope
 import (
 	"context"
 	"errors"
-	"fmt"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	"os"
+
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 // OscClient contains input client to use outscale api
@@ -46,7 +46,7 @@ func newOscClient() (*OscClient, error) {
 	}
 	config := osc.NewConfiguration()
 	config.Debug = true
-	config.UserAgent = fmt.Sprintf("cluster-api-provider-outscale/%s", version)
+	config.UserAgent = "cluster-api-provider-outscale/" + version
 	auth := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),

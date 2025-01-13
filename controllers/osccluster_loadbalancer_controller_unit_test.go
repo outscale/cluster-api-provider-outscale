@@ -18,16 +18,13 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"testing"
-
-	"fmt"
-
 	"time"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -176,19 +173,18 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerSubnetOscAssociateResourceNameErr: fmt.Errorf("test-subnet-test-uid subnet does not exist in loadBalancer"),
+			expCheckLoadBalancerSubnetOscAssociateResourceNameErr: errors.New("test-subnet-test-uid subnet does not exist in loadBalancer"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, lbtc.name, lbtc.spec)
 			err := checkLoadBalancerSubnetOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr, err, "checkLoadBalancerSubnetOscAssociateResourceName() should return the same error")
+			if lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr.Error(), "checkLoadBalancerSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
-
 		})
 	}
 }
@@ -224,7 +220,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("test-loadbalancer@test is an invalid loadBalancer name: Invalid Description"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("test-loadbalancer@test is an invalid loadBalancer name: Invalid Description"),
 		},
 		{
 			name: "check invalid type loadBalancer",
@@ -238,7 +234,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("internet is an invalid loadBalancer type: Invalid LoadBalancerType"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("internet is an invalid loadBalancer type: Invalid LoadBalancerType"),
 		},
 		{
 			name: "check invalid backend port loadBalancer",
@@ -254,7 +250,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an Invalid Port for loadBalancer backend"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an Invalid Port for loadBalancer backend"),
 		},
 		{
 			name: "check invalid backend protocol loadBalancer",
@@ -270,7 +266,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an Invalid protocol for loadBalancer backend"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an Invalid protocol for loadBalancer backend"),
 		},
 		{
 			name: "check invalid loadBalancer port",
@@ -286,7 +282,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an Invalid Port for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an Invalid Port for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer protocol",
@@ -302,7 +298,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an Invalid protocol for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an Invalid protocol for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer health check interval",
@@ -320,7 +316,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("602 is an Invalid Interval for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("602 is an Invalid Interval for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck healthy threshold",
@@ -338,7 +334,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("12 is an Invalid threshold for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("12 is an Invalid threshold for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck port",
@@ -356,7 +352,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("65537 is an Invalid Port for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an Invalid Port for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck protocol",
@@ -374,7 +370,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("SCTP is an Invalid protocol for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an Invalid protocol for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck timeout",
@@ -392,7 +388,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("62 is an Invalid Timeout for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("62 is an Invalid Timeout for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck unhealthy threshold",
@@ -410,20 +406,19 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: fmt.Errorf("12 is an Invalid threshold for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("12 is an Invalid threshold for loadBalancer"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, lbtc.name, lbtc.spec)
 			loadBalancerName, err := checkLoadBalancerFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, lbtc.expCheckLoadBalancerFormatParametersErr.Error(), err.Error(), "checkLoadBalancerFormatParameters should return the same error")
+			if lbtc.expCheckLoadBalancerFormatParametersErr != nil {
+				assert.EqualError(t, err, lbtc.expCheckLoadBalancerFormatParametersErr.Error(), "checkLoadBalancerFormatParameters should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expCheckLoadBalancerFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find loadBalancer %s\n", loadBalancerName)
-
 		})
 	}
 }
@@ -479,17 +474,17 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr: fmt.Errorf("test-securitygroup-test-uid securityGroup does not exist in loadBalancer"),
+			expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr: errors.New("test-securitygroup-test-uid securityGroup does not exist in loadBalancer"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, lbtc.name, lbtc.spec)
 			err := checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr, err, "checkLoadBalancerSecurityGroupOscAssociateResourceName() should return the same error")
+			if lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr.Error(), "checkLoadBalancerSecurityGroupOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -545,8 +540,8 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
-			expCreateLoadbalancerTagErr:   fmt.Errorf("CreateLoadbalancerTag generic error"),
-			expReconcileLoadBalancerErr:   fmt.Errorf("CreateLoadbalancerTag generic error Can not tag loadBalancer for OscCluster test-system/test-osc"),
+			expCreateLoadbalancerTagErr:   errors.New("CreateLoadbalancerTag generic error"),
+			expReconcileLoadBalancerErr:   errors.New("CreateLoadbalancerTag generic error Can not tag loadBalancer for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                          "failed to delete outbound Sg for loadBalancer",
@@ -558,12 +553,12 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expConfigureLoadBalancerFound: false,
 			expDeleteOutboundSgRule:       false,
 			expCreateLoadBalancerTag:      false,
-			expDeleteOutboundSgRuleErr:    fmt.Errorf("DeleteSecurityGroupsRules generic error"),
+			expDeleteOutboundSgRuleErr:    errors.New("DeleteSecurityGroupsRules generic error"),
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expCreateLoadbalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   fmt.Errorf("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
+			expReconcileLoadBalancerErr:   errors.New("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
 		},
 		{
 			name:                          "failed to configure loadBalancer",
@@ -579,8 +574,8 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expCreateLoadbalancerTagErr:   nil,
-			expConfigureLoadBalancerErr:   fmt.Errorf("ConfigureLoadBalancer generic error"),
-			expReconcileLoadBalancerErr:   fmt.Errorf("ConfigureLoadBalancer generic error Can not configure healthcheck for Osccluster test-system/test-osc"),
+			expConfigureLoadBalancerErr:   errors.New("ConfigureLoadBalancer generic error"),
+			expReconcileLoadBalancerErr:   errors.New("ConfigureLoadBalancer generic error Can not configure healthcheck for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -624,7 +619,6 @@ func TestReconcileLoadBalancer(t *testing.T) {
 					EXPECT().
 					GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
 					Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
-
 			} else {
 				mockOscLoadBalancerInterface.
 					EXPECT().
@@ -681,10 +675,10 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			}
 
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
+			if lbtc.expReconcileLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -735,11 +729,11 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			expCreateLoadBalancerTagFound: false,
 			expGetLoadBalancerTagFound:    false,
 			expGetBadLoadBalancerTagFound: false,
-			expDescribeLoadBalancerErr:    fmt.Errorf("GetLoadBalancer generic error"),
+			expDescribeLoadBalancerErr:    errors.New("GetLoadBalancer generic error"),
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expGetLoadBalancerTagErr:      nil,
-			expReconcileLoadBalancerErr:   fmt.Errorf("GetLoadBalancer generic error"),
+			expReconcileLoadBalancerErr:   errors.New("GetLoadBalancer generic error"),
 		},
 	}
 
@@ -811,10 +805,10 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 					Return(nil, lbtc.expDescribeLoadBalancerErr)
 			}
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileLoadBalancerErr, err, "reconcileLoadBalancer() should return the same error")
+			if lbtc.expReconcileLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -855,9 +849,9 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			expDescribeLoadBalancerErr:    nil,
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
-			expGetLoadBalancerTagErr:      fmt.Errorf("GetLoadBalancerTag generic error"),
+			expGetLoadBalancerTagErr:      errors.New("GetLoadBalancerTag generic error"),
 			expCreateLoadBalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   fmt.Errorf("GetLoadBalancerTag generic error"),
+			expReconcileLoadBalancerErr:   errors.New("GetLoadBalancerTag generic error"),
 		},
 		{
 			name:                          "a loadBalancer with the same name already exists without tag",
@@ -875,7 +869,7 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			expConfigureLoadBalancerErr:   nil,
 			expGetLoadBalancerTagErr:      nil,
 			expCreateLoadBalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   fmt.Errorf("A LoadBalancer test-loadbalancer already exists"),
+			expReconcileLoadBalancerErr:   errors.New("A LoadBalancer test-loadbalancer already exists"),
 		},
 		{
 			name:                          "a loadBalancer with the same name in other cluster already exists",
@@ -893,7 +887,7 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			expConfigureLoadBalancerErr:   nil,
 			expGetLoadBalancerTagErr:      nil,
 			expCreateLoadBalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   fmt.Errorf("A LoadBalancer test-loadbalancer already exists that is used by another cluster other than uid"),
+			expReconcileLoadBalancerErr:   errors.New("A LoadBalancer test-loadbalancer already exists that is used by another cluster other than uid"),
 		},
 	}
 
@@ -974,10 +968,10 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 					Return(nil, lbtc.expDescribeLoadBalancerErr)
 			}
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileLoadBalancerErr, err, "reconcileLoadBalancer() should return the same error")
+			if lbtc.expReconcileLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -998,10 +992,10 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 		{
 			name:                        "failed to create loadBalancer",
 			spec:                        defaultLoadBalancerInitialize,
-			expCreateLoadBalancerErr:    fmt.Errorf("CreateLoadBalancer generic error"),
+			expCreateLoadBalancerErr:    errors.New("CreateLoadBalancer generic error"),
 			expConfigureLoadBalancerErr: nil,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: fmt.Errorf("CreateLoadBalancer generic error Can not create loadBalancer for Osccluster test-system/test-osc"),
+			expReconcileLoadBalancerErr: errors.New("CreateLoadBalancer generic error Can not create loadBalancer for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1030,10 +1024,10 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 				CreateLoadBalancer(gomock.Eq(&loadBalancerSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
 				Return(nil, lbtc.expCreateLoadBalancerErr)
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
+			if lbtc.expReconcileLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -1056,7 +1050,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 			expSubnetFound:              false,
 			expSecurityGroupFound:       false,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: fmt.Errorf("test-subnet-uid does not exist"),
+			expReconcileLoadBalancerErr: errors.New("test-subnet-uid does not exist"),
 		},
 		{
 			name:                        "securitygroup does not exist",
@@ -1064,7 +1058,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 			expSubnetFound:              true,
 			expSecurityGroupFound:       false,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileLoadBalancerErr: errors.New("test-securitygroup-uid does not exist"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1094,10 +1088,10 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 				GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileLoadBalancerErr.Error(), err.Error(), "reconcileLoadBalancer() should return the same error")
+			if lbtc.expReconcileLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -1138,12 +1132,12 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 			expLoadBalancerFound:                true,
 			expGetLoadBalancerTagFound:          true,
 			expDeleteLoadBalancerTagFound:       true,
-			expDeleteLoadBalancerErr:            fmt.Errorf("DeleteLoadBalancer generic error"),
+			expDeleteLoadBalancerErr:            errors.New("DeleteLoadBalancer generic error"),
 			expDescribeLoadBalancerErr:          nil,
 			expCheckLoadBalancerDeregisterVmErr: nil,
 			expGetLoadBalancerTagErr:            nil,
 			expDeleteLoadBalancerTagErr:         nil,
-			expReconcileDeleteLoadBalancerErr:   fmt.Errorf("DeleteLoadBalancer generic error Can not delete loadBalancer for Osccluster test-system/test-osc"),
+			expReconcileDeleteLoadBalancerErr:   errors.New("DeleteLoadBalancer generic error Can not delete loadBalancer for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1212,10 +1206,10 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr.Error(), err.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileDeleteLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1251,9 +1245,9 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 			expDeleteLoadBalancerErr:              nil,
 			expDescribeLoadBalancerErr:            nil,
 			expCheckLoadBalancerDeregisterVmErr:   nil,
-			expGetLoadBalancerTagErr:              fmt.Errorf("GetLoadBalancerTag generic error"),
+			expGetLoadBalancerTagErr:              errors.New("GetLoadBalancerTag generic error"),
 			expDeleteLoadBalancerTagErr:           nil,
-			expReconcileDeleteLoadBalancerErr:     fmt.Errorf("GetLoadBalancerTag generic error"),
+			expReconcileDeleteLoadBalancerErr:     errors.New("GetLoadBalancerTag generic error"),
 		},
 		{
 			name:                                  "a loadBalancer with the same name in other cluster already exists",
@@ -1282,8 +1276,8 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 			expDescribeLoadBalancerErr:            nil,
 			expCheckLoadBalancerDeregisterVmErr:   nil,
 			expGetLoadBalancerTagErr:              nil,
-			expDeleteLoadBalancerTagErr:           fmt.Errorf("DeleteLoadBalancerTag generic error"),
-			expReconcileDeleteLoadBalancerErr:     fmt.Errorf("DeleteLoadBalancerTag generic error Can not delete loadBalancer Tag for OscCluster test-system/test-osc"),
+			expDeleteLoadBalancerTagErr:           errors.New("DeleteLoadBalancerTag generic error"),
+			expReconcileDeleteLoadBalancerErr:     errors.New("DeleteLoadBalancerTag generic error Can not delete loadBalancer Tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1356,10 +1350,10 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 					Return(lbtc.expCheckLoadBalancerDeregisterVmErr)
 			}
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr.Error(), err.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileDeleteLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1472,10 +1466,10 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 				DeleteLoadBalancer(gomock.Eq(loadBalancerSpec)).
 				Return(lbtc.expDeleteLoadBalancerErr)
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr, err, "reconcileDeleteLoadBalancer() should return the same error")
+			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileDeleteLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1503,8 +1497,8 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 			expCheckLoadBalancerDeregisterVmFound: true,
 			expDescribeLoadBalancerErr:            nil,
 			expGetLoadBalancerTagErr:              nil,
-			expCheckLoadBalancerDeregisterVmErr:   fmt.Errorf("CheckLoadBalancerDeregisterVm generic error"),
-			expReconcileDeleteLoadBalancerErr:     fmt.Errorf("CheckLoadBalancerDeregisterVm generic error VmBackend is not deregister in loadBalancer test-loadbalancer for OscCluster test-system/test-osc"),
+			expCheckLoadBalancerDeregisterVmErr:   errors.New("CheckLoadBalancerDeregisterVm generic error"),
+			expReconcileDeleteLoadBalancerErr:     errors.New("CheckLoadBalancerDeregisterVm generic error VmBackend is not deregister in loadBalancer test-loadbalancer for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1562,10 +1556,10 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 			}
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr.Error(), err.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileDeleteLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1585,8 +1579,8 @@ func TestReconcileDeleteLoadBalancerGet(t *testing.T) {
 			name:                              "failed to get loadBalancer",
 			spec:                              defaultLoadBalancerReconcile,
 			expLoadBalancerFound:              false,
-			expDescribeLoadBalancerErr:        fmt.Errorf("GetLoadBalancer generic error"),
-			expReconcileDeleteLoadBalancerErr: fmt.Errorf("GetLoadBalancer generic error"),
+			expDescribeLoadBalancerErr:        errors.New("GetLoadBalancer generic error"),
+			expReconcileDeleteLoadBalancerErr: errors.New("GetLoadBalancer generic error"),
 		},
 		{
 			name:                              "remove finalizer (user delete loadBalancer without cluster-api)",
@@ -1606,10 +1600,10 @@ func TestReconcileDeleteLoadBalancerGet(t *testing.T) {
 				GetLoadBalancer(gomock.Eq(&loadBalancerSpec)).
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
-			if err != nil {
-				assert.Equal(t, lbtc.expReconcileDeleteLoadBalancerErr.Error(), err.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
+				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.Nil(t, lbtc.expReconcileDeleteLoadBalancerErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})

@@ -17,13 +17,14 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type OscInfraMachineInput struct {
@@ -124,7 +125,7 @@ func WaitForOscInfraMachineAvailable(ctx context.Context, input OscInfraMachineI
 
 // WaitForOscInfraMachineListAvailable wait for oscmachne to be available.
 func WaitForOscInfraMachineListAvailable(ctx context.Context, input OscInfraMachineListInput) bool {
-	By(fmt.Sprintf("Waiting for OscInfraMachine selected options to be ready"))
+	By("Waiting for OscInfraMachine selected options to be ready")
 	Eventually(func() bool {
 		isOscInfraMachineListAvailable := GetOscInfraMachineList(ctx, input)
 		return isOscInfraMachineListAvailable
@@ -134,7 +135,7 @@ func WaitForOscInfraMachineListAvailable(ctx context.Context, input OscInfraMach
 
 // WaitForOscInfraMachineListDelete wait for oscMachine to be deleted.
 func WaitForOscInfraMachineListDelete(ctx context.Context, input OscInfraMachineListDeleteInput) bool {
-	By(fmt.Sprintf("Waiting for OscInfraMachine selected by options to be deleted"))
+	By("Waiting for OscInfraMachine selected by options to be deleted")
 	Eventually(func() bool {
 		isOscInfraMachineListDelete := DeleteOscInfraMachineList(ctx, input)
 		return isOscInfraMachineListDelete

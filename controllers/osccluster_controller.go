@@ -153,7 +153,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		OscCluster: oscCluster,
 	})
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to create scope: %+v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 	defer func() {
 		if err := clusterScope.Close(); err != nil && reterr == nil {
@@ -438,12 +438,12 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 
 	machines, _, err := clusterScope.ListMachines(ctx)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to list machines for OscCluster %s/%s: %+v", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("failed to list machines for OscCluster %s/%s: %w", clusterScope.GetNamespace(), clusterScope.GetName(), err)
 	}
 	if len(machines) > 0 {
 		names := make([]string, len(machines))
 		for i, m := range machines {
-			names[i] = fmt.Sprintf("machine/%s", m.Name)
+			names[i] = "machine/" + m.Name
 		}
 		nameMachineList := strings.Join(names, ", ")
 		clusterScope.V(2).Info("Machine are still running, postpone oscCluster deletion", "nameMachineList", nameMachineList)

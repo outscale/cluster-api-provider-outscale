@@ -18,9 +18,8 @@ package controllers
 
 import (
 	"context"
-
-	"fmt"
-	"io/ioutil"
+	"errors"
+	"io"
 	"net/http"
 	"runtime"
 	"strings"
@@ -180,7 +179,7 @@ func TestGetSecurityGroupResourceId(t *testing.T) {
 			name:                             "can not get securityGroupId",
 			spec:                             defaultSecurityGroupInitialize,
 			expSecurityGroupsFound:           false,
-			expGetSecurityGroupResourceIdErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expGetSecurityGroupResourceIdErr: errors.New("test-securitygroup-uid does not exist"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -197,10 +196,10 @@ func TestGetSecurityGroupResourceId(t *testing.T) {
 					securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 				}
 				securityGroupResourceId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
-				if err != nil {
-					assert.Equal(t, sgtc.expGetSecurityGroupResourceIdErr, err, "getSecurityGroupResourceId() should return the same error")
+				if sgtc.expGetSecurityGroupResourceIdErr != nil {
+					assert.EqualError(t, err, sgtc.expGetSecurityGroupResourceIdErr.Error(), "getSecurityGroupResourceId() should return the same error")
 				} else {
-					assert.Nil(t, sgtc.expGetSecurityGroupResourceIdErr)
+					assert.NoError(t, err)
 				}
 				t.Logf("Find securityGroupResourceId %s\n", securityGroupResourceId)
 			}
@@ -226,7 +225,7 @@ func TestGetSecurityGroupRuleResourceId(t *testing.T) {
 			name:                                 "can not get securityGroupRuleId",
 			spec:                                 defaultSecurityGroupInitialize,
 			expSecurityGroupRuleFound:            false,
-			expGetSecurityGroupRuleResourceIdErr: fmt.Errorf("test-securitygrouprule-uid does not exist"),
+			expGetSecurityGroupRuleResourceIdErr: errors.New("test-securitygrouprule-uid does not exist"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -245,10 +244,10 @@ func TestGetSecurityGroupRuleResourceId(t *testing.T) {
 						securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupId
 					}
 					securityGroupRuleResourceId, err := getSecurityGroupRulesResourceId(securityGroupRuleName, clusterScope)
-					if err != nil {
-						assert.Equal(t, sgrtc.expGetSecurityGroupRuleResourceIdErr, err, "getSecurityGroupRuleResourceId() should return the same error")
+					if sgrtc.expGetSecurityGroupRuleResourceIdErr != nil {
+						assert.EqualError(t, err, sgrtc.expGetSecurityGroupRuleResourceIdErr.Error(), "getSecurityGroupRuleResourceId() should return the same error")
 					} else {
-						assert.Nil(t, sgrtc.expGetSecurityGroupRuleResourceIdErr)
+						assert.NoError(t, err)
 					}
 					t.Logf("Find securityGroupRuleResourceId %s\n", securityGroupRuleResourceId)
 				}
@@ -309,17 +308,17 @@ func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupOscDuplicateNameErr: fmt.Errorf("test-securitygroup already exist"),
+			expCheckSecurityGroupOscDuplicateNameErr: errors.New("test-securitygroup already exist"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, sgtc.name, sgtc.spec)
-			duplicateResourceSecurityGroupNameErr := checkSecurityGroupOscDuplicateName(clusterScope)
-			if duplicateResourceSecurityGroupNameErr != nil {
-				assert.Equal(t, sgtc.expCheckSecurityGroupOscDuplicateNameErr, duplicateResourceSecurityGroupNameErr, "checkSecurityGroupOscDuplicateName() should return the same error")
+			err := checkSecurityGroupOscDuplicateName(clusterScope)
+			if sgtc.expCheckSecurityGroupOscDuplicateNameErr != nil {
+				assert.EqualError(t, err, sgtc.expCheckSecurityGroupOscDuplicateNameErr.Error(), "checkSecurityGroupOscDuplicateName() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expCheckSecurityGroupOscDuplicateNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -378,17 +377,17 @@ func TestCheckSecurityGroupRuleOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleOscDuplicateNameErr: fmt.Errorf("test-securitygrouprule already exist"),
+			expCheckSecurityGroupRuleOscDuplicateNameErr: errors.New("test-securitygrouprule already exist"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, sgrtc.name, sgrtc.spec)
-			duplicateResourceSecurityGroupRuleNameErr := checkSecurityGroupRuleOscDuplicateName(clusterScope)
-			if duplicateResourceSecurityGroupRuleNameErr != nil {
-				assert.Equal(t, sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr, duplicateResourceSecurityGroupRuleNameErr, "checkSecurityGroupRuleOscDuplicateName() should return the same error")
+			err := checkSecurityGroupRuleOscDuplicateName(clusterScope)
+			if sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr != nil {
+				assert.EqualError(t, err, sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr.Error(), "checkSecurityGroupRuleOscDuplicateName() should return the same error")
 			} else {
-				assert.Nil(t, sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -439,7 +438,7 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckSecurityGroupFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
 			name: "check securityGroup bad description format",
@@ -467,17 +466,17 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupFormatParametersErr: fmt.Errorf("Invalid Description"),
+			expCheckSecurityGroupFormatParametersErr: errors.New("Invalid Description"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, sgtc.name, sgtc.spec)
 			_, err := checkSecurityGroupFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, sgtc.expCheckSecurityGroupFormatParametersErr, err, "checkSecurityGroupFormatParameters() should return the same error")
+			if sgtc.expCheckSecurityGroupFormatParametersErr != nil {
+				assert.EqualError(t, err, sgtc.expCheckSecurityGroupFormatParametersErr.Error(), "checkSecurityGroupFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expCheckSecurityGroupFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find all securityGroupName")
 		})
@@ -529,7 +528,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
 			name: "check Bad Flow SecurityGroupRule",
@@ -557,7 +556,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("Invalid flow"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid flow"),
 		},
 		{
 			name: "check Bad IpProtocol SecurityGroupRule",
@@ -585,7 +584,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("Invalid protocol"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid protocol"),
 		},
 		{
 			name: "check Bad Ip Range Prefix securityGroupRule",
@@ -613,7 +612,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.0/36"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("invalid CIDR address: 10.0.0.0/36"),
 		},
 		{
 			name: "check Bad Ip Range Ip securityGroupRule",
@@ -641,7 +640,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.256/16"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("invalid CIDR address: 10.0.0.256/16"),
 		},
 		{
 			name: "check bad FromPortRange securityGroupRule",
@@ -669,7 +668,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("Invalid Port"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid Port"),
 		},
 		{
 			name: "check bad ToPortRange securityGroupRule",
@@ -697,17 +696,17 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: fmt.Errorf("Invalid Port"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid Port"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
 			clusterScope := Setup(t, sgrtc.name, sgrtc.spec)
 			_, err := checkSecurityGroupRuleFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, sgrtc.expCheckSecurityGroupRuleFormatParametersErr.Error(), err.Error(), "checkSecurityGroupRuleFormatParameters() should return the same error")
+			if sgrtc.expCheckSecurityGroupRuleFormatParametersErr != nil {
+				assert.EqualError(t, err, sgrtc.expCheckSecurityGroupRuleFormatParametersErr.Error(), "checkSecurityGroupRuleFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, sgrtc.expCheckSecurityGroupRuleFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find all securityGroupRule")
 		})
@@ -743,9 +742,9 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 			expCreateSecurityGroupRuleFound: false,
 			expTagFound:                     false,
 			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
-			expCreateSecurityGroupRuleErr:               fmt.Errorf("CreateSecurityGroupRule generic errors"),
+			expCreateSecurityGroupRuleErr:               errors.New("CreateSecurityGroupRule generic errors"),
 			expReadTagErr:                               nil,
-			expReconcileSecurityGroupRuleErr:            fmt.Errorf("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileSecurityGroupRuleErr:            errors.New("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -799,10 +798,10 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 							Return(nil, sgrtc.expCreateSecurityGroupRuleErr)
 					}
 					reconcileSecurityGroupRule, err := reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
-					if err != nil {
-						assert.Equal(t, sgrtc.expReconcileSecurityGroupRuleErr.Error(), err.Error(), "reconcileSecurityGroupRules() should return the same error")
+					if sgrtc.expReconcileSecurityGroupRuleErr != nil {
+						assert.EqualError(t, err, sgrtc.expReconcileSecurityGroupRuleErr.Error(), "reconcileSecurityGroupRules() should return the same error")
 					} else {
-						assert.Nil(t, sgrtc.expReconcileSecurityGroupRuleErr)
+						assert.NoError(t, err)
 					}
 					t.Logf("find reconcileSecurityGroupRule %v\n", reconcileSecurityGroupRule)
 				}
@@ -846,8 +845,8 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 			expSecurityGroupRuleFound: true,
 			expTagFound:               false,
 			expReadTagErr:             nil,
-			expGetSecurityGroupFromSecurityGroupRuleErr: fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
-			expReconcileSecurityGroupRuleErr:            fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			expGetSecurityGroupFromSecurityGroupRuleErr: errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			expReconcileSecurityGroupRuleErr:            errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -898,10 +897,10 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 							Return(&readSecurityGroup[0], sgrtc.expGetSecurityGroupFromSecurityGroupRuleErr)
 					}
 					reconcileSecurityGroupRule, err := reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
-					if err != nil {
-						assert.Equal(t, sgrtc.expReconcileSecurityGroupRuleErr, err, "reconcileSecurityGroupRules() should return the same error")
+					if sgrtc.expReconcileSecurityGroupRuleErr != nil {
+						assert.EqualError(t, err, sgrtc.expReconcileSecurityGroupRuleErr.Error(), "reconcileSecurityGroupRules() should return the same error")
 					} else {
-						assert.Nil(t, sgrtc.expReconcileSecurityGroupRuleErr)
+						assert.NoError(t, err)
 					}
 					t.Logf("find reconcileSecurityGroupRule %v\n", reconcileSecurityGroupRule)
 				}
@@ -923,8 +922,8 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 			name: "failed to delete securityGroupRule",
 			spec: defaultSecurityGroupReconcile,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               fmt.Errorf("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupRuleErr:      fmt.Errorf("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
+			expDeleteSecurityGroupRuleErr:               errors.New("DeleteSecurityGroupRule generic error"),
+			expReconcileDeleteSecurityGroupRuleErr:      errors.New("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name: "delete securityGroupRule",
@@ -973,10 +972,10 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 						DeleteSecurityGroupRule(gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
 						Return(sgrtc.expDeleteSecurityGroupRuleErr)
 					reconcileDeleteSecurityGroupRule, err := reconcileDeleteSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
-					if err != nil {
-						assert.Equal(t, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), err.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
+					if sgrtc.expReconcileDeleteSecurityGroupRuleErr != nil {
+						assert.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
 					} else {
-						assert.Nil(t, sgrtc.expReconcileDeleteSecurityGroupRuleErr)
+						assert.NoError(t, err)
 					}
 					t.Logf("find reconcileDeleteSecurityGroupRule %v\n", reconcileDeleteSecurityGroupRule)
 				}
@@ -996,9 +995,9 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 		{
 			name: "failed to get securityGroupRule",
 			spec: defaultSecurityGroupReconcile,
-			expGetSecurityGroupfromSecurityGroupRuleErr: fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			expGetSecurityGroupfromSecurityGroupRuleErr: errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
 
-			expReconcileDeleteSecurityGroupRuleErr: fmt.Errorf("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			expReconcileDeleteSecurityGroupRuleErr: errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
 		},
 		{
 			name: "remove finalizer (user delete securityGroup without cluster-api)",
@@ -1030,10 +1029,10 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 						GetSecurityGroupFromSecurityGroupRule(gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
 						Return(nil, sgrtc.expGetSecurityGroupfromSecurityGroupRuleErr)
 					reconcileDeleteSecurityGroupRule, err := reconcileDeleteSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
-					if err != nil {
-						assert.Equal(t, sgrtc.expReconcileDeleteSecurityGroupRuleErr, err, "reconcileDeleteSecuritygroupRules() should return the same error")
+					if sgrtc.expReconcileDeleteSecurityGroupRuleErr != nil {
+						assert.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
 					} else {
-						assert.Nil(t, sgrtc.expReconcileDeleteSecurityGroupRuleErr)
+						assert.NoError(t, err)
 					}
 					t.Logf("find reconcileDeleteSecurityGroupRule %v\n", reconcileDeleteSecurityGroupRule)
 				}
@@ -1094,9 +1093,9 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expCreateSecurityGroupErr:        nil,
 			expGetSecurityGroupRuleErr:       nil,
-			expCreateSecurityGroupRuleErr:    fmt.Errorf("CreateSecurityGroupRule generic errors"),
+			expCreateSecurityGroupRuleErr:    errors.New("CreateSecurityGroupRule generic errors"),
 			expReadTagErr:                    nil,
-			expReconcileSecurityGroupErr:     fmt.Errorf("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     errors.New("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1199,10 +1198,10 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 						}
 					}
 					reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
-					if err != nil {
-						assert.Equal(t, sgtc.expReconcileSecurityGroupErr.Error(), err.Error(), "reconcileSecurityGroup() should return the same error")
+					if sgtc.expReconcileSecurityGroupErr != nil {
+						assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 					} else {
-						assert.Nil(t, sgtc.expReconcileSecurityGroupErr)
+						assert.NoError(t, err)
 					}
 
 					t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1231,9 +1230,9 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 			expSecurityGroupFound:            false,
 			expTagFound:                      false,
 			expNetFound:                      true,
-			expGetSecurityGroupFromNetIdsErr: fmt.Errorf("GetSecurityGroup generic error"),
+			expGetSecurityGroupFromNetIdsErr: errors.New("GetSecurityGroup generic error"),
 			expReadTagErr:                    nil,
-			expReconcileSecurityGroupErr:     fmt.Errorf("GetSecurityGroup generic error"),
+			expReconcileSecurityGroupErr:     errors.New("GetSecurityGroup generic error"),
 		},
 		{
 			name: "get securityGroup (second time reconcile loop)",
@@ -1297,10 +1296,10 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 						Return(nil, sgtc.expGetSecurityGroupFromNetIdsErr)
 				}
 				reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
-				if err != nil {
-					assert.Equal(t, sgtc.expReconcileSecurityGroupErr, err, "reconcileSecurityGroup() should return the same error")
+				if sgtc.expReconcileSecurityGroupErr != nil {
+					assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 				} else {
-					assert.Nil(t, sgtc.expReconcileSecurityGroupErr)
+					assert.NoError(t, err)
 				}
 
 				t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1348,9 +1347,9 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 			},
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expTagFound:                      false,
-			expCreateSecurityGroupErr:        fmt.Errorf("CreateSecurityGroup generic error"),
+			expCreateSecurityGroupErr:        errors.New("CreateSecurityGroup generic error"),
 			expReadTagErr:                    nil,
-			expReconcileSecurityGroupErr:     fmt.Errorf("CreateSecurityGroup generic error Can not create securityGroup for Osccluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     errors.New("CreateSecurityGroup generic error Can not create securityGroup for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1380,7 +1379,6 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 						EXPECT().
 						ReadTag(gomock.Eq("Name"), gomock.Eq(securityGroupName)).
 						Return(&tag, sgtc.expReadTagErr)
-
 				} else {
 					mockOscTagInterface.
 						EXPECT().
@@ -1405,10 +1403,10 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 					Return(securityGroup.SecurityGroup, sgtc.expCreateSecurityGroupErr)
 			}
 			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileSecurityGroupErr.Error(), err.Error(), "reconcileSecurityGroup() should return the same error")
+			if sgtc.expReconcileSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1435,7 +1433,7 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 			expNetFound:                      false,
 			expReadTagErr:                    nil,
 			expGetSecurityGroupIdsFromNetIds: nil,
-			expReconcileSecurityGroupErr:     fmt.Errorf("test-net-uid does not exist"),
+			expReconcileSecurityGroupErr:     errors.New("test-net-uid does not exist"),
 		},
 		{
 			name:                             "failed to get tag",
@@ -1443,12 +1441,11 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 			expTagFound:                      true,
 			expNetFound:                      true,
 			expGetSecurityGroupIdsFromNetIds: nil,
-			expReadTagErr:                    fmt.Errorf("ReadTag generic error"),
-			expReconcileSecurityGroupErr:     fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReadTagErr:                    errors.New("ReadTag generic error"),
+			expReconcileSecurityGroupErr:     errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
-
 		t.Run(sgtc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 			netRef := clusterScope.GetNetRef()
@@ -1476,14 +1473,13 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 					EXPECT().
 					GetSecurityGroupIdsFromNetIds(gomock.Eq(netId)).
 					Return(securityGroupIds, sgtc.expGetSecurityGroupIdsFromNetIds)
-
 			}
 
 			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileSecurityGroupErr.Error(), err.Error(), "reconcileSecurityGroup() should return the same error")
+			if sgtc.expReconcileSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1517,8 +1513,8 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			expSecurityGroupFound:           true,
 			expLoadBalancerResourceConflict: false,
 			expInvalidDeleteSecurityGroupJsonResponse: false,
-			expDeleteSecurityGroupFirstMockErr:        fmt.Errorf("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupFirstMockErr:        errors.New("DeleteSecurityGroup first generic error"),
+			expDeleteSecurityGroupError:               errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
 		},
 		{
 			name:                            "invalid json response",
@@ -1526,8 +1522,8 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			expSecurityGroupFound:           true,
 			expLoadBalancerResourceConflict: false,
 			expInvalidDeleteSecurityGroupJsonResponse: true,
-			expDeleteSecurityGroupFirstMockErr:        fmt.Errorf("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               fmt.Errorf("invalid character 'B' looking for beginning of value Can not delete securityGroup for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupFirstMockErr:        errors.New("DeleteSecurityGroup first generic error"),
+			expDeleteSecurityGroupError:               errors.New("invalid character 'B' looking for beginning of value Can not delete securityGroup for Osccluster test-system/test-osc"),
 		},
 		{
 			name:                            "waiting loadbalancer to timeout",
@@ -1535,8 +1531,8 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			expSecurityGroupFound:           true,
 			expLoadBalancerResourceConflict: true,
 			expInvalidDeleteSecurityGroupJsonResponse: false,
-			expDeleteSecurityGroupFirstMockErr:        fmt.Errorf("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               fmt.Errorf("DeleteSecurityGroup first generic error Can not delete securityGroup because to waiting loadbalancer to be delete timeout  for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupFirstMockErr:        errors.New("DeleteSecurityGroup first generic error"),
+			expDeleteSecurityGroupError:               errors.New("DeleteSecurityGroup first generic error Can not delete securityGroup because to waiting loadbalancer to be delete timeout for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1549,7 +1545,6 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
 			clock_mock := clock.NewMock()
-			clock_mock.Now().UTC()
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
@@ -1559,7 +1554,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					if sgtc.expLoadBalancerResourceConflict {
 						httpResponse = &http.Response{
 							StatusCode: 9085,
-							Body: ioutil.NopCloser(strings.NewReader(`{
+							Body: io.NopCloser(strings.NewReader(`{
 							"Errors": [
                                                 	        {
                                                 	       	    "Type": "ResourceConflict",
@@ -1575,7 +1570,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					} else {
 						httpResponse = &http.Response{
 							StatusCode: 10014,
-							Body: ioutil.NopCloser(strings.NewReader(`{
+							Body: io.NopCloser(strings.NewReader(`{
                                                         "Errors": [
                                                                 {
                                                                     "Type": "TooManyResources (QuotaExceded)",
@@ -1592,7 +1587,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 					if sgtc.expInvalidDeleteSecurityGroupJsonResponse {
 						httpResponse = &http.Response{
 							StatusCode: 0,
-							Body: ioutil.NopCloser(strings.NewReader(`{
+							Body: io.NopCloser(strings.NewReader(`{
                                                         "Errors": [
                                                                 {
                                                                     "Type":Bad,
@@ -1603,17 +1598,15 @@ func TestDeleteSecurityGroup(t *testing.T) {
                                                         }
                                                 }`)),
 						}
-
 					}
 					mockOscSecurityGroupInterface.
 						EXPECT().
 						DeleteSecurityGroup(gomock.Eq(securityGroupId)).
 						Return(sgtc.expDeleteSecurityGroupFirstMockErr, httpResponse)
-
 				} else {
 					httpResponse = &http.Response{
 						StatusCode: 200,
-						Body: ioutil.NopCloser(strings.NewReader(`{
+						Body: io.NopCloser(strings.NewReader(`{
                                                         "ResponseContext": {
                                                                 "RequestId": "aaaaa-bbbbb-ccccc"
                                                         }
@@ -1634,10 +1627,10 @@ func TestDeleteSecurityGroup(t *testing.T) {
 				runtime.Gosched()
 				clock_mock.Add(630 * time.Second)
 				wg.Wait()
-				if err != nil {
-					assert.Equal(t, sgtc.expDeleteSecurityGroupError.Error(), err.Error(), "deleteSecurityGroup() should return the same error")
+				if sgtc.expDeleteSecurityGroupError != nil {
+					assert.EqualError(t, err, sgtc.expDeleteSecurityGroupError.Error(), "deleteSecurityGroup() should return the same error")
 				} else {
-					assert.Nil(t, sgtc.expDeleteSecurityGroupError)
+					assert.NoError(t, err)
 				}
 				t.Logf("Find  deleteSecurityGroup %v\n", deleteSg)
 			}
@@ -1670,8 +1663,8 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 			expDeleteSecurityGroupRuleFound:  false,
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               fmt.Errorf("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupErr:          fmt.Errorf("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
+			expDeleteSecurityGroupRuleErr:               errors.New("DeleteSecurityGroupRule generic error"),
+			expReconcileDeleteSecurityGroupErr:          errors.New("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1750,10 +1743,10 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 				}
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileDeleteSecurityGroupErr.Error(), err.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileDeleteSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -1789,8 +1782,8 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
 			expDeleteSecurityGroupRuleErr:               nil,
-			expDeleteSecurityGroupErr:                   fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
-			expReconcileDeleteSecurityGroupErr:          fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc Can not delete securityGroup  for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupErr:                   errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
+			expReconcileDeleteSecurityGroupErr:          errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc Can not delete securityGroup  for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1821,17 +1814,16 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 				if sgtc.expDeleteSecurityGroupErr == nil {
 					httpResponse = &http.Response{
 						StatusCode: 200,
-						Body: ioutil.NopCloser(strings.NewReader(`{
+						Body: io.NopCloser(strings.NewReader(`{
 	                                                "ResponseContext": {
         	                                                "RequestId": "aaaaa-bbbbb-ccccc"
                 	                                }
                         	                }`)),
 					}
-
 				} else {
 					httpResponse = &http.Response{
 						StatusCode: 10014,
-						Body: ioutil.NopCloser(strings.NewReader(`{
+						Body: io.NopCloser(strings.NewReader(`{
                                                         "Errors": [
                                                                 {
                                                                     "Type": "TooManyResources (QuotaExceded)",
@@ -1844,7 +1836,6 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
                                                         }
                                                 }`)),
 					}
-
 				}
 				securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
 				for _, securityGroupRuleSpec := range securityGroupRulesSpec {
@@ -1874,7 +1865,6 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 						EXPECT().
 						DeleteSecurityGroupRule(gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
 						Return(sgtc.expDeleteSecurityGroupRuleErr)
-
 				}
 				mockOscSecurityGroupInterface.
 					EXPECT().
@@ -1882,10 +1872,10 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 					Return(sgtc.expDeleteSecurityGroupErr, httpResponse)
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileDeleteSecurityGroupErr.Error(), err.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileDeleteSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -1933,7 +1923,7 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			var httpResponse *http.Response
 			httpResponse = &http.Response{
 				StatusCode: 200,
-				Body: ioutil.NopCloser(strings.NewReader(`{
+				Body: io.NopCloser(strings.NewReader(`{
 	                                                "ResponseContext": {
         	                                                "RequestId": "aaaaa-bbbbb-ccccc"
                 	                                }
@@ -2037,10 +2027,10 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 				DeleteSecurityGroup(gomock.Eq(securityGroupId)).
 				Return(sgtc.expDeleteSecurityGroupErr, httpResponse)
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileDeleteSecurityGroupErr.Error(), err.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileDeleteSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -2062,8 +2052,8 @@ func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 			spec:                               defaultSecurityGroupReconcile,
 			expNetFound:                        true,
 			expSecurityGroupFound:              false,
-			expGetSecurityGroupFromNetIdsErr:   fmt.Errorf("GetSecurityGroup generic error"),
-			expReconcileDeleteSecurityGroupErr: fmt.Errorf("GetSecurityGroup generic error"),
+			expGetSecurityGroupFromNetIdsErr:   errors.New("GetSecurityGroup generic error"),
+			expReconcileDeleteSecurityGroupErr: errors.New("GetSecurityGroup generic error"),
 		},
 		{
 			name:                               "remove finalizer (user delete securityGroup without cluster-api)",
@@ -2111,10 +2101,10 @@ func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 				}
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileDeleteSecurityGroupErr.Error(), err.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileDeleteSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -2133,7 +2123,7 @@ func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 			name:                               "net does not exist",
 			spec:                               defaultSecurityGroupReconcile,
 			expNetFound:                        false,
-			expReconcileDeleteSecurityGroupErr: fmt.Errorf("test-net-uid does not exist"),
+			expReconcileDeleteSecurityGroupErr: errors.New("test-net-uid does not exist"),
 		},
 		{
 			name: "check failed without net and securityGroup spec (retrieve default values cluster-api)",
@@ -2141,7 +2131,7 @@ func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
 			expNetFound:                        false,
-			expReconcileDeleteSecurityGroupErr: fmt.Errorf("cluster-api-net-uid does not exist"),
+			expReconcileDeleteSecurityGroupErr: errors.New("cluster-api-net-uid does not exist"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -2152,10 +2142,10 @@ func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, sgtc.expReconcileDeleteSecurityGroupErr.Error(), err.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
+				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.Nil(t, sgtc.expReconcileDeleteSecurityGroupErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})

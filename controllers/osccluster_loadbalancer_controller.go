@@ -21,17 +21,16 @@ import (
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	osc "github.com/outscale/osc-sdk-go/v2"
-
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// checkLoadBalancerSubneOscAssociateResourceName check that LoadBalancer Subnet dependancies tag name in both resource configuration are the same.
+// checkLoadBalancerSubneOscAssociateResourceName check that LoadBalancer Subnet dependencies tag name in both resource configuration are the same.
 func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -130,7 +129,7 @@ func checkLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string
 	return "", nil
 }
 
-// checkLoadBalancerSecurityOscAssociateResourceName check that LoadBalancer SecurityGroup dependancies tag name in both resource configuration are the same.
+// checkLoadBalancerSecurityOscAssociateResourceName check that LoadBalancer SecurityGroup dependencies tag name in both resource configuration are the same.
 func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
@@ -151,7 +150,6 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 
 // reconcileLoadBalancer reconciles the loadBalancer of the cluster.
 func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
-
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	clusterScope.V(2).Info("Check if the desired loadbalancer exist", "loadBalancerName", loadBalancerName)
@@ -225,7 +223,6 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		Port: controlPlanePort,
 	})
 	return reconcile.Result{}, nil
-
 }
 
 // reconcileDeleteLoadBalancer reconcile the destruction of the LoadBalancer of the cluster.

@@ -18,6 +18,7 @@ package tag
 
 import (
 	"context"
+
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 )
 

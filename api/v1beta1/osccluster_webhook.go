@@ -43,7 +43,6 @@ var _ webhook.Defaulter = &OscCluster{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (m *OscCluster) Default() {
 	oscClusterLog.Info("default", "name", m.Name)
-
 }
 
 //+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta1,name=vosccluster.kb.io,admissionReviewVersions=v1

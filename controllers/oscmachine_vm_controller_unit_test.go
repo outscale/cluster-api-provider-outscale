@@ -18,15 +18,9 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
-	//"time"
-
-	osc "github.com/outscale/osc-sdk-go/v2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"sigs.k8s.io/controller-runtime/pkg/log"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -36,8 +30,11 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage/mock_storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -573,7 +570,7 @@ func TestGetVmResourceId(t *testing.T) {
 			clusterSpec:           defaultVmClusterInitialize,
 			machineSpec:           defaultVmInitialize,
 			expVmFound:            false,
-			expGetVmResourceIdErr: fmt.Errorf("test-vm-uid does not exist"),
+			expGetVmResourceIdErr: errors.New("test-vm-uid does not exist"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -587,10 +584,10 @@ func TestGetVmResourceId(t *testing.T) {
 				vmRef.ResourceMap[vmName] = vmId
 			}
 			vmResourceId, err := getVmResourceId(vmName, machineScope)
-			if err != nil {
-				assert.Equal(t, vtc.expGetVmResourceIdErr.Error(), err.Error(), "GetVmResourceId() should return the same error")
+			if vtc.expGetVmResourceIdErr != nil {
+				assert.EqualError(t, err, vtc.expGetVmResourceIdErr.Error(), "GetVmResourceId() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expGetVmResourceIdErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find netResourceId %s", vmResourceId)
 		})
@@ -621,7 +618,7 @@ func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmVolumeOscAssociateResourceNameErr: fmt.Errorf("test-volume-uid volume does not exist in vm"),
+			expCheckVmVolumeOscAssociateResourceNameErr: errors.New("test-volume-uid volume does not exist in vm"),
 		},
 		{
 			name:        "check Bad name volume",
@@ -673,17 +670,17 @@ func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmVolumeOscAssociateResourceNameErr: fmt.Errorf("test-volume@test-uid volume does not exist in vm"),
+			expCheckVmVolumeOscAssociateResourceNameErr: errors.New("test-volume@test-uid volume does not exist in vm"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmVolumeOscAssociateResourceName(machineScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmVolumeOscAssociateResourceNameErr, err, "checkVmVolumeOscAssociateResourceName() should return the same eror")
+			if vtc.expCheckVmVolumeOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmVolumeOscAssociateResourceNameErr.Error(), "checkVmVolumeOscAssociateResourceName() should return the same eror")
 			} else {
-				assert.Nil(t, vtc.expCheckVmVolumeOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -713,7 +710,7 @@ func TestCheckVmLoadBalancerOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmLoadBalancerOscAssociateResourceNameErr: fmt.Errorf("OscClusterApi-1-uid loadBalancer does not exist in vm"),
+			expCheckVmLoadBalancerOscAssociateResourceNameErr: errors.New("OscClusterApi-1-uid loadBalancer does not exist in vm"),
 		},
 		{
 			name:        "check Bad loadBalancer name",
@@ -765,17 +762,17 @@ func TestCheckVmLoadBalancerOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmLoadBalancerOscAssociateResourceNameErr: fmt.Errorf("test-loadbalancer@test-uid loadBalancer does not exist in vm"),
+			expCheckVmLoadBalancerOscAssociateResourceNameErr: errors.New("test-loadbalancer@test-uid loadBalancer does not exist in vm"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmLoadBalancerOscAssociateResourceName(machineScope, clusterScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr, err, "checkVmLoadBalancerOscAssociateResourceName() should return the same erroor")
+			if vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr.Error(), "checkVmLoadBalancerOscAssociateResourceName() should return the same erroor")
 			} else {
-				assert.Nil(t, vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -801,7 +798,7 @@ func TestCheckVmSecurityGroupOscAssociateResourceName(t *testing.T) {
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{},
 			},
-			expCheckVmSecurityGroupOscAssociateResourceNameErr: fmt.Errorf("cluster-api-securitygroup-kw-uid securityGroup does not exist in vm"),
+			expCheckVmSecurityGroupOscAssociateResourceNameErr: errors.New("cluster-api-securitygroup-kw-uid securityGroup does not exist in vm"),
 		},
 		{
 			name:        "check Bad security group name",
@@ -853,17 +850,17 @@ func TestCheckVmSecurityGroupOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmSecurityGroupOscAssociateResourceNameErr: fmt.Errorf("test-securitygroup@test-uid securityGroup does not exist in vm"),
+			expCheckVmSecurityGroupOscAssociateResourceNameErr: errors.New("test-securitygroup@test-uid securityGroup does not exist in vm"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr, err, "checkVmSecurityGroupOscAssociateResourceName() should return the same error")
+			if vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr.Error(), "checkVmSecurityGroupOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -893,7 +890,7 @@ func TestCheckVmPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmPublicIpOscAssociateResourceNameErr: fmt.Errorf("cluster-api-publicip-uid publicIp does not exist in vm"),
+			expCheckVmPublicIpOscAssociateResourceNameErr: errors.New("cluster-api-publicip-uid publicIp does not exist in vm"),
 		},
 		{
 			name:        "check Bad name publicIp",
@@ -945,17 +942,17 @@ func TestCheckVmPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmPublicIpOscAssociateResourceNameErr: fmt.Errorf("test-publicip@test-uid publicIp does not exist in vm"),
+			expCheckVmPublicIpOscAssociateResourceNameErr: errors.New("test-publicip@test-uid publicIp does not exist in vm"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmPublicIpOscAssociateResourceName(machineScope, clusterScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmPublicIpOscAssociateResourceNameErr, err, "checkVmPublicIpOscAssociateResourceName() should return the same error")
+			if vtc.expCheckVmPublicIpOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmPublicIpOscAssociateResourceNameErr.Error(), "checkVmPublicIpOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVmPublicIpOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1021,7 +1018,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckVmFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
 			name:        "check Bad name volumeDeviceName",
@@ -1069,7 +1066,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid deviceName"),
+			expCheckVmFormatParametersErr: errors.New("Invalid deviceName"),
 		},
 		{
 			name:        "check Bad imageId",
@@ -1117,7 +1114,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid imageId"),
+			expCheckVmFormatParametersErr: errors.New("Invalid imageId"),
 		},
 		{
 			name:        "check bad image Name",
@@ -1167,7 +1164,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid Image Name"),
+			expCheckVmFormatParametersErr: errors.New("Invalid Image Name"),
 		},
 		{
 			name:        "check Bad keypairname",
@@ -1215,7 +1212,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid KeypairName"),
+			expCheckVmFormatParametersErr: errors.New("Invalid KeypairName"),
 		},
 		{
 			name:        "check empty imageId",
@@ -1313,7 +1310,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid deviceName"),
+			expCheckVmFormatParametersErr: errors.New("Invalid deviceName"),
 		},
 		{
 			name:        "check empty device name",
@@ -1408,7 +1405,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid vmType"),
+			expCheckVmFormatParametersErr: errors.New("Invalid vmType"),
 		},
 		{
 			name:        "Check Bad IpAddr",
@@ -1456,7 +1453,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid ip in cidr"),
+			expCheckVmFormatParametersErr: errors.New("Invalid ip in cidr"),
 		},
 		{
 			name:        "Check Bad subregionname",
@@ -1504,7 +1501,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid subregionName"),
+			expCheckVmFormatParametersErr: errors.New("Invalid subregionName"),
 		},
 		{
 			name:        "Check Bad root device size",
@@ -1552,7 +1549,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid size"),
+			expCheckVmFormatParametersErr: errors.New("Invalid size"),
 		},
 		{
 			name:        "Check Bad rootDeviceIops",
@@ -1600,7 +1597,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid iops"),
+			expCheckVmFormatParametersErr: errors.New("Invalid iops"),
 		},
 		{
 			name:        "Check bad rootDiskType",
@@ -1648,7 +1645,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid volumeType"),
+			expCheckVmFormatParametersErr: errors.New("Invalid volumeType"),
 		},
 		{
 			name:        "Check Bad ratio root disk Iops Size",
@@ -1696,7 +1693,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: fmt.Errorf("Invalid ratio Iops size that exceed 300"),
+			expCheckVmFormatParametersErr: errors.New("Invalid ratio Iops size that exceed 300"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -1708,15 +1705,14 @@ func TestCheckVmFormatParameters(t *testing.T) {
 			subnetRef.ResourceMap = make(map[string]string)
 			subnetRef.ResourceMap[subnetName] = subnetId
 			vmName, err := checkVmFormatParameters(machineScope, clusterScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmFormatParametersErr, err, "checkVmFormatParameters() should return the same error")
+			if vtc.expCheckVmFormatParametersErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmFormatParametersErr.Error(), "checkVmFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVmFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find vmName %s\n", vmName)
 		})
 	}
-
 }
 
 // TestCheckVmSubnetAssociateResourceName has several tests to cover the code of the function checkVmSubnetAssociateResourceName
@@ -1739,7 +1735,7 @@ func TestCheckVmSubnetAssociateResourceName(t *testing.T) {
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{},
 			},
-			expCheckVmSubnetAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-kw-uid subnet does not exist in vm"),
+			expCheckVmSubnetAssociateResourceNameErr: errors.New("cluster-api-subnet-kw-uid subnet does not exist in vm"),
 		},
 		{
 			name:        "check Bad subnet name",
@@ -1791,17 +1787,17 @@ func TestCheckVmSubnetAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmSubnetAssociateResourceNameErr: fmt.Errorf("test-subnet@test-uid subnet does not exist in vm"),
+			expCheckVmSubnetAssociateResourceNameErr: errors.New("test-subnet@test-uid subnet does not exist in vm"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmSubnetOscAssociateResourceName(machineScope, clusterScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmSubnetAssociateResourceNameErr, err, "checkVmSubnetOscAssociateResourceName() should return the same error")
+			if vtc.expCheckVmSubnetAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmSubnetAssociateResourceNameErr.Error(), "checkVmSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVmSubnetAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1871,17 +1867,17 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmPrivateIpsOscDuplicateNameErr: fmt.Errorf("test-privateip-first already exist"),
+			expCheckVmPrivateIpsOscDuplicateNameErr: errors.New("test-privateip-first already exist"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			duplicateResourceVmPrivateIpsErr := checkVmPrivateIpOscDuplicateName(machineScope)
-			if duplicateResourceVmPrivateIpsErr != nil {
-				assert.Equal(t, vtc.expCheckVmPrivateIpsOscDuplicateNameErr, duplicateResourceVmPrivateIpsErr, "checkVmPrivateIpsOscDuplicateName() should return the same error")
+			err := checkVmPrivateIpOscDuplicateName(machineScope)
+			if vtc.expCheckVmPrivateIpsOscDuplicateNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmPrivateIpsOscDuplicateNameErr.Error(), "checkVmPrivateIpsOscDuplicateName() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVmPrivateIpsOscDuplicateNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1989,17 +1985,17 @@ func TestCheckVmVolumeSubregionName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmVolumeSubregionNameErr: fmt.Errorf("volume test-volume and vm test-vm are not in the same subregion eu-west-2b"),
+			expCheckVmVolumeSubregionNameErr: errors.New("volume test-volume and vm test-vm are not in the same subregion eu-west-2b"),
 		},
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmVolumeSubregionName(machineScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmVolumeSubregionNameErr, err, "checkVmVolumeSubregionName() should return the same error")
+			if vtc.expCheckVmVolumeSubregionNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVmVolumeSubregionNameErr.Error(), "checkVmVolumeSubregionName() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVmVolumeSubregionNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -2040,7 +2036,6 @@ func TestUseFailureDomain(t *testing.T) {
 
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.oscMachineSpec)
 			machineScope.Machine.Spec = vtc.machineSec
 			UseFailureDomain(clusterScope, machineScope)
@@ -2186,12 +2181,12 @@ func TestReconcileVm(t *testing.T) {
 			expLinkPublicIpErr:                      nil,
 			expCheckVmStatePublicIpErr:              nil,
 			expLinkLoadBalancerBackendMachineErr:    nil,
-			expCreateOutboundSecurityGroupRuleErr:   fmt.Errorf("CreateSecurityGroupRule generic error"),
+			expCreateOutboundSecurityGroupRuleErr:   errors.New("CreateSecurityGroupRule generic error"),
 			expGetOutboundSecurityGroupRuleErr:      nil,
 			expCreateInboundSecurityGroupRuleErr:    nil,
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expReadTagErr:                           nil,
-			expReconcileVmErr:                       fmt.Errorf("CreateSecurityGroupRule generic error Can not create outbound securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileVmErr:                       errors.New("CreateSecurityGroupRule generic error Can not create outbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                                    "failed to get outbound securityGroupRule",
@@ -2214,11 +2209,11 @@ func TestReconcileVm(t *testing.T) {
 			expCheckVmStatePublicIpErr:              nil,
 			expLinkLoadBalancerBackendMachineErr:    nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
-			expGetOutboundSecurityGroupRuleErr:      fmt.Errorf("GetSecurityGroupRule generic error"),
+			expGetOutboundSecurityGroupRuleErr:      errors.New("GetSecurityGroupRule generic error"),
 			expCreateInboundSecurityGroupRuleErr:    nil,
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expReadTagErr:                           nil,
-			expReconcileVmErr:                       fmt.Errorf("GetSecurityGroupRule generic error Can not get outbound securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileVmErr:                       errors.New("GetSecurityGroupRule generic error Can not get outbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                                    "failed to create inbound securityGroupRule",
@@ -2240,12 +2235,12 @@ func TestReconcileVm(t *testing.T) {
 			expLinkPublicIpErr:                      nil,
 			expCheckVmStatePublicIpErr:              nil,
 			expLinkLoadBalancerBackendMachineErr:    nil,
-			expCreateInboundSecurityGroupRuleErr:    fmt.Errorf("CreateSecurityGroupRule generic error"),
+			expCreateInboundSecurityGroupRuleErr:    errors.New("CreateSecurityGroupRule generic error"),
 			expGetInboundSecurityGroupRuleErr:       nil,
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
 			expReadTagErr:                           nil,
-			expReconcileVmErr:                       fmt.Errorf("CreateSecurityGroupRule generic error Can not create inbound securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileVmErr:                       errors.New("CreateSecurityGroupRule generic error Can not create inbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                                    "failed to get inbound securityGroupRule",
@@ -2267,11 +2262,11 @@ func TestReconcileVm(t *testing.T) {
 			expCheckVmStatePublicIpErr:              nil,
 			expLinkLoadBalancerBackendMachineErr:    nil,
 			expCreateInboundSecurityGroupRuleErr:    nil,
-			expGetInboundSecurityGroupRuleErr:       fmt.Errorf("GetSecurityGroupRule generic error"),
+			expGetInboundSecurityGroupRuleErr:       errors.New("GetSecurityGroupRule generic error"),
 			expCreateOutboundSecurityGroupRuleErr:   nil,
 			expGetOutboundSecurityGroupRuleErr:      nil,
 			expReadTagErr:                           nil,
-			expReconcileVmErr:                       fmt.Errorf("GetSecurityGroupRule generic error Can not get inbound securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileVmErr:                       errors.New("GetSecurityGroupRule generic error Can not get inbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                                   "linkPublicIp does not exist",
@@ -2518,9 +2513,9 @@ func TestReconcileVm(t *testing.T) {
 			}
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+				assert.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileVmErr)
+				assert.NoError(t, vtc.expReconcileVmErr)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
@@ -2545,9 +2540,9 @@ func TestReconcileVmCreate(t *testing.T) {
 			machineSpec:       defaultVmInitialize,
 			expCreateVmFound:  false,
 			expTagFound:       false,
-			expCreateVmErr:    fmt.Errorf("CreateVm generic error"),
+			expCreateVmErr:    errors.New("CreateVm generic error"),
 			expReadTagErr:     nil,
-			expReconcileVmErr: fmt.Errorf("CreateVm generic error Can not create vm for OscMachine test-system/test-osc"),
+			expReconcileVmErr: errors.New("CreateVm generic error Can not create vm for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -2636,9 +2631,9 @@ func TestReconcileVmCreate(t *testing.T) {
 
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+				assert.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileVmErr)
+				assert.NoError(t, vtc.expReconcileVmErr)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
@@ -2693,13 +2688,13 @@ func TestReconcileVmGet(t *testing.T) {
 			expPrivateDnsNameFound: true,
 			expPrivateIpFound:      true,
 			expTagFound:            false,
-			expGetVmErr:            fmt.Errorf("GetVm generic error"),
+			expGetVmErr:            errors.New("GetVm generic error"),
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
 			expReadTagErr:          nil,
-			expReconcileVmErr:      fmt.Errorf("GetVm generic error"),
+			expReconcileVmErr:      errors.New("GetVm generic error"),
 		},
 		{
 			name:                   "failed to set vmstate",
@@ -2713,11 +2708,11 @@ func TestReconcileVmGet(t *testing.T) {
 			expTagFound:            false,
 			expGetVmErr:            nil,
 			expAddCcmTagErr:        nil,
-			expGetVmStateErr:       fmt.Errorf("GetVmState generic error"),
+			expGetVmStateErr:       errors.New("GetVmState generic error"),
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
 			expReadTagErr:          nil,
-			expReconcileVmErr:      fmt.Errorf("GetVmState generic error Can not get vm i-test-vm-uid state for OscMachine test-system/test-osc"),
+			expReconcileVmErr:      errors.New("GetVmState generic error Can not get vm i-test-vm-uid state for OscMachine test-system/test-osc"),
 		},
 		{
 			name:                   "failed to add tag",
@@ -2731,11 +2726,11 @@ func TestReconcileVmGet(t *testing.T) {
 			expTagFound:            false,
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
-			expAddCcmTagErr:        fmt.Errorf("AddCcmTag generic error"),
+			expAddCcmTagErr:        errors.New("AddCcmTag generic error"),
 			expPrivateDnsNameErr:   nil,
 			expPrivateIpErr:        nil,
 			expReadTagErr:          nil,
-			expReconcileVmErr:      fmt.Errorf("AddCcmTag generic error can not add ccm tag test-system/test-osc"),
+			expReconcileVmErr:      errors.New("AddCcmTag generic error can not add ccm tag test-system/test-osc"),
 		},
 		{
 			name:                   "Failed to retrieve privateDnsName",
@@ -2752,8 +2747,8 @@ func TestReconcileVmGet(t *testing.T) {
 			expAddCcmTagErr:        nil,
 			expPrivateIpErr:        nil,
 			expReadTagErr:          nil,
-			expPrivateDnsNameErr:   fmt.Errorf("GetPrivateDnsNameok generic error"),
-			expReconcileVmErr:      fmt.Errorf("Can not found privateDnsName test-system/test-osc"),
+			expPrivateDnsNameErr:   errors.New("GetPrivateDnsNameok generic error"),
+			expReconcileVmErr:      errors.New("Can not found privateDnsName test-system/test-osc"),
 		},
 		{
 			name:                   "Failed to retrieve privateIp",
@@ -2767,9 +2762,9 @@ func TestReconcileVmGet(t *testing.T) {
 			expGetVmErr:            nil,
 			expGetVmStateErr:       nil,
 			expAddCcmTagErr:        nil,
-			expPrivateIpErr:        fmt.Errorf("GetPrivateIpOk generic error"),
+			expPrivateIpErr:        errors.New("GetPrivateIpOk generic error"),
 			expPrivateDnsNameErr:   nil,
-			expReconcileVmErr:      fmt.Errorf("Can not found privateIp test-system/test-osc"),
+			expReconcileVmErr:      errors.New("Can not found privateIp test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -2888,9 +2883,9 @@ func TestReconcileVmGet(t *testing.T) {
 			}
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+				assert.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileVmErr)
+				assert.NoError(t, vtc.expReconcileVmErr)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 
@@ -2999,13 +2994,13 @@ func TestReconcileDeleteVm(t *testing.T) {
 			expDeleteDedicatedPublicIpFound:         false,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
 			expSecurityGroupRuleFound:               true,
-			expDeleteVmErr:                          fmt.Errorf("DeleteVm generic error"),
+			expDeleteVmErr:                          errors.New("DeleteVm generic error"),
 			expGetVmFound:                           true,
 			expGetVmErr:                             nil,
 			expDeleteInboundSecurityGroupRuleErr:    nil,
 			expDeleteOutboundSecurityGroupRuleErr:   nil,
 			expCheckUnlinkPublicIpErr:               nil,
-			expReconcileDeleteVmErr:                 fmt.Errorf("DeleteVm generic error Can not delete vm for OscMachine test-system/test-osc"),
+			expReconcileDeleteVmErr:                 errors.New("DeleteVm generic error Can not delete vm for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -3129,7 +3124,6 @@ func TestReconcileDeleteVm(t *testing.T) {
 					EXPECT().
 					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Inbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteInboundSecurityGroupRuleErr)
-
 			}
 
 			mockOscVmInterface.
@@ -3138,16 +3132,14 @@ func TestReconcileDeleteVm(t *testing.T) {
 				Return(vtc.expDeleteVmErr)
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				t.Logf(err.Error())
-				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconcileDeleteVm() should return the same error")
+			if vtc.expReconcileDeleteVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVmErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
 	}
-
 }
 
 // TestReconcileDeleteVmUnlinkPublicIp has several tests to cover the code of the function reconcileDeleteVm
@@ -3170,8 +3162,8 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 			expGetVmFound:               true,
 			expGetVmErr:                 nil,
 			expCheckUnlinkPublicIpFound: true,
-			expCheckUnlinkPublicIpErr:   fmt.Errorf("CheckUnlinkPublicIp generic error"),
-			expReconcileDeleteVmErr:     fmt.Errorf("CheckUnlinkPublicIp generic error Can not unlink publicIp for OscCluster test-system/test-osc"),
+			expCheckUnlinkPublicIpErr:   errors.New("CheckUnlinkPublicIp generic error"),
+			expReconcileDeleteVmErr:     errors.New("CheckUnlinkPublicIp generic error Can not unlink publicIp for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -3231,15 +3223,14 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 			}
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconcileDeleteVm() should return the same error")
+			if vtc.expReconcileDeleteVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVmErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
 	}
-
 }
 
 // TestReconcileDeleteVmResourceId has several tests to cover the code of the function reconcileDeleteVm
@@ -3260,16 +3251,16 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 			expGetVmFound:           true,
 			expGetVmErr:             nil,
 			expSecurityGroupFound:   false,
-			expReconcileDeleteVmErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileDeleteVmErr: errors.New("test-securitygroup-uid does not exist"),
 		},
 		{
 			name:                    "failed to get vm",
 			clusterSpec:             defaultVmClusterReconcile,
 			machineSpec:             defaultVmReconcile,
 			expGetVmFound:           true,
-			expGetVmErr:             fmt.Errorf("GetVm generic error"),
+			expGetVmErr:             errors.New("GetVm generic error"),
 			expSecurityGroupFound:   false,
-			expReconcileDeleteVmErr: fmt.Errorf("GetVm generic error"),
+			expReconcileDeleteVmErr: errors.New("GetVm generic error"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -3324,15 +3315,14 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr, err, "reconcileDeleteVm() hould return the same error")
+			if vtc.expReconcileDeleteVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() hould return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVmErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
 	}
-
 }
 
 // TestReconcileDeleteVmAlready has several tests to cover the code of the function reconcileDeleteVm
@@ -3362,10 +3352,10 @@ func TestReconcileDeleteVmAlready(t *testing.T) {
 				vmRef.ResourceMap[vmName] = vmId
 			}
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr, err, "reconcileDeleteVm() should return the same error")
+			if vtc.expReconcileDeleteVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVmErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
@@ -3439,17 +3429,10 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 
-			createVms := osc.CreateVmsResponse{
-				Vms: &[]osc.Vm{
-					{
-						VmId: &vmId,
-					},
-				},
-			}
-
-			createVm := *createVms.Vms
-			vm := &createVm[0]
 			if vtc.expGetVmFound {
+				vm := &osc.Vm{
+					VmId: &vmId,
+				}
 				mockOscVmInterface.
 					EXPECT().
 					GetVm(gomock.Eq(vmId)).
@@ -3465,16 +3448,15 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 				DeleteVm(gomock.Eq(vmId)).
 				Return(vtc.expDeleteVmErr)
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr, err, "reconcileDeleteVm() should return the same error")
+			if vtc.expReconcileDeleteVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVmErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
 	}
-
 }
 
 // TestReconcileDeleteVmSecurityGroup has several tests to cover the code of the function reconcileDeleteVm
@@ -3502,14 +3484,14 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 			expDeleteInboundSecurityGroupRuleFound:  true,
 			expDeleteOutboundSecurityGroupRuleFound: true,
 			expUnlinkLoadBalancerBackendMachineErr:  nil,
-			expDeleteInboundSecurityGroupRuleErr:    fmt.Errorf("CreateSecurityGroupRule generic error"),
+			expDeleteInboundSecurityGroupRuleErr:    errors.New("CreateSecurityGroupRule generic error"),
 			expDeleteOutboundSecurityGroupRuleErr:   nil,
 			expSecurityGroupRuleFound:               true,
 			expDeleteVmErr:                          nil,
 			expGetVmFound:                           true,
 			expGetVmErr:                             nil,
 			expCheckUnlinkPublicIpErr:               nil,
-			expReconcileDeleteVmErr:                 fmt.Errorf("CreateSecurityGroupRule generic error Can not delete inbound securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileDeleteVmErr:                 errors.New("CreateSecurityGroupRule generic error Can not delete inbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                                    "failed to delete outbound securitygroup",
@@ -3523,9 +3505,9 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 			expGetVmFound:                           true,
 			expGetVmErr:                             nil,
 			expDeleteInboundSecurityGroupRuleErr:    nil,
-			expDeleteOutboundSecurityGroupRuleErr:   fmt.Errorf("CreateSecurityGroupRule generic error"),
+			expDeleteOutboundSecurityGroupRuleErr:   errors.New("CreateSecurityGroupRule generic error"),
 			expCheckUnlinkPublicIpErr:               nil,
-			expReconcileDeleteVmErr:                 fmt.Errorf("CreateSecurityGroupRule generic error Can not delete outbound securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileDeleteVmErr:                 errors.New("CreateSecurityGroupRule generic error Can not delete outbound securityGroupRule for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -3611,17 +3593,15 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 					EXPECT().
 					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Inbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteInboundSecurityGroupRuleErr)
-
 			}
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVmErr.Error(), err.Error(), "reconcileDeleteVm() should return the same error")
+			if vtc.expReconcileDeleteVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVmErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
 	}
-
 }

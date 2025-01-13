@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,7 +54,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": Invalid KeypairName"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: keypairName: Invalid value: \"rke λ\": Invalid KeypairName"),
 		},
 		{
 			name: "create with bad vmType",
@@ -65,7 +65,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": Invalid vmType"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: vmType: Invalid value: \"oscv4.c2r4p2\": Invalid vmType"),
 		},
 		{
 			name: "create with bad iops",
@@ -82,7 +82,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
 		},
 		{
 			name: "create rootdisk with bad iops",
@@ -95,7 +95,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: iops: Invalid value: -15: Invalid iops"),
 		},
 		{
 			name: "create rootdisk with bad size",
@@ -108,7 +108,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -15: Invalid size"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: size: Invalid value: -15: Invalid size"),
 		},
 		{
 			name: "create rootdisk with bad volumeType",
@@ -121,7 +121,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: diskType: Invalid value: \"ssd1\": Invalid volumeType"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: diskType: Invalid value: \"ssd1\": Invalid volumeType"),
 		},
 		{
 			name: "create with bad volumeType",
@@ -138,7 +138,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"ssd1\": Invalid volumeType"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: volumeType: Invalid value: \"ssd1\": Invalid volumeType"),
 		},
 		{
 			name: "create with bad subregionName",
@@ -155,7 +155,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": Invalid subregionName"),
+			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: subregionName: Invalid value: \"eu-west-2c\": Invalid subregionName"),
 		},
 		{
 			name: "create with good io1 volumeSpec",
@@ -228,10 +228,10 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 		t.Run(mtc.name, func(t *testing.T) {
 			oscInfraMachine := createOscInfraMachine(mtc.machineSpec, "webhook-test", "default")
 			_, err := oscInfraMachine.ValidateCreate()
-			if err != nil {
-				assert.Equal(t, mtc.expValidateCreateErr.Error(), err.Error(), "ValidateCreate should return the same errror")
+			if mtc.expValidateCreateErr != nil {
+				assert.EqualError(t, err, mtc.expValidateCreateErr.Error(), "ValidateCreate should return the same errror")
 			} else {
-				assert.Nil(t, mtc.expValidateCreateErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -303,7 +303,7 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.keyPairName: Invalid value: \"test-webhook-2\": field is immutable"),
+			expValidateUpdateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.keyPairName: Invalid value: \"test-webhook-2\": field is immutable"),
 		},
 		{
 			name: "update vmType",
@@ -321,7 +321,7 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-			expValidateUpdateErr: fmt.Errorf("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.vmType: Invalid value: \"tinav4.c2r4p1\": field is immutable"),
+			expValidateUpdateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: spec.vmType: Invalid value: \"tinav4.c2r4p1\": field is immutable"),
 		},
 	}
 	for _, mtc := range machineTestCases {
@@ -329,10 +329,10 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 			oscOldInfraMachine := createOscInfraMachine(mtc.oldMachineSpec, "old-webhook-test", "default")
 			oscInfraMachine := createOscInfraMachine(mtc.machineSpec, "webhook-test", "default")
 			_, err := oscInfraMachine.ValidateUpdate(oscOldInfraMachine)
-			if err != nil {
-				assert.Equal(t, mtc.expValidateUpdateErr.Error(), err.Error(), "ValidateUpdate() should return the same error")
+			if mtc.expValidateUpdateErr != nil {
+				assert.EqualError(t, err, mtc.expValidateUpdateErr.Error(), "ValidateUpdate() should return the same error")
 			} else {
-				assert.Nil(t, mtc.expValidateUpdateErr)
+				assert.NoError(t, err)
 			}
 		})
 	}

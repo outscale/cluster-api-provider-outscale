@@ -138,7 +138,6 @@ func ValidateRatioSizeIops(ratioIopsSize int32) (int32, error) {
 	} else {
 		return ratioIopsSize, errors.New("Invalid ratio Iops size that exceed 300")
 	}
-
 }
 
 // ValidateIamegName check that Image name is a valide name

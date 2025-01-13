@@ -20,9 +20,8 @@ import (
 	"reflect"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -46,7 +45,6 @@ var _ webhook.Defaulter = &OscClusterTemplate{}
 
 func (r *OscClusterTemplate) Default() {
 	oscClusterTemplateLog.Info("default", "name", r.Name)
-
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

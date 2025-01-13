@@ -18,7 +18,7 @@ package compute
 
 import (
 	"fmt"
-	_nethttp "net/http"
+	"net/http"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -42,7 +42,7 @@ func (s *Service) GetImage(imageId string) (*osc.Image, error) {
 
 	var readImagesResponse osc.ReadImagesResponse
 	readImageCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
 		if err != nil {
@@ -82,7 +82,7 @@ func (s *Service) GetImageId(imageName string) (string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readImagesResponse osc.ReadImagesResponse
 	readImageCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
 		if err != nil {
@@ -122,7 +122,7 @@ func (s *Service) GetImageName(imageId string) (string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readImagesResponse osc.ReadImagesResponse
 	readImageCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
 		if err != nil {

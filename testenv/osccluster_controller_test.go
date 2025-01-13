@@ -17,10 +17,11 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	network "net"
 	"net/http"
 	"os"
@@ -35,15 +36,12 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // deployOscInfraCluster will deploy OscInfraCluster (create osccluster object)
@@ -232,7 +230,6 @@ func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 	}
 	client := &http.Client{Transport: transportCfg}
 	response, err := client.Get(controlPlaneEndpoint)
-
 	if err != nil {
 		fmt.Fprintf(GinkgoWriter, "Can not communicate with control plane %s \n", controlPlaneEndpoint)
 		return false, err
@@ -240,9 +237,12 @@ func IsControlPlaneEndpointUp(controlPlaneEndpoint string) (bool, error) {
 
 	defer response.Body.Close()
 
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return false, err
+	}
 	var res map[string]interface{}
-	json.Unmarshal([]byte(data), &res)
+	err = json.Unmarshal(data, &res)
 	if err != nil {
 		return false, err
 	}
@@ -286,14 +286,13 @@ func deployCapoMachine(ctx context.Context, name string, namespace string) (clie
 				Namespace:  namespace,
 			},
 			Bootstrap: clusterv1.Bootstrap{
-				DataSecretName: pointer.String("cluster-api-test"),
+				DataSecretName: ptr.To("cluster-api-test"),
 			},
 		},
 	}
 	Expect(k8sClient.Create(ctx, capoMachine)).To(Succeed())
 	capoMachineKey := client.ObjectKey{Namespace: namespace, Name: name}
 	return capoMachine, capoMachineKey
-
 }
 
 // waitOscClusterToProvision will wait that capi will set capoCluster in provisionned phase
@@ -316,7 +315,6 @@ func waitOscMachineToProvision(ctx context.Context, capoMachineKey client.Object
 		fmt.Fprintf(GinkgoWriter, "capoMachinePhase: %v\n", capoMachine.Status.Phase)
 		return capoMachine.Status.Phase, nil
 	}, 8*time.Minute, 15*time.Second).Should(Equal("Provisioned"))
-
 }
 
 // waitOscClusterToProvision will wait OscInfraCluster to be deployed and ready (object osccluster create with ready status)
@@ -482,36 +480,6 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 	}, 5*time.Minute, 1*time.Second).Should(BeNil())
 }
 
-// checkOscVolumeToBeProvisioned will validate that OscVolume is provisionned
-func checkOscVolumeToBeProvisioned(ctx context.Context, oscInfraMachineKey client.ObjectKey, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
-	By("Check OscVolume is provisioned")
-	Eventually(func() error {
-		volumeSvc := storage.NewService(ctx, clusterScope)
-		var volumesSpec []*infrastructurev1beta1.OscVolume
-		volumesSpec = machineScope.GetVolume()
-		var volumeId string
-		var volumeIds []string
-		for _, volumeSpec := range volumesSpec {
-			volumeId = volumeSpec.ResourceId
-			volumeIds = append(volumeIds, volumeId)
-		}
-		validVolumeIds, err := volumeSvc.ValidateVolumeIds(volumeIds)
-		fmt.Fprintf(GinkgoWriter, "Check VolumeIds has been received %s\n", validVolumeIds)
-		if err != nil {
-			return err
-		}
-		for _, volumeSpec := range volumesSpec {
-			volumeId := volumeSpec.ResourceId
-			fmt.Fprintf(GinkgoWriter, "Check VolumeId %s\n", volumeId)
-		}
-		if !controllers.Contains(validVolumeIds, volumeId) {
-			return fmt.Errorf("VolumeId %s does not exist", volumeId)
-		}
-		fmt.Fprintf(GinkgoWriter, "Found OscVolume \n")
-		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
-}
-
 // checkOscRouteTableToBeProvisioned will validate that OscRouteTable is provisionned
 func checkOscRouteTableToBeProvisioned(ctx context.Context, oscInfraClusterKey client.ObjectKey, clusterScope *scope.ClusterScope) {
 	By("Check OscRouteTable is provisioned")
@@ -602,7 +570,6 @@ func checkOscSecurityGroupToBeProvisioned(ctx context.Context, oscInfraClusterKe
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroup \n")
 		return nil
-
 	}, 5*time.Minute, 1*time.Second).Should(BeNil())
 }
 
@@ -632,7 +599,6 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 				if securityGroupId != securityGroupFromSecurityGroupRule.GetSecurityGroupId() {
 					return fmt.Errorf("SecurityGroupRule %s does not exist", securityGroupRuleName)
 				}
-
 			}
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroupRule \n")

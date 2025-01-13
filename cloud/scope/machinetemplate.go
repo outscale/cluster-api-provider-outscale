@@ -64,7 +64,7 @@ func NewMachineTemplateScope(params MachineTemplateScopeParams) (*MachineTemplat
 
 	helper, err := patch.NewHelper(params.OscMachineTemplate, params.Client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init patch helper: %+v", err)
+		return nil, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 	return &MachineTemplateScope{
 		client:             params.Client,

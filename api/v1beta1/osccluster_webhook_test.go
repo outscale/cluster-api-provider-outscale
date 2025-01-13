@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,17 +40,17 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: fmt.Errorf("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": Invalid Description"),
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": Invalid Description"),
 		},
 	}
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
 			oscInfraCluster := createOscInfraCluster(ctc.clusterSpec, "webhook-test", "default")
 			_, err := oscInfraCluster.ValidateCreate()
-			if err != nil {
-				assert.Equal(t, ctc.expValidateCreateErr.Error(), err.Error(), "ValidateCreate() should return the same error")
+			if ctc.expValidateCreateErr != nil {
+				assert.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the same error")
 			} else {
-				assert.Nil(t, ctc.expValidateCreateErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -165,10 +165,10 @@ func TestOscCluster_ValidateUpdate(t *testing.T) {
 			oscOldInfraCluster := createOscInfraCluster(ctc.oldClusterSpec, "old-webhook-test", "default")
 			oscInfraCluster := createOscInfraCluster(ctc.newClusterSpec, "webhook-test", "default")
 			_, err := oscInfraCluster.ValidateUpdate(oscOldInfraCluster)
-			if err != nil {
-				assert.Equal(t, ctc.expValidateUpdateErr.Error(), err.Error(), "ValidateUpdate should return the same error")
+			if ctc.expValidateUpdateErr != nil {
+				assert.EqualError(t, err, ctc.expValidateUpdateErr.Error(), "ValidateUpdate should return the same error")
 			} else {
-				assert.Nil(t, ctc.expValidateUpdateErr)
+				assert.NoError(t, err)
 			}
 		})
 	}

@@ -18,10 +18,8 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -29,6 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -117,7 +116,7 @@ func TestGetNatResourceId(t *testing.T) {
 			name:                   "can not get natServiceId",
 			spec:                   defaultNatServiceInitialize,
 			expNatServiceFound:     false,
-			expGetNatResourceIdErr: fmt.Errorf("test-natservice-uid does not exist"),
+			expGetNatResourceIdErr: errors.New("test-natservice-uid does not exist"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -133,11 +132,10 @@ func TestGetNatResourceId(t *testing.T) {
 			}
 
 			natResourceId, err := getNatResourceId(natServiceName, clusterScope)
-			if err != nil {
-				assert.Equal(t, nstc.expGetNatResourceIdErr, err, "GetNatResourceId() should return the same error")
+			if nstc.expGetNatResourceIdErr != nil {
+				assert.EqualError(t, err, nstc.expGetNatResourceIdErr.Error(), "GetNatResourceId() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expGetNatResourceIdErr)
-
+				assert.NoError(t, err)
 			}
 			t.Logf("find natResourceId %s", natResourceId)
 		})
@@ -190,7 +188,7 @@ func TestCheckNatFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckNatFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNatFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
 			name: "check Bad name publicIp",
@@ -219,7 +217,7 @@ func TestCheckNatFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckNatFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNatFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
 			name: "Check BadName subnet",
@@ -249,17 +247,17 @@ func TestCheckNatFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckNatFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNatFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
 			clusterScope := Setup(t, nstc.name, nstc.spec)
 			natServiceName, err := checkNatFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, nstc.expCheckNatFormatParametersErr, err, "checkNatFormatParameters() should return the same error")
+			if nstc.expCheckNatFormatParametersErr != nil {
+				assert.EqualError(t, err, nstc.expCheckNatFormatParametersErr.Error(), "checkNatFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expCheckNatFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find natServiceName %s\n", natServiceName)
 		})
@@ -278,7 +276,7 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-public-uid subnet does not exist in natService"),
+			expCheckNatSubnetOscAssociateResourceNameErr: errors.New("cluster-api-subnet-public-uid subnet does not exist in natService"),
 		},
 		{
 			name: "check natService association with subnet",
@@ -311,17 +309,17 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckNatSubnetOscAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-public-uid subnet does not exist in natService"),
+			expCheckNatSubnetOscAssociateResourceNameErr: errors.New("cluster-api-subnet-public-uid subnet does not exist in natService"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
 		t.Run(nstc.name, func(t *testing.T) {
 			clusterScope := Setup(t, nstc.name, nstc.spec)
 			err := checkNatSubnetOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, nstc.expCheckNatSubnetOscAssociateResourceNameErr, err, "checkNatSubnetOscAssociateResourceName() should return the same error")
+			if nstc.expCheckNatSubnetOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, nstc.expCheckNatSubnetOscAssociateResourceNameErr.Error(), "checkNatSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expCheckNatSubnetOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -361,8 +359,8 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			expSubnetFound:            true,
 			expGetNatServiceErr:       nil,
 			expCreateNatServiceFound:  false,
-			expCreateNatServiceErr:    fmt.Errorf("CreateNatService generic error"),
-			expReconcileNatServiceErr: fmt.Errorf("CreateNatService generic error Can not create natService for Osccluster test-system/test-osc"),
+			expCreateNatServiceErr:    errors.New("CreateNatService generic error"),
+			expReconcileNatServiceErr: errors.New("CreateNatService generic error Can not create natService for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -422,10 +420,10 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 					Return(nil, nstc.expCreateNatServiceErr)
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, nstc.expReconcileNatServiceErr.Error(), err.Error(), "reconcileNatService() should return the same error")
+			if nstc.expReconcileNatServiceErr != nil {
+				assert.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expReconcileNatServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileNatService %v\n", reconcileNatService)
 		})
@@ -463,9 +461,9 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			expPublicIpFound:          true,
 			expSubnetFound:            true,
 			expTagFound:               false,
-			expGetNatServiceErr:       fmt.Errorf("GetSubnet generic error"),
+			expGetNatServiceErr:       errors.New("GetSubnet generic error"),
 			expReadTagErr:             nil,
-			expReconcileNatServiceErr: fmt.Errorf("GetSubnet generic error"),
+			expReconcileNatServiceErr: errors.New("GetSubnet generic error"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -533,10 +531,10 @@ func TestReconcileNatServiceGet(t *testing.T) {
 					Return(nil, nstc.expGetNatServiceErr)
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, nstc.expReconcileNatServiceErr, err, "reconcileNatService() should return the same error")
+			if nstc.expReconcileNatServiceErr != nil {
+				assert.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expReconcileNatServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileNatService %v\n", reconcileNatService)
 		})
@@ -561,7 +559,7 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			expSubnetFound:            true,
 			expTagFound:               false,
 			expReadTagErr:             nil,
-			expReconcileNatServiceErr: fmt.Errorf("test-publicip-uid does not exist"),
+			expReconcileNatServiceErr: errors.New("test-publicip-uid does not exist"),
 		},
 		{
 			name:                      "Subnet does not exist",
@@ -570,7 +568,7 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			expSubnetFound:            false,
 			expTagFound:               false,
 			expReadTagErr:             nil,
-			expReconcileNatServiceErr: fmt.Errorf("test-subnet-uid does not exist"),
+			expReconcileNatServiceErr: errors.New("test-subnet-uid does not exist"),
 		},
 		{
 			name:                      "Failed to get tag",
@@ -578,8 +576,8 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			expPublicIpFound:          true,
 			expSubnetFound:            true,
 			expTagFound:               false,
-			expReadTagErr:             fmt.Errorf("ReadTag generic error"),
-			expReconcileNatServiceErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReadTagErr:             errors.New("ReadTag generic error"),
+			expReconcileNatServiceErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -620,10 +618,10 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 				}
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, nstc.expReconcileNatServiceErr.Error(), err.Error(), "reconcileNatService() should return the same error")
+			if nstc.expReconcileNatServiceErr != nil {
+				assert.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expReconcileNatServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileNatService %v\n", reconcileNatService)
 		})
@@ -693,10 +691,10 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 				Return(nstc.expDeleteNatServiceErr)
 
 			reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, mockOscNatServiceInterface)
-			if err != nil {
-				assert.Equal(t, nstc.expReconcileDeleteNatServiceErr.Error(), err.Error(), "reconcileDeleteNatService() should return the same error")
+			if nstc.expReconcileDeleteNatServiceErr != nil {
+				assert.EqualError(t, err, nstc.expReconcileDeleteNatServiceErr.Error(), "reconcileDeleteNatService() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expReconcileDeleteNatServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNatService %v\n", reconcileDeleteNatService)
 		})
@@ -732,8 +730,8 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 			expPublicIpFound:                true,
 			expNatServiceFound:              true,
 			expGetNatServiceErr:             nil,
-			expDeleteNatServiceErr:          fmt.Errorf("DeleteNatService generic error"),
-			expReconcileDeleteNatServiceErr: fmt.Errorf("DeleteNatService generic error Can not delete natService for Osccluster test-system/test-osc"),
+			expDeleteNatServiceErr:          errors.New("DeleteNatService generic error"),
+			expReconcileDeleteNatServiceErr: errors.New("DeleteNatService generic error Can not delete natService for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, nstc := range natServiceTestCases {
@@ -775,10 +773,10 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 				DeleteNatService(gomock.Eq(natServiceId)).
 				Return(nstc.expDeleteNatServiceErr)
 			reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, mockOscNatServiceInterface)
-			if err != nil {
-				assert.Equal(t, nstc.expReconcileDeleteNatServiceErr.Error(), err.Error(), "reconcileDeleteNatService() should return the same error")
+			if nstc.expReconcileDeleteNatServiceErr != nil {
+				assert.EqualError(t, err, nstc.expReconcileDeleteNatServiceErr.Error(), "reconcileDeleteNatService() should return the same error")
 			} else {
-				assert.Nil(t, nstc.expReconcileDeleteNatServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNatService %v\n", reconcileDeleteNatService)
 		})

@@ -17,14 +17,15 @@ limitations under the License.
 package utils
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type ConfigMapInput struct {
@@ -50,7 +51,7 @@ func GetConfigMap(ctx context.Context, input ConfigMapInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find configmap %s", input.Name))
+	By("Find configmap " + input.Name)
 	return true
 }
 
@@ -71,7 +72,7 @@ func DeleteConfigMap(ctx context.Context, input ConfigMapInput) bool {
 		By(fmt.Sprintf("Can not delete configmap %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Delete DaemonSet %s", input.Name))
+	By("Delete DaemonSet " + input.Name)
 	return true
 }
 
@@ -102,7 +103,7 @@ func CreateConfigMap(ctx context.Context, input CreateConfigMapInput) bool {
 		By(fmt.Sprintf("Can not create configmap %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Create configMap %s", input.Name))
+	By("Create configMap " + input.Name)
 	return true
 }
 

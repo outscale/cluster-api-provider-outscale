@@ -17,11 +17,9 @@ limitations under the License.
 package net
 
 import (
-	"fmt"
-
 	"errors"
-
-	_nethttp "net/http"
+	"fmt"
+	"net/http"
 
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
@@ -48,7 +46,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 
 	var natServiceResponse osc.CreateNatServiceResponse
 	createNatServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		natServiceResponse, httpRes, err = oscApiClient.NatServiceApi.CreateNatService(oscAuthClient).CreateNatServiceRequest(natServiceRequest).Execute()
 		if err != nil {
@@ -127,7 +125,7 @@ func (s *Service) DeleteNatService(natServiceId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteNatServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.NatServiceApi.DeleteNatService(oscAuthClient).DeleteNatServiceRequest(deleteNatServiceRequest).Execute()
 		if err != nil {

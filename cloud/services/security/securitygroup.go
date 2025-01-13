@@ -17,12 +17,9 @@ limitations under the License.
 package security
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-
-	"errors"
-
-	_nethttp "net/http"
 
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
@@ -53,7 +50,7 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 	oscAuthClient := s.scope.GetAuth()
 	var securityGroupResponse osc.CreateSecurityGroupResponse
 	createSecurityGroupCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		securityGroupResponse, httpRes, err = oscApiClient.SecurityGroupApi.CreateSecurityGroup(oscAuthClient).CreateSecurityGroupRequest(securityGroupRequest).Execute()
 		if err != nil {
@@ -152,7 +149,7 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 
 	var securityGroupRuleResponse osc.CreateSecurityGroupRuleResponse
 	createSecurityGroupRuleCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		securityGroupRuleResponse, httpRes, err = oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
 		if err != nil {
@@ -183,7 +180,6 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 		// if CreateSecurityGroupRule return 409, the response not contain the conflicted SecurityGroup.
 		// workarround to a Outscale API issue
 		return s.GetSecurityGroup(securityGroupId)
-
 	}
 	return securityGroupRule, nil
 }
@@ -219,7 +215,7 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 	oscAuthClient := s.scope.GetAuth()
 
 	deleteSecurityGroupCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 
 		_, httpRes, err = oscApiClient.SecurityGroupRuleApi.DeleteSecurityGroupRule(oscAuthClient).DeleteSecurityGroupRuleRequest(deleteSecurityGroupRuleRequest).Execute()
@@ -272,7 +268,7 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 	oscAuthClient := s.scope.GetAuth()
 	var readSecurityGroupsResponse osc.ReadSecurityGroupsResponse
 	readSecurityGroupsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
 		if err != nil {
@@ -357,7 +353,7 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 	oscAuthClient := s.scope.GetAuth()
 	var readSecurityGroupRulesResponse osc.ReadSecurityGroupsResponse
 	readSecurityGroupRulesCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readSecurityGroupRulesResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()
 		if err != nil {
@@ -403,7 +399,7 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) 
 	oscAuthClient := s.scope.GetAuth()
 	var readSecurityGroupsResponse osc.ReadSecurityGroupsResponse
 	readSecurityGroupsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
 		if err != nil {
