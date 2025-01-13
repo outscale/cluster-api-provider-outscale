@@ -18,35 +18,17 @@ on:
       - "!hack/json-format/Makefile"
       - "!hack/json-format/Cargo.*"
       - "!hack/json-format/tests/*.rs"
-  push:
-    branches:
-      - 'main'
-    paths:
-      - "**.go"
-      - "**.yaml"
-      - "!capm.yaml"
-      - "!osc-secret.yaml"
-      - "!example/**.yaml"
-      - "!helm/**"
-      - "Makefile"
-      - "!docs/src/**"
-      - "!hack/json-format/*.sh"
-      - "!hack/json-format/src/*.rs"
-      - "!hack/json-format/Makefile"
-      - "!hack/json-format/Cargo.*"
-      - "!hack/json-format/tests/*.rs"
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
         with:
-	  go-version-file: './go.mod'
-      - name: check-gofmt
-        run: make checkfmt
-        shell: bash
+          version: v1.63
+          args: --timeout=300s
+          only-new-issues: true
       - name: Check with boilerplate
         run: make verify-boilerplate
         shell: bash
