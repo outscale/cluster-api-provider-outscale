@@ -19,8 +19,7 @@ package net
 import (
 	"errors"
 	"fmt"
-
-	_nethttp "net/http"
+	"net/http"
 
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
@@ -44,7 +43,7 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 	oscAuthClient := s.scope.GetAuth()
 	var internetServiceResponse osc.CreateInternetServiceResponse
 	createInternetServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		internetServiceResponse, httpRes, err = oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
 		if err != nil {
@@ -97,7 +96,7 @@ func (s *Service) DeleteInternetService(internetServiceId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteInternetServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
 		if err != nil {
@@ -132,7 +131,7 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	linkInternetServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
 		if err != nil {
@@ -167,7 +166,7 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	unlinkInternetServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
 		if err != nil {
@@ -204,7 +203,7 @@ func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetSer
 	oscAuthClient := s.scope.GetAuth()
 	var readInternetServicesResponse osc.ReadInternetServicesResponse
 	readInternetServiceCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readInternetServicesResponse, httpRes, err = oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
 		if err != nil {

@@ -159,7 +159,7 @@ spec:
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
 | `checkinterval`| `30` | false | the time in second between two pings
-| `healthythreshold` | `10` | false | the consecutive number of pings which are sucessful to consider the vm healthy
+| `healthythreshold` | `10` | false | the consecutive number of pings which are successful to consider the vm healthy
 | `unhealthythreshold` | `5` | false | the consecutive number of pings which are failed to consider the vm unhealthy
 | `port` | `6443` | false |  the HealthCheck port number
 | `protocol` | `TCP` | false | The HealthCheck protocol ('HTTP'|'TCP')

@@ -68,7 +68,7 @@ func checkPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, er
 	return "", nil
 }
 
-// checkPublicIpOscAssociateResourceName check that PublicIp dependancies tag name in both resource configuration are the same.
+// checkPublicIpOscAssociateResourceName check that PublicIp dependencies tag name in both resource configuration are the same.
 func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	var natServicesSpec []*infrastructurev1beta1.OscNatService
@@ -122,7 +122,6 @@ func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 
 // reconcilePublicIp reconcile the PublicIp of the cluster.
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
-
 	var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
 	publicIpsSpec = clusterScope.GetPublicIp()
 	var publicIpId string
@@ -215,7 +214,6 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}
-
 	}
 	return reconcile.Result{}, nil
 }

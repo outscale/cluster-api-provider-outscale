@@ -45,7 +45,7 @@ func getVmResourceId(resourceName string, machineScope *scope.MachineScope) (str
 	}
 }
 
-// checkVmVolumeOscAssociateResourceName check that Volume dependancies tag name in both resource configuration are the same.
+// checkVmVolumeOscAssociateResourceName check that Volume dependencies tag name in both resource configuration are the same.
 func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) error {
 	var resourceNameList []string
 	vmSpec := machineScope.GetVm()
@@ -65,7 +65,7 @@ func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) err
 	}
 }
 
-// checkVmLoadBalancerOscAssociateResourceName  check that LoadBalancer dependancies tag name in both resource configuration are the same.
+// checkVmLoadBalancerOscAssociateResourceName  check that LoadBalancer dependencies tag name in both resource configuration are the same.
 func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	vmSpec := machineScope.GetVm()
@@ -83,7 +83,6 @@ func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScop
 	} else {
 		return fmt.Errorf("%s loadBalancer does not exist in vm", vmLoadBalancerName)
 	}
-
 }
 
 func checkVmVolumeSubregionName(machineScope *scope.MachineScope) error {
@@ -101,7 +100,7 @@ func checkVmVolumeSubregionName(machineScope *scope.MachineScope) error {
 	}
 }
 
-// checkVmSecurityGroupOscAssociateResourceName check that SecurityGroup dependancies tag name in both resource configuration are the same.
+// checkVmSecurityGroupOscAssociateResourceName check that SecurityGroup dependencies tag name in both resource configuration are the same.
 func checkVmSecurityGroupOscAssociateResourceName(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
 	var vmSecurityGroupNameList []string
@@ -695,7 +694,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			machineSize = 1
 			machineKcpCount = 1
 			machineCount = 1
-
 		}
 
 		if machineSize > 0 {
@@ -703,7 +701,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 				clusterScope.V(2).Info("Get  MachineList")
 				names := make([]string, len(machines))
 				for i, m := range machines {
-					names[i] = fmt.Sprintf("machine/%s", m.Name)
+					names[i] = "machine/" + m.Name
 					machineScope.V(4).Info("Get Machines", "machine", m.Name)
 					machineLabel := m.Labels
 					for labelKey := range machineLabel {
@@ -715,7 +713,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 							machineScope.V(4).Info("Get Kw Machine", "machineKw", m.Name)
 							machineKwCount++
 						}
-
 					}
 					machineCount = machineKwCount + machineKcpCount
 				}
@@ -748,7 +745,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("%w Can not delete inbound securityGroupRule for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 				}
-
 			} else {
 				machineScope.V(2).Info("Get several control plane machine, can not delete loadBalancer securityGroup", "machineKcp", machineKcpCount)
 			}

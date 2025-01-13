@@ -17,16 +17,16 @@ limitations under the License.
 package security
 
 import (
-	"fmt"
-
 	"errors"
+	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/benbjohnson/clock"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	_nethttp "net/http"
-	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
@@ -48,7 +48,7 @@ func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 
 	var publicIpResponse osc.CreatePublicIpResponse
 	createPublicIpCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		publicIpResponse, httpRes, err = oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
 		if err != nil {
@@ -101,7 +101,7 @@ func (s *Service) DeletePublicIp(publicIpId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deletePublicIpCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
 		if err != nil {
@@ -139,7 +139,7 @@ func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
 
 	var readPublicIpsResponse osc.ReadPublicIpsResponse
 	readPublicIpCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readPublicIpsResponse, httpRes, err = oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
 		if err != nil {
@@ -185,7 +185,7 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readPublicIpsResponse osc.ReadPublicIpsResponse
 	readPublicIpCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readPublicIpsResponse, httpRes, err = oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
 		if err != nil {
@@ -232,7 +232,7 @@ func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var linkPublicIpResponse osc.LinkPublicIpResponse
 	linkPublicIpCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		linkPublicIpResponse, httpRes, err = oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
 		if err != nil {
@@ -270,7 +270,7 @@ func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	unlinkPublicIpCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
 		if err != nil {

@@ -18,12 +18,8 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-
+	"errors"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"k8s.io/klog/v2/klogr"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -31,7 +27,9 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -111,7 +109,7 @@ func TestGetNetResourceId(t *testing.T) {
 			name:                   "can not get netId",
 			spec:                   defaultNetInitialize,
 			expNetFound:            false,
-			expGetNetResourceIdErr: fmt.Errorf("test-net-uid does not exist"),
+			expGetNetResourceIdErr: errors.New("test-net-uid does not exist"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -125,10 +123,10 @@ func TestGetNetResourceId(t *testing.T) {
 				netRef.ResourceMap[netName] = netId
 			}
 			netResourceId, err := getNetResourceId(netName, clusterScope)
-			if err != nil {
-				assert.Equal(t, ntc.expGetNetResourceIdErr, err, "getNetResourceId() should return the same error")
+			if ntc.expGetNetResourceIdErr != nil {
+				assert.EqualError(t, err, ntc.expGetNetResourceIdErr.Error(), "getNetResourceId() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expGetNetResourceIdErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find netResourceId %s", netResourceId)
 		})
@@ -164,7 +162,7 @@ func TestCheckNetFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckNetFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.0/36"),
+			expCheckNetFormatParametersErr: errors.New("invalid CIDR address: 10.0.0.0/36"),
 		},
 		{
 			name: "check Bad Ip Range IP Net",
@@ -176,7 +174,7 @@ func TestCheckNetFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckNetFormatParametersErr: fmt.Errorf("invalid CIDR address: 10.0.0.256/8"),
+			expCheckNetFormatParametersErr: errors.New("invalid CIDR address: 10.0.0.256/8"),
 		},
 		{
 			name: "check Bad Name Net",
@@ -188,17 +186,17 @@ func TestCheckNetFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckNetFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckNetFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
 			clusterScope := Setup(t, ntc.name, ntc.spec)
 			netName, err := checkNetFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, ntc.expCheckNetFormatParametersErr.Error(), err.Error(), "checkNetFormatParameters() should return the same error")
+			if ntc.expCheckNetFormatParametersErr != nil {
+				assert.EqualError(t, err, ntc.expCheckNetFormatParametersErr.Error(), "checkNetFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expCheckNetFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find netName %s\n", netName)
 		})
@@ -233,9 +231,9 @@ func TestReconcileNetCreate(t *testing.T) {
 			expNetFound:        false,
 			expCreateNetFound:  false,
 			expTagFound:        false,
-			expCreateNetErr:    fmt.Errorf("CreateNet generic error"),
+			expCreateNetErr:    errors.New("CreateNet generic error"),
 			expReadTagErr:      nil,
-			expReconcileNetErr: fmt.Errorf("CreateNet generic error Can not create net for Osccluster test-system/test-osc"),
+			expReconcileNetErr: errors.New("CreateNet generic error Can not create net for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -277,15 +275,13 @@ func TestReconcileNetCreate(t *testing.T) {
 					Return(nil, ntc.expCreateNetErr)
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, ntc.expReconcileNetErr.Error(), err.Error(), "reconcileNet() should return the same error")
+			if ntc.expReconcileNetErr != nil {
+				assert.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expReconcileNetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
-
 		})
-
 	}
 }
 
@@ -321,8 +317,8 @@ func TestReconcileNetGet(t *testing.T) {
 			expCreateNetFound:  false,
 			expCreateNetErr:    nil,
 			expReadTagErr:      nil,
-			expDescribeNetErr:  fmt.Errorf("GetNet generic error"),
-			expReconcileNetErr: fmt.Errorf("GetNet generic error"),
+			expDescribeNetErr:  errors.New("GetNet generic error"),
+			expReconcileNetErr: errors.New("GetNet generic error"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -368,15 +364,13 @@ func TestReconcileNetGet(t *testing.T) {
 					Return(nil, ntc.expDescribeNetErr)
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, ntc.expReconcileNetErr, err, "reconcileNet() should return the same error")
+			if ntc.expReconcileNetErr != nil {
+				assert.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expReconcileNetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
-
 		})
-
 	}
 }
 
@@ -405,9 +399,9 @@ func TestReconcileNetResourceId(t *testing.T) {
 			spec:               defaultNetReconcile,
 			expTagFound:        true,
 			expCreateNetErr:    nil,
-			expReadTagErr:      fmt.Errorf("ReadTag generic error"),
+			expReadTagErr:      errors.New("ReadTag generic error"),
 			expDescribeNetErr:  nil,
-			expReconcileNetErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileNetErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -425,7 +419,6 @@ func TestReconcileNetResourceId(t *testing.T) {
 					EXPECT().
 					ReadTag(gomock.Eq("Name"), gomock.Eq(netName)).
 					Return(&tag, ntc.expReadTagErr)
-
 			} else {
 				net := osc.CreateNetResponse{
 					Net: &osc.Net{
@@ -446,18 +439,15 @@ func TestReconcileNetResourceId(t *testing.T) {
 					EXPECT().
 					CreateNet(gomock.Eq(&netSpec), gomock.Eq(clusterName), gomock.Eq(netName)).
 					Return(net.Net, ntc.expCreateNetErr)
-
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, ntc.expReconcileNetErr.Error(), err.Error(), "reconcileNet() should return the same error")
+			if ntc.expReconcileNetErr != nil {
+				assert.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expReconcileNetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
-
 		})
-
 	}
 }
 
@@ -483,9 +473,9 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 			name:                     "failed to delete Net",
 			spec:                     defaultNetReconcile,
 			expNetFound:              true,
-			expDeleteNetErr:          fmt.Errorf("DeleteNet generic error"),
+			expDeleteNetErr:          errors.New("DeleteNet generic error"),
 			expDescribeNetErr:        nil,
-			expReconcileDeleteNetErr: fmt.Errorf("DeleteNet generic error Can not delete net for Osccluster test-system/test-osc"),
+			expReconcileDeleteNetErr: errors.New("DeleteNet generic error Can not delete net for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -520,15 +510,13 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 				DeleteNet(gomock.Eq(netId)).
 				Return(ntc.expDeleteNetErr)
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
-			if err != nil {
-				assert.Equal(t, ntc.expReconcileDeleteNetErr.Error(), err.Error(), "reconcileDeleteNet() should return the same error")
+			if ntc.expReconcileDeleteNetErr != nil {
+				assert.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expReconcileDeleteNetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
-
 		})
-
 	}
 }
 
@@ -576,15 +564,13 @@ func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 				DeleteNet(gomock.Eq(netId)).
 				Return(ntc.expDeleteNetErr)
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
-			if err != nil {
-				assert.Equal(t, ntc.expReconcileDeleteNetErr, err, "reconcileDeleteNet() should return the same error")
+			if ntc.expReconcileDeleteNetErr != nil {
+				assert.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expReconcileDeleteNetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
-
 		})
-
 	}
 }
 
@@ -608,8 +594,8 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 			name:                     "failed to get Net",
 			spec:                     defaultNetReconcile,
 			expNetFound:              false,
-			expDescribeNetErr:        fmt.Errorf("GetNet generic error"),
-			expReconcileDeleteNetErr: fmt.Errorf("GetNet generic error"),
+			expDescribeNetErr:        errors.New("GetNet generic error"),
+			expReconcileDeleteNetErr: errors.New("GetNet generic error"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -640,14 +626,12 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 					Return(nil, ntc.expDescribeNetErr)
 			}
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
-			if err != nil {
-				assert.Equal(t, ntc.expReconcileDeleteNetErr, err, "reconcileDeleteNet() should return the same error")
+			if ntc.expReconcileDeleteNetErr != nil {
+				assert.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
 			} else {
-				assert.Nil(t, ntc.expReconcileDeleteNetErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
-
 		})
-
 	}
 }

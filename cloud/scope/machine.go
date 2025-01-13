@@ -27,7 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2/klogr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
@@ -86,7 +86,7 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 
 	helper, err := patch.NewHelper(params.OscMachine, params.Client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init patch helper: %+v", err)
+		return nil, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 	return &MachineScope{
 		client:      params.Client,
@@ -147,10 +147,10 @@ func (m *MachineScope) GetVolume() []*infrastructurev1beta1.OscVolume {
 }
 
 // GetVolumeSubregionName return the volume subregionName
-func (m *MachineScope) GetVolumeSubregionName(Name string) string {
+func (m *MachineScope) GetVolumeSubregionName(name string) string {
 	volumes := m.OscMachine.Spec.Node.Volumes
 	for _, volume := range volumes {
-		if volume.Name == Name {
+		if volume.Name == name {
 			return volume.SubregionName
 		}
 	}
@@ -270,7 +270,7 @@ func (m *MachineScope) GetInstanceID() string {
 // SetProviderID set the instanceID
 func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
 	pid := fmt.Sprintf("aws:///%s/%s", subregionName, vmId)
-	m.OscMachine.Spec.ProviderID = pointer.StringPtr(pid)
+	m.OscMachine.Spec.ProviderID = ptr.To(pid)
 }
 
 // SetVmID set the instanceID
@@ -300,7 +300,7 @@ func (m *MachineScope) SetNotReady() {
 
 // SetFailureMessage set failure message
 func (m *MachineScope) SetFailureMessage(v error) {
-	m.OscMachine.Status.FailureMessage = pointer.StringPtr(v.Error())
+	m.OscMachine.Status.FailureMessage = ptr.To(v.Error())
 }
 
 // SetFailureReason set failure reason

@@ -17,12 +17,13 @@ limitations under the License.
 package security
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	_nethttp "net/http"
 )
 
 type OscKeyPairInterface interface {
@@ -33,7 +34,6 @@ type OscKeyPairInterface interface {
 
 // CreateKeyPair create keypair with keypairName
 func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error) {
-
 	keyPairRequest := osc.CreateKeypairRequest{
 		KeypairName: keypairName,
 	}
@@ -42,7 +42,7 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 	oscAuthClient := s.scope.GetAuth()
 	var keyPairResponse osc.CreateKeypairResponse
 	createKeyPairCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		keyPairResponse, httpRes, err = oscAPIClient.KeypairApi.CreateKeypair(oscAuthClient).CreateKeypairRequest(keyPairRequest).Execute()
 		if err != nil {
@@ -72,16 +72,16 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 
 	resp, _, err := oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(req).Execute()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to read keypairRequest")
+		return nil, errors.New("Unable to read keypairRequest")
 	}
 
 	if len(resp.GetKeypairs()) < 1 {
-		return nil, fmt.Errorf("Unable to find key pair, please provide a better query criteria ")
+		return nil, errors.New("Unable to find key pair, please provide a better query criteria ")
 	}
 
 	keypair, ok := keyPairResponse.GetKeypairOk()
 	if !ok {
-		return nil, fmt.Errorf("Can not create keypair")
+		return nil, errors.New("Can not create keypair")
 	}
 	return keypair, nil
 }
@@ -97,7 +97,7 @@ func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readKeypairsResponse osc.ReadKeypairsResponse
 	readKeypairsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readKeypairsResponse, httpRes, err = oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(readKeypairsRequest).Execute()
 		if err != nil {
@@ -122,7 +122,7 @@ func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
 	}
 	keypairs, ok := readKeypairsResponse.GetKeypairsOk()
 	if !ok {
-		return nil, fmt.Errorf("Error retrieving KeyPair")
+		return nil, errors.New("error retrieving KeyPair")
 	}
 
 	if len(*keypairs) == 0 {
@@ -139,7 +139,7 @@ func (s *Service) DeleteKeyPair(keyPairName string) error {
 	oscAPIClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteKeypairCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscAPIClient.KeypairApi.DeleteKeypair(oscAuthClient).DeleteKeypairRequest(deleteKeypairRequest).Execute()
 		if err != nil {

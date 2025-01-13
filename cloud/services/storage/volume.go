@@ -19,7 +19,8 @@ package storage
 import (
 	"errors"
 	"fmt"
-	_nethttp "net/http"
+	"net/http"
+	"time"
 
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -27,7 +28,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
@@ -59,7 +59,7 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 	oscAuthClient := s.scope.GetAuth()
 	var volumeResponse osc.CreateVolumeResponse
 	createVolumeCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		volumeResponse, httpRes, err = oscApiClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
 		if err != nil {
@@ -122,7 +122,7 @@ func (s *Service) GetVolume(volumeId string) (*osc.Volume, error) {
 
 	var readVolumesResponse osc.ReadVolumesResponse
 	readVolumesCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readVolumesResponse, httpRes, err = oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
 		if err != nil {
@@ -168,7 +168,7 @@ func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) er
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	linkVolumeCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
 		if err != nil {
@@ -185,7 +185,6 @@ func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) er
 			return false, err
 		}
 		return true, err
-
 	}
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, linkVolumeCallBack)
@@ -204,7 +203,7 @@ func (s *Service) UnlinkVolume(volumeId string) error {
 	oscAuthClient := s.scope.GetAuth()
 
 	unlinkVolumeCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
 		if err != nil {
@@ -236,7 +235,7 @@ func (s *Service) DeleteVolume(volumeId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteVolumeCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
 		if err != nil {
@@ -273,7 +272,7 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readVolumesResponse osc.ReadVolumesResponse
 	readVolumesCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readVolumesResponse, httpRes, err = oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumeRequest).Execute()
 		if err != nil {

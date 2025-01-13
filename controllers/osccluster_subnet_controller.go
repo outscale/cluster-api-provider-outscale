@@ -156,8 +156,6 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	if networkSpec.Subnets == nil {
 		networkSpec.SetSubnetDefaultValue()
 		subnetsSpec = networkSpec.Subnets
-	} else {
-		subnetsSpec = clusterScope.GetSubnet()
 	}
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {

@@ -21,16 +21,15 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2/klogr"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 var (
@@ -222,10 +221,10 @@ func TestReconcileCapacity(t *testing.T) {
 			}
 
 			reconcileCapacity, err := reconcileCapacity(ctx, clusterScope, machineTemplateScope, mockOscVmInterface)
-			if err != nil {
-				assert.Equal(t, ctc.expReconcileCapacityErr.Error(), err.Error(), "reconcileVmCapacity() should return the same error")
+			if ctc.expReconcileCapacityErr != nil {
+				assert.Equal(t, err, ctc.expReconcileCapacityErr.Error(), "reconcileVmCapacity() should return the same error")
 			} else {
-				assert.Nil(t, ctc.expReconcileCapacityErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileCapacity %v\n", reconcileCapacity)
 		})

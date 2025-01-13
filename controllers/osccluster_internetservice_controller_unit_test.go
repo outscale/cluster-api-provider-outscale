@@ -18,20 +18,16 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"testing"
-
-	"fmt"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
-
 	osc "github.com/outscale/osc-sdk-go/v2"
-
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -90,7 +86,7 @@ func TestGetInternetServiceResourceId(t *testing.T) {
 			name:                               "can not get InternetServiceId",
 			spec:                               defaultInternetServiceInitialize,
 			expInternetServiceFound:            false,
-			expGetInternetServiceResourceIdErr: fmt.Errorf("test-internetservice-uid does not exist"),
+			expGetInternetServiceResourceIdErr: errors.New("test-internetservice-uid does not exist"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -104,10 +100,10 @@ func TestGetInternetServiceResourceId(t *testing.T) {
 				internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
 			}
 			internetServiceResourceId, err := getInternetServiceResourceId(internetServiceName, clusterScope)
-			if err != nil {
-				assert.Equal(t, istc.expGetInternetServiceResourceIdErr.Error(), err.Error(), "GetInternetServiceResourceId() should return the same error")
+			if istc.expGetInternetServiceResourceIdErr != nil {
+				assert.EqualError(t, err, istc.expGetInternetServiceResourceIdErr.Error(), "GetInternetServiceResourceId() should return the same error")
 			} else {
-				assert.Nil(t, istc.expGetInternetServiceResourceIdErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find internetServiceResourceId %s", internetServiceResourceId)
 		})
@@ -146,17 +142,17 @@ func TestCheckInternetServiceFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckInternetServiceFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckInternetServiceFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
 		t.Run(istc.name, func(t *testing.T) {
 			clusterScope := Setup(t, istc.name, istc.spec)
 			internetServiceName, err := checkInternetServiceFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, istc.expCheckInternetServiceFormatParametersErr, err, "CheckInternetServiceFormatParameters() should return the same error")
+			if istc.expCheckInternetServiceFormatParametersErr != nil {
+				assert.EqualError(t, err, istc.expCheckInternetServiceFormatParametersErr.Error(), "CheckInternetServiceFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, istc.expCheckInternetServiceFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find internetServiceName %s\n", internetServiceName)
 		})
@@ -198,8 +194,8 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 			expCreateInternetServiceFound:  true,
 			expCreateInternetServiceErr:    nil,
 			expReadTagErr:                  nil,
-			expLinkInternetServiceErr:      fmt.Errorf("LinkInternetService generic error"),
-			expReconcileInternetServiceErr: fmt.Errorf("LinkInternetService generic error Can not link internetService with net for Osccluster test-system/test-osc"),
+			expLinkInternetServiceErr:      errors.New("LinkInternetService generic error"),
+			expReconcileInternetServiceErr: errors.New("LinkInternetService generic error Can not link internetService with net for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -243,17 +239,16 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 					EXPECT().
 					CreateInternetService(gomock.Eq(internetServiceName)).
 					Return(nil, istc.expCreateInternetServiceErr)
-
 			}
 			mockOscInternetServiceInterface.
 				EXPECT().
 				LinkInternetService(gomock.Eq(internetServiceId), gomock.Eq(netId)).
 				Return(istc.expLinkInternetServiceErr)
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileInternetServiceErr.Error(), err.Error(), "ReconcileInternetService() should return the same error")
+			if istc.expReconcileInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -328,10 +323,10 @@ func TestReconcileInternetServiceDelete(t *testing.T) {
 				Return(istc.expLinkInternetServiceErr)
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileInternetServiceErr, err, "ReconcileInternetService() should return the same error")
+			if istc.expReconcileInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -396,13 +391,12 @@ func TestReconcileDeleteInternetServiceDeleteWithoutSpec(t *testing.T) {
 				Return(istc.expDeleteInternetServiceErr)
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileDeleteInternetServiceErr, err, "ReconcileDelteInternetService() should return the same error")
+			if istc.expReconcileDeleteInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileDeleteInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
-
 		})
 	}
 }
@@ -439,8 +433,8 @@ func TestReconcileInternetServiceGet(t *testing.T) {
 			expInternetServiceFound:        true,
 			expCreateInternetServiceFound:  true,
 			expReadTagErr:                  nil,
-			expDescribeInternetServiceErr:  fmt.Errorf("GetSubnet generic error"),
-			expReconcileInternetServiceErr: fmt.Errorf("GetSubnet generic error"),
+			expDescribeInternetServiceErr:  errors.New("GetSubnet generic error"),
+			expReconcileInternetServiceErr: errors.New("GetSubnet generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -494,10 +488,10 @@ func TestReconcileInternetServiceGet(t *testing.T) {
 			}
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileInternetServiceErr, err, "ReconcileInternetService() should return the same error")
+			if istc.expReconcileInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -518,9 +512,9 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 			name:                           "failed to create internet service",
 			spec:                           defaultInternetServiceInitialize,
 			expTagFound:                    false,
-			expCreateInternetServiceErr:    fmt.Errorf("CreateInternetService generic error"),
+			expCreateInternetServiceErr:    errors.New("CreateInternetService generic error"),
 			expReadTagErr:                  nil,
-			expReconcileInternetServiceErr: fmt.Errorf("CreateInternetService generic error Can not create internetservice for Osccluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("CreateInternetService generic error Can not create internetservice for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -554,10 +548,10 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 				Return(nil, istc.expCreateInternetServiceErr)
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileInternetServiceErr.Error(), err.Error(), "ReconcileInternetService() should return the same error")
+			if istc.expReconcileInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -577,7 +571,7 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 		{
 			name:                           "net does not exist",
 			spec:                           defaultInternetServiceInitialize,
-			expReconcileInternetServiceErr: fmt.Errorf("test-net-uid does not exist"),
+			expReconcileInternetServiceErr: errors.New("test-net-uid does not exist"),
 			expTagFound:                    true,
 			expNetFound:                    false,
 			expReadTagErr:                  nil,
@@ -587,8 +581,8 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 			spec:                           defaultInternetServiceInitialize,
 			expTagFound:                    true,
 			expNetFound:                    true,
-			expReadTagErr:                  fmt.Errorf("ReadTag generic error"),
-			expReconcileInternetServiceErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReadTagErr:                  errors.New("ReadTag generic error"),
+			expReconcileInternetServiceErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -619,10 +613,10 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 				}
 			}
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileInternetServiceErr.Error(), err.Error(), "ReconcileInternetService() should return the same error")
+			if istc.expReconcileInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -644,8 +638,8 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 			spec:                                 defaultInternetServiceReconcile,
 			expNetFound:                          true,
 			expInternetServiceFound:              false,
-			expDescribeInternetServiceErr:        fmt.Errorf("GetInternetService generic error"),
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("GetInternetService generic error"),
+			expDescribeInternetServiceErr:        errors.New("GetInternetService generic error"),
+			expReconcileDeleteInternetServiceErr: errors.New("GetInternetService generic error"),
 		},
 		{
 			name:                                 "remove finalizer (user delete internetService without cluster-api)",
@@ -693,14 +687,12 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 			}
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileDeleteInternetServiceErr, err, "ReconcileDeleteInternetService() should return the same error")
+			if istc.expReconcileDeleteInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDeleteInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileDeleteInternetServiceErr)
-
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
-
 		})
 	}
 }
@@ -718,8 +710,8 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 			name:                                 "failed to unlink internet service",
 			spec:                                 defaultInternetServiceReconcile,
 			expDescribeInternetServiceErr:        nil,
-			expUnlinkInternetServiceErr:          fmt.Errorf("UnlinkInternetService generic error"),
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("UnlinkInternetService generic error Can not unlink internetService and net for Osccluster test-system/test-osc"),
+			expUnlinkInternetServiceErr:          errors.New("UnlinkInternetService generic error"),
+			expReconcileDeleteInternetServiceErr: errors.New("UnlinkInternetService generic error Can not unlink internetService and net for Osccluster test-system/test-osc"),
 		},
 	}
 
@@ -755,13 +747,12 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 				Return(istc.expUnlinkInternetServiceErr)
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileDeleteInternetServiceErr.Error(), err.Error(), "ReconcileDelteInternetService() should return the same error")
+			if istc.expReconcileDeleteInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileDeleteInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
-
 		})
 	}
 }
@@ -793,10 +784,10 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 			spec:                                 defaultInternetServiceReconcile,
 			expNetFound:                          true,
 			expInternetServiceFound:              true,
-			expDeleteInternetServiceErr:          fmt.Errorf("DeleteInternetService generic error"),
+			expDeleteInternetServiceErr:          errors.New("DeleteInternetService generic error"),
 			expDescribeInternetServiceErr:        nil,
 			expUnlinkInternetServiceErr:          nil,
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("DeleteInternetService generic error Can not delete internetService for Osccluster test-system/test-osc"),
+			expReconcileDeleteInternetServiceErr: errors.New("DeleteInternetService generic error Can not delete internetService for Osccluster test-system/test-osc"),
 		},
 	}
 
@@ -846,13 +837,12 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 				netRef.ResourceMap[netName] = netId
 			}
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileDeleteInternetServiceErr.Error(), err.Error(), "ReconcileDelteInternetService() should return the same error")
+			if istc.expReconcileDeleteInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileDeleteInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
-
 		})
 	}
 }
@@ -869,12 +859,12 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("cluster-api-net-uid does not exist"),
+			expReconcileDeleteInternetServiceErr: errors.New("cluster-api-net-uid does not exist"),
 		},
 		{
 			name:                                 "net does not exist",
 			spec:                                 defaultInternetServiceInitialize,
-			expReconcileDeleteInternetServiceErr: fmt.Errorf("test-net-uid does not exist"),
+			expReconcileDeleteInternetServiceErr: errors.New("test-net-uid does not exist"),
 		},
 	}
 
@@ -885,13 +875,12 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
-			if err != nil {
-				assert.Equal(t, istc.expReconcileDeleteInternetServiceErr, err, "ReconcileDeleteInternetService() should return the same error")
+			if istc.expReconcileDeleteInternetServiceErr != nil {
+				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDeleteInternetService() should return the same error")
 			} else {
-				assert.Nil(t, istc.expReconcileDeleteInternetServiceErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
-
 		})
 	}
 }

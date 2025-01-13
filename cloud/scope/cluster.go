@@ -18,15 +18,13 @@ package scope
 
 import (
 	"context"
-
-	osc "github.com/outscale/osc-sdk-go/v2"
-
 	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -62,7 +60,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	client, err := newOscClient()
 
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to create Osc Client", err)
+		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
 	}
 
 	if params.OscClient == nil {
@@ -79,7 +77,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	helper, err := patch.NewHelper(params.OscCluster, params.Client)
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to init patch helper", err)
+		return nil, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 
 	return &ClusterScope{
@@ -249,10 +247,10 @@ func (s ClusterScope) SetLinkRouteTablesRef(linkRouteTableRef map[string][]strin
 }
 
 // Route return slices of routes associated with routetable Name
-func (s *ClusterScope) GetRoute(Name string) *[]infrastructurev1beta1.OscRoute {
+func (s *ClusterScope) GetRoute(name string) *[]infrastructurev1beta1.OscRoute {
 	routeTables := s.OscCluster.Spec.Network.RouteTables
 	for _, routeTable := range routeTables {
-		if routeTable.Name == Name {
+		if routeTable.Name == name {
 			return &routeTable.Routes
 		}
 	}
@@ -260,10 +258,10 @@ func (s *ClusterScope) GetRoute(Name string) *[]infrastructurev1beta1.OscRoute {
 }
 
 // GetIpSubnetRange return IpSubnetRang from the subnet
-func (s *ClusterScope) GetIpSubnetRange(Name string) string {
+func (s *ClusterScope) GetIpSubnetRange(name string) string {
 	subnets := s.OscCluster.Spec.Network.Subnets
 	for _, subnet := range subnets {
-		if subnet.Name == Name {
+		if subnet.Name == name {
 			return subnet.IpSubnetRange
 		}
 	}
@@ -271,10 +269,10 @@ func (s *ClusterScope) GetIpSubnetRange(Name string) string {
 }
 
 // GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
-func (s *ClusterScope) GetSecurityGroupRule(Name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
+func (s *ClusterScope) GetSecurityGroupRule(name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
 	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
 	for _, securityGroup := range securityGroups {
-		if securityGroup.Name == Name {
+		if securityGroup.Name == name {
 			return &securityGroup.SecurityGroupRules
 		}
 	}

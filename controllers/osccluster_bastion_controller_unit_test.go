@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -289,7 +289,7 @@ func TestGetBastionResourceId(t *testing.T) {
 			name:                       "can not get bastion",
 			clusterSpec:                defaultBastionInitialize,
 			expBastionFound:            false,
-			expGetBastionResourceIdErr: fmt.Errorf("test-bastion-uid does not exist"),
+			expGetBastionResourceIdErr: errors.New("test-bastion-uid does not exist"),
 		},
 	}
 	for _, btc := range bastionTestCases {
@@ -303,10 +303,10 @@ func TestGetBastionResourceId(t *testing.T) {
 				bastionRef.ResourceMap[bastionName] = vmId
 			}
 			bastionResourceId, err := getBastionResourceId(bastionName, clusterScope)
-			if err != nil {
-				assert.Equal(t, btc.expGetBastionResourceIdErr.Error(), err.Error(), "GetBastionResourceId() should return the same error")
+			if btc.expGetBastionResourceIdErr != nil {
+				assert.EqualError(t, err, btc.expGetBastionResourceIdErr.Error(), "GetBastionResourceId() should return the same error")
 			} else {
-				assert.Nil(t, btc.expGetBastionResourceIdErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find bastionResourceId %s", bastionResourceId)
 		})
@@ -334,7 +334,7 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionSecurityGroupOscAssociateResourceNameErr: fmt.Errorf("cluster-api-securitygroup-lb-uid securityGroup does not exist in bastion"),
+			expCheckBastionSecurityGroupOscAssociateResourceNameErr: errors.New("cluster-api-securitygroup-lb-uid securityGroup does not exist in bastion"),
 		},
 		{
 			name: "check Bad security group name",
@@ -410,17 +410,17 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionSecurityGroupOscAssociateResourceNameErr: fmt.Errorf("test-securitygroup@test-uid securityGroup does not exist in bastion"),
+			expCheckBastionSecurityGroupOscAssociateResourceNameErr: errors.New("test-securitygroup@test-uid securityGroup does not exist in bastion"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
 			clusterScope := Setup(t, btc.name, btc.clusterSpec)
 			err := checkBastionSecurityGroupOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr, err, "checkBastionSecurityGroupOscAssociateResourceName() should return the same error")
+			if btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr.Error(), "checkBastionSecurityGroupOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -447,7 +447,7 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionSubnetAssociateResourceNameErr: fmt.Errorf("cluster-api-subnet-public-uid subnet does not exist in bastion"),
+			expCheckBastionSubnetAssociateResourceNameErr: errors.New("cluster-api-subnet-public-uid subnet does not exist in bastion"),
 		},
 		{
 			name: "check Bad subnet name",
@@ -523,17 +523,17 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionSubnetAssociateResourceNameErr: fmt.Errorf("test-subnet@test-uid subnet does not exist in bastion"),
+			expCheckBastionSubnetAssociateResourceNameErr: errors.New("test-subnet@test-uid subnet does not exist in bastion"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
 			clusterScope := Setup(t, btc.name, btc.clusterSpec)
 			err := checkBastionSubnetOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, btc.expCheckBastionSubnetAssociateResourceNameErr, err, "checkBastionSubnetOscAssociateResourceName(() should return the same error")
+			if btc.expCheckBastionSubnetAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, btc.expCheckBastionSubnetAssociateResourceNameErr.Error(), "checkBastionSubnetOscAssociateResourceName(() should return the same error")
 			} else {
-				assert.Nil(t, btc.expCheckBastionSubnetAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -561,7 +561,7 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionPublicIpOscAssociateResourceNameErr: fmt.Errorf("cluster-api-publicip-uid publicIp does not exist in bastion"),
+			expCheckBastionPublicIpOscAssociateResourceNameErr: errors.New("cluster-api-publicip-uid publicIp does not exist in bastion"),
 		},
 		{
 			name: "check Bad PublicIp  name",
@@ -637,17 +637,17 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionPublicIpOscAssociateResourceNameErr: fmt.Errorf("test-publicip@test-uid publicIp does not exist in bastion"),
+			expCheckBastionPublicIpOscAssociateResourceNameErr: errors.New("test-publicip@test-uid publicIp does not exist in bastion"),
 		},
 	}
 	for _, btc := range bastionTestCases {
 		t.Run(btc.name, func(t *testing.T) {
 			clusterScope := Setup(t, btc.name, btc.clusterSpec)
 			err := checkBastionPublicIpOscAssociateResourceName(clusterScope)
-			if err != nil {
-				assert.Equal(t, btc.expCheckBastionPublicIpOscAssociateResourceNameErr, err, "checkBastionPublicIpOscAssociateResourceName() should return the same error")
+			if btc.expCheckBastionPublicIpOscAssociateResourceNameErr != nil {
+				assert.EqualError(t, err, btc.expCheckBastionPublicIpOscAssociateResourceNameErr.Error(), "checkBastionPublicIpOscAssociateResourceName() should return the same error")
 			} else {
-				assert.Nil(t, btc.expCheckBastionPublicIpOscAssociateResourceNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -739,7 +739,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 
 		{
@@ -816,7 +816,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid imageId"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid imageId"),
 		},
 		{
 			name: "check empty imageId and imagename",
@@ -904,7 +904,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid Image Name"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid Image Name"),
 		},
 		{
 			name: "check Bad keypairname",
@@ -980,7 +980,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid KeypairName"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid KeypairName"),
 		},
 		{
 			name: "check empty imageId",
@@ -1134,7 +1134,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid deviceName"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid deviceName"),
 		},
 		{
 			name: "check empty device name",
@@ -1285,7 +1285,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid vmType"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid vmType"),
 		},
 		{
 			name: "Check Bad IpAddr",
@@ -1361,7 +1361,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid ip in cidr"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid ip in cidr"),
 		},
 		{
 			name: "Check Bad subregionname",
@@ -1437,7 +1437,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid subregionName"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid subregionName"),
 		},
 		{
 			name: "Check Bad root device size",
@@ -1513,7 +1513,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid size"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid size"),
 		},
 		{
 			name: "Check Bad rootDeviceIops",
@@ -1589,7 +1589,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid iops"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid iops"),
 		},
 		{
 			name: "Check bad rootDiskType",
@@ -1665,7 +1665,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: fmt.Errorf("Invalid volumeType"),
+			expCheckBastionFormatParametersErr: errors.New("Invalid volumeType"),
 		},
 	}
 	for _, btc := range bastionTestCases {
@@ -1677,10 +1677,10 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 			subnetRef.ResourceMap = make(map[string]string)
 			subnetRef.ResourceMap[subnetName] = subnetId
 			bastionName, err := checkBastionFormatParameters(clusterScope)
-			if err != nil {
-				assert.Equal(t, btc.expCheckBastionFormatParametersErr, err, "checkBastionFormatParameters() should return the same error")
+			if btc.expCheckBastionFormatParametersErr != nil {
+				assert.EqualError(t, err, btc.expCheckBastionFormatParametersErr.Error(), "checkBastionFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, btc.expCheckBastionFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find vmName %s\n", bastionName)
 		})
@@ -1720,7 +1720,7 @@ func TestReconcileBastion(t *testing.T) {
 			expFailVmList:          false,
 			expLinkPublicIpFound:   false, // LinkPublicIp should not be called
 			expCreateVmErr:         nil,
-			expReconcileBastionErr: fmt.Errorf("Can not link publicIp eipalloc-test-publicip-uid with i-test-bastion-uid for OscCluster test-system/test-osc"),
+			expReconcileBastionErr: errors.New("Can not link publicIp eipalloc-test-publicip-uid with i-test-bastion-uid for OscCluster test-system/test-osc"),
 		},
 		{
 			name:                   "fail to create bastion",
@@ -1729,8 +1729,8 @@ func TestReconcileBastion(t *testing.T) {
 			expCreateVmFound:       true,
 			expFailVmList:          false,
 			expLinkPublicIpFound:   false, // Should not attempt to link public IP
-			expCreateVmErr:         fmt.Errorf("failed to create bastion VM"),
-			expReconcileBastionErr: fmt.Errorf("failed to create bastion VM"),
+			expCreateVmErr:         errors.New("failed to create bastion VM"),
+			expReconcileBastionErr: errors.New("failed to create bastion VM"),
 		},
 		{
 			name:                   "fail to retrieve VM list",
@@ -1739,7 +1739,7 @@ func TestReconcileBastion(t *testing.T) {
 			expCreateVmFound:       false, // VM is not created due to failure
 			expLinkPublicIpFound:   false, // Public IP is not linked
 			expCreateVmErr:         nil,
-			expReconcileBastionErr: fmt.Errorf("failed to retrieve VM list"),
+			expReconcileBastionErr: errors.New("failed to retrieve VM list"),
 			expFailVmList:          true, // Explicitly fail GetVmListFromTag
 		},
 		{
@@ -1750,7 +1750,7 @@ func TestReconcileBastion(t *testing.T) {
 			expLinkPublicIpFound:   false, // Attempt to link public IP
 			expFailVmList:          false,
 			expCreateVmErr:         nil,
-			expReconcileBastionErr: fmt.Errorf("failed to link public IP"),
+			expReconcileBastionErr: errors.New("failed to link public IP"),
 		},
 	}
 
@@ -1807,7 +1807,7 @@ func TestReconcileBastion(t *testing.T) {
 			if btc.expFailVmList {
 				mockOscVmInterface.EXPECT().
 					GetVmListFromTag("Name", bastionName).
-					Return(nil, fmt.Errorf("failed to retrieve VM list"))
+					Return(nil, errors.New("failed to retrieve VM list"))
 			} else {
 				mockOscVmInterface.EXPECT().
 					GetVmListFromTag("Name", bastionName).
@@ -1816,7 +1816,7 @@ func TestReconcileBastion(t *testing.T) {
 				if btc.expCreateVmErr != nil {
 					mockOscVmInterface.EXPECT().
 						CreateVmUserData("", gomock.Any(), subnetId, gomock.Any(), gomock.Any(), bastionName, imageId).
-						Return(nil, fmt.Errorf("failed to create bastion VM"))
+						Return(nil, errors.New("failed to create bastion VM"))
 				} else {
 					mockOscVmInterface.EXPECT().
 						CreateVmUserData("", gomock.Any(), subnetId, gomock.Any(), gomock.Any(), bastionName, imageId).
@@ -1887,7 +1887,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expTagFound:            false,
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
-			expReconcileBastionErr: fmt.Errorf("test-publicip-uid does not exist"),
+			expReconcileBastionErr: errors.New("test-publicip-uid does not exist"),
 		},
 		{
 			name:                   "Subnet does not exist",
@@ -1899,7 +1899,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expSecurityGroupFound:  true,
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
-			expReconcileBastionErr: fmt.Errorf("test-subnet-uid does not exist"),
+			expReconcileBastionErr: errors.New("test-subnet-uid does not exist"),
 		},
 		{
 			name:                   "SecurityGroup does not exist",
@@ -1911,7 +1911,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expSecurityGroupFound:  false,
 			expGetImageIdErr:       nil,
 			expReadTagErr:          nil,
-			expReconcileBastionErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileBastionErr: errors.New("test-securitygroup-uid does not exist"),
 		},
 		{
 			name:                   "failed to get ImageId",
@@ -1921,9 +1921,9 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expPublicIpFound:       false,
 			expLinkPublicIpFound:   false,
 			expSecurityGroupFound:  false,
-			expGetImageIdErr:       fmt.Errorf("GetImageId generic error"),
+			expGetImageIdErr:       errors.New("GetImageId generic error"),
 			expReadTagErr:          nil,
-			expReconcileBastionErr: fmt.Errorf("GetImageId generic error"),
+			expReconcileBastionErr: errors.New("GetImageId generic error"),
 		},
 		/*{
 			name:                   "failed to get tag",
@@ -1934,8 +1934,8 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expLinkPublicIpFound:   true,
 			expSecurityGroupFound:  true,
 			expGetImageIdErr:       nil,
-			expReadTagErr:          fmt.Errorf("ReadTag generic error"),
-			expReconcileBastionErr: fmt.Errorf("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReadTagErr:          errors.New("ReadTag generic error"),
+			expReconcileBastionErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
 		},*/
 	}
 	for _, btc := range bastionTestCases {
@@ -2013,10 +2013,10 @@ func TestReconcileBastionResourceId(t *testing.T) {
 				}
 			}
 			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, btc.expReconcileBastionErr.Error(), err.Error(), "reconcileBastion() should return the same error")
+			if btc.expReconcileBastionErr != nil {
+				assert.EqualError(t, err, btc.expReconcileBastionErr.Error(), "reconcileBastion() should return the same error")
 			} else {
-				assert.Nil(t, btc.expReconcileBastionErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileBastion %v\n", reconcileBastion)
@@ -2052,8 +2052,8 @@ func TestReconcileDeleteBastion(t *testing.T) {
 			expGetBastionFound:           true,
 			expCheckUnlinkPublicIpFound:  true,
 			expCheckUnlinkPublicIpErr:    nil,
-			expDeleteBastionErr:          fmt.Errorf("DeleteVm generic error"),
-			expReconcileDeleteBastionErr: fmt.Errorf("DeleteVm generic error Can not delete vm for OscCluster test-system/test-osc"),
+			expDeleteBastionErr:          errors.New("DeleteVm generic error"),
+			expReconcileDeleteBastionErr: errors.New("DeleteVm generic error Can not delete vm for OscCluster test-system/test-osc"),
 			expGetBastionErr:             nil,
 		},
 	}
@@ -2119,10 +2119,10 @@ func TestReconcileDeleteBastion(t *testing.T) {
 				Return(btc.expDeleteBastionErr)
 
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, btc.expReconcileDeleteBastionErr.Error(), err.Error(), "reconcileDeleteBastion() should return the same error")
+			if btc.expReconcileDeleteBastionErr != nil {
+				assert.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.Nil(t, btc.expReconcileDeleteBastionErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)
@@ -2148,16 +2148,16 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 			expGetImageIdErr:             nil,
 			expGetBastionErr:             nil,
 			expSecurityGroupFound:        false,
-			expReconcileDeleteBastionErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expReconcileDeleteBastionErr: errors.New("test-securitygroup-uid does not exist"),
 		},
 		{
 			name:                         "failed to get bastion",
 			clusterSpec:                  defaultBastionReconcile,
 			expGetBastionFound:           true,
 			expGetImageIdErr:             nil,
-			expGetBastionErr:             fmt.Errorf("GetVm generic error"),
+			expGetBastionErr:             errors.New("GetVm generic error"),
 			expSecurityGroupFound:        false,
-			expReconcileDeleteBastionErr: fmt.Errorf("GetVm generic error"),
+			expReconcileDeleteBastionErr: errors.New("GetVm generic error"),
 		},
 		{
 			name:                         "bastion is already destroyed",
@@ -2216,10 +2216,10 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, btc.expReconcileDeleteBastionErr, err, "reconcileDeleteBastion() should return the same error")
+			if btc.expReconcileDeleteBastionErr != nil {
+				assert.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.Nil(t, btc.expReconcileDeleteBastionErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileDeletBastion %v\n", reconcileDeleteBastion)
 		})
@@ -2363,10 +2363,10 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 				DeleteVm(gomock.Eq(vmId)).
 				Return(btc.expDeleteBastionErr)
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, btc.expReconcileDeleteBastionErr, err, "reconcileDeleteBastion() should return the same error")
+			if btc.expReconcileDeleteBastionErr != nil {
+				assert.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.Nil(t, btc.expReconcileDeleteBastionErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)
@@ -2391,8 +2391,8 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 			expGetVmFound:                true,
 			expGetVmErr:                  nil,
 			expCheckUnlinkPublicIpFound:  true,
-			expCheckUnlinkPublicIpErr:    fmt.Errorf("CheckUnlinkPublicIp generic error"),
-			expReconcileDeleteBastionErr: fmt.Errorf("CheckUnlinkPublicIp generic error Can not unlink publicIp for OscCluster test-system/test-osc"),
+			expCheckUnlinkPublicIpErr:    errors.New("CheckUnlinkPublicIp generic error"),
+			expReconcileDeleteBastionErr: errors.New("CheckUnlinkPublicIp generic error Can not unlink publicIp for OscCluster test-system/test-osc"),
 		},
 	}
 	for _, btc := range bastionTestCases {
@@ -2448,10 +2448,10 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 					Return(btc.expCheckUnlinkPublicIpErr)
 			}
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
-			if err != nil {
-				assert.Equal(t, btc.expReconcileDeleteBastionErr.Error(), err.Error(), "reconcileDeleteBastion() should return the same error")
+			if btc.expReconcileDeleteBastionErr != nil {
+				assert.Error(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.Nil(t, btc.expReconcileDeleteBastionErr)
+				assert.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)

@@ -17,11 +17,10 @@ limitations under the License.
 package scope
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // Copied from https://github.com/kubernetes-sigs/cluster-api/blob/bda002f52575eeaff68da1ba33c8ef27d5b1014c/controllers/noderefutil/providerid.go

@@ -114,14 +114,14 @@ type OscLoadBalancerListener struct {
 	LoadBalancerPort int32 `json:"loadbalancerport,omitempty"`
 	// the routing protocol ('HTTP'|'TCP')
 	// +optional
-	LoadBalancerProtocol string `json:"loadbalancerprotocol,omiempty"`
+	LoadBalancerProtocol string `json:"loadbalancerprotocol,omitempty"`
 }
 
 type OscLoadBalancerHealthCheck struct {
 	// the time in second between two pings
 	// +optional
 	CheckInterval int32 `json:"checkinterval,omitempty"`
-	// the consecutive number of pings which are sucessful to consider the vm healthy
+	// the consecutive number of pings which are successful to consider the vm healthy
 	// +optional
 	HealthyThreshold int32 `json:"healthythreshold,omitempty"`
 	// the HealthCheck port number
@@ -129,7 +129,7 @@ type OscLoadBalancerHealthCheck struct {
 	Port int32 `json:"port,omitempty"`
 	// The HealthCheck protocol ('HTTP'|'TCP')
 	// +optional
-	Protocol string `json:"protocol,omitepty"`
+	Protocol string `json:"protocol,omitempty"`
 	// the Timeout to consider VM unhealthy
 	// +optional
 	Timeout int32 `json:"timeout,omitempty"`
@@ -184,7 +184,7 @@ type OscNatService struct {
 	// The tag name associate with the Nat Service
 	// +optional
 	Name string `json:"name,omitempty"`
-	// The Public Ip tag name associated wtih a Public Ip
+	// The Public Ip tag name associated with a Public Ip
 	// +optional
 	PublicIpName string `json:"publicipname,omitempty"`
 	// The subnet tag name associate with a Subnet
@@ -258,7 +258,7 @@ type OscRoute struct {
 
 type OscPrivateIpElement struct {
 	Name      string `json:"name,omitempty"`
-	PrivateIp string `json:"privateIp,omiteempty"`
+	PrivateIp string `json:"privateIp,omitempty"`
 }
 
 type OscSecurityGroupElement struct {
@@ -625,7 +625,7 @@ var (
 func (net *OscNet) SetDefaultValue() {
 	var netName string = DefaultNetName
 	if net.ClusterName != "" {
-		netName = strings.Replace(DefaultNetName, DefaultClusterName, net.ClusterName, -1)
+		netName = strings.ReplaceAll(DefaultNetName, DefaultClusterName, net.ClusterName)
 	}
 	if net.IpRange == "" {
 		net.IpRange = DefaultIpRange
@@ -644,11 +644,10 @@ func (node *OscNode) SetVolumeDefaultValue() {
 		var volumeKcpSubregionName string = DefaultVolumeKcpSubregionName
 		var volumeKwSubregionName string = DefaultVolumeKwSubregionName
 		if node.ClusterName != "" {
-			volumeKcpName = strings.Replace(DefaultVolumeKcpName, DefaultClusterName, node.ClusterName, -1)
-			volumeKwName = strings.Replace(DefaultVolumeKwName, DefaultClusterName, node.ClusterName, -1)
-			volumeKcpSubregionName = strings.Replace(DefaultVolumeKcpSubregionName, DefaultClusterName, node.ClusterName, -1)
-			volumeKwSubregionName = strings.Replace(DefaultVolumeKwSubregionName, DefaultClusterName, node.ClusterName, -1)
-
+			volumeKcpName = strings.ReplaceAll(DefaultVolumeKcpName, DefaultClusterName, node.ClusterName)
+			volumeKwName = strings.ReplaceAll(DefaultVolumeKwName, DefaultClusterName, node.ClusterName)
+			volumeKcpSubregionName = strings.ReplaceAll(DefaultVolumeKcpSubregionName, DefaultClusterName, node.ClusterName)
+			volumeKwSubregionName = strings.ReplaceAll(DefaultVolumeKwSubregionName, DefaultClusterName, node.ClusterName)
 		}
 		if node.Vm.Role == "controlplane" {
 			volume = OscVolume{
@@ -688,14 +687,13 @@ func (node *OscNode) SetKeyPairDefaultValue() {
 	if len(node.KeyPair.Name) == 0 {
 		node.KeyPair.Name = DefaultKeypairName
 	}
-
 }
 
 // SetDefaultValue set the Internet Service default values
 func (igw *OscInternetService) SetDefaultValue() {
 	var internetServiceName string = DefaultInternetServiceName
 	if igw.ClusterName != "" {
-		internetServiceName = strings.Replace(DefaultInternetServiceName, DefaultClusterName, igw.ClusterName, -1)
+		internetServiceName = strings.ReplaceAll(DefaultInternetServiceName, DefaultClusterName, igw.ClusterName)
 	}
 	if igw.Name == "" {
 		igw.Name = internetServiceName
@@ -712,13 +710,13 @@ func (vm *OscVm) SetDefaultValue() {
 	var securityGroupKwName string = DefaultSecurityGroupKwName
 	var securityGroupNodeName string = DefaultSecurityGroupNodeName
 	if vm.ClusterName != "" {
-		vmKcpName = strings.Replace(DefaultVmKcpName, DefaultClusterName, vm.ClusterName, -1)
-		vmKwName = strings.Replace(DefaultVmKwName, DefaultClusterName, vm.ClusterName, -1)
-		subnetKcpName = strings.Replace(DefaultSubnetKcpName, DefaultClusterName, vm.ClusterName, -1)
-		subnetKwName = strings.Replace(DefaultSubnetKwName, DefaultClusterName, vm.ClusterName, -1)
-		securityGroupKcpName = strings.Replace(DefaultSecurityGroupKcpName, DefaultClusterName, vm.ClusterName, -1)
-		securityGroupKwName = strings.Replace(DefaultSecurityGroupKwName, DefaultClusterName, vm.ClusterName, -1)
-		securityGroupNodeName = strings.Replace(DefaultSecurityGroupNodeName, DefaultClusterName, vm.ClusterName, -1)
+		vmKcpName = strings.ReplaceAll(DefaultVmKcpName, DefaultClusterName, vm.ClusterName)
+		vmKwName = strings.ReplaceAll(DefaultVmKwName, DefaultClusterName, vm.ClusterName)
+		subnetKcpName = strings.ReplaceAll(DefaultSubnetKcpName, DefaultClusterName, vm.ClusterName)
+		subnetKwName = strings.ReplaceAll(DefaultSubnetKwName, DefaultClusterName, vm.ClusterName)
+		securityGroupKcpName = strings.ReplaceAll(DefaultSecurityGroupKcpName, DefaultClusterName, vm.ClusterName)
+		securityGroupKwName = strings.ReplaceAll(DefaultSecurityGroupKwName, DefaultClusterName, vm.ClusterName)
+		securityGroupNodeName = strings.ReplaceAll(DefaultSecurityGroupNodeName, DefaultClusterName, vm.ClusterName)
 	}
 	if vm.Role == "controlplane" {
 		if vm.Name == "" {
@@ -800,7 +798,6 @@ func (vm *OscVm) SetDefaultValue() {
 	if vm.SubregionName == "" {
 		vm.SubregionName = DefaultVmSubregionName
 	}
-
 }
 
 // SetDefaultValue set the bastion default values
@@ -810,9 +807,9 @@ func (bastion *OscBastion) SetDefaultValue() {
 	var securityGroupPublicName string = DefaultSecurityGroupPublicName
 	if bastion.Enable {
 		if bastion.ClusterName != "" {
-			vmBastionName = strings.Replace(DefaultVmBastionName, DefaultClusterName, bastion.ClusterName, -1)
-			subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, bastion.ClusterName, -1)
-			securityGroupPublicName = strings.Replace(DefaultSecurityGroupPublicName, DefaultClusterName, bastion.ClusterName, -1)
+			vmBastionName = strings.ReplaceAll(DefaultVmBastionName, DefaultClusterName, bastion.ClusterName)
+			subnetPublicName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, bastion.ClusterName)
+			securityGroupPublicName = strings.ReplaceAll(DefaultSecurityGroupPublicName, DefaultClusterName, bastion.ClusterName)
 		}
 		if bastion.Name == "" {
 			bastion.Name = vmBastionName
@@ -863,9 +860,9 @@ func (nat *OscNatService) SetDefaultValue() {
 	var publicIpNatName string = DefaultPublicIpNatName
 	var subnetNatName string = DefaultSubnetPublicName
 	if nat.ClusterName != "" {
-		natServiceName = strings.Replace(DefaultNatServiceName, DefaultClusterName, nat.ClusterName, -1)
-		publicIpNatName = strings.Replace(DefaultPublicIpNatName, DefaultClusterName, nat.ClusterName, -1)
-		subnetNatName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, nat.ClusterName, -1)
+		natServiceName = strings.ReplaceAll(DefaultNatServiceName, DefaultClusterName, nat.ClusterName)
+		publicIpNatName = strings.ReplaceAll(DefaultPublicIpNatName, DefaultClusterName, nat.ClusterName)
+		subnetNatName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, nat.ClusterName)
 	}
 	if nat.Name == "" {
 		nat.Name = natServiceName
@@ -897,19 +894,19 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 		var subnetPublicName string = DefaultSubnetPublicName
 
 		if network.ClusterName != "" {
-			routeKwName = strings.Replace(DefaultRouteKwName, DefaultClusterName, network.ClusterName, -1)
-			targetKwName = strings.Replace(DefaultTargetKwName, DefaultClusterName, network.ClusterName, -1)
-			routeTableKwName = strings.Replace(DefaultRouteTableKwName, DefaultClusterName, network.ClusterName, -1)
-			subnetKwName = strings.Replace(DefaultSubnetKwName, DefaultClusterName, network.ClusterName, -1)
-			routeKcpName = strings.Replace(DefaultRouteKcpName, DefaultClusterName, network.ClusterName, -1)
-			targetKcpName = strings.Replace(DefaultTargetKcpName, DefaultClusterName, network.ClusterName, -1)
-			routeTableKcpName = strings.Replace(DefaultRouteTableKcpName, DefaultClusterName, network.ClusterName, -1)
-			subnetKcpName = strings.Replace(DefaultSubnetKcpName, DefaultClusterName, network.ClusterName, -1)
+			routeKwName = strings.ReplaceAll(DefaultRouteKwName, DefaultClusterName, network.ClusterName)
+			targetKwName = strings.ReplaceAll(DefaultTargetKwName, DefaultClusterName, network.ClusterName)
+			routeTableKwName = strings.ReplaceAll(DefaultRouteTableKwName, DefaultClusterName, network.ClusterName)
+			subnetKwName = strings.ReplaceAll(DefaultSubnetKwName, DefaultClusterName, network.ClusterName)
+			routeKcpName = strings.ReplaceAll(DefaultRouteKcpName, DefaultClusterName, network.ClusterName)
+			targetKcpName = strings.ReplaceAll(DefaultTargetKcpName, DefaultClusterName, network.ClusterName)
+			routeTableKcpName = strings.ReplaceAll(DefaultRouteTableKcpName, DefaultClusterName, network.ClusterName)
+			subnetKcpName = strings.ReplaceAll(DefaultSubnetKcpName, DefaultClusterName, network.ClusterName)
 
-			routePublicName = strings.Replace(DefaultRoutePublicName, DefaultClusterName, network.ClusterName, -1)
-			targetPublicName = strings.Replace(DefaultTargetPublicName, DefaultClusterName, network.ClusterName, -1)
-			routeTablePublicName = strings.Replace(DefaultRouteTablePublicName, DefaultClusterName, network.ClusterName, -1)
-			subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, network.ClusterName, -1)
+			routePublicName = strings.ReplaceAll(DefaultRoutePublicName, DefaultClusterName, network.ClusterName)
+			targetPublicName = strings.ReplaceAll(DefaultTargetPublicName, DefaultClusterName, network.ClusterName)
+			routeTablePublicName = strings.ReplaceAll(DefaultRouteTablePublicName, DefaultClusterName, network.ClusterName)
+			subnetPublicName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, network.ClusterName)
 		}
 
 		routeKw := OscRoute{
@@ -979,24 +976,23 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 		var securityGroupLbName string = DefaultSecurityGroupPublicName
 		var securityGroupNodeName string = DefaultSecurityGroupNodeName
 		if network.ClusterName != "" {
-			securityGroupRuleApiKubeletKwName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleApiKubeletKcpName = strings.Replace(DefaultSecurityGroupRuleApiKubeletKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKwNodeIpKwName = strings.Replace(DefaultSecurityGroupRuleKwNodeIpKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKcpNodeIpKwName = strings.Replace(DefaultSecurityGroupRuleKcpNodeIpKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKcpNodeIpKcpName = strings.Replace(DefaultSecurityGroupRuleKcpNodeIpKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKwNodeIpKcpName = strings.Replace(DefaultSecurityGroupRuleKwNodeIpKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupKwName = strings.Replace(DefaultSecurityGroupKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleApiKwName = strings.Replace(DefaultSecurityGroupRuleApiKwName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleApiKcpName = strings.Replace(DefaultSecurityGroupRuleApiKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleEtcdName = strings.Replace(DefaultSecurityGroupRuleEtcdName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKwBgpName = strings.Replace(DefaultSecurityGroupRuleKwBgpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKcpBgpName = strings.Replace(DefaultSecurityGroupRuleKcpBgpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleKubeletKcpName = strings.Replace(DefaultSecurityGroupRuleKubeletKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupKcpName = strings.Replace(DefaultSecurityGroupKcpName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupRuleLbName = strings.Replace(DefaultSecurityGroupRuleLbName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupLbName = strings.Replace(DefaultSecurityGroupPublicName, DefaultClusterName, network.ClusterName, -1)
-			securityGroupNodeName = strings.Replace(DefaultSecurityGroupNodeName, DefaultClusterName, network.ClusterName, -1)
-
+			securityGroupRuleApiKubeletKwName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKubeletKwName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleApiKubeletKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKubeletKcpName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKwNodeIpKwName = strings.ReplaceAll(DefaultSecurityGroupRuleKwNodeIpKwName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKcpNodeIpKwName = strings.ReplaceAll(DefaultSecurityGroupRuleKcpNodeIpKwName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKcpNodeIpKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleKcpNodeIpKcpName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKwNodeIpKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleKwNodeIpKcpName, DefaultClusterName, network.ClusterName)
+			securityGroupKwName = strings.ReplaceAll(DefaultSecurityGroupKwName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleApiKwName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKwName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleApiKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKcpName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleEtcdName = strings.ReplaceAll(DefaultSecurityGroupRuleEtcdName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKwBgpName = strings.ReplaceAll(DefaultSecurityGroupRuleKwBgpName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKcpBgpName = strings.ReplaceAll(DefaultSecurityGroupRuleKcpBgpName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleKubeletKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleKubeletKcpName, DefaultClusterName, network.ClusterName)
+			securityGroupKcpName = strings.ReplaceAll(DefaultSecurityGroupKcpName, DefaultClusterName, network.ClusterName)
+			securityGroupRuleLbName = strings.ReplaceAll(DefaultSecurityGroupRuleLbName, DefaultClusterName, network.ClusterName)
+			securityGroupLbName = strings.ReplaceAll(DefaultSecurityGroupPublicName, DefaultClusterName, network.ClusterName)
+			securityGroupNodeName = strings.ReplaceAll(DefaultSecurityGroupNodeName, DefaultClusterName, network.ClusterName)
 		}
 		securityGroupRuleApiKubeletKw := OscSecurityGroupRule{
 			Name:          securityGroupRuleApiKubeletKwName,
@@ -1212,7 +1208,7 @@ func (network *OscNetwork) SetPublicIpDefaultValue() {
 	if len(network.PublicIps) == 0 {
 		var publicIpNatName string = DefaultPublicIpNatName
 		if network.ClusterName != "" {
-			publicIpNatName = strings.Replace(DefaultPublicIpNatName, DefaultClusterName, network.ClusterName, -1)
+			publicIpNatName = strings.ReplaceAll(DefaultPublicIpNatName, DefaultClusterName, network.ClusterName)
 		}
 		publicIp := OscPublicIp{
 			Name: publicIpNatName,
@@ -1229,9 +1225,9 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 		var subnetPublicName string = DefaultSubnetPublicName
 
 		if network.ClusterName != "" {
-			subnetKcpName = strings.Replace(subnetKcpName, DefaultClusterName, network.ClusterName, -1)
-			subnetKwName = strings.Replace(subnetKwName, DefaultClusterName, network.ClusterName, -1)
-			subnetPublicName = strings.Replace(subnetPublicName, DefaultClusterName, network.ClusterName, -1)
+			subnetKcpName = strings.ReplaceAll(subnetKcpName, DefaultClusterName, network.ClusterName)
+			subnetKwName = strings.ReplaceAll(subnetKwName, DefaultClusterName, network.ClusterName)
+			subnetPublicName = strings.ReplaceAll(subnetPublicName, DefaultClusterName, network.ClusterName)
 		}
 		subnetKcp := OscSubnet{
 			Name:          subnetKcpName,
@@ -1271,8 +1267,8 @@ func (lb *OscLoadBalancer) SetDefaultValue() {
 	var subnetPublicName string = DefaultSubnetPublicName
 	var securityGroupLbName string = DefaultSecurityGroupPublicName
 	if lb.ClusterName != "" {
-		subnetPublicName = strings.Replace(DefaultSubnetPublicName, DefaultClusterName, lb.ClusterName, -1)
-		securityGroupLbName = strings.Replace(DefaultSecurityGroupPublicName, DefaultClusterName, lb.ClusterName, -1)
+		subnetPublicName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, lb.ClusterName)
+		securityGroupLbName = strings.ReplaceAll(DefaultSecurityGroupPublicName, DefaultClusterName, lb.ClusterName)
 	}
 	if lb.LoadBalancerName == "" {
 		lb.LoadBalancerName = DefaultLoadBalancerName

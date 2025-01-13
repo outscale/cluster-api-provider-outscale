@@ -17,16 +17,15 @@ limitations under the License.
 package net
 
 import (
-	"fmt"
-
 	"errors"
+	"fmt"
+	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	_nethttp "net/http"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/net_mock.go -package mock_net -source ./net.go
@@ -85,7 +84,6 @@ func (s *Service) CreateNet(spec *infrastructurev1beta1.OscNet, clusterName stri
 
 	err, httpRes = tag.AddTag(netTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
@@ -102,7 +100,7 @@ func (s *Service) DeleteNet(netId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteNetCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
 		if err != nil {
@@ -119,7 +117,6 @@ func (s *Service) DeleteNet(netId string) error {
 			return false, err
 		}
 		return true, err
-
 	}
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, deleteNetCallBack)

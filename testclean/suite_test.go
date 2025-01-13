@@ -17,23 +17,20 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"flag"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
-	"golang.org/x/net/context"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
-
-	//	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/controllers"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
@@ -42,8 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -51,7 +46,6 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg              *rest.Config
 	k8sClient        client.Client
 	testEnv          *envtest.Environment
 	reconcileTimeout time.Duration
@@ -80,8 +74,6 @@ func TestAPIs(t *testing.T) {
 
 	RunSpecs(t, "capo testclean")
 }
-
-const kubeconfigEnvVar = "KUBECONFIG"
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
@@ -112,6 +104,7 @@ var _ = BeforeSuite(func() {
 		Recorder:         k8sManager.GetEventRecorderFor("osc-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(context.Background(), k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

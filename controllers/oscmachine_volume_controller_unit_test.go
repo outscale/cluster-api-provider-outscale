@@ -18,10 +18,9 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"time"
-
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -211,7 +210,7 @@ func TestGetVolumeResourceId(t *testing.T) {
 			clusterSpec:               defaultClusterInitialize,
 			machineSpec:               defaultVolumeInitialize,
 			expVolumeFound:            false,
-			expGetVolumeResourceIdErr: fmt.Errorf("test-volume-uid does not exist"),
+			expGetVolumeResourceIdErr: errors.New("test-volume-uid does not exist"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
@@ -227,10 +226,10 @@ func TestGetVolumeResourceId(t *testing.T) {
 					volumeRef.ResourceMap[volumeName] = volumeId
 				}
 				volumeResourceId, err := getVolumeResourceId(volumeName, machineScope)
-				if err != nil {
-					assert.Equal(t, vtc.expGetVolumeResourceIdErr, err, "getVolumeResourceId() should return the same error")
+				if vtc.expGetVolumeResourceIdErr != nil {
+					assert.EqualError(t, err, vtc.expGetVolumeResourceIdErr.Error(), "getVolumeResourceId() should return the same error")
 				} else {
-					assert.Nil(t, vtc.expGetVolumeResourceIdErr)
+					assert.NoError(t, err)
 				}
 				t.Logf("Find volumeResourceId %s\n", volumeResourceId)
 			}
@@ -275,17 +274,17 @@ func TestCheckVolumeOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVolumeOscDuplicateNameErr: fmt.Errorf("test-volume already exist"),
+			expCheckVolumeOscDuplicateNameErr: errors.New("test-volume already exist"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			duplicateResourceVolumeErr := checkVolumeOscDuplicateName(machineScope)
-			if duplicateResourceVolumeErr != nil {
-				assert.Equal(t, vtc.expCheckVolumeOscDuplicateNameErr, duplicateResourceVolumeErr, "checkVolumeOscDuplicateName() should return the same error")
+			err := checkVolumeOscDuplicateName(machineScope)
+			if vtc.expCheckVolumeOscDuplicateNameErr != nil {
+				assert.EqualError(t, err, vtc.expCheckVolumeOscDuplicateNameErr.Error(), "checkVolumeOscDuplicateName() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expCheckVolumeOscDuplicateNameErr)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -320,7 +319,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("test-volume-uid does not exist"),
+			expReconcileVmErr:                 errors.New("test-volume-uid does not exist"),
 		},
 		{
 			name:                              "Volume does not exist ",
@@ -334,7 +333,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("failed to get subnet ID for test-subnet-uid: test-subnet-uid does not exist"),
+			expReconcileVmErr:                 errors.New("failed to get subnet ID for test-subnet-uid: test-subnet-uid does not exist"),
 		},
 		{
 			name:                              "PublicIp does not exist ",
@@ -348,7 +347,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("test-publicip-uid does not exist"),
+			expReconcileVmErr:                 errors.New("test-publicip-uid does not exist"),
 		},
 		{
 			name:                              "SecurityGroup does not exist ",
@@ -362,7 +361,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expLoadBalancerSecurityGroupFound: false,
 			expTagFound:                       false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("failed to handle security groups: failed to get security group ID for test-securitygroup-uid"),
+			expReconcileVmErr:                 errors.New("failed to handle security groups: failed to get security group ID for test-securitygroup-uid"),
 		},
 		{
 			name:                              "failed to get tag",
@@ -375,8 +374,8 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       true,
-			expReadTagErr:                     fmt.Errorf("ReadTag generic error"),
-			expReconcileVmErr:                 fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
+			expReadTagErr:                     errors.New("ReadTag generic error"),
+			expReconcileVmErr:                 errors.New("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -462,10 +461,10 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			}
 
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+			if vtc.expReconcileVmErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileVmErr.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileVmErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
@@ -529,10 +528,10 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expCreateVolumeFound:              false,
 			expTagFound:                       false,
 			expValidateVolumeIdsErr:           nil,
-			expCreateVolumeErr:                fmt.Errorf("CreateVolume generic error"),
+			expCreateVolumeErr:                errors.New("CreateVolume generic error"),
 			expCheckVolumeStateAvailableErr:   nil,
 			expReadTagErr:                     nil,
-			expReconcileVolumeErr:             fmt.Errorf("CreateVolume generic error Can not create volume for OscMachine test-system/test-osc"),
+			expReconcileVolumeErr:             errors.New("CreateVolume generic error Can not create volume for OscMachine test-system/test-osc"),
 		},
 		{
 			name:                              "user delete volume without cluster-api",
@@ -559,9 +558,9 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			expValidateVolumeIdsErr:           nil,
 			expCreateVolumeFound:              true,
 			expCreateVolumeErr:                nil,
-			expCheckVolumeStateAvailableErr:   fmt.Errorf("CheckVolumeStateAvailable generic error"),
+			expCheckVolumeStateAvailableErr:   errors.New("CheckVolumeStateAvailable generic error"),
 			expReadTagErr:                     nil,
-			expReconcileVolumeErr:             fmt.Errorf("CheckVolumeStateAvailable generic error Can not get volume available for OscMachine test-system/test-osc"),
+			expReconcileVolumeErr:             errors.New("CheckVolumeStateAvailable generic error Can not get volume available for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
@@ -618,7 +617,6 @@ func TestReconcileVolumeCreate(t *testing.T) {
 						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
 						Return(vtc.expCheckVolumeStateAvailableErr)
 				}
-
 			}
 			if vtc.expUserDeleteVolumeFound {
 				mockOscVolumeInterface.
@@ -640,10 +638,10 @@ func TestReconcileVolumeCreate(t *testing.T) {
 			}
 
 			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileVolumeErr.Error(), err.Error(), "reconcileVolume should return the same error")
+			if vtc.expReconcileVolumeErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileVolumeErr.Error(), "reconcileVolume should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileVolumeErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileVolume %v\n", reconcileVolume)
 		})
@@ -688,9 +686,9 @@ func TestReconcileVolumeGet(t *testing.T) {
 			machineSpec:             defaultVolumeReconcile,
 			expVolumeFound:          false,
 			expTagFound:             true,
-			expValidateVolumeIdsErr: fmt.Errorf("ValidateVolumeIds generic error"),
+			expValidateVolumeIdsErr: errors.New("ValidateVolumeIds generic error"),
 			expReadTagErr:           nil,
-			expReconcileVolumeErr:   fmt.Errorf("ValidateVolumeIds generic error"),
+			expReconcileVolumeErr:   errors.New("ValidateVolumeIds generic error"),
 		},
 		{
 			name:                    "failed to get tag",
@@ -699,8 +697,8 @@ func TestReconcileVolumeGet(t *testing.T) {
 			expVolumeFound:          true,
 			expTagFound:             false,
 			expValidateVolumeIdsErr: nil,
-			expReadTagErr:           fmt.Errorf("ReadTag generic error"),
-			expReconcileVolumeErr:   fmt.Errorf("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
+			expReadTagErr:           errors.New("ReadTag generic error"),
+			expReconcileVolumeErr:   errors.New("ReadTag generic error Can not get tag for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
@@ -731,7 +729,6 @@ func TestReconcileVolumeGet(t *testing.T) {
 				volumeRef := machineScope.GetVolumeRef()
 				volumeRef.ResourceMap = make(map[string]string)
 				volumeRef.ResourceMap[volumeName] = volumeId
-
 			}
 			if vtc.expVolumeFound {
 				mockOscVolumeInterface.
@@ -746,10 +743,10 @@ func TestReconcileVolumeGet(t *testing.T) {
 			}
 
 			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface, mockOscTagInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileVolumeErr.Error(), err.Error(), "reconcileVolume should return the same error")
+			if vtc.expReconcileVolumeErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileVolumeErr.Error(), "reconcileVolume should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileVolumeErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileVolume %v\n", reconcileVolume)
 		})
@@ -800,11 +797,11 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 			machineSpec:                     defaultVolumeReconcile,
 			expVolumeFound:                  true,
 			expValidateVolumeIdsErr:         nil,
-			expDeleteVolumeErr:              fmt.Errorf("DeleteVolume generic error"),
+			expDeleteVolumeErr:              errors.New("DeleteVolume generic error"),
 			expCheckVolumeStateAvailableErr: nil,
 			expUnlinkVolumeErr:              nil,
 			expCheckVolumeStateUseErr:       nil,
-			expReconcileDeleteVolumeErr:     fmt.Errorf("DeleteVolume generic error Can not delete volume for OscMachine test-system/test-osc"),
+			expReconcileDeleteVolumeErr:     errors.New("DeleteVolume generic error Can not delete volume for OscMachine test-system/test-osc"),
 		},
 	}
 	for _, vtc := range volumeTestCases {
@@ -856,10 +853,10 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 			}
 
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
+			if vtc.expReconcileDeleteVolumeErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVolumeErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
@@ -891,8 +888,8 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 			clusterSpec:                 defaultClusterReconcile,
 			machineSpec:                 defaultVolumeReconcile,
 			expVolumeFound:              true,
-			expValidateVolumeIdsErr:     fmt.Errorf("ValidateVolumeIds generic errors"),
-			expReconcileDeleteVolumeErr: fmt.Errorf("ValidateVolumeIds generic errors"),
+			expValidateVolumeIdsErr:     errors.New("ValidateVolumeIds generic errors"),
+			expReconcileDeleteVolumeErr: errors.New("ValidateVolumeIds generic errors"),
 		},
 		{
 			name:                        "remove finalizer (user delete volume without cluster-api)",
@@ -930,10 +927,10 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 			}
 
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
+			if vtc.expReconcileDeleteVolumeErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVolumeErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
@@ -1005,10 +1002,10 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 			nodeSpec.SetVolumeDefaultValue()
 			machineScope.OscMachine.Spec.Node.Volumes[0].ResourceId = volumeId
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
-			if err != nil {
-				assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
+			if vtc.expReconcileDeleteVolumeErr != nil {
+				assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 			} else {
-				assert.Nil(t, vtc.expReconcileDeleteVolumeErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
@@ -1052,15 +1049,15 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 			},
 			expVolumeFound:                    true,
 			expValidateVolumeIdsErr:           nil,
-			expDeleteVolumeErr:                fmt.Errorf("DeleteVolume generic error"),
+			expDeleteVolumeErr:                errors.New("DeleteVolume generic error"),
 			expCheckVolumeStateAvailableErr:   nil,
 			expCheckVolumeStateAvailableFound: false,
 			expUnlinkVolumeErr:                nil,
 			expUnlinkVolumeFound:              false,
-			expCheckVolumeStateUseErr:         fmt.Errorf("VolumeState generic error"),
+			expCheckVolumeStateUseErr:         errors.New("VolumeState generic error"),
 			expCheckVolumeStateUseFound:       true,
 			expDeleteVolumeFound:              false,
-			expReconcileDeleteVolumeErr:       fmt.Errorf("VolumeState generic error Can not get volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
+			expReconcileDeleteVolumeErr:       errors.New("VolumeState generic error Can not get volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
 		},
 		{
 			name:        "failed to unlink volume",
@@ -1084,12 +1081,12 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 			expDeleteVolumeErr:                nil,
 			expCheckVolumeStateAvailableErr:   nil,
 			expCheckVolumeStateAvailableFound: false,
-			expUnlinkVolumeErr:                fmt.Errorf("UnlinkVolume generic error"),
+			expUnlinkVolumeErr:                errors.New("UnlinkVolume generic error"),
 			expUnlinkVolumeFound:              true,
 			expCheckVolumeStateUseErr:         nil,
 			expCheckVolumeStateUseFound:       true,
 			expDeleteVolumeFound:              false,
-			expReconcileDeleteVolumeErr:       fmt.Errorf("UnlinkVolume generic error Can not unlink volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
+			expReconcileDeleteVolumeErr:       errors.New("UnlinkVolume generic error Can not unlink volume volume-test-volume-uid in use for OscMachine test-system/test-osc"),
 		},
 		{
 			name:        "failed to delete volume",
@@ -1110,15 +1107,15 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 			},
 			expVolumeFound:                    true,
 			expValidateVolumeIdsErr:           nil,
-			expDeleteVolumeErr:                fmt.Errorf("DeleteVolume generic error"),
-			expCheckVolumeStateAvailableErr:   fmt.Errorf("VolumeState generic error"),
+			expDeleteVolumeErr:                errors.New("DeleteVolume generic error"),
+			expCheckVolumeStateAvailableErr:   errors.New("VolumeState generic error"),
 			expCheckVolumeStateAvailableFound: true,
 			expUnlinkVolumeErr:                nil,
 			expUnlinkVolumeFound:              true,
 			expCheckVolumeStateUseErr:         nil,
 			expCheckVolumeStateUseFound:       true,
 			expDeleteVolumeFound:              false,
-			expReconcileDeleteVolumeErr:       fmt.Errorf("VolumeState generic error Can not get volume volume-test-volume-uid available for OscMachine test-system/test-osc"),
+			expReconcileDeleteVolumeErr:       errors.New("VolumeState generic error Can not get volume volume-test-volume-uid available for OscMachine test-system/test-osc"),
 		},
 	}
 
@@ -1176,10 +1173,10 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 				}
 
 				reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
-				if err != nil {
-					assert.Equal(t, vtc.expReconcileDeleteVolumeErr.Error(), err.Error(), "reconcileDeleteVolume() should return the same error")
+				if vtc.expReconcileDeleteVolumeErr != nil {
+					assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 				} else {
-					assert.Nil(t, vtc.expReconcileDeleteVolumeErr)
+					assert.NoError(t, err)
 				}
 				t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 			}

@@ -17,13 +17,14 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type CapoMachineDeploymentListInput struct {
@@ -77,14 +78,13 @@ func DeleteCapoMachineDeploymentList(ctx context.Context, input CapoMachineDeplo
 			fmt.Fprintf(GinkgoWriter, "Wait capoMachineDeployment %s in namespace %s to be deleted \n", capoMachineDeployment.Name, capoMachineDeployment.Namespace)
 			return input.Deleter.Get(ctx, key, capoMachineDeploymentGet)
 		}, 1*time.Minute, 5*time.Second).ShouldNot(Succeed())
-
 	}
 	return true
 }
 
 // WaitForCapoMachineDeploymentListAvailable wait machine to be available.
 func WaitForCapoMachineDeploymentListAvailable(ctx context.Context, input CapoMachineDeploymentListInput) bool {
-	By(fmt.Sprintf("Waiting for capoMachineDeployment selected by options to be ready"))
+	By("Waiting for capoMachineDeployment selected by options to be ready")
 	Eventually(func() bool {
 		isCapoMachineDeploymentListAvailable := GetCapoMachineDeploymentList(ctx, input)
 		return isCapoMachineDeploymentListAvailable
@@ -94,7 +94,7 @@ func WaitForCapoMachineDeploymentListAvailable(ctx context.Context, input CapoMa
 
 // WaitForCapoMachineDeploymentListDelete  wait machine to be deleted.
 func WaitForCapoMachineDeploymentListDelete(ctx context.Context, input CapoMachineDeploymentDeleteListInput) bool {
-	By(fmt.Sprintf("Wait for capoMachineDeployment selected by options to be deleted"))
+	By("Wait for capoMachineDeployment selected by options to be deleted")
 	Eventually(func() bool {
 		isCapoMachineDeploymentListDelete := DeleteCapoMachineDeploymentList(ctx, input)
 		return isCapoMachineDeploymentListDelete

@@ -19,12 +19,13 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 // checkImageFormatParameters check keypair format
@@ -89,7 +90,6 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	} else {
 		machineScope.SetImageId(imageId)
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
-
 	}
 	if image == nil {
 		machineScope.V(2).Info("Image is nil")

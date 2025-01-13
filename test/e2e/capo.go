@@ -19,12 +19,11 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
-	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -32,14 +31,16 @@ import (
 	utils "github.com/outscale-dev/cluster-api-provider-outscale.git/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/conditions"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CapoClusterDeploymentSpecInput struct {
@@ -101,12 +102,10 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 	for {
 		obj := &unstructured.Unstructured{}
 		err := decoder.Decode(obj)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			Expect(err).NotTo(HaveOccurred(), "Failed to decode cluster template")
+		if errors.Is(err, io.EOF) {
+			break
 		}
+		Expect(err).NotTo(HaveOccurred(), "Failed to decode cluster template")
 		gvk := obj.GroupVersionKind()
 		obj.SetGroupVersionKind(gvk)
 		// Set the namespace for namespaced resources
@@ -157,7 +156,7 @@ func CapoClusterDeploymentSpec(ctx context.Context, inputGetter func() CapoClust
 		clusterName = fmt.Sprintf("%s-%s", specName, util.RandomString(6))
 	})
 
-	It("Should sucessfully create an infrastructure cluster", func() {
+	It("Should successfully create an infrastructure cluster", func() {
 		By("creating an infrastructure cluster")
 		CreateClusterAndWait(ctx, CreateClusterAndWaitInput{
 			ClusterProxy: input.BootstrapClusterProxy,
@@ -170,8 +169,8 @@ func CapoClusterDeploymentSpec(ctx context.Context, inputGetter func() CapoClust
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
 				KubernetesVersion:        input.E2EConfig.GetVariable(KubernetesVersion),
-				ControlPlaneMachineCount: pointer.Int64Ptr(3),
-				WorkerMachineCount:       pointer.Int64Ptr(1),
+				ControlPlaneMachineCount: ptr.To(int64(3)),
+				WorkerMachineCount:       ptr.To(int64(1)),
 			},
 			WaitForClusterIntervals: input.E2EConfig.GetIntervals(specName, "wait-cluster"),
 		}, clusterResources)
@@ -206,7 +205,7 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 		clusterResources = new(clusterctl.ApplyClusterTemplateAndWaitResult)
 		clusterName = fmt.Sprintf("%s-%s", specName, util.RandomString(6))
 	})
-	It("Should sucessfully create a cluster with one control planes", func() {
+	It("Should successfully create a cluster with one control planes", func() {
 		By("Creating a workload cluster")
 		ctx := context.Background()
 
@@ -221,8 +220,8 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
 				KubernetesVersion:        input.E2EConfig.GetVariable(KubernetesVersion),
-				ControlPlaneMachineCount: pointer.Int64Ptr(1),
-				WorkerMachineCount:       pointer.Int64Ptr(1),
+				ControlPlaneMachineCount: ptr.To(int64(1)),
+				WorkerMachineCount:       ptr.To(int64(1)),
 			},
 			WaitForClusterIntervals:      input.E2EConfig.GetIntervals(specName, "wait-cluster"),
 			WaitForControlPlaneIntervals: input.E2EConfig.GetIntervals(specName, "wait-control-plane"),
@@ -307,6 +306,7 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 		})
 
 		certManager, err := labels.Parse("app.kubernetes.io/component=controller")
+		Expect(err).ToNot(HaveOccurred())
 		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
 			Lister:      k8sClient,
 			ListOptions: &client.ListOptions{LabelSelector: certManager},

@@ -17,11 +17,9 @@ limitations under the License.
 package net
 
 import (
-	"fmt"
-
 	"errors"
-
-	_nethttp "net/http"
+	"fmt"
+	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -57,7 +55,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 	oscAuthClient := s.scope.GetAuth()
 	var subnetResponse osc.CreateSubnetResponse
 	createSubnetCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		subnetResponse, httpRes, err = oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
 		if err != nil {
@@ -129,11 +127,10 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 	oscAuthClient := s.scope.GetAuth()
 
 	deleteSubnetCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
 		if err != nil {
-
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
 			}
@@ -148,7 +145,6 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 			return false, err
 		}
 		return true, err
-
 	}
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, deleteSubnetCallBack)
@@ -198,7 +194,7 @@ func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
 	oscAuthClient := s.scope.GetAuth()
 	var readSubnetsResponse osc.ReadSubnetsResponse
 	readSubnetsCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		readSubnetsResponse, httpRes, err = oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 		if err != nil {

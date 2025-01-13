@@ -212,7 +212,7 @@ spec:
                                     type: integer
                                   healthythreshold:
                                     description: the consecutive number of pings which
-                                      are sucessful to consider the vm healthy
+                                      are successful to consider the vm healthy
                                     format: int32
                                     type: integer
                                   port:

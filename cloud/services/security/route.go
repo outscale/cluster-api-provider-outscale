@@ -17,10 +17,9 @@ limitations under the License.
 package security
 
 import (
-	"fmt"
-
 	"errors"
-	_nethttp "net/http"
+	"fmt"
+	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
@@ -51,7 +50,7 @@ func (s *Service) CreateRouteTable(netId string, clusterName string, routeTableN
 	oscAuthClient := s.scope.GetAuth()
 	var routeTableResponse osc.CreateRouteTableResponse
 	createRouteTableCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		routeTableResponse, httpRes, err = oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
 		if err != nil {
@@ -162,7 +161,7 @@ func (s *Service) DeleteRouteTable(routeTableId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteRouteCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
 		if err != nil {
@@ -197,7 +196,7 @@ func (s *Service) DeleteRoute(destinationIpRange string, routeTableId string) er
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteRouteCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
 		if err != nil {
@@ -306,7 +305,7 @@ func (s *Service) LinkRouteTable(routeTableId string, subnetId string) (string, 
 	oscAuthClient := s.scope.GetAuth()
 	var linkRouteTableResponse osc.LinkRouteTableResponse
 	linkRouteTableCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		linkRouteTableResponse, httpRes, err = oscApiClient.RouteTableApi.LinkRouteTable(oscAuthClient).LinkRouteTableRequest(linkRouteTableRequest).Execute()
 		if err != nil {
@@ -345,7 +344,7 @@ func (s *Service) UnlinkRouteTable(linkRouteTableId string) error {
 	oscAuthClient := s.scope.GetAuth()
 
 	unlinkRouteTableCallBack := func() (bool, error) {
-		var httpRes *_nethttp.Response
+		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
 		if err != nil {

@@ -22,8 +22,8 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	base64 "encoding/base64"
-
-	"fmt"
+	"errors"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
@@ -32,7 +32,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
-	"testing"
 )
 
 var (
@@ -114,7 +113,7 @@ func TestGetKeyPairResourceId(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{},
 			},
 			expKeyPairFound:            false,
-			expGetKeyPairResourceIdErr: fmt.Errorf(" does not exist"),
+			expGetKeyPairResourceIdErr: errors.New(" does not exist"),
 		},
 	}
 
@@ -129,10 +128,10 @@ func TestGetKeyPairResourceId(t *testing.T) {
 				keyPairRef.ResourceMap[keyPairName] = keyPairName
 			}
 			keyPairResourceID, err := getKeyPairResourceId(keyPairName, machineScope)
-			if err != nil {
-				assert.Equal(t, k.expGetKeyPairResourceIdErr, err, "get should return the same error")
+			if k.expGetKeyPairResourceIdErr != nil {
+				assert.EqualError(t, err, k.expGetKeyPairResourceIdErr.Error(), "get should return the same error")
 			} else {
-				assert.Nil(t, k.expGetKeyPairResourceIdErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Find keyPairResourceID %s\n", keyPairResourceID)
 		})
@@ -179,17 +178,17 @@ func TestCheckKeyPairFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckKeyPairFormatParametersErr: fmt.Errorf("Invalid Tag Name"),
+			expCheckKeyPairFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 	}
 	for _, k := range keypairTestCases {
 		t.Run(k.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, k.name, k.clusterSpec, k.machineSpec)
 			keyPairName, err := checkKeypairFormatParameters(machineScope)
-			if err != nil {
-				assert.Equal(t, k.expCheckKeyPairFormatParametersErr, err, "checkKeyPairFormatParameters() should return the same error")
+			if k.expCheckKeyPairFormatParametersErr != nil {
+				assert.EqualError(t, err, k.expCheckKeyPairFormatParametersErr.Error(), "checkKeyPairFormatParameters() should return the same error")
 			} else {
-				assert.Nil(t, k.expCheckKeyPairFormatParametersErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find keyPairName %s\n", keyPairName)
 		})
@@ -231,7 +230,7 @@ func TestCheckKeypairSameName(t *testing.T) {
 					},
 				},
 			},
-			expCheckKeypairSameNameErr: fmt.Errorf("test-bad-keypair is not the same in vm and keypair section"),
+			expCheckKeypairSameNameErr: errors.New("test-bad-keypair is not the same in vm and keypair section"),
 		},
 		{
 			name:        "check not have the same keypair name from vm section",
@@ -246,22 +245,21 @@ func TestCheckKeypairSameName(t *testing.T) {
 					},
 				},
 			},
-			expCheckKeypairSameNameErr: fmt.Errorf("test-keypair is not the same in vm and keypair section"),
+			expCheckKeypairSameNameErr: errors.New("test-keypair is not the same in vm and keypair section"),
 		},
 	}
 	for _, k := range keypairTestCases {
 		t.Run(k.name, func(t *testing.T) {
 			_, machineScope := SetupMachine(t, k.name, k.clusterSpec, k.machineSpec)
 			err := checkKeypairSameName(machineScope)
-			if err != nil {
-				assert.Equal(t, k.expCheckKeypairSameNameErr, err, "checkKeypairSameName() should return the same error")
+			if k.expCheckKeypairSameNameErr != nil {
+				assert.EqualError(t, err, k.expCheckKeypairSameNameErr.Error(), "checkKeypairSameName() should return the same error")
 			} else {
-				assert.Nil(t, k.expCheckKeypairSameNameErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("Got the same keypair name %s in both vm and keypair section \n", k.machineSpec.Node.Vm.KeypairName)
 		})
 	}
-
 }
 
 // TestReconcileKeyPairGet has several tests to cover the code of the function reconcileKeyPair
@@ -297,7 +295,7 @@ func TestReconcileKeyPairGet(t *testing.T) {
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
-			expReconcileKeyPairErr: fmt.Errorf("GetKeyPair generic error"),
+			expReconcileKeyPairErr: errors.New("GetKeyPair generic error"),
 		},
 	}
 	for _, k := range keypairTestCases {
@@ -315,29 +313,30 @@ func TestReconcileKeyPairGet(t *testing.T) {
 					},
 				},
 			}
-			keyPairCreated := osc.CreateKeypairResponse{
-				Keypair: &osc.KeypairCreated{
-					KeypairName: &keyPairName,
-				},
-			}
+			// keyPairCreated := osc.CreateKeypairResponse{
+			// 	Keypair: &osc.KeypairCreated{
+			// 		KeypairName: &keyPairName,
+			// 	},
+			// }
 			keyPairSpec.ResourceId = keyPairName
 			mockOscKeyPairInterface.
 				EXPECT().
 				GetKeyPair(gomock.Eq(keyPairName)).
 				Return(&(*key.Keypairs)[0], k.expReconcileKeyPairErr)
 
-			if &(*key.Keypairs)[0] == nil {
-				mockOscKeyPairInterface.
-					EXPECT().
-					CreateKeyPair(gomock.Eq(keyPairName)).
-					Return(keyPairCreated.Keypair, k.expReconcileKeyPairErr)
-			}
+			// SA4022: the address of a variable cannot be nil
+			// if &(*key.Keypairs)[0] == nil {
+			// 	mockOscKeyPairInterface.
+			// 		EXPECT().
+			// 		CreateKeyPair(gomock.Eq(keyPairName)).
+			// 		Return(keyPairCreated.Keypair, k.expReconcileKeyPairErr)
+			// }
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
-			if err != nil {
-				assert.Equal(t, k.expReconcileKeyPairErr.Error(), err.Error(), "reconcileKeyPair() should return the same error")
+			if k.expReconcileKeyPairErr != nil {
+				assert.EqualError(t, err, k.expReconcileKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
 			} else {
-				assert.Nil(t, k.expReconcileKeyPairErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileKeyPair)
 		})
@@ -365,8 +364,8 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			},
 			expValidateKeyPairs:    false,
 			expCreateKeyPairFound:  false,
-			expCreateKeyPairErr:    fmt.Errorf("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
-			expReconcileKeyPairErr: fmt.Errorf("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
+			expCreateKeyPairErr:    errors.New("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
+			expReconcileKeyPairErr: errors.New("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
 		},
 
 		{
@@ -377,7 +376,7 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
-			expGetKeyPairErr:       fmt.Errorf("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
+			expGetKeyPairErr:       errors.New("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
 			expCreateKeyPairFound:  true,
 			expCreateKeyPairErr:    nil,
 			expReconcileKeyPairErr: nil,
@@ -391,7 +390,7 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
-			expGetKeyPairErr:       fmt.Errorf("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
+			expGetKeyPairErr:       errors.New("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
 			expCreateKeyPairFound:  false,
 			expCreateKeyPairErr:    nil,
 			expReconcileKeyPairErr: nil,
@@ -430,10 +429,10 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			}
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
-			if err != nil {
-				assert.Equal(t, k.expReconcileKeyPairErr.Error(), err.Error(), "reconcileKeyPair() should return the same error")
+			if k.expReconcileKeyPairErr != nil {
+				assert.EqualError(t, err, k.expReconcileKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
 			} else {
-				assert.Nil(t, k.expReconcileKeyPairErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileKeyPair)
 		})
@@ -465,9 +464,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			},
 
 			expKeyPairFound:              false,
-			expGetKeyPairErr:             fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
+			expGetKeyPairErr:             errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
 			expDeleteKeyPairErr:          nil,
-			expReconcileDeleteKeyPairErr: fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
+			expReconcileDeleteKeyPairErr: errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
 			expKeyPairDelete:             false,
 			expKeyPairNotnil:             false,
 		},
@@ -484,8 +483,8 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 
 			expKeyPairFound:              true,
 			expGetKeyPairErr:             nil,
-			expDeleteKeyPairErr:          fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
-			expReconcileDeleteKeyPairErr: fmt.Errorf("Can not delete keypair for OscCluster test-system/test-osc"),
+			expDeleteKeyPairErr:          errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
+			expReconcileDeleteKeyPairErr: errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
 			expKeyPairDelete:             false,
 			expKeyPairNotnil:             true,
 		},
@@ -575,24 +574,17 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 					Return(nil, k.expGetKeyPairErr)
 			}
 			if k.expKeyPairNotnil {
-				if k.expKeyPairDelete {
-					mockOscKeyPairInterface.
-						EXPECT().
-						DeleteKeyPair(gomock.Eq(keyPairName)).
-						Return(k.expDeleteKeyPairErr)
-				} else {
-					mockOscKeyPairInterface.
-						EXPECT().
-						DeleteKeyPair(gomock.Eq(keyPairName)).
-						Return(k.expDeleteKeyPairErr)
-				}
+				mockOscKeyPairInterface.
+					EXPECT().
+					DeleteKeyPair(gomock.Eq(keyPairName)).
+					Return(k.expDeleteKeyPairErr)
 			}
 
 			reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, mockOscKeyPairInterface)
-			if err != nil {
-				assert.Equal(t, k.expReconcileDeleteKeyPairErr.Error(), err.Error(), "reconcileKeyPair() should return the same error")
+			if k.expReconcileDeleteKeyPairErr != nil {
+				assert.EqualError(t, err, k.expReconcileDeleteKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
 			} else {
-				assert.Nil(t, k.expReconcileDeleteKeyPairErr)
+				assert.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileDeleteKeyPair)
 		})

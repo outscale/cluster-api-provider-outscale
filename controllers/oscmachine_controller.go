@@ -29,7 +29,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
-	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -176,7 +175,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		OscMachine: oscMachine,
 	})
 	if err != nil {
-		return reconcile.Result{}, errors.Errorf("failed to create scope: %+v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 	defer func() {
 		if err := machineScope.Close(); err != nil && reterr == nil {
@@ -281,7 +280,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		}
 	}
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-
 		checkVmVolumeSubregionNameErr := checkVmVolumeSubregionName(machineScope)
 		if checkVmVolumeSubregionNameErr != nil {
 			return reconcile.Result{}, checkVmVolumeSubregionNameErr
@@ -350,7 +348,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		machineScope.SetNotReady()
 		machineScope.V(4).Info("Vm state is undefined", "state", vmState)
 		machineScope.SetFailureReason(capierrors.UpdateMachineError)
-		machineScope.SetFailureMessage(errors.Errorf("instance state %+v  is undefined", vmState))
+		machineScope.SetFailureMessage(fmt.Errorf("instance state %+v  is undefined", vmState))
 		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
 	}
 	return reconcile.Result{}, nil
@@ -389,7 +387,7 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
 	clusterToObjectFunc, err := util.ClusterToTypedObjectsMapper(r.Client, &infrastructurev1beta1.OscMachineList{}, mgr.GetScheme())
 	if err != nil {
-		return errors.Errorf("failed to create mapper for Cluster to OscMachines: %+v", err)
+		return fmt.Errorf("failed to create mapper for Cluster to OscMachines: %w", err)
 	}
 	err = ctrl.NewControllerManagedBy(mgr).
 		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(ctrl.LoggerFrom(ctx), r.WatchFilterValue)).
@@ -410,7 +408,7 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		Complete(r)
 
 	if err != nil {
-		return errors.Errorf("error creating controller: %+v", err)
+		return fmt.Errorf("error creating controller: %w", err)
 	}
 	return err
 }
@@ -452,7 +450,7 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 		for _, m := range machineList.Items {
 			log.WithValues("machine", m.Name)
 			if m.Spec.InfrastructureRef.GroupVersionKind().Kind != "OscMachine" {
-				log.V(1).Info("Machine has an InfrastructureRef for a different type, will not add to reconcilation request.")
+				log.V(1).Info("Machine has an InfrastructureRef for a different type, will not add to reconciliation request.")
 				continue
 			}
 			if m.Spec.InfrastructureRef.Name == "" {
