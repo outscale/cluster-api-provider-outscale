@@ -1619,6 +1619,7 @@ metadata:
   namespace: cluster-api-provider-outscale-system
 spec:
   selfSigned: {}
+  renewalDuration: 720h
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
