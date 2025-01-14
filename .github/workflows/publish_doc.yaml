@@ -13,14 +13,14 @@ jobs:
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip -o awscliv2.zip
           sudo ./aws/install -u 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'outscale-dev/cluster-api-provider-outscale'
           path: "cluster-api-provider-outscale"
           ref: main       
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version-file: 'go.mod'
       - name: install mdbook
         run: make install-mdbook
         shell: bash
