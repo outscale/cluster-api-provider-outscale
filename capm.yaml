@@ -349,6 +349,9 @@ spec:
                   securityGroups:
                     items:
                       properties:
+                        deleteDefaultOutboundRule:
+                          description: Should the default allow all outbound rule be deleted
+                          type: boolean
                         description:
                           description: The description of the security group
                           type: string
@@ -383,6 +386,9 @@ spec:
                                 type: string
                               resourceId:
                                 description: The security group rule id
+                                type: string
+                              targetSecurityGroupName:
+                                description: The name of the security group to use as target
                                 type: string
                               toPortRange:
                                 description: The end of the port range

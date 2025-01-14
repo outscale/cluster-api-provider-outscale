@@ -362,7 +362,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expLoadBalancerSecurityGroupFound: false,
 			expTagFound:                       false,
 			expReadTagErr:                     nil,
-			expReconcileVmErr:                 fmt.Errorf("failed to handle security groups: failed to get security group ID for test-securitygroup-uid"),
+			expReconcileVmErr:                 fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 		{
 			name:                              "failed to get tag",

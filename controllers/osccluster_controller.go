@@ -371,9 +371,15 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
 	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc, tagSvc)
 	if err != nil {
-		clusterScope.Error(err, "failed to reconcile securityGroup")
+		clusterScope.Error(err, "failed to reconcile securityGroups")
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcileSecurityGroups, err
+	}
+	reconcileSecurityGroupRules, err := reconcileSecurityGroupRule(ctx, clusterScope, securityGroupSvc, tagSvc)
+	if err != nil {
+		clusterScope.Error(err, "failed to reconcile reconcileSecurityGroupRules")
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
+		return reconcileSecurityGroupRules, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
@@ -483,9 +489,9 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteRouteTable, err
 	}
 
-	reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, securityGroupSvc)
+	reconcileDeleteSecurityGroups, err := reconcileDeleteSecurityGroups(ctx, clusterScope, securityGroupSvc)
 	if err != nil {
-		return reconcileDeleteSecurityGroup, err
+		return reconcileDeleteSecurityGroups, err
 	}
 
 	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
