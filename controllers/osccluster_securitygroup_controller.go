@@ -209,7 +209,6 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 	for !loadbalancer_delete {
 		err, httpRes := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
 		if err != nil {
-			time.Sleep(20 * time.Second)
 			buffer := new(strings.Builder)
 			_, err := io.Copy(buffer, httpRes.Body)
 			if err != nil {
@@ -239,6 +238,7 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			loadbalancer_delete = true
 		}
 
+		clock_time.Sleep(20 * time.Second)
 		if clock_time.Now().After(currentTimeout) {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup because to waiting loadbalancer to be delete timeout for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}

@@ -22,9 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"runtime"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -1536,7 +1534,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			expLoadBalancerResourceConflict: true,
 			expInvalidDeleteSecurityGroupJsonResponse: false,
 			expDeleteSecurityGroupFirstMockErr:        fmt.Errorf("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               fmt.Errorf("DeleteSecurityGroup first generic error Can not delete securityGroup because to waiting loadbalancer to be delete timeout  for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupError:               fmt.Errorf("DeleteSecurityGroup first generic error Can not delete securityGroup because to waiting loadbalancer to be delete timeout for Osccluster test-system/test-osc"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1544,7 +1542,6 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
 			var err error
 			var deleteSg reconcile.Result
-			var wg sync.WaitGroup
 			securityGroupsSpec := sgtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -1624,16 +1621,13 @@ func TestDeleteSecurityGroup(t *testing.T) {
 						DeleteSecurityGroup(gomock.Eq(securityGroupId)).
 						Return(nil, httpResponse)
 				}
-
-				wg.Add(1)
-				go func() {
-					clock_mock.Sleep(5 * time.Second)
-					deleteSg, err = deleteSecurityGroup(ctx, clusterScope, securityGroupId, mockOscSecurityGroupInterface, clock_mock)
-					wg.Done()
-				}()
-				runtime.Gosched()
-				clock_mock.Add(630 * time.Second)
-				wg.Wait()
+				if sgtc.expDeleteSecurityGroupError != nil {
+					go func() {
+						time.Sleep(500 * time.Millisecond)
+						clock_mock.Add(630 * time.Second)
+					}()
+				}
+				deleteSg, err = deleteSecurityGroup(ctx, clusterScope, securityGroupId, mockOscSecurityGroupInterface, clock_mock)
 				if err != nil {
 					assert.Equal(t, sgtc.expDeleteSecurityGroupError.Error(), err.Error(), "deleteSecurityGroup() should return the same error")
 				} else {
