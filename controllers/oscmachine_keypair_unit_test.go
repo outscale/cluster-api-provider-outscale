@@ -30,7 +30,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -129,9 +129,9 @@ func TestGetKeyPairResourceId(t *testing.T) {
 			}
 			keyPairResourceID, err := getKeyPairResourceId(keyPairName, machineScope)
 			if k.expGetKeyPairResourceIdErr != nil {
-				assert.EqualError(t, err, k.expGetKeyPairResourceIdErr.Error(), "get should return the same error")
+				require.EqualError(t, err, k.expGetKeyPairResourceIdErr.Error(), "get should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find keyPairResourceID %s\n", keyPairResourceID)
 		})
@@ -186,9 +186,9 @@ func TestCheckKeyPairFormatParameters(t *testing.T) {
 			_, machineScope := SetupMachine(t, k.name, k.clusterSpec, k.machineSpec)
 			keyPairName, err := checkKeypairFormatParameters(machineScope)
 			if k.expCheckKeyPairFormatParametersErr != nil {
-				assert.EqualError(t, err, k.expCheckKeyPairFormatParametersErr.Error(), "checkKeyPairFormatParameters() should return the same error")
+				require.EqualError(t, err, k.expCheckKeyPairFormatParametersErr.Error(), "checkKeyPairFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find keyPairName %s\n", keyPairName)
 		})
@@ -253,9 +253,9 @@ func TestCheckKeypairSameName(t *testing.T) {
 			_, machineScope := SetupMachine(t, k.name, k.clusterSpec, k.machineSpec)
 			err := checkKeypairSameName(machineScope)
 			if k.expCheckKeypairSameNameErr != nil {
-				assert.EqualError(t, err, k.expCheckKeypairSameNameErr.Error(), "checkKeypairSameName() should return the same error")
+				require.EqualError(t, err, k.expCheckKeypairSameNameErr.Error(), "checkKeypairSameName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Got the same keypair name %s in both vm and keypair section \n", k.machineSpec.Node.Vm.KeypairName)
 		})
@@ -334,9 +334,9 @@ func TestReconcileKeyPairGet(t *testing.T) {
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
 			if k.expReconcileKeyPairErr != nil {
-				assert.EqualError(t, err, k.expReconcileKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
+				require.EqualError(t, err, k.expReconcileKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileKeyPair)
 		})
@@ -430,9 +430,9 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
 			if k.expReconcileKeyPairErr != nil {
-				assert.EqualError(t, err, k.expReconcileKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
+				require.EqualError(t, err, k.expReconcileKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileKeyPair)
 		})
@@ -582,9 +582,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 
 			reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, mockOscKeyPairInterface)
 			if k.expReconcileDeleteKeyPairErr != nil {
-				assert.EqualError(t, err, k.expReconcileDeleteKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
+				require.EqualError(t, err, k.expReconcileDeleteKeyPairErr.Error(), "reconcileKeyPair() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileDeleteKeyPair)
 		})

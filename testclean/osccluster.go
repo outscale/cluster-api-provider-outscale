@@ -55,7 +55,7 @@ func GetOscInfraCluster(ctx context.Context, input OscInfraClusterInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find OscClusterMachine %s", input.Name))
+	By("Find OscClusterMachine " + input.Name)
 	return true
 }
 

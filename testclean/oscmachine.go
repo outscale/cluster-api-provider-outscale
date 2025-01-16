@@ -55,7 +55,7 @@ func GetOscInfraMachine(ctx context.Context, input OscInfraMachineInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find oscInfraMachine %s", input.Name))
+	By("Find oscInfraMachine " + input.Name)
 	return true
 }
 

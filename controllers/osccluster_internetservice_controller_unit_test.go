@@ -27,7 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -101,9 +101,9 @@ func TestGetInternetServiceResourceId(t *testing.T) {
 			}
 			internetServiceResourceId, err := getInternetServiceResourceId(internetServiceName, clusterScope)
 			if istc.expGetInternetServiceResourceIdErr != nil {
-				assert.EqualError(t, err, istc.expGetInternetServiceResourceIdErr.Error(), "GetInternetServiceResourceId() should return the same error")
+				require.EqualError(t, err, istc.expGetInternetServiceResourceIdErr.Error(), "GetInternetServiceResourceId() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find internetServiceResourceId %s", internetServiceResourceId)
 		})
@@ -150,9 +150,9 @@ func TestCheckInternetServiceFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, istc.name, istc.spec)
 			internetServiceName, err := checkInternetServiceFormatParameters(clusterScope)
 			if istc.expCheckInternetServiceFormatParametersErr != nil {
-				assert.EqualError(t, err, istc.expCheckInternetServiceFormatParametersErr.Error(), "CheckInternetServiceFormatParameters() should return the same error")
+				require.EqualError(t, err, istc.expCheckInternetServiceFormatParametersErr.Error(), "CheckInternetServiceFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find internetServiceName %s\n", internetServiceName)
 		})
@@ -246,9 +246,9 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 				Return(istc.expLinkInternetServiceErr)
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
 			if istc.expReconcileInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -324,9 +324,9 @@ func TestReconcileInternetServiceDelete(t *testing.T) {
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
 			if istc.expReconcileInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -392,9 +392,9 @@ func TestReconcileDeleteInternetServiceDeleteWithoutSpec(t *testing.T) {
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
 			if istc.expReconcileDeleteInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
 		})
@@ -489,9 +489,9 @@ func TestReconcileInternetServiceGet(t *testing.T) {
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
 			if istc.expReconcileInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -549,9 +549,9 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
 			if istc.expReconcileInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -614,9 +614,9 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 			}
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
 			if istc.expReconcileInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileInternetServiceErr.Error(), "ReconcileInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileInternetService %v\n", reconcileInternetService)
 		})
@@ -688,9 +688,9 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
 			if istc.expReconcileDeleteInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDeleteInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDeleteInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
 		})
@@ -748,9 +748,9 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
 			if istc.expReconcileDeleteInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
 		})
@@ -838,9 +838,9 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 			}
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
 			if istc.expReconcileDeleteInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDelteInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
 		})
@@ -876,9 +876,9 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			netRef.ResourceMap = make(map[string]string)
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
 			if istc.expReconcileDeleteInternetServiceErr != nil {
-				assert.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDeleteInternetService() should return the same error")
+				require.EqualError(t, err, istc.expReconcileDeleteInternetServiceErr.Error(), "ReconcileDeleteInternetService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteInternetService %v\n", reconcileDeleteInternetService)
 		})

@@ -486,7 +486,7 @@ func (s *Service) DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 func (s *Service) CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	var getLoadBalancerDeregisterVm = false
+	getLoadBalancerDeregisterVm := false
 	for !getLoadBalancerDeregisterVm {
 		time.Sleep(clockInsideLoop * time.Second)
 		loadBalancer, err := s.GetLoadBalancer(spec)

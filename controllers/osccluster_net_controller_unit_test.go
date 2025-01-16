@@ -27,7 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -124,9 +124,9 @@ func TestGetNetResourceId(t *testing.T) {
 			}
 			netResourceId, err := getNetResourceId(netName, clusterScope)
 			if ntc.expGetNetResourceIdErr != nil {
-				assert.EqualError(t, err, ntc.expGetNetResourceIdErr.Error(), "getNetResourceId() should return the same error")
+				require.EqualError(t, err, ntc.expGetNetResourceIdErr.Error(), "getNetResourceId() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find netResourceId %s", netResourceId)
 		})
@@ -194,9 +194,9 @@ func TestCheckNetFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, ntc.name, ntc.spec)
 			netName, err := checkNetFormatParameters(clusterScope)
 			if ntc.expCheckNetFormatParametersErr != nil {
-				assert.EqualError(t, err, ntc.expCheckNetFormatParametersErr.Error(), "checkNetFormatParameters() should return the same error")
+				require.EqualError(t, err, ntc.expCheckNetFormatParametersErr.Error(), "checkNetFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find netName %s\n", netName)
 		})
@@ -276,9 +276,9 @@ func TestReconcileNetCreate(t *testing.T) {
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
 			if ntc.expReconcileNetErr != nil {
-				assert.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
+				require.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 		})
@@ -365,9 +365,9 @@ func TestReconcileNetGet(t *testing.T) {
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
 			if ntc.expReconcileNetErr != nil {
-				assert.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
+				require.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 		})
@@ -442,9 +442,9 @@ func TestReconcileNetResourceId(t *testing.T) {
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
 			if ntc.expReconcileNetErr != nil {
-				assert.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
+				require.EqualError(t, err, ntc.expReconcileNetErr.Error(), "reconcileNet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 		})
@@ -511,9 +511,9 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 				Return(ntc.expDeleteNetErr)
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if ntc.expReconcileDeleteNetErr != nil {
-				assert.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
+				require.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
 		})
@@ -565,9 +565,9 @@ func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 				Return(ntc.expDeleteNetErr)
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if ntc.expReconcileDeleteNetErr != nil {
-				assert.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
+				require.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
 		})
@@ -627,9 +627,9 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 			}
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if ntc.expReconcileDeleteNetErr != nil {
-				assert.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
+				require.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNet %v\n", reconcileDeleteNet)
 		})

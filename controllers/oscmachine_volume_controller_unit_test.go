@@ -28,7 +28,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage/mock_storage"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -227,9 +227,9 @@ func TestGetVolumeResourceId(t *testing.T) {
 				}
 				volumeResourceId, err := getVolumeResourceId(volumeName, machineScope)
 				if vtc.expGetVolumeResourceIdErr != nil {
-					assert.EqualError(t, err, vtc.expGetVolumeResourceIdErr.Error(), "getVolumeResourceId() should return the same error")
+					require.EqualError(t, err, vtc.expGetVolumeResourceIdErr.Error(), "getVolumeResourceId() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("Find volumeResourceId %s\n", volumeResourceId)
 			}
@@ -282,9 +282,9 @@ func TestCheckVolumeOscDuplicateName(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVolumeOscDuplicateName(machineScope)
 			if vtc.expCheckVolumeOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVolumeOscDuplicateNameErr.Error(), "checkVolumeOscDuplicateName() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVolumeOscDuplicateNameErr.Error(), "checkVolumeOscDuplicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -462,9 +462,9 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if vtc.expReconcileVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileVmErr.Error(), "reconcileVm() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileVmErr.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
@@ -639,9 +639,9 @@ func TestReconcileVolumeCreate(t *testing.T) {
 
 			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface, mockOscTagInterface)
 			if vtc.expReconcileVolumeErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileVolumeErr.Error(), "reconcileVolume should return the same error")
+				require.EqualError(t, err, vtc.expReconcileVolumeErr.Error(), "reconcileVolume should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileVolume %v\n", reconcileVolume)
 		})
@@ -744,9 +744,9 @@ func TestReconcileVolumeGet(t *testing.T) {
 
 			reconcileVolume, err := reconcileVolume(ctx, machineScope, mockOscVolumeInterface, mockOscTagInterface)
 			if vtc.expReconcileVolumeErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileVolumeErr.Error(), "reconcileVolume should return the same error")
+				require.EqualError(t, err, vtc.expReconcileVolumeErr.Error(), "reconcileVolume should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileVolume %v\n", reconcileVolume)
 		})
@@ -854,9 +854,9 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
 			if vtc.expReconcileDeleteVolumeErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
@@ -928,9 +928,9 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
 			if vtc.expReconcileDeleteVolumeErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
@@ -1003,9 +1003,9 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 			machineScope.OscMachine.Spec.Node.Volumes[0].ResourceId = volumeId
 			reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
 			if vtc.expReconcileDeleteVolumeErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 		})
@@ -1174,9 +1174,9 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 
 				reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, mockOscVolumeInterface)
 				if vtc.expReconcileDeleteVolumeErr != nil {
-					assert.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
+					require.EqualError(t, err, vtc.expReconcileDeleteVolumeErr.Error(), "reconcileDeleteVolume() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("Find reconcileDeleteVolume %v\n", reconcileDeleteVolume)
 			}

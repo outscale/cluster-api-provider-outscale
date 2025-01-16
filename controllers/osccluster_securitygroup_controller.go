@@ -200,7 +200,7 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 // deleteSecurityGroup reconcile the deletion of securityGroup of the cluster.
 func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clock_time clock.Clock) (reconcile.Result, error) {
 	currentTimeout := clock_time.Now().Add(time.Second * 600)
-	var loadbalancer_delete = false
+	loadbalancer_delete := false
 	for !loadbalancer_delete {
 		err, httpRes := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
 		if err != nil {
@@ -220,7 +220,7 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 			}
 			httpResCode := strings.Replace(strings.Replace(fmt.Sprintf("%v", httpResBodyParsed.Path("Errors.Code").Data()), "[", "", 1), "]", "", 1)
 			httpResType := strings.Replace(strings.Replace(fmt.Sprintf("%v", httpResBodyParsed.Path("Errors.Type").Data()), "[", "", 1), "]", "", 1)
-			var unexpectedErr bool = true
+			unexpectedErr := true
 
 			if httpResCode == "9085" && httpResType == "ResourceConflict" {
 				clusterScope.V(2).Info("LoadBalancer is not deleted yet")

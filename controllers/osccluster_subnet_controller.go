@@ -97,8 +97,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	var subnetsSpec []*infrastructurev1beta1.OscSubnet
-	subnetsSpec = clusterScope.GetSubnet()
+	subnetsSpec := clusterScope.GetSubnet()
 
 	subnetRef := clusterScope.GetSubnetRef()
 	networkSpec := clusterScope.GetNetwork()

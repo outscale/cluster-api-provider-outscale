@@ -414,7 +414,7 @@ func (s *ClusterScope) PatchObject() error {
 
 func (s *ClusterScope) ListMachines(ctx context.Context) ([]*clusterv1.Machine, []*infrastructurev1beta1.OscMachine, error) {
 	var machineListRaw clusterv1.MachineList
-	var machineByOscMachineName = make(map[string]*clusterv1.Machine)
+	machineByOscMachineName := make(map[string]*clusterv1.Machine)
 	if err := s.Client.List(ctx, &machineListRaw, client.InNamespace(s.GetNamespace())); err != nil {
 		return nil, nil, err
 	}

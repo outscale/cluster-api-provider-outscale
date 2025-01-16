@@ -28,7 +28,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service/mock_service"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -181,9 +181,9 @@ func TestCheckLoadBalancerSubnetOscAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, lbtc.name, lbtc.spec)
 			err := checkLoadBalancerSubnetOscAssociateResourceName(clusterScope)
 			if lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr.Error(), "checkLoadBalancerSubnetOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, lbtc.expCheckLoadBalancerSubnetOscAssociateResourceNameErr.Error(), "checkLoadBalancerSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -414,9 +414,9 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, lbtc.name, lbtc.spec)
 			loadBalancerName, err := checkLoadBalancerFormatParameters(clusterScope)
 			if lbtc.expCheckLoadBalancerFormatParametersErr != nil {
-				assert.EqualError(t, err, lbtc.expCheckLoadBalancerFormatParametersErr.Error(), "checkLoadBalancerFormatParameters should return the same error")
+				require.EqualError(t, err, lbtc.expCheckLoadBalancerFormatParametersErr.Error(), "checkLoadBalancerFormatParameters should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find loadBalancer %s\n", loadBalancerName)
 		})
@@ -482,9 +482,9 @@ func TestCheckLoadBalancerSecurityGroupOscAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, lbtc.name, lbtc.spec)
 			err := checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope)
 			if lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr.Error(), "checkLoadBalancerSecurityGroupOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, lbtc.expCheckLoadBalancerSecuriyGroupOscAssociateResourceNameErr.Error(), "checkLoadBalancerSecurityGroupOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -676,9 +676,9 @@ func TestReconcileLoadBalancer(t *testing.T) {
 
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if lbtc.expReconcileLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -773,8 +773,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 				},
 			}
 			loadBalancerKey := "Name"
-			var loadBalancerValue string
-			loadBalancerValue = loadBalancerName + "-uid"
+			loadBalancerValue := loadBalancerName + "-uid"
 			tag := osc.LoadBalancerTag{
 				Key:              &loadBalancerKey,
 				LoadBalancerName: &loadBalancerName,
@@ -806,9 +805,9 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			}
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if lbtc.expReconcileLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -969,9 +968,9 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			}
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if lbtc.expReconcileLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -1025,9 +1024,9 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 				Return(nil, lbtc.expCreateLoadBalancerErr)
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if lbtc.expReconcileLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -1089,9 +1088,9 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if lbtc.expReconcileLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileLoadBalancerErr.Error(), "reconcileLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileLoadBalancer %v\n", reconcileLoadBalancer)
 		})
@@ -1159,9 +1158,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 				},
 			}
 			loadBalancerKey := "Name"
-			var loadBalancerValue string
-
-			loadBalancerValue = loadBalancerName + "-uid"
+			loadBalancerValue := loadBalancerName + "-uid"
 			tag := osc.LoadBalancerTag{
 				Key:              &loadBalancerKey,
 				LoadBalancerName: &loadBalancerName,
@@ -1207,9 +1204,9 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1351,9 +1348,9 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 			}
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1467,9 +1464,9 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 				Return(lbtc.expDeleteLoadBalancerErr)
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1520,9 +1517,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 				},
 			}
 			loadBalancerKey := "Name"
-			var loadBalancerValue string
-
-			loadBalancerValue = loadBalancerName + "-uid"
+			loadBalancerValue := loadBalancerName + "-uid"
 			tag := osc.LoadBalancerTag{
 				Key:              &loadBalancerKey,
 				LoadBalancerName: &loadBalancerName,
@@ -1557,9 +1552,9 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})
@@ -1601,9 +1596,9 @@ func TestReconcileDeleteLoadBalancerGet(t *testing.T) {
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
-				assert.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
+				require.EqualError(t, err, lbtc.expReconcileDeleteLoadBalancerErr.Error(), "reconcileDeleteLoadBalancer() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteLoadBalancer %v\n", reconcileDeleteLoadBalancer)
 		})

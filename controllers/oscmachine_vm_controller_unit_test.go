@@ -32,6 +32,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -585,9 +586,9 @@ func TestGetVmResourceId(t *testing.T) {
 			}
 			vmResourceId, err := getVmResourceId(vmName, machineScope)
 			if vtc.expGetVmResourceIdErr != nil {
-				assert.EqualError(t, err, vtc.expGetVmResourceIdErr.Error(), "GetVmResourceId() should return the same error")
+				require.EqualError(t, err, vtc.expGetVmResourceIdErr.Error(), "GetVmResourceId() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find netResourceId %s", vmResourceId)
 		})
@@ -678,9 +679,9 @@ func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmVolumeOscAssociateResourceName(machineScope)
 			if vtc.expCheckVmVolumeOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmVolumeOscAssociateResourceNameErr.Error(), "checkVmVolumeOscAssociateResourceName() should return the same eror")
+				require.EqualError(t, err, vtc.expCheckVmVolumeOscAssociateResourceNameErr.Error(), "checkVmVolumeOscAssociateResourceName() should return the same eror")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -770,9 +771,9 @@ func TestCheckVmLoadBalancerOscAssociateResourceName(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmLoadBalancerOscAssociateResourceName(machineScope, clusterScope)
 			if vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr.Error(), "checkVmLoadBalancerOscAssociateResourceName() should return the same erroor")
+				require.EqualError(t, err, vtc.expCheckVmLoadBalancerOscAssociateResourceNameErr.Error(), "checkVmLoadBalancerOscAssociateResourceName() should return the same erroor")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -858,9 +859,9 @@ func TestCheckVmSecurityGroupOscAssociateResourceName(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
 			if vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr.Error(), "checkVmSecurityGroupOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVmSecurityGroupOscAssociateResourceNameErr.Error(), "checkVmSecurityGroupOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -950,9 +951,9 @@ func TestCheckVmPublicIpOscAssociateResourceName(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmPublicIpOscAssociateResourceName(machineScope, clusterScope)
 			if vtc.expCheckVmPublicIpOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmPublicIpOscAssociateResourceNameErr.Error(), "checkVmPublicIpOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVmPublicIpOscAssociateResourceNameErr.Error(), "checkVmPublicIpOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -1706,9 +1707,9 @@ func TestCheckVmFormatParameters(t *testing.T) {
 			subnetRef.ResourceMap[subnetName] = subnetId
 			vmName, err := checkVmFormatParameters(machineScope, clusterScope)
 			if vtc.expCheckVmFormatParametersErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmFormatParametersErr.Error(), "checkVmFormatParameters() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVmFormatParametersErr.Error(), "checkVmFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find vmName %s\n", vmName)
 		})
@@ -1795,9 +1796,9 @@ func TestCheckVmSubnetAssociateResourceName(t *testing.T) {
 			clusterScope, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmSubnetOscAssociateResourceName(machineScope, clusterScope)
 			if vtc.expCheckVmSubnetAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmSubnetAssociateResourceNameErr.Error(), "checkVmSubnetOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVmSubnetAssociateResourceNameErr.Error(), "checkVmSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -1875,9 +1876,9 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmPrivateIpOscDuplicateName(machineScope)
 			if vtc.expCheckVmPrivateIpsOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmPrivateIpsOscDuplicateNameErr.Error(), "checkVmPrivateIpsOscDuplicateName() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVmPrivateIpsOscDuplicateNameErr.Error(), "checkVmPrivateIpsOscDuplicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -1993,9 +1994,9 @@ func TestCheckVmVolumeSubregionName(t *testing.T) {
 			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			err := checkVmVolumeSubregionName(machineScope)
 			if vtc.expCheckVmVolumeSubregionNameErr != nil {
-				assert.EqualError(t, err, vtc.expCheckVmVolumeSubregionNameErr.Error(), "checkVmVolumeSubregionName() should return the same error")
+				require.EqualError(t, err, vtc.expCheckVmVolumeSubregionNameErr.Error(), "checkVmVolumeSubregionName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -2513,9 +2514,9 @@ func TestReconcileVm(t *testing.T) {
 			}
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+				require.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.NoError(t, vtc.expReconcileVmErr)
+				require.NoError(t, vtc.expReconcileVmErr)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
@@ -2631,9 +2632,9 @@ func TestReconcileVmCreate(t *testing.T) {
 
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+				require.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.NoError(t, vtc.expReconcileVmErr)
+				require.NoError(t, vtc.expReconcileVmErr)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 		})
@@ -2883,9 +2884,9 @@ func TestReconcileVmGet(t *testing.T) {
 			}
 			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
-				assert.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
+				require.EqualError(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
-				assert.NoError(t, vtc.expReconcileVmErr)
+				require.NoError(t, vtc.expReconcileVmErr)
 			}
 			t.Logf("find reconcileVm %v\n", reconcileVm)
 
@@ -3133,9 +3134,9 @@ func TestReconcileDeleteVm(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
@@ -3224,9 +3225,9 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
@@ -3316,9 +3317,9 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() hould return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() hould return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
@@ -3353,9 +3354,9 @@ func TestReconcileDeleteVmAlready(t *testing.T) {
 			}
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})
@@ -3449,9 +3450,9 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 				Return(vtc.expDeleteVmErr)
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
@@ -3597,9 +3598,9 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
-				assert.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
+				require.EqualError(t, err, vtc.expReconcileDeleteVmErr.Error(), "reconcileDeleteVm() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteVm %v\n", reconcileDeleteVm)
 		})

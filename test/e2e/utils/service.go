@@ -54,7 +54,7 @@ func GetService(ctx context.Context, input ServiceInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find Service %s", input.Name))
+	By("Find Service " + input.Name)
 	return true
 }
 
@@ -75,7 +75,7 @@ func DeleteService(ctx context.Context, input ServiceInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Delete Service %s", input.Name))
+	By("Delete Service " + input.Name)
 	return true
 }
 
@@ -114,10 +114,10 @@ func CreateService(ctx context.Context, input CreateServiceInput) bool {
 		},
 	}
 	if err := input.Getter.Create(ctx, createService); err != nil {
-		By(fmt.Sprintf("Can not create service %s", input.Name))
+		By("Can not create service " + input.Name)
 		return false
 	}
-	By(fmt.Sprintf("Create Service %s", input.Name))
+	By("Create Service " + input.Name)
 	return true
 }
 

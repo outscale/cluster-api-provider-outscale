@@ -58,7 +58,7 @@ func GetSecret(ctx context.Context, input SecretInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find Secret %s", input.Name))
+	By("Find Secret " + input.Name)
 	return true
 }
 
@@ -79,7 +79,7 @@ func DeleteSecret(ctx context.Context, input SecretInput) bool {
 		By(fmt.Sprintf("Can not delete secret %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Delete Secret %s", input.Name))
+	By("Delete Secret " + input.Name)
 	return true
 }
 
@@ -111,7 +111,7 @@ func CreateSecret(ctx context.Context, input CreateSecretInput) bool {
 		By(fmt.Sprintf("Can not create secret %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Create secret %s", input.Name))
+	By("Create secret " + input.Name)
 	return true
 }
 
@@ -145,7 +145,7 @@ func CreateMultiSecret(ctx context.Context, input CreateMultiSecretInput) bool {
 		By(fmt.Sprintf("Can not create multi secret %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Create multi secret %s", input.Name))
+	By("Create multi secret " + input.Name)
 	return true
 }
 

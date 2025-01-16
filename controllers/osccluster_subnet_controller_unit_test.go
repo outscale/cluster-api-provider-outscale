@@ -27,7 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -158,9 +158,9 @@ func TestGetSubnetResourceId(t *testing.T) {
 				}
 				subnetResourceId, err := getSubnetResourceId(subnetName, clusterScope)
 				if stc.expGetSubnetResourceIdErr != nil {
-					assert.EqualError(t, err, stc.expGetSubnetResourceIdErr.Error(), "getSubnetResourceId() should return the same error")
+					require.EqualError(t, err, stc.expGetSubnetResourceIdErr.Error(), "getSubnetResourceId() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("Find subnetResourceId %s\n", subnetResourceId)
 			}
@@ -211,9 +211,9 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 			clusterScope := Setup(t, stc.name, stc.spec)
 			err := checkSubnetOscDuplicateName(clusterScope)
 			if stc.expCheckSubnetOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, stc.expCheckSubnetOscDuplicateNameErr.Error(), "checkSubnetOscDupicateName() should return the same error")
+				require.EqualError(t, err, stc.expCheckSubnetOscDuplicateNameErr.Error(), "checkSubnetOscDupicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -302,9 +302,9 @@ func TestCheckSubnetFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, stc.name, stc.spec)
 			subnetName, err := checkSubnetFormatParameters(clusterScope)
 			if stc.expCheckSubnetFormatParametersErr != nil {
-				assert.EqualError(t, err, stc.expCheckSubnetFormatParametersErr.Error(), "checkSubnetFormatParameters() should return the same error")
+				require.EqualError(t, err, stc.expCheckSubnetFormatParametersErr.Error(), "checkSubnetFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find subnetName %s\n", subnetName)
 		})
@@ -440,9 +440,9 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
 			if stc.expReconcileSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "reconcileSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "reconcileSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
@@ -538,9 +538,9 @@ func TestReconcileSubnetGet(t *testing.T) {
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
 			if stc.expReconcileSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "ReconcileSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "ReconcileSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
@@ -613,9 +613,9 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
 			if stc.expReconcileSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "reconcileSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileSubnetErr.Error(), "reconcileSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
@@ -680,9 +680,9 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
 			if stc.expReconcileDeleteSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})
@@ -732,9 +732,9 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 			clusterScope.OscCluster.Spec.Network.Subnets[0].ResourceId = subnetId
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
 			if stc.expReconcileDeleteSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})
@@ -815,9 +815,9 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
 			if stc.expReconcileDeleteSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})
@@ -852,9 +852,9 @@ func TestReconcileDeleteSubnetResourceId(t *testing.T) {
 			netRef.ResourceMap = make(map[string]string)
 			reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, mockOscSubnetInterface)
 			if stc.expReconcileDeleteSubnetErr != nil {
-				assert.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
+				require.EqualError(t, err, stc.expReconcileDeleteSubnetErr.Error(), "reconcileDeleteSubnet() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteSubnet %v\n", reconcileDeleteSubnet)
 		})

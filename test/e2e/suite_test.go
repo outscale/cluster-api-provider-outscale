@@ -191,7 +191,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	By(fmt.Sprintf("Loading the e2e test configuration from %q", configPath))
 	e2eConfig = loadE2EConfig(ctx, configPath)
 
-	By(fmt.Sprintf("Loading the e2e test"))
+	By("Loading the e2e test")
 	By(fmt.Sprintf("Creating a clusterctl local repositorry into %q", artifactFolder))
 	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"), useCni)
 
@@ -277,7 +277,7 @@ func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2E
 	}
 
 	if useCni {
-		By(fmt.Sprintf("Find CNI"))
+		By("Find CNI")
 		Expect(config.Variables).To(HaveKey(capi_e2e.CNIPath), "Missing %s variable in the config", capi_e2e.CNIPath)
 		cniPath := config.GetVariable(capi_e2e.CNIPath)
 		Expect(cniPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", capi_e2e.CNIPath)
@@ -286,7 +286,7 @@ func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2E
 	}
 
 	if useCcm {
-		By(fmt.Sprintf("Find CCm"))
+		By("Find CCm")
 		Expect(config.Variables).To(HaveKey("CCM"), "Missing %s variable in the config", "CCM")
 		ccmPath := config.GetVariable("CCM")
 		Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", "CCM")
