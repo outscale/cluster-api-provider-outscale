@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -48,9 +48,9 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 			oscInfraCluster := createOscInfraCluster(ctc.clusterSpec, "webhook-test", "default")
 			_, err := oscInfraCluster.ValidateCreate()
 			if ctc.expValidateCreateErr != nil {
-				assert.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the same error")
+				require.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -166,9 +166,9 @@ func TestOscCluster_ValidateUpdate(t *testing.T) {
 			oscInfraCluster := createOscInfraCluster(ctc.newClusterSpec, "webhook-test", "default")
 			_, err := oscInfraCluster.ValidateUpdate(oscOldInfraCluster)
 			if ctc.expValidateUpdateErr != nil {
-				assert.EqualError(t, err, ctc.expValidateUpdateErr.Error(), "ValidateUpdate should return the same error")
+				require.EqualError(t, err, ctc.expValidateUpdateErr.Error(), "ValidateUpdate should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

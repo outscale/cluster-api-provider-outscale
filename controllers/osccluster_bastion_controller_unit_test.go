@@ -29,6 +29,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -304,9 +305,9 @@ func TestGetBastionResourceId(t *testing.T) {
 			}
 			bastionResourceId, err := getBastionResourceId(bastionName, clusterScope)
 			if btc.expGetBastionResourceIdErr != nil {
-				assert.EqualError(t, err, btc.expGetBastionResourceIdErr.Error(), "GetBastionResourceId() should return the same error")
+				require.EqualError(t, err, btc.expGetBastionResourceIdErr.Error(), "GetBastionResourceId() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find bastionResourceId %s", bastionResourceId)
 		})
@@ -418,9 +419,9 @@ func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, btc.name, btc.clusterSpec)
 			err := checkBastionSecurityGroupOscAssociateResourceName(clusterScope)
 			if btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr.Error(), "checkBastionSecurityGroupOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, btc.expCheckBastionSecurityGroupOscAssociateResourceNameErr.Error(), "checkBastionSecurityGroupOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -531,9 +532,9 @@ func TestCheckBastionSubnetAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, btc.name, btc.clusterSpec)
 			err := checkBastionSubnetOscAssociateResourceName(clusterScope)
 			if btc.expCheckBastionSubnetAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, btc.expCheckBastionSubnetAssociateResourceNameErr.Error(), "checkBastionSubnetOscAssociateResourceName(() should return the same error")
+				require.EqualError(t, err, btc.expCheckBastionSubnetAssociateResourceNameErr.Error(), "checkBastionSubnetOscAssociateResourceName(() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -645,9 +646,9 @@ func TestCheckBastionPublicIpOscAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, btc.name, btc.clusterSpec)
 			err := checkBastionPublicIpOscAssociateResourceName(clusterScope)
 			if btc.expCheckBastionPublicIpOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, btc.expCheckBastionPublicIpOscAssociateResourceNameErr.Error(), "checkBastionPublicIpOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, btc.expCheckBastionPublicIpOscAssociateResourceNameErr.Error(), "checkBastionPublicIpOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -1678,9 +1679,9 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 			subnetRef.ResourceMap[subnetName] = subnetId
 			bastionName, err := checkBastionFormatParameters(clusterScope)
 			if btc.expCheckBastionFormatParametersErr != nil {
-				assert.EqualError(t, err, btc.expCheckBastionFormatParametersErr.Error(), "checkBastionFormatParameters() should return the same error")
+				require.EqualError(t, err, btc.expCheckBastionFormatParametersErr.Error(), "checkBastionFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find vmName %s\n", bastionName)
 		})
@@ -1849,11 +1850,10 @@ func TestReconcileBastion(t *testing.T) {
 
 			// Assertions
 			if btc.expReconcileBastionErr != nil {
-				if assert.Error(t, err) {
-					assert.Contains(t, err.Error(), btc.expReconcileBastionErr.Error())
-				}
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), btc.expReconcileBastionErr.Error())
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			assert.NotNil(t, result)
@@ -2014,9 +2014,9 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			}
 			reconcileBastion, err := reconcileBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface)
 			if btc.expReconcileBastionErr != nil {
-				assert.EqualError(t, err, btc.expReconcileBastionErr.Error(), "reconcileBastion() should return the same error")
+				require.EqualError(t, err, btc.expReconcileBastionErr.Error(), "reconcileBastion() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileBastion %v\n", reconcileBastion)
@@ -2120,9 +2120,9 @@ func TestReconcileDeleteBastion(t *testing.T) {
 
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
 			if btc.expReconcileDeleteBastionErr != nil {
-				assert.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
+				require.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)
@@ -2217,9 +2217,9 @@ func TestReconcileDeleteBastionResourceId(t *testing.T) {
 
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
 			if btc.expReconcileDeleteBastionErr != nil {
-				assert.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
+				require.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeletBastion %v\n", reconcileDeleteBastion)
 		})
@@ -2364,9 +2364,9 @@ func TestReconcileDeleteBastionWithoutSpec(t *testing.T) {
 				Return(btc.expDeleteBastionErr)
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
 			if btc.expReconcileDeleteBastionErr != nil {
-				assert.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
+				require.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)
@@ -2449,9 +2449,9 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 			}
 			reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface)
 			if btc.expReconcileDeleteBastionErr != nil {
-				assert.Error(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
+				require.EqualError(t, err, btc.expReconcileDeleteBastionErr.Error(), "reconcileDeleteBastion() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileDeleteBastion %v\n", reconcileDeleteBastion)

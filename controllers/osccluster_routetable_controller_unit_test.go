@@ -27,7 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -345,9 +345,9 @@ func TestGetRouteTableResourceId(t *testing.T) {
 				}
 				routeTableResourceId, err := getRouteTableResourceId(routeTableName, clusterScope)
 				if rttc.expGetRouteTableResourceIdErr != nil {
-					assert.EqualError(t, err, rttc.expGetRouteTableResourceIdErr.Error(), "GetRouteTableResourceId() should return the same error")
+					require.EqualError(t, err, rttc.expGetRouteTableResourceIdErr.Error(), "GetRouteTableResourceId() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("Find routeTableResourceId %s\n", routeTableResourceId)
 			}
@@ -393,9 +393,9 @@ func TestGetRouteResourceId(t *testing.T) {
 					}
 					routeResourceId, err := getRouteResourceId(routeName, clusterScope)
 					if rtc.expGetRouteResourceIdErr != nil {
-						assert.EqualError(t, err, rtc.expGetRouteResourceIdErr.Error(), "GetRouteResourceId() should return the same error")
+						require.EqualError(t, err, rtc.expGetRouteResourceIdErr.Error(), "GetRouteResourceId() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("Find routeResourceId %s\n", routeResourceId)
 				}
@@ -467,9 +467,9 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, rttc.name, rttc.spec)
 			err := checkRouteTableSubnetOscAssociateResourceName(clusterScope)
 			if rttc.expCheckRouteTableSubnetOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, rttc.expCheckRouteTableSubnetOscAssociateResourceNameErr.Error(), "CheckRouteTableSubnetOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, rttc.expCheckRouteTableSubnetOscAssociateResourceNameErr.Error(), "CheckRouteTableSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -538,9 +538,9 @@ func TestCheckRouteTableFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, rttc.name, rttc.spec)
 			_, err := checkRouteTableFormatParameters(clusterScope)
 			if rttc.expCheckRouteTableFormatParametersErr != nil {
-				assert.EqualError(t, err, rttc.expCheckRouteTableFormatParametersErr.Error(), "CheckRouteTableFormatParameters() should return the same error")
+				require.EqualError(t, err, rttc.expCheckRouteTableFormatParametersErr.Error(), "CheckRouteTableFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find all routetablename ")
 		})
@@ -687,9 +687,9 @@ func TestCheckRouteFormatParameters(t *testing.T) {
 
 			_, err := checkRouteFormatParameters(clusterScope)
 			if rtc.expCheckRouteFormatParametersErr != nil {
-				assert.EqualError(t, err, rtc.expCheckRouteFormatParametersErr.Error(), "CheckRouteFormatParameters() should return the same error")
+				require.EqualError(t, err, rtc.expCheckRouteFormatParametersErr.Error(), "CheckRouteFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find all routeName")
 		})
@@ -766,9 +766,9 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 			clusterScope := Setup(t, rttc.name, rttc.spec)
 			err := checkRouteTableOscDuplicateName(clusterScope)
 			if rttc.expCheckRouteTableOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, rttc.expCheckRouteTableOscDuplicateNameErr.Error(), "checkRouteTableOscDuplicateName() should return the same error")
+				require.EqualError(t, err, rttc.expCheckRouteTableOscDuplicateNameErr.Error(), "checkRouteTableOscDuplicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -917,9 +917,9 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 			clusterScope := Setup(t, rtc.name, rtc.spec)
 			err := checkRouteOscDuplicateName(clusterScope)
 			if rtc.expCheckRouteOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, rtc.expCheckRouteOscDuplicateNameErr.Error(), "CheckRouteOscDuplicateName() should return the same error")
+				require.EqualError(t, err, rtc.expCheckRouteOscDuplicateNameErr.Error(), "CheckRouteOscDuplicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -1095,9 +1095,9 @@ func TestReconcilerRouteCreate(t *testing.T) {
 					}
 					reconcileRoute, err := reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileRouteErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileRouteErr.Error(), "reconcileRoute() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileRouteErr.Error(), "reconcileRoute() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileRoute %v\n", reconcileRoute)
 				}
@@ -1230,9 +1230,9 @@ func TestReconcileRouteGet(t *testing.T) {
 					}
 					reconcileRoute, err := reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileRouteErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileRouteErr.Error(), "reconcileRoute() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileRouteErr.Error(), "reconcileRoute() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileRoute %v\n", reconcileRoute)
 				}
@@ -1308,9 +1308,9 @@ func TestReconcileRouteResourceId(t *testing.T) {
 				for _, routeSpec := range routesSpec {
 					reconcileRoute, err := reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileRouteErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileRouteErr.Error(), "reconcileRoute() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileRouteErr.Error(), "reconcileRoute() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileRoute %v\n", reconcileRoute)
 				}
@@ -1556,9 +1556,9 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 					}
 					reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
 					if rttc.expReconcileRouteTableErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileRoute %v\n", reconcileRouteTable)
 				}
@@ -1700,9 +1700,9 @@ func TestReconcileRouteTableGet(t *testing.T) {
 
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
 				if rttc.expReconcileRouteTableErr != nil {
-					assert.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
+					require.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("find reconcileRoute %v\n", reconcileRouteTable)
 			}
@@ -1771,9 +1771,9 @@ func TestReconcileRouteTableResourceId(t *testing.T) {
 			}
 			reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
 			if rttc.expReconcileRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileRoute %v\n", reconcileRouteTable)
 		})
@@ -1889,9 +1889,9 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 				}
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
 				if rttc.expReconcileRouteTableErr != nil {
-					assert.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
+					require.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("find reconcileRoute %v\n", reconcileRouteTable)
 			}
@@ -2004,9 +2004,9 @@ func TestReconcileRouteTableLink(t *testing.T) {
 				}
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
 				if rttc.expReconcileRouteTableErr != nil {
-					assert.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
+					require.EqualError(t, err, rttc.expReconcileRouteTableErr.Error(), "reconcileRouteTable() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("find reconcileRoute %v\n", reconcileRouteTable)
 			}
@@ -2143,9 +2143,9 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 
 					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileDeleteRouteErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("Find reconcileDeleteRoute %v\n", reconcileDeleteRoute)
 				}
@@ -2256,9 +2256,9 @@ func TestReconcileDeleteRouteGet(t *testing.T) {
 
 					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileDeleteRouteErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("Find reconcileDeleteRoute %v\n", reconcileDeleteRoute)
 				}
@@ -2325,9 +2325,9 @@ func TestReconcileDeleteRouteResourceId(t *testing.T) {
 				for _, routeSpec := range routesSpec {
 					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileDeleteRouteErr != nil {
-						assert.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
+						require.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("Find reconcileDeleteRoute %v\n", reconcileDeleteRoute)
 				}
@@ -2450,9 +2450,9 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 				Return(rttc.expDeleteRouteErr)
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteRouteTable %v\n", reconcileDeleteRouteTable)
 		})
@@ -2634,9 +2634,9 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 			}
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteRouteTable %v\n", reconcileDeleteRouteTable)
 		})
@@ -2730,9 +2730,9 @@ func TestReconcileDeleteRouteTableGet(t *testing.T) {
 			}
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteRouteTable %v\n", reconcileDeleteRouteTable)
 		})
@@ -2847,9 +2847,9 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 			}
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteRouteTable %v\n", reconcileDeleteRouteTable)
 		})
@@ -2958,9 +2958,9 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			}
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteRouteTable %v\n", reconcileDeleteRouteTable)
 		})
@@ -3005,9 +3005,9 @@ func TestReconcileDeleteRouteTableResourceId(t *testing.T) {
 
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
-				assert.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
+				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteRouteTable %v\n", reconcileDeleteRouteTable)
 		})

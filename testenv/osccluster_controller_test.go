@@ -455,8 +455,7 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 	By("Check OscPublicIp is provisioned")
 	Eventually(func() error {
 		securitysvc := security.NewService(ctx, clusterScope)
-		var publicIpsSpec []*infrastructurev1beta1.OscPublicIp
-		publicIpsSpec = clusterScope.GetPublicIp()
+		publicIpsSpec := clusterScope.GetPublicIp()
 		var publicIpId string
 		var publicIpIds []string
 		for _, publicIpSpec := range publicIpsSpec {

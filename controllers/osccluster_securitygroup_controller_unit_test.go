@@ -33,7 +33,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -197,9 +197,9 @@ func TestGetSecurityGroupResourceId(t *testing.T) {
 				}
 				securityGroupResourceId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
 				if sgtc.expGetSecurityGroupResourceIdErr != nil {
-					assert.EqualError(t, err, sgtc.expGetSecurityGroupResourceIdErr.Error(), "getSecurityGroupResourceId() should return the same error")
+					require.EqualError(t, err, sgtc.expGetSecurityGroupResourceIdErr.Error(), "getSecurityGroupResourceId() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("Find securityGroupResourceId %s\n", securityGroupResourceId)
 			}
@@ -245,9 +245,9 @@ func TestGetSecurityGroupRuleResourceId(t *testing.T) {
 					}
 					securityGroupRuleResourceId, err := getSecurityGroupRulesResourceId(securityGroupRuleName, clusterScope)
 					if sgrtc.expGetSecurityGroupRuleResourceIdErr != nil {
-						assert.EqualError(t, err, sgrtc.expGetSecurityGroupRuleResourceIdErr.Error(), "getSecurityGroupRuleResourceId() should return the same error")
+						require.EqualError(t, err, sgrtc.expGetSecurityGroupRuleResourceIdErr.Error(), "getSecurityGroupRuleResourceId() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("Find securityGroupRuleResourceId %s\n", securityGroupRuleResourceId)
 				}
@@ -316,9 +316,9 @@ func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 			clusterScope := Setup(t, sgtc.name, sgtc.spec)
 			err := checkSecurityGroupOscDuplicateName(clusterScope)
 			if sgtc.expCheckSecurityGroupOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, sgtc.expCheckSecurityGroupOscDuplicateNameErr.Error(), "checkSecurityGroupOscDuplicateName() should return the same error")
+				require.EqualError(t, err, sgtc.expCheckSecurityGroupOscDuplicateNameErr.Error(), "checkSecurityGroupOscDuplicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -385,9 +385,9 @@ func TestCheckSecurityGroupRuleOscDuplicateName(t *testing.T) {
 			clusterScope := Setup(t, sgrtc.name, sgrtc.spec)
 			err := checkSecurityGroupRuleOscDuplicateName(clusterScope)
 			if sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr != nil {
-				assert.EqualError(t, err, sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr.Error(), "checkSecurityGroupRuleOscDuplicateName() should return the same error")
+				require.EqualError(t, err, sgrtc.expCheckSecurityGroupRuleOscDuplicateNameErr.Error(), "checkSecurityGroupRuleOscDuplicateName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -474,9 +474,9 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, sgtc.name, sgtc.spec)
 			_, err := checkSecurityGroupFormatParameters(clusterScope)
 			if sgtc.expCheckSecurityGroupFormatParametersErr != nil {
-				assert.EqualError(t, err, sgtc.expCheckSecurityGroupFormatParametersErr.Error(), "checkSecurityGroupFormatParameters() should return the same error")
+				require.EqualError(t, err, sgtc.expCheckSecurityGroupFormatParametersErr.Error(), "checkSecurityGroupFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find all securityGroupName")
 		})
@@ -704,9 +704,9 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, sgrtc.name, sgrtc.spec)
 			_, err := checkSecurityGroupRuleFormatParameters(clusterScope)
 			if sgrtc.expCheckSecurityGroupRuleFormatParametersErr != nil {
-				assert.EqualError(t, err, sgrtc.expCheckSecurityGroupRuleFormatParametersErr.Error(), "checkSecurityGroupRuleFormatParameters() should return the same error")
+				require.EqualError(t, err, sgrtc.expCheckSecurityGroupRuleFormatParametersErr.Error(), "checkSecurityGroupRuleFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find all securityGroupRule")
 		})
@@ -799,9 +799,9 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 					}
 					reconcileSecurityGroupRule, err := reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
 					if sgrtc.expReconcileSecurityGroupRuleErr != nil {
-						assert.EqualError(t, err, sgrtc.expReconcileSecurityGroupRuleErr.Error(), "reconcileSecurityGroupRules() should return the same error")
+						require.EqualError(t, err, sgrtc.expReconcileSecurityGroupRuleErr.Error(), "reconcileSecurityGroupRules() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileSecurityGroupRule %v\n", reconcileSecurityGroupRule)
 				}
@@ -898,9 +898,9 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 					}
 					reconcileSecurityGroupRule, err := reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
 					if sgrtc.expReconcileSecurityGroupRuleErr != nil {
-						assert.EqualError(t, err, sgrtc.expReconcileSecurityGroupRuleErr.Error(), "reconcileSecurityGroupRules() should return the same error")
+						require.EqualError(t, err, sgrtc.expReconcileSecurityGroupRuleErr.Error(), "reconcileSecurityGroupRules() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileSecurityGroupRule %v\n", reconcileSecurityGroupRule)
 				}
@@ -973,9 +973,9 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 						Return(sgrtc.expDeleteSecurityGroupRuleErr)
 					reconcileDeleteSecurityGroupRule, err := reconcileDeleteSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
 					if sgrtc.expReconcileDeleteSecurityGroupRuleErr != nil {
-						assert.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
+						require.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileDeleteSecurityGroupRule %v\n", reconcileDeleteSecurityGroupRule)
 				}
@@ -1030,9 +1030,9 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 						Return(nil, sgrtc.expGetSecurityGroupfromSecurityGroupRuleErr)
 					reconcileDeleteSecurityGroupRule, err := reconcileDeleteSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
 					if sgrtc.expReconcileDeleteSecurityGroupRuleErr != nil {
-						assert.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
+						require.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 					t.Logf("find reconcileDeleteSecurityGroupRule %v\n", reconcileDeleteSecurityGroupRule)
 				}
@@ -1199,9 +1199,9 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 					}
 					reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 					if sgtc.expReconcileSecurityGroupErr != nil {
-						assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
+						require.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 
 					t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1297,9 +1297,9 @@ func TestReconcileCreateSecurityGroupGet(t *testing.T) {
 				}
 				reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 				if sgtc.expReconcileSecurityGroupErr != nil {
-					assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
+					require.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 
 				t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1404,9 +1404,9 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 			}
 			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if sgtc.expReconcileSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1477,9 +1477,9 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 
 			reconcileSecurityGroup, err := reconcileSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if sgtc.expReconcileSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileSecurityGroupErr.Error(), "reconcileSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			t.Logf("find reconcileSecurityGroup %v\n", reconcileSecurityGroup)
@@ -1628,9 +1628,9 @@ func TestDeleteSecurityGroup(t *testing.T) {
 				clock_mock.Add(630 * time.Second)
 				wg.Wait()
 				if sgtc.expDeleteSecurityGroupError != nil {
-					assert.EqualError(t, err, sgtc.expDeleteSecurityGroupError.Error(), "deleteSecurityGroup() should return the same error")
+					require.EqualError(t, err, sgtc.expDeleteSecurityGroupError.Error(), "deleteSecurityGroup() should return the same error")
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				t.Logf("Find  deleteSecurityGroup %v\n", deleteSg)
 			}
@@ -1744,9 +1744,9 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -1873,9 +1873,9 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -1920,8 +1920,7 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			securityGroupId := "sg-" + securityGroupName
 			securityGroupIds = append(securityGroupIds, securityGroupId)
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-			var httpResponse *http.Response
-			httpResponse = &http.Response{
+			httpResponse := &http.Response{
 				StatusCode: 200,
 				Body: io.NopCloser(strings.NewReader(`{
 	                                                "ResponseContext": {
@@ -2028,9 +2027,9 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 				Return(sgtc.expDeleteSecurityGroupErr, httpResponse)
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -2102,9 +2101,9 @@ func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})
@@ -2143,9 +2142,9 @@ func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
 			netRef.ResourceMap = make(map[string]string)
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
-				assert.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
+				require.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileDeleteSecurityGroup %v\n", reconcileDeleteSecurityGroup)
 		})

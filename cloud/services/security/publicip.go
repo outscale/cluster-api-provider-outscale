@@ -300,7 +300,7 @@ func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
 func (s *Service) CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	var getPublicIpUnlink = false
+	getPublicIpUnlink := false
 	for !getPublicIpUnlink {
 		publicIp, err := s.GetPublicIp(publicIpId)
 		if err != nil {

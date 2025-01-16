@@ -313,7 +313,7 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 func (s *Service) CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	var getVolumeState = false
+	getVolumeState := false
 	for !getVolumeState {
 		volume, err := s.GetVolume(volumeId)
 		if err != nil {
