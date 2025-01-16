@@ -27,7 +27,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/net/mock_net"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -133,9 +133,9 @@ func TestGetNatResourceId(t *testing.T) {
 
 			natResourceId, err := getNatResourceId(natServiceName, clusterScope)
 			if nstc.expGetNatResourceIdErr != nil {
-				assert.EqualError(t, err, nstc.expGetNatResourceIdErr.Error(), "GetNatResourceId() should return the same error")
+				require.EqualError(t, err, nstc.expGetNatResourceIdErr.Error(), "GetNatResourceId() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find natResourceId %s", natResourceId)
 		})
@@ -255,9 +255,9 @@ func TestCheckNatFormatParameters(t *testing.T) {
 			clusterScope := Setup(t, nstc.name, nstc.spec)
 			natServiceName, err := checkNatFormatParameters(clusterScope)
 			if nstc.expCheckNatFormatParametersErr != nil {
-				assert.EqualError(t, err, nstc.expCheckNatFormatParametersErr.Error(), "checkNatFormatParameters() should return the same error")
+				require.EqualError(t, err, nstc.expCheckNatFormatParametersErr.Error(), "checkNatFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find natServiceName %s\n", natServiceName)
 		})
@@ -317,9 +317,9 @@ func TestCheckNatSubnetOscAssociateResourceName(t *testing.T) {
 			clusterScope := Setup(t, nstc.name, nstc.spec)
 			err := checkNatSubnetOscAssociateResourceName(clusterScope)
 			if nstc.expCheckNatSubnetOscAssociateResourceNameErr != nil {
-				assert.EqualError(t, err, nstc.expCheckNatSubnetOscAssociateResourceNameErr.Error(), "checkNatSubnetOscAssociateResourceName() should return the same error")
+				require.EqualError(t, err, nstc.expCheckNatSubnetOscAssociateResourceNameErr.Error(), "checkNatSubnetOscAssociateResourceName() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -421,9 +421,9 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
 			if nstc.expReconcileNatServiceErr != nil {
-				assert.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
+				require.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileNatService %v\n", reconcileNatService)
 		})
@@ -532,9 +532,9 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
 			if nstc.expReconcileNatServiceErr != nil {
-				assert.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
+				require.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileNatService %v\n", reconcileNatService)
 		})
@@ -619,9 +619,9 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
 			if nstc.expReconcileNatServiceErr != nil {
-				assert.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
+				require.EqualError(t, err, nstc.expReconcileNatServiceErr.Error(), "reconcileNatService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileNatService %v\n", reconcileNatService)
 		})
@@ -692,9 +692,9 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 
 			reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, mockOscNatServiceInterface)
 			if nstc.expReconcileDeleteNatServiceErr != nil {
-				assert.EqualError(t, err, nstc.expReconcileDeleteNatServiceErr.Error(), "reconcileDeleteNatService() should return the same error")
+				require.EqualError(t, err, nstc.expReconcileDeleteNatServiceErr.Error(), "reconcileDeleteNatService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNatService %v\n", reconcileDeleteNatService)
 		})
@@ -774,9 +774,9 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 				Return(nstc.expDeleteNatServiceErr)
 			reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, mockOscNatServiceInterface)
 			if nstc.expReconcileDeleteNatServiceErr != nil {
-				assert.EqualError(t, err, nstc.expReconcileDeleteNatServiceErr.Error(), "reconcileDeleteNatService() should return the same error")
+				require.EqualError(t, err, nstc.expReconcileDeleteNatServiceErr.Error(), "reconcileDeleteNatService() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("Find reconcileDeleteNatService %v\n", reconcileDeleteNatService)
 		})

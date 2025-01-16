@@ -25,6 +25,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -202,9 +203,9 @@ func TestReconcileCapacity(t *testing.T) {
 			vmType := ctc.machineTemplateSpec.Template.Spec.Node.Vm.VmType
 			capacity := make(corev1.ResourceList)
 			memory, err := resource.ParseQuantity("4G")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			cpu, err := resource.ParseQuantity("2")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			capacity[corev1.ResourceMemory] = memory
 			capacity[corev1.ResourceCPU] = cpu
 
@@ -224,7 +225,7 @@ func TestReconcileCapacity(t *testing.T) {
 			if ctc.expReconcileCapacityErr != nil {
 				assert.Equal(t, err, ctc.expReconcileCapacityErr.Error(), "reconcileVmCapacity() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileCapacity %v\n", reconcileCapacity)
 		})

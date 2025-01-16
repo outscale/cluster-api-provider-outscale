@@ -71,8 +71,7 @@ func checkRouteTableFormatParameters(clusterScope *scope.ClusterScope) (string, 
 
 // checkRouteFormatParameters check Route parameters format (Tag format, cidr format, ..)
 func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
-	routeTablesSpec = clusterScope.GetRouteTables()
+	routeTablesSpec := clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 		for _, routeSpec := range *routesSpec {
@@ -293,7 +292,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		}
 
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
-		var natRouteTable bool = false
+		natRouteTable := false
 
 		if !Contains(routeTableIds, routeTableId) && tag == nil {
 			clusterScope.V(2).Info("Check Nat RouteTable")

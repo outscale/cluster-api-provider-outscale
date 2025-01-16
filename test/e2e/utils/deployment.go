@@ -118,7 +118,7 @@ func CreateDeployment(ctx context.Context, input CreateDeploymentInput) bool {
 		By(fmt.Sprintf("Can not create deployment %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Create Deployment %s", input.Name))
+	By("Create Deployment " + input.Name)
 	return true
 }
 
@@ -135,7 +135,7 @@ func GetDeployment(ctx context.Context, input DeploymentInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find Deployment %s", input.Name))
+	By("Find Deployment " + input.Name)
 	return true
 }
 
@@ -156,7 +156,7 @@ func DeleteDeployment(ctx context.Context, input DeploymentInput) bool {
 		By(fmt.Sprintf("Can not delete deployment %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Delete Deployment %s", input.Name))
+	By("Delete Deployment " + input.Name)
 	return true
 }
 

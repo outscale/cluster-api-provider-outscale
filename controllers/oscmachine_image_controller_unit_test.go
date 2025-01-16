@@ -26,7 +26,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute/mock_compute"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -110,9 +110,9 @@ func TestGetImageResourceId(t *testing.T) {
 			}
 			imageResourceId, err := getImageResourceId(imageName, machineScope)
 			if itc.expGetImageResourceIdErr != nil {
-				assert.EqualError(t, err, itc.expGetImageResourceIdErr.Error(), "GetImageResourceId() should return the same error")
+				require.EqualError(t, err, itc.expGetImageResourceIdErr.Error(), "GetImageResourceId() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find imageResourceId %s", imageResourceId)
 		})
@@ -165,9 +165,9 @@ func TestCheckImageFormatParameters(t *testing.T) {
 			_, machineScope := SetupMachine(t, itc.name, itc.clusterSpec, itc.machineSpec)
 			imageName, err := checkImageFormatParameters(machineScope)
 			if itc.expCheckImageFormatParametersErr != nil {
-				assert.EqualError(t, err, itc.expCheckImageFormatParametersErr.Error(), "checkImageFormatParameters() should return the same error")
+				require.EqualError(t, err, itc.expCheckImageFormatParametersErr.Error(), "checkImageFormatParameters() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find imageName %s\n", imageName)
 		})
@@ -379,9 +379,9 @@ func TestReconcileImageGet(t *testing.T) {
 
 			reconcileImage, err := reconcileImage(ctx, machineScope, mockOscimageInterface)
 			if itc.expReconcileImageErr != nil {
-				assert.EqualError(t, err, itc.expReconcileImageErr.Error(), "reconcileImage() should return the same error")
+				require.EqualError(t, err, itc.expReconcileImageErr.Error(), "reconcileImage() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			t.Logf("find reconcileKeyPair %v\n", reconcileImage)
 		})

@@ -59,8 +59,7 @@ func getImageResourceId(resourceName string, machineScope *scope.MachineScope) (
 
 // reconcileImage reconcile the image of the machine
 func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, imageSvc compute.OscImageInterface) (reconcile.Result, error) {
-	var imageSpec *infrastructurev1beta1.OscImage
-	imageSpec = machineScope.GetImage()
+	imageSpec := machineScope.GetImage()
 	imageRef := machineScope.GetImageRef()
 	imageName := imageSpec.Name
 	imageId := machineScope.GetImageId()

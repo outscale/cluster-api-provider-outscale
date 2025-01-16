@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -241,9 +241,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			oscInfraMachine := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
 			_, err := oscInfraMachine.ValidateCreate()
 			if mtc.expValidateCreateErr != nil {
-				assert.EqualError(t, err, mtc.expValidateCreateErr.Error(), "ValidateCreate should return the same errror")
+				require.EqualError(t, err, mtc.expValidateCreateErr.Error(), "ValidateCreate should return the same errror")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -331,9 +331,9 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 			oscInfraMachineTemplate := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
 			_, err := oscInfraMachineTemplate.ValidateUpdate(oscOldInfraMachineTemplate)
 			if mtc.expValidateUpdateErr != nil {
-				assert.EqualError(t, err, mtc.expValidateUpdateErr.Error(), "ValidateUpdate() should return the same error")
+				require.EqualError(t, err, mtc.expValidateUpdateErr.Error(), "ValidateUpdate() should return the same error")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

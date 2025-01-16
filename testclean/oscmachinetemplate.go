@@ -55,7 +55,7 @@ func GetOscInfraMachineTemplate(ctx context.Context, input OscInfraMachineTempla
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find oscInfraMachineTemplate %s", input.Name))
+	By("Find oscInfraMachineTemplate " + input.Name)
 	return true
 }
 

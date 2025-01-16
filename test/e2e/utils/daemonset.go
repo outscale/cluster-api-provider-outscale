@@ -58,7 +58,7 @@ func GetDaemonSet(ctx context.Context, input DaemonSetInput) bool {
 		By(fmt.Sprintf("Can not find %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Find DaemonSet %s", input.Name))
+	By("Find DaemonSet " + input.Name)
 	return true
 }
 
@@ -79,7 +79,7 @@ func DeleteDaemonSet(ctx context.Context, input DaemonSetInput) bool {
 		By(fmt.Sprintf("Can not delete daemonSet %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Delete DaemonSet %s", input.Name))
+	By("Delete DaemonSet " + input.Name)
 	return true
 }
 
@@ -157,7 +157,7 @@ func CreateDaemonSet(ctx context.Context, input CreateDaemonSetInput) bool {
 		By(fmt.Sprintf("Can not create daemmonset %s", err))
 		return false
 	}
-	By(fmt.Sprintf("Create DaemonSet %s", input.Name))
+	By("Create DaemonSet " + input.Name)
 	return true
 }
 
