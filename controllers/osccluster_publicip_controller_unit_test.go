@@ -309,7 +309,7 @@ func TestCheckPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckPublicIpOscAssociateResourceNameErr: errors.New("publicIp test-publicip-test-uid does not exist in natService "),
+			expCheckPublicIpOscAssociateResourceNameErr: errors.New("publicIp test-publicip-test-uid does not exist in natService"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -421,7 +421,7 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expReadTagErr:           errors.New("ReadTag generic error"),
-			expReconcilePublicIpErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcilePublicIpErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -443,12 +443,12 @@ func TestReconcilePublicIpGet(t *testing.T) {
 					if pitc.expTagFound {
 						mockOscTagInterface.
 							EXPECT().
-							ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+							ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(publicIpName)).
 							Return(&tag, pitc.expReadTagErr)
 					} else {
 						mockOscTagInterface.
 							EXPECT().
-							ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+							ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(publicIpName)).
 							Return(nil, pitc.expReadTagErr)
 					}
 				}
@@ -464,12 +464,12 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			if pitc.expPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(publicIpIds, pitc.expValidatePublicIpsErr)
 			} else {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpsErr)
 			}
 			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
@@ -539,7 +539,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expCreatePublicIpFound:  false,
 			expCreatePublicIpErr:    errors.New("CreatePublicIp generic error"),
 			expReadTagErr:           nil,
-			expReconcilePublicIpErr: errors.New("CreatePublicIp generic error Can not create publicIp for Osccluster test-system/test-osc"),
+			expReconcilePublicIpErr: errors.New("cannot create publicIp: CreatePublicIp generic error"),
 		},
 		{
 			name: "user delete publicIp without cluster-api",
@@ -579,12 +579,12 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 				if pitc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(publicIpName)).
 						Return(&tag, pitc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(publicIpName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(publicIpName)).
 						Return(nil, pitc.expReadTagErr)
 				}
 				publicIpIds = append(publicIpIds, publicIpId)
@@ -602,12 +602,12 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 					publicIpIds[index] = ""
 					mockOscPublicIpInterface.
 						EXPECT().
-						CreatePublicIp(gomock.Eq(publicIpName)).
+						CreatePublicIp(gomock.Any(), gomock.Eq(publicIpName)).
 						Return(publicIp.PublicIp, pitc.expCreatePublicIpErr)
 				} else {
 					mockOscPublicIpInterface.
 						EXPECT().
-						CreatePublicIp(gomock.Eq(publicIpName)).
+						CreatePublicIp(gomock.Any(), gomock.Eq(publicIpName)).
 						Return(nil, pitc.expCreatePublicIpErr)
 				}
 			}
@@ -617,12 +617,12 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			if pitc.expPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(publicIpIds, pitc.expValidatePublicIpsErr)
 			} else {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpsErr)
 			}
 			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
@@ -665,15 +665,15 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 			publicIpIds = append(publicIpIds, publicIpId)
 			mockOscPublicIpInterface.
 				EXPECT().
-				ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+				ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 				Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
 			mockOscPublicIpInterface.
 				EXPECT().
-				CheckPublicIpUnlink(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
+				CheckPublicIpUnlink(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
 				Return(pitc.expCheckPublicIpUnlinkErr)
 			mockOscPublicIpInterface.
 				EXPECT().
-				DeletePublicIp(gomock.Eq(publicIpId)).
+				DeletePublicIp(gomock.Any(), gomock.Eq(publicIpId)).
 				Return(pitc.expDeletePublicIpErr)
 			networkSpec := clusterScope.GetNetwork()
 			networkSpec.SetPublicIpDefaultValue()
@@ -726,7 +726,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 			expValidatePublicIpIdsErr:     nil,
 			expCheckPublicIpUnlinkErr:     nil,
 			expDeletePublicIpErr:          errors.New("DeletePublicIp generic error"),
-			expReconcileDeletePublicIpErr: errors.New("DeletePublicIp generic error Can not delete publicIp for Osccluster test-system/test-osc"),
+			expReconcileDeletePublicIpErr: errors.New("cannot delete publicIp eipalloc-test-publicip-uid: DeletePublicIp generic error"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -742,17 +742,17 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 				publicIpIds = append(publicIpIds, publicIpId)
 				mockOscPublicIpInterface.
 					EXPECT().
-					CheckPublicIpUnlink(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
+					CheckPublicIpUnlink(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
 					Return(pitc.expCheckPublicIpUnlinkErr)
 				mockOscPublicIpInterface.
 					EXPECT().
-					DeletePublicIp(gomock.Eq(publicIpId)).
+					DeletePublicIp(gomock.Any(), gomock.Eq(publicIpId)).
 					Return(pitc.expDeletePublicIpErr)
 			}
 			if pitc.expPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
 			} else {
 				if len(publicIpIds) == 0 {
@@ -760,7 +760,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 				}
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpIdsErr)
 			}
 
@@ -792,7 +792,7 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 			expPublicIpFound:              true,
 			expValidatePublicIpIdsErr:     nil,
 			expCheckPublicIpUnlinkErr:     errors.New("CheckPublicIpUnlink generic error"),
-			expReconcileDeletePublicIpErr: errors.New("CheckPublicIpUnlink generic error Can not delete publicIp eipalloc-test-publicip-uid for Osccluster test-system/test-osc"),
+			expReconcileDeletePublicIpErr: errors.New("cannot check publicIp eipalloc-test-publicip-uid: CheckPublicIpUnlink generic error"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -808,13 +808,13 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 				publicIpIds = append(publicIpIds, publicIpId)
 				mockOscPublicIpInterface.
 					EXPECT().
-					CheckPublicIpUnlink(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
+					CheckPublicIpUnlink(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(publicIpId)).
 					Return(pitc.expCheckPublicIpUnlinkErr)
 			}
 			if pitc.expPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
 			} else {
 				if len(publicIpIds) == 0 {
@@ -822,7 +822,7 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 				}
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpIdsErr)
 			}
 
@@ -860,7 +860,7 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 			spec:                          defaultPublicIpReconcile,
 			expPublicIpFound:              false,
 			expValidatePublicIpIdsErr:     errors.New("ValidatePublicIp generic error"),
-			expReconcileDeletePublicIpErr: errors.New("ValidatePublicIp generic error"),
+			expReconcileDeletePublicIpErr: errors.New("cannot validate publicips: ValidatePublicIp generic error"),
 		},
 		{
 			name:                          "remove finalizer (user delete publicIp without cluster-api)",
@@ -883,7 +883,7 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 			if pitc.expPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
 			} else {
 				if len(publicIpIds) == 0 {
@@ -891,7 +891,7 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 				}
 				mockOscPublicIpInterface.
 					EXPECT().
-					ValidatePublicIpIds(gomock.Eq(publicIpIds)).
+					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
 					Return(nil, pitc.expValidatePublicIpIdsErr)
 			}
 

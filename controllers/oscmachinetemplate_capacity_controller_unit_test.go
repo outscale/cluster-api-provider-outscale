@@ -29,7 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -147,9 +146,7 @@ func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev
 		},
 	}
 
-	log := klogr.New()
 	clusterScope = &scope.ClusterScope{
-		Logger: log,
 		Cluster: &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       "uid",
@@ -160,7 +157,6 @@ func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev
 		OscCluster: &oscCluster,
 	}
 	machineTemplateScope = &scope.MachineTemplateScope{
-		Logger:             log,
 		OscMachineTemplate: &oscMachineTemplate,
 	}
 	return clusterScope, machineTemplateScope
@@ -212,12 +208,12 @@ func TestReconcileCapacity(t *testing.T) {
 			if ctc.expGetCapacityFound {
 				mockOscVmInterface.
 					EXPECT().
-					GetCapacity(gomock.Eq(tagKey), gomock.Eq(tagValue), gomock.Eq(vmType)).
+					GetCapacity(gomock.Any(), gomock.Eq(tagKey), gomock.Eq(tagValue), gomock.Eq(vmType)).
 					Return(capacity, ctc.expReconcileCapacityErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetCapacity(gomock.Eq(tagKey), gomock.Eq(tagValue), gomock.Eq(vmType)).
+					GetCapacity(gomock.Any(), gomock.Eq(tagKey), gomock.Eq(tagValue), gomock.Eq(vmType)).
 					Return(nil, ctc.expReconcileCapacityErr)
 			}
 

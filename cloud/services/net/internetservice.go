@@ -17,11 +17,13 @@ limitations under the License.
 package net
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -29,15 +31,15 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_net/internetservice_mock.go -package mock_net -source ./internetservice.go
 type OscInternetServiceInterface interface {
-	CreateInternetService(internetServiceName string) (*osc.InternetService, error)
-	DeleteInternetService(internetServiceId string) error
-	LinkInternetService(internetServiceId string, netId string) error
-	UnlinkInternetService(internetServiceId string, netId string) error
-	GetInternetService(internetServiceId string) (*osc.InternetService, error)
+	CreateInternetService(ctx context.Context, internetServiceName string) (*osc.InternetService, error)
+	DeleteInternetService(ctx context.Context, internetServiceId string) error
+	LinkInternetService(ctx context.Context, internetServiceId string, netId string) error
+	UnlinkInternetService(ctx context.Context, internetServiceId string, netId string) error
+	GetInternetService(ctx context.Context, internetServiceId string) (*osc.InternetService, error)
 }
 
 // CreateInternetService launch the internet service
-func (s *Service) CreateInternetService(internetServiceName string) (*osc.InternetService, error) {
+func (s *Service) CreateInternetService(ctx context.Context, internetServiceName string) (*osc.InternetService, error) {
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -46,6 +48,7 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 		var httpRes *http.Response
 		var err error
 		internetServiceResponse, httpRes, err = oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "CreateInternetService", internetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -75,7 +78,7 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{internetServiceTag},
 	}
-	err, httpRes := tag.AddTag(internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -91,7 +94,7 @@ func (s *Service) CreateInternetService(internetServiceName string) (*osc.Intern
 }
 
 // DeleteInternetService delete the internet service
-func (s *Service) DeleteInternetService(internetServiceId string) error {
+func (s *Service) DeleteInternetService(ctx context.Context, internetServiceId string) error {
 	deleteInternetServiceRequest := osc.DeleteInternetServiceRequest{InternetServiceId: internetServiceId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -99,6 +102,7 @@ func (s *Service) DeleteInternetService(internetServiceId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteInternetService", deleteInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -123,7 +127,7 @@ func (s *Service) DeleteInternetService(internetServiceId string) error {
 }
 
 // LinkInternetService attach the internet service to the net
-func (s *Service) LinkInternetService(internetServiceId string, netId string) error {
+func (s *Service) LinkInternetService(ctx context.Context, internetServiceId string, netId string) error {
 	linkInternetServiceRequest := osc.LinkInternetServiceRequest{
 		InternetServiceId: internetServiceId,
 		NetId:             netId,
@@ -134,6 +138,7 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "LinkInternetService", linkInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -158,7 +163,7 @@ func (s *Service) LinkInternetService(internetServiceId string, netId string) er
 }
 
 // UnlinkInternetService detach the internet service from the net
-func (s *Service) UnlinkInternetService(internetServiceId string, netId string) error {
+func (s *Service) UnlinkInternetService(ctx context.Context, internetServiceId string, netId string) error {
 	unlinkInternetServiceRequest := osc.UnlinkInternetServiceRequest{
 		InternetServiceId: internetServiceId,
 		NetId:             netId,
@@ -169,6 +174,7 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "UnlinkInternetService", unlinkInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -193,7 +199,7 @@ func (s *Service) UnlinkInternetService(internetServiceId string, netId string) 
 }
 
 // GetInternetService retrieve internet service object using internet service id
-func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetService, error) {
+func (s *Service) GetInternetService(ctx context.Context, internetServiceId string) (*osc.InternetService, error) {
 	readInternetServiceRequest := osc.ReadInternetServicesRequest{
 		Filters: &osc.FiltersInternetService{
 			InternetServiceIds: &[]string{internetServiceId},
@@ -206,6 +212,7 @@ func (s *Service) GetInternetService(internetServiceId string) (*osc.InternetSer
 		var httpRes *http.Response
 		var err error
 		readInternetServicesResponse, httpRes, err = oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

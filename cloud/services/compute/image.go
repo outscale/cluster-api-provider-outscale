@@ -17,9 +17,11 @@ limitations under the License.
 package compute
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -27,13 +29,13 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/image_mock.go -package mock_compute -source ./image.go
 type OscImageInterface interface {
-	GetImage(imageId string) (*osc.Image, error)
-	GetImageId(imageName string) (string, error)
-	GetImageName(imageId string) (string, error)
+	GetImage(ctx context.Context, imageId string) (*osc.Image, error)
+	GetImageId(ctx context.Context, imageName string) (string, error)
+	GetImageName(ctx context.Context, imageId string) (string, error)
 }
 
 // GetImage retrieve image from imageId
-func (s *Service) GetImage(imageId string) (*osc.Image, error) {
+func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, error) {
 	readImageRequest := osc.ReadImagesRequest{
 		Filters: &osc.FiltersImage{ImageIds: &[]string{imageId}},
 	}
@@ -45,6 +47,7 @@ func (s *Service) GetImage(imageId string) (*osc.Image, error) {
 		var httpRes *http.Response
 		var err error
 		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -74,7 +77,7 @@ func (s *Service) GetImage(imageId string) (*osc.Image, error) {
 }
 
 // GetImageId retrieve imageId from imageName
-func (s *Service) GetImageId(imageName string) (string, error) {
+func (s *Service) GetImageId(ctx context.Context, imageName string) (string, error) {
 	readImageRequest := osc.ReadImagesRequest{
 		Filters: &osc.FiltersImage{ImageNames: &[]string{imageName}},
 	}
@@ -85,6 +88,7 @@ func (s *Service) GetImageId(imageName string) (string, error) {
 		var httpRes *http.Response
 		var err error
 		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -114,7 +118,7 @@ func (s *Service) GetImageId(imageName string) (string, error) {
 }
 
 // GetImageName retrieve imageId from imageName
-func (s *Service) GetImageName(imageId string) (string, error) {
+func (s *Service) GetImageName(ctx context.Context, imageId string) (string, error) {
 	readImageRequest := osc.ReadImagesRequest{
 		Filters: &osc.FiltersImage{ImageNames: &[]string{imageId}},
 	}
@@ -125,6 +129,7 @@ func (s *Service) GetImageName(imageId string) (string, error) {
 		var httpRes *http.Response
 		var err error
 		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

@@ -21,10 +21,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2/klogr"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +31,6 @@ import (
 type MachineTemplateScopeParams struct {
 	OscClient          *OscClient
 	Client             client.Client
-	Logger             logr.Logger
 	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
 }
 
@@ -42,14 +39,11 @@ func NewMachineTemplateScope(params MachineTemplateScopeParams) (*MachineTemplat
 	if params.Client == nil {
 		return nil, errors.New("Client is required when creating a MachineTemplateScope")
 	}
-	if params.Logger == (logr.Logger{}) {
-		params.Logger = klogr.New()
-	}
 
 	client, err := newOscClient()
 
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to create Osc Client", err)
+		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
 	}
 
 	if params.OscClient == nil {
@@ -69,14 +63,12 @@ func NewMachineTemplateScope(params MachineTemplateScopeParams) (*MachineTemplat
 	return &MachineTemplateScope{
 		client:             params.Client,
 		OscMachineTemplate: params.OscMachineTemplate,
-		Logger:             params.Logger,
 		patchHelper:        helper,
 	}, nil
 }
 
 // MachineTemplateScope is the basic context of the actuator that will be used
 type MachineTemplateScope struct {
-	logr.Logger
 	client             client.Client
 	patchHelper        *patch.Helper
 	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
@@ -97,8 +89,8 @@ func (m *MachineTemplateScope) GetNamespace() string {
 	return m.OscMachineTemplate.Namespace
 }
 
-func (m *MachineTemplateScope) PatchObject() error {
-	return m.patchHelper.Patch(context.TODO(), m.OscMachineTemplate)
+func (m *MachineTemplateScope) PatchObject(ctx context.Context) error {
+	return m.patchHelper.Patch(ctx, m.OscMachineTemplate)
 }
 
 func (m *MachineTemplateScope) GetVmType() string {

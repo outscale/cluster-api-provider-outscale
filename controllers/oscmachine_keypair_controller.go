@@ -26,6 +26,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -42,7 +43,6 @@ func checkKeypairFormatParameters(machineScope *scope.MachineScope) (string, err
 	}
 
 	keypairName := keypairSpec.Name
-	machineScope.V(2).Info("Check Keypair parameters")
 	keypairTagName, err := tag.ValidateTagNameValue(keypairName)
 	if err != nil {
 		return keypairTagName, err
@@ -64,7 +64,6 @@ func checkKeypairSameName(machineScope *scope.MachineScope) error {
 	keypairName := keypairSpec.Name
 	vmSpec := machineScope.GetVm()
 	vmSpec.SetDefaultValue()
-	machineScope.V(2).Info("Check keypair name is the same in vm and keypair section ")
 	vmKeypairName := vmSpec.KeypairName
 	if keypairName != vmKeypairName {
 		return fmt.Errorf("%s is not the same in vm and keypair section", keypairName)
@@ -84,10 +83,10 @@ func getKeyPairResourceId(resourceName string, machineScope *scope.MachineScope)
 
 // reconcileKeypair reconcile the keypair of the machine
 func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, keypairSvc security.OscKeyPairInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	keypairSpec := machineScope.GetKeypair()
 	keypairRef := machineScope.GetKeypairRef()
 	keypairName := keypairSpec.Name
-	machineScope.V(2).Info("Get Keypair if existing", "keypair", keypairName)
 	var keypair *osc.Keypair
 	var err error
 
@@ -96,47 +95,48 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 	}
 	keypairRef.ResourceMap[keypairName] = keypairName
 
-	if keypair, err = keypairSvc.GetKeyPair(keypairName); err != nil {
-		machineScope.V(2).Info("Fail to get keypair", "keypair", keypairName)
-		return reconcile.Result{}, err
+	log.V(4).Info("Checking keypair", "keypair", keypairName)
+	if keypair, err = keypairSvc.GetKeyPair(ctx, keypairName); err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot get keypair: %w", err)
 	}
 	if keypair == nil {
-		machineScope.V(2).Info("Keypair will be created", "keypair", keypairName)
-		_, err := keypairSvc.CreateKeyPair(keypairName)
+		log.V(2).Info("Creating keypair", "keypair", keypairName)
+		_, err := keypairSvc.CreateKeyPair(ctx, keypairName)
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("cannot create keypair: %w", err)
 		}
 	} else if keypairSpec.ResourceId == "" {
-		machineScope.V(4).Info("Keypair Ressource id is empty", "keypair", keypairName)
+		log.V(4).Info("Setting Keypair Ressource id", "keypair", keypairName)
 		keypairRef.ResourceMap[keypairName] = keypairName
 	}
-	machineScope.V(2).Info("Get Keypair after reconcile keypair", "keypair", keypairName)
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteKeypair reconcile the destruction of the keypair of the machine
 func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScope, keypairSvc security.OscKeyPairInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	oscmachine := machineScope.OscMachine
 	keypairSpec := machineScope.GetKeypair()
 	keypairName := keypairSpec.Name
 
-	keypair, err := keypairSvc.GetKeyPair(keypairName)
+	keypair, err := keypairSvc.GetKeyPair(ctx, keypairName)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("cannot get keypair: %w", err)
 	}
 	if keypair == nil {
+		log.V(3).Info("Keypair is already deleted", "keypair", keypairName)
 		controllerutil.RemoveFinalizer(oscmachine, "")
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 	deleteKeypair := machineScope.GetDeleteKeypair()
 	if deleteKeypair {
-		machineScope.V(2).Info("Remove keypair")
-		err = keypairSvc.DeleteKeyPair(keypairName)
+		log.V(2).Info("Deleting keypair", "keypair", keypairName)
+		err = keypairSvc.DeleteKeyPair(ctx, keypairName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("Can not delete keypair for OscCluster %s/%s", machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot delete keypair: %w", err)
 		}
 	} else {
-		machineScope.V(2).Info("Keep keypair")
+		log.V(3).Info("Keeping keypair", "keypair", keypairName)
 	}
 
 	return reconcile.Result{}, nil

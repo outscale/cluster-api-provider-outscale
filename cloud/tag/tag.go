@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -30,14 +31,15 @@ import (
 
 //go:generate ../../bin/mockgen -destination mock_tag/tag_mock.go -package mock_tag -source ./tag.go
 type OscTagInterface interface {
-	ReadTag(tagKey string, tagValue string) (*osc.Tag, error)
+	ReadTag(ctx context.Context, tagKey string, tagValue string) (*osc.Tag, error)
 }
 
 // AddTag add a tag to a resource
-func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
+func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
 	var httpRes *http.Response
 	addTagNameCallBack := func() (bool, error) {
 		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
+		utils.LogAPICall(ctx, "CreateTags", createTagRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Printf("Error with http result %s", httpRes.Status)
@@ -49,7 +51,7 @@ func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *o
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("%w failed to add Tag Name", err)
+			return false, fmt.Errorf("failed to add Tag Name: %w", err)
 		}
 		return true, err
 	}
@@ -62,7 +64,7 @@ func AddTag(createTagRequest osc.CreateTagsRequest, resourceIds []string, api *o
 }
 
 // ReadTag read a tag of a resource
-func (s *Service) ReadTag(tagKey string, tagValue string) (*osc.Tag, error) {
+func (s *Service) ReadTag(ctx context.Context, tagKey string, tagValue string) (*osc.Tag, error) {
 	readTagsRequest := osc.ReadTagsRequest{
 		Filters: &osc.FiltersTag{
 			Keys:   &[]string{tagKey},
@@ -72,6 +74,7 @@ func (s *Service) ReadTag(tagKey string, tagValue string) (*osc.Tag, error) {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readTagsResponse, httpRes, err := oscApiClient.TagApi.ReadTags(oscAuthClient).ReadTagsRequest(readTagsRequest).Execute()
+	utils.LogAPICall(ctx, "ReadTags", readTagsRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
 			fmt.Printf("Error with http result %s", httpRes.Status)

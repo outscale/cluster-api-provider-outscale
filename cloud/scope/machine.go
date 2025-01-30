@@ -21,12 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capierrors "sigs.k8s.io/cluster-api/errors"
@@ -40,7 +38,6 @@ import (
 type MachineScopeParams struct {
 	OscClient  *OscClient
 	Client     client.Client
-	Logger     logr.Logger
 	Cluster    *clusterv1.Cluster
 	Machine    *clusterv1.Machine
 	OscCluster *infrastructurev1beta1.OscCluster
@@ -64,14 +61,11 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 	if params.OscMachine == nil {
 		return nil, errors.New("OscMachine is required when creating a MachineScope")
 	}
-	if params.Logger == (logr.Logger{}) {
-		params.Logger = klogr.New()
-	}
 
 	client, err := newOscClient()
 
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to create Osc Client", err)
+		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
 	}
 
 	if params.OscClient == nil {
@@ -94,14 +88,12 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 		Machine:     params.Machine,
 		OscCluster:  params.OscCluster,
 		OscMachine:  params.OscMachine,
-		Logger:      params.Logger,
 		patchHelper: helper,
 	}, nil
 }
 
 // MachineScope is the basic context of the actuator that will be used
 type MachineScope struct {
-	logr.Logger
 	client      client.Client
 	patchHelper *patch.Helper
 	Cluster     *clusterv1.Cluster
@@ -314,7 +306,7 @@ func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 }
 
 // PatchObject keep the machine configuration and status
-func (m *MachineScope) PatchObject() error {
+func (m *MachineScope) PatchObject(ctx context.Context) error {
 	applicableConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.VmReadyCondition,
 	}
@@ -324,7 +316,7 @@ func (m *MachineScope) PatchObject() error {
 		conditions.WithStepCounter(),
 	)
 	return m.patchHelper.Patch(
-		context.TODO(),
+		ctx,
 		m.OscMachine,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,
@@ -335,12 +327,12 @@ func (m *MachineScope) PatchObject() error {
 // GetBootstrapData return bootstrapData
 func (m *MachineScope) GetBootstrapData() (string, error) {
 	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
-		return "", errors.New("error retrieving bootstrap data: linked Machine's bootstrap.DataSecretName is nil")
+		return "", errors.New("error retrieving bootstrap data: DataSecretName is not set")
 	}
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Namespace: m.GetNamespace(), Name: *m.Machine.Spec.Bootstrap.DataSecretName}
 	if err := m.client.Get(context.TODO(), key, secret); err != nil {
-		return "", fmt.Errorf("%w failed to retrieve bootstrap data secret for OscMachine %s/%s", err, m.GetNamespace(), m.GetName())
+		return "", fmt.Errorf("failed to retrieve bootstrap data secret: %w", err)
 	}
 	value, ok := secret.Data["value"]
 	if !ok {

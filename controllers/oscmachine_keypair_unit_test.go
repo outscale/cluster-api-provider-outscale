@@ -270,6 +270,7 @@ func TestReconcileKeyPairGet(t *testing.T) {
 		machineSpec            infrastructurev1beta1.OscMachineSpec
 		expKeyPairFound        bool
 		expValidateKeyPairs    bool
+		expGetKeyPairErr       error
 		expReconcileKeyPairErr error
 	}{
 		{
@@ -283,9 +284,8 @@ func TestReconcileKeyPairGet(t *testing.T) {
 					},
 				},
 			},
-			expKeyPairFound:        true,
-			expValidateKeyPairs:    true,
-			expReconcileKeyPairErr: nil,
+			expKeyPairFound:     true,
+			expValidateKeyPairs: true,
 		},
 		{
 			name: "failed to get keypair",
@@ -295,7 +295,8 @@ func TestReconcileKeyPairGet(t *testing.T) {
 			},
 			expKeyPairFound:        false,
 			expValidateKeyPairs:    false,
-			expReconcileKeyPairErr: errors.New("GetKeyPair generic error"),
+			expGetKeyPairErr:       errors.New("GetKeyPair generic error"),
+			expReconcileKeyPairErr: errors.New("cannot get keypair: GetKeyPair generic error"),
 		},
 	}
 	for _, k := range keypairTestCases {
@@ -321,8 +322,8 @@ func TestReconcileKeyPairGet(t *testing.T) {
 			keyPairSpec.ResourceId = keyPairName
 			mockOscKeyPairInterface.
 				EXPECT().
-				GetKeyPair(gomock.Eq(keyPairName)).
-				Return(&(*key.Keypairs)[0], k.expReconcileKeyPairErr)
+				GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
+				Return(&(*key.Keypairs)[0], k.expGetKeyPairErr)
 
 			// SA4022: the address of a variable cannot be nil
 			// if &(*key.Keypairs)[0] == nil {
@@ -364,8 +365,8 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			},
 			expValidateKeyPairs:    false,
 			expCreateKeyPairFound:  false,
-			expCreateKeyPairErr:    errors.New("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
-			expReconcileKeyPairErr: errors.New("CreateKeyPair failed Can not create keypair for OscCluster test-system/test-osc"),
+			expCreateKeyPairErr:    errors.New("CreateKeyPair failed"),
+			expReconcileKeyPairErr: errors.New("cannot create keypair: CreateKeyPair failed"),
 		},
 
 		{
@@ -411,21 +412,21 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			if k.expCreateKeyPairFound {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, nil)
 				mockOscKeyPairInterface.
 					EXPECT().
-					CreateKeyPair(gomock.Eq(keyPairName)).
-					Return(keyPairCreated.Keypair, k.expReconcileKeyPairErr) // keypair to becreated
+					CreateKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
+					Return(keyPairCreated.Keypair, k.expCreateKeyPairErr) // keypair to becreated
 			} else {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, nil)
 				mockOscKeyPairInterface.
 					EXPECT().
-					CreateKeyPair(gomock.Eq(keyPairName)).
-					Return(nil, k.expReconcileKeyPairErr)
+					CreateKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
+					Return(nil, k.expCreateKeyPairErr)
 			}
 
 			reconcileKeyPair, err := reconcileKeypair(ctx, machineScope, mockOscKeyPairInterface)
@@ -464,9 +465,9 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			},
 
 			expKeyPairFound:              false,
-			expGetKeyPairErr:             errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
+			expGetKeyPairErr:             errors.New("GetKeyPair generic error"),
 			expDeleteKeyPairErr:          nil,
-			expReconcileDeleteKeyPairErr: errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
+			expReconcileDeleteKeyPairErr: errors.New("cannot get keypair: GetKeyPair generic error"),
 			expKeyPairDelete:             false,
 			expKeyPairNotnil:             false,
 		},
@@ -483,8 +484,8 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 
 			expKeyPairFound:              true,
 			expGetKeyPairErr:             nil,
-			expDeleteKeyPairErr:          errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
-			expReconcileDeleteKeyPairErr: errors.New("Can not delete keypair for OscCluster test-system/test-osc"),
+			expDeleteKeyPairErr:          errors.New("Can not delete keypair"),
+			expReconcileDeleteKeyPairErr: errors.New("cannot delete keypair: Can not delete keypair"),
 			expKeyPairDelete:             false,
 			expKeyPairNotnil:             true,
 		},
@@ -565,18 +566,18 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			if k.expKeyPairFound {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(&(*key.Keypairs)[0], nil)
 			} else {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, k.expGetKeyPairErr)
 			}
 			if k.expKeyPairNotnil {
 				mockOscKeyPairInterface.
 					EXPECT().
-					DeleteKeyPair(gomock.Eq(keyPairName)).
+					DeleteKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(k.expDeleteKeyPairErr)
 			}
 

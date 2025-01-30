@@ -24,6 +24,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -60,7 +61,6 @@ func checkRouteTableFormatParameters(clusterScope *scope.ClusterScope) (string, 
 	}
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
-		clusterScope.V(2).Info("Check Route table parameters")
 		routeTableTagName, err := tag.ValidateTagNameValue(routeTableName)
 		if err != nil {
 			return routeTableTagName, err
@@ -80,7 +80,6 @@ func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error
 			if err != nil {
 				return routeTagName, err
 			}
-			clusterScope.V(2).Info("Check route destination IpRange parameters")
 			destinationIpRange := routeSpec.Destination
 			_, err = infrastructurev1beta1.ValidateCidr(destinationIpRange)
 			if err != nil {
@@ -105,12 +104,11 @@ func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 		routeTableSubnetsSpec := routeTableSpec.Subnets
 		for _, routeTableSubnet := range routeTableSubnetsSpec {
 			routeTableSubnetName := routeTableSubnet + "-" + clusterScope.GetUID()
-			clusterScope.V(2).Info("Check the desired subnet", "routeTableSubnet", routeTableSubnet)
 			checkOscAssociate := Contains(resourceNameList, routeTableSubnetName)
 			if checkOscAssociate {
 				return nil
 			} else {
-				return fmt.Errorf("%s subnet does not exist in routeTable", routeTableSubnetName)
+				return fmt.Errorf("subnet %s does not exist in routeTable", routeTableSubnetName)
 			}
 		}
 	}
@@ -124,7 +122,6 @@ func checkRouteTableOscDuplicateName(clusterScope *scope.ClusterScope) error {
 	for _, routeTableSpec := range routeTablesSpec {
 		resourceNameList = append(resourceNameList, routeTableSpec.Name)
 	}
-	clusterScope.V(2).Info("Check unique routetable")
 	duplicateResourceErr := alertDuplicate(resourceNameList)
 	if duplicateResourceErr != nil {
 		return duplicateResourceErr
@@ -142,7 +139,6 @@ func checkRouteOscDuplicateName(clusterScope *scope.ClusterScope) error {
 		for _, routeSpec := range *routesSpec {
 			resourceNameList = append(resourceNameList, routeSpec.Name)
 		}
-		clusterScope.V(2).Info("Check unique route")
 		duplicateResourceErr := alertDuplicate(resourceNameList)
 		if duplicateResourceErr != nil {
 			return duplicateResourceErr
@@ -155,6 +151,7 @@ func checkRouteOscDuplicateName(clusterScope *scope.ClusterScope) error {
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
 func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta1.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	routeRef := clusterScope.GetRouteRef()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
 	resourceName := routeSpec.TargetName + "-" + clusterScope.GetUID()
@@ -178,17 +175,16 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 	}
 	destinationIpRange := routeSpec.Destination
 	associateRouteTableId := routeTablesRef.ResourceMap[routeTableName]
-	clusterScope.V(2).Info("Check if the desired route exist", "routename", routeName)
-	routeTableFromRoute, err := routeTableSvc.GetRouteTableFromRoute(associateRouteTableId, resourceId, resourceType)
+	log.V(4).Info("Checking route", "routename", routeName)
+	routeTableFromRoute, err := routeTableSvc.GetRouteTableFromRoute(ctx, associateRouteTableId, resourceId, resourceType)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("cannot get route table: %w", err)
 	}
 	if routeTableFromRoute == nil {
-		clusterScope.V(4).Info("Create Route", "Route", resourceId)
-		clusterScope.V(2).Info("Create the desired route", "routeName", routeName)
-		routeTableFromRoute, err = routeTableSvc.CreateRoute(destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
+		log.V(2).Info("Creating route", "routeName", routeName)
+		routeTableFromRoute, err = routeTableSvc.CreateRoute(ctx, destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create route for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot create route: %w", err)
 		}
 	}
 
@@ -198,6 +194,7 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
 func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta1.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	osccluster := clusterScope.OscCluster
 
 	routeTablesRef := clusterScope.GetRouteTablesRef()
@@ -225,27 +222,27 @@ func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope,
 	destinationIpRange := routeSpec.Destination
 	associateRouteTableId := routeTablesRef.ResourceMap[routeTableName]
 
-	clusterScope.V(2).Info("Check if the desired route still exist", "routeName", routeName)
-	routeTableFromRoute, err := routeTableSvc.GetRouteTableFromRoute(associateRouteTableId, resourceId, resourceType)
+	log.V(4).Info("Checking if route still exist", "routeName", routeName)
+	routeTableFromRoute, err := routeTableSvc.GetRouteTableFromRoute(ctx, associateRouteTableId, resourceId, resourceType)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("checking route table: %w", err)
 	}
 	if routeTableFromRoute == nil {
-		clusterScope.V(2).Info("The desired route does not exist anymore", "routeName", routeName)
+		log.V(3).Info("The route is already deleted", "routeName", routeName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	clusterScope.V(4).Info("Delete destinationIpRange", "routeTable", destinationIpRange)
-	clusterScope.V(4).Info("Delete the desired route", "routeName", routeName)
-	err = routeTableSvc.DeleteRoute(destinationIpRange, routeTableId)
+	log.V(2).Info("Deleting route", "routeName", routeName)
+	err = routeTableSvc.DeleteRoute(ctx, destinationIpRange, routeTableId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete route for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot delete route: %w", err)
 	}
 	return reconcile.Result{}, nil
 }
 
 // reconcileRouteTable reconcile the RouteTable and the Route of the cluster.
 func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	routeTablesSpec := clusterScope.GetRouteTables()
 	routeTablesRef := clusterScope.GetRouteTablesRef()
 	linkRouteTablesRef := clusterScope.GetLinkRouteTablesRef()
@@ -260,22 +257,21 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 	networkSpec := clusterScope.GetNetwork()
 	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 
-	clusterScope.V(4).Info("Get list of all desired routetable in net", "netId", netId)
-	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(netId)
+	log.V(4).Info("List routetables in net", "netId", netId)
+	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(ctx, netId)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("list route tables: %w", err)
 	}
-	clusterScope.V(4).Info("Number of routeTable", "routeTableLength", routeTablesSpec)
+	log.V(4).Info("Number of routeTables", "routeTableLength", routeTablesSpec)
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
-		clusterScope.V(2).Info("Check if the desired routeTable exist in net", "routeTableName", routeTableName)
-		clusterScope.V(4).Info("Get routeTable Id", "routeTable", routeTablesRef.ResourceMap)
+		log.V(4).Info("Check if routeTable exists in net", "routeTableName", routeTableName)
 
 		tagKey := "Name"
 		tagValue := routeTableName
-		tag, err := tagSvc.ReadTag(tagKey, tagValue)
+		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
 		if len(routeTablesRef.ResourceMap) == 0 {
 			routeTablesRef.ResourceMap = make(map[string]string)
@@ -295,15 +291,14 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		natRouteTable := false
 
 		if !Contains(routeTableIds, routeTableId) && tag == nil {
-			clusterScope.V(2).Info("Check Nat RouteTable")
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-			clusterScope.V(4).Info("Number of route", "routeLength", len(*routesSpec))
+			log.V(4).Info("Number of routes", "routeLength", len(*routesSpec))
 			for _, routeSpec := range *routesSpec {
 				resourceType := routeSpec.TargetType
-				clusterScope.V(4).Info("Get resourceType", "ResourceType", resourceType)
+				log.V(4).Info("Get resourceType", "ResourceType", resourceType)
 				if resourceType == "nat" {
 					natServiceRef := clusterScope.GetNatServiceRef()
-					clusterScope.V(4).Info("Get Nat", "Nat", natServiceRef.ResourceMap)
+					log.V(4).Info("Get Nat", "Nat", natServiceRef.ResourceMap)
 					if len(natServiceRef.ResourceMap) == 0 {
 						natRouteTable = true
 					}
@@ -312,14 +307,13 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 			if natRouteTable {
 				continue
 			}
-			clusterScope.V(4).Info("Create the desired routetable", "routeTableName", routeTableName)
-			routeTable, err := routeTableSvc.CreateRouteTable(netId, clusterName, routeTableName)
+			log.V(2).Info("Creating routetable", "routeTableName", routeTableName)
+			routeTable, err := routeTableSvc.CreateRouteTable(ctx, netId, clusterName, routeTableName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create routetable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 			}
 
 			routeTableId := routeTable.GetRouteTableId()
-			clusterScope.V(4).Info("Get routeTable", "routeTable", routeTable)
 			routeTablesRef.ResourceMap[routeTableName] = routeTableId
 			routeTableSpec.ResourceId = routeTableId
 			subnetsSpec := routeTableSpec.Subnets
@@ -330,11 +324,10 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 				if err != nil {
 					return reconcile.Result{}, err
 				}
-				clusterScope.V(2).Info("Link the desired routetable with subnet", "routeTableName", routeTableName)
-
-				linkRouteTableId, err := routeTableSvc.LinkRouteTable(routeTableId, subnetId)
+				log.V(2).Info("Link routetable with subnet", "routeTableName", routeTableName)
+				linkRouteTableId, err := routeTableSvc.LinkRouteTable(ctx, routeTableId, subnetId)
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not link routetable with net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+					return reconcile.Result{}, fmt.Errorf("cannot link routetable with net: %w", err)
 				}
 				linkRouteTableIdArray = append(linkRouteTableIdArray, linkRouteTableId)
 			}
@@ -342,7 +335,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 			linkRouteTablesRef[routeTableName] = linkRouteTableIdArray
 			clusterScope.SetLinkRouteTablesRef(linkRouteTablesRef)
 			for _, routeSpec := range *routesSpec {
-				clusterScope.V(2).Info("Create route for the desired routetable", "routeTableName", routeTableName)
+				log.V(2).Info("Create route for routetable", "routeTableName", routeTableName)
 				_, err = reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, routeTableSvc)
 				if err != nil {
 					return reconcile.Result{}, err
@@ -355,6 +348,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 // reconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
 func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	var routeTablesSpec []*infrastructurev1beta1.OscRouteTable
 	networkSpec := clusterScope.GetNetwork()
 
@@ -375,44 +369,44 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		return reconcile.Result{}, err
 	}
 
-	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(netId)
+	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	osccluster := clusterScope.OscCluster
-	clusterScope.V(4).Info("Number of routeTable", "routeTable", len(routeTablesSpec))
+	log.V(4).Info("Number of routeTable", "routeTable", len(routeTablesSpec))
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
-		clusterScope.V(2).Info("Get routetable", "routeTable", routeTableName)
+		log.V(2).Info("Get routetable", "routeTable", routeTableName)
 		if !Contains(routeTableIds, routeTableId) {
-			clusterScope.V(2).Info("The desired routeTable does no exist anymore", "routeTableName", routeTableName)
+			log.V(2).Info("routeTable is already deleted", "routeTableName", routeTableName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-		clusterScope.V(4).Info("Number of route", "routeLength", len(*routesSpec))
+		log.V(4).Info("Number of route", "routeLength", len(*routesSpec))
 		for _, routeSpec := range *routesSpec {
 			_, err = reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, routeTableSvc)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		}
-		clusterScope.V(4).Info("Get link", "link", len(linkRouteTablesRef))
+		log.V(4).Info("Get link", "link", len(linkRouteTablesRef))
 
 		for _, linkRouteTableId := range linkRouteTablesRef[routeTableName] {
-			clusterScope.V(2).Info("Unlink the desired routeTable", "routeTableName", routeTableName)
-			err = routeTableSvc.UnlinkRouteTable(linkRouteTableId)
+			log.V(2).Info("Unlink routeTable", "routeTableName", routeTableName)
+			err = routeTableSvc.UnlinkRouteTable(ctx, linkRouteTableId)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not unlink routeTable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("cannot unlink routeTable: %w", err)
 			}
 		}
 
-		clusterScope.V(2).Info("Delete the desired routeTable", "routeTableName", routeTableName)
-		err = routeTableSvc.DeleteRouteTable(routeTablesRef.ResourceMap[routeTableName])
+		log.V(2).Info("Deleting routeTable", "routeTableName", routeTableName)
+		err = routeTableSvc.DeleteRouteTable(ctx, routeTablesRef.ResourceMap[routeTableName])
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete routeTable for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot delete routeTable: %w", err)
 		}
 	}
 	return reconcile.Result{}, nil

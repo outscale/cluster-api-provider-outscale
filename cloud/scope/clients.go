@@ -45,7 +45,7 @@ func newOscClient() (*OscClient, error) {
 		version = "DEV"
 	}
 	config := osc.NewConfiguration()
-	config.Debug = true
+	// config.Debug = true
 	config.UserAgent = "cluster-api-provider-outscale/" + version
 	auth := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),

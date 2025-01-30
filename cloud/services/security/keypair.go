@@ -17,23 +17,26 @@ limitations under the License.
 package security
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+//go:generate ../../../bin/mockgen -destination mock_security/keypair_mock.go -package mock_security -source ./keypair.go
 type OscKeyPairInterface interface {
-	CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
-	DeleteKeyPair(keypairName string) error
-	GetKeyPair(keyPairName string) (*osc.Keypair, error)
+	CreateKeyPair(ctx context.Context, keypairName string) (*osc.KeypairCreated, error)
+	DeleteKeyPair(ctx context.Context, keypairName string) error
+	GetKeyPair(ctx context.Context, keyPairName string) (*osc.Keypair, error)
 }
 
 // CreateKeyPair create keypair with keypairName
-func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error) {
+func (s *Service) CreateKeyPair(ctx context.Context, keypairName string) (*osc.KeypairCreated, error) {
 	keyPairRequest := osc.CreateKeypairRequest{
 		KeypairName: keypairName,
 	}
@@ -45,6 +48,7 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 		var httpRes *http.Response
 		var err error
 		keyPairResponse, httpRes, err = oscAPIClient.KeypairApi.CreateKeypair(oscAuthClient).CreateKeypairRequest(keyPairRequest).Execute()
+		utils.LogAPICall(ctx, "CreateKeypair", keyPairRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -70,7 +74,8 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 		Filters: &osc.FiltersKeypair{},
 	}
 
-	resp, _, err := oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(req).Execute()
+	resp, httpRes, err := oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(req).Execute()
+	utils.LogAPICall(ctx, "ReadKeypairs", req, httpRes, err)
 	if err != nil {
 		return nil, errors.New("Unable to read keypairRequest")
 	}
@@ -87,7 +92,7 @@ func (s *Service) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error)
 }
 
 // GetKeypair retrieve keypair from keypairName
-func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
+func (s *Service) GetKeyPair(ctx context.Context, keyPairName string) (*osc.Keypair, error) {
 	readKeypairsRequest := osc.ReadKeypairsRequest{
 		Filters: &osc.FiltersKeypair{
 			KeypairNames: &[]string{keyPairName},
@@ -100,6 +105,7 @@ func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
 		var httpRes *http.Response
 		var err error
 		readKeypairsResponse, httpRes, err = oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(readKeypairsRequest).Execute()
+		utils.LogAPICall(ctx, "ReadKeypairs", readKeypairsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -134,7 +140,7 @@ func (s *Service) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
 }
 
 // DeleteKeyPair delete machine keypair
-func (s *Service) DeleteKeyPair(keyPairName string) error {
+func (s *Service) DeleteKeyPair(ctx context.Context, keyPairName string) error {
 	deleteKeypairRequest := osc.DeleteKeypairRequest{KeypairName: keyPairName}
 	oscAPIClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -142,6 +148,7 @@ func (s *Service) DeleteKeyPair(keyPairName string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscAPIClient.KeypairApi.DeleteKeypair(oscAuthClient).DeleteKeypairRequest(deleteKeypairRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteKeypair", deleteKeypairRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

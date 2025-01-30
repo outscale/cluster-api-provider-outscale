@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -48,7 +49,6 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 	if err != nil {
 		return netTagName, err
 	}
-	clusterScope.V(2).Info("Check Net IpRange parameters")
 	netIpRange := netSpec.IpRange
 	_, err = infrastructurev1beta1.ValidateCidr(netIpRange)
 	if err != nil {
@@ -59,6 +59,7 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 
 // reconcileNet reconcile the Net of the cluster.
 func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netRef := clusterScope.GetNetRef()
@@ -72,27 +73,25 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	}
 	tagKey := "Name"
 	tagValue := netName
-	tag, err := tagSvc.ReadTag(tagKey, tagValue)
+	tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 	}
 	if netSpec.ResourceId != "" {
 		netRef.ResourceMap[netName] = netSpec.ResourceId
 		netId := netSpec.ResourceId
-		clusterScope.V(2).Info("Check if the desired net exist", "netName", netName)
-		clusterScope.V(4).Info("Get netId", "net", netRef.ResourceMap)
-		net, err = netSvc.GetNet(netId)
+		log.V(4).Info("Checking net", "netName", netName)
+		net, err = netSvc.GetNet(ctx, netId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 	if (net == nil && tag == nil) || (netSpec.ResourceId == "" && tag == nil) {
-		clusterScope.V(2).Info("Create the desired net", "netName", netName)
-		net, err := netSvc.CreateNet(netSpec, clusterName, netName)
+		log.V(2).Info("Creating net", "netName", netName)
+		net, err := netSvc.CreateNet(ctx, netSpec, clusterName, netName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
 		}
-		clusterScope.V(4).Info("Get net", "net", net)
 		netRef.ResourceMap[netName] = net.GetNetId()
 		netSpec.ResourceId = *net.NetId
 		netRef.ResourceMap[netName] = net.GetNetId()
@@ -103,25 +102,26 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
 func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	osccluster := clusterScope.OscCluster
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netId := netSpec.ResourceId
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	net, err := netSvc.GetNet(netId)
+	net, err := netSvc.GetNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if net == nil {
-		clusterScope.V(4).Info("The desired net does not exist anymore", "netName", netName)
+		log.V(4).Info("The net is already deleted", "netName", netName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	clusterScope.V(2).Info("Delete the desired net", "netName", netName)
-	err = netSvc.DeleteNet(netId)
+	log.V(2).Info("Deleting net", "netName", netName)
+	err = netSvc.DeleteNet(ctx, netId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot delete net: %w", err)
 	}
 	return reconcile.Result{}, nil
 }

@@ -5,9 +5,11 @@
 package mock_security
 
 import (
+	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	reflect "reflect"
 )
 
 // MockOscKeyPairInterface is a mock of OscKeyPairInterface interface.
@@ -34,45 +36,45 @@ func (m *MockOscKeyPairInterface) EXPECT() *MockOscKeyPairInterfaceMockRecorder 
 }
 
 // CreateKeyPair mocks base method.
-func (m *MockOscKeyPairInterface) CreateKeyPair(keypairName string) (*osc.KeypairCreated, error) {
+func (m *MockOscKeyPairInterface) CreateKeyPair(ctx context.Context, keypairName string) (*osc.KeypairCreated, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateKeyPair", keypairName)
+	ret := m.ctrl.Call(m, "CreateKeyPair", ctx, keypairName)
 	ret0, _ := ret[0].(*osc.KeypairCreated)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateKeyPair indicates an expected call of CreateKeyPair.
-func (mr *MockOscKeyPairInterfaceMockRecorder) CreateKeyPair(keypairName interface{}) *gomock.Call {
+func (mr *MockOscKeyPairInterfaceMockRecorder) CreateKeyPair(ctx, keypairName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKeyPair", reflect.TypeOf((*MockOscKeyPairInterface)(nil).CreateKeyPair), keypairName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKeyPair", reflect.TypeOf((*MockOscKeyPairInterface)(nil).CreateKeyPair), ctx, keypairName)
 }
 
 // DeleteKeyPair mocks base method.
-func (m *MockOscKeyPairInterface) DeleteKeyPair(keypairName string) error {
+func (m *MockOscKeyPairInterface) DeleteKeyPair(ctx context.Context, keypairName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteKeyPair", keypairName)
+	ret := m.ctrl.Call(m, "DeleteKeyPair", ctx, keypairName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteKeyPair indicates an expected call of DeleteKeyPair.
-func (mr *MockOscKeyPairInterfaceMockRecorder) DeleteKeyPair(keypairName interface{}) *gomock.Call {
+func (mr *MockOscKeyPairInterfaceMockRecorder) DeleteKeyPair(ctx, keypairName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteKeyPair", reflect.TypeOf((*MockOscKeyPairInterface)(nil).DeleteKeyPair), keypairName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteKeyPair", reflect.TypeOf((*MockOscKeyPairInterface)(nil).DeleteKeyPair), ctx, keypairName)
 }
 
 // GetKeyPair mocks base method.
-func (m *MockOscKeyPairInterface) GetKeyPair(keyPairName string) (*osc.Keypair, error) {
+func (m *MockOscKeyPairInterface) GetKeyPair(ctx context.Context, keyPairName string) (*osc.Keypair, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeyPair", keyPairName)
+	ret := m.ctrl.Call(m, "GetKeyPair", ctx, keyPairName)
 	ret0, _ := ret[0].(*osc.Keypair)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetKeyPair indicates an expected call of GetKeyPair.
-func (mr *MockOscKeyPairInterfaceMockRecorder) GetKeyPair(keyPairName interface{}) *gomock.Call {
+func (mr *MockOscKeyPairInterfaceMockRecorder) GetKeyPair(ctx, keyPairName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyPair", reflect.TypeOf((*MockOscKeyPairInterface)(nil).GetKeyPair), keyPairName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyPair", reflect.TypeOf((*MockOscKeyPairInterface)(nil).GetKeyPair), ctx, keyPairName)
 }
