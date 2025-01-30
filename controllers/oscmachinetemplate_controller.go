@@ -24,11 +24,13 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // reconcileCapacity reconcile oscmachinetemplate capacity
 func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope, vmSvc compute.OscVmInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	var machineSize int
 	var machineKcpCount int32
 	var machineKwCount int32
@@ -43,9 +45,9 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			return reconcile.Result{}, fmt.Errorf("%w Can not get ListMachine", err)
 		}
 		machineSize = len(machines)
-		clusterScope.V(4).Info("Get OscMachine Size", "machineSize", machineSize)
+		log.V(4).Info("Get OscMachine Size", "machineSize", machineSize)
 	} else {
-		clusterScope.V(2).Info("Do not wait for OscMachine")
+		log.V(2).Info("Do not wait for OscMachine")
 		machineSize = 1
 		machineKcpReady = 1
 		machineKcpCount = 1
@@ -56,18 +58,18 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			names := make([]string, len(machines))
 			for i, m := range machines {
 				names[i] = "machine/" + m.Name
-				machineTemplateScope.V(4).Info("Get Machines", "machine", m.Name)
+				log.V(4).Info("Get Machines", "machine", m.Name)
 				machineLabel := m.Labels
 				for labelKey := range machineLabel {
 					switch labelKey {
 					case "cluster.x-k8s.io/control-plane":
-						machineTemplateScope.V(4).Info("Get Kcp Machine", "machineKcp", m.Name)
+						log.V(4).Info("Get Kcp Machine", "machineKcp", m.Name)
 						machineKcpCount++
 						if m.Status.Phase == "Running" || m.Status.Phase == "Provisioned" {
 							machineKcpReady++
 						}
 					case "cluster.x-k8s.io/deployment-name":
-						machineTemplateScope.V(4).Info("Get Kw Machine", "machineKw", m.Name)
+						log.V(4).Info("Get Kw Machine", "machineKw", m.Name)
 						machineKwCount++
 						if m.Status.Phase == "Running" || m.Status.Phase == "Provisioned" {
 							machineKwReady++
@@ -78,20 +80,20 @@ func reconcileCapacity(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		}
 		role := machineTemplateScope.GetRole()
 		if role == "controlplane" && machineKcpReady > 0 && machineKcpCount > 0 {
-			machineTemplateScope.V(2).Info("At least one controlplane node ready")
+			log.V(2).Info("At least one controlplane node ready")
 		} else if role == "" && machineKwReady > 0 && machineKwCount > 0 {
-			machineTemplateScope.V(2).Info("At least one worker node ready")
+			log.V(2).Info("At least one worker node ready")
 		} else {
-			machineTemplateScope.V(2).Info("Node is not ready yet")
+			log.V(2).Info("Node is not ready yet")
 			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 	} else {
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 	clusterName := machineTemplateScope.GetClusterName() + "-" + clusterScope.GetUID()
-	machineTemplateScope.V(4).Info("Get ClusterName", "clusterName", clusterName)
+	log.V(4).Info("Get ClusterName", "clusterName", clusterName)
 	vmType := machineTemplateScope.GetVmType()
-	capacity, err := vmSvc.GetCapacity("OscK8sClusterID/"+clusterName, "owned", vmType)
+	capacity, err := vmSvc.GetCapacity(ctx, "OscK8sClusterID/"+clusterName, "owned", vmType)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

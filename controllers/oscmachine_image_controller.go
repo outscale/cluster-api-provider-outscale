@@ -25,6 +25,7 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -39,7 +40,6 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 		imageSpec = machineScope.GetImage()
 	}
 	imageName := imageSpec.Name
-	machineScope.V(2).Info("Check Image parameters")
 	imageName, err = infrastructurev1beta1.ValidateImageName(imageName)
 	if err != nil {
 		return imageName, err
@@ -59,6 +59,7 @@ func getImageResourceId(resourceName string, machineScope *scope.MachineScope) (
 
 // reconcileImage reconcile the image of the machine
 func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, imageSvc compute.OscImageInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	imageSpec := machineScope.GetImage()
 	imageRef := machineScope.GetImageRef()
 	imageName := imageSpec.Name
@@ -71,17 +72,17 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	}
 
 	if imageName != "" {
-		machineScope.V(2).Info("Image Name exist", "imageName", imageName)
-		if imageId, err = imageSvc.GetImageId(imageName); err != nil {
+		log.V(2).Info("Image Name exist", "imageName", imageName)
+		if imageId, err = imageSvc.GetImageId(ctx, imageName); err != nil {
 			return reconcile.Result{}, err
 		}
 	} else {
-		machineScope.V(4).Info("Image Name is empty and we will try to get it from Id", "imageId", imageId)
-		if imageName, err = imageSvc.GetImageName(imageId); err != nil {
+		log.V(4).Info("Image Name is empty and we will try to get it from Id", "imageId", imageId)
+		if imageName, err = imageSvc.GetImageName(ctx, imageId); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
-	if image, err = imageSvc.GetImage(imageId); err != nil {
+	if image, err = imageSvc.GetImage(ctx, imageId); err != nil {
 		return reconcile.Result{}, err
 	}
 	if imageSpec.ResourceId != "" {
@@ -91,7 +92,7 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 	if image == nil {
-		machineScope.V(2).Info("Image is nil")
+		log.V(2).Info("Image is nil")
 		return reconcile.Result{}, err
 	} else {
 		imageRef.ResourceMap[imageName] = imageId

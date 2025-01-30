@@ -378,12 +378,12 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			if nstc.expTagFound {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(natServiceName)).
 					Return(&tag, nstc.expReadTagErr)
 			} else {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(natServiceName)).
 					Return(nil, nstc.expReadTagErr)
 			}
 			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
@@ -411,12 +411,12 @@ func TestReconcileNatServiceCreate(t *testing.T) {
 			if nstc.expCreateNatServiceFound {
 				mockOscNatServiceInterface.
 					EXPECT().
-					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
+					CreateNatService(gomock.Any(), gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
 					Return(natService.NatService, nstc.expCreateNatServiceErr)
 			} else {
 				mockOscNatServiceInterface.
 					EXPECT().
-					CreateNatService(gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
+					CreateNatService(gomock.Any(), gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(natServiceName), gomock.Eq(clusterName)).
 					Return(nil, nstc.expCreateNatServiceErr)
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
@@ -483,12 +483,12 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			if nstc.expTagFound {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(natServiceName)).
 					Return(&tag, nstc.expReadTagErr)
 			} else {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(natServiceName)).
 					Return(nil, nstc.expReadTagErr)
 			}
 			publicIpName := nstc.spec.Network.NatService.PublicIpName + "-uid"
@@ -522,12 +522,12 @@ func TestReconcileNatServiceGet(t *testing.T) {
 			if nstc.expNatServiceFound {
 				mockOscNatServiceInterface.
 					EXPECT().
-					GetNatService(gomock.Eq(natServiceId)).
+					GetNatService(gomock.Any(), gomock.Eq(natServiceId)).
 					Return(&readNatService[0], nstc.expGetNatServiceErr)
 			} else {
 				mockOscNatServiceInterface.
 					EXPECT().
-					GetNatService(gomock.Eq(natServiceId)).
+					GetNatService(gomock.Any(), gomock.Eq(natServiceId)).
 					Return(nil, nstc.expGetNatServiceErr)
 			}
 			reconcileNatService, err := reconcileNatService(ctx, clusterScope, mockOscNatServiceInterface, mockOscTagInterface)
@@ -608,12 +608,12 @@ func TestReconcileNatServiceResourceId(t *testing.T) {
 				if nstc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(natServiceName)).
 						Return(&tag, nstc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(natServiceName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(natServiceName)).
 						Return(nil, nstc.expReadTagErr)
 				}
 			}
@@ -682,12 +682,12 @@ func TestReconcileDeleteNatServiceDeleteWithoutSpec(t *testing.T) {
 
 			mockOscNatServiceInterface.
 				EXPECT().
-				GetNatService(gomock.Eq(natServiceId)).
+				GetNatService(gomock.Any(), gomock.Eq(natServiceId)).
 				Return(&readNatService[0], nstc.expGetNatServiceErr)
 
 			mockOscNatServiceInterface.
 				EXPECT().
-				DeleteNatService(gomock.Eq(natServiceId)).
+				DeleteNatService(gomock.Any(), gomock.Eq(natServiceId)).
 				Return(nstc.expDeleteNatServiceErr)
 
 			reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, mockOscNatServiceInterface)
@@ -760,17 +760,17 @@ func TestReconcileDeleteNatServiceDelete(t *testing.T) {
 			if nstc.expNatServiceFound {
 				mockOscNatServiceInterface.
 					EXPECT().
-					GetNatService(gomock.Eq(natServiceId)).
+					GetNatService(gomock.Any(), gomock.Eq(natServiceId)).
 					Return(&readNatService[0], nstc.expGetNatServiceErr)
 			} else {
 				mockOscNatServiceInterface.
 					EXPECT().
-					GetNatService(gomock.Eq(natServiceId)).
+					GetNatService(gomock.Any(), gomock.Eq(natServiceId)).
 					Return(nil, nstc.expGetNatServiceErr)
 			}
 			mockOscNatServiceInterface.
 				EXPECT().
-				DeleteNatService(gomock.Eq(natServiceId)).
+				DeleteNatService(gomock.Any(), gomock.Eq(natServiceId)).
 				Return(nstc.expDeleteNatServiceErr)
 			reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, mockOscNatServiceInterface)
 			if nstc.expReconcileDeleteNatServiceErr != nil {

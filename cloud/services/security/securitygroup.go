@@ -17,11 +17,13 @@ limitations under the License.
 package security
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
+	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/utils"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -30,17 +32,17 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
 
 type OscSecurityGroupInterface interface {
-	CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error)
-	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
-	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
-	DeleteSecurityGroup(securityGroupId string) (error, *http.Response)
-	GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error)
-	GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, securityGroupMemberId string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
-	GetSecurityGroupIdsFromNetIds(netId string) ([]string, error)
+	CreateSecurityGroup(ctx context.Context, netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error)
+	CreateSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
+	DeleteSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
+	DeleteSecurityGroup(ctx context.Context, securityGroupId string) (error, *http.Response)
+	GetSecurityGroup(ctx context.Context, securityGroupId string) (*osc.SecurityGroup, error)
+	GetSecurityGroupFromSecurityGroupRule(ctx context.Context, securityGroupId string, Flow string, IpProtocols string, IpRanges string, securityGroupMemberId string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
+	GetSecurityGroupIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
 }
 
 // CreateSecurityGroup create the securitygroup associated with the net
-func (s *Service) CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error) {
+func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error) {
 	securityGroupRequest := osc.CreateSecurityGroupRequest{
 		SecurityGroupName: securityGroupName,
 		Description:       securityGroupDescription,
@@ -86,7 +88,7 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err, httpRes := tag.AddTag(clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -103,7 +105,7 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 			ResourceIds: resourceIds,
 			Tags:        []osc.ResourceTag{mainTag},
 		}
-		err, httpRes := tag.AddTag(mainSecurityGroupTagRequest, resourceIds, oscApiClient, oscAuthClient)
+		err, httpRes := tag.AddTag(ctx, mainSecurityGroupTagRequest, resourceIds, oscApiClient, oscAuthClient)
 		if err != nil {
 			if httpRes != nil {
 				return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -117,7 +119,7 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 }
 
 // CreateSecurityGroupRule create the security group rule associated with the security group and the net
-func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
+func (s *Service) CreateSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
 	var rule osc.SecurityGroupRule
 	if securityGroupMemberId != "" && ipRange == "" {
 		securityGroupMember := osc.SecurityGroupsMember{
@@ -152,6 +154,7 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 		var httpRes *http.Response
 		var err error
 		securityGroupRuleResponse, httpRes, err = oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
+		utils.LogAPICall(ctx, "CreateSecurityGroupRule", createSecurityGroupRuleRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				if httpRes.StatusCode == 409 {
@@ -179,13 +182,13 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 	if !ok {
 		// if CreateSecurityGroupRule return 409, the response not contain the conflicted SecurityGroup.
 		// workarround to a Outscale API issue
-		return s.GetSecurityGroup(securityGroupId)
+		return s.GetSecurityGroup(ctx, securityGroupId)
 	}
 	return securityGroupRule, nil
 }
 
 // DeleteSecurityGroupRule delete the security group rule associated with the security group and the net
-func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error {
+func (s *Service) DeleteSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error {
 	var rule osc.SecurityGroupRule
 	if securityGroupMemberId != "" && ipRange == "" {
 		securityGroupMember := osc.SecurityGroupsMember{
@@ -219,6 +222,7 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 		var err error
 
 		_, httpRes, err = oscApiClient.SecurityGroupRuleApi.DeleteSecurityGroupRule(oscAuthClient).DeleteSecurityGroupRuleRequest(deleteSecurityGroupRuleRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteSecurityGroupRule", deleteSecurityGroupRuleRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -243,11 +247,12 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 }
 
 // DeleteSecurityGroup delete the securitygroup associated with the net
-func (s *Service) DeleteSecurityGroup(securityGroupId string) (error, *http.Response) {
+func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId string) (error, *http.Response) {
 	deleteSecurityGroupRequest := osc.DeleteSecurityGroupRequest{SecurityGroupId: &securityGroupId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
 			fmt.Printf("Error with http result %s", httpRes.Status)
@@ -258,7 +263,7 @@ func (s *Service) DeleteSecurityGroup(securityGroupId string) (error, *http.Resp
 }
 
 // GetSecurityGroup retrieve security group object from the security group id
-func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error) {
+func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) (*osc.SecurityGroup, error) {
 	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
 			SecurityGroupIds: &[]string{securityGroupId},
@@ -304,7 +309,7 @@ func (s *Service) GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, 
 }
 
 // GetSecurityGroupFromSecurityGroupRule retrieve security group rule object from the security group id
-func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
+func (s *Service) GetSecurityGroupFromSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
 	if ipProtocols == "-1" {
 		fromPortRanges = -1
@@ -389,7 +394,7 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(securityGroupId string, 
 }
 
 // GetSecurityGroupIdsFromNetIds return the security group id resource that exist from the net id
-func (s *Service) GetSecurityGroupIdsFromNetIds(netId string) ([]string, error) {
+func (s *Service) GetSecurityGroupIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
 	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
 			NetIds: &[]string{netId},

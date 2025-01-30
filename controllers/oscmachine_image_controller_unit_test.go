@@ -355,24 +355,24 @@ func TestReconcileImageGet(t *testing.T) {
 			if itc.expImageNameFound {
 				mockOscimageInterface.
 					EXPECT().
-					GetImageId(gomock.Eq(imageName)).
+					GetImageId(gomock.Any(), gomock.Eq(imageName)).
 					Return(imageId, itc.expGetImageIdErr)
 			} else {
 				mockOscimageInterface.
 					EXPECT().
-					GetImageName(gomock.Eq(imageId)).
+					GetImageName(gomock.Any(), gomock.Eq(imageId)).
 					Return(imageName, itc.expGetImageNameErr)
 			}
 			if itc.expImageFound {
 				if itc.expImageErr {
 					mockOscimageInterface.
 						EXPECT().
-						GetImage(gomock.Eq(imageId)).
+						GetImage(gomock.Any(), gomock.Eq(imageId)).
 						Return(nil, itc.expGetImageErr)
 				} else {
 					mockOscimageInterface.
 						EXPECT().
-						GetImage(gomock.Eq(imageId)).
+						GetImage(gomock.Any(), gomock.Eq(imageId)).
 						Return(&(*image.Images)[0], itc.expGetImageErr)
 				}
 			}

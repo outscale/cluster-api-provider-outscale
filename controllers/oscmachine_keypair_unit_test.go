@@ -321,7 +321,7 @@ func TestReconcileKeyPairGet(t *testing.T) {
 			keyPairSpec.ResourceId = keyPairName
 			mockOscKeyPairInterface.
 				EXPECT().
-				GetKeyPair(gomock.Eq(keyPairName)).
+				GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 				Return(&(*key.Keypairs)[0], k.expReconcileKeyPairErr)
 
 			// SA4022: the address of a variable cannot be nil
@@ -411,20 +411,20 @@ func TestReconcileKeyPairCreate(t *testing.T) {
 			if k.expCreateKeyPairFound {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, nil)
 				mockOscKeyPairInterface.
 					EXPECT().
-					CreateKeyPair(gomock.Eq(keyPairName)).
+					CreateKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(keyPairCreated.Keypair, k.expReconcileKeyPairErr) // keypair to becreated
 			} else {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, nil)
 				mockOscKeyPairInterface.
 					EXPECT().
-					CreateKeyPair(gomock.Eq(keyPairName)).
+					CreateKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, k.expReconcileKeyPairErr)
 			}
 
@@ -565,18 +565,18 @@ func TestReconcileDeleteKeyPairGet(t *testing.T) {
 			if k.expKeyPairFound {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(&(*key.Keypairs)[0], nil)
 			} else {
 				mockOscKeyPairInterface.
 					EXPECT().
-					GetKeyPair(gomock.Eq(keyPairName)).
+					GetKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(nil, k.expGetKeyPairErr)
 			}
 			if k.expKeyPairNotnil {
 				mockOscKeyPairInterface.
 					EXPECT().
-					DeleteKeyPair(gomock.Eq(keyPairName)).
+					DeleteKeyPair(gomock.Any(), gomock.Eq(keyPairName)).
 					Return(k.expDeleteKeyPairErr)
 			}
 

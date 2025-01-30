@@ -52,7 +52,7 @@ type OscMachineTemplateReconciler struct {
 
 // Reconcile manages the lifecycle of an OscMachineTemplate object.
 func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
-	log := ctrl.LoggerFrom(ctx).WithValues("oscmachinetemplate", req.NamespacedName)
+	log := ctrl.LoggerFrom(ctx)
 	log.V(2).Info("Reconcile OscMachineTemplate")
 
 	machineTemplate := &infrastructurev1beta1.OscMachineTemplate{}
@@ -65,7 +65,6 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	machineTemplateScope, err := scope.NewMachineTemplateScope(scope.MachineTemplateScopeParams{
 		Client:             r.Client,
-		Logger:             log,
 		OscMachineTemplate: machineTemplate,
 	})
 
@@ -86,7 +85,7 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	} else {
 		for _, cluster = range clusterList.Items {
-			machineTemplateScope.V(4).Info("Get Cluster", "cluster", cluster.Name)
+			log.V(4).Info("Get Cluster", "cluster", cluster.Name)
 			log.V(2).Info("Find cluster")
 		}
 		if len(clusterList.Items) == 0 {
@@ -105,7 +104,6 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     r.Client,
-		Logger:     log,
 		Cluster:    &cluster,
 		OscCluster: oscCluster,
 	})
@@ -125,7 +123,8 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 // reconcile reconcile the creation of the machine
 func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	machineTemplateScope.V(2).Info("Reconciling OscMachineTemplate")
+	log := ctrl.LoggerFrom(ctx)
+	log.V(2).Info("Reconciling OscMachineTemplate")
 	controllerutil.AddFinalizer(machineTemplateScope.OscMachineTemplate, "oscmachine.infrastructure.cluster.x-k8s.io")
 
 	if err := machineTemplateScope.PatchObject(); err != nil {
@@ -142,7 +141,8 @@ func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTem
 
 // reconcileDelete reconcile the deletion of the machine
 func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	machineTemplateScope.V(2).Info("Reconciling delete OscMachineTemplate")
+	log := ctrl.LoggerFrom(ctx)
+	log.V(2).Info("Reconciling delete OscMachineTemplate")
 	oscmachinetemplate := machineTemplateScope.OscMachineTemplate
 	controllerutil.RemoveFinalizer(oscmachinetemplate, "oscmachinetemplate.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil

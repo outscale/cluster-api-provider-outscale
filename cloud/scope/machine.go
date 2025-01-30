@@ -21,12 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	capierrors "sigs.k8s.io/cluster-api/errors"
@@ -40,7 +38,6 @@ import (
 type MachineScopeParams struct {
 	OscClient  *OscClient
 	Client     client.Client
-	Logger     logr.Logger
 	Cluster    *clusterv1.Cluster
 	Machine    *clusterv1.Machine
 	OscCluster *infrastructurev1beta1.OscCluster
@@ -63,9 +60,6 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 	}
 	if params.OscMachine == nil {
 		return nil, errors.New("OscMachine is required when creating a MachineScope")
-	}
-	if params.Logger == (logr.Logger{}) {
-		params.Logger = klogr.New()
 	}
 
 	client, err := newOscClient()
@@ -94,14 +88,12 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 		Machine:     params.Machine,
 		OscCluster:  params.OscCluster,
 		OscMachine:  params.OscMachine,
-		Logger:      params.Logger,
 		patchHelper: helper,
 	}, nil
 }
 
 // MachineScope is the basic context of the actuator that will be used
 type MachineScope struct {
-	logr.Logger
 	client      client.Client
 	patchHelper *patch.Helper
 	Cluster     *clusterv1.Cluster
