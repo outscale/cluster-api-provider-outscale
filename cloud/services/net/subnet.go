@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"net/http"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )

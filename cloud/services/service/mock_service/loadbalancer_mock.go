@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 

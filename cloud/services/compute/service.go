@@ -19,7 +19,7 @@ package compute
 import (
 	"context"
 
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 )
 
 type Service struct {

@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2/klogr"
 	"sigs.k8s.io/cluster-api/util/patch"
