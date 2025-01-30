@@ -359,7 +359,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			expCreateSubnetErr:    errors.New("CreateSubnet generic error"),
 			expGetSubnetIdsErr:    nil,
 			expReadTagErr:         nil,
-			expReconcileSubnetErr: errors.New("CreateSubnet generic error Can not create subnet for Osccluster test-system/test-osc"),
+			expReconcileSubnetErr: errors.New("cannot create subnet: CreateSubnet generic error"),
 		},
 		{
 			name:                  "user delete subnet without cluster-api",
@@ -397,12 +397,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 				if stc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(subnetName)).
 						Return(&tag, stc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(subnetName)).
 						Return(nil, stc.expReadTagErr)
 				}
 				subnetIds = append(subnetIds, subnetId)
@@ -418,24 +418,24 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					subnetRef.ResourceMap[subnetName] = subnetId
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
+						CreateSubnet(gomock.Any(), gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
 						Return(subnet.Subnet, stc.expCreateSubnetErr)
 				} else {
 					mockOscSubnetInterface.
 						EXPECT().
-						CreateSubnet(gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
+						CreateSubnet(gomock.Any(), gomock.Eq(subnetSpec), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(subnetName)).
 						Return(nil, stc.expCreateSubnetErr)
 				}
 			}
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
@@ -514,12 +514,12 @@ func TestReconcileSubnetGet(t *testing.T) {
 					if stc.expTagFound {
 						mockOscTagInterface.
 							EXPECT().
-							ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+							ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(subnetName)).
 							Return(&tag, stc.expReadTagErr)
 					} else {
 						mockOscTagInterface.
 							EXPECT().
-							ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+							ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(subnetName)).
 							Return(nil, stc.expReadTagErr)
 					}
 				}
@@ -528,12 +528,12 @@ func TestReconcileSubnetGet(t *testing.T) {
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 			reconcileSubnet, err := reconcileSubnet(ctx, clusterScope, mockOscSubnetInterface, mockOscTagInterface)
@@ -574,7 +574,7 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 			expNetFound:           true,
 			expReadTagErr:         errors.New("ReadTag generic error"),
 			expGetSubnetIdsErr:    nil,
-			expReconcileSubnetErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileSubnetErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -601,12 +601,12 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 				if stc.expTagFound {
 					mockOscSubnetInterface.
 						EXPECT().
-						GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+						GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return(subnetIds, stc.expGetSubnetIdsErr)
 
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(subnetName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(subnetName)).
 						Return(&tag, stc.expReadTagErr)
 				}
 			}
@@ -669,12 +669,12 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 
@@ -721,11 +721,11 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 			subnetIds = append(subnetIds, subnetId)
 			mockOscSubnetInterface.
 				EXPECT().
-				GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+				GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 				Return(subnetIds, stc.expGetSubnetIdsErr)
 			mockOscSubnetInterface.
 				EXPECT().
-				DeleteSubnet(gomock.Eq(subnetId)).
+				DeleteSubnet(gomock.Any(), gomock.Eq(subnetId)).
 				Return(stc.expDeleteSubnetErr)
 			networkSpec := clusterScope.GetNetwork()
 			networkSpec.SetSubnetDefaultValue()
@@ -777,7 +777,7 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 			expNetFound:                 true,
 			expDeleteSubnetErr:          errors.New("DeleteSubnet generic error"),
 			expGetSubnetIdsErr:          nil,
-			expReconcileDeleteSubnetErr: errors.New("DeleteSubnet generic error Can not delete subnet for Osccluster test-system/test-osc"),
+			expReconcileDeleteSubnetErr: errors.New("cannot delete subnet: DeleteSubnet generic error"),
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -798,18 +798,18 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 				subnetIds = append(subnetIds, subnetId)
 				mockOscSubnetInterface.
 					EXPECT().
-					DeleteSubnet(gomock.Eq(subnetId)).
+					DeleteSubnet(gomock.Any(), gomock.Eq(subnetId)).
 					Return(stc.expDeleteSubnetErr)
 			}
 			if stc.expSubnetFound {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(subnetIds, stc.expGetSubnetIdsErr)
 			} else {
 				mockOscSubnetInterface.
 					EXPECT().
-					GetSubnetIdsFromNetIds(gomock.Eq(netId)).
+					GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return(nil, stc.expGetSubnetIdsErr)
 			}
 

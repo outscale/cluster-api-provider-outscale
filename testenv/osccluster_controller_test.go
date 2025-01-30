@@ -347,7 +347,7 @@ func checkOscNetToBeProvisioned(ctx context.Context, oscInfraClusterKey client.O
 		netSpec := clusterScope.GetNet()
 		netId := netSpec.ResourceId
 		fmt.Fprintf(GinkgoWriter, "Check NetId %s\n", netId)
-		net, err := netsvc.GetNet(netId)
+		net, err := netsvc.GetNet(ctx, netId)
 		if err != nil {
 			return err
 		}
@@ -368,7 +368,7 @@ func checkOscVmToBeProvisioned(ctx context.Context, oscInfraMachineKey client.Ob
 		vmSpec := machineScope.GetVm()
 		vmId := vmSpec.ResourceId
 		fmt.Fprintf(GinkgoWriter, "Check VmId %s\n", vmId)
-		vm, err := vmSvc.GetVm(vmId)
+		vm, err := vmSvc.GetVm(ctx, vmId)
 		if err != nil {
 			return err
 		}
@@ -390,7 +390,7 @@ func checkOscSubnetToBeProvisioned(ctx context.Context, oscInfraClusterKey clien
 		subnetsSpec := clusterScope.GetSubnet()
 		netId := netSpec.ResourceId
 		var subnetIds []string
-		subnetIds, err := netsvc.GetSubnetIdsFromNetIds(netId)
+		subnetIds, err := netsvc.GetSubnetIdsFromNetIds(ctx, netId)
 		if err != nil {
 			return err
 		}
@@ -416,7 +416,7 @@ func checkOscInternetServiceToBeProvisioned(ctx context.Context, oscInfraCluster
 		internetServiceSpec := clusterScope.GetInternetService()
 		internetServiceId := internetServiceSpec.ResourceId
 		fmt.Fprintf(GinkgoWriter, "Check InternetServiceId %s\n", internetServiceId)
-		internetService, err := netsvc.GetInternetService(internetServiceId)
+		internetService, err := netsvc.GetInternetService(ctx, internetServiceId)
 		if err != nil {
 			return err
 		}
@@ -437,7 +437,7 @@ func checkOscNatServiceToBeProvisioned(ctx context.Context, oscInfraClusterKey c
 		natServiceSpec := clusterScope.GetNatService()
 		natServiceId := natServiceSpec.ResourceId
 		fmt.Fprintf(GinkgoWriter, "Check NatServiceId %s\n", natServiceId)
-		natService, err := netsvc.GetNatService(natServiceId)
+		natService, err := netsvc.GetNatService(ctx, natServiceId)
 		if err != nil {
 			return err
 		}
@@ -462,7 +462,7 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 			publicIpId = publicIpSpec.ResourceId
 			publicIpIds = append(publicIpIds, publicIpId)
 		}
-		validPublicIpIds, err := securitysvc.ValidatePublicIpIds(publicIpIds)
+		validPublicIpIds, err := securitysvc.ValidatePublicIpIds(ctx, publicIpIds)
 		fmt.Fprintf(GinkgoWriter, "Check PublicIpIds has been received %s\n", validPublicIpIds)
 		if err != nil {
 			return err
@@ -487,7 +487,7 @@ func checkOscRouteTableToBeProvisioned(ctx context.Context, oscInfraClusterKey c
 		netId := netSpec.ResourceId
 		securitysvc := security.NewService(ctx, clusterScope)
 		routeTablesSpec := clusterScope.GetRouteTables()
-		routeTableIds, err := securitysvc.GetRouteTableIdsFromNetIds(netId)
+		routeTableIds, err := securitysvc.GetRouteTableIdsFromNetIds(ctx, netId)
 		fmt.Fprintf(GinkgoWriter, "Check RouteTableIds has been received %v \n", routeTableIds)
 
 		if err != nil {
@@ -532,7 +532,7 @@ func checkOscRouteToBeProvisioned(ctx context.Context, oscInfraClusterKey client
 				}
 				fmt.Fprintf(GinkgoWriter, "Check RouteTable %s %s %s\n", routeTableId, resourceId, resourceType)
 
-				routeTableFromRoute, err := securitysvc.GetRouteTableFromRoute(routeTableId, resourceId, resourceType)
+				routeTableFromRoute, err := securitysvc.GetRouteTableFromRoute(ctx, routeTableId, resourceId, resourceType)
 				if err != nil {
 					return err
 				}
@@ -555,7 +555,7 @@ func checkOscSecurityGroupToBeProvisioned(ctx context.Context, oscInfraClusterKe
 		netId := netSpec.ResourceId
 		securitysvc := security.NewService(ctx, clusterScope)
 		securityGroupsSpec := clusterScope.GetSecurityGroups()
-		securityGroupIds, err := securitysvc.GetSecurityGroupIdsFromNetIds(netId)
+		securityGroupIds, err := securitysvc.GetSecurityGroupIdsFromNetIds(ctx, netId)
 		fmt.Fprintf(GinkgoWriter, "Check SecurityGroupIds received %v \n", securityGroupIds)
 		if err != nil {
 			return err
@@ -590,7 +590,7 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 				IpRange := securityGroupRuleSpec.IpRange
 				FromPortRange := securityGroupRuleSpec.FromPortRange
 				ToPortRange := securityGroupRuleSpec.ToPortRange
-				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(ctx, securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 				if err != nil {
 					return err
 				}
@@ -611,7 +611,7 @@ func checkOscLoadBalancerToBeProvisioned(ctx context.Context, oscInfraClusterKey
 	Eventually(func() error {
 		servicesvc := service.NewService(ctx, clusterScope)
 		loadBalancerSpec := clusterScope.GetLoadBalancer()
-		loadbalancer, err := servicesvc.GetLoadBalancer(loadBalancerSpec)
+		loadbalancer, err := servicesvc.GetLoadBalancer(ctx, loadBalancerSpec)
 		loadBalancerName := loadBalancerSpec.LoadBalancerName
 		fmt.Fprintf(GinkgoWriter, "Check loadBalancer %s\n", loadBalancerName)
 		if err != nil {

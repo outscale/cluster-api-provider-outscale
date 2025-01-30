@@ -17,6 +17,7 @@ limitations under the License.
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -32,17 +34,17 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
 type OscVolumeInterface interface {
-	CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error)
-	DeleteVolume(volumeId string) error
-	GetVolume(volumeId string) (*osc.Volume, error)
-	ValidateVolumeIds(volumeIds []string) ([]string, error)
-	LinkVolume(volumeId string, vmId string, deviceName string) error
-	CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error
-	UnlinkVolume(volumeId string) error
+	CreateVolume(ctx context.Context, spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error)
+	DeleteVolume(ctx context.Context, volumeId string) error
+	GetVolume(ctx context.Context, volumeId string) (*osc.Volume, error)
+	ValidateVolumeIds(ctx context.Context, volumeIds []string) ([]string, error)
+	LinkVolume(ctx context.Context, volumeId string, vmId string, deviceName string) error
+	CheckVolumeState(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error
+	UnlinkVolume(ctx context.Context, volumeId string) error
 }
 
 // CreateVolume create machine volume
-func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error) {
+func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error) {
 	size := spec.Size
 	subregionName := spec.SubregionName
 	volumeType := spec.VolumeType
@@ -62,6 +64,7 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 		var httpRes *http.Response
 		var err error
 		volumeResponse, httpRes, err = oscApiClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
+		utils.LogAPICall(ctx, "CreateVolume", volumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -98,7 +101,7 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{volumeTag},
 	}
-	err, httpRes := tag.AddTag(volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -111,7 +114,7 @@ func (s *Service) CreateVolume(spec *infrastructurev1beta1.OscVolume, volumeName
 }
 
 // GetVolume retrieve volume from volumeId
-func (s *Service) GetVolume(volumeId string) (*osc.Volume, error) {
+func (s *Service) GetVolume(ctx context.Context, volumeId string) (*osc.Volume, error) {
 	readVolumesRequest := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			VolumeIds: &[]string{volumeId},
@@ -125,6 +128,7 @@ func (s *Service) GetVolume(volumeId string) (*osc.Volume, error) {
 		var httpRes *http.Response
 		var err error
 		readVolumesResponse, httpRes, err = oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
+		utils.LogAPICall(ctx, "ReadVolumes", readVolumesRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -159,7 +163,7 @@ func (s *Service) GetVolume(volumeId string) (*osc.Volume, error) {
 }
 
 // LinkVolume link machine volume
-func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) error {
+func (s *Service) LinkVolume(ctx context.Context, volumeId string, vmId string, deviceName string) error {
 	linkVolumeRequest := osc.LinkVolumeRequest{
 		DeviceName: deviceName,
 		VolumeId:   volumeId,
@@ -171,6 +175,7 @@ func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) er
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
+		utils.LogAPICall(ctx, "LinkVolume", linkVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -195,7 +200,7 @@ func (s *Service) LinkVolume(volumeId string, vmId string, deviceName string) er
 }
 
 // UnlinkVolume unlink machine volume
-func (s *Service) UnlinkVolume(volumeId string) error {
+func (s *Service) UnlinkVolume(ctx context.Context, volumeId string) error {
 	unlinkVolumeRequest := osc.UnlinkVolumeRequest{
 		VolumeId: volumeId,
 	}
@@ -206,6 +211,7 @@ func (s *Service) UnlinkVolume(volumeId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
+		utils.LogAPICall(ctx, "UnlinkVolume", unlinkVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -230,7 +236,7 @@ func (s *Service) UnlinkVolume(volumeId string) error {
 }
 
 // DeleteVolume delete machine volume
-func (s *Service) DeleteVolume(volumeId string) error {
+func (s *Service) DeleteVolume(ctx context.Context, volumeId string) error {
 	deleteVolumeRequest := osc.DeleteVolumeRequest{VolumeId: volumeId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -238,6 +244,7 @@ func (s *Service) DeleteVolume(volumeId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteVolume", deleteVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -262,7 +269,7 @@ func (s *Service) DeleteVolume(volumeId string) error {
 }
 
 // ValidatePublicIpIds validate the list of id by checking each volume resource and return volume resource that currently exist
-func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
+func (s *Service) ValidateVolumeIds(ctx context.Context, volumeIds []string) ([]string, error) {
 	readVolumeRequest := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			VolumeIds: &volumeIds,
@@ -275,6 +282,7 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 		var httpRes *http.Response
 		var err error
 		readVolumesResponse, httpRes, err = oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumeRequest).Execute()
+		utils.LogAPICall(ctx, "ReadVolumes", readVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -310,12 +318,12 @@ func (s *Service) ValidateVolumeIds(volumeIds []string) ([]string, error) {
 }
 
 // CheckVolumeState check volume in state
-func (s *Service) CheckVolumeState(clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error {
+func (s *Service) CheckVolumeState(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	getVolumeState := false
 	for !getVolumeState {
-		volume, err := s.GetVolume(volumeId)
+		volume, err := s.GetVolume(ctx, volumeId)
 		if err != nil {
 			return err
 		}

@@ -17,6 +17,7 @@ limitations under the License.
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -31,20 +33,20 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_service/loadbalancer_mock.go -package mock_service -source ./load_balancer.go
 type OscLoadBalancerInterface interface {
-	ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
-	GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
-	CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
-	DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) error
-	LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
-	UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error
-	CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
-	GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error)
-	CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error
-	DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
+	ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
+	GetLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
+	CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
+	DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error
+	LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
+	UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
+	CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
+	GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error)
+	CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error
+	DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
 }
 
 // GetName return the name of the loadBalancer
-func (s *Service) GetName(spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
+func (s *Service) GetName(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
 	var name string
 	var clusterName string
 	if spec.LoadBalancerName != "" {
@@ -73,8 +75,8 @@ func ValidateProtocol(protocol string) (string, error) {
 }
 
 // ConfigureHealthCheck update loadBalancer to configure healthCheck
-func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +106,7 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 		var httpRes *http.Response
 		var err error
 		updateLoadBalancerResponse, httpRes, err = oscApiClient.LoadBalancerApi.UpdateLoadBalancer(oscAuthClient).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()
+		utils.LogAPICall(ctx, "UpdateLoadBalancer", updateLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -132,7 +135,7 @@ func (s *Service) ConfigureHealthCheck(spec *infrastructurev1beta1.OscLoadBalanc
 }
 
 // LinkLoadBalancerBackendMachines link the loadBalancer with vm backend
-func (s *Service) LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error {
+func (s *Service) LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error {
 	linkLoadBalancerBackendMachinesRequest := osc.LinkLoadBalancerBackendMachinesRequest{
 		BackendVmIds:     &vmIds,
 		LoadBalancerName: loadBalancerName,
@@ -143,6 +146,7 @@ func (s *Service) LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerNa
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.LinkLoadBalancerBackendMachines(oscAuthClient).LinkLoadBalancerBackendMachinesRequest(linkLoadBalancerBackendMachinesRequest).Execute()
+		utils.LogAPICall(ctx, "LinkLoadBalancerBackendMachines", linkLoadBalancerBackendMachinesRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -167,7 +171,7 @@ func (s *Service) LinkLoadBalancerBackendMachines(vmIds []string, loadBalancerNa
 }
 
 // UnlinkLoadBalancerBackendMachines unlink the loadbalancer with vm backend
-func (s *Service) UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancerName string) error {
+func (s *Service) UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error {
 	unlinkLoadBalancerBackendMachinesRequest := osc.UnlinkLoadBalancerBackendMachinesRequest{
 		BackendVmIds:     &vmIds,
 		LoadBalancerName: loadBalancerName,
@@ -179,6 +183,7 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancer
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.UnlinkLoadBalancerBackendMachines(oscAuthClient).UnlinkLoadBalancerBackendMachinesRequest(unlinkLoadBalancerBackendMachinesRequest).Execute()
+		utils.LogAPICall(ctx, "UnlinkLoadBalancerBackendMachines", unlinkLoadBalancerBackendMachinesRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -203,8 +208,8 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(vmIds []string, loadBalancer
 }
 
 // GetLoadBalancer retrieve loadBalancer object from spec
-func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) GetLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -220,6 +225,7 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 		var httpRes *http.Response
 		var err error
 		readLoadBalancersResponse, httpRes, err = oscApiClient.LoadBalancerApi.ReadLoadBalancers(oscAuthClient).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
+		utils.LogAPICall(ctx, "ReadLoadBalancers", readLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				requestStr := fmt.Sprintf("%v", readLoadBalancerRequest)
@@ -255,8 +261,8 @@ func (s *Service) GetLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) (
 }
 
 // GetLoadBalancerTag retrieve loadBalancer object from spec
-func (s *Service) GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -270,6 +276,7 @@ func (s *Service) GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer
 		var httpRes *http.Response
 		var err error
 		readLoadBalancerTagsResponse, httpRes, err = oscApiClient.LoadBalancerApi.ReadLoadBalancerTags(oscAuthClient).ReadLoadBalancerTagsRequest(readLoadBalancerTagRequest).Execute()
+		utils.LogAPICall(ctx, "ReadLoadBalancerTags", readLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -281,7 +288,7 @@ func (s *Service) GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("%w failed to read Tag Name", err)
+			return false, fmt.Errorf("failed to read Tag Name: %w", err)
 		}
 		return true, err
 	}
@@ -304,8 +311,8 @@ func (s *Service) GetLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer
 }
 
 // CreateLoadBalancerTag create the load balancer tag
-func (s *Service) CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return err
 	}
@@ -317,6 +324,7 @@ func (s *Service) CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 	oscAuthClient := s.scope.GetAuth()
 	createLoadBalancerTagCallBack := func() (bool, error) {
 		_, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancerTags(oscAuthClient).CreateLoadBalancerTagsRequest(createLoadBalancerTagRequest).Execute()
+		utils.LogAPICall(ctx, "CreateLoadBalancerTags", createLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Printf("Error with http result %s", httpRes.Status)
@@ -328,7 +336,7 @@ func (s *Service) CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("%w failed to add Tag", err)
+			return false, fmt.Errorf("failed to add Tag: %w", err)
 		}
 		return true, err
 	}
@@ -341,8 +349,8 @@ func (s *Service) CreateLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 }
 
 // CreateLoadBalancer create the load balancer
-func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -378,6 +386,7 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 		var httpRes *http.Response
 		var err error
 		loadBalancerResponse, httpRes, err = oscApiClient.LoadBalancerApi.CreateLoadBalancer(oscAuthClient).CreateLoadBalancerRequest(loadBalancerRequest).Execute()
+		utils.LogAPICall(ctx, "CreateLoadBalancer", loadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -406,8 +415,8 @@ func (s *Service) CreateLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 }
 
 // DeleteLoadBalancer delete the loadbalancer
-func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer) error {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return err
 	}
@@ -420,6 +429,7 @@ func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.DeleteLoadBalancer(oscAuthClient).DeleteLoadBalancerRequest(deleteLoadBalancerRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteLoadBalancer", deleteLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -444,8 +454,8 @@ func (s *Service) DeleteLoadBalancer(spec *infrastructurev1beta1.OscLoadBalancer
 }
 
 // DeleteLoadBalancerTag delete the loadbalancerTag
-func (s *Service) DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
-	loadBalancerName, err := s.GetName(spec)
+func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
+	loadBalancerName, err := s.GetName(ctx, spec)
 	if err != nil {
 		return err
 	}
@@ -459,6 +469,7 @@ func (s *Service) DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.DeleteLoadBalancerTags(oscAuthClient).DeleteLoadBalancerTagsRequest(deleteLoadBalancerTagRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteLoadBalancerTags", deleteLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -483,13 +494,13 @@ func (s *Service) DeleteLoadBalancerTag(spec *infrastructurev1beta1.OscLoadBalan
 }
 
 // CheckLoadBalancerDeregisterVm check vm is deregister as vm backend in loadBalancer
-func (s *Service) CheckLoadBalancerDeregisterVm(clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
+func (s *Service) CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	getLoadBalancerDeregisterVm := false
 	for !getLoadBalancerDeregisterVm {
 		time.Sleep(clockInsideLoop * time.Second)
-		loadBalancer, err := s.GetLoadBalancer(spec)
+		loadBalancer, err := s.GetLoadBalancer(ctx, spec)
 		if err != nil {
 			return err
 		}

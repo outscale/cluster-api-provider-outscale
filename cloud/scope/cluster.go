@@ -21,11 +21,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -38,7 +36,6 @@ const clusterUIDLabel = "outscale.com/clusterUID"
 type ClusterScopeParams struct {
 	OscClient  *OscClient
 	Client     client.Client
-	Logger     logr.Logger
 	Cluster    *clusterv1.Cluster
 	OscCluster *infrastructurev1beta1.OscCluster
 }
@@ -51,10 +48,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	if params.OscCluster == nil {
 		return nil, errors.New("OscCluster is required when creating a ClusterScope")
-	}
-
-	if params.Logger == (logr.Logger{}) {
-		params.Logger = klogr.New()
 	}
 
 	client, err := newOscClient()
@@ -81,7 +74,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	}
 
 	return &ClusterScope{
-		Logger:      params.Logger,
 		Client:      params.Client,
 		Cluster:     params.Cluster,
 		OscCluster:  params.OscCluster,
@@ -92,7 +84,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 // ClusterScope is the basic context of the actuator that will be used
 type ClusterScope struct {
-	logr.Logger
 	Client      client.Client
 	patchHelper *patch.Helper
 	OscClient   *OscClient
@@ -385,7 +376,7 @@ func (s *ClusterScope) GetVmState() *infrastructurev1beta1.VmState {
 }
 
 // PatchObject keep the cluster configuration and status
-func (s *ClusterScope) PatchObject() error {
+func (s *ClusterScope) PatchObject(ctx context.Context) error {
 	setConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.NetReadyCondition,
 		infrastructurev1beta1.SubnetsReadyCondition,
@@ -400,7 +391,7 @@ func (s *ClusterScope) PatchObject() error {
 		conditions.WithStepCounter(),
 	)
 	return s.patchHelper.Patch(
-		context.TODO(),
+		ctx,
 		s.OscCluster,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,

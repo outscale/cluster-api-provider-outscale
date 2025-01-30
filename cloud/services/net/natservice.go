@@ -17,11 +17,13 @@ limitations under the License.
 package net
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -30,13 +32,13 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_net/natservice_mock.go -package mock_net -source ./natservice.go
 
 type OscNatServiceInterface interface {
-	CreateNatService(publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error)
-	DeleteNatService(natServiceId string) error
-	GetNatService(natServiceId string) (*osc.NatService, error)
+	CreateNatService(ctx context.Context, publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error)
+	DeleteNatService(ctx context.Context, natServiceId string) error
+	GetNatService(ctx context.Context, natServiceId string) (*osc.NatService, error)
 }
 
 // CreateNatService create the nat in the public subnet of the net
-func (s *Service) CreateNatService(publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error) {
+func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error) {
 	natServiceRequest := osc.CreateNatServiceRequest{
 		PublicIpId: publicIpId,
 		SubnetId:   subnetId,
@@ -49,6 +51,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 		var httpRes *http.Response
 		var err error
 		natServiceResponse, httpRes, err = oscApiClient.NatServiceApi.CreateNatService(oscAuthClient).CreateNatServiceRequest(natServiceRequest).Execute()
+		utils.LogAPICall(ctx, "CreateNatService", natServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
@@ -78,7 +81,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{natServiceTag},
 	}
-	err, httpRes := tag.AddTag(natServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, natServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -86,7 +89,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 			return nil, err
 		}
 	}
-	subnet, err := s.GetSubnet(subnetId)
+	subnet, err := s.GetSubnet(ctx, subnetId)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -103,7 +106,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{natServiceClusterTag},
 	}
-	err, httpRes = tag.AddTag(natServiceClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, natServiceClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -120,7 +123,7 @@ func (s *Service) CreateNatService(publicIpId string, subnetId string, natServic
 }
 
 // DeleteNatService  delete the nat
-func (s *Service) DeleteNatService(natServiceId string) error {
+func (s *Service) DeleteNatService(ctx context.Context, natServiceId string) error {
 	deleteNatServiceRequest := osc.DeleteNatServiceRequest{NatServiceId: natServiceId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -128,6 +131,7 @@ func (s *Service) DeleteNatService(natServiceId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.NatServiceApi.DeleteNatService(oscAuthClient).DeleteNatServiceRequest(deleteNatServiceRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteNatService", deleteNatServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -152,7 +156,7 @@ func (s *Service) DeleteNatService(natServiceId string) error {
 }
 
 // GetNatService retrieve nat service object using nat service id
-func (s *Service) GetNatService(natServiceId string) (*osc.NatService, error) {
+func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.NatService, error) {
 	readNatServicesRequest := osc.ReadNatServicesRequest{
 		Filters: &osc.FiltersNatService{
 			NatServiceIds: &[]string{natServiceId},
@@ -161,6 +165,7 @@ func (s *Service) GetNatService(natServiceId string) (*osc.NatService, error) {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
+	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

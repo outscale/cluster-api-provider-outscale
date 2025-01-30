@@ -27,6 +27,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -57,7 +58,6 @@ func checkBastionSecurityGroupOscAssociateResourceName(clusterScope *scope.Clust
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, securityGroupName)
 	}
-	clusterScope.V(2).Info("Check match securityGroup with vm")
 	for _, validateBastionSecurityGroupName := range bastionSecurityGroupNameList {
 		checkOscAssociate = Contains(resourceNameList, validateBastionSecurityGroupName)
 		if !checkOscAssociate {
@@ -78,7 +78,6 @@ func checkBastionSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	clusterScope.V(2).Info("Check match subnet with bastion")
 	checkOscAssociate := Contains(resourceNameList, bastionSubnetName)
 	if checkOscAssociate {
 		return nil
@@ -98,7 +97,6 @@ func checkBastionPublicIpOscAssociateResourceName(clusterScope *scope.ClusterSco
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, publicIpName)
 	}
-	clusterScope.V(2).Info("Check match publicip with bastion")
 	checkOscAssociate := Contains(resourceNameList, bastionPublicIpName)
 	if checkOscAssociate {
 		return nil
@@ -108,7 +106,8 @@ func checkBastionPublicIpOscAssociateResourceName(clusterScope *scope.ClusterSco
 }
 
 // checkBastionFormatParameters check Bastion parameters format.
-func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
+func checkBastionFormatParameters(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
+	log := ctrl.LoggerFrom(ctx)
 	bastionSpec := clusterScope.GetBastion()
 	bastionSpec.SetDefaultValue()
 	bastionName := bastionSpec.Name + "-" + clusterScope.GetUID()
@@ -118,7 +117,7 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	}
 
 	imageName := bastionSpec.ImageName
-	clusterScope.V(2).Info("Check Bastion parameters")
+	ctrl.LoggerFrom(ctx).V(2).Info("Check Bastion parameters")
 	if imageName != "" {
 		_, err := infrastructurev1beta1.ValidateImageName(imageName)
 		if err != nil {
@@ -156,16 +155,16 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	}
 
 	bastionSubnetName := bastionSpec.SubnetName
-	clusterScope.V(4).Info("Get bastionSubnetName", "bastionSubnetName", bastionSubnetName)
+	log.V(4).Info("Get bastionSubnetName", "bastionSubnetName", bastionSubnetName)
 
 	ipSubnetRange := clusterScope.GetIpSubnetRange(bastionSubnetName)
-	clusterScope.V(4).Info("Get valid subnet", "ipSubnetRange", ipSubnetRange)
+	log.V(4).Info("Get valid subnet", "ipSubnetRange", ipSubnetRange)
 	bastionPrivateIps := clusterScope.GetBastionPrivateIps()
 	networkSpec := clusterScope.GetNetwork()
 	networkSpec.SetSubnetDefaultValue()
 	for _, bastionPrivateIp := range *bastionPrivateIps {
 		privateIp := bastionPrivateIp.PrivateIp
-		clusterScope.V(4).Info("Get valid IP", "privateIp", privateIp)
+		log.V(4).Info("Get valid IP", "privateIp", privateIp)
 
 		_, err := compute.ValidateIpAddrInCidr(privateIp, ipSubnetRange)
 		if err != nil {
@@ -175,7 +174,7 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 
 	if bastionSpec.RootDisk.RootDiskIops != 0 {
 		rootDiskIops := bastionSpec.RootDisk.RootDiskIops
-		clusterScope.V(4).Info("Check rootDiskIops", "rootDiskIops", rootDiskIops)
+		log.V(4).Info("Check rootDiskIops", "rootDiskIops", rootDiskIops)
 		_, err := infrastructurev1beta1.ValidateIops(rootDiskIops)
 		if err != nil {
 			return bastionTagName, err
@@ -183,14 +182,14 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	}
 
 	rootDiskSize := bastionSpec.RootDisk.RootDiskSize
-	clusterScope.V(4).Info("Check rootDiskSize", "rootDiskSize", rootDiskSize)
+	log.V(4).Info("Check rootDiskSize", "rootDiskSize", rootDiskSize)
 	_, err = infrastructurev1beta1.ValidateSize(rootDiskSize)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	rootDiskType := bastionSpec.RootDisk.RootDiskType
-	clusterScope.V(4).Info("Check rootDiskType", "rootDiskType", rootDiskType)
+	log.V(4).Info("Check rootDiskType", "rootDiskType", rootDiskType)
 	_, err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
 	if err != nil {
 		return bastionTagName, err
@@ -200,19 +199,24 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 
 // reconcileBastion reconcile the bastion of cluster.
 func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, securityGroupSvc security.OscSecurityGroupInterface, imageSvc compute.OscImageInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	bastionSpec := clusterScope.GetBastion()
 	bastionRef := clusterScope.GetBastionRef()
 	bastionName := bastionSpec.Name + "-" + clusterScope.GetUID()
+	bastionState := clusterScope.GetVmState()
+	log.V(4).Info("Reconcile bastion", "resourceId", bastionSpec.ResourceId, "state", bastionState)
+
 	subnetName := bastionSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	// TODO: useless check if bastion already exist, move this code
 	imageId := bastionSpec.ImageId
 	imageName := bastionSpec.ImageName
 	if imageName != "" {
-		if imageId, err = imageSvc.GetImageId(imageName); err != nil {
-			return reconcile.Result{}, err
+		if imageId, err = imageSvc.GetImageId(ctx, imageName); err != nil {
+			return reconcile.Result{}, fmt.Errorf("unable to find image %s: %w", imageName, err)
 		}
 	}
 
@@ -242,10 +246,10 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	var securityGroupIds []string
 	bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 	for _, bastionSecurityGroup := range *bastionSecurityGroups {
-		clusterScope.V(4).Info("Get bastionSecurityGroup", "bastionSecurityGroup", bastionSecurityGroup)
+		log.V(4).Info("Get bastionSecurityGroup", "bastionSecurityGroup", bastionSecurityGroup)
 		securityGroupName := bastionSecurityGroup.Name + "-" + clusterScope.GetUID()
 		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
-		clusterScope.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
+		log.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -256,13 +260,11 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	if len(bastionRef.ResourceMap) == 0 {
 		bastionRef.ResourceMap = make(map[string]string)
 	}
-	clusterScope.V(4).Info("Get ResourceId", "resourceId", bastionSpec.ResourceId)
-	bastionState := clusterScope.GetVmState()
 
 	if bastionState == nil {
-		vms, err := vmSvc.GetVmListFromTag("Name", bastionName)
+		vms, err := vmSvc.GetVmListFromTag(ctx, "Name", bastionName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Could not list vms for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("could not list vms: %w", err)
 		}
 		if len(vms) > 0 {
 			if bastionSpec.ResourceId != "" {
@@ -270,83 +272,80 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 				bastionRef.ResourceMap[bastionName] = bastionSpec.ResourceId
 				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			return reconcile.Result{}, fmt.Errorf("%w Bastion Vm with Name %s already exists for OscCluster %s/%s", err, bastionName, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("a bastion with name %s already exists", bastionName)
 		}
 
-		clusterScope.V(4).Info("Create the desired bastion", "bastionName", bastionName)
 		keypairName := bastionSpec.KeypairName
-		clusterScope.V(4).Info("Get keypairName", "keypairName", keypairName)
 		vmType := bastionSpec.VmType
-		clusterScope.V(4).Info("Get vmType", "vmType", vmType)
+		log.V(4).Info("Creating bastion", "bastionName", bastionName, "keypairName", keypairName, "vmType", vmType)
 
-		vm, err = vmSvc.CreateVmUserData("", bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, imageId)
+		vm, err = vmSvc.CreateVmUserData(ctx, "", bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, imageId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create bastion for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("can not create bastion: %w", err)
 		}
 		vmId = vm.GetVmId()
 		clusterScope.SetVmState(infrastructurev1beta1.VmStatePending)
 		bastionState = &infrastructurev1beta1.VmStatePending
 		bastionRef.ResourceMap[bastionName] = vmId
 		bastionSpec.ResourceId = vmId
-		clusterScope.V(4).Info("Bastion Created", "bastionId", vmId)
+		log.V(3).Info("Bastion created", "bastionId", vmId)
 	}
 
 	if bastionState != nil {
 		if *bastionState != infrastructurev1beta1.VmStateRunning {
 			vmId := bastionSpec.ResourceId
-			clusterScope.V(4).Info("Get vmId", "vmId", vmId)
-			_, err = vmSvc.GetVm(vmId)
+			_, err = vmSvc.GetVm(ctx, vmId)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			clusterScope.V(2).Info("Get currentVmState")
-			currentVmState, err := vmSvc.GetVmState(vmId)
+			currentVmState, err := vmSvc.GetVmState(ctx, vmId)
 			if err != nil {
 				clusterScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
-				return reconcile.Result{}, fmt.Errorf("%w Can not get bastion %s state for OscCluster %s/%s", err, vmId, clusterScope.GetNamespace(), clusterScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("cannot get bastion %s state: %w", vmId, err)
 			}
 			clusterScope.SetVmState(infrastructurev1beta1.VmState(currentVmState))
-			clusterScope.V(4).Info("Bastion state", "vmState", currentVmState)
+			log.V(4).Info("Bastion vm state", "vmState", currentVmState)
 
 			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
-				clusterScope.V(4).Info("Bastion vm is not yet running", "vmId", vmId)
-				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("bastion %s is not yet running for OscCluster %s/%s", vmId, clusterScope.GetNamespace(), clusterScope.GetName())
+				log.V(3).Info("Bastion vm is not yet running", "vmId", vmId)
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("bastion %s is not running yet", vmId)
 			}
 			bastionState = &infrastructurev1beta1.VmStateRunning
-			clusterScope.V(4).Info("Bastion is running", "vmId", vmId)
+			log.V(3).Info("Bastion is running", "vmId", vmId)
 		}
 
 		if bastionState != nil && *bastionState == infrastructurev1beta1.VmStateRunning {
 			vmId := bastionSpec.ResourceId
 
 			if bastionSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[bastionPublicIpName] == "" {
-				linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmId)
+				linkPublicIpId, err := publicIpSvc.LinkPublicIp(ctx, publicIpId, vmId)
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp %s with %s for OscCluster %s/%s", err, publicIpId, vmId, clusterScope.GetNamespace(), clusterScope.GetName())
+					return reconcile.Result{}, fmt.Errorf("cannot link publicIp %s with %s: %w", publicIpId, vmId, err)
 				}
-				clusterScope.V(4).Info("Get bastionPublicIpName", "bastionPublicIpName", bastionPublicIpName)
+				log.V(4).Info("Get bastionPublicIpName", "bastionPublicIpName", bastionPublicIpName)
 				linkPublicIpRef.ResourceMap[bastionPublicIpName] = linkPublicIpId
 			}
 		} else {
-			clusterScope.V(4).Info("VM is not running, skipping public IP linking")
+			log.V(4).Info("VM is not running, skipping public IP linking")
 		}
 	}
-	clusterScope.V(4).Info("Bastion is reconciled")
+	log.V(4).Info("Bastion is reconciled")
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteBastion reconcile the destruction of the machine bastion.
 func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	bastionSpec := clusterScope.GetBastion()
 	bastionSpec.SetDefaultValue()
 	vmId := bastionSpec.ResourceId
-	clusterScope.V(4).Info("Get vmId", "vmId", vmId)
+	log.V(4).Info("Reconcile delete bastion", "resourceId", vmId)
 	bastionName := bastionSpec.Name
 	if bastionSpec.ResourceId == "" {
-		clusterScope.V(2).Info("The desired bastion is currently destroyed", "bastionName", bastionName)
+		log.V(3).Info("The bastion is already destroyed")
 		return reconcile.Result{}, nil
 	}
-	bastion, err := vmSvc.GetVm(vmId)
+	bastion, err := vmSvc.GetVm(ctx, vmId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -360,7 +359,7 @@ func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScop
 		}
 	}
 	if bastion == nil {
-		clusterScope.V(2).Info("The desired bastion does not exist anymore", "bastionName", bastionName)
+		log.V(3).Info("The bastion is already destroyed")
 		return reconcile.Result{}, nil
 	}
 	if bastionSpec.PublicIpName != "" {
@@ -368,17 +367,17 @@ func reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScop
 		publicIpName := bastionSpec.PublicIpName + "-" + clusterScope.GetUID()
 		publicIpRef := linkPublicIpRef.ResourceMap[publicIpName]
 		if publicIpRef != "" {
-			err = publicIpSvc.UnlinkPublicIp(publicIpRef)
+			err = publicIpSvc.UnlinkPublicIp(ctx, publicIpRef)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not unlink publicIp for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("cannot unlink bastion publicIp: %w", err)
 			}
 		}
 	}
-	err = vmSvc.DeleteVm(vmId)
+	err = vmSvc.DeleteVm(ctx, vmId)
 	bastionSpec.ResourceId = ""
-	clusterScope.V(2).Info("Delete the desired bastion", "bastionName", bastionName)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete vm for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot delete bastion: %w", err)
 	}
+	log.V(2).Info("Bastion deleted", "bastionName", bastionName)
 	return reconcile.Result{}, nil
 }

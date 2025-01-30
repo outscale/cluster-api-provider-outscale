@@ -5,6 +5,7 @@
 package mock_compute
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -38,119 +39,119 @@ func (m *MockOscVmInterface) EXPECT() *MockOscVmInterfaceMockRecorder {
 }
 
 // AddCcmTag mocks base method.
-func (m *MockOscVmInterface) AddCcmTag(clusterName, hostname, vmId string) error {
+func (m *MockOscVmInterface) AddCcmTag(ctx context.Context, clusterName, hostname, vmId string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCcmTag", clusterName, hostname, vmId)
+	ret := m.ctrl.Call(m, "AddCcmTag", ctx, clusterName, hostname, vmId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddCcmTag indicates an expected call of AddCcmTag.
-func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(clusterName, hostname, vmId interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(ctx, clusterName, hostname, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), clusterName, hostname, vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), ctx, clusterName, hostname, vmId)
 }
 
 // CreateVm mocks base method.
-func (m *MockOscVmInterface) CreateVm(machineScope *scope.MachineScope, spec *v1beta1.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
+func (m *MockOscVmInterface) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *v1beta1.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVm", machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags)
+	ret := m.ctrl.Call(m, "CreateVm", ctx, machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateVm indicates an expected call of CreateVm.
-func (mr *MockOscVmInterfaceMockRecorder) CreateVm(machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) CreateVm(ctx, machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), ctx, machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags)
 }
 
 // CreateVmUserData mocks base method.
-func (m *MockOscVmInterface) CreateVmUserData(userData string, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, imageId string) (*osc.Vm, error) {
+func (m *MockOscVmInterface) CreateVmUserData(ctx context.Context, userData string, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, imageId string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVmUserData", userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
+	ret := m.ctrl.Call(m, "CreateVmUserData", ctx, userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateVmUserData indicates an expected call of CreateVmUserData.
-func (mr *MockOscVmInterfaceMockRecorder) CreateVmUserData(userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) CreateVmUserData(ctx, userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmUserData", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVmUserData), userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmUserData", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVmUserData), ctx, userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
 }
 
 // DeleteVm mocks base method.
-func (m *MockOscVmInterface) DeleteVm(vmId string) error {
+func (m *MockOscVmInterface) DeleteVm(ctx context.Context, vmId string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteVm", vmId)
+	ret := m.ctrl.Call(m, "DeleteVm", ctx, vmId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteVm indicates an expected call of DeleteVm.
-func (mr *MockOscVmInterfaceMockRecorder) DeleteVm(vmId interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) DeleteVm(ctx, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVm", reflect.TypeOf((*MockOscVmInterface)(nil).DeleteVm), vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVm", reflect.TypeOf((*MockOscVmInterface)(nil).DeleteVm), ctx, vmId)
 }
 
 // GetCapacity mocks base method.
-func (m *MockOscVmInterface) GetCapacity(tagKey, tagValue, vmType string) (v1.ResourceList, error) {
+func (m *MockOscVmInterface) GetCapacity(ctx context.Context, tagKey, tagValue, vmType string) (v1.ResourceList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCapacity", tagKey, tagValue, vmType)
+	ret := m.ctrl.Call(m, "GetCapacity", ctx, tagKey, tagValue, vmType)
 	ret0, _ := ret[0].(v1.ResourceList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCapacity indicates an expected call of GetCapacity.
-func (mr *MockOscVmInterfaceMockRecorder) GetCapacity(tagKey, tagValue, vmType interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) GetCapacity(ctx, tagKey, tagValue, vmType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapacity", reflect.TypeOf((*MockOscVmInterface)(nil).GetCapacity), tagKey, tagValue, vmType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapacity", reflect.TypeOf((*MockOscVmInterface)(nil).GetCapacity), ctx, tagKey, tagValue, vmType)
 }
 
 // GetVm mocks base method.
-func (m *MockOscVmInterface) GetVm(vmId string) (*osc.Vm, error) {
+func (m *MockOscVmInterface) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVm", vmId)
+	ret := m.ctrl.Call(m, "GetVm", ctx, vmId)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetVm indicates an expected call of GetVm.
-func (mr *MockOscVmInterfaceMockRecorder) GetVm(vmId interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) GetVm(ctx, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVm", reflect.TypeOf((*MockOscVmInterface)(nil).GetVm), vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVm", reflect.TypeOf((*MockOscVmInterface)(nil).GetVm), ctx, vmId)
 }
 
 // GetVmListFromTag mocks base method.
-func (m *MockOscVmInterface) GetVmListFromTag(tagKey, tagName string) ([]osc.Vm, error) {
+func (m *MockOscVmInterface) GetVmListFromTag(ctx context.Context, tagKey, tagName string) ([]osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVmListFromTag", tagKey, tagName)
+	ret := m.ctrl.Call(m, "GetVmListFromTag", ctx, tagKey, tagName)
 	ret0, _ := ret[0].([]osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetVmListFromTag indicates an expected call of GetVmListFromTag.
-func (mr *MockOscVmInterfaceMockRecorder) GetVmListFromTag(tagKey, tagName interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) GetVmListFromTag(ctx, tagKey, tagName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmListFromTag", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmListFromTag), tagKey, tagName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmListFromTag", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmListFromTag), ctx, tagKey, tagName)
 }
 
 // GetVmState mocks base method.
-func (m *MockOscVmInterface) GetVmState(vmId string) (string, error) {
+func (m *MockOscVmInterface) GetVmState(ctx context.Context, vmId string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVmState", vmId)
+	ret := m.ctrl.Call(m, "GetVmState", ctx, vmId)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetVmState indicates an expected call of GetVmState.
-func (mr *MockOscVmInterfaceMockRecorder) GetVmState(vmId interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) GetVmState(ctx, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmState", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmState), vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmState", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmState), ctx, vmId)
 }

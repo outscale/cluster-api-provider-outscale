@@ -17,12 +17,14 @@ limitations under the License.
 package net
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -30,14 +32,14 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_net/subnet_mock.go -package mock_net -source ./subnet.go
 type OscSubnetInterface interface {
-	CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error)
-	DeleteSubnet(subnetId string) error
-	GetSubnet(subnetId string) (*osc.Subnet, error)
-	GetSubnetIdsFromNetIds(netId string) ([]string, error)
+	CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error)
+	DeleteSubnet(ctx context.Context, subnetId string) error
+	GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, error)
+	GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
 }
 
 // CreateSubnet create the subnet associate to the net
-func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
 	ipSubnetRange, err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
@@ -58,6 +60,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		var httpRes *http.Response
 		var err error
 		subnetResponse, httpRes, err = oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
+		utils.LogAPICall(ctx, "CreateSubnet", subnetRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -88,7 +91,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{subnetTag},
 	}
-	err, httpRes := tag.AddTag(subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -104,7 +107,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{subnetClusterTag},
 	}
-	err, httpRes = tag.AddTag(subnetClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, subnetClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -121,7 +124,7 @@ func (s *Service) CreateSubnet(spec *infrastructurev1beta1.OscSubnet, netId stri
 }
 
 // DeleteSubnet delete the subnet
-func (s *Service) DeleteSubnet(subnetId string) error {
+func (s *Service) DeleteSubnet(ctx context.Context, subnetId string) error {
 	deleteSubnetRequest := osc.DeleteSubnetRequest{SubnetId: subnetId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -130,6 +133,7 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -155,7 +159,7 @@ func (s *Service) DeleteSubnet(subnetId string) error {
 }
 
 // GetSubnet retrieve Subnet object from subnet Id
-func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
+func (s *Service) GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
 			SubnetIds: &[]string{subnetId},
@@ -164,6 +168,7 @@ func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+	utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
@@ -184,7 +189,7 @@ func (s *Service) GetSubnet(subnetId string) (*osc.Subnet, error) {
 }
 
 // GetSubnetIdsFromNetIds return subnet id resource which eist from the net id
-func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
+func (s *Service) GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
 			NetIds: &[]string{netId},
@@ -197,6 +202,7 @@ func (s *Service) GetSubnetIdsFromNetIds(netId string) ([]string, error) {
 		var httpRes *http.Response
 		var err error
 		readSubnetsResponse, httpRes, err = oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+		utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

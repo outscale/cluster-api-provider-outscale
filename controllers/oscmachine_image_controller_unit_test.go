@@ -249,7 +249,7 @@ func TestReconcileImageGet(t *testing.T) {
 			expGetImageIdErr:     nil,
 			expGetImageNameErr:   nil,
 			expGetImageErr:       errors.New("GetImage generic error"),
-			expReconcileImageErr: errors.New("GetImage generic error"),
+			expReconcileImageErr: errors.New("cannot get image: GetImage generic error"),
 			expImageErr:          true,
 		},
 		{
@@ -290,7 +290,7 @@ func TestReconcileImageGet(t *testing.T) {
 			expGetImageIdErr:     nil,
 			expGetImageNameErr:   errors.New("GetImageName generic error"),
 			expGetImageErr:       nil,
-			expReconcileImageErr: errors.New("GetImageName generic error"),
+			expReconcileImageErr: errors.New("cannot get image: GetImageName generic error"),
 			expImageErr:          false,
 		},
 		{
@@ -308,7 +308,7 @@ func TestReconcileImageGet(t *testing.T) {
 			expGetImageIdErr:     nil,
 			expGetImageNameErr:   nil,
 			expGetImageErr:       errors.New("GetImage generic error"),
-			expReconcileImageErr: errors.New("GetImage generic error"),
+			expReconcileImageErr: errors.New("cannot get image: GetImage generic error"),
 			expImageErr:          false,
 		},
 		{
@@ -330,7 +330,7 @@ func TestReconcileImageGet(t *testing.T) {
 			expGetImageIdErr:     errors.New("GetImageId generic error"),
 			expGetImageNameErr:   nil,
 			expGetImageErr:       nil,
-			expReconcileImageErr: errors.New("GetImageId generic error"),
+			expReconcileImageErr: errors.New("cannot get image: GetImageId generic error"),
 		},
 	}
 	for _, itc := range imageTestCases {
@@ -355,24 +355,24 @@ func TestReconcileImageGet(t *testing.T) {
 			if itc.expImageNameFound {
 				mockOscimageInterface.
 					EXPECT().
-					GetImageId(gomock.Eq(imageName)).
+					GetImageId(gomock.Any(), gomock.Eq(imageName)).
 					Return(imageId, itc.expGetImageIdErr)
 			} else {
 				mockOscimageInterface.
 					EXPECT().
-					GetImageName(gomock.Eq(imageId)).
+					GetImageName(gomock.Any(), gomock.Eq(imageId)).
 					Return(imageName, itc.expGetImageNameErr)
 			}
 			if itc.expImageFound {
 				if itc.expImageErr {
 					mockOscimageInterface.
 						EXPECT().
-						GetImage(gomock.Eq(imageId)).
+						GetImage(gomock.Any(), gomock.Eq(imageId)).
 						Return(nil, itc.expGetImageErr)
 				} else {
 					mockOscimageInterface.
 						EXPECT().
-						GetImage(gomock.Eq(imageId)).
+						GetImage(gomock.Any(), gomock.Eq(imageId)).
 						Return(&(*image.Images)[0], itc.expGetImageErr)
 				}
 			}

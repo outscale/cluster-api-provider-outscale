@@ -17,6 +17,7 @@ limitations under the License.
 package security
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -31,17 +33,17 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
 type OscPublicIpInterface interface {
-	CreatePublicIp(publicIpName string) (*osc.PublicIp, error)
-	DeletePublicIp(publicIpId string) error
-	GetPublicIp(publicIpId string) (*osc.PublicIp, error)
-	LinkPublicIp(publicIpId string, vmId string) (string, error)
-	UnlinkPublicIp(linkPublicIpId string) error
-	CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
-	ValidatePublicIpIds(publicIpIds []string) ([]string, error)
+	CreatePublicIp(ctx context.Context, publicIpName string) (*osc.PublicIp, error)
+	DeletePublicIp(ctx context.Context, publicIpId string) error
+	GetPublicIp(ctx context.Context, publicIpId string) (*osc.PublicIp, error)
+	LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error)
+	UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error
+	CheckPublicIpUnlink(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
+	ValidatePublicIpIds(ctx context.Context, publicIpIds []string) ([]string, error)
 }
 
 // CreatePublicIp retrieve a publicip associated with you account
-func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
+func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string) (*osc.PublicIp, error) {
 	publicIpRequest := osc.CreatePublicIpRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -51,6 +53,7 @@ func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 		var httpRes *http.Response
 		var err error
 		publicIpResponse, httpRes, err = oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
+		utils.LogAPICall(ctx, "CreatePublicIp", publicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -81,7 +84,7 @@ func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 		Tags:        []osc.ResourceTag{publicIpTag},
 	}
 
-	err, httpRes := tag.AddTag(publicIpTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, publicIpTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
@@ -94,7 +97,7 @@ func (s *Service) CreatePublicIp(publicIpName string) (*osc.PublicIp, error) {
 }
 
 // DeletePublicIp release the public ip
-func (s *Service) DeletePublicIp(publicIpId string) error {
+func (s *Service) DeletePublicIp(ctx context.Context, publicIpId string) error {
 	deletePublicIpRequest := osc.DeletePublicIpRequest{
 		PublicIpId: &publicIpId,
 	}
@@ -104,6 +107,7 @@ func (s *Service) DeletePublicIp(publicIpId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
+		utils.LogAPICall(ctx, "DeletePublicIp", deletePublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -128,7 +132,7 @@ func (s *Service) DeletePublicIp(publicIpId string) error {
 }
 
 // GetPublicIp get a public ip object using a public ip id
-func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
+func (s *Service) GetPublicIp(ctx context.Context, publicIpId string) (*osc.PublicIp, error) {
 	readPublicIpRequest := osc.ReadPublicIpsRequest{
 		Filters: &osc.FiltersPublicIp{
 			PublicIpIds: &[]string{publicIpId},
@@ -142,6 +146,7 @@ func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
 		var httpRes *http.Response
 		var err error
 		readPublicIpsResponse, httpRes, err = oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+		utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -175,7 +180,7 @@ func (s *Service) GetPublicIp(publicIpId string) (*osc.PublicIp, error) {
 }
 
 // ValidatePublicIpIds validate the list of id by checking each public ip resource and return only  public ip resource id that currently exist.
-func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
+func (s *Service) ValidatePublicIpIds(ctx context.Context, publicIpIds []string) ([]string, error) {
 	readPublicIpRequest := osc.ReadPublicIpsRequest{
 		Filters: &osc.FiltersPublicIp{
 			PublicIpIds: &publicIpIds,
@@ -188,6 +193,7 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 		var httpRes *http.Response
 		var err error
 		readPublicIpsResponse, httpRes, err = oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+		utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -223,7 +229,7 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 }
 
 // LinkPublicIp link publicIp
-func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
+func (s *Service) LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error) {
 	linkPublicIpRequest := osc.LinkPublicIpRequest{
 		PublicIpId: &publicIpId,
 		VmId:       &vmId,
@@ -235,6 +241,7 @@ func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
 		var httpRes *http.Response
 		var err error
 		linkPublicIpResponse, httpRes, err = oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
+		utils.LogAPICall(ctx, "LinkPublicIp", linkPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -263,7 +270,7 @@ func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
 }
 
 // UnlinkPublicIp unlink publicIp
-func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
+func (s *Service) UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error {
 	unlinkPublicIpRequest := osc.UnlinkPublicIpRequest{
 		LinkPublicIpId: &linkPublicIpId,
 	}
@@ -273,6 +280,7 @@ func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
+		utils.LogAPICall(ctx, "UnlinkPublicIp", unlinkPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -297,12 +305,12 @@ func (s *Service) UnlinkPublicIp(linkPublicIpId string) error {
 }
 
 // CheckPublicIpUnlink check publicIp is unlinked
-func (s *Service) CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error {
+func (s *Service) CheckPublicIpUnlink(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error {
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	getPublicIpUnlink := false
 	for !getPublicIpUnlink {
-		publicIp, err := s.GetPublicIp(publicIpId)
+		publicIp, err := s.GetPublicIp(ctx, publicIpId)
 		if err != nil {
 			return err
 		}
