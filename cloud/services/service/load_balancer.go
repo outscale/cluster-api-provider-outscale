@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )

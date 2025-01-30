@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
