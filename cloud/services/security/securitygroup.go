@@ -29,13 +29,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+// ErrResourceConflict is returned by DeleteSecurityGroup when SG cannot be deleted because another resource requires it.
+var ErrResourceConflict = errors.New("conflict with existing resource")
+
 //go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
 
 type OscSecurityGroupInterface interface {
 	CreateSecurityGroup(ctx context.Context, netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error)
 	CreateSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
 	DeleteSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
-	DeleteSecurityGroup(ctx context.Context, securityGroupId string) (error, *http.Response)
+	DeleteSecurityGroup(ctx context.Context, securityGroupId string) error
 	GetSecurityGroup(ctx context.Context, securityGroupId string) (*osc.SecurityGroup, error)
 	GetSecurityGroupFromSecurityGroupRule(ctx context.Context, securityGroupId string, Flow string, IpProtocols string, IpRanges string, securityGroupMemberId string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
 	GetSecurityGroupIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
@@ -248,7 +251,7 @@ func (s *Service) DeleteSecurityGroupRule(ctx context.Context, securityGroupId s
 }
 
 // DeleteSecurityGroup delete the securitygroup associated with the net
-func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId string) (error, *http.Response) {
+func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId string) error {
 	deleteSecurityGroupRequest := osc.DeleteSecurityGroupRequest{SecurityGroupId: &securityGroupId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -257,10 +260,13 @@ func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId strin
 	if err != nil {
 		if httpRes != nil {
 			fmt.Printf("Error with http result %s", httpRes.Status)
-			return err, httpRes
+			if httpRes.StatusCode == http.StatusConflict {
+				return ErrResourceConflict
+			}
+			return err
 		}
 	}
-	return nil, httpRes
+	return nil
 }
 
 // GetSecurityGroup retrieve security group object from the security group id

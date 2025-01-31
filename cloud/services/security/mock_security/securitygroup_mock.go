@@ -6,7 +6,6 @@ package mock_security
 
 import (
 	context "context"
-	http "net/http"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -67,12 +66,11 @@ func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroupRule(ctx
 }
 
 // DeleteSecurityGroup mocks base method.
-func (m *MockOscSecurityGroupInterface) DeleteSecurityGroup(ctx context.Context, securityGroupId string) (error, *http.Response) {
+func (m *MockOscSecurityGroupInterface) DeleteSecurityGroup(ctx context.Context, securityGroupId string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteSecurityGroup", ctx, securityGroupId)
 	ret0, _ := ret[0].(error)
-	ret1, _ := ret[1].(*http.Response)
-	return ret0, ret1
+	return ret0
 }
 
 // DeleteSecurityGroup indicates an expected call of DeleteSecurityGroup.
