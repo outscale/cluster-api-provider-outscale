@@ -5,6 +5,7 @@
 package mock_compute
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,46 +36,46 @@ func (m *MockOscImageInterface) EXPECT() *MockOscImageInterfaceMockRecorder {
 }
 
 // GetImage mocks base method.
-func (m *MockOscImageInterface) GetImage(imageId string) (*osc.Image, error) {
+func (m *MockOscImageInterface) GetImage(ctx context.Context, imageId string) (*osc.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImage", imageId)
+	ret := m.ctrl.Call(m, "GetImage", ctx, imageId)
 	ret0, _ := ret[0].(*osc.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetImage indicates an expected call of GetImage.
-func (mr *MockOscImageInterfaceMockRecorder) GetImage(imageId interface{}) *gomock.Call {
+func (mr *MockOscImageInterfaceMockRecorder) GetImage(ctx, imageId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockOscImageInterface)(nil).GetImage), imageId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockOscImageInterface)(nil).GetImage), ctx, imageId)
 }
 
 // GetImageId mocks base method.
-func (m *MockOscImageInterface) GetImageId(imageName string) (string, error) {
+func (m *MockOscImageInterface) GetImageId(ctx context.Context, imageName string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageId", imageName)
+	ret := m.ctrl.Call(m, "GetImageId", ctx, imageName)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetImageId indicates an expected call of GetImageId.
-func (mr *MockOscImageInterfaceMockRecorder) GetImageId(imageName interface{}) *gomock.Call {
+func (mr *MockOscImageInterfaceMockRecorder) GetImageId(ctx, imageName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageId", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageId), imageName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageId", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageId), ctx, imageName)
 }
 
 // GetImageName mocks base method.
-func (m *MockOscImageInterface) GetImageName(imageId string) (string, error) {
+func (m *MockOscImageInterface) GetImageName(ctx context.Context, imageId string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageName", imageId)
+	ret := m.ctrl.Call(m, "GetImageName", ctx, imageId)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetImageName indicates an expected call of GetImageName.
-func (mr *MockOscImageInterfaceMockRecorder) GetImageName(imageId interface{}) *gomock.Call {
+func (mr *MockOscImageInterfaceMockRecorder) GetImageName(ctx, imageId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageName), imageId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageName), ctx, imageId)
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package compute
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
@@ -38,14 +39,14 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error)
-	CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
-	DeleteVm(vmId string) error
-	GetVm(vmId string) (*osc.Vm, error)
-	GetVmListFromTag(tagKey string, tagName string) ([]osc.Vm, error)
-	GetVmState(vmId string) (string, error)
-	AddCcmTag(clusterName string, hostname string, vmId string) error
-	GetCapacity(tagKey string, tagValue string, vmType string) (corev1.ResourceList, error)
+	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error)
+	CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
+	DeleteVm(ctx context.Context, vmId string) error
+	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
+	GetVmListFromTag(ctx context.Context, tagKey string, tagName string) ([]osc.Vm, error)
+	GetVmState(ctx context.Context, vmId string) (string, error)
+	AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error
+	GetCapacity(ctx context.Context, tagKey string, tagValue string, vmType string) (corev1.ResourceList, error)
 }
 
 // ValidateIpAddrInCidr check that ipaddr is in cidr
@@ -60,7 +61,7 @@ func ValidateIpAddrInCidr(ipAddr string, cidr string) (string, error) {
 }
 
 // CreateVm create machine vm
-func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
+func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
 	imageId := spec.ImageId
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
@@ -75,7 +76,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 	}
 	bootstrapData, err := machineScope.GetBootstrapData()
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to decode bootstrap data", err)
+		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
 	}
 	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
 	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
@@ -114,6 +115,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 		var httpRes *http.Response
 		var err error
 		vmResponse, httpRes, err = oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
+		utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -148,7 +150,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err, httpRes := tag.AddTag(vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -165,7 +167,7 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 }
 
 // CreateVmUserData create machine vm
-func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
+func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
 	subregionName := spec.SubregionName
@@ -209,6 +211,7 @@ func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta1.
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
+	utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
@@ -227,7 +230,7 @@ func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta1.
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err, httpRes = tag.AddTag(vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -244,7 +247,7 @@ func (s *Service) CreateVmUserData(userData string, spec *infrastructurev1beta1.
 }
 
 // DeleteVm delete machine vm
-func (s *Service) DeleteVm(vmId string) error {
+func (s *Service) DeleteVm(ctx context.Context, vmId string) error {
 	deleteVmsRequest := osc.DeleteVmsRequest{VmIds: []string{vmId}}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -252,6 +255,7 @@ func (s *Service) DeleteVm(vmId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -276,7 +280,7 @@ func (s *Service) DeleteVm(vmId string) error {
 }
 
 // GetVm retrieve vm from vmId
-func (s *Service) GetVm(vmId string) (*osc.Vm, error) {
+func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 	readVmsRequest := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			VmIds: &[]string{vmId},
@@ -289,6 +293,7 @@ func (s *Service) GetVm(vmId string) (*osc.Vm, error) {
 		var httpRes *http.Response
 		var err error
 		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+		utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -323,7 +328,7 @@ func (s *Service) GetVm(vmId string) (*osc.Vm, error) {
 }
 
 // GetVm retrieve vm from vmId
-func (s *Service) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, error) {
+func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue string) ([]osc.Vm, error) {
 	readVmsRequest := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			TagKeys:   &[]string{tagKey},
@@ -337,6 +342,7 @@ func (s *Service) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, er
 		var httpRes *http.Response
 		var err error
 		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+		utils.LogAPICall(ctx, "ReadVms", readVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -370,9 +376,9 @@ func (s *Service) GetVmListFromTag(tagKey string, tagValue string) ([]osc.Vm, er
 	}
 }
 
-func (s *Service) GetCapacity(tagKey string, tagValue string, vmType string) (corev1.ResourceList, error) {
+func (s *Service) GetCapacity(ctx context.Context, tagKey string, tagValue string, vmType string) (corev1.ResourceList, error) {
 	capacity := make(corev1.ResourceList)
-	vmList, err := s.GetVmListFromTag(tagKey, tagValue)
+	vmList, err := s.GetVmListFromTag(ctx, tagKey, tagValue)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +394,7 @@ func (s *Service) GetCapacity(tagKey string, tagValue string, vmType string) (co
 			}
 			cpu, err := GetCPUQuantityFromInt(core)
 			if err != nil {
-				return nil, fmt.Errorf("%w failed to parse quantity. CPU cores: %s. Vm Type: %s", err, vmCore, vmType)
+				return nil, fmt.Errorf("failed to parse CPU cores %s from Vm Type: %s: %w", vmCore, vmType, err)
 			}
 			capacity[corev1.ResourceCPU] = cpu
 			ram, err := strconv.ParseFloat(vmMemory, 32)
@@ -397,7 +403,7 @@ func (s *Service) GetCapacity(tagKey string, tagValue string, vmType string) (co
 			}
 			memory, err := GetMemoryQuantityFromFloat32(float32(ram))
 			if err != nil {
-				return nil, fmt.Errorf("%w failed to parse quantity. Memory: %s. Vm type: %s", err, vmMemory, vmType)
+				return nil, fmt.Errorf("failed to parse Memory %s from Vm type: %s: %w", vmMemory, vmType, err)
 			}
 			capacity[corev1.ResourceMemory] = memory
 		}
@@ -410,8 +416,8 @@ func (s *Service) GetCapacity(tagKey string, tagValue string, vmType string) (co
 }
 
 // GetVmState return vm state
-func (s *Service) GetVmState(vmId string) (string, error) {
-	vm, err := s.GetVm(vmId)
+func (s *Service) GetVmState(ctx context.Context, vmId string) (string, error) {
+	vm, err := s.GetVm(ctx, vmId)
 	if err != nil {
 		return "", err
 	}
@@ -423,7 +429,7 @@ func (s *Service) GetVmState(vmId string) (string, error) {
 }
 
 // AddCcmTag add ccm tag
-func (s *Service) AddCcmTag(clusterName string, hostname string, vmId string) error {
+func (s *Service) AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error {
 	resourceIds := []string{vmId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -435,7 +441,7 @@ func (s *Service) AddCcmTag(clusterName string, hostname string, vmId string) er
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{nodeTag},
 	}
-	err, httpRes := tag.AddTag(nodeTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes := tag.AddTag(ctx, nodeTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err
@@ -449,7 +455,7 @@ func (s *Service) AddCcmTag(clusterName string, hostname string, vmId string) er
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
 
-	err, httpRes = tag.AddTag(clusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, clusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return err

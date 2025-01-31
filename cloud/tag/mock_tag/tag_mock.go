@@ -5,6 +5,7 @@
 package mock_tag
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,16 +36,16 @@ func (m *MockOscTagInterface) EXPECT() *MockOscTagInterfaceMockRecorder {
 }
 
 // ReadTag mocks base method.
-func (m *MockOscTagInterface) ReadTag(tagKey, tagValue string) (*osc.Tag, error) {
+func (m *MockOscTagInterface) ReadTag(ctx context.Context, tagKey, tagValue string) (*osc.Tag, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadTag", tagKey, tagValue)
+	ret := m.ctrl.Call(m, "ReadTag", ctx, tagKey, tagValue)
 	ret0, _ := ret[0].(*osc.Tag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReadTag indicates an expected call of ReadTag.
-func (mr *MockOscTagInterfaceMockRecorder) ReadTag(tagKey, tagValue interface{}) *gomock.Call {
+func (mr *MockOscTagInterfaceMockRecorder) ReadTag(ctx, tagKey, tagValue interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadTag", reflect.TypeOf((*MockOscTagInterface)(nil).ReadTag), tagKey, tagValue)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadTag", reflect.TypeOf((*MockOscTagInterface)(nil).ReadTag), ctx, tagKey, tagValue)
 }

@@ -195,7 +195,7 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 			expCreateInternetServiceErr:    nil,
 			expReadTagErr:                  nil,
 			expLinkInternetServiceErr:      errors.New("LinkInternetService generic error"),
-			expReconcileInternetServiceErr: errors.New("LinkInternetService generic error Can not link internetService with net for Osccluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("cannot link internetService: LinkInternetService generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -221,28 +221,28 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 			if istc.expTagFound {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(&tag, istc.expReadTagErr)
 			} else {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(nil, istc.expReadTagErr)
 			}
 			if istc.expCreateInternetServiceFound {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					CreateInternetService(gomock.Eq(internetServiceName)).
+					CreateInternetService(gomock.Any(), gomock.Eq(internetServiceName)).
 					Return(internetService.InternetService, istc.expCreateInternetServiceErr)
 			} else {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					CreateInternetService(gomock.Eq(internetServiceName)).
+					CreateInternetService(gomock.Any(), gomock.Eq(internetServiceName)).
 					Return(nil, istc.expCreateInternetServiceErr)
 			}
 			mockOscInternetServiceInterface.
 				EXPECT().
-				LinkInternetService(gomock.Eq(internetServiceId), gomock.Eq(netId)).
+				LinkInternetService(gomock.Any(), gomock.Eq(internetServiceId), gomock.Eq(netId)).
 				Return(istc.expLinkInternetServiceErr)
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
 			if istc.expReconcileInternetServiceErr != nil {
@@ -300,26 +300,26 @@ func TestReconcileInternetServiceDelete(t *testing.T) {
 			if istc.expTagFound {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(&tag, istc.expReadTagErr)
 			} else {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(nil, istc.expReadTagErr)
 			}
 			mockOscInternetServiceInterface.
 				EXPECT().
-				GetInternetService(gomock.Eq(internetServiceId)).
+				GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 				Return(nil, istc.expDescribeInternetServiceErr)
 			mockOscInternetServiceInterface.
 				EXPECT().
-				CreateInternetService(gomock.Eq(internetServiceName)).
+				CreateInternetService(gomock.Any(), gomock.Eq(internetServiceName)).
 				Return(internetService.InternetService, istc.expCreateInternetServiceErr)
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				LinkInternetService(gomock.Eq(internetServiceId), gomock.Eq(netId)).
+				LinkInternetService(gomock.Any(), gomock.Eq(internetServiceId), gomock.Eq(netId)).
 				Return(istc.expLinkInternetServiceErr)
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
@@ -377,17 +377,17 @@ func TestReconcileDeleteInternetServiceDeleteWithoutSpec(t *testing.T) {
 			readInternetService := *readInternetServices.InternetServices
 			mockOscInternetServiceInterface.
 				EXPECT().
-				GetInternetService(gomock.Eq(internetServiceId)).
+				GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 				Return(&readInternetService[0], istc.expDescribeInternetServiceErr)
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				UnlinkInternetService(gomock.Eq(internetServiceId), gomock.Eq(netId)).
+				UnlinkInternetService(gomock.Any(), gomock.Eq(internetServiceId), gomock.Eq(netId)).
 				Return(istc.expUnlinkInternetServiceErr)
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				DeleteInternetService(gomock.Eq(internetServiceId)).
+				DeleteInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 				Return(istc.expDeleteInternetServiceErr)
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
@@ -452,12 +452,12 @@ func TestReconcileInternetServiceGet(t *testing.T) {
 			if istc.expTagFound {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(&tag, istc.expReadTagErr)
 			} else {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(nil, istc.expReadTagErr)
 			}
 
@@ -478,12 +478,12 @@ func TestReconcileInternetServiceGet(t *testing.T) {
 			if istc.expInternetServiceFound {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					GetInternetService(gomock.Eq(internetServiceId)).
+					GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 					Return(&readInternetService[0], istc.expDescribeInternetServiceErr)
 			} else {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					GetInternetService(gomock.Eq(internetServiceId)).
+					GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 					Return(nil, istc.expDescribeInternetServiceErr)
 			}
 
@@ -514,7 +514,7 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 			expTagFound:                    false,
 			expCreateInternetServiceErr:    errors.New("CreateInternetService generic error"),
 			expReadTagErr:                  nil,
-			expReconcileInternetServiceErr: errors.New("CreateInternetService generic error Can not create internetservice for Osccluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("cannot create internetservice: CreateInternetService generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -533,18 +533,18 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 			if istc.expTagFound {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(&tag, istc.expReadTagErr)
 			} else {
 				mockOscTagInterface.
 					EXPECT().
-					ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 					Return(nil, istc.expReadTagErr)
 			}
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				CreateInternetService(gomock.Eq(internetServiceName)).
+				CreateInternetService(gomock.Any(), gomock.Eq(internetServiceName)).
 				Return(nil, istc.expCreateInternetServiceErr)
 
 			reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, mockOscInternetServiceInterface, mockOscTagInterface)
@@ -582,7 +582,7 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 			expTagFound:                    true,
 			expNetFound:                    true,
 			expReadTagErr:                  errors.New("ReadTag generic error"),
-			expReconcileInternetServiceErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -603,12 +603,12 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 				if istc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 						Return(&tag, istc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(internetServiceName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(internetServiceName)).
 						Return(nil, istc.expReadTagErr)
 				}
 			}
@@ -634,12 +634,12 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 		expReconcileDeleteInternetServiceErr error
 	}{
 		{
-			name:                                 "failed to get interntservice",
+			name:                                 "failed to get internetservice",
 			spec:                                 defaultInternetServiceReconcile,
 			expNetFound:                          true,
 			expInternetServiceFound:              false,
 			expDescribeInternetServiceErr:        errors.New("GetInternetService generic error"),
-			expReconcileDeleteInternetServiceErr: errors.New("GetInternetService generic error"),
+			expReconcileDeleteInternetServiceErr: errors.New("get internetservice: GetInternetService generic error"),
 		},
 		{
 			name:                                 "remove finalizer (user delete internetService without cluster-api)",
@@ -677,12 +677,12 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 			if istc.expInternetServiceFound {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					GetInternetService(gomock.Eq(internetServiceId)).
+					GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 					Return(&readInternetService[0], istc.expDescribeInternetServiceErr)
 			} else {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					GetInternetService(gomock.Eq(internetServiceId)).
+					GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 					Return(nil, istc.expDescribeInternetServiceErr)
 			}
 
@@ -711,7 +711,7 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 			spec:                                 defaultInternetServiceReconcile,
 			expDescribeInternetServiceErr:        nil,
 			expUnlinkInternetServiceErr:          errors.New("UnlinkInternetService generic error"),
-			expReconcileDeleteInternetServiceErr: errors.New("UnlinkInternetService generic error Can not unlink internetService and net for Osccluster test-system/test-osc"),
+			expReconcileDeleteInternetServiceErr: errors.New("cannot unlink internetService and net: UnlinkInternetService generic error"),
 		},
 	}
 
@@ -738,12 +738,12 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 			readInternetService := *readInternetServices.InternetServices
 			mockOscInternetServiceInterface.
 				EXPECT().
-				GetInternetService(gomock.Eq(internetServiceId)).
+				GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 				Return(&readInternetService[0], istc.expDescribeInternetServiceErr)
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				UnlinkInternetService(gomock.Eq(internetServiceId), gomock.Eq(netId)).
+				UnlinkInternetService(gomock.Any(), gomock.Eq(internetServiceId), gomock.Eq(netId)).
 				Return(istc.expUnlinkInternetServiceErr)
 
 			reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, mockOscInternetServiceInterface)
@@ -787,7 +787,7 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 			expDeleteInternetServiceErr:          errors.New("DeleteInternetService generic error"),
 			expDescribeInternetServiceErr:        nil,
 			expUnlinkInternetServiceErr:          nil,
-			expReconcileDeleteInternetServiceErr: errors.New("DeleteInternetService generic error Can not delete internetService for Osccluster test-system/test-osc"),
+			expReconcileDeleteInternetServiceErr: errors.New("cannot delete internetService: DeleteInternetService generic error"),
 		},
 	}
 
@@ -812,23 +812,23 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 			if istc.expInternetServiceFound {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					GetInternetService(gomock.Eq(internetServiceId)).
+					GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 					Return(&readInternetService[0], istc.expDescribeInternetServiceErr)
 			} else {
 				mockOscInternetServiceInterface.
 					EXPECT().
-					GetInternetService(gomock.Eq(internetServiceId)).
+					GetInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 					Return(nil, istc.expDescribeInternetServiceErr)
 			}
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				UnlinkInternetService(gomock.Eq(internetServiceId), gomock.Eq(netId)).
+				UnlinkInternetService(gomock.Any(), gomock.Eq(internetServiceId), gomock.Eq(netId)).
 				Return(istc.expUnlinkInternetServiceErr)
 
 			mockOscInternetServiceInterface.
 				EXPECT().
-				DeleteInternetService(gomock.Eq(internetServiceId)).
+				DeleteInternetService(gomock.Any(), gomock.Eq(internetServiceId)).
 				Return(istc.expDeleteInternetServiceErr)
 
 			netRef := clusterScope.GetNetRef()
@@ -859,12 +859,12 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteInternetServiceErr: errors.New("cluster-api-net-uid does not exist"),
+			expReconcileDeleteInternetServiceErr: errors.New("get net: cluster-api-net-uid does not exist"),
 		},
 		{
 			name:                                 "net does not exist",
 			spec:                                 defaultInternetServiceInitialize,
-			expReconcileDeleteInternetServiceErr: errors.New("test-net-uid does not exist"),
+			expReconcileDeleteInternetServiceErr: errors.New("get net: test-net-uid does not exist"),
 		},
 	}
 

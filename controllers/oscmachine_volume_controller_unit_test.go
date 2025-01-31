@@ -30,7 +30,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -145,9 +144,7 @@ func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.O
 		},
 	}
 
-	log := klogr.New()
 	clusterScope = &scope.ClusterScope{
-		Logger: log,
 		Cluster: &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       "uid",
@@ -158,7 +155,6 @@ func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.O
 		OscCluster: &oscCluster,
 	}
 	machineScope = &scope.MachineScope{
-		Logger: log,
 		Cluster: &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:       "uid",
@@ -428,12 +424,12 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 				if vtc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(vmName)).
 						Return(&tag, vtc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(vmName)).
 						Return(nil, vtc.expReadTagErr)
 				}
 			}
@@ -580,12 +576,12 @@ func TestReconcileVolumeCreate(t *testing.T) {
 				if vtc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(volumeName)).
 						Return(&tag, vtc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(volumeName)).
 						Return(nil, vtc.expReadTagErr)
 				}
 				volumesIds = append(volumesIds, volumeId)
@@ -603,36 +599,36 @@ func TestReconcileVolumeCreate(t *testing.T) {
 					}
 					mockOscVolumeInterface.
 						EXPECT().
-						CreateVolume(gomock.Eq(volumeSpec), gomock.Eq(volumeName)).
+						CreateVolume(gomock.Any(), gomock.Eq(volumeSpec), gomock.Eq(volumeName)).
 						Return(volume.Volume, vtc.expCreateVolumeErr)
 				} else {
 					mockOscVolumeInterface.
 						EXPECT().
-						CreateVolume(gomock.Eq(volumeSpec), gomock.Eq(volumeName)).
+						CreateVolume(gomock.Any(), gomock.Eq(volumeSpec), gomock.Eq(volumeName)).
 						Return(nil, vtc.expCreateVolumeErr)
 				}
 				if vtc.expCheckVolumeStateAvailableFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+						CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
 						Return(vtc.expCheckVolumeStateAvailableErr)
 				}
 			}
 			if vtc.expUserDeleteVolumeFound {
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return([]string{""}, vtc.expValidateVolumeIdsErr)
 			} else {
 				if vtc.expVolumeFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 						Return(volumesIds, vtc.expValidateVolumeIdsErr)
 				} else {
 					mockOscVolumeInterface.
 						EXPECT().
-						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 						Return(nil, vtc.expValidateVolumeIdsErr)
 				}
 			}
@@ -716,12 +712,12 @@ func TestReconcileVolumeGet(t *testing.T) {
 					if vtc.expTagFound {
 						mockOscTagInterface.
 							EXPECT().
-							ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+							ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(volumeName)).
 							Return(&tag, vtc.expReadTagErr)
 					} else {
 						mockOscTagInterface.
 							EXPECT().
-							ReadTag(gomock.Eq("Name"), gomock.Eq(volumeName)).
+							ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(volumeName)).
 							Return(nil, vtc.expReadTagErr)
 					}
 				}
@@ -733,12 +729,12 @@ func TestReconcileVolumeGet(t *testing.T) {
 			if vtc.expVolumeFound {
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return(volumesIds, vtc.expValidateVolumeIdsErr)
 			} else {
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return(nil, vtc.expValidateVolumeIdsErr)
 			}
 
@@ -820,27 +816,27 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 				volumesIds = append(volumesIds, volumeId)
 				mockOscVolumeInterface.
 					EXPECT().
-					DeleteVolume(gomock.Eq(volumeId)).
+					DeleteVolume(gomock.Any(), gomock.Eq(volumeId)).
 					Return(vtc.expDeleteVolumeErr)
 				mockOscVolumeInterface.
 					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
+					CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
 					Return(vtc.expCheckVolumeStateUseErr)
 
 				mockOscVolumeInterface.
 					EXPECT().
-					UnlinkVolume(gomock.Eq(volumeId)).
+					UnlinkVolume(gomock.Any(), gomock.Eq(volumeId)).
 					Return(vtc.expUnlinkVolumeErr)
 
 				mockOscVolumeInterface.
 					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+					CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
 					Return(vtc.expCheckVolumeStateAvailableErr)
 			}
 			if vtc.expVolumeFound {
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return(volumesIds, vtc.expValidateVolumeIdsErr)
 			} else {
 				if len(volumesIds) == 0 {
@@ -848,7 +844,7 @@ func TestReconcileDeleteVolumeDelete(t *testing.T) {
 				}
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return(nil, vtc.expValidateVolumeIdsErr)
 			}
 
@@ -914,7 +910,7 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 			if vtc.expVolumeFound {
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return(volumesIds, vtc.expValidateVolumeIdsErr)
 			} else {
 				if len(volumesIds) == 0 {
@@ -922,7 +918,7 @@ func TestReconcileDeleteVolumeGet(t *testing.T) {
 				}
 				mockOscVolumeInterface.
 					EXPECT().
-					ValidateVolumeIds(gomock.Eq(volumesIds)).
+					ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 					Return(nil, vtc.expValidateVolumeIdsErr)
 			}
 
@@ -976,26 +972,26 @@ func TestReconcileDeleteVolumeWithoutSpec(t *testing.T) {
 			volumesIds = append(volumesIds, volumeId)
 			mockOscVolumeInterface.
 				EXPECT().
-				DeleteVolume(gomock.Eq(volumeId)).
+				DeleteVolume(gomock.Any(), gomock.Eq(volumeId)).
 				Return(vtc.expDeleteVolumeErr)
 			mockOscVolumeInterface.
 				EXPECT().
-				ValidateVolumeIds(gomock.Eq(volumesIds)).
+				ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 				Return(volumesIds, vtc.expValidateVolumeIdsErr)
 
 			mockOscVolumeInterface.
 				EXPECT().
-				CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
+				CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
 				Return(vtc.expCheckVolumeStateUseErr)
 
 			mockOscVolumeInterface.
 				EXPECT().
-				UnlinkVolume(gomock.Eq(volumeId)).
+				UnlinkVolume(gomock.Any(), gomock.Eq(volumeId)).
 				Return(vtc.expUnlinkVolumeErr)
 
 			mockOscVolumeInterface.
 				EXPECT().
-				CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+				CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
 				Return(vtc.expCheckVolumeStateAvailableErr)
 
 			nodeSpec := vtc.machineSpec.Node
@@ -1136,31 +1132,31 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 				if vtc.expDeleteVolumeFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						DeleteVolume(gomock.Eq(volumeId)).
+						DeleteVolume(gomock.Any(), gomock.Eq(volumeId)).
 						Return(vtc.expDeleteVolumeErr)
 				}
 				if vtc.expCheckVolumeStateUseFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
+						CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
 						Return(vtc.expCheckVolumeStateUseErr)
 				}
 				if vtc.expUnlinkVolumeFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						UnlinkVolume(gomock.Eq(volumeId)).
+						UnlinkVolume(gomock.Any(), gomock.Eq(volumeId)).
 						Return(vtc.expUnlinkVolumeErr)
 				}
 				if vtc.expCheckVolumeStateAvailableFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
+						CheckVolumeState(gomock.Any(), gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
 						Return(vtc.expCheckVolumeStateAvailableErr)
 				}
 				if vtc.expVolumeFound {
 					mockOscVolumeInterface.
 						EXPECT().
-						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 						Return(volumesIds, vtc.expValidateVolumeIdsErr)
 				} else {
 					if len(volumesIds) == 0 {
@@ -1168,7 +1164,7 @@ func TestReconcileDeleteVolumeUnlink(t *testing.T) {
 					}
 					mockOscVolumeInterface.
 						EXPECT().
-						ValidateVolumeIds(gomock.Eq(volumesIds)).
+						ValidateVolumeIds(gomock.Any(), gomock.Eq(volumesIds)).
 						Return(nil, vtc.expValidateVolumeIdsErr)
 				}
 

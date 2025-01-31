@@ -459,7 +459,7 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteTableSubnetOscAssociateResourceNameErr: errors.New("test-subnet-test-uid subnet does not exist in routeTable"),
+			expCheckRouteTableSubnetOscAssociateResourceNameErr: errors.New("subnet test-subnet-test-uid does not exist in routeTable"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -1003,7 +1003,7 @@ func TestReconcilerRouteCreate(t *testing.T) {
 			expCreateRouteErr:            errors.New("CreateRoute generic error"),
 			expGetRouteTableFromRouteErr: nil,
 			expReadTagErr:                nil,
-			expReconcileRouteErr:         errors.New("CreateRoute generic error Can not create route for Osccluster test-system/test-osc"),
+			expReconcileRouteErr:         errors.New("cannot create route: CreateRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1044,7 +1044,7 @@ func TestReconcilerRouteCreate(t *testing.T) {
 				if rttc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(&tag, rttc.expReadTagErr)
 				}
 				routeTablesRef.ResourceMap[routeTableName] = routeTableId
@@ -1074,23 +1074,23 @@ func TestReconcilerRouteCreate(t *testing.T) {
 					if rttc.expRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expGetRouteTableFromRouteErr)
 					}
 					if rttc.expCreateRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							CreateRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(route.RouteTable, rttc.expCreateRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							CreateRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expCreateRouteErr)
 					}
 					reconcileRoute, err := reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
@@ -1150,7 +1150,7 @@ func TestReconcileRouteGet(t *testing.T) {
 			expNatServiceFound:           true,
 			expGetRouteTableFromRouteErr: errors.New("GetRouteTableFromRoute generic error"),
 			expReadTagErr:                nil,
-			expReconcileRouteErr:         errors.New("GetRouteTableFromRoute generic error"),
+			expReconcileRouteErr:         errors.New("cannot get route table: GetRouteTableFromRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1192,7 +1192,7 @@ func TestReconcileRouteGet(t *testing.T) {
 				if rttc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(&tag, rttc.expReadTagErr)
 				}
 				associateRouteTableId = routeTableId
@@ -1220,12 +1220,12 @@ func TestReconcileRouteGet(t *testing.T) {
 					if rttc.expRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expGetRouteTableFromRouteErr)
 					}
 					reconcileRoute, err := reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
@@ -1301,7 +1301,7 @@ func TestReconcileRouteResourceId(t *testing.T) {
 				if rttc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(&tag, rttc.expReadTagErr)
 				}
 				routesSpec := routeTableSpec.Routes
@@ -1382,7 +1382,7 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("CreateRoute generic error Can not create route for Osccluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot create route: CreateRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1440,12 +1440,12 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 				if rttc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(&tag, rttc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expReadTagErr)
 				}
 				routeTableIds = append(routeTableIds, routeTableId)
@@ -1482,12 +1482,12 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 					if rttc.expRouteTableFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 							Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 							Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
 					}
 					if rttc.expCreateRouteTableFound {
@@ -1495,24 +1495,24 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 						routeTablesRef.ResourceMap[routeTableName] = routeTableId
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
+							CreateRouteTable(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
 							Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							CreateRouteTable(gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
+							CreateRouteTable(gomock.Any(), gomock.Eq(netId), gomock.Eq(netName), gomock.Eq(routeTableName)).
 							Return(nil, rttc.expCreateRouteTableErr)
 					}
 
 					if rttc.expLinkRouteTableFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+							LinkRouteTable(gomock.Any(), gomock.Eq(routeTableId), gomock.Eq(subnetId)).
 							Return(*linkRouteTable.LinkRouteTableId, rttc.expLinkRouteTableErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+							LinkRouteTable(gomock.Any(), gomock.Eq(routeTableId), gomock.Eq(subnetId)).
 							Return("", rttc.expLinkRouteTableErr)
 					}
 
@@ -1534,23 +1534,23 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 						if rttc.expRouteFound {
 							mockOscRouteTableInterface.
 								EXPECT().
-								GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 								Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 						} else {
 							mockOscRouteTableInterface.
 								EXPECT().
-								GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 								Return(nil, rttc.expGetRouteTableFromRouteErr)
 						}
 						if rttc.expCreateRouteFound {
 							mockOscRouteTableInterface.
 								EXPECT().
-								CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								CreateRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 								Return(route.RouteTable, rttc.expCreateRouteErr)
 						} else {
 							mockOscRouteTableInterface.
 								EXPECT().
-								CreateRoute(gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+								CreateRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 								Return(nil, rttc.expCreateRouteErr)
 						}
 					}
@@ -1606,7 +1606,7 @@ func TestReconcileRouteTableGet(t *testing.T) {
 			expTagFound:                      false,
 			expGetRouteTableIdsFromNetIdsErr: errors.New("GetRouteTableIdsFromNetIds generic errors"),
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("GetRouteTableIdsFromNetIds generic errors"),
+			expReconcileRouteTableErr:        errors.New("list route tables: GetRouteTableIdsFromNetIds generic errors"),
 		},
 		{
 			name:                             "create routetable with natservice (first time reconcile loop)",
@@ -1674,7 +1674,7 @@ func TestReconcileRouteTableGet(t *testing.T) {
 						if rttc.expRouteTableFound {
 							mockOscTagInterface.
 								EXPECT().
-								ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+								ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 								Return(&tag, rttc.expReadTagErr)
 						}
 					}
@@ -1688,12 +1688,12 @@ func TestReconcileRouteTableGet(t *testing.T) {
 					if rttc.expRouteTableFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 							Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+							GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 							Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
 					}
 				}
@@ -1737,7 +1737,7 @@ func TestReconcileRouteTableResourceId(t *testing.T) {
 			expNetFound:                      true,
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReadTagErr:                    errors.New("ReadTag generic error"),
-			expReconcileRouteTableErr:        errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1760,13 +1760,13 @@ func TestReconcileRouteTableResourceId(t *testing.T) {
 					routeTableIds = append(routeTableIds, routeTableId)
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expReadTagErr)
 				}
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					GetRouteTableIdsFromNetIds(netId).
+					GetRouteTableIdsFromNetIds(gomock.Any(), netId).
 					Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 			}
 			reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
@@ -1831,7 +1831,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expTagFound:                      false,
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("CreateRouteTable generic error Can not create routetable for Osccluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot create routetable: CreateRouteTable generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1863,12 +1863,12 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 				if rttc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(&tag, rttc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expReadTagErr)
 				}
 
@@ -1879,12 +1879,12 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 					subnetRef.ResourceMap[subnetName] = subnetId
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 
 					mockOscRouteTableInterface.
 						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
+						CreateRouteTable(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expCreateRouteTableErr)
 				}
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
@@ -1923,7 +1923,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			expLinkRouteTableErr:             errors.New("LinkRouteTable generic error"),
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("LinkRouteTable generic error Can not link routetable with net for Osccluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot link routetable with net: LinkRouteTable generic error"),
 		},
 		{
 			name:                             "failed to get subnet",
@@ -1965,12 +1965,12 @@ func TestReconcileRouteTableLink(t *testing.T) {
 				if rttc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(&tag, rttc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Eq("Name"), gomock.Eq(routeTableName)).
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(routeTableName)).
 						Return(nil, rttc.expReadTagErr)
 				}
 				subnetsSpec := routeTableSpec.Subnets
@@ -1989,17 +1989,17 @@ func TestReconcileRouteTableLink(t *testing.T) {
 
 					mockOscRouteTableInterface.
 						EXPECT().
-						CreateRouteTable(gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
+						CreateRouteTable(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterName), gomock.Eq(routeTableName)).
 						Return(routeTable.RouteTable, rttc.expCreateRouteTableErr)
 					if rttc.expLinkRouteTableFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							LinkRouteTable(gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+							LinkRouteTable(gomock.Any(), gomock.Eq(routeTableId), gomock.Eq(subnetId)).
 							Return("", rttc.expLinkRouteTableErr)
 					}
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
 				}
 				reconcileRouteTable, err := reconcileRouteTable(ctx, clusterScope, mockOscRouteTableInterface, mockOscTagInterface)
@@ -2064,7 +2064,7 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 			expNatServiceFound:           false,
 			expDeleteRouteErr:            errors.New("DeleteRoute generic error"),
 			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   errors.New("DeleteRoute generic error Can not delete route for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteErr:   errors.New("cannot delete route: DeleteRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -2128,17 +2128,17 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 					if rttc.expRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expGetRouteTableFromRouteErr)
 					}
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+						DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
 						Return(rttc.expDeleteRouteErr)
 
 					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
@@ -2172,7 +2172,7 @@ func TestReconcileDeleteRouteGet(t *testing.T) {
 			expInternetServiceFound:      true,
 			expNatServiceFound:           false,
 			expGetRouteTableFromRouteErr: errors.New("GetRouteTable generic error"),
-			expReconcileDeleteRouteErr:   errors.New("GetRouteTable generic error"),
+			expReconcileDeleteRouteErr:   errors.New("checking route table: GetRouteTable generic error"),
 		},
 		{
 			name:                         "remove finalizer (user delete route without cluster-api)",
@@ -2245,12 +2245,12 @@ func TestReconcileDeleteRouteGet(t *testing.T) {
 					if rttc.expRouteFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expGetRouteTableFromRouteErr)
 					}
 
@@ -2404,16 +2404,16 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 			clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
 			mockOscRouteTableInterface.
 				EXPECT().
-				GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+				GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 				Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 			mockOscRouteTableInterface.
 				EXPECT().
-				UnlinkRouteTable(gomock.Eq(linkRouteTableId)).
+				UnlinkRouteTable(gomock.Any(), gomock.Eq(linkRouteTableId)).
 				Return(rttc.expUnlinkRouteTableErr)
 
 			mockOscRouteTableInterface.
 				EXPECT().
-				DeleteRouteTable(gomock.Eq(routeTableId)).
+				DeleteRouteTable(gomock.Any(), gomock.Eq(routeTableId)).
 				Return(rttc.expDeleteRouteTableErr)
 
 			destinationIpRange := "0.0.0.0/0"
@@ -2441,12 +2441,12 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 			readRouteTable := *readRouteTables.RouteTables
 			mockOscRouteTableInterface.
 				EXPECT().
-				GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+				GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 				Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 
 			mockOscRouteTableInterface.
 				EXPECT().
-				DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+				DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
 				Return(rttc.expDeleteRouteErr)
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
@@ -2507,7 +2507,7 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 			expDeleteRouteTableErr:           errors.New("DeleteRoutetable generic error"),
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileDeleteRouteTableErr:  errors.New("DeleteRoutetable generic error Can not delete routeTable for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteTableErr:  errors.New("cannot delete routeTable: DeleteRoutetable generic error"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -2572,21 +2572,21 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 				if rttc.expRouteTableFound {
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
 				} else {
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
 				}
 				mockOscRouteTableInterface.
 					EXPECT().
-					UnlinkRouteTable(gomock.Eq(linkRouteTableId)).
+					UnlinkRouteTable(gomock.Any(), gomock.Eq(linkRouteTableId)).
 					Return(rttc.expUnlinkRouteTableErr)
 				mockOscRouteTableInterface.
 					EXPECT().
-					DeleteRouteTable(gomock.Eq(routeTableId)).
+					DeleteRouteTable(gomock.Any(), gomock.Eq(routeTableId)).
 					Return(rttc.expDeleteRouteTableErr)
 
 				routesSpec := routeTableSpec.Routes
@@ -2618,17 +2618,17 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 					if rttc.expRouteTableFound {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					} else {
 						mockOscRouteTableInterface.
 							EXPECT().
-							GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 							Return(nil, rttc.expGetRouteTableFromRouteErr)
 					}
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+						DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
 						Return(rttc.expDeleteRouteErr)
 				}
 			}
@@ -2719,12 +2719,12 @@ func TestReconcileDeleteRouteTableGet(t *testing.T) {
 				if rttc.expRouteTableFound {
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return([]string{routeTableId}, rttc.expGetRouteTableIdsFromNetIdsErr)
 				} else {
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+						GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 						Return(nil, rttc.expGetRouteTableIdsFromNetIdsErr)
 				}
 			}
@@ -2757,7 +2757,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 			expDeleteRouteErr:                nil,
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileDeleteRouteTableErr:  errors.New("UnlinkRouteTable generic error Can not unlink routeTable for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteTableErr:  errors.New("cannot unlink routeTable: UnlinkRouteTable generic error"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -2803,12 +2803,12 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 				clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
 				mockOscRouteTableInterface.
 					EXPECT().
-					GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+					GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return([]string{routeTableId}, rttc.expGetRouteTableIdsFromNetIdsErr)
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					UnlinkRouteTable(gomock.Eq(linkRouteTableId)).
+					UnlinkRouteTable(gomock.Any(), gomock.Eq(linkRouteTableId)).
 					Return(rttc.expUnlinkRouteTableErr)
 
 				routesSpec := routeTableSpec.Routes
@@ -2837,11 +2837,11 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 					readRouteTable := *readRouteTables.RouteTables
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+						GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 						Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
+						DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
 						Return(rttc.expDeleteRouteErr).AnyTimes()
 				}
 			}
@@ -2872,7 +2872,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			expDeleteRouteErr:                errors.New("DeleteRoute generic error"),
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileDeleteRouteTableErr:  errors.New("DeleteRoute generic error Can not delete route for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteTableErr:  errors.New("cannot delete route: DeleteRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -2919,7 +2919,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 
 				mockOscRouteTableInterface.
 					EXPECT().
-					GetRouteTableIdsFromNetIds(gomock.Eq(netId)).
+					GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
 					Return([]string{routeTableId}, rttc.expGetRouteTableIdsFromNetIdsErr)
 
 				routesSpec := routeTableSpec.Routes
@@ -2948,11 +2948,11 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 					readRouteTable := *readRouteTables.RouteTables
 					mockOscRouteTableInterface.
 						EXPECT().
-						GetRouteTableFromRoute(gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+						GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 						Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					mockOscRouteTableInterface.
 						EXPECT().
-						DeleteRoute(destinationIpRange, routeTableId).
+						DeleteRoute(gomock.Any(), destinationIpRange, routeTableId).
 						Return(rttc.expDeleteRouteErr)
 				}
 			}

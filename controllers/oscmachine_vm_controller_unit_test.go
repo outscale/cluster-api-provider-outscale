@@ -2860,12 +2860,12 @@ func TestReconcileVmGet(t *testing.T) {
 			if vtc.expGetVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(vm, vtc.expGetVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(nil, vtc.expGetVmErr)
 			}
 
@@ -3064,12 +3064,12 @@ func TestReconcileDeleteVm(t *testing.T) {
 			if vtc.expGetVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(vm, vtc.expGetVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(nil, vtc.expGetVmErr)
 			}
 
@@ -3099,37 +3099,37 @@ func TestReconcileDeleteVm(t *testing.T) {
 			}
 			mockOscPublicIpInterface.
 				EXPECT().
-				UnlinkPublicIp(gomock.Eq(linkPublicIpId)).
+				UnlinkPublicIp(gomock.Any(), gomock.Eq(linkPublicIpId)).
 				Return(vtc.expCheckUnlinkPublicIpErr)
 			vmIds := []string{vmId}
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				UnlinkLoadBalancerBackendMachines(gomock.Eq(vmIds), gomock.Eq(loadBalancerName)).
+				UnlinkLoadBalancerBackendMachines(gomock.Any(), gomock.Eq(vmIds), gomock.Eq(loadBalancerName)).
 				Return(vtc.expUnlinkLoadBalancerBackendMachineErr)
 
 			if vtc.expDeleteOutboundSecurityGroupRuleFound {
 				mockOscSecurityGroupInterface.
 					EXPECT().
-					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Outbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
+					DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(associateSecurityGroupId), gomock.Eq("Outbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteOutboundSecurityGroupRuleErr)
 			}
 			if vtc.expDeleteDedicatedPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					DeletePublicIp(gomock.Eq("eipassoc-test-osc-publicIp-uid")).
+					DeletePublicIp(gomock.Any(), gomock.Eq("eipassoc-test-osc-publicIp-uid")).
 					Return(nil)
 			}
 
 			if vtc.expDeleteInboundSecurityGroupRuleFound {
 				mockOscSecurityGroupInterface.
 					EXPECT().
-					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Inbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
+					DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(associateSecurityGroupId), gomock.Eq("Inbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteInboundSecurityGroupRuleErr)
 			}
 
 			mockOscVmInterface.
 				EXPECT().
-				DeleteVm(gomock.Eq(vmId)).
+				DeleteVm(gomock.Any(), gomock.Eq(vmId)).
 				Return(vtc.expDeleteVmErr)
 
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
@@ -3207,19 +3207,19 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 			if vtc.expGetVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(vm, vtc.expGetVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(nil, vtc.expGetVmErr)
 			}
 
 			if vtc.expCheckUnlinkPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
-					UnlinkPublicIp(gomock.Eq(linkPublicIpId)).
+					UnlinkPublicIp(gomock.Any(), gomock.Eq(linkPublicIpId)).
 					Return(vtc.expCheckUnlinkPublicIpErr)
 			}
 
@@ -3288,12 +3288,12 @@ func TestReconcileDeleteVmResourceId(t *testing.T) {
 			if vtc.expGetVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(vm, vtc.expGetVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(nil, vtc.expGetVmErr)
 			}
 
@@ -3436,17 +3436,17 @@ func TestReconcileDeleteVmWithoutSpec(t *testing.T) {
 				}
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(vm, vtc.expGetVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(nil, vtc.expGetVmErr)
 			}
 			mockOscVmInterface.
 				EXPECT().
-				DeleteVm(gomock.Eq(vmId)).
+				DeleteVm(gomock.Any(), gomock.Eq(vmId)).
 				Return(vtc.expDeleteVmErr)
 			reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if vtc.expReconcileDeleteVmErr != nil {
@@ -3563,36 +3563,36 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 			if vtc.expGetVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(vm, vtc.expGetVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					GetVm(gomock.Eq(vmId)).
+					GetVm(gomock.Any(), gomock.Eq(vmId)).
 					Return(nil, vtc.expGetVmErr)
 			}
 
 			mockOscPublicIpInterface.
 				EXPECT().
-				UnlinkPublicIp(gomock.Eq(linkPublicIpId)).
+				UnlinkPublicIp(gomock.Any(), gomock.Eq(linkPublicIpId)).
 				Return(vtc.expCheckUnlinkPublicIpErr)
 			vmIds := []string{vmId}
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				UnlinkLoadBalancerBackendMachines(gomock.Eq(vmIds), gomock.Eq(loadBalancerName)).
+				UnlinkLoadBalancerBackendMachines(gomock.Any(), gomock.Eq(vmIds), gomock.Eq(loadBalancerName)).
 				Return(vtc.expUnlinkLoadBalancerBackendMachineErr)
 
 			if vtc.expDeleteOutboundSecurityGroupRuleFound {
 				mockOscSecurityGroupInterface.
 					EXPECT().
-					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Outbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
+					DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(associateSecurityGroupId), gomock.Eq("Outbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteOutboundSecurityGroupRuleErr)
 			}
 
 			if vtc.expDeleteInboundSecurityGroupRuleFound {
 				mockOscSecurityGroupInterface.
 					EXPECT().
-					DeleteSecurityGroupRule(gomock.Eq(associateSecurityGroupId), gomock.Eq("Inbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
+					DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(associateSecurityGroupId), gomock.Eq("Inbound"), gomock.Eq(ipProtocol), "", gomock.Eq(securityGroupIds[0]), gomock.Eq(fromPortRange), gomock.Eq(toPortRange)).
 					Return(vtc.expDeleteInboundSecurityGroupRuleErr)
 			}
 
