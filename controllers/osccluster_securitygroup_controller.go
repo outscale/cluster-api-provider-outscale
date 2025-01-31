@@ -19,12 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io"
-	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs"
-	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
@@ -198,45 +194,10 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 }
 
 // deleteSecurityGroup reconcile the deletion of securityGroup of the cluster.
-func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clock_time clock.Clock) (reconcile.Result, error) {
-	currentTimeout := clock_time.Now().Add(time.Second * 600)
-	loadbalancer_delete := false
-	for !loadbalancer_delete {
-		err, httpRes := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
-		if err != nil {
-			time.Sleep(20 * time.Second)
-			buffer := new(strings.Builder)
-			_, err := io.Copy(buffer, httpRes.Body)
-			if err != nil {
-				return reconcile.Result{}, nil
-			}
-			httpResBody := buffer.String()
-			clusterScope.V(4).Info("Find body", "httpResBody", httpResBody)
-			httpResBodyData := []byte(httpResBody)
-			httpResBodyParsed, err := gabs.ParseJSON(httpResBodyData)
-
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-			}
-			httpResCode := strings.Replace(strings.Replace(fmt.Sprintf("%v", httpResBodyParsed.Path("Errors.Code").Data()), "[", "", 1), "]", "", 1)
-			httpResType := strings.Replace(strings.Replace(fmt.Sprintf("%v", httpResBodyParsed.Path("Errors.Type").Data()), "[", "", 1), "]", "", 1)
-			unexpectedErr := true
-
-			if httpResCode == "9085" && httpResType == "ResourceConflict" {
-				clusterScope.V(2).Info("LoadBalancer is not deleted yet")
-				unexpectedErr = false
-			}
-			if unexpectedErr {
-				return reconcile.Result{}, fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster %s/%s", clusterScope.GetNamespace(), clusterScope.GetName())
-			}
-			clusterScope.V(2).Info("Wait until loadBalancer is deleted")
-		} else {
-			loadbalancer_delete = true
-		}
-
-		if clock_time.Now().After(currentTimeout) {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup because to waiting loadbalancer to be delete timeout for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-		}
+func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+	err := securityGroupSvc.DeleteSecurityGroup(securityGroupId)
+	if err != nil {
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf(" Can not delete securityGroup because of the uncatch error for Osccluster %s/%s", clusterScope.GetNamespace(), clusterScope.GetName())
 	}
 	return reconcile.Result{}, nil
 }
@@ -398,7 +359,6 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	clock_time := clock.New()
 	clusterScope.V(4).Info("Number of securitGroup", "securityGroupLength", len(securityGroupsSpec))
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
@@ -417,7 +377,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 			}
 		}
 		clusterScope.V(2).Info("Delete the desired securityGroup", "securityGroupName", securityGroupName)
-		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc, clock_time)
+		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not delete securityGroup  for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
 		}

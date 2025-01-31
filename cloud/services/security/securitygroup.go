@@ -33,7 +33,7 @@ type OscSecurityGroupInterface interface {
 	CreateSecurityGroup(netId string, clusterName string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error)
 	CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
 	DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
-	DeleteSecurityGroup(securityGroupId string) (error, *http.Response)
+	DeleteSecurityGroup(securityGroupId string) error
 	GetSecurityGroup(securityGroupId string) (*osc.SecurityGroup, error)
 	GetSecurityGroupFromSecurityGroupRule(securityGroupId string, Flow string, IpProtocols string, IpRanges string, securityGroupMemberId string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
 	GetSecurityGroupIdsFromNetIds(netId string) ([]string, error)
@@ -243,18 +243,33 @@ func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, i
 }
 
 // DeleteSecurityGroup delete the securitygroup associated with the net
-func (s *Service) DeleteSecurityGroup(securityGroupId string) (error, *http.Response) {
+func (s *Service) DeleteSecurityGroup(securityGroupId string) error {
 	deleteSecurityGroupRequest := osc.DeleteSecurityGroupRequest{SecurityGroupId: &securityGroupId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
-	if err != nil {
-		if httpRes != nil {
-			fmt.Printf("Error with http result %s", httpRes.Status)
-			return err, httpRes
+	deleteSecurityGroupCallBack := func() (bool, error) {
+		_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", deleteSecurityGroupRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
 	}
-	return nil, httpRes
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteSecurityGroupCallBack)
+	if waitErr != nil {
+		return waitErr
+	}
+	return nil
 }
 
 // GetSecurityGroup retrieve security group object from the security group id
