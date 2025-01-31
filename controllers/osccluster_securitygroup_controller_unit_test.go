@@ -19,20 +19,15 @@ package controllers
 import (
 	"context"
 	"errors"
-	"io"
-	"net/http"
-	"runtime"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security/mock_security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag/mock_tag"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -1490,149 +1485,49 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 // TestDeleteSecurityGroup has several tests to cover the code of the function deleteSecurityGroup
 func TestDeleteSecurityGroup(t *testing.T) {
 	securityGroupTestCases := []struct {
-		name                                      string
-		spec                                      infrastructurev1beta1.OscClusterSpec
-		expSecurityGroupFound                     bool
-		expLoadBalancerResourceConflict           bool
-		expInvalidDeleteSecurityGroupJsonResponse bool
-		expDeleteSecurityGroupFirstMockErr        error
-		expDeleteSecurityGroupError               error
+		name                            string
+		spec                            infrastructurev1beta1.OscClusterSpec
+		expDeleteSecurityGroupMockError error
+		expDeleteSecurityGroupError     error
+		res                             reconcile.Result
 	}{
 		{
 			name:                            "delete securityGroup",
 			spec:                            defaultSecurityGroupReconcile,
-			expSecurityGroupFound:           true,
-			expLoadBalancerResourceConflict: false,
-			expInvalidDeleteSecurityGroupJsonResponse: false,
-			expDeleteSecurityGroupFirstMockErr:        nil,
-			expDeleteSecurityGroupError:               nil,
+			expDeleteSecurityGroupMockError: nil,
+			expDeleteSecurityGroupError:     nil,
+			res:                             reconcile.Result{},
 		},
 		{
 			name:                            "delete securityGroup unmatch to catch",
 			spec:                            defaultSecurityGroupReconcile,
-			expSecurityGroupFound:           true,
-			expLoadBalancerResourceConflict: false,
-			expInvalidDeleteSecurityGroupJsonResponse: false,
-			expDeleteSecurityGroupFirstMockErr:        errors.New("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
-		},
-		{
-			name:                            "invalid json response",
-			spec:                            defaultSecurityGroupReconcile,
-			expSecurityGroupFound:           true,
-			expLoadBalancerResourceConflict: false,
-			expInvalidDeleteSecurityGroupJsonResponse: true,
-			expDeleteSecurityGroupFirstMockErr:        errors.New("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               errors.New("invalid character 'B' looking for beginning of value Can not delete securityGroup for Osccluster test-system/test-osc"),
-		},
-		{
-			name:                            "waiting loadbalancer to timeout",
-			spec:                            defaultSecurityGroupReconcile,
-			expSecurityGroupFound:           true,
-			expLoadBalancerResourceConflict: true,
-			expInvalidDeleteSecurityGroupJsonResponse: false,
-			expDeleteSecurityGroupFirstMockErr:        errors.New("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:               errors.New("DeleteSecurityGroup first generic error Can not delete securityGroup because to waiting loadbalancer to be delete timeout for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupMockError: errors.New("DeleteSecurityGroup first generic error"),
+			expDeleteSecurityGroupError:     errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
+			res:                             reconcile.Result{RequeueAfter: 30 * time.Second},
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
-			var err error
-			var deleteSg reconcile.Result
-			var wg sync.WaitGroup
 			securityGroupsSpec := sgtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			clock_mock := clock.NewMock()
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				var httpResponse *http.Response
-				if sgtc.expDeleteSecurityGroupFirstMockErr != nil {
-					if sgtc.expLoadBalancerResourceConflict {
-						httpResponse = &http.Response{
-							StatusCode: 9085,
-							Body: io.NopCloser(strings.NewReader(`{
-							"Errors": [
-                                                	        {
-                                                	       	    "Type": "ResourceConflict",
-        	                                                    "Details": "",
-	                                                            "Code": "9085"
-                                 	                       }
-                                        	        ],
-                                               	 	"ResponseContext": {
-                                                        	"RequestId": "aaaaa-bbbbb-ccccc"
-                                                	}
-						}`)),
-						}
-					} else {
-						httpResponse = &http.Response{
-							StatusCode: 10014,
-							Body: io.NopCloser(strings.NewReader(`{
-                                                        "Errors": [
-                                                                {
-                                                                    "Type": "TooManyResources (QuotaExceded)",
-                                                                    "Details": "",
-                                                                    "Code": "10014"
-                                                               }
-                                                        ],
-                                                        "ResponseContext": {
-                                                                "RequestId": "aaaaa-bbbbb-ccccc"
-                                                        }
-                                                }`)),
-						}
-					}
-					if sgtc.expInvalidDeleteSecurityGroupJsonResponse {
-						httpResponse = &http.Response{
-							StatusCode: 0,
-							Body: io.NopCloser(strings.NewReader(`{
-                                                        "Errors": [
-                                                                {
-                                                                    "Type":Bad,
-                                                               }
-                                                        ],
-                                                        "ResponseContext": {
-                                                                "RequestId": "aaaaa-bbbbb-ccccc"
-                                                        }
-                                                }`)),
-						}
-					}
-					mockOscSecurityGroupInterface.
-						EXPECT().
-						DeleteSecurityGroup(gomock.Eq(securityGroupId)).
-						Return(sgtc.expDeleteSecurityGroupFirstMockErr, httpResponse)
-				} else {
-					httpResponse = &http.Response{
-						StatusCode: 200,
-						Body: io.NopCloser(strings.NewReader(`{
-                                                        "ResponseContext": {
-                                                                "RequestId": "aaaaa-bbbbb-ccccc"
-                                                        }
-                                                }`)),
-					}
-					mockOscSecurityGroupInterface.
-						EXPECT().
-						DeleteSecurityGroup(gomock.Eq(securityGroupId)).
-						Return(nil, httpResponse)
-				}
+				mockOscSecurityGroupInterface.
+					EXPECT().
+					DeleteSecurityGroup(gomock.Eq(securityGroupId)).
+					Return(sgtc.expDeleteSecurityGroupMockError)
 
-				wg.Add(1)
-				go func() {
-					clock_mock.Sleep(5 * time.Second)
-					deleteSg, err = deleteSecurityGroup(ctx, clusterScope, securityGroupId, mockOscSecurityGroupInterface, clock_mock)
-					wg.Done()
-				}()
-				runtime.Gosched()
-				clock_mock.Add(630 * time.Second)
-				wg.Wait()
+				res, err := deleteSecurityGroup(ctx, clusterScope, securityGroupId, mockOscSecurityGroupInterface)
 				if sgtc.expDeleteSecurityGroupError != nil {
 					require.EqualError(t, err, sgtc.expDeleteSecurityGroupError.Error(), "deleteSecurityGroup() should return the same error")
 				} else {
 					require.NoError(t, err)
 				}
-				t.Logf("Find  deleteSecurityGroup %v\n", deleteSg)
+				assert.Equal(t, sgtc.res, res)
 			}
 		})
 	}
@@ -1806,37 +1701,10 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-				var httpResponse *http.Response
 				mockOscSecurityGroupInterface.
 					EXPECT().
 					GetSecurityGroupIdsFromNetIds(gomock.Eq(netId)).
 					Return(securityGroupIds, sgtc.expGetSecurityGroupFromNetIdsErr)
-				if sgtc.expDeleteSecurityGroupErr == nil {
-					httpResponse = &http.Response{
-						StatusCode: 200,
-						Body: io.NopCloser(strings.NewReader(`{
-	                                                "ResponseContext": {
-        	                                                "RequestId": "aaaaa-bbbbb-ccccc"
-                	                                }
-                        	                }`)),
-					}
-				} else {
-					httpResponse = &http.Response{
-						StatusCode: 10014,
-						Body: io.NopCloser(strings.NewReader(`{
-                                                        "Errors": [
-                                                                {
-                                                                    "Type": "TooManyResources (QuotaExceded)",
-                                                                    "Details": "",
-                                                                    "Code": "10014"
-                                                               }
-                                                        ],
-                                                        "ResponseContext": {
-                                                                "RequestId": "aaaaa-bbbbb-ccccc"
-                                                        }
-                                                }`)),
-					}
-				}
 				securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
 				for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 					securityGroupRuleFlow := securityGroupRuleSpec.Flow
@@ -1869,7 +1737,7 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 				mockOscSecurityGroupInterface.
 					EXPECT().
 					DeleteSecurityGroup(gomock.Eq(securityGroupId)).
-					Return(sgtc.expDeleteSecurityGroupErr, httpResponse)
+					Return(sgtc.expDeleteSecurityGroupErr)
 			}
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
@@ -1920,14 +1788,6 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			securityGroupId := "sg-" + securityGroupName
 			securityGroupIds = append(securityGroupIds, securityGroupId)
 			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
-			httpResponse := &http.Response{
-				StatusCode: 200,
-				Body: io.NopCloser(strings.NewReader(`{
-	                                                "ResponseContext": {
-        	                                                "RequestId": "aaaaa-bbbbb-ccccc"
-                	                                }
-                        	                }`)),
-			}
 			securityGroupRuleKubeletKwFlow := "Inbound"
 			securityGroupRuleKubeletKwIpProtocol := "tcp"
 			securityGroupRuleKubeletKwIpRange := "10.0.3.0/24"
@@ -2024,7 +1884,7 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			mockOscSecurityGroupInterface.
 				EXPECT().
 				DeleteSecurityGroup(gomock.Eq(securityGroupId)).
-				Return(sgtc.expDeleteSecurityGroupErr, httpResponse)
+				Return(sgtc.expDeleteSecurityGroupErr)
 			reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, mockOscSecurityGroupInterface)
 			if sgtc.expReconcileDeleteSecurityGroupErr != nil {
 				require.EqualError(t, err, sgtc.expReconcileDeleteSecurityGroupErr.Error(), "reconcileDeleteSecurityGroup() should return the same error")
