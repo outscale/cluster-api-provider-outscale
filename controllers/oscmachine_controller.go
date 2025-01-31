@@ -367,7 +367,6 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 			return nil
 		}
 		for _, m := range machineList.Items {
-			log.WithValues("machine", m.Name)
 			if m.Spec.InfrastructureRef.GroupVersionKind().Kind != "OscMachine" {
 				log.V(1).Info("Machine has an InfrastructureRef for a different type, will not add to reconciliation request.")
 				continue
@@ -376,7 +375,6 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 				continue
 			}
 			name := client.ObjectKey{Namespace: m.Namespace, Name: m.Spec.InfrastructureRef.Name}
-			log.WithValues("oscMachine", name.Name)
 			log.V(1).Info("Adding OscMachine to reconciliation request.")
 			result = append(result, ctrl.Request{NamespacedName: name})
 		}

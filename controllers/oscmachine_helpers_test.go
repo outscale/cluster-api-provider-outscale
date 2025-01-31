@@ -3,12 +3,12 @@ package controllers_test
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -136,14 +136,6 @@ func mockLinkLoadBalancer(vmId, lb string) mockFunc {
 		s.LoadBalancerMock.EXPECT().
 			LinkLoadBalancerBackendMachines(gomock.Any(), []string{vmId}, lb).
 			Return(nil)
-	}
-}
-
-func mockSecurityGroupHasRule(sg, flow, proto, ipRanges, memberSg string, portFrom, portTo int32, found bool) mockFunc {
-	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
-			SecurityGroupHasRule(gomock.Any(), sg, flow, proto, ipRanges, memberSg, portFrom, portTo).
-			Return(found, nil)
 	}
 }
 
