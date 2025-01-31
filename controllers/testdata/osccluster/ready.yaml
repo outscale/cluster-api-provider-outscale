@@ -215,12 +215,6 @@ spec:
         name: cluster-api-securitygroup-wireguard-ipv6
         toPortRange: 51821
       - flow: Inbound
-        fromPortRange: 4789
-        ipProtocol: udp
-        ipRange: 10.0.0.0/16
-        name: cluster-api-securitygroup-flannel
-        toPortRange: 4789
-      - flow: Inbound
         fromPortRange: 8285
         ipProtocol: udp
         ipRange: 10.0.0.0/16
