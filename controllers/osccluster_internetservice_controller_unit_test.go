@@ -195,7 +195,7 @@ func TestReconcileInternetServiceLink(t *testing.T) {
 			expCreateInternetServiceErr:    nil,
 			expReadTagErr:                  nil,
 			expLinkInternetServiceErr:      errors.New("LinkInternetService generic error"),
-			expReconcileInternetServiceErr: errors.New("LinkInternetService generic error Can not link internetService with net for Osccluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("cannot link internetService: LinkInternetService generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -514,7 +514,7 @@ func TestReconcileInternetServiceCreate(t *testing.T) {
 			expTagFound:                    false,
 			expCreateInternetServiceErr:    errors.New("CreateInternetService generic error"),
 			expReadTagErr:                  nil,
-			expReconcileInternetServiceErr: errors.New("CreateInternetService generic error Can not create internetservice for Osccluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("cannot create internetservice: CreateInternetService generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -582,7 +582,7 @@ func TestReconcileInternetServiceResourceId(t *testing.T) {
 			expTagFound:                    true,
 			expNetFound:                    true,
 			expReadTagErr:                  errors.New("ReadTag generic error"),
-			expReconcileInternetServiceErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileInternetServiceErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, istc := range internetServiceTestCases {
@@ -634,12 +634,12 @@ func TestReconcileDeleteInternetServiceGet(t *testing.T) {
 		expReconcileDeleteInternetServiceErr error
 	}{
 		{
-			name:                                 "failed to get interntservice",
+			name:                                 "failed to get internetservice",
 			spec:                                 defaultInternetServiceReconcile,
 			expNetFound:                          true,
 			expInternetServiceFound:              false,
 			expDescribeInternetServiceErr:        errors.New("GetInternetService generic error"),
-			expReconcileDeleteInternetServiceErr: errors.New("GetInternetService generic error"),
+			expReconcileDeleteInternetServiceErr: errors.New("get internetservice: GetInternetService generic error"),
 		},
 		{
 			name:                                 "remove finalizer (user delete internetService without cluster-api)",
@@ -711,7 +711,7 @@ func TestReconcileDeleteInternetServiceUnlink(t *testing.T) {
 			spec:                                 defaultInternetServiceReconcile,
 			expDescribeInternetServiceErr:        nil,
 			expUnlinkInternetServiceErr:          errors.New("UnlinkInternetService generic error"),
-			expReconcileDeleteInternetServiceErr: errors.New("UnlinkInternetService generic error Can not unlink internetService and net for Osccluster test-system/test-osc"),
+			expReconcileDeleteInternetServiceErr: errors.New("cannot unlink internetService and net: UnlinkInternetService generic error"),
 		},
 	}
 
@@ -787,7 +787,7 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 			expDeleteInternetServiceErr:          errors.New("DeleteInternetService generic error"),
 			expDescribeInternetServiceErr:        nil,
 			expUnlinkInternetServiceErr:          nil,
-			expReconcileDeleteInternetServiceErr: errors.New("DeleteInternetService generic error Can not delete internetService for Osccluster test-system/test-osc"),
+			expReconcileDeleteInternetServiceErr: errors.New("cannot delete internetService: DeleteInternetService generic error"),
 		},
 	}
 
@@ -859,12 +859,12 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteInternetServiceErr: errors.New("cluster-api-net-uid does not exist"),
+			expReconcileDeleteInternetServiceErr: errors.New("get net: cluster-api-net-uid does not exist"),
 		},
 		{
 			name:                                 "net does not exist",
 			spec:                                 defaultInternetServiceInitialize,
-			expReconcileDeleteInternetServiceErr: errors.New("test-net-uid does not exist"),
+			expReconcileDeleteInternetServiceErr: errors.New("get net: test-net-uid does not exist"),
 		},
 	}
 

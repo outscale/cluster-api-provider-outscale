@@ -376,7 +376,7 @@ func (s *ClusterScope) GetVmState() *infrastructurev1beta1.VmState {
 }
 
 // PatchObject keep the cluster configuration and status
-func (s *ClusterScope) PatchObject() error {
+func (s *ClusterScope) PatchObject(ctx context.Context) error {
 	setConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.NetReadyCondition,
 		infrastructurev1beta1.SubnetsReadyCondition,
@@ -391,7 +391,7 @@ func (s *ClusterScope) PatchObject() error {
 		conditions.WithStepCounter(),
 	)
 	return s.patchHelper.Patch(
-		context.TODO(),
+		ctx,
 		s.OscCluster,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,

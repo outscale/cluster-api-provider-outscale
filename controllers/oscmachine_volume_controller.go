@@ -129,21 +129,21 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		tagValue := volumeName
 		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
 		volumeId := volumeRef.ResourceMap[volumeName]
-		log.V(2).Info("Check if the desired volumes exist")
+		log.V(2).Info("Check if volumes exist")
 		if !Contains(validVolumeIds, volumeId) && tag == nil {
 			volume, err := volumeSvc.CreateVolume(ctx, volumeSpec, volumeName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("cannot create volume: %w", err)
 			}
 			volumeId := volume.GetVolumeId()
 			log.V(4).Info("Get VolumeId", "volumeId", volumeId)
 			if volumeId != "" {
 				err = volumeSvc.CheckVolumeState(ctx, 5, 60, "available", volumeId)
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not get volume available for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+					return reconcile.Result{}, fmt.Errorf("cannot get volume available: %w", err)
 				}
 				log.V(4).Info("Volume is available", "volumeId", volumeId)
 			}
@@ -176,9 +176,8 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 		volumeIds = append(volumeIds, volumeId)
 	}
 	validVolumeIds, err := volumeSvc.ValidateVolumeIds(ctx, volumeIds)
-	log.V(4).Info("Check Volume Id", "volume", volumeIds)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("cannot validate volume id: %w", err)
 	}
 	log.V(4).Info("Number of volume", "volumeLength", len(volumesSpec))
 	for _, volumeSpec := range volumesSpec {
@@ -189,26 +188,26 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 			return reconcile.Result{}, nil
 		}
 		err = volumeSvc.CheckVolumeState(ctx, 5, 60, "in-use", volumeId)
-		log.V(4).Info("Volume is in use", "volumeId", volumeId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot get volume %s in use: %w", volumeId, err)
 		}
+		log.V(4).Info("Volume is in use", "volumeId", volumeId)
 
+		log.V(2).Info("Unlinking volume", "volumeId", volumeId)
 		err = volumeSvc.UnlinkVolume(ctx, volumeId)
-		log.V(4).Info("Volume is unlinked", "volumeId", volumeId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not unlink volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot unlink volume %s in use: %w", volumeId, err)
 		}
 
 		err = volumeSvc.CheckVolumeState(ctx, 5, 60, "available", volumeId)
-		log.V(4).Info("Volume is available", "volumeId", volumeId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot get volume %s available: %w", volumeId, err)
 		}
-		log.V(2).Info("Delete the desired volume", "volumeName", volumeName)
+		log.V(4).Info("Volume is available", "volumeId", volumeId)
+		log.V(2).Info("Deleting volume", "volumeName", volumeName)
 		err = volumeSvc.DeleteVolume(ctx, volumeId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete volume for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot delete volume %s: %w", volumeId, err)
 		}
 	}
 	return reconcile.Result{}, nil

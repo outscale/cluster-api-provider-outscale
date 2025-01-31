@@ -249,7 +249,7 @@ func TestCheckPublicIpFormatParameters(t *testing.T) {
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope := Setup(t, pitc.name, pitc.spec)
-			publicIpName, err := checkPublicIpFormatParameters(context.TODO(), clusterScope)
+			publicIpName, err := checkPublicIpFormatParameters(clusterScope)
 			if pitc.expCheckPublicIpFormatParametersErr != nil {
 				require.EqualError(t, err, pitc.expCheckPublicIpFormatParametersErr.Error(), "checkPublicIpFormatParameters() should return the same error")
 			} else {
@@ -309,7 +309,7 @@ func TestCheckPublicIpOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckPublicIpOscAssociateResourceNameErr: errors.New("publicIp test-publicip-test-uid does not exist in natService "),
+			expCheckPublicIpOscAssociateResourceNameErr: errors.New("publicIp test-publicip-test-uid does not exist in natService"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -421,7 +421,7 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
 			expReadTagErr:           errors.New("ReadTag generic error"),
-			expReconcilePublicIpErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcilePublicIpErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -539,7 +539,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expCreatePublicIpFound:  false,
 			expCreatePublicIpErr:    errors.New("CreatePublicIp generic error"),
 			expReadTagErr:           nil,
-			expReconcilePublicIpErr: errors.New("CreatePublicIp generic error Can not create publicIp for Osccluster test-system/test-osc"),
+			expReconcilePublicIpErr: errors.New("cannot create publicIp: CreatePublicIp generic error"),
 		},
 		{
 			name: "user delete publicIp without cluster-api",
@@ -726,7 +726,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 			expValidatePublicIpIdsErr:     nil,
 			expCheckPublicIpUnlinkErr:     nil,
 			expDeletePublicIpErr:          errors.New("DeletePublicIp generic error"),
-			expReconcileDeletePublicIpErr: errors.New("DeletePublicIp generic error Can not delete publicIp for Osccluster test-system/test-osc"),
+			expReconcileDeletePublicIpErr: errors.New("cannot delete publicIp eipalloc-test-publicip-uid: DeletePublicIp generic error"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -792,7 +792,7 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 			expPublicIpFound:              true,
 			expValidatePublicIpIdsErr:     nil,
 			expCheckPublicIpUnlinkErr:     errors.New("CheckPublicIpUnlink generic error"),
-			expReconcileDeletePublicIpErr: errors.New("CheckPublicIpUnlink generic error Can not delete publicIp eipalloc-test-publicip-uid for Osccluster test-system/test-osc"),
+			expReconcileDeletePublicIpErr: errors.New("cannot check publicIp eipalloc-test-publicip-uid: CheckPublicIpUnlink generic error"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -860,7 +860,7 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 			spec:                          defaultPublicIpReconcile,
 			expPublicIpFound:              false,
 			expValidatePublicIpIdsErr:     errors.New("ValidatePublicIp generic error"),
-			expReconcileDeletePublicIpErr: errors.New("ValidatePublicIp generic error"),
+			expReconcileDeletePublicIpErr: errors.New("cannot validate publicips: ValidatePublicIp generic error"),
 		},
 		{
 			name:                          "remove finalizer (user delete publicIp without cluster-api)",

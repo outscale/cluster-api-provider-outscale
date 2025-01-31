@@ -75,25 +75,23 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	tagValue := netName
 	tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 	}
 	if netSpec.ResourceId != "" {
 		netRef.ResourceMap[netName] = netSpec.ResourceId
 		netId := netSpec.ResourceId
-		log.V(2).Info("Check if the desired net exist", "netName", netName)
-		log.V(4).Info("Get netId", "net", netRef.ResourceMap)
+		log.V(4).Info("Checking net", "netName", netName)
 		net, err = netSvc.GetNet(ctx, netId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 	if (net == nil && tag == nil) || (netSpec.ResourceId == "" && tag == nil) {
-		log.V(2).Info("Create the desired net", "netName", netName)
+		log.V(2).Info("Creating net", "netName", netName)
 		net, err := netSvc.CreateNet(ctx, netSpec, clusterName, netName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
 		}
-		log.V(4).Info("Get net", "net", net)
 		netRef.ResourceMap[netName] = net.GetNetId()
 		netSpec.ResourceId = *net.NetId
 		netRef.ResourceMap[netName] = net.GetNetId()
@@ -116,14 +114,14 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 		return reconcile.Result{}, err
 	}
 	if net == nil {
-		log.V(4).Info("The desired net does not exist anymore", "netName", netName)
+		log.V(4).Info("The net is already deleted", "netName", netName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
-	log.V(2).Info("Delete the desired net", "netName", netName)
+	log.V(2).Info("Deleting net", "netName", netName)
 	err = netSvc.DeleteNet(ctx, netId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not delete net for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot delete net: %w", err)
 	}
 	return reconcile.Result{}, nil
 }

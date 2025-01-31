@@ -51,7 +51,7 @@ func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourc
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("%w failed to add Tag Name", err)
+			return false, fmt.Errorf("failed to add Tag Name: %w", err)
 		}
 		return true, err
 	}

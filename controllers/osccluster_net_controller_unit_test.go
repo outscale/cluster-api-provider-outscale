@@ -230,7 +230,7 @@ func TestReconcileNetCreate(t *testing.T) {
 			expTagFound:        false,
 			expCreateNetErr:    errors.New("CreateNet generic error"),
 			expReadTagErr:      nil,
-			expReconcileNetErr: errors.New("CreateNet generic error Can not create net for Osccluster test-system/test-osc"),
+			expReconcileNetErr: errors.New("cannot create net: CreateNet generic error"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -398,7 +398,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 			expCreateNetErr:    nil,
 			expReadTagErr:      errors.New("ReadTag generic error"),
 			expDescribeNetErr:  nil,
-			expReconcileNetErr: errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileNetErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -472,7 +472,7 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 			expNetFound:              true,
 			expDeleteNetErr:          errors.New("DeleteNet generic error"),
 			expDescribeNetErr:        nil,
-			expReconcileDeleteNetErr: errors.New("DeleteNet generic error Can not delete net for Osccluster test-system/test-osc"),
+			expReconcileDeleteNetErr: errors.New("cannot delete net: DeleteNet generic error"),
 		},
 	}
 	for _, ntc := range netTestCases {

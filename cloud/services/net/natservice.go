@@ -165,6 +165,7 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
+	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
 			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)

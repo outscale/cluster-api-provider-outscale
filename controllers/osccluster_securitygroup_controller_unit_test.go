@@ -744,7 +744,7 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
 			expCreateSecurityGroupRuleErr:               errors.New("CreateSecurityGroupRule generic errors"),
 			expReadTagErr:                               nil,
-			expReconcileSecurityGroupRuleErr:            errors.New("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileSecurityGroupRuleErr:            errors.New("cannot create securityGroupRule: CreateSecurityGroupRule generic errors"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -923,7 +923,7 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 			spec: defaultSecurityGroupReconcile,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
 			expDeleteSecurityGroupRuleErr:               errors.New("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupRuleErr:      errors.New("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileDeleteSecurityGroupRuleErr:      errors.New("cannot delete securityGroupRule: DeleteSecurityGroupRule generic error"),
 		},
 		{
 			name: "delete securityGroupRule",
@@ -1095,7 +1095,7 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 			expGetSecurityGroupRuleErr:       nil,
 			expCreateSecurityGroupRuleErr:    errors.New("CreateSecurityGroupRule generic errors"),
 			expReadTagErr:                    nil,
-			expReconcileSecurityGroupErr:     errors.New("CreateSecurityGroupRule generic errors Can not create securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     errors.New("cannot create securityGroupRule: CreateSecurityGroupRule generic errors"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1349,7 +1349,7 @@ func TestReconcileCreateSecurityGroupFailedCreate(t *testing.T) {
 			expTagFound:                      false,
 			expCreateSecurityGroupErr:        errors.New("CreateSecurityGroup generic error"),
 			expReadTagErr:                    nil,
-			expReconcileSecurityGroupErr:     errors.New("CreateSecurityGroup generic error Can not create securityGroup for Osccluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     errors.New("cannot create securityGroup: CreateSecurityGroup generic error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1442,7 +1442,7 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 			expNetFound:                      true,
 			expGetSecurityGroupIdsFromNetIds: nil,
 			expReadTagErr:                    errors.New("ReadTag generic error"),
-			expReconcileSecurityGroupErr:     errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileSecurityGroupErr:     errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1664,7 +1664,7 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
 			expDeleteSecurityGroupRuleErr:               errors.New("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupErr:          errors.New("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileDeleteSecurityGroupErr:          errors.New("cannot delete securityGroupRule:DeleteSecurityGroupRule generic error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1782,8 +1782,8 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 			expGetSecurityGroupFromNetIdsErr: nil,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
 			expDeleteSecurityGroupRuleErr:               nil,
-			expDeleteSecurityGroupErr:                   errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc"),
-			expReconcileDeleteSecurityGroupErr:          errors.New(" Can not delete securityGroup because of the uncatch error for Osccluster test-system/test-osc Can not delete securityGroup  for Osccluster test-system/test-osc"),
+			expDeleteSecurityGroupErr:                   errors.New("DeleteSecurityGroup error"),
+			expReconcileDeleteSecurityGroupErr:          errors.New("cannot delete securityGroup: DeleteSecurityGroup error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {

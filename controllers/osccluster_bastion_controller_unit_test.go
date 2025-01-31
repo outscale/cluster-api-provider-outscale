@@ -1923,7 +1923,7 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expSecurityGroupFound:  false,
 			expGetImageIdErr:       errors.New("GetImageId generic error"),
 			expReadTagErr:          nil,
-			expReconcileBastionErr: errors.New("GetImageId generic error"),
+			expReconcileBastionErr: errors.New("unable to find image ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23: GetImageId generic error"),
 		},
 		/*{
 			name:                   "failed to get tag",
@@ -2053,7 +2053,7 @@ func TestReconcileDeleteBastion(t *testing.T) {
 			expCheckUnlinkPublicIpFound:  true,
 			expCheckUnlinkPublicIpErr:    nil,
 			expDeleteBastionErr:          errors.New("DeleteVm generic error"),
-			expReconcileDeleteBastionErr: errors.New("DeleteVm generic error Can not delete vm for OscCluster test-system/test-osc"),
+			expReconcileDeleteBastionErr: errors.New("cannot delete bastion: DeleteVm generic error"),
 			expGetBastionErr:             nil,
 		},
 	}
@@ -2392,7 +2392,7 @@ func TestReconcileDeleteBastionUnlinkPublicIp(t *testing.T) {
 			expGetVmErr:                  nil,
 			expCheckUnlinkPublicIpFound:  true,
 			expCheckUnlinkPublicIpErr:    errors.New("CheckUnlinkPublicIp generic error"),
-			expReconcileDeleteBastionErr: errors.New("CheckUnlinkPublicIp generic error Can not unlink publicIp for OscCluster test-system/test-osc"),
+			expReconcileDeleteBastionErr: errors.New("cannot unlink bastion publicIp: CheckUnlinkPublicIp generic error"),
 		},
 	}
 	for _, btc := range bastionTestCases {

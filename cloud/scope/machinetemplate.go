@@ -43,7 +43,7 @@ func NewMachineTemplateScope(params MachineTemplateScopeParams) (*MachineTemplat
 	client, err := newOscClient()
 
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to create Osc Client", err)
+		return nil, fmt.Errorf("failed to create Osc Client: %", err)
 	}
 
 	if params.OscClient == nil {
@@ -89,8 +89,8 @@ func (m *MachineTemplateScope) GetNamespace() string {
 	return m.OscMachineTemplate.Namespace
 }
 
-func (m *MachineTemplateScope) PatchObject() error {
-	return m.patchHelper.Patch(context.TODO(), m.OscMachineTemplate)
+func (m *MachineTemplateScope) PatchObject(ctx context.Context) error {
+	return m.patchHelper.Patch(ctx, m.OscMachineTemplate)
 }
 
 func (m *MachineTemplateScope) GetVmType() string {

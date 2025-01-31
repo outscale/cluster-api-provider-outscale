@@ -76,7 +76,7 @@ func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope
 	}
 	bootstrapData, err := machineScope.GetBootstrapData()
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to decode bootstrap data", err)
+		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
 	}
 	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
 	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
@@ -394,7 +394,7 @@ func (s *Service) GetCapacity(ctx context.Context, tagKey string, tagValue strin
 			}
 			cpu, err := GetCPUQuantityFromInt(core)
 			if err != nil {
-				return nil, fmt.Errorf("%w failed to parse quantity. CPU cores: %s. Vm Type: %s", err, vmCore, vmType)
+				return nil, fmt.Errorf("failed to parse CPU cores %s from Vm Type: %s: %w", vmCore, vmType, err)
 			}
 			capacity[corev1.ResourceCPU] = cpu
 			ram, err := strconv.ParseFloat(vmMemory, 32)
@@ -403,7 +403,7 @@ func (s *Service) GetCapacity(ctx context.Context, tagKey string, tagValue strin
 			}
 			memory, err := GetMemoryQuantityFromFloat32(float32(ram))
 			if err != nil {
-				return nil, fmt.Errorf("%w failed to parse quantity. Memory: %s. Vm type: %s", err, vmMemory, vmType)
+				return nil, fmt.Errorf("failed to parse Memory %s from Vm type: %s: %w", vmMemory, vmType, err)
 			}
 			capacity[corev1.ResourceMemory] = memory
 		}

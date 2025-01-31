@@ -541,7 +541,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expCreateLoadbalancerTagErr:   errors.New("CreateLoadbalancerTag generic error"),
-			expReconcileLoadBalancerErr:   errors.New("CreateLoadbalancerTag generic error Can not tag loadBalancer for OscCluster test-system/test-osc"),
+			expReconcileLoadBalancerErr:   errors.New("cannot tag loadBalancer: CreateLoadbalancerTag generic error"),
 		},
 		{
 			name:                          "failed to delete outbound Sg for loadBalancer",
@@ -558,7 +558,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expCreateLoadbalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   errors.New("DeleteSecurityGroupsRules generic error can not empty Outbound sg rules for loadBalancer for Osccluster test-system/test-osc"),
+			expReconcileLoadBalancerErr:   errors.New("cannot delete default sg rules for loadBalancer: DeleteSecurityGroupsRules generic error"),
 		},
 		{
 			name:                          "failed to configure loadBalancer",
@@ -575,7 +575,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 			expCreateLoadBalancerErr:      nil,
 			expCreateLoadbalancerTagErr:   nil,
 			expConfigureLoadBalancerErr:   errors.New("ConfigureLoadBalancer generic error"),
-			expReconcileLoadBalancerErr:   errors.New("ConfigureLoadBalancer generic error Can not configure healthcheck for Osccluster test-system/test-osc"),
+			expReconcileLoadBalancerErr:   errors.New("cannot configure healthcheck: ConfigureLoadBalancer generic error"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -733,7 +733,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			expCreateLoadBalancerErr:      nil,
 			expConfigureLoadBalancerErr:   nil,
 			expGetLoadBalancerTagErr:      nil,
-			expReconcileLoadBalancerErr:   errors.New("GetLoadBalancer generic error"),
+			expReconcileLoadBalancerErr:   errors.New("cannot get loadbalancer: GetLoadBalancer generic error"),
 		},
 	}
 
@@ -850,7 +850,7 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			expConfigureLoadBalancerErr:   nil,
 			expGetLoadBalancerTagErr:      errors.New("GetLoadBalancerTag generic error"),
 			expCreateLoadBalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   errors.New("GetLoadBalancerTag generic error"),
+			expReconcileLoadBalancerErr:   errors.New("get loadbalancer tag: GetLoadBalancerTag generic error"),
 		},
 		{
 			name:                          "a loadBalancer with the same name already exists without tag",
@@ -868,7 +868,7 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			expConfigureLoadBalancerErr:   nil,
 			expGetLoadBalancerTagErr:      nil,
 			expCreateLoadBalancerTagErr:   nil,
-			expReconcileLoadBalancerErr:   errors.New("A LoadBalancer test-loadbalancer already exists"),
+			expReconcileLoadBalancerErr:   errors.New("A LoadBalancer with name test-loadbalancer already exists"),
 		},
 		{
 			name:                          "a loadBalancer with the same name in other cluster already exists",
@@ -994,7 +994,7 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 			expCreateLoadBalancerErr:    errors.New("CreateLoadBalancer generic error"),
 			expConfigureLoadBalancerErr: nil,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: errors.New("CreateLoadBalancer generic error Can not create loadBalancer for Osccluster test-system/test-osc"),
+			expReconcileLoadBalancerErr: errors.New("cannot create loadBalancer: CreateLoadBalancer generic error"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1049,7 +1049,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 			expSubnetFound:              false,
 			expSecurityGroupFound:       false,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: errors.New("test-subnet-uid does not exist"),
+			expReconcileLoadBalancerErr: errors.New("cannot get subnet: test-subnet-uid does not exist"),
 		},
 		{
 			name:                        "securitygroup does not exist",
@@ -1057,7 +1057,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 			expSubnetFound:              true,
 			expSecurityGroupFound:       false,
 			expDescribeLoadBalancerErr:  nil,
-			expReconcileLoadBalancerErr: errors.New("test-securitygroup-uid does not exist"),
+			expReconcileLoadBalancerErr: errors.New("cannot get security group: test-securitygroup-uid does not exist"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1136,7 +1136,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 			expCheckLoadBalancerDeregisterVmErr: nil,
 			expGetLoadBalancerTagErr:            nil,
 			expDeleteLoadBalancerTagErr:         nil,
-			expReconcileDeleteLoadBalancerErr:   errors.New("DeleteLoadBalancer generic error Can not delete loadBalancer for Osccluster test-system/test-osc"),
+			expReconcileDeleteLoadBalancerErr:   errors.New("cannot delete loadBalancer: DeleteLoadBalancer generic error"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1274,7 +1274,7 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 			expCheckLoadBalancerDeregisterVmErr:   nil,
 			expGetLoadBalancerTagErr:              nil,
 			expDeleteLoadBalancerTagErr:           errors.New("DeleteLoadBalancerTag generic error"),
-			expReconcileDeleteLoadBalancerErr:     errors.New("DeleteLoadBalancerTag generic error Can not delete loadBalancer Tag for OscCluster test-system/test-osc"),
+			expReconcileDeleteLoadBalancerErr:     errors.New("cannot delete loadBalancer tag: DeleteLoadBalancerTag generic error"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {
@@ -1495,7 +1495,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 			expDescribeLoadBalancerErr:            nil,
 			expGetLoadBalancerTagErr:              nil,
 			expCheckLoadBalancerDeregisterVmErr:   errors.New("CheckLoadBalancerDeregisterVm generic error"),
-			expReconcileDeleteLoadBalancerErr:     errors.New("CheckLoadBalancerDeregisterVm generic error VmBackend is not deregister in loadBalancer test-loadbalancer for OscCluster test-system/test-osc"),
+			expReconcileDeleteLoadBalancerErr:     errors.New("VmBackend is stll registered in loadBalancer: CheckLoadBalancerDeregisterVm generic error"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {

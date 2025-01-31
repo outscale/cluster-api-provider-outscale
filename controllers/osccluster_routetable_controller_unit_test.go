@@ -459,7 +459,7 @@ func TestCheckRouteTableSubnetOscAssociateResourceName(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteTableSubnetOscAssociateResourceNameErr: errors.New("test-subnet-test-uid subnet does not exist in routeTable"),
+			expCheckRouteTableSubnetOscAssociateResourceNameErr: errors.New("subnet test-subnet-test-uid does not exist in routeTable"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -1003,7 +1003,7 @@ func TestReconcilerRouteCreate(t *testing.T) {
 			expCreateRouteErr:            errors.New("CreateRoute generic error"),
 			expGetRouteTableFromRouteErr: nil,
 			expReadTagErr:                nil,
-			expReconcileRouteErr:         errors.New("CreateRoute generic error Can not create route for Osccluster test-system/test-osc"),
+			expReconcileRouteErr:         errors.New("cannot create route: CreateRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1150,7 +1150,7 @@ func TestReconcileRouteGet(t *testing.T) {
 			expNatServiceFound:           true,
 			expGetRouteTableFromRouteErr: errors.New("GetRouteTableFromRoute generic error"),
 			expReadTagErr:                nil,
-			expReconcileRouteErr:         errors.New("GetRouteTableFromRoute generic error"),
+			expReconcileRouteErr:         errors.New("cannot get route table: GetRouteTableFromRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1382,7 +1382,7 @@ func TestReconcileRouteTableCreate(t *testing.T) {
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("CreateRoute generic error Can not create route for Osccluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot create route: CreateRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1606,7 +1606,7 @@ func TestReconcileRouteTableGet(t *testing.T) {
 			expTagFound:                      false,
 			expGetRouteTableIdsFromNetIdsErr: errors.New("GetRouteTableIdsFromNetIds generic errors"),
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("GetRouteTableIdsFromNetIds generic errors"),
+			expReconcileRouteTableErr:        errors.New("list route tables: GetRouteTableIdsFromNetIds generic errors"),
 		},
 		{
 			name:                             "create routetable with natservice (first time reconcile loop)",
@@ -1737,7 +1737,7 @@ func TestReconcileRouteTableResourceId(t *testing.T) {
 			expNetFound:                      true,
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReadTagErr:                    errors.New("ReadTag generic error"),
-			expReconcileRouteTableErr:        errors.New("ReadTag generic error Can not get tag for OscCluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot get tag: ReadTag generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1831,7 +1831,7 @@ func TestReconcileCreateRouteTable(t *testing.T) {
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expTagFound:                      false,
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("CreateRouteTable generic error Can not create routetable for Osccluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot create routetable: CreateRouteTable generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -1923,7 +1923,7 @@ func TestReconcileRouteTableLink(t *testing.T) {
 			expLinkRouteTableErr:             errors.New("LinkRouteTable generic error"),
 			expGetRouteTableIdsFromNetIdsErr: nil,
 			expReadTagErr:                    nil,
-			expReconcileRouteTableErr:        errors.New("LinkRouteTable generic error Can not link routetable with net for Osccluster test-system/test-osc"),
+			expReconcileRouteTableErr:        errors.New("cannot link routetable with net: LinkRouteTable generic error"),
 		},
 		{
 			name:                             "failed to get subnet",
@@ -2064,7 +2064,7 @@ func TestReconcileDeleteRouteDelete(t *testing.T) {
 			expNatServiceFound:           false,
 			expDeleteRouteErr:            errors.New("DeleteRoute generic error"),
 			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   errors.New("DeleteRoute generic error Can not delete route for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteErr:   errors.New("cannot delete route: DeleteRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTestCases {
@@ -2172,7 +2172,7 @@ func TestReconcileDeleteRouteGet(t *testing.T) {
 			expInternetServiceFound:      true,
 			expNatServiceFound:           false,
 			expGetRouteTableFromRouteErr: errors.New("GetRouteTable generic error"),
-			expReconcileDeleteRouteErr:   errors.New("GetRouteTable generic error"),
+			expReconcileDeleteRouteErr:   errors.New("checking route table: GetRouteTable generic error"),
 		},
 		{
 			name:                         "remove finalizer (user delete route without cluster-api)",
@@ -2507,7 +2507,7 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 			expDeleteRouteTableErr:           errors.New("DeleteRoutetable generic error"),
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileDeleteRouteTableErr:  errors.New("DeleteRoutetable generic error Can not delete routeTable for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteTableErr:  errors.New("cannot delete routeTable: DeleteRoutetable generic error"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -2757,7 +2757,7 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 			expDeleteRouteErr:                nil,
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileDeleteRouteTableErr:  errors.New("UnlinkRouteTable generic error Can not unlink routeTable for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteTableErr:  errors.New("cannot unlink routeTable: UnlinkRouteTable generic error"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -2872,7 +2872,7 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			expDeleteRouteErr:                errors.New("DeleteRoute generic error"),
 			expGetRouteTableFromRouteErr:     nil,
 			expGetRouteTableIdsFromNetIdsErr: nil,
-			expReconcileDeleteRouteTableErr:  errors.New("DeleteRoute generic error Can not delete route for Osccluster test-system/test-osc"),
+			expReconcileDeleteRouteTableErr:  errors.New("cannot delete route: DeleteRoute generic error"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {

@@ -65,7 +65,7 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 	client, err := newOscClient()
 
 	if err != nil {
-		return nil, fmt.Errorf("%w failed to create Osc Client", err)
+		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
 	}
 
 	if params.OscClient == nil {
@@ -306,7 +306,7 @@ func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 }
 
 // PatchObject keep the machine configuration and status
-func (m *MachineScope) PatchObject() error {
+func (m *MachineScope) PatchObject(ctx context.Context) error {
 	applicableConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.VmReadyCondition,
 	}
@@ -316,7 +316,7 @@ func (m *MachineScope) PatchObject() error {
 		conditions.WithStepCounter(),
 	)
 	return m.patchHelper.Patch(
-		context.TODO(),
+		ctx,
 		m.OscMachine,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,
@@ -327,12 +327,12 @@ func (m *MachineScope) PatchObject() error {
 // GetBootstrapData return bootstrapData
 func (m *MachineScope) GetBootstrapData() (string, error) {
 	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
-		return "", errors.New("error retrieving bootstrap data: linked Machine's bootstrap.DataSecretName is nil")
+		return "", errors.New("error retrieving bootstrap data: DataSecretName is not set")
 	}
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Namespace: m.GetNamespace(), Name: *m.Machine.Spec.Bootstrap.DataSecretName}
 	if err := m.client.Get(context.TODO(), key, secret); err != nil {
-		return "", fmt.Errorf("%w failed to retrieve bootstrap data secret for OscMachine %s/%s", err, m.GetNamespace(), m.GetName())
+		return "", fmt.Errorf("failed to retrieve bootstrap data secret: %w", err)
 	}
 	value, ok := secret.Data["value"]
 	if !ok {

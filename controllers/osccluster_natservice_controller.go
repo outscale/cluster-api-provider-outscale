@@ -154,25 +154,24 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 		tagValue := natServiceName
 		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not get tag for OscCluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
 		if natServiceSpec.ResourceId != "" {
 			natServiceRef.ResourceMap[natServiceName] = natServiceSpec.ResourceId
 			natServiceId := natServiceSpec.ResourceId
-			log.V(4).Info("Get natService Id", "natService", natServiceId)
-			log.V(2).Info("Check if the desired natService exist")
+			log.V(4).Info("Checking natService", "natService", natServiceId)
 			natService, err = natServiceSvc.GetNatService(ctx, natServiceId)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		}
 		if (natService == nil && tag == nil) || (natServiceSpec.ResourceId == "" && tag == nil) {
-			log.V(4).Info("Create the desired natService", "natServiceName", natServiceName)
+			log.V(2).Info("Creating natService", "natServiceName", natServiceName)
 			networkSpec := clusterScope.GetNetwork()
 			clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
 			natService, err := natServiceSvc.CreateNatService(ctx, publicIpId, subnetId, natServiceName, clusterName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not create natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+				return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
 			}
 			natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
 			natServiceSpec.ResourceId = natService.GetNatServiceId()
@@ -192,14 +191,14 @@ func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterS
 			return reconcile.Result{}, err
 		}
 		if natService == nil {
-			log.V(2).Info("The desired natService does not exist anymore", "natServiceName", natServiceName)
+			log.V(3).Info("The natService is already deleted", "natServiceName", natServiceName)
 			delete(natServiceRef.ResourceMap, natServiceName)
 			return reconcile.Result{}, nil
 		}
-		log.V(2).Info("Delete the desired natService", "natServiceName", natServiceName)
+		log.V(2).Info("Deleting natService", "natServiceName", natServiceName)
 		err = natServiceSvc.DeleteNatService(ctx, natServiceId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete natService for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot delete natService: %w", err)
 		}
 		delete(natServiceRef.ResourceMap, natServiceName)
 	}

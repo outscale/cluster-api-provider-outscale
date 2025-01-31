@@ -116,6 +116,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	defer cancel()
 
 	log := ctrl.LoggerFrom(ctx)
+	log.V(3).Info("Reconciling OscMachine")
 
 	oscMachine := &infrastructurev1beta1.OscMachine{}
 	if err := r.Get(ctx, req.NamespacedName, oscMachine); err != nil {
@@ -188,30 +189,28 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 // reconcile reconcile the creation of the machine
 func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(2).Info("Reconciling OscMachine")
 	oscmachine := machineScope.OscMachine
 	if oscmachine.Status.FailureReason != nil || oscmachine.Status.FailureMessage != nil {
-		log.V(2).Info("Error state detected, skipping reconciliation")
+		log.V(3).Info("Error state detected, skipping reconciliation")
 		return reconcile.Result{}, nil
 	}
 
 	controllerutil.AddFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 
 	if !machineScope.Cluster.Status.InfrastructureReady {
-		log.V(2).Info("Cluster infrastructure is not ready yet")
+		log.V(3).Info("Cluster infrastructure is not ready yet")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	}
-	log.V(2).Info("Check bootstrap data")
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
-		log.V(2).Info("Bootstrap data secret reference is not yet availablle")
+		log.V(3).Info("Bootstrap data secret reference is not yet availablle")
 		return ctrl.Result{}, nil
 	}
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
 		log.V(2).Info("Find volumes")
 		volumeName, err := checkVolumeFormatParameters(machineScope)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create volume %s for OscMachine %s/%s", err, volumeName, machineScope.GetNamespace(), machineScope.GetName())
+			return reconcile.Result{}, fmt.Errorf("cannot create volume %s: %w", volumeName, err)
 		}
 	}
 
@@ -219,16 +218,15 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 
 	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, vmName, machineScope.GetNamespace(), machineScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", vmName, err)
 	}
 
 	keypairName, err := checkKeypairFormatParameters(machineScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("%w Can not create vm %s for OscMachine %s/%s", err, keypairName, machineScope.GetNamespace(), machineScope.GetName())
+		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", keypairName, err)
 	}
 
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		log.V(2).Info("Find Volumes")
 		duplicateResourceVolumeErr := checkVolumeOscDuplicateName(machineScope)
 		if duplicateResourceVolumeErr != nil {
 			return reconcile.Result{}, duplicateResourceVolumeErr
@@ -240,7 +238,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
 	}
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		log.V(2).Info("Find volumes")
 		checkOscAssociateVmVolumeErr := checkVmVolumeOscAssociateResourceName(machineScope)
 		if checkOscAssociateVmVolumeErr != nil {
 			return reconcile.Result{}, checkOscAssociateVmVolumeErr
@@ -287,17 +284,16 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	imageSvc := r.getImageSvc(ctx, *clusterScope)
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
 	if err != nil {
-		log.Error(err, "failed to reconcile Image")
+		log.V(2).Error(err, "failed to reconcile Image")
 		return reconcileImage, err
 	}
 
 	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
 	tagSvc := r.getTagSvc(ctx, *clusterScope)
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		log.V(2).Info("Find Volumes")
 		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
 		if err != nil {
-			log.Error(err, "failed to reconcile volume")
+			log.V(2).Error(err, "failed to reconcile volume")
 			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 			return reconcileVolume, err
 		}
@@ -307,7 +303,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
 	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
 	if err != nil {
-		log.Error(err, "failed to reconcile keypair")
+		log.V(2).Error(err, "failed to reconcile keypair")
 		return reconcileKeypair, err
 	}
 
@@ -316,10 +312,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
 
-	log.V(4).Info("Reconciling Vm")
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
-		log.Error(err, "failed to reconcile vm")
+		log.V(2).Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileVm, err
 	}
@@ -355,10 +350,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 // reconcileDelete reconcile the deletion of the machine
 func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(2).Info("Reconciling delete OscMachine")
+	log.V(3).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		log.V(2).Info("Find volumes")
 		volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
 		reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, volumeSvc)
 		if err != nil {
@@ -420,7 +414,7 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 
 		c, ok := o.(*infrastructurev1beta1.OscCluster)
 		if !ok {
-			log.Error(fmt.Errorf("expected a OscCluster but got a %T", o), "failed to get OscMachine for OscCluster")
+			log.V(1).Error(fmt.Errorf("expected a OscCluster but got a %T", o), "failed to get OscMachine for OscCluster")
 			return nil
 		}
 		log = log.WithValues("objectMapper", "oscClusterToOscMachine", "namespace", c.Namespace)
@@ -436,14 +430,14 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 			log.V(1).Info("Cluster for OscCluster not found, skipping mapping.")
 			return result
 		case err != nil:
-			log.Error(err, "failed to get owning cluster, skipping mapping.")
+			log.V(1).Error(err, "failed to get owning cluster, skipping mapping.")
 			return result
 		}
 
 		labels := map[string]string{"cluster.x-k8s.io/cluster-name": cluster.Name}
 		machineList := &clusterv1.MachineList{}
 		if err := r.List(ctx, machineList, client.InNamespace(c.Namespace), client.MatchingLabels(labels)); err != nil {
-			log.Error(err, "failed to list Machines, skipping mapping.")
+			log.V(1).Error(err, "failed to list Machines, skipping mapping.")
 			return nil
 		}
 		for _, m := range machineList.Items {

@@ -72,18 +72,18 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 	}
 
 	if imageName != "" {
-		log.V(2).Info("Image Name exist", "imageName", imageName)
+		log.V(4).Info("Finding image id", "imageName", imageName)
 		if imageId, err = imageSvc.GetImageId(ctx, imageName); err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("cannot get image: %w", err)
 		}
 	} else {
-		log.V(4).Info("Image Name is empty and we will try to get it from Id", "imageId", imageId)
+		log.V(4).Info("Finding image name", "imageId", imageId)
 		if imageName, err = imageSvc.GetImageName(ctx, imageId); err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("cannot get image: %w", err)
 		}
 	}
 	if image, err = imageSvc.GetImage(ctx, imageId); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("cannot get image: %w", err)
 	}
 	if imageSpec.ResourceId != "" {
 		imageRef.ResourceMap[imageName] = imageSpec.ResourceId
@@ -91,7 +91,7 @@ func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, image
 		machineScope.SetImageId(imageId)
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
-	if image == nil {
+	if image == nil { // FIXME: This should never occur: if Getimage returns no error, image should be set
 		log.V(2).Info("Image is nil")
 		return reconcile.Result{}, err
 	} else {

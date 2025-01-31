@@ -288,7 +288,7 @@ func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("%w failed to read Tag Name", err)
+			return false, fmt.Errorf("failed to read Tag Name: %w", err)
 		}
 		return true, err
 	}
@@ -336,7 +336,7 @@ func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructur
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("%w failed to add Tag", err)
+			return false, fmt.Errorf("failed to add Tag: %w", err)
 		}
 		return true, err
 	}

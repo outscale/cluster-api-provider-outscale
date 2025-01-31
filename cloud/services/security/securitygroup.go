@@ -55,6 +55,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 		var httpRes *http.Response
 		var err error
 		securityGroupResponse, httpRes, err = oscApiClient.SecurityGroupApi.CreateSecurityGroup(oscAuthClient).CreateSecurityGroupRequest(securityGroupRequest).Execute()
+		utils.LogAPICall(ctx, "CreateSecurityGroup", securityGroupRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Printf("Error with http result %s", httpRes.Status)
@@ -276,6 +277,7 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 		var httpRes *http.Response
 		var err error
 		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
+		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -361,6 +363,7 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(ctx context.Context, sec
 		var httpRes *http.Response
 		var err error
 		readSecurityGroupRulesResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()
+		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRuleRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
@@ -407,6 +410,7 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(ctx context.Context, netId strin
 		var httpRes *http.Response
 		var err error
 		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
+		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
