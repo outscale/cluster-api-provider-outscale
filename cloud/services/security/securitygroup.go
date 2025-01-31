@@ -255,16 +255,28 @@ func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId strin
 	deleteSecurityGroupRequest := osc.DeleteSecurityGroupRequest{SecurityGroupId: &securityGroupId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
-	if err != nil {
-		if httpRes != nil {
-			fmt.Printf("Error with http result %s", httpRes.Status)
-			if httpRes.StatusCode == http.StatusConflict {
-				return ErrResourceConflict
+	deleteSecurityGroupCallBack := func() (bool, error) {
+		_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
+		utils.LogAPICall(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
+		if err != nil {
+			if httpRes != nil {
+				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
 			}
-			return err
+			requestStr := fmt.Sprintf("%v", deleteSecurityGroupRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
 		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteSecurityGroupCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 	return nil
 }

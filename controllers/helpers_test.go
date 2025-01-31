@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -25,6 +24,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -153,6 +153,7 @@ type testcase struct {
 	mockFuncs                []mockFunc
 	hasError                 bool
 	requeue                  bool
+	assertDeleted            bool
 	clusterAsserts           []assertOSCClusterFunc
 	machineAsserts           []assertOSCMachineFunc
 
@@ -188,5 +189,24 @@ func mockReadTagByNameFound(name string) mockFunc {
 		s.TagMock.EXPECT().
 			ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
 			Return(&osc.Tag{}, nil)
+	}
+}
+
+func mockSecurityGroupHasRule(sg, flow, proto, ipRanges, memberSg string, portFrom, portTo int32, found bool) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SecurityGroupMock.EXPECT().
+			SecurityGroupHasRule(gomock.Any(), gomock.Eq(sg), gomock.Eq(flow), gomock.Eq(proto), gomock.Eq(ipRanges), gomock.Eq(memberSg), gomock.Eq(portFrom), gomock.Eq(portTo)).
+			Return(found, nil)
+	}
+}
+
+func mockSecurityGroupCleanAllRules(sg string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SecurityGroupMock.EXPECT().
+			SecurityGroupHasRule(gomock.Any(), gomock.Eq(sg), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(true, nil).MinTimes(1)
+		s.SecurityGroupMock.EXPECT().
+			DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(sg), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(nil).MinTimes(1)
 	}
 }
