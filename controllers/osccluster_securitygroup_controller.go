@@ -18,12 +18,10 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
@@ -194,24 +192,12 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 }
 
 // deleteSecurityGroup reconcile the deletion of securityGroup of the cluster.
-func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface, clock_time clock.Clock) (reconcile.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
-	currentTimeout := clock_time.Now().Add(time.Second * 600)
-	for {
-		err := securityGroupSvc.DeleteSecurityGroup(ctx, securityGroupId)
-		if err == nil {
-			return reconcile.Result{}, nil
-		}
-		if !errors.Is(err, security.ErrResourceConflict) {
-			return reconcile.Result{}, fmt.Errorf("cannot delete securityGroup: %w", err)
-		}
-		log.V(2).Info("LoadBalancer is not deleted yet")
-
-		clock_time.Sleep(20 * time.Second)
-		if clock_time.Now().After(currentTimeout) {
-			return reconcile.Result{}, fmt.Errorf("timeout trying to delete securityGroup: %w", err)
-		}
+func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupId string, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+	err := securityGroupSvc.DeleteSecurityGroup(ctx, securityGroupId)
+	if err != nil {
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("cannot delete securityGroup: %w", err)
 	}
+	return reconcile.Result{}, nil
 }
 
 // reconcileSecurityGroup reconcile the securityGroup of the cluster.
@@ -371,8 +357,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	clock_time := clock.New()
-	log.V(4).Info("Number of securitGroup", "securityGroupLength", len(securityGroupsSpec))
+	log.V(4).Info("Number of securityGroups", "securityGroupLength", len(securityGroupsSpec))
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
@@ -389,7 +374,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 			}
 		}
 		log.V(2).Info("Deleting securityGroup", "securityGroupName", securityGroupName)
-		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc, clock_time)
+		_, err := deleteSecurityGroup(ctx, clusterScope, securityGroupsRef.ResourceMap[securityGroupName], securityGroupSvc)
 		if err != nil {
 			return reconcile.Result{}, err
 		}

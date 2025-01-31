@@ -19,18 +19,17 @@ package controllers
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security/mock_security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag/mock_tag"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
@@ -1486,38 +1485,30 @@ func TestReconcileCreateSecurityGroupResourceId(t *testing.T) {
 // TestDeleteSecurityGroup has several tests to cover the code of the function deleteSecurityGroup
 func TestDeleteSecurityGroup(t *testing.T) {
 	securityGroupTestCases := []struct {
-		name                               string
-		spec                               infrastructurev1beta1.OscClusterSpec
-		expSecurityGroupFound              bool
-		expDeleteSecurityGroupFirstMockErr error
-		expDeleteSecurityGroupError        error
+		name                            string
+		spec                            infrastructurev1beta1.OscClusterSpec
+		expDeleteSecurityGroupMockError error
+		expDeleteSecurityGroupError     error
+		res                             reconcile.Result
 	}{
 		{
-			name:                               "delete securityGroup",
-			spec:                               defaultSecurityGroupReconcile,
-			expSecurityGroupFound:              true,
-			expDeleteSecurityGroupFirstMockErr: nil,
-			expDeleteSecurityGroupError:        nil,
+			name:                            "delete securityGroup",
+			spec:                            defaultSecurityGroupReconcile,
+			expDeleteSecurityGroupMockError: nil,
+			expDeleteSecurityGroupError:     nil,
+			res:                             reconcile.Result{},
 		},
 		{
-			name:                               "delete securityGroup unmatch to catch",
-			spec:                               defaultSecurityGroupReconcile,
-			expSecurityGroupFound:              true,
-			expDeleteSecurityGroupFirstMockErr: errors.New("DeleteSecurityGroup first generic error"),
-			expDeleteSecurityGroupError:        errors.New("cannot delete securityGroup: DeleteSecurityGroup first generic error"),
-		},
-		{
-			name:                               "waiting loadbalancer to timeout",
-			spec:                               defaultSecurityGroupReconcile,
-			expSecurityGroupFound:              true,
-			expDeleteSecurityGroupFirstMockErr: security.ErrResourceConflict,
-			expDeleteSecurityGroupError:        errors.New("timeout trying to delete securityGroup: " + security.ErrResourceConflict.Error()),
+			name:                            "delete securityGroup unmatch to catch",
+			spec:                            defaultSecurityGroupReconcile,
+			expDeleteSecurityGroupMockError: errors.New("DeleteSecurityGroup first generic error"),
+			expDeleteSecurityGroupError:     errors.New("cannot delete securityGroup: DeleteSecurityGroup first generic error"),
+			res:                             reconcile.Result{RequeueAfter: 30 * time.Second},
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
 		t.Run(sgtc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscSecurityGroupInterface, _ := SetupWithSecurityGroupMock(t, sgtc.name, sgtc.spec)
-			var err error
 			securityGroupsSpec := sgtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -1528,22 +1519,15 @@ func TestDeleteSecurityGroup(t *testing.T) {
 				mockOscSecurityGroupInterface.
 					EXPECT().
 					DeleteSecurityGroup(gomock.Any(), gomock.Eq(securityGroupId)).
-					Return(sgtc.expDeleteSecurityGroupFirstMockErr).MinTimes(1)
-				clock_mock := clock.NewMock()
-				wg := sync.WaitGroup{}
-				wg.Add(1)
-				go func() {
-					clock_mock.Add(630 * time.Second)
-					wg.Done()
-				}()
-				clock_mock.Sleep(time.Second)
-				_, err = deleteSecurityGroup(ctx, clusterScope, securityGroupId, mockOscSecurityGroupInterface, clock_mock)
+					Return(sgtc.expDeleteSecurityGroupMockError)
+
+				res, err := deleteSecurityGroup(ctx, clusterScope, securityGroupId, mockOscSecurityGroupInterface)
 				if sgtc.expDeleteSecurityGroupError != nil {
 					require.EqualError(t, err, sgtc.expDeleteSecurityGroupError.Error(), "deleteSecurityGroup() should return the right error")
 				} else {
 					require.NoError(t, err)
 				}
-				wg.Wait()
+				assert.Equal(t, sgtc.res, res)
 			}
 		})
 	}
