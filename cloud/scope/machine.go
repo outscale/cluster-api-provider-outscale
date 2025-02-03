@@ -197,6 +197,11 @@ func (m *MachineScope) GetPublicIpIdRef() *infrastructurev1beta1.OscResourceRefe
 	return &m.OscMachine.Status.Node.PublicIpIdRef
 }
 
+// GetNicRef get the status of NicIdRef (a Map with tag name with machine uid associate with resource response id)
+func (m *MachineScope) GetNicIdRef() *infrastructurev1beta1.OscResourceReference {
+	return &m.OscMachine.Status.Node.NicIdRef
+}
+
 // GetKeyPair return the keypair of the cluster
 func (m *MachineScope) GetKeypair() *infrastructurev1beta1.OscKeypair {
 	return &m.OscMachine.Spec.Node.KeyPair

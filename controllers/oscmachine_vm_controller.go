@@ -316,7 +316,7 @@ func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.Mach
 }
 
 // reconcileVm reconcile the vm of the machine
-func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface, nicSvc security.OscNicInterface) (reconcile.Result, error) {
 	vmSpec := machineScope.GetVm()
 	vmRef := machineScope.GetVmRef()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
@@ -335,6 +335,26 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	var nicId string
+	var nicIdRef *infrastructurev1beta1.OscResourceReference
+	var nicFound bool
+
+	nicIdRef = machineScope.GetNicIdRef()
+	if len(nicIdRef.ResourceMap) == 0 {
+		nicIdRef.ResourceMap = make(map[string]string)
+	}
+	nicId, nicFound = nicIdRef.ResourceMap[vmName]
+	if !nicFound {
+		// create the primary Nic
+		nic, err := nicSvc.CreateNic(vmName, subnetId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not create nic for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
+		}
+		clusterScope.V(4).Info("Get nic for Vm", "nic", nic)
+		nicId = nic.GetNicId()
+		nicIdRef.ResourceMap[vmName] = nicId
 	}
 
 	var publicIpId string
@@ -372,7 +392,17 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		if len(linkPublicIpRef.ResourceMap) == 0 {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 		}
+
+		// link publicIp to Nic
+		linkPublicIpId, err := publicIpSvc.LinkPublicIpToNic(publicIpId, nicId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with nic %s for OscCluster %s/%s", err, publicIpId, nicId, machineScope.GetNamespace(), machineScope.GetName())
+		}
+		machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
+		linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
+
 	}
+
 	var privateIps []string
 	vmPrivateIps := machineScope.GetVmPrivateIps()
 	if len(*vmPrivateIps) > 0 {
@@ -468,7 +498,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		vmTags := vmSpec.Tags
 		machineScope.V(4).Info("Info tags", "tags", vmTags)
 
-		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
+		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags, []string{nicId})
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
@@ -503,19 +533,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 		machineScope.V(4).Info("Vm is running again", "vmId", vmID)
 
-		if vmSpec.PublicIpName != "" {
-			linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmID)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with %s for OscCluster %s/%s", err, publicIpId, vmID, machineScope.GetNamespace(), machineScope.GetName())
-			}
-			machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
-			linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
-
-			err = vmSvc.CheckVmState(20, 240, "running", vmID)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("%w Can not get vm %s running for OscMachine %s/%s", err, vmID, machineScope.GetNamespace(), machineScope.GetName())
-			}
-		}
 		if vmSpec.LoadBalancerName != "" {
 			loadBalancerName := vmSpec.LoadBalancerName
 			vmIds := []string{vmID}

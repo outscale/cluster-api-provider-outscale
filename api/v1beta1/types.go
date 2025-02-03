@@ -330,6 +330,7 @@ type OscNodeResource struct {
 	VmRef           OscResourceReference `json:"vmRef,omitempty"`
 	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
 	PublicIpIdRef   OscResourceReference `json:"publicIpIdRef,omitempty"`
+	NicIdRef        OscResourceReference `json:"nicIdRef,omitempty"`
 }
 
 type OscImage struct {

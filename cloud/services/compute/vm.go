@@ -41,7 +41,7 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error)
+	CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, nicIds []string) (*osc.Vm, error)
 	CreateVmUserData(userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
 	DeleteVm(vmId string) error
 	GetVm(vmId string) (*osc.Vm, error)
@@ -63,7 +63,7 @@ func ValidateIpAddrInCidr(ipAddr string, cidr string) (string, error) {
 }
 
 // CreateVm create machine vm
-func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
+func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, nicIds []string) (*osc.Vm, error) {
 	imageId := spec.ImageId
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
@@ -93,9 +93,18 @@ func (s *Service) CreateVm(machineScope *scope.MachineScope, spec *infrastructur
 		rootDisk.Bsu.SetIops(rootDiskIops)
 	}
 
+	nics := make([]osc.NicForVmCreation, len(nicIds))
+	for _, nicId := range nicIds {
+		nicForVm := *osc.NewNicForVmCreation()
+		nicForVm.SetNicId(nicId)
+		nicForVm.SetDeleteOnVmDeletion(true)
+		nics = append(nics, nicForVm)
+	}
+
 	vmOpt := osc.CreateVmsRequest{
 		ImageId:          imageId,
 		KeypairName:      &keypairName,
+		Nics:             &nics,
 		VmType:           &vmType,
 		SubnetId:         &subnetId,
 		SecurityGroupIds: &securityGroupIds,

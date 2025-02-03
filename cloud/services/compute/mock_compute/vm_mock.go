@@ -67,18 +67,18 @@ func (mr *MockOscVmInterfaceMockRecorder) CheckVmState(clockInsideLoop, clockLoo
 }
 
 // CreateVm mocks base method.
-func (m *MockOscVmInterface) CreateVm(machineScope *scope.MachineScope, spec *v1beta1.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
+func (m *MockOscVmInterface) CreateVm(machineScope *scope.MachineScope, spec *v1beta1.OscVm, subnetId string, securityGroupIds, privateIps []string, vmName string, tags map[string]string, nicIds []string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVm", machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags)
+	ret := m.ctrl.Call(m, "CreateVm", machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags, nicIds)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateVm indicates an expected call of CreateVm.
-func (mr *MockOscVmInterfaceMockRecorder) CreateVm(machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags interface{}) *gomock.Call {
+func (mr *MockOscVmInterfaceMockRecorder) CreateVm(machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags, nicIds interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags, nicIds)
 }
 
 // CreateVmUserData mocks base method.

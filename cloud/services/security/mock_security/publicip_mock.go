@@ -108,6 +108,21 @@ func (mr *MockOscPublicIpInterfaceMockRecorder) LinkPublicIp(publicIpId, vmId in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).LinkPublicIp), publicIpId, vmId)
 }
 
+// LinkPublicIpToNic mocks base method.
+func (m *MockOscPublicIpInterface) LinkPublicIpToNic(publicIpId, nicId string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LinkPublicIpToNic", publicIpId, nicId)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LinkPublicIpToNic indicates an expected call of LinkPublicIpToNic.
+func (mr *MockOscPublicIpInterfaceMockRecorder) LinkPublicIpToNic(publicIpId, nicId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkPublicIpToNic", reflect.TypeOf((*MockOscPublicIpInterface)(nil).LinkPublicIpToNic), publicIpId, nicId)
+}
+
 // UnlinkPublicIp mocks base method.
 func (m *MockOscPublicIpInterface) UnlinkPublicIp(linkPublicIpId string) error {
 	m.ctrl.T.Helper()

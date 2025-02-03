@@ -20,13 +20,14 @@ import (
 	"fmt"
 
 	"errors"
+	_nethttp "net/http"
+	"time"
+
 	"github.com/benbjohnson/clock"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
-	_nethttp "net/http"
-	"time"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
@@ -35,6 +36,7 @@ type OscPublicIpInterface interface {
 	DeletePublicIp(publicIpId string) error
 	GetPublicIp(publicIpId string) (*osc.PublicIp, error)
 	LinkPublicIp(publicIpId string, vmId string) (string, error)
+	LinkPublicIpToNic(publicIpId string, nicId string) (string, error)
 	UnlinkPublicIp(linkPublicIpId string) error
 	CheckPublicIpUnlink(clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
 	ValidatePublicIpIds(publicIpIds []string) ([]string, error)
@@ -224,9 +226,23 @@ func (s *Service) ValidatePublicIpIds(publicIpIds []string) ([]string, error) {
 
 // LinkPublicIp link publicIp
 func (s *Service) LinkPublicIp(publicIpId string, vmId string) (string, error) {
+	return s.linkPublicIp(publicIpId, vmId, false)
+}
+
+// LinkPublicIp link publicIp
+func (s *Service) LinkPublicIpToNic(publicIpId string, vmId string) (string, error) {
+	return s.linkPublicIp(publicIpId, vmId, true)
+}
+
+func (s *Service) linkPublicIp(publicIpId string, id string, toNic bool) (string, error) {
+
 	linkPublicIpRequest := osc.LinkPublicIpRequest{
 		PublicIpId: &publicIpId,
-		VmId:       &vmId,
+	}
+	if toNic {
+		linkPublicIpRequest.NicId = &id
+	} else {
+		linkPublicIpRequest.VmId = &id
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()

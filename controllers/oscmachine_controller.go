@@ -112,6 +112,10 @@ func (r *OscMachineReconciler) getTagSvc(ctx context.Context, scope scope.Cluste
 	return tag.NewService(ctx, &scope)
 }
 
+func (r *OscMachineReconciler) getNicSvc(ctx context.Context, scope scope.ClusterScope) security.OscNicInterface {
+	return security.NewService(ctx, &scope)
+}
+
 func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	_ = log.FromContext(ctx)
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
@@ -320,7 +324,8 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
-	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
+	nicSvc := r.getNicSvc(ctx, *clusterScope)
+	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc, nicSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, err.Error())
