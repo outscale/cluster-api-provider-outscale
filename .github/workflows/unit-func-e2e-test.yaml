@@ -33,7 +33,7 @@ jobs:
         path: "rke-cluster-for-cluster-api"
         ref: master
     - name: Install kubectl
-      uses: azure/setup-kubectl@v3
+      uses: azure/setup-kubectl@v4
       with:
         version: v1.30.7
       id: install
@@ -72,15 +72,6 @@ jobs:
         command: kubectl get --raw='/readyz?verbose'
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Wait all infrastructure app are really up and running
-      uses: jupyterhub/action-k8s-await-workloads@v1
-      with:
-        workloads: ""
-        namespace: "" 
-        timeout: 600
-        max-restarts: -1
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
     - name: Deploy Docker-registry into cluster
       run: |
         ansible-playbook addons/docker-registry/playbook.yaml
@@ -89,10 +80,13 @@ jobs:
         KUBECONFIG: rke/kube_config_cluster.yml
         ANSIBLE_CONFIG: ansible.cfg
       working-directory: rke-cluster-for-cluster-api
-    - name: Wait registry up
-      uses: GuillaumeFalourd/wait-sleep-action@v1
+    - name: Wait until docker registry is ready
+      uses: nick-invision/retry@v2
       with:
-        time: '2m'
+        timeout_seconds: 30
+        max_attempts: 20
+        retry_wait_seconds: 30
+        command: curl -s -f -m 1 http://127.0.0.1:4242/v2/
     - name: Build and Push Docker image 
       run: |
         sudo apt-get update
@@ -130,6 +124,15 @@ jobs:
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         IMG: ${nodeport_ip}:${nodeport_port}/cluster-api-outscale-controller:${{ github.sha }}
+    - name: Wait until cluster-api-outscale is ready
+      uses: jupyterhub/action-k8s-await-workloads@v3
+      with:
+        workloads: ""
+        namespace: "cluster-api-provider-outscale-system" 
+        timeout: 600
+        max-restarts: -1
+      env:
+        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
     - name: Launch functional test
       run: make testenv
       shell: bash
@@ -198,7 +201,7 @@ jobs:
         path: "rke-cluster-for-cluster-api"
         ref: master
     - name: Install kubectl
-      uses: azure/setup-kubectl@v3
+      uses: azure/setup-kubectl@v4
       with:
         version: v1.30.7
       id: install
@@ -237,15 +240,6 @@ jobs:
         command: kubectl get --raw='/readyz?verbose'
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-    - name: Wait all infrastructure app are really up and running
-      uses: jupyterhub/action-k8s-await-workloads@v1
-      with:
-        workloads: ""
-        namespace: "" 
-        timeout: 600
-        max-restarts: -1
-      env:
-        KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
     - name: Deploy Docker-registry into cluster
       run: |
         ansible-playbook addons/docker-registry/playbook.yaml
@@ -254,10 +248,13 @@ jobs:
         KUBECONFIG: rke/kube_config_cluster.yml
         ANSIBLE_CONFIG: ansible.cfg
       working-directory: rke-cluster-for-cluster-api
-    - name: Wait registry up
-      uses: GuillaumeFalourd/wait-sleep-action@v1
+    - name: Wait until docker registry is ready
+      uses: nick-invision/retry@v2
       with:
-        time: '2m'
+        timeout_seconds: 30
+        max_attempts: 20
+        retry_wait_seconds: 30
+        command: curl -s -f -m 1 http://127.0.0.1:4242/v2/
     - name: Build and Push Docker image 
       run: |
         sudo apt-get update
