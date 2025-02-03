@@ -2053,7 +2053,7 @@ func TestReconcileVm(t *testing.T) {
 			clusterSpec:                             defaultVmClusterInitialize,
 			machineSpec:                             defaultVmInitialize,
 			expCreateVmFound:                        true,
-			expLinkPublicIpFound:                    true,
+			expLinkPublicIpFound:                    false,
 			expCreateInboundSecurityGroupRuleFound:  true,
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: true,
@@ -2107,7 +2107,7 @@ func TestReconcileVm(t *testing.T) {
 			clusterSpec:                             defaultVmClusterInitialize,
 			machineSpec:                             defaultVmInitialize,
 			expCreateVmFound:                        true,
-			expLinkPublicIpFound:                    true,
+			expLinkPublicIpFound:                    false,
 			expCreateInboundSecurityGroupRuleFound:  true,
 			expGetInboundSecurityGroupRuleFound:     false,
 			expCreateOutboundSecurityGroupRuleFound: true,
@@ -2299,7 +2299,7 @@ func TestReconcileVm(t *testing.T) {
 			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 			if vtc.expLinkPublicIpFound {
-				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
+				linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 			}
 
 			var privateIps []string
@@ -2422,16 +2422,11 @@ func TestReconcileVm(t *testing.T) {
 
 			}
 
-			if vtc.expLinkPublicIpFound {
+			if !vtc.expLinkPublicIpFound {
 				mockOscPublicIpInterface.
 					EXPECT().
 					LinkPublicIpToNic(gomock.Eq(publicIpId), gomock.Eq(nicId)).
 					Return(*linkPublicIp.LinkPublicIpId, vtc.expLinkPublicIpErr)
-			} else {
-				mockOscPublicIpInterface.
-					EXPECT().
-					LinkPublicIpToNic(gomock.Eq(publicIpId), gomock.Eq(nicId)).
-					Return("", vtc.expLinkPublicIpErr)
 			}
 
 			mockOscVmInterface.
@@ -2874,7 +2869,7 @@ func TestReconcileVmLinkPubicIp(t *testing.T) {
 			expLinkPublic:      false,
 			expCreateNicErr:    fmt.Errorf("createNic generic error"),
 			expLinkPublicIpErr: nil,
-			expReconcileVmErr:  fmt.Errorf("createNic generic error Can not link publicIp  eipalloc-test-publicip-uid with nic eni-test-vm-uid for OscCluster test-system/test-osc"),
+			expReconcileVmErr:  fmt.Errorf("createNic generic error Can not create nic for OscMachine test-system/test-osc"),
 		},
 		{
 			name:               "failed linkPublicIp",
@@ -3035,6 +3030,10 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			subnetRef.ResourceMap[subnetName] = subnetId
 
 			nicId := "eni-" + vmName
+			createNic := &osc.Nic{
+				NicId:    &nicId,
+				SubnetId: &subnetId,
+			}
 
 			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
@@ -3065,14 +3064,25 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
-			mockOscNicInterface.EXPECT().CreateNic(gomock.Eq(vmName), gomock.Eq(subnetId))
+			mockOscNicInterface.
+				EXPECT().
+				CreateNic(gomock.Eq(vmName), gomock.Eq(subnetId)).
+				Return(createNic, nil)
+
+			linkPublicIp := osc.LinkPublicIpResponse{
+				LinkPublicIpId: &linkPublicIpId,
+			}
+			mockOscPublicIpInterface.
+				EXPECT().
+				LinkPublicIpToNic(gomock.Eq(publicIpId), gomock.Eq(nicId)).
+				Return(*linkPublicIp.LinkPublicIpId, vtc.expLinkPublicIpErr)
 
 			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
 			var clockInsideLoop time.Duration = 20
-			var firstClockInsideLoop time.Duration = 20
+			// var firstClockInsideLoop time.Duration = 20
 			var clockLoop time.Duration = 240
-			var firstClockLoop time.Duration = 240
+			// var firstClockLoop time.Duration = 240
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
 
 			createVms := osc.CreateVmsResponse{
@@ -3084,9 +3094,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			}
 
 			createVm := *createVms.Vms
-			linkPublicIp := osc.LinkPublicIpResponse{
-				LinkPublicIpId: &linkPublicIpId,
-			}
+
 			vm := &createVm[0]
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
@@ -3100,10 +3108,10 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			mockOscVmInterface.
-				EXPECT().
-				CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
-				Return(vtc.expCheckVmStateBootErr)
+			// mockOscVmInterface.
+			// 	EXPECT().
+			// 	CheckVmState(gomock.Eq(firstClockInsideLoop), gomock.Eq(firstClockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
+			// 	Return(vtc.expCheckVmStateBootErr)
 			if vtc.machineSpec.Node.Vm.VolumeName != "" {
 
 				mockOscVolumeInterface.
@@ -3125,18 +3133,6 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 				EXPECT().
 				CheckVmState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(vmState), gomock.Eq(vmId)).
 				Return(vtc.expCheckVmStateVolumeErr)
-
-			if vtc.expLinkPublicIpFound {
-				mockOscPublicIpInterface.
-					EXPECT().
-					LinkPublicIp(gomock.Eq(publicIpId), gomock.Eq(vmId)).
-					Return(*linkPublicIp.LinkPublicIpId, vtc.expLinkPublicIpErr)
-			} else {
-				mockOscPublicIpInterface.
-					EXPECT().
-					LinkPublicIp(gomock.Eq(publicIpId), gomock.Eq(vmId)).
-					Return("", vtc.expLinkPublicIpErr)
-			}
 
 			mockOscVmInterface.
 				EXPECT().
@@ -3329,7 +3325,7 @@ func TestReconcileVmGet(t *testing.T) {
 			linkPublicIpId := "eipassoc-" + publicIpName
 			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 			linkPublicIpRef.ResourceMap = make(map[string]string)
-			linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
+			linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 
 			var privateIps []string
 			vmPrivateIps := machineScope.GetVmPrivateIps()
@@ -3337,8 +3333,10 @@ func TestReconcileVmGet(t *testing.T) {
 				privateIp := vmPrivateIp.PrivateIp
 				privateIps = append(privateIps, privateIp)
 			}
-
-			mockOscNicInterface.EXPECT().CreateNic(gomock.Eq(vmName), gomock.Eq(subnetId))
+			nicId := "eni-" + vmName
+			nicIdRef := machineScope.GetNicIdRef()
+			nicIdRef.ResourceMap = make(map[string]string)
+			nicIdRef.ResourceMap[vmName] = nicId
 
 			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
@@ -3529,6 +3527,11 @@ func TestReconcileVmResourceId(t *testing.T) {
 				subnetRef.ResourceMap[subnetName] = subnetId
 			}
 
+			nicId := "eni-" + vmName
+			nicIdRef := machineScope.GetNicIdRef()
+			nicIdRef.ResourceMap = make(map[string]string)
+			nicIdRef.ResourceMap[vmName] = nicId
+
 			publicIpName := vtc.machineSpec.Node.Vm.PublicIpName + "-uid"
 			publicIpId := "eipalloc-" + publicIpName
 			publicIpRef := clusterScope.GetPublicIpRef()
@@ -3541,7 +3544,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 			if vtc.expLinkPublicIpFound {
-				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
+				linkPublicIpRef.ResourceMap[publicIpName] = linkPublicIpId
 			}
 
 			var privateIps []string
@@ -3580,8 +3583,6 @@ func TestReconcileVmResourceId(t *testing.T) {
 				}
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
-
-			mockOscNicInterface.EXPECT().CreateNic(gomock.Eq(vmName), gomock.Eq(subnetId))
 
 			loadBalancerSpec := clusterScope.GetLoadBalancer()
 			loadBalancerSpec.SetDefaultValue()

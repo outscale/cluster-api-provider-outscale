@@ -347,6 +347,9 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	}
 	nicId, nicFound = nicIdRef.ResourceMap[vmName]
 	if !nicFound {
+		// TODO retro-compatibility
+
+
 		// create the primary Nic
 		nic, err := nicSvc.CreateNic(vmName, subnetId)
 		if err != nil {
@@ -392,14 +395,16 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		if len(linkPublicIpRef.ResourceMap) == 0 {
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 		}
-
-		// link publicIp to Nic
-		linkPublicIpId, err := publicIpSvc.LinkPublicIpToNic(publicIpId, nicId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with nic %s for OscCluster %s/%s", err, publicIpId, nicId, machineScope.GetNamespace(), machineScope.GetName())
+		_, linkPublicIpFound := linkPublicIpRef.ResourceMap[vmPublicIpName]
+		if !linkPublicIpFound {
+			// link publicIp to Nic
+			linkPublicIpId, err := publicIpSvc.LinkPublicIpToNic(publicIpId, nicId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with nic %s for OscCluster %s/%s", err, publicIpId, nicId, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
+			linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 		}
-		machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
-		linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 
 	}
 
