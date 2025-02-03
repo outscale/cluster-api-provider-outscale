@@ -75,9 +75,9 @@ jobs:
         env:
           IMG: cluster-api-outscale-controller:${{ github.sha }}
         # Mount cached Trivy DB to avoid redundant downloads
-        with:
-          args: |
-            -v $HOME/.cache/trivy/db:/root/.cache/trivy/db
+        # with:
+        #   args: |
+        #     -v $HOME/.cache/trivy/db:/root/.cache/trivy/db
 
       # Trivy Ignore Check
       - name: Trivy Ignore Check
