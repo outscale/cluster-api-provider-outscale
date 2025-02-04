@@ -351,7 +351,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			}
 			clusterScope.V(4).Info("Get publicIp for Vm", "publicip", publicIp)
 			publicIpId = publicIp.GetPublicIpId()
-
 			if len(publicIpIdRef.ResourceMap) == 0 {
 				publicIpIdRef.ResourceMap = make(map[string]string)
 			}
@@ -371,6 +370,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 		}
 	}
+
 	var privateIps []string
 	vmPrivateIps := machineScope.GetVmPrivateIps()
 	if len(*vmPrivateIps) > 0 {
@@ -438,6 +438,13 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		vmType := vmSpec.VmType
 		machineScope.V(4).Info("Info vmType", "vmType", vmType)
 		vmTags := vmSpec.Tags
+		if publicIpId != "" {
+			publicIpObj, err := publicIpSvc.GetPublicIp(publicIpId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not find publicIpId %s for OscMachine %s/%s", err, publicIpId, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			vmTags["osc.fcu.eip.auto-attach"] = publicIpObj.GetPublicIp()
+		}
 		machineScope.V(4).Info("Info tags", "tags", vmTags)
 
 		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
@@ -512,14 +519,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				}
 			}
 
-			if vmSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[vmPublicIpName] == "" {
-				linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with %s for OscCluster %s/%s", err, publicIpId, vmId, machineScope.GetNamespace(), machineScope.GetName())
-				}
-				machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
-				linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
-			}
 			if vmSpec.LoadBalancerName != "" {
 				loadBalancerName := vmSpec.LoadBalancerName
 				vmIds := []string{vmId}
