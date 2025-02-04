@@ -260,6 +260,9 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupName)
 			clusterScope.V(4).Info("Deleting securityGroupRules", "securityGroupName", securityGroupName)
+			if securityGroupRulesSpec == nil {
+				continue
+			}
 			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
 				reconcileDeleteSecurityGroupsRule, err := reconcileDeleteSecurityGroupsRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
 				if err != nil {

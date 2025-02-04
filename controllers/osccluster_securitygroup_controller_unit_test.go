@@ -27,7 +27,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/benbjohnson/clock"
 	"github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale-dev/cluster-api-provider-outscale.git/api/v1beta1"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
@@ -150,7 +149,7 @@ func TestGetSecurityGroupResourceId(t *testing.T) {
 			name:                             "can not get securityGroupId",
 			spec:                             defaultSecurityGroupInitialize,
 			expSecurityGroupsFound:           false,
-			expGetSecurityGroupResourceIdErr: fmt.Errorf("test-securitygroup-uid does not exist"),
+			expGetSecurityGroupResourceIdErr: fmt.Errorf("test-securitygroup-uid does not exist (yet)"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -720,7 +719,7 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
+			clusterScope, _, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
 			securityGroupsSpec := sgrtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -814,7 +813,7 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
 		t.Run(sgrtc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
+			clusterScope, _, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithSecurityGroupMock(t, sgrtc.name, sgrtc.spec)
 			securityGroupsSpec := sgrtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
@@ -887,7 +886,7 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 			spec: defaultSecurityGroupReconcile,
 			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
 			expDeleteSecurityGroupRuleErr:               fmt.Errorf("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupRuleErr:      fmt.Errorf("DeleteSecurityGroupRule generic error Can not delete securityGroupRule for OscCluster test-system/test-osc"),
+			expReconcileDeleteSecurityGroupRuleErr:      fmt.Errorf("DeleteSecurityGroupRule generic error cannot delete securityGroupRule for OscCluster test-system/test-osc"),
 		},
 		{
 			name: "delete securityGroupRule",
@@ -1506,7 +1505,7 @@ func TestDeleteSecurityGroup(t *testing.T) {
 			securityGroupsSpec := sgtc.spec.Network.SecurityGroups
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			clock_mock := clock.NewMock()
+
 			for _, securityGroupSpec := range securityGroupsSpec {
 				securityGroupName := securityGroupSpec.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
