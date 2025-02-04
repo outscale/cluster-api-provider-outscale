@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.issuer.enable }}
+{{- if .Values.issuer.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.issuer }}
+  {{- with .Values.issuer }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

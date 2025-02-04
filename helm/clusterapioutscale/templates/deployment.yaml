@@ -1,13 +1,9 @@
-{{- if .Values.clusterapioutscale.deployment.enable }}
+{{- if .Values.deployment.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.deployment }}
+  {{- with .Values.deployment }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    {{- range $key,$val := .annotations }}
-    {{ $key }}: {{ $val | quote }}
-    {{- end }}
   labels:
     control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
     app: "{{ template "clusterapioutscale.fullname" $root }}"
@@ -16,14 +12,14 @@ metadata:
   name: "{{ template "clusterapioutscale.deployment" $root }}"
   namespace: {{ $root.Release.Namespace }}
 spec:
-  replicas: {{ .repliaccount | default "1" }}
+  replicas: {{ .replicaCount | default "1" }}
   selector:
     matchLabels:
       control-plane: "{{ template "clusterapioutscale.controllermanager" $root }}"
   template:
     metadata:
       annotations:
-        {{- range $key,$val := .pods.annotations }}
+        {{- range $key,$val := .annotations }}
         {{ $key }}: {{ $val }}
         {{- end }}
       labels:
@@ -40,23 +36,23 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v={{ .verbosity }}
-        {{- if .watch_filter }}
-        - --watch-filter {{ .watch_filter }}
+        {{- if .watchFilter }}
+        - --watch-filter {{ .watchFilter }}
         {{- end}}
-        image: {{ .containers.imageProxy }}:{{ .containers.imageProxyTag }}
+        image: {{ .proxyImage }}:{{ .proxyImageTag }}
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
           name: https
           protocol: TCP
-      {{- if.containers.resources }}
+      {{- if .proxyResources }}
         resources:
           requests:
-            memory: {{ .containers.resourcesproxy.memory.requests | default "128Mi" | quote }}
-            cpu: {{ .containers.resourcesproxy.cpu.requests | default "500m" | quote }}
+            memory: {{ .proxyResources.memory.requests | default "128Mi" | quote }}
+            cpu: {{ .proxyResources.cpu.requests | default "500m" | quote }}
           limits:
-            memory: {{ .containers.resourcesproxy.memory.limits | default "64Mi" | quote }}
-            cpu: {{ .containers.resourcesproxy.cpu.limits | default "10m" | quote }}
+            memory: {{ .proxyResources.memory.limits | default "64Mi" | quote }}
+            cpu: {{ .proxyResources.cpu.limits | default "10m" | quote }}
       {{- end }}
       - args:
         - --health-probe-bind-address=:8081
@@ -85,13 +81,13 @@ spec:
               name: cluster-api-provider-outscale
               optional: true
         - name: BACKOFF_DURATION
-          value: "{{ .backoff_duration }}"
+          value: "{{ .backoffDuration }}"
         - name: BACKOFF_FACTOR
-          value: "{{ .backoff_factor }}"
+          value: "{{ .backoffFactor }}"
         - name: BACKOFF_STEPS
-          value: "{{ .backoff_steps }}"
-        image: {{ .containers.image }}:{{ .containers.imageTag }}
-        imagePullPolicy: {{ .containers.pullPolicy }}
+          value: "{{ .backoffSteps }}"
+        image: {{ .image }}:{{ .imageTag }}
+        imagePullPolicy: {{ .imagePullPolicy }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -109,18 +105,18 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-      {{- if.containers.resources }}
+      {{- if.resources }}
         resources:
           requests:
-            memory: {{ .containers.resources.memory.requests | default "128Mi" | quote }}
-            cpu: {{ .containers.resources.cpu.requests | default "500m" | quote }}
+            memory: {{ .resources.memory.requests | default "128Mi" | quote }}
+            cpu: {{ .resources.cpu.requests | default "500m" | quote }}
           limits:
-            memory: {{ .containers.resources.memory.limits | default "64Mi" | quote }}
-            cpu: {{ .containers.resources.cpu.limits | default "10m" | quote }}
+            memory: {{ .resources.memory.limits | default "64Mi" | quote }}
+            cpu: {{ .resources.cpu.limits | default "10m" | quote }}
       {{- end }}
-      {{- if .containers.securityContext }}
+      {{- if .securityContext }}
         securityContext:
-        {{- range $key, $val := .containers.securityContext }}
+        {{- range $key, $val := .securityContext }}
           {{ $key }}: {{ $val }}
         {{- end }}
       {{- end }}
@@ -128,8 +124,10 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+      {{- with .imagePullSecrets }}
       imagePullSecrets:
-      - name: {{ .registry_credential | default "regcred" }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         runAsNonRoot: true
       serviceAccountName: {{ template "clusterapioutscale.serviceAccount" $root }}

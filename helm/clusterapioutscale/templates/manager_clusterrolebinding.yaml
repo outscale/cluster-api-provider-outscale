@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.managerClusterRoleBinding.enable }}
+{{- if .Values.managerClusterRoleBinding.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.managerClusterRoleBinding }}
+  {{- with .Values.managerClusterRoleBinding }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

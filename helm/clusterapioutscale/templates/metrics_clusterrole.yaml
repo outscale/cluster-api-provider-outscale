@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.metricsClusterRole.enable }}
+{{- if .Values.metricsClusterRole.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.metricsClusterRole }}
+  {{- with .Values.metricsClusterRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

@@ -5,7 +5,7 @@
 
 {{- define "clusterapioutscale.controllermanager" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-conttroller-manager" .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-controller-manager" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "clusterapioutscale.webhookservice" -}}

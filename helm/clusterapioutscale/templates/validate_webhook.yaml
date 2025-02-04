@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.validatingWebhook.enable }}
+{{- if .Values.validatingWebhook.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.validatingWebhook }}
+  {{- with .Values.validatingWebhook }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -12,8 +12,8 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: webhook-service
-      namespace: system
+      name: {{ template "clusterapioutscale.webhookservice" $root }}
+      namespace:  {{ $root.Release.Namespace }}
       path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster
   failurePolicy: Fail
   name: vosccluster.kb.io

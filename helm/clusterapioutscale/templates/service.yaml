@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.service.enable }}
+{{- if .Values.service.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.service }}
+  {{- with .Values.service }}
 apiVersion: v1
 kind: Service
 metadata:

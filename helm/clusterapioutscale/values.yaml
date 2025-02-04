@@ -1,111 +1,109 @@
-clusterapioutscale:
-
-  deployment:
-    # -- Enable deployment
-    enable: true
-    # -- Number of replica
-    replicaccount: 1
-    # -- Regitry credential to use
-    registry_credential: harbor-dockerconfigjson
-    # -- Verbosity level of plugin
-    verbosity: 10
-    # integer in second defining initial duration
-    # -- Initial duraction of backoff
-    backoff_duration: "1"
-    # float define the factor multiplied by Duration each iteration
-    # -- Factor multiplied by Duration for each iteration
-    backoff_factor: "2.0"
-    # integer defining the remaining number of iterations in which the duration parameter may change
-    # -- Remaining number of iterations in which the duration parameter may change
-    backoff_steps: "20"
-    watch_filter: ""
-    # -- Additional annotions to use
-    pods:
-      annotations:
-        kubectl.kubernetes.io/default-container: manager
-    containers:
-      # -- Outscale provider image
-      image: registry.hub.docker.com/outscale/cluster-api-outscale-controllers
-      # -- Outscale provider image tag
-      imageTag: "v0.1.0"
-      # -- Proxy image
-      imageProxy: gcr.io/kubebuilder/kube-rbac-proxy
-      # -- Proxy imageTag
-      imageProxyTag: "v0.8.0"
-      # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
-      pullPolicy: IfNotPresent
-      # -- Additional securityContext to add
-      securityContext:
-        allowPrivilegeEscalation: false
-        # -- Container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
-      resources:
-        memory:
-          # -- Container memory requests
-          requests: 20Mi
-          # -- Container memory limits
-          limits: 30Mi
-        cpu:
-          # -- Container cpu requests
-          requests: 100m
-          # -- Container cpu limts
-          limits: 200m
-          # -- Container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
-      resourcesproxy:
-        memory:
-          # -- Container proxy memory requests
-          requests: 20Mi
-          # -- Container proxy memory limits
-          limits: 30Mi
-        cpu:
-          # -- Container proxy cpu requests
-          requests: 100m
-          # -- Container proxy cpu limits
-          limits: 200m
-  crd:
-    # -- enable crd
-    enable: True
-  issuer:
-    # -- enable issuer
-    enable: True
-  service:
-    # -- enable service
-    enable: True
-  serviceAccount:
-    # -- enable serviceAccount
-    enable: True
-  webhookservice:
-    # -- enable webhookservice
-    enable: True
-  configmap:
-    # -- enable configmap
-    enable: True
-  metricsClusterRole:
-    # -- enable metricsClusterRole
-    enable: True
-  proxyClusterRole:
-    # -- enable proxyClusterRole
-    enable: True
-  proxyClusterRoleBinding:
-    # -- enable proxyClusterRoleBinding
-    enable: True
-  managerClusterRole:
-    # -- enable managerClusterRole
-    enable: True
-  managerClusterRoleBinding:
-    # -- enable managerClusterRoleBinding
-    enable: True
-  leaderElectionRole:
-    # -- enable leaderElectionRole
-    enable: True
-  leaderElectionRoleBinding:
-    # -- enable leaderElectionRoleBinding
-    enable: True
-  mutatingWebhook:
-    # -- enable mutatingWebhook
-    enable: True
-  validatingWebhook:
-    # -- enable validatingWebhook
-    enable: True
-  certificate:
-    # -- enable certificate
-    enable: True
+deployment:
+  # -- Enable deployment
+  enable: true
+  # -- Number of replicas
+  replicaCount: 1
+  # -- Verbosity level of plugin
+  verbosity: 5
+  # integer in second defining initial duration
+  # -- Initial duraction of backoff
+  backoffDuration: "1"
+  # float define the factor multiplied by Duration each iteration
+  # -- Factor multiplied by Duration for each iteration
+  backoffFactor: "1.5"
+  # integer defining the remaining number of iterations in which the duration parameter may change
+  # -- Remaining number of iterations in which the duration parameter may change
+  backoffSteps: "20"
+  watchFilter: ""
+  # -- Annotations to set on pods
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+  # -- (object) Labels to set on pods
+  labels:
+  # -- Outscale provider image
+  image: registry.hub.docker.com/outscale/cluster-api-outscale-controllers
+  # -- Outscale provider image tag
+  imageTag: "v0.1.0"
+  # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
+  imagePullPolicy: IfNotPresent
+  # -- Specify image pull secrets
+  imagePullSecrets: []
+  # -- Additional securityContext to add
+  securityContext:
+    allowPrivilegeEscalation: false
+  # -- Container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+  resources:
+    memory:
+      # -- Container memory requests
+      requests: 20Mi
+      # -- Container memory limits
+      limits: 30Mi
+    cpu:
+      # -- Container cpu requests
+      requests: 100m
+      # -- Container cpu limts
+      limits: 200m
+  # -- Proxy image
+  proxyImage: gcr.io/kubebuilder/kube-rbac-proxy
+  # -- Proxy image tag
+  proxyImageTag: "v0.8.0"
+  # -- Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+  proxyResources:
+    memory:
+      # -- Container proxy memory requests
+      requests: 20Mi
+      # -- Container proxy memory limits
+      limits: 30Mi
+    cpu:
+      # -- Container proxy cpu requests
+      requests: 100m
+      # -- Container proxy cpu limits
+      limits: 200m
+crd:
+  # -- enable crd
+  enable: True
+issuer:
+  # -- enable issuer
+  enable: True
+service:
+  # -- enable service
+  enable: True
+serviceAccount:
+  # -- enable serviceAccount
+  enable: True
+webhookservice:
+  # -- enable webhookservice
+  enable: True
+configmap:
+  # -- enable configmap
+  enable: True
+metricsClusterRole:
+  # -- enable metricsClusterRole
+  enable: True
+proxyClusterRole:
+  # -- enable proxyClusterRole
+  enable: True
+proxyClusterRoleBinding:
+  # -- enable proxyClusterRoleBinding
+  enable: True
+managerClusterRole:
+  # -- enable managerClusterRole
+  enable: True
+managerClusterRoleBinding:
+  # -- enable managerClusterRoleBinding
+  enable: True
+leaderElectionRole:
+  # -- enable leaderElectionRole
+  enable: True
+leaderElectionRoleBinding:
+  # -- enable leaderElectionRoleBinding
+  enable: True
+mutatingWebhook:
+  # -- enable mutatingWebhook
+  enable: True
+validatingWebhook:
+  # -- enable validatingWebhook
+  enable: True
+certificate:
+  # -- enable certificate
+  enable: True
