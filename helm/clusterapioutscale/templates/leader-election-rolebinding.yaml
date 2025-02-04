@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.leaderElectionRoleBinding.enable }}
+{{- if .Values.leaderElectionRoleBinding.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.leaderElectionRoleBinding }}
+  {{- with .Values.leaderElectionRoleBinding }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

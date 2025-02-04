@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.configmap.enable }}
+{{- if .Values.configmap.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.configmap }}
+  {{- with .Values.configmap }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

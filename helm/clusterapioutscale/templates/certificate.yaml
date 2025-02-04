@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.certificate.enable }}
+{{- if .Values.certificate.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.certificate }}
+  {{- with .Values.certificate }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.proxyClusterRoleBinding.enable }}
+{{- if .Values.proxyClusterRoleBinding.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.proxyClusterRoleBinding }}
+  {{- with .Values.proxyClusterRoleBinding }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

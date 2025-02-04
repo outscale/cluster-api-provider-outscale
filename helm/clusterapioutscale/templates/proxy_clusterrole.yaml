@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.proxyClusterRole.enable }}
+{{- if .Values.proxyClusterRole.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.proxyClusterRole }}
+  {{- with .Values.proxyClusterRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

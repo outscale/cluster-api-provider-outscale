@@ -23,7 +23,7 @@ kubectl label namespaces cluster-api-outscale-system control-plane=cluster-api-o
 Install charts with your helm release name:
 ex:
 ```
-helm upgrade --install  cluster-api-provider-outscale -n cluster-api-outscale-system ./helm/clusterapioutscale/
+helm upgrade --install cluster-api-provider-outscale -n cluster-api-outscale-system ./helm/clusterapioutscale/
 ```
 
 # CleanUp

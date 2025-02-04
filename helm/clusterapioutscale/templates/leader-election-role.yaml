@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.leaderElectionRole.enable }}
+{{- if .Values.leaderElectionRole.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.leaderElectionRole }}
+  {{- with .Values.leaderElectionRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

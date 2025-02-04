@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.mutatingWebhook.enable }}
+{{- if .Values.mutatingWebhook.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.mutatingWebhook }}
+  {{- with .Values.mutatingWebhook }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:

@@ -1,51 +1,55 @@
 # clusterapioutscale
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.3.1](https://img.shields.io/badge/AppVersion-0.3.1-informational?style=flat-square)
 
-Deploy clusterapioutscale. Please look at deploy.md
+Deploy Outscale Cluster API. Please look at deploy.md
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| clusterapioutscale.certificate.enable | bool | `true` | enable certificate |
-| clusterapioutscale.configmap.enable | bool | `true` | enable configmap |
-| clusterapioutscale.crd.enable | bool | `true` | enable crd |
-| clusterapioutscale.deployment.backoff_duration | string | `"1"` | Initial duraction of backoff |
-| clusterapioutscale.deployment.backoff_factor | string | `"2.0"` | Factor multiplied by Duration for each iteration |
-| clusterapioutscale.deployment.backoff_steps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
-| clusterapioutscale.deployment.containers.image | string | `"registry.hub.docker.com/outscale/cluster-api-outscale-controllers"` | Outscale provider image |
-| clusterapioutscale.deployment.containers.imageProxy | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
-| clusterapioutscale.deployment.containers.imageProxyTag | string | `"v0.8.0"` | Proxy imageTag |
-| clusterapioutscale.deployment.containers.imageTag | string | `"v0.1.0"` | Outscale provider image tag |
-| clusterapioutscale.deployment.containers.pullPolicy | string | `"IfNotPresent"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
-| clusterapioutscale.deployment.containers.resources.cpu.limits | string | `"200m"` | Container cpu limts |
-| clusterapioutscale.deployment.containers.resources.cpu.requests | string | `"100m"` | Container cpu requests |
-| clusterapioutscale.deployment.containers.resources.memory.limits | string | `"30Mi"` | Container memory limits |
-| clusterapioutscale.deployment.containers.resources.memory.requests | string | `"20Mi"` | Container memory requests |
-| clusterapioutscale.deployment.containers.resourcesproxy.cpu.limits | string | `"200m"` | Container proxy cpu limits |
-| clusterapioutscale.deployment.containers.resourcesproxy.cpu.requests | string | `"100m"` | Container proxy cpu requests |
-| clusterapioutscale.deployment.containers.resourcesproxy.memory.limits | string | `"30Mi"` | Container proxy memory limits |
-| clusterapioutscale.deployment.containers.resourcesproxy.memory.requests | string | `"20Mi"` | Container proxy memory requests |
-| clusterapioutscale.deployment.containers.securityContext | object | `{"allowPrivilegeEscalation":false}` | Additional securityContext to add |
-| clusterapioutscale.deployment.enable | bool | `true` | Enable deployment |
-| clusterapioutscale.deployment.pods | object | `{"annotations":{"kubectl.kubernetes.io/default-container":"manager"}}` | Additional annotions to use |
-| clusterapioutscale.deployment.registry_credential | string | `"harbor-dockerconfigjson"` | Regitry credential to use |
-| clusterapioutscale.deployment.replicaccount | int | `1` | Number of replica |
-| clusterapioutscale.deployment.verbosity | int | `10` | Verbosity level of plugin |
-| clusterapioutscale.issuer.enable | bool | `true` | enable issuer |
-| clusterapioutscale.leaderElectionRole.enable | bool | `true` | enable leaderElectionRole |
-| clusterapioutscale.leaderElectionRoleBinding.enable | bool | `true` | enable leaderElectionRoleBinding |
-| clusterapioutscale.managerClusterRole.enable | bool | `true` | enable managerClusterRole |
-| clusterapioutscale.managerClusterRoleBinding.enable | bool | `true` | enable managerClusterRoleBinding |
-| clusterapioutscale.metricsClusterRole.enable | bool | `true` | enable metricsClusterRole |
-| clusterapioutscale.mutatingWebhook.enable | bool | `true` | enable mutatingWebhook |
-| clusterapioutscale.proxyClusterRole.enable | bool | `true` | enable proxyClusterRole |
-| clusterapioutscale.proxyClusterRoleBinding.enable | bool | `true` | enable proxyClusterRoleBinding |
-| clusterapioutscale.service.enable | bool | `true` | enable service |
-| clusterapioutscale.serviceAccount.enable | bool | `true` | enable serviceAccount |
-| clusterapioutscale.validatingWebhook.enable | bool | `true` | enable validatingWebhook |
-| clusterapioutscale.webhookservice.enable | bool | `true` | enable webhookservice |
+| certificate.enable | bool | `true` | enable certificate |
+| configmap.enable | bool | `true` | enable configmap |
+| crd.enable | bool | `true` | enable crd |
+| deployment.annotations | object | `{"kubectl.kubernetes.io/default-container":"manager"}` | Annotations to set on pods |
+| deployment.backoffDuration | string | `"1"` | Initial duraction of backoff |
+| deployment.backoffFactor | string | `"1.5"` | Factor multiplied by Duration for each iteration |
+| deployment.backoffSteps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
+| deployment.enable | bool | `true` | Enable deployment |
+| deployment.image | string | `"registry.hub.docker.com/outscale/cluster-api-outscale-controllers"` | Outscale provider image |
+| deployment.imagePullPolicy | string | `"IfNotPresent"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
+| deployment.imagePullSecrets | list | `[]` | Specify image pull secrets |
+| deployment.imageTag | string | `"v0.1.0"` | Outscale provider image tag |
+| deployment.labels | object | `nil` | Labels to set on pods |
+| deployment.proxyImage | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
+| deployment.proxyImageTag | string | `"v0.8.0"` | Proxy image tag |
+| deployment.proxyResources | object | `{"cpu":{"limits":"200m","requests":"100m"},"memory":{"limits":"30Mi","requests":"20Mi"}}` | Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
+| deployment.proxyResources.cpu.limits | string | `"200m"` | Container proxy cpu limits |
+| deployment.proxyResources.cpu.requests | string | `"100m"` | Container proxy cpu requests |
+| deployment.proxyResources.memory.limits | string | `"30Mi"` | Container proxy memory limits |
+| deployment.proxyResources.memory.requests | string | `"20Mi"` | Container proxy memory requests |
+| deployment.replicaCount | int | `1` | Number of replicas |
+| deployment.resources | object | `{"cpu":{"limits":"200m","requests":"100m"},"memory":{"limits":"30Mi","requests":"20Mi"}}` | Container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
+| deployment.resources.cpu.limits | string | `"200m"` | Container cpu limts |
+| deployment.resources.cpu.requests | string | `"100m"` | Container cpu requests |
+| deployment.resources.memory.limits | string | `"30Mi"` | Container memory limits |
+| deployment.resources.memory.requests | string | `"20Mi"` | Container memory requests |
+| deployment.securityContext | object | `{"allowPrivilegeEscalation":false}` | Additional securityContext to add |
+| deployment.verbosity | int | `5` | Verbosity level of plugin |
+| deployment.watchFilter | string | `""` |  |
+| issuer.enable | bool | `true` | enable issuer |
+| leaderElectionRole.enable | bool | `true` | enable leaderElectionRole |
+| leaderElectionRoleBinding.enable | bool | `true` | enable leaderElectionRoleBinding |
+| managerClusterRole.enable | bool | `true` | enable managerClusterRole |
+| managerClusterRoleBinding.enable | bool | `true` | enable managerClusterRoleBinding |
+| metricsClusterRole.enable | bool | `true` | enable metricsClusterRole |
+| mutatingWebhook.enable | bool | `true` | enable mutatingWebhook |
+| proxyClusterRole.enable | bool | `true` | enable proxyClusterRole |
+| proxyClusterRoleBinding.enable | bool | `true` | enable proxyClusterRoleBinding |
+| service.enable | bool | `true` | enable service |
+| serviceAccount.enable | bool | `true` | enable serviceAccount |
+| validatingWebhook.enable | bool | `true` | enable validatingWebhook |
+| webhookservice.enable | bool | `true` | enable webhookservice |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)
+Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)

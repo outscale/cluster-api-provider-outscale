@@ -1,6 +1,6 @@
-{{- if .Values.clusterapioutscale.webhookservice.enable }}
+{{- if .Values.webhookservice.enable }}
   {{ $root := . }}
-  {{- with .Values.clusterapioutscale.webhookservice }}
+  {{- with .Values.webhookservice }}
 apiVersion: v1
 kind: Service
 metadata:
