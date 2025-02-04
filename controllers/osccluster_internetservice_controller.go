@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
@@ -56,6 +57,13 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
+	if len(internetServiceRef.ResourceMap) == 0 {
+		internetServiceRef.ResourceMap = make(map[string]string)
+	}
+	if internetServiceSpec.ResourceId != "" && internetServiceRef.ResourceMap[v1beta1.ManagedByKey(internetServiceSpec.ResourceId)] != v1beta1.ManagedByValueCapi {
+		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
+		return reconcile.Result{}, nil
+	}
 	var internetService *osc.InternetService
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -63,9 +71,6 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-	if len(internetServiceRef.ResourceMap) == 0 {
-		internetServiceRef.ResourceMap = make(map[string]string)
 	}
 	tagKey := "Name"
 	tagValue := internetServiceName
@@ -95,6 +100,7 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 		}
 		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
 		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
+		internetServiceRef.ResourceMap[v1beta1.ManagedByKey(internetService.GetInternetServiceId())] = v1beta1.ManagedByValueCapi
 	}
 	return reconcile.Result{}, nil
 }
@@ -104,6 +110,13 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	log := ctrl.LoggerFrom(ctx)
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceSpec.SetDefaultValue()
+	internetServiceRef := clusterScope.GetInternetServiceRef()
+	internetServiceId := internetServiceSpec.ResourceId
+	internetServiceName := internetServiceSpec.Name
+	if internetServiceId != "" && internetServiceRef.ResourceMap[v1beta1.ManagedByKey(internetServiceId)] != v1beta1.ManagedByValueCapi {
+		log.V(2).Info("Not unlinking/deleting the desired internetservice because it's not managed by capi", "internetServiceName", internetServiceName)
+		return reconcile.Result{}, nil
+	}
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -114,8 +127,6 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 		return reconcile.Result{}, nil //nolint: nilerr
 	}
 
-	internetServiceId := internetServiceSpec.ResourceId
-	internetServiceName := internetServiceSpec.Name
 	internetService, err := internetServiceSvc.GetInternetService(ctx, internetServiceId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("get internetservice: %w", err)
@@ -134,5 +145,6 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete internetService: %w", err)
 	}
+
 	return reconcile.Result{}, nil
 }

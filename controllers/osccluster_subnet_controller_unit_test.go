@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net/mock_net"
@@ -316,6 +317,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
 		spec                  infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi      bool
 		expSubnetFound        bool
 		expNetFound           bool
 		expTagFound           bool
@@ -324,10 +326,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 		expGetSubnetIdsErr    error
 		expReconcileSubnetErr error
 		expReadTagErr         error
+		expManagedByCapi      bool
 	}{
 		{
 			name:                  "create Subnet (first time reconcile loop)",
 			spec:                  defaultSubnetInitialize,
+			notManagedByCapi:      true,
 			expSubnetFound:        false,
 			expNetFound:           true,
 			expTagFound:           false,
@@ -336,10 +340,12 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			expGetSubnetIdsErr:    nil,
 			expReconcileSubnetErr: nil,
 			expReadTagErr:         nil,
+			expManagedByCapi:      true,
 		},
 		{
 			name:                  "create two Subnets (first time reconcile loop)",
 			spec:                  defaultMultiSubnetInitialize,
+			notManagedByCapi:      true,
 			expSubnetFound:        false,
 			expNetFound:           true,
 			expTagFound:           false,
@@ -348,6 +354,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			expGetSubnetIdsErr:    nil,
 			expReconcileSubnetErr: nil,
 			expReadTagErr:         nil,
+			expManagedByCapi:      true,
 		},
 		{
 			name:                  "failed to create subnet",
@@ -360,6 +367,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			expGetSubnetIdsErr:    nil,
 			expReadTagErr:         nil,
 			expReconcileSubnetErr: errors.New("cannot create subnet: CreateSubnet generic error"),
+			expManagedByCapi:      true,
 		},
 		{
 			name:                  "user delete subnet without cluster-api",
@@ -372,6 +380,7 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			expGetSubnetIdsErr:    nil,
 			expReadTagErr:         nil,
 			expReconcileSubnetErr: nil,
+			expManagedByCapi:      true,
 		},
 	}
 	for _, stc := range subnetTestCases {
@@ -388,9 +397,14 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			}
 			subnetsSpec := stc.spec.Network.Subnets
 			var subnetIds []string
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
+				if !stc.notManagedByCapi {
+					subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetId)] = v1beta1.ManagedByValueCapi
+				}
 				tag := osc.Tag{
 					ResourceId: &subnetId,
 				}
@@ -412,8 +426,6 @@ func TestReconcileSubnetCreate(t *testing.T) {
 					},
 				}
 
-				subnetRef := clusterScope.GetSubnetRef()
-				subnetRef.ResourceMap = make(map[string]string)
 				if stc.expCreateSubnetFound {
 					subnetRef.ResourceMap[subnetName] = subnetId
 					mockOscSubnetInterface.
@@ -444,6 +456,15 @@ func TestReconcileSubnetCreate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+			resourceMapValues := make([]string, 0, len(subnetRef.ResourceMap))
+			for _, value := range subnetRef.ResourceMap {
+				resourceMapValues = append(resourceMapValues, value)
+			}
+			if stc.expManagedByCapi {
+				require.Contains(t, resourceMapValues, infrastructurev1beta1.ManagedByValueCapi)
+			} else {
+				require.NotContains(t, resourceMapValues, infrastructurev1beta1.ManagedByValueCapi)
+			}
 			t.Logf("Find reconcileSubnet  %v\n", reconcileSubnet)
 		})
 	}
@@ -454,6 +475,7 @@ func TestReconcileSubnetGet(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
 		spec                  infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi      bool
 		expSubnetFound        bool
 		expNetFound           bool
 		expTagFound           bool
@@ -504,9 +526,14 @@ func TestReconcileSubnetGet(t *testing.T) {
 			}
 			subnetsSpec := stc.spec.Network.Subnets
 			var subnetIds []string
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
+				if !stc.notManagedByCapi {
+					subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetId)] = v1beta1.ManagedByValueCapi
+				}
 				tag := osc.Tag{
 					ResourceId: &subnetId,
 				}
@@ -552,6 +579,7 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 	subnetTestCases := []struct {
 		name                  string
 		spec                  infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi      bool
 		expTagFound           bool
 		expNetFound           bool
 		expReadTagErr         error
@@ -590,10 +618,15 @@ func TestReconcileSubnetResourceId(t *testing.T) {
 				netRef.ResourceMap[netName] = netId
 			}
 			var subnetIds []string
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
 				subnetIds = append(subnetIds, subnetId)
+				if !stc.notManagedByCapi {
+					subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetId)] = v1beta1.ManagedByValueCapi
+				}
 				var subnetIds []string
 				tag := osc.Tag{
 					ResourceId: &subnetId,
@@ -627,6 +660,7 @@ func TestReconcileDeleteSubnetGet(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi            bool
 		expSubnetFound              bool
 		expNetFound                 bool
 		expGetSubnetIdsErr          error
@@ -694,6 +728,7 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi            bool
 		expDeleteSubnetErr          error
 		expGetSubnetIdsErr          error
 		expReconcileDeleteSubnetErr error
@@ -715,9 +750,14 @@ func TestReconcileDeleteSubnetDeleteWithoutSpec(t *testing.T) {
 			netRef.ResourceMap[netName] = netId
 			clusterScope.OscCluster.Spec.Network.Net.ResourceId = netId
 
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
 			var subnetIds []string
 			subnetName := "cluster-api-subnet-uid"
 			subnetId := "subnet-" + subnetName
+			if !stc.notManagedByCapi {
+				subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetId)] = v1beta1.ManagedByValueCapi
+			}
 			subnetIds = append(subnetIds, subnetId)
 			mockOscSubnetInterface.
 				EXPECT().
@@ -746,6 +786,7 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi            bool
 		expSubnetFound              bool
 		expNetFound                 bool
 		expDeleteSubnetErr          error
@@ -792,9 +833,14 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 			}
 			subnetsSpec := stc.spec.Network.Subnets
 			var subnetIds []string
+			subnetRef := clusterScope.GetSubnetRef()
+			subnetRef.ResourceMap = make(map[string]string)
 			for _, subnetSpec := range subnetsSpec {
 				subnetName := subnetSpec.Name + "-uid"
 				subnetId := "subnet-" + subnetName
+				if !stc.notManagedByCapi {
+					subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetId)] = v1beta1.ManagedByValueCapi
+				}
 				subnetIds = append(subnetIds, subnetId)
 				mockOscSubnetInterface.
 					EXPECT().
@@ -829,6 +875,7 @@ func TestReconcileDeleteSubnet_NoNetKnown(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi            bool
 		expReconcileDeleteSubnetErr error
 	}{
 		{

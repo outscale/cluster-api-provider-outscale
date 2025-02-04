@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security/mock_security"
@@ -381,6 +382,8 @@ func TestReconcilePublicIpGet(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                    string
 		spec                    infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi        bool
+		expSkip                 bool
 		expPublicIpFound        bool
 		expTagFound             bool
 		expValidatePublicIpsErr error
@@ -423,6 +426,12 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			expReadTagErr:           errors.New("ReadTag generic error"),
 			expReconcilePublicIpErr: errors.New("cannot get tag: ReadTag generic error"),
 		},
+		{
+			name:             "skip reconcile because not managed by capi",
+			spec:             defaultInternetServiceReconcile,
+			notManagedByCapi: true,
+			expSkip:          true,
+		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
@@ -435,11 +444,14 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId = "eipalloc-" + publicIpName
+				if !pitc.notManagedByCapi {
+					publicIpRef.ResourceMap[v1beta1.ManagedByKey(publicIpId)] = v1beta1.ManagedByValueCapi
+				}
 
 				tag := osc.Tag{
 					ResourceId: &publicIpId,
 				}
-				if pitc.expPublicIpFound {
+				if !pitc.expSkip && pitc.expPublicIpFound {
 					if pitc.expTagFound {
 						mockOscTagInterface.
 							EXPECT().
@@ -461,16 +473,18 @@ func TestReconcilePublicIpGet(t *testing.T) {
 			if pitc.expValidatePublicIpsErr != nil {
 				publicIpIds = []string{""}
 			}
-			if pitc.expPublicIpFound {
-				mockOscPublicIpInterface.
-					EXPECT().
-					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
-					Return(publicIpIds, pitc.expValidatePublicIpsErr)
-			} else {
-				mockOscPublicIpInterface.
-					EXPECT().
-					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
-					Return(nil, pitc.expValidatePublicIpsErr)
+			if !pitc.expSkip {
+				if pitc.expPublicIpFound {
+					mockOscPublicIpInterface.
+						EXPECT().
+						ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
+						Return(publicIpIds, pitc.expValidatePublicIpsErr)
+				} else {
+					mockOscPublicIpInterface.
+						EXPECT().
+						ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
+						Return(nil, pitc.expValidatePublicIpsErr)
+				}
 			}
 			reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, mockOscPublicIpInterface, mockOscTagInterface)
 			if pitc.expReconcilePublicIpErr != nil {
@@ -488,6 +502,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                    string
 		spec                    infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi        bool
 		expPublicIpFound        bool
 		expTagFound             bool
 		expValidatePublicIpsErr error
@@ -495,10 +510,12 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 		expCreatePublicIpErr    error
 		expReadTagErr           error
 		expReconcilePublicIpErr error
+		expManagedByCapi        bool
 	}{
 		{
 			name:                    "create publicIp (first time reconcile loop)",
 			spec:                    defaultPublicIpInitialize,
+			notManagedByCapi:        true,
 			expPublicIpFound:        false,
 			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
@@ -506,10 +523,12 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expCreatePublicIpErr:    nil,
 			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
+			expManagedByCapi:        true,
 		},
 		{
 			name:                    "create two publicIp (first time reconcile loop)",
 			spec:                    defaultMultiPublicIpInitialize,
+			notManagedByCapi:        true,
 			expPublicIpFound:        false,
 			expTagFound:             false,
 			expValidatePublicIpsErr: nil,
@@ -517,6 +536,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expCreatePublicIpErr:    nil,
 			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
+			expManagedByCapi:        true,
 		},
 		{
 			name: "failed to create publicIp",
@@ -540,6 +560,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expCreatePublicIpErr:    errors.New("CreatePublicIp generic error"),
 			expReadTagErr:           nil,
 			expReconcilePublicIpErr: errors.New("cannot create publicIp: CreatePublicIp generic error"),
+			expManagedByCapi:        true,
 		},
 		{
 			name: "user delete publicIp without cluster-api",
@@ -563,6 +584,7 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			expCreatePublicIpErr:    nil,
 			expReadTagErr:           nil,
 			expReconcilePublicIpErr: nil,
+			expManagedByCapi:        true,
 		},
 	}
 	for _, pitc := range publicIpTestCases {
@@ -570,9 +592,14 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			clusterScope, ctx, mockOscPublicIpInterface, mockOscTagInterface := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
 			for index, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				if !pitc.notManagedByCapi {
+					publicIpRef.ResourceMap[v1beta1.ManagedByKey(publicIpId)] = v1beta1.ManagedByValueCapi
+				}
 				tag := osc.Tag{
 					ResourceId: &publicIpId,
 				}
@@ -594,8 +621,6 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 						PublicIpId: &publicIpId,
 					},
 				}
-				publicIpRef := clusterScope.GetPublicIpRef()
-				publicIpRef.ResourceMap = make(map[string]string)
 				if pitc.expCreatePublicIpFound {
 					publicIpRef.ResourceMap[publicIpName] = publicIpId
 
@@ -631,6 +656,15 @@ func TestReconcilePublicIpCreate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+			resourceMapValues := make([]string, 0, len(publicIpRef.ResourceMap))
+			for _, value := range publicIpRef.ResourceMap {
+				resourceMapValues = append(resourceMapValues, value)
+			}
+			if pitc.expManagedByCapi {
+				require.Contains(t, resourceMapValues, infrastructurev1beta1.ManagedByValueCapi)
+			} else {
+				require.NotContains(t, resourceMapValues, infrastructurev1beta1.ManagedByValueCapi)
+			}
 			t.Logf("Find reconcilePublicIp %v\n", reconcilePublicIp)
 		})
 	}
@@ -641,6 +675,7 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
 		spec                          infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi              bool
 		expValidatePublicIpIdsErr     error
 		expCheckPublicIpUnlinkErr     error
 		expDeletePublicIpErr          error
@@ -662,6 +697,11 @@ func TestReconcileDeletePublicIpDeleteWithoutSpec(t *testing.T) {
 			var clockLoop time.Duration = 120
 			publicIpName := "cluster-api-publicip-nat-uid"
 			publicIpId := "eipalloc-" + publicIpName
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
+			if !pitc.notManagedByCapi {
+				publicIpRef.ResourceMap[v1beta1.ManagedByKey(publicIpId)] = v1beta1.ManagedByValueCapi
+			}
 			publicIpIds = append(publicIpIds, publicIpId)
 			mockOscPublicIpInterface.
 				EXPECT().
@@ -695,6 +735,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
 		spec                          infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi              bool
 		expPublicIpFound              bool
 		expValidatePublicIpIdsErr     error
 		expCheckPublicIpUnlinkErr     error
@@ -712,7 +753,7 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 		},
 		{
 			name:                          "delete two publicIp (first time reconcile loop)",
-			spec:                          defaultMultiPublicIpInitialize,
+			spec:                          defaultMultiPublicIpReconcile,
 			expPublicIpFound:              true,
 			expValidatePublicIpIdsErr:     nil,
 			expCheckPublicIpUnlinkErr:     nil,
@@ -736,9 +777,14 @@ func TestReconcileDeletePublicIpDelete(t *testing.T) {
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				if !pitc.notManagedByCapi {
+					publicIpRef.ResourceMap[v1beta1.ManagedByKey(publicIpId)] = v1beta1.ManagedByValueCapi
+				}
 				publicIpIds = append(publicIpIds, publicIpId)
 				mockOscPublicIpInterface.
 					EXPECT().
@@ -781,6 +827,7 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
 		spec                          infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi              bool
 		expPublicIpFound              bool
 		expValidatePublicIpIdsErr     error
 		expCheckPublicIpUnlinkErr     error
@@ -802,9 +849,14 @@ func TestReconcileDeletePublicIpCheck(t *testing.T) {
 			var publicIpIds []string
 			var clockInsideLoop time.Duration = 5
 			var clockLoop time.Duration = 120
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				if !pitc.notManagedByCapi {
+					publicIpRef.ResourceMap[v1beta1.ManagedByKey(publicIpId)] = v1beta1.ManagedByValueCapi
+				}
 				publicIpIds = append(publicIpIds, publicIpId)
 				mockOscPublicIpInterface.
 					EXPECT().
@@ -842,6 +894,8 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 	publicIpTestCases := []struct {
 		name                          string
 		spec                          infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi              bool
+		expSkip                       bool
 		expPublicIpFound              bool
 		expValidatePublicIpIdsErr     error
 		expReconcileDeletePublicIpErr error
@@ -869,30 +923,42 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 			expValidatePublicIpIdsErr:     nil,
 			expReconcileDeletePublicIpErr: nil,
 		},
+		{
+			name:             "skip reconcile delete because not managed by capi",
+			spec:             defaultInternetServiceReconcile,
+			notManagedByCapi: true,
+			expSkip:          true,
+		},
 	}
 	for _, pitc := range publicIpTestCases {
 		t.Run(pitc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscPublicIpInterface, _ := SetupWithPublicIpMock(t, pitc.name, pitc.spec)
 			publicIpsSpec := pitc.spec.Network.PublicIps
 			var publicIpIds []string
+			publicIpRef := clusterScope.GetPublicIpRef()
+			publicIpRef.ResourceMap = make(map[string]string)
 			for _, publicIpSpec := range publicIpsSpec {
 				publicIpName := publicIpSpec.Name + "-uid"
 				publicIpId := "eipalloc-" + publicIpName
+				if !pitc.notManagedByCapi {
+					publicIpRef.ResourceMap[v1beta1.ManagedByKey(publicIpId)] = v1beta1.ManagedByValueCapi
+				}
 				publicIpIds = append(publicIpIds, publicIpId)
 			}
-			if pitc.expPublicIpFound {
-				mockOscPublicIpInterface.
-					EXPECT().
-					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
-					Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
-			} else {
-				if len(publicIpIds) == 0 {
-					publicIpIds = []string{""}
+			if !pitc.expSkip {
+				if pitc.expPublicIpFound {
+					mockOscPublicIpInterface.
+						EXPECT().
+						ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
+						Return(publicIpIds, pitc.expValidatePublicIpIdsErr)
+				} else {
+					if len(publicIpIds) != 0 {
+						mockOscPublicIpInterface.
+							EXPECT().
+							ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
+							Return(nil, pitc.expValidatePublicIpIdsErr)
+					}
 				}
-				mockOscPublicIpInterface.
-					EXPECT().
-					ValidatePublicIpIds(gomock.Any(), gomock.Eq(publicIpIds)).
-					Return(nil, pitc.expValidatePublicIpIdsErr)
 			}
 
 			reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, mockOscPublicIpInterface)
