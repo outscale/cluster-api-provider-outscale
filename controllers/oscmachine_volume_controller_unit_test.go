@@ -301,7 +301,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 		expSubnetFound                    bool
 		expTagFound                       bool
 		expPublicIpFound                  bool
-		expLinkPublicIpFound              bool
 		expSecurityGroupFound             bool
 		expLoadBalancerSecurityGroupFound bool
 		expReadTagErr                     error
@@ -314,7 +313,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expVolumeFound:                    false,
 			expSubnetFound:                    true,
 			expPublicIpFound:                  true,
-			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
@@ -328,7 +326,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expVolumeFound:                    true,
 			expSubnetFound:                    false,
 			expPublicIpFound:                  true,
-			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
@@ -342,7 +339,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expVolumeFound:                    true,
 			expSubnetFound:                    true,
 			expPublicIpFound:                  false,
-			expLinkPublicIpFound:              false,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       false,
@@ -356,7 +352,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expVolumeFound:                    true,
 			expSubnetFound:                    true,
 			expPublicIpFound:                  true,
-			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             false,
 			expLoadBalancerSecurityGroupFound: false,
 			expTagFound:                       false,
@@ -370,7 +365,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			expVolumeFound:                    true,
 			expSubnetFound:                    true,
 			expPublicIpFound:                  true,
-			expLinkPublicIpFound:              true,
 			expSecurityGroupFound:             true,
 			expLoadBalancerSecurityGroupFound: true,
 			expTagFound:                       true,
@@ -407,13 +401,6 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 				publicIpRef.ResourceMap[publicIpName] = publicIpId
 			}
 
-			linkPublicIpId := "eipassoc-" + publicIpName
-			linkPublicIpRef := machineScope.GetLinkPublicIpRef()
-			linkPublicIpRef.ResourceMap = make(map[string]string)
-			if vtc.expLinkPublicIpFound {
-				linkPublicIpRef.ResourceMap[vmName] = linkPublicIpId
-			}
-
 			var privateIps []string
 			vmPrivateIps := machineScope.GetVmPrivateIps()
 			for _, vmPrivateIp := range *vmPrivateIps {
@@ -424,7 +411,7 @@ func TestReconcileVolumeResourceId(t *testing.T) {
 			tag := osc.Tag{
 				ResourceId: &vmId,
 			}
-			if vtc.expVolumeFound && vtc.expSubnetFound && vtc.expPublicIpFound && vtc.expLinkPublicIpFound && vtc.expSecurityGroupFound {
+			if vtc.expVolumeFound && vtc.expSubnetFound && vtc.expPublicIpFound && vtc.expSecurityGroupFound {
 				if vtc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
