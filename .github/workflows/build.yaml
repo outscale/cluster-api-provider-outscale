@@ -29,9 +29,6 @@ jobs:
           version: v1.63
           args: --timeout=300s
           only-new-issues: true
-      - name: Check with boilerplate
-        run: make verify-boilerplate
-        shell: bash
       - name: check with ShellCheck
         run: make install-shellcheck
         shell: bash

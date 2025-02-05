@@ -111,9 +111,10 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	return allErrs
 }
 
+var isValidateKeypairName = regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
+
 // ValidateKeypairName check that KeypairName is a valid name of keypair
 func ValidateKeypairName(keypairName string) (string, error) {
-	isValidateKeypairName := regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
 	if isValidateKeypairName(keypairName) {
 		return keypairName, nil
 	} else {
@@ -140,9 +141,10 @@ func ValidateRatioSizeIops(ratioIopsSize int32) (int32, error) {
 	}
 }
 
+var isValidateName = regexp.MustCompile(`^[0-9A-Za-z\-_\s\.\(\)\\]{0,255}$`).MatchString
+
 // ValidateIamegName check that Image name is a valide name
 func ValidateImageName(imageName string) (string, error) {
-	isValidateName := regexp.MustCompile(`^[0-9A-Za-z\-_\s\.\(\)\\]{0,255}$`).MatchString
 	if isValidateName(imageName) {
 		return imageName, nil
 	} else {
@@ -188,9 +190,10 @@ func ValidateSubregionName(subregionName string) (string, error) {
 	}
 }
 
+var isValidateDeviceName = regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
+
 // ValidateDeviceName check that DeviceName  is a valid DeviceName
 func ValidateDeviceName(deviceName string) (string, error) {
-	isValidateDeviceName := regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
 	switch {
 	case isValidateDeviceName(deviceName):
 		return deviceName, nil
@@ -199,9 +202,10 @@ func ValidateDeviceName(deviceName string) (string, error) {
 	}
 }
 
+var isValidateVmType = regexp.MustCompile(`^tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]$`).MatchString
+
 // ValidateVmType check that vmType is a valid vmType
 func ValidateVmType(vmType string) (string, error) {
-	isValidateVmType := regexp.MustCompile(`^tinav[3-6].c[0-9]+r[0-9]+p[1-3]$`).MatchString
 	switch {
 	case isValidateVmType(vmType):
 		return vmType, nil
