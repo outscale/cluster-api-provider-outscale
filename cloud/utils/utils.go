@@ -29,7 +29,7 @@ func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 	fmt.Fprintln(b, "-----BEGIN OUTSCALE SECTION-----")
 	fmt.Fprintln(b, "filter_private_section=true")
 	for key, value := range tags {
-		fmt.Fprintf(b, "%s=%s\n", key, value)
+		fmt.Fprintf(b, "tags.%s=%s\n", key, value)
 	}
 	fmt.Fprintln(b, "-----END OUTSCALE SECTION-----")
 	return b.String()

@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const eipAutoAttachTagName = "osc.fcu.eip.auto-attach"
+
 // getVmResourceId return the vmId from the resourceMap base on resourceName (tag name + cluster uid)
 func getVmResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
 	vmRef := machineScope.GetVmRef()
@@ -337,7 +339,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 	var publicIpId string
 	var vmPublicIpName string
-	var linkPublicIpRef *infrastructurev1beta1.OscResourceReference
 	if vmSpec.PublicIp {
 		vmSpec.PublicIpName = vmSpec.Name + "-publicIp"
 		vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
@@ -351,7 +352,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			}
 			clusterScope.V(4).Info("Get publicIp for Vm", "publicip", publicIp)
 			publicIpId = publicIp.GetPublicIpId()
-
 			if len(publicIpIdRef.ResourceMap) == 0 {
 				publicIpIdRef.ResourceMap = make(map[string]string)
 			}
@@ -366,11 +366,8 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				return reconcile.Result{}, err
 			}
 		}
-		linkPublicIpRef = machineScope.GetLinkPublicIpRef()
-		if len(linkPublicIpRef.ResourceMap) == 0 {
-			linkPublicIpRef.ResourceMap = make(map[string]string)
-		}
 	}
+
 	var privateIps []string
 	vmPrivateIps := machineScope.GetVmPrivateIps()
 	if len(*vmPrivateIps) > 0 {
@@ -438,6 +435,16 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		vmType := vmSpec.VmType
 		machineScope.V(4).Info("Info vmType", "vmType", vmType)
 		vmTags := vmSpec.Tags
+		if publicIpId != "" {
+			publicIpObj, err := publicIpSvc.GetPublicIp(publicIpId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("%w Can not find publicIp %s for OscMachine %s/%s", err, publicIpId, machineScope.GetNamespace(), machineScope.GetName())
+			}
+			if vmTags == nil {
+				vmTags = make(map[string]string)
+			}
+			vmTags[eipAutoAttachTagName] = publicIpObj.GetPublicIp()
+		}
 		machineScope.V(4).Info("Info tags", "tags", vmTags)
 
 		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
@@ -512,14 +519,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				}
 			}
 
-			if vmSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[vmPublicIpName] == "" {
-				linkPublicIpId, err := publicIpSvc.LinkPublicIp(publicIpId, vmId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not link publicIp  %s with %s for OscCluster %s/%s", err, publicIpId, vmId, machineScope.GetNamespace(), machineScope.GetName())
-				}
-				machineScope.V(4).Info("Link public ip", "linkPublicIpId", linkPublicIpId)
-				linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
-			}
 			if vmSpec.LoadBalancerName != "" {
 				loadBalancerName := vmSpec.LoadBalancerName
 				vmIds := []string{vmId}
@@ -652,6 +651,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	if vmSpec.PublicIpName != "" {
 		linkPublicIpRef := machineScope.GetLinkPublicIpRef()
 		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
+		// Keep for retro-compatibility; now publicIP are mounted with the tag osc.fcu.eip.auto-attach and unmounted at VM deletion
 		linkPublicIiId := linkPublicIpRef.ResourceMap[publicIpName]
 		if linkPublicIiId != "" {
 			err = publicIpSvc.UnlinkPublicIp(linkPublicIiId)
@@ -660,15 +660,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 			}
 		}
 	}
-	if vmSpec.PublicIp {
-		publicIpIdRef := machineScope.GetPublicIpIdRef()
-		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-		clusterScope.V(2).Info("Delete the desired Vm publicip", "publicIpName", publicIpName)
-		err = publicIpSvc.DeletePublicIp(publicIpIdRef.ResourceMap[publicIpName])
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not delete Vm publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
-		}
-	}
+
 	if vmSpec.LoadBalancerName != "" {
 		vmIds := []string{vmId}
 		loadBalancerName := vmSpec.LoadBalancerName
@@ -761,7 +753,16 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	if err != nil {
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("%w Can not delete vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 	}
-	return reconcile.Result{}, nil
+	if vmSpec.PublicIp {
+		publicIpIdRef := machineScope.GetPublicIpIdRef()
+		publicIpName := vmSpec.PublicIpName + "-" + clusterScope.GetUID()
+		clusterScope.V(2).Info("Delete the desired Vm publicip", "publicIpName", publicIpName)
+		err = publicIpSvc.DeletePublicIp(publicIpIdRef.ResourceMap[publicIpName])
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("%w Can not delete Vm publicIp for Osccluster %s/%s", err, clusterScope.GetNamespace(), clusterScope.GetName())
+		}
+	}
+	return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 }
 
 /*
