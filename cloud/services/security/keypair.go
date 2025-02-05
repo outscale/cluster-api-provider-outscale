@@ -141,7 +141,7 @@ func (s *Service) GetKeyPair(ctx context.Context, keyPairName string) (*osc.Keyp
 
 // DeleteKeyPair delete machine keypair
 func (s *Service) DeleteKeyPair(ctx context.Context, keyPairName string) error {
-	deleteKeypairRequest := osc.DeleteKeypairRequest{KeypairName: keyPairName}
+	deleteKeypairRequest := osc.DeleteKeypairRequest{KeypairName: &keyPairName}
 	oscAPIClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	deleteKeypairCallBack := func() (bool, error) {
