@@ -75,8 +75,8 @@ type MachineTemplateScope struct {
 }
 
 // Close closes the scope of the machine configuration and status
-func (m *MachineTemplateScope) Close() error {
-	return m.patchHelper.Patch(context.TODO(), m.OscMachineTemplate)
+func (m *MachineTemplateScope) Close(ctx context.Context) error {
+	return m.patchHelper.Patch(ctx, m.OscMachineTemplate)
 }
 
 // GetName return the name of the machine

@@ -67,13 +67,21 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		Client:             r.Client,
 		OscMachineTemplate: machineTemplate,
 	})
-
 	if err != nil {
 		log.V(3).Error(err, "failed to get machineTemplate, requeing.")
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
-	clusterName := machineTemplateScope.GetClusterName()
+	defer func() {
+		if err := machineTemplateScope.Close(ctx); err != nil && reterr == nil {
+			reterr = err
+		}
+	}()
 
+	if !machineTemplate.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, machineTemplateScope)
+	}
+
+	clusterName := machineTemplateScope.GetClusterName()
 	labels := map[string]string{"ccm": clusterName + "-crs-ccm"}
 	clusterList := &clusterv1.ClusterList{}
 	cluster := clusterv1.Cluster{}
@@ -108,14 +116,6 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
-	defer func() {
-		if err := machineTemplateScope.Close(); err != nil && reterr == nil {
-			reterr = err
-		}
-	}()
-	if !machineTemplate.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, machineTemplateScope, clusterScope)
-	}
 	return r.reconcile(ctx, machineTemplateScope, clusterScope)
 }
 
@@ -123,11 +123,6 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.V(2).Info("Reconciling OscMachineTemplate")
-	controllerutil.AddFinalizer(machineTemplateScope.OscMachineTemplate, "oscmachine.infrastructure.cluster.x-k8s.io")
-
-	if err := machineTemplateScope.PatchObject(ctx); err != nil {
-		return reconcile.Result{}, err
-	}
 
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
 	reconcileCapacity, err := reconcileCapacity(ctx, clusterScope, machineTemplateScope, vmSvc)
@@ -138,11 +133,11 @@ func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTem
 }
 
 // reconcileDelete reconcile the deletion of the machine
-func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.V(2).Info("Reconciling delete OscMachineTemplate")
-	oscmachinetemplate := machineTemplateScope.OscMachineTemplate
-	controllerutil.RemoveFinalizer(oscmachinetemplate, "oscmachinetemplate.infrastructure.cluster.x-k8s.io")
+	// Previous versions set a oscmachine finalizer, remove it.
+	controllerutil.RemoveFinalizer(machineTemplateScope.OscMachineTemplate, "oscmachine.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil
 }
 
