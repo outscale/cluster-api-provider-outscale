@@ -181,16 +181,6 @@ func alertDuplicate(nameArray []string) error {
 	return nil
 }
 
-// contains check if item is present in slice
-func Contains(slice []string, item string) bool {
-	for _, val := range slice {
-		if val == item {
-			return true
-		}
-	}
-	return false
-}
-
 // reconcile reconcile the creation of the cluster
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)

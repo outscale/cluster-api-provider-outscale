@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -107,7 +108,7 @@ func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 
 	for _, natServiceSpec := range natServicesSpec {
 		natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
-		checkOscAssociate := Contains(resourceNameList, natSubnetName)
+		checkOscAssociate := slices.Contains(resourceNameList, natSubnetName)
 		if checkOscAssociate {
 			return nil
 		} else {

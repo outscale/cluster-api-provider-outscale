@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/benbjohnson/clock"
@@ -263,7 +264,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		var securityGroup *osc.SecurityGroup
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 
-		if !Contains(securityGroupIds, securityGroupId) && tag == nil {
+		if !slices.Contains(securityGroupIds, securityGroupId) && tag == nil {
 			if extraSecurityGroupRule && (len(securityGroupsRef.ResourceMap) == len(securityGroupsSpec)) {
 				log.V(4).Info("Extra Security Group Rule activated")
 			} else {
@@ -292,7 +293,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 			}
 		}
 
-		if Contains(securityGroupIds, securityGroupId) && extraSecurityGroupRule {
+		if slices.Contains(securityGroupIds, securityGroupId) && extraSecurityGroupRule {
 			log.V(4).Info("Extra Security Group Rule activated")
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
 			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(*securityGroupRulesSpec))
@@ -375,7 +376,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-		if !Contains(securityGroupIds, securityGroupId) {
+		if !slices.Contains(securityGroupIds, securityGroupId) {
 			log.V(2).Info("securityGroup does not exist anymore", "securityGroupName", securityGroupName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
