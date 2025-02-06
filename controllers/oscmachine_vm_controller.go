@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -58,7 +59,7 @@ func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) err
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
 		resourceNameList = append(resourceNameList, volumeName)
 	}
-	checkOscAssociate := Contains(resourceNameList, vmVolumeName)
+	checkOscAssociate := slices.Contains(resourceNameList, vmVolumeName)
 	if checkOscAssociate {
 		return nil
 	} else {
@@ -75,7 +76,7 @@ func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScop
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName + "-" + clusterScope.GetUID()
 	resourceNameList = append(resourceNameList, loadBalancerName)
-	checkOscAssociate := Contains(resourceNameList, vmLoadBalancerName)
+	checkOscAssociate := slices.Contains(resourceNameList, vmLoadBalancerName)
 	if checkOscAssociate {
 		return nil
 	} else {
@@ -115,7 +116,7 @@ func checkVmSecurityGroupOscAssociateResourceName(machineScope *scope.MachineSco
 		resourceNameList = append(resourceNameList, securityGroupName)
 	}
 	for _, validateVmSecurityGroupName := range vmSecurityGroupNameList {
-		checkOscAssociate = Contains(resourceNameList, validateVmSecurityGroupName)
+		checkOscAssociate = slices.Contains(resourceNameList, validateVmSecurityGroupName)
 		if !checkOscAssociate {
 			return fmt.Errorf("%s securityGroup does not exist in vm", validateVmSecurityGroupName)
 		}
@@ -134,7 +135,7 @@ func checkVmSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clu
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	checkOscAssociate := Contains(resourceNameList, vmSubnetName)
+	checkOscAssociate := slices.Contains(resourceNameList, vmSubnetName)
 	if checkOscAssociate {
 		return nil
 	} else {
@@ -156,7 +157,7 @@ func checkVmPublicIpOscAssociateResourceName(machineScope *scope.MachineScope, c
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, publicIpName)
 	}
-	checkOscAssociate := Contains(resourceNameList, vmPublicIpName)
+	checkOscAssociate := slices.Contains(resourceNameList, vmPublicIpName)
 	if checkOscAssociate {
 		return nil
 	} else {

@@ -25,6 +25,7 @@ import (
 	network "net"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -36,7 +37,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
-	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -399,7 +399,7 @@ func checkOscSubnetToBeProvisioned(ctx context.Context, oscInfraClusterKey clien
 			subnetId := subnetSpec.ResourceId
 
 			fmt.Fprintf(GinkgoWriter, "Check SubnetId %s\n", subnetId)
-			if !controllers.Contains(subnetIds, subnetId) {
+			if !slices.Contains(subnetIds, subnetId) {
 				return fmt.Errorf("Subnet %s does not exist", subnetId)
 			}
 		}
@@ -471,7 +471,7 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 			publicIpId = publicIpSpec.ResourceId
 			fmt.Fprintf(GinkgoWriter, "Check PublicIpId %s\n", publicIpId)
 		}
-		if !controllers.Contains(validPublicIpIds, publicIpId) {
+		if !slices.Contains(validPublicIpIds, publicIpId) {
 			return fmt.Errorf("PublicIpId %s does not exist", publicIpId)
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscPublicIp \n")
@@ -497,7 +497,7 @@ func checkOscRouteTableToBeProvisioned(ctx context.Context, oscInfraClusterKey c
 		for _, routeTableSpec := range routeTablesSpec {
 			routeTableId := routeTableSpec.ResourceId
 			fmt.Fprintf(GinkgoWriter, "Check RouteTableId %s\n", routeTableId)
-			if !controllers.Contains(routeTableIds, routeTableId) {
+			if !slices.Contains(routeTableIds, routeTableId) {
 				return fmt.Errorf("RouteTableId %s does not exist", routeTableId)
 			}
 		}
@@ -563,7 +563,7 @@ func checkOscSecurityGroupToBeProvisioned(ctx context.Context, oscInfraClusterKe
 		for _, securityGroupSpec := range securityGroupsSpec {
 			securityGroupId := securityGroupSpec.ResourceId
 			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupId)
-			if !controllers.Contains(securityGroupIds, securityGroupId) {
+			if !slices.Contains(securityGroupIds, securityGroupId) {
 				return fmt.Errorf("SecurityGroupId %s does not exist", securityGroupId)
 			}
 		}

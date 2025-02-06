@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -104,7 +105,7 @@ func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 		routeTableSubnetsSpec := routeTableSpec.Subnets
 		for _, routeTableSubnet := range routeTableSubnetsSpec {
 			routeTableSubnetName := routeTableSubnet + "-" + clusterScope.GetUID()
-			checkOscAssociate := Contains(resourceNameList, routeTableSubnetName)
+			checkOscAssociate := slices.Contains(resourceNameList, routeTableSubnetName)
 			if checkOscAssociate {
 				return nil
 			} else {
@@ -290,7 +291,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		natRouteTable := false
 
-		if !Contains(routeTableIds, routeTableId) && tag == nil {
+		if !slices.Contains(routeTableIds, routeTableId) && tag == nil {
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
 			log.V(4).Info("Number of routes", "routeLength", len(*routesSpec))
 			for _, routeSpec := range *routesSpec {
@@ -380,7 +381,7 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
 		routeTableId := routeTablesRef.ResourceMap[routeTableName]
 		log.V(2).Info("Get routetable", "routeTable", routeTableName)
-		if !Contains(routeTableIds, routeTableId) {
+		if !slices.Contains(routeTableIds, routeTableId) {
 			log.V(2).Info("routeTable is already deleted", "routeTableName", routeTableName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil

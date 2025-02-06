@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -41,7 +42,7 @@ func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	checkOscAssociate := Contains(resourceNameList, loadBalancerSubnetName)
+	checkOscAssociate := slices.Contains(resourceNameList, loadBalancerSubnetName)
 	if checkOscAssociate {
 		return nil
 	} else {
@@ -138,7 +139,7 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, securityGroupName)
 	}
-	checkOscAssociate := Contains(resourceNameList, loadBalancerSecurityGroupName)
+	checkOscAssociate := slices.Contains(resourceNameList, loadBalancerSecurityGroupName)
 	if checkOscAssociate {
 		return nil
 	} else {

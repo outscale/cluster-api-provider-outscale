@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -59,7 +60,7 @@ func checkBastionSecurityGroupOscAssociateResourceName(clusterScope *scope.Clust
 		resourceNameList = append(resourceNameList, securityGroupName)
 	}
 	for _, validateBastionSecurityGroupName := range bastionSecurityGroupNameList {
-		checkOscAssociate = Contains(resourceNameList, validateBastionSecurityGroupName)
+		checkOscAssociate = slices.Contains(resourceNameList, validateBastionSecurityGroupName)
 		if !checkOscAssociate {
 			return fmt.Errorf("%s securityGroup does not exist in bastion", validateBastionSecurityGroupName)
 		}
@@ -78,7 +79,7 @@ func checkBastionSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
 	}
-	checkOscAssociate := Contains(resourceNameList, bastionSubnetName)
+	checkOscAssociate := slices.Contains(resourceNameList, bastionSubnetName)
 	if checkOscAssociate {
 		return nil
 	} else {
@@ -97,7 +98,7 @@ func checkBastionPublicIpOscAssociateResourceName(clusterScope *scope.ClusterSco
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, publicIpName)
 	}
-	checkOscAssociate := Contains(resourceNameList, bastionPublicIpName)
+	checkOscAssociate := slices.Contains(resourceNameList, bastionPublicIpName)
 	if checkOscAssociate {
 		return nil
 	} else {

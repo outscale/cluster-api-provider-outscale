@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -93,7 +94,7 @@ func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) err
 			resourceNameList = append(resourceNameList, publicIpName)
 		}
 
-		checkOscAssociate := Contains(resourceNameList, natPublicIpName)
+		checkOscAssociate := slices.Contains(resourceNameList, natPublicIpName)
 		if checkOscAssociate {
 			return nil
 		} else {
@@ -157,7 +158,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 		}
 
 		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		if !Contains(validPublicIpIds, publicIpId) && tag == nil {
+		if !slices.Contains(validPublicIpIds, publicIpId) && tag == nil {
 			publicIp, err := publicIpSvc.CreatePublicIp(ctx, publicIpName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create publicIp: %w", err)
@@ -198,7 +199,7 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 		publicIpId := publicIpSpec.ResourceId
 		log.V(4).Info("Check publicIp Id", "publicipid", publicIpId)
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
-		if !Contains(validPublicIpIds, publicIpId) {
+		if !slices.Contains(validPublicIpIds, publicIpId) {
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}

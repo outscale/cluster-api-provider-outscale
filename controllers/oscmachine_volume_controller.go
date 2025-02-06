@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -133,7 +134,7 @@ func reconcileVolume(ctx context.Context, machineScope *scope.MachineScope, volu
 		}
 		volumeId := volumeRef.ResourceMap[volumeName]
 		log.V(2).Info("Check if volumes exist")
-		if !Contains(validVolumeIds, volumeId) && tag == nil {
+		if !slices.Contains(validVolumeIds, volumeId) && tag == nil {
 			volume, err := volumeSvc.CreateVolume(ctx, volumeSpec, volumeName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create volume: %w", err)
@@ -183,7 +184,7 @@ func reconcileDeleteVolume(ctx context.Context, machineScope *scope.MachineScope
 	for _, volumeSpec := range volumesSpec {
 		volumeId = volumeSpec.ResourceId
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
-		if !Contains(validVolumeIds, volumeId) {
+		if !slices.Contains(validVolumeIds, volumeId) {
 			controllerutil.RemoveFinalizer(oscmachine, "")
 			return reconcile.Result{}, nil
 		}

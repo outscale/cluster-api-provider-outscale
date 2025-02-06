@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -128,7 +129,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		if resourceMapExist {
 			subnetSpec.ResourceId = subnetRef.ResourceMap[subnetName]
 		}
-		if !Contains(subnetIds, subnetId) && tag == nil {
+		if !slices.Contains(subnetIds, subnetId) && tag == nil {
 			log.V(2).Info("Creating subnet", "subnetName", subnetName)
 			subnet, err := subnetSvc.CreateSubnet(ctx, subnetSpec, netId, clusterName, subnetName)
 			if err != nil {
@@ -167,7 +168,7 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	for _, subnetSpec := range subnetsSpec {
 		subnetId := subnetSpec.ResourceId
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
-		if !Contains(subnetIds, subnetId) {
+		if !slices.Contains(subnetIds, subnetId) {
 			log.V(2).Info("subnet does not exist anymore", "subnetName", subnetName)
 			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
