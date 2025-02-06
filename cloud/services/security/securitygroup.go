@@ -121,32 +121,40 @@ func (s *Service) CreateSecurityGroup(netId string, clusterName string, security
 
 // CreateSecurityGroupRule create the security group rule associated with the security group and the net
 func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error) {
-	var rule osc.SecurityGroupRule
+	var rules []osc.SecurityGroupRule
 	if securityGroupMemberId != "" && ipRange == "" {
 		securityGroupMember := osc.SecurityGroupsMember{
 			SecurityGroupId: &securityGroupMemberId,
 		}
-		rule = osc.SecurityGroupRule{
-			SecurityGroupsMembers: &[]osc.SecurityGroupsMember{securityGroupMember},
-			IpProtocol:            &ipProtocol,
-			FromPortRange:         &fromPortRange,
-			ToPortRange:           &toPortRange,
-		}
+		rules = append(
+			rules, osc.SecurityGroupRule{
+				SecurityGroupsMembers: &[]osc.SecurityGroupsMember{securityGroupMember},
+				IpProtocol:            &ipProtocol,
+				FromPortRange:         &fromPortRange,
+				ToPortRange:           &toPortRange,
+			},
+		)
 	} else if securityGroupMemberId != "" && ipRange != "" {
 		return nil, errors.New("Get Both ipRange and securityGroupMemberId")
 	} else {
-		ipRanges := strings.Split(ipRange, ",")
-		rule = osc.SecurityGroupRule{
-			IpProtocol:    &ipProtocol,
-			IpRanges:      &ipRanges,
-			FromPortRange: &fromPortRange,
-			ToPortRange:   &toPortRange,
+		// One rule needs to be created for every ipRange in the list,
+		// and not one rule with all ip ranges as the Outscale api cannot handle updates of that list
+		// and will return a 409 if the list of ipRanges in a rule is updated
+		for _, ipRange := range strings.Split(ipRange, ",") {
+			rules = append(
+				rules, osc.SecurityGroupRule{
+					IpProtocol:    &ipProtocol,
+					IpRanges:      &[]string{ipRange},
+					FromPortRange: &fromPortRange,
+					ToPortRange:   &toPortRange,
+				},
+			)
 		}
 	}
 	createSecurityGroupRuleRequest := osc.CreateSecurityGroupRuleRequest{
 		Flow:            flow,
 		SecurityGroupId: securityGroupId,
-		Rules:           &[]osc.SecurityGroupRule{rule},
+		Rules:           &rules,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -191,31 +199,39 @@ func (s *Service) CreateSecurityGroupRule(securityGroupId string, flow string, i
 
 // DeleteSecurityGroupRule delete the security group rule associated with the security group and the net
 func (s *Service) DeleteSecurityGroupRule(securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error {
-	var rule osc.SecurityGroupRule
+	var rules []osc.SecurityGroupRule
 	if securityGroupMemberId != "" && ipRange == "" {
 		securityGroupMember := osc.SecurityGroupsMember{
 			SecurityGroupId: &securityGroupMemberId,
 		}
-		rule = osc.SecurityGroupRule{
-			SecurityGroupsMembers: &[]osc.SecurityGroupsMember{securityGroupMember},
-			IpProtocol:            &ipProtocol,
-			FromPortRange:         &fromPortRange,
-			ToPortRange:           &toPortRange,
-		}
+		rules = append(
+			rules, osc.SecurityGroupRule{
+				SecurityGroupsMembers: &[]osc.SecurityGroupsMember{securityGroupMember},
+				IpProtocol:            &ipProtocol,
+				FromPortRange:         &fromPortRange,
+				ToPortRange:           &toPortRange,
+			},
+		)
 	} else {
-		ipRanges := strings.Split(ipRange, ",")
-		rule = osc.SecurityGroupRule{
-			IpProtocol:    &ipProtocol,
-			IpRanges:      &ipRanges,
-			FromPortRange: &fromPortRange,
-			ToPortRange:   &toPortRange,
+		// One rule needs to be created for every ipRange in the list,
+		// and not one rule with all ip ranges as the Outscale api cannot handle updates of that list
+		// and will return a 409 if the list of ipRanges in a rule is updated
+		for _, ipRange := range strings.Split(ipRange, ",") {
+			rules = append(
+				rules, osc.SecurityGroupRule{
+					IpProtocol:    &ipProtocol,
+					IpRanges:      &[]string{ipRange},
+					FromPortRange: &fromPortRange,
+					ToPortRange:   &toPortRange,
+				},
+			)
 		}
 	}
 
 	deleteSecurityGroupRuleRequest := osc.DeleteSecurityGroupRuleRequest{
 		Flow:            flow,
 		SecurityGroupId: securityGroupId,
-		Rules:           &[]osc.SecurityGroupRule{rule},
+		Rules:           &rules,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()

@@ -145,14 +145,14 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 			securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
 			securityGroupTargetSecurityGroupName := securityGroupRuleSpec.TargetSecurityGroupName
 			if securityGroupRuleIpRange == "" && securityGroupTargetSecurityGroupName == "" {
-				return securityGroupRuleTagName, fmt.Errorf("ipRange or targetSecurityGroupName must be set")
+				return securityGroupRuleTagName, fmt.Errorf("ipRange or targetSecurityGroupName must be set on security group rule %s", securityGroupRuleSpec.Name)
 			}
 			if securityGroupRuleIpRange != "" {
 				ipRanges := strings.Split(securityGroupRuleIpRange, ",")
 				for _, ipRange := range ipRanges {
 					_, err = infrastructurev1beta1.ValidateCidr(ipRange)
 					if err != nil {
-						return securityGroupRuleTagName, err
+						return securityGroupRuleTagName, fmt.Errorf("%w invalid CIDR (%s) provided for security group rule %s", err, ipRange, securityGroupRuleSpec.Name)
 					}
 				}
 			}
