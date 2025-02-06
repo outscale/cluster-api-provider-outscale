@@ -1,6 +1,6 @@
 module github.com/outscale-dev/cluster-api-provider-outscale.git
 
-go 1.18
+go 1.23
 
 require (
 	github.com/Jeffail/gabs v1.4.0
