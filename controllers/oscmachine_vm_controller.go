@@ -618,6 +618,11 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		vmId = vmRef.ResourceMap[vmName]
 		vmSpec.ResourceId = vmId
 	}
+	if vmId == "" {
+		machineScope.V(2).Info("vm is already destroyed", "vmName", vmName)
+		controllerutil.RemoveFinalizer(machineScope.OscMachine, "")
+		return reconcile.Result{}, nil
+	}
 	machineScope.V(4).Info("Get vmId", "vmId", vmId)
 	vm, err := vmSvc.GetVm(vmId)
 	if err != nil {
