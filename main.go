@@ -61,12 +61,14 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var watchFilterValue string
+	var syncPeriod time.Duration
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&watchFilterValue, "watch-filter", "", fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
+	flag.DurationVar(&syncPeriod, "sync-period", 10*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
 
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
@@ -86,6 +88,7 @@ func main() {
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
+		SyncPeriod:             &syncPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
