@@ -405,7 +405,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				if vmRef.ResourceMap[vmName] != "" {
 					machineScope.SetVmID(vmRef.ResourceMap[vmName])
 				}
-				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("Vm with Name %s is already created: %w", vmName, err)
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 			return reconcile.Result{}, fmt.Errorf("Vm with Name %s already exists: %w", vmName, err)
 		}
@@ -459,7 +459,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
 				log.V(3).Info("Vm is not yet running", "vmId", vmId)
-				return reconcile.Result{RequeueAfter: 180 * time.Second}, fmt.Errorf("vm %s is not yet running", vmId)
+				return reconcile.Result{RequeueAfter: time.Minute}, nil
 			}
 			vmState = &infrastructurev1beta1.VmStateRunning
 			log.V(3).Info("Vm is running", "vmId", vmId)
