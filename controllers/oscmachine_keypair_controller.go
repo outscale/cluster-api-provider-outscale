@@ -27,7 +27,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -115,28 +114,31 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 // reconcileDeleteKeypair reconcile the destruction of the keypair of the machine
 func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScope, keypairSvc security.OscKeyPairInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	oscmachine := machineScope.OscMachine
 	keypairSpec := machineScope.GetKeypair()
 	keypairName := keypairSpec.Name
+
+	if keypairName == "" {
+		log.V(3).Info("Machine has no keypair")
+		return reconcile.Result{}, nil
+	}
+	deleteKeypair := machineScope.GetDeleteKeypair()
+	if !deleteKeypair {
+		log.V(3).Info("Keeping keypair", "keypair", keypairName)
+		return reconcile.Result{}, nil
+	}
 
 	keypair, err := keypairSvc.GetKeyPair(ctx, keypairName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get keypair: %w", err)
 	}
-	if keypair == nil {
+	if keypair == nil { // FIXME: this never occurs, an error should be returned by GetKeyPair
 		log.V(3).Info("Keypair is already deleted", "keypair", keypairName)
-		controllerutil.RemoveFinalizer(oscmachine, "")
 		return reconcile.Result{}, nil
 	}
-	deleteKeypair := machineScope.GetDeleteKeypair()
-	if deleteKeypair {
-		log.V(2).Info("Deleting keypair", "keypair", keypairName)
-		err = keypairSvc.DeleteKeyPair(ctx, keypairName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot delete keypair: %w", err)
-		}
-	} else {
-		log.V(3).Info("Keeping keypair", "keypair", keypairName)
+	log.V(2).Info("Deleting keypair", "keypair", keypairName)
+	err = keypairSvc.DeleteKeyPair(ctx, keypairName)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot delete keypair: %w", err)
 	}
 
 	return reconcile.Result{}, nil
