@@ -176,7 +176,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)
 	}
 	defer func() {
-		if err := machineScope.Close(); err != nil && reterr == nil {
+		if err := machineScope.Close(ctx); err != nil && reterr == nil {
 			reterr = err
 		}
 	}()

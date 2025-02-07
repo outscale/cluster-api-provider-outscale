@@ -104,8 +104,8 @@ type MachineScope struct {
 }
 
 // Close closes the scope of the machine configuration and status
-func (m *MachineScope) Close() error {
-	return m.patchHelper.Patch(context.TODO(), m.OscMachine)
+func (m *MachineScope) Close(ctx context.Context) error {
+	return m.patchHelper.Patch(ctx, m.OscMachine)
 }
 
 // GetName return the name of the machine
