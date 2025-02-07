@@ -13,7 +13,7 @@ deployment:
   backoffFactor: "1.5"
   # integer defining the remaining number of iterations in which the duration parameter may change
   # -- Remaining number of iterations in which the duration parameter may change
-  backoffSteps: "20"
+  backoffSteps: "10"
   watchFilter: ""
   # -- Annotations to set on pods
   annotations:

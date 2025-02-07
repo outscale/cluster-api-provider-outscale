@@ -69,18 +69,17 @@ func EnvBackoff() wait.Backoff {
 	}
 
 	// BACKOFF_FACTOR float Duration is multiplied by factor each iteration
-	factor, err := strconv.ParseFloat(getEnv("BACKOFF_FACTOR", "2.0"), 32)
+	factor, err := strconv.ParseFloat(getEnv("BACKOFF_FACTOR", "1.5"), 32)
 	if err != nil {
-		factor = 1.8
+		factor = 1.5
 	}
 
 	// BACKOFF_STEPS integer : The remaining number of iterations in which
 	// the duration parameter may change
-	steps, err := strconv.Atoi(getEnv("BACKOFF_STEPS", "20"))
+	steps, err := strconv.Atoi(getEnv("BACKOFF_STEPS", "10"))
 	if err != nil {
-		steps = 13
+		steps = 10
 	}
-	fmt.Printf("Debug Returning backoff with params: duration(%v), factor(%v), steps(%v) \n", duration, factor, steps)
 	return wait.Backoff{
 		Duration: time.Duration(duration) * time.Second,
 		Factor:   factor,
