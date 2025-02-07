@@ -647,16 +647,22 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		log.V(2).Info("Deleting Vm publicip", "publicIpName", publicIpName)
 		err = publicIpSvc.DeletePublicIp(ctx, publicIpIdRef.ResourceMap[publicIpName])
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot delete Vm publicIp: %w", err)
+			return reconcile.Result{}, fmt.Errorf("cannot delete Vm publicIp %s: %w", publicIpName, err)
 		}
 	}
 	if vmSpec.LoadBalancerName != "" {
-		vmIds := []string{vmId}
-		loadBalancerName := vmSpec.LoadBalancerName
-		err := loadBalancerSvc.UnlinkLoadBalancerBackendMachines(ctx, vmIds, loadBalancerName)
+		lb, err := loadBalancerSvc.GetLoadBalancer(ctx, vmSpec.LoadBalancerName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot unlink vm %s with loadBalancerName %s: %w", loadBalancerName, vmId, err)
+			return reconcile.Result{}, fmt.Errorf("cannot unlink loadBalancer %s: %w", vmSpec.LoadBalancerName, err)
 		}
+		if lb.BackendVmIds != nil && slices.Contains(*lb.BackendVmIds, vmId) {
+			err = loadBalancerSvc.UnlinkLoadBalancerBackendMachines(ctx, []string{vmId}, vmSpec.LoadBalancerName)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot unlink loadBalancer %s: %w", vmSpec.LoadBalancerName, err)
+			}
+		}
+
+		// TODO: this cleanups resources from the pool of machines. this should probably move to machinetemplate or cluster.
 		log.V(2).Info("Get list OscMachine")
 		var machineSize int
 		var machineKcpCount int32
@@ -733,7 +739,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 	log.V(2).Info("Deleting vm", "vmName", vmName)
 	err = vmSvc.DeleteVm(ctx, vmId)
 	if err != nil {
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("cannot delete vm: %w", err)
+		return reconcile.Result{}, fmt.Errorf("cannot delete vm: %w", err)
 	}
 	return reconcile.Result{}, nil
 }

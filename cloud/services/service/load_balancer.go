@@ -34,7 +34,7 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_service/loadbalancer_mock.go -package mock_service -source ./load_balancer.go
 type OscLoadBalancerInterface interface {
 	ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
-	GetLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
+	GetLoadBalancer(ctx context.Context, loadBalancerName string) (*osc.LoadBalancer, error)
 	CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
 	DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error
 	LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
@@ -208,11 +208,7 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds [
 }
 
 // GetLoadBalancer retrieve loadBalancer object from spec
-func (s *Service) GetLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return nil, err
-	}
+func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) (*osc.LoadBalancer, error) {
 	filterLoadBalancer := osc.FiltersLoadBalancer{
 		LoadBalancerNames: &[]string{loadBalancerName},
 	}
@@ -495,12 +491,16 @@ func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructur
 
 // CheckLoadBalancerDeregisterVm check vm is deregister as vm backend in loadBalancer
 func (s *Service) CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
+	loadBalancerName, err := s.GetName(ctx, spec)
+	if err != nil {
+		return err
+	}
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	getLoadBalancerDeregisterVm := false
 	for !getLoadBalancerDeregisterVm {
 		time.Sleep(clockInsideLoop * time.Second)
-		loadBalancer, err := s.GetLoadBalancer(ctx, spec)
+		loadBalancer, err := s.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
 			return err
 		}

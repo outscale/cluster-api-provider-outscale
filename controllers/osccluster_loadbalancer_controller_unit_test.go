@@ -581,7 +581,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 	for _, lbtc := range loadBalancerTestCases {
 		t.Run(lbtc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface := SetupWithLoadBalancerMock(t, lbtc.name, lbtc.spec)
-			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName + "-uid"
+			loadBalancerName := lbtc.spec.Network.LoadBalancer.LoadBalancerName
 			loadBalancerDnsName := loadBalancerName + "." + "eu-west-2" + "." + ".lbu.outscale.com"
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
 			subnetRef := clusterScope.GetSubnetRef()
@@ -601,35 +601,27 @@ func TestReconcileLoadBalancer(t *testing.T) {
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
 			}
 
-			loadBalancer := osc.CreateLoadBalancerResponse{
-				LoadBalancer: &osc.LoadBalancer{
-					LoadBalancerName: &loadBalancerName,
-					DnsName:          &loadBalancerDnsName,
-				},
-			}
-			readLoadBalancers := osc.ReadLoadBalancersResponse{
-				LoadBalancers: &[]osc.LoadBalancer{
-					*loadBalancer.LoadBalancer,
-				},
+			loadBalancer := &osc.LoadBalancer{
+				LoadBalancerName: &loadBalancerName,
+				DnsName:          &loadBalancerDnsName,
 			}
 
-			readLoadBalancer := *readLoadBalancers.LoadBalancers
 			if lbtc.expLoadBalancerFound {
 				mockOscLoadBalancerInterface.
 					EXPECT().
-					GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
-					Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
+					GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
+					Return(loadBalancer, lbtc.expDescribeLoadBalancerErr)
 			} else {
 				mockOscLoadBalancerInterface.
 					EXPECT().
-					GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+					GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 					Return(nil, lbtc.expDescribeLoadBalancerErr)
 			}
 			if lbtc.expCreateLoadBalancerFound {
 				mockOscLoadBalancerInterface.
 					EXPECT().
 					CreateLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
-					Return(loadBalancer.LoadBalancer, lbtc.expCreateLoadBalancerErr)
+					Return(loadBalancer, lbtc.expCreateLoadBalancerErr)
 			} else {
 				mockOscLoadBalancerInterface.
 					EXPECT().
@@ -647,7 +639,7 @@ func TestReconcileLoadBalancer(t *testing.T) {
 						mockOscLoadBalancerInterface.
 							EXPECT().
 							ConfigureHealthCheck(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
-							Return(loadBalancer.LoadBalancer, lbtc.expConfigureLoadBalancerErr)
+							Return(loadBalancer, lbtc.expConfigureLoadBalancerErr)
 					} else {
 						mockOscLoadBalancerInterface.
 							EXPECT().
@@ -789,7 +781,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			if lbtc.expLoadBalancerFound {
 				mockOscLoadBalancerInterface.
 					EXPECT().
-					GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+					GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 					Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 				if lbtc.expGetLoadBalancerTagFound {
 					mockOscLoadBalancerInterface.
@@ -800,7 +792,7 @@ func TestReconcileLoadBalancerGet(t *testing.T) {
 			} else {
 				mockOscLoadBalancerInterface.
 					EXPECT().
-					GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+					GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 					Return(nil, lbtc.expDescribeLoadBalancerErr)
 			}
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
@@ -947,7 +939,7 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			if lbtc.expLoadBalancerFound {
 				mockOscLoadBalancerInterface.
 					EXPECT().
-					GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+					GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 					Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 				if lbtc.expGetLoadBalancerTagFound {
 					mockOscLoadBalancerInterface.
@@ -963,7 +955,7 @@ func TestReconcileLoadBalancerGetTag(t *testing.T) {
 			} else {
 				mockOscLoadBalancerInterface.
 					EXPECT().
-					GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+					GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 					Return(nil, lbtc.expDescribeLoadBalancerErr)
 			}
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
@@ -1016,7 +1008,7 @@ func TestReconcileLoadBalancerCreate(t *testing.T) {
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerSpec.LoadBalancerName)).
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -1084,7 +1076,7 @@ func TestReconcileLoadBalancerResourceId(t *testing.T) {
 			loadBalancerSpec := lbtc.spec.Network.LoadBalancer
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerSpec.LoadBalancerName)).
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface)
 			if lbtc.expReconcileLoadBalancerErr != nil {
@@ -1190,7 +1182,7 @@ func TestReconcileDeleteLoadBalancerDelete(t *testing.T) {
 			}
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 			mockOscLoadBalancerInterface.
 				EXPECT().
@@ -1338,7 +1330,7 @@ func TestReconcileDeleteLoadBalancerDeleteTag(t *testing.T) {
 			}
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 			if lbtc.expCheckLoadBalancerDeregisterVmFound {
 				mockOscLoadBalancerInterface.
@@ -1450,7 +1442,7 @@ func TestReconcileDeleteLoadBalancerDeleteWithoutSpec(t *testing.T) {
 			}
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 			if lbtc.expCheckLoadBalancerDeregisterVmFound {
 				mockOscLoadBalancerInterface.
@@ -1540,7 +1532,7 @@ func TestReconcileDeleteLoadBalancerCheck(t *testing.T) {
 			}
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerName)).
 				Return(&readLoadBalancer[0], lbtc.expDescribeLoadBalancerErr)
 
 			if lbtc.expCheckLoadBalancerDeregisterVmFound {
@@ -1592,7 +1584,7 @@ func TestReconcileDeleteLoadBalancerGet(t *testing.T) {
 			loadBalancerSpec.SetDefaultValue()
 			mockOscLoadBalancerInterface.
 				EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(&loadBalancerSpec)).
+				GetLoadBalancer(gomock.Any(), gomock.Eq(loadBalancerSpec.LoadBalancerName)).
 				Return(nil, lbtc.expDescribeLoadBalancerErr)
 			reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, mockOscLoadBalancerInterface)
 			if lbtc.expReconcileDeleteLoadBalancerErr != nil {
