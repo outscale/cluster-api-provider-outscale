@@ -611,8 +611,8 @@ func checkOscLoadBalancerToBeProvisioned(ctx context.Context, oscInfraClusterKey
 	Eventually(func() error {
 		servicesvc := service.NewService(ctx, clusterScope)
 		loadBalancerSpec := clusterScope.GetLoadBalancer()
-		loadbalancer, err := servicesvc.GetLoadBalancer(ctx, loadBalancerSpec)
 		loadBalancerName := loadBalancerSpec.LoadBalancerName
+		loadbalancer, err := servicesvc.GetLoadBalancer(ctx, loadBalancerName)
 		fmt.Fprintf(GinkgoWriter, "Check loadBalancer %s\n", loadBalancerName)
 		if err != nil {
 			return err

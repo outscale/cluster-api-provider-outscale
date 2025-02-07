@@ -152,7 +152,7 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	log := ctrl.LoggerFrom(ctx)
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
-	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(ctx, loadBalancerSpec)
+	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(ctx, loadBalancerName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
 	}
@@ -229,7 +229,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 
-	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(ctx, loadBalancerSpec)
+	loadbalancer, err := loadBalancerSvc.GetLoadBalancer(ctx, loadBalancerName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
