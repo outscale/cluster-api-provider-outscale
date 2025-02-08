@@ -36,9 +36,6 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v={{ .verbosity }}
-        {{- if .watchFilter }}
-        - --watch-filter {{ .watchFilter }}
-        {{- end}}
         image: {{ .proxyImage }}:{{ .proxyImageTag }}
         name: kube-rbac-proxy
         ports:
@@ -59,6 +56,9 @@ spec:
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         - --zap-log-level={{ .verbosity }}
+        {{- if .watchFilter }}
+        - --watch-filter={{ .watchFilter }}
+        {{- end}}
         command:
         - /manager
         env:
