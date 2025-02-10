@@ -109,10 +109,10 @@ spec:
         resources:
           requests:
             memory: {{ .resources.memory.requests | default "128Mi" | quote }}
-            cpu: {{ .resources.cpu.requests | default "500m" | quote }}
+            cpu: {{ .resources.cpu.requests | default "100m" | quote }}
           limits:
-            memory: {{ .resources.memory.limits | default "64Mi" | quote }}
-            cpu: {{ .resources.cpu.limits | default "10m" | quote }}
+            memory: {{ .resources.memory.limits | default "128Mi" | quote }}
+            cpu: {{ .resources.cpu.limits | default "100m" | quote }}
       {{- end }}
       {{- if .securityContext }}
         securityContext:

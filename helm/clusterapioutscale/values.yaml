@@ -35,14 +35,14 @@ deployment:
   resources:
     memory:
       # -- Container memory requests
-      requests: 20Mi
+      requests: 128Mi
       # -- Container memory limits
-      limits: 30Mi
+      limits: 128Mi
     cpu:
       # -- Container cpu requests
       requests: 100m
       # -- Container cpu limts
-      limits: 200m
+      limits: 100m
   # -- Proxy image
   proxyImage: gcr.io/kubebuilder/kube-rbac-proxy
   # -- Proxy image tag
@@ -51,14 +51,14 @@ deployment:
   proxyResources:
     memory:
       # -- Container proxy memory requests
-      requests: 20Mi
+      requests: 64Mi
       # -- Container proxy memory limits
-      limits: 30Mi
+      limits: 64Mi
     cpu:
       # -- Container proxy cpu requests
       requests: 100m
       # -- Container proxy cpu limits
-      limits: 200m
+      limits: 100m
 crd:
   # -- enable crd
   enable: True
