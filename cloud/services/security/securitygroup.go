@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
@@ -138,9 +139,10 @@ func (s *Service) CreateSecurityGroupRule(ctx context.Context, securityGroupId s
 	} else if securityGroupMemberId != "" && ipRange != "" {
 		return nil, errors.New("Get Both ipRange and securityGroupMemberId")
 	} else {
+		ipRanges := strings.Split(ipRange, ",")
 		rule = osc.SecurityGroupRule{
 			IpProtocol:    &ipProtocol,
-			IpRanges:      &[]string{ipRange},
+			IpRanges:      &ipRanges,
 			FromPortRange: &fromPortRange,
 			ToPortRange:   &toPortRange,
 		}
@@ -205,9 +207,10 @@ func (s *Service) DeleteSecurityGroupRule(ctx context.Context, securityGroupId s
 			ToPortRange:           &toPortRange,
 		}
 	} else {
+		ipRanges := strings.Split(ipRange, ",")
 		rule = osc.SecurityGroupRule{
 			IpProtocol:    &ipProtocol,
-			IpRanges:      &[]string{ipRange},
+			IpRanges:      &ipRanges,
 			FromPortRange: &fromPortRange,
 			ToPortRange:   &toPortRange,
 		}
