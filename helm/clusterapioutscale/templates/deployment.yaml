@@ -66,20 +66,17 @@ spec:
           valueFrom:
             secretKeyRef:
               key: access_key
-              name: cluster-api-provider-outscale
-              optional: true
+              name: {{ .secretName }}
         - name: OSC_SECRET_KEY
           valueFrom:
             secretKeyRef:
               key: secret_key
-              name: cluster-api-provider-outscale
-              optional: true
+              name: {{ .secretName }}
         - name: OSC_REGION
           valueFrom:
             secretKeyRef:
               key: region
-              name: cluster-api-provider-outscale
-              optional: true
+              name: {{ .secretName }}
         - name: BACKOFF_DURATION
           value: "{{ .backoffDuration }}"
         - name: BACKOFF_FACTOR
