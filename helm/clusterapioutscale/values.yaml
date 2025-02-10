@@ -59,6 +59,8 @@ deployment:
       requests: 100m
       # -- Container proxy cpu limits
       limits: 200m
+  # -- Name of the secret to find access_key/secret_key/region used by the provider
+  secretName: cluster-api-provider-outscale
 crd:
   # -- enable crd
   enable: True
