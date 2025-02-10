@@ -26,7 +26,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -196,45 +195,16 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
 func reconcileDeleteRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeSpec infrastructurev1beta1.OscRoute, routeTableName string, routeTableSvc security.OscRouteTableInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	osccluster := clusterScope.OscCluster
 
-	routeTablesRef := clusterScope.GetRouteTablesRef()
-
-	resourceName := routeSpec.TargetName + "-" + clusterScope.GetUID()
-	resourceType := routeSpec.TargetType
 	routeName := routeSpec.Name + "-" + clusterScope.GetUID()
-	var resourceId string
-	var err error
-	if resourceType == "gateway" {
-		resourceId, err = getInternetServiceResourceId(resourceName, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else {
-		resourceId, err = getNatResourceId(resourceName, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
 	routeTableId, err := getRouteResourceId(routeName, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.V(3).Info("No route table found, skipping route deletion")
+		return reconcile.Result{}, nil //nolint: nilerr
 	}
-	destinationIpRange := routeSpec.Destination
-	associateRouteTableId := routeTablesRef.ResourceMap[routeTableName]
 
-	log.V(4).Info("Checking if route still exist", "routeName", routeName)
-	routeTableFromRoute, err := routeTableSvc.GetRouteTableFromRoute(ctx, associateRouteTableId, resourceId, resourceType)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("checking route table: %w", err)
-	}
-	if routeTableFromRoute == nil {
-		log.V(3).Info("The route is already deleted", "routeName", routeName)
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
-		return reconcile.Result{}, nil
-	}
 	log.V(2).Info("Deleting route", "routeName", routeName)
-	err = routeTableSvc.DeleteRoute(ctx, destinationIpRange, routeTableId)
+	err = routeTableSvc.DeleteRoute(ctx, routeSpec.Destination, routeTableId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete route: %w", err)
 	}
@@ -367,7 +337,8 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.V(3).Info("No net found, skipping route table deletion")
+		return reconcile.Result{}, nil //nolint: nilerr
 	}
 
 	routeTableIds, err := routeTableSvc.GetRouteTableIdsFromNetIds(ctx, netId)
@@ -375,7 +346,6 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		return reconcile.Result{}, err
 	}
 
-	osccluster := clusterScope.OscCluster
 	log.V(4).Info("Number of routeTable", "routeTable", len(routeTablesSpec))
 	for _, routeTableSpec := range routeTablesSpec {
 		routeTableName := routeTableSpec.Name + "-" + clusterScope.GetUID()
@@ -383,7 +353,6 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 		log.V(2).Info("Get routetable", "routeTable", routeTableName)
 		if !slices.Contains(routeTableIds, routeTableId) {
 			log.V(2).Info("routeTable is already deleted", "routeTableName", routeTableName)
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)

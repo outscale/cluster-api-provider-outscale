@@ -28,7 +28,6 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -224,7 +223,6 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 
 func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	osccluster := clusterScope.OscCluster
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
@@ -235,7 +233,6 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 	if loadbalancer == nil {
 		log.V(4).Info("The loadBalancer is already deleted", "loadBalancerName", loadBalancerName)
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
 	name := loadBalancerName + "-" + clusterScope.GetUID()
