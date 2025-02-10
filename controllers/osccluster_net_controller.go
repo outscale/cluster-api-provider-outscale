@@ -26,7 +26,6 @@ import (
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -103,7 +102,6 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
 func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc net.OscNetInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	osccluster := clusterScope.OscCluster
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -115,7 +113,6 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 	}
 	if net == nil {
 		log.V(4).Info("The net is already deleted", "netName", netName)
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
 	log.V(2).Info("Deleting net", "netName", netName)

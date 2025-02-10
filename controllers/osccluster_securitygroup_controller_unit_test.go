@@ -1986,27 +1986,22 @@ func TestReconcileDeleteSecurityGroupGet(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteSecurityGroupResourceId has several tests to cover the code of the function reconcileDeleteSecurityGroup
-func TestReconcileDeleteSecurityGroupResourceId(t *testing.T) {
+// TestReconcileDeleteSecurityGroup_NoNetKnown tests that reconciliation succeeds if no net is known
+func TestReconcileDeleteSecurityGroup_NoNetKnown(t *testing.T) {
 	securityGroupTestCases := []struct {
 		name                               string
 		spec                               infrastructurev1beta1.OscClusterSpec
-		expNetFound                        bool
 		expReconcileDeleteSecurityGroupErr error
 	}{
 		{
-			name:                               "net does not exist",
-			spec:                               defaultSecurityGroupReconcile,
-			expNetFound:                        false,
-			expReconcileDeleteSecurityGroupErr: errors.New("test-net-uid does not exist"),
+			name: "net does not exist",
+			spec: defaultSecurityGroupReconcile,
 		},
 		{
 			name: "check failed without net and securityGroup spec (retrieve default values cluster-api)",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expNetFound:                        false,
-			expReconcileDeleteSecurityGroupErr: errors.New("cluster-api-net-uid does not exist"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {

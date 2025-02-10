@@ -131,7 +131,7 @@ func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScop
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get keypair: %w", err)
 	}
-	if keypair == nil { // FIXME: this never occurs, an error should be returned by GetKeyPair
+	if keypair == nil {
 		log.V(3).Info("Keypair is already deleted", "keypair", keypairName)
 		return reconcile.Result{}, nil
 	}

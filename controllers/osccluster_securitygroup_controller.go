@@ -348,7 +348,6 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 // reconcileDeleteSecurityGroup reconcile the deletetion of securityGroup of the cluster.
 func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	osccluster := clusterScope.OscCluster
 
 	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
 	networkSpec := clusterScope.GetNetwork()
@@ -365,7 +364,8 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.V(3).Info("No net found, skipping security group deletion")
+		return reconcile.Result{}, nil //nolint: nilerr
 	}
 	securityGroupIds, err := securityGroupSvc.GetSecurityGroupIdsFromNetIds(ctx, netId)
 	if err != nil {
@@ -378,7 +378,6 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 		if !slices.Contains(securityGroupIds, securityGroupId) {
 			log.V(2).Info("securityGroup does not exist anymore", "securityGroupName", securityGroupName)
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
 		securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)

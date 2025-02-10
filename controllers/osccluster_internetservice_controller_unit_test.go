@@ -847,7 +847,7 @@ func TestReconcileDeleteInternetServiceDelete(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteInternetServiceResourceId has several tests to cover the code of the function reconcileDeleteInternetService
+// TestReconcileDeleteInternetServiceResourceId tests that reconcileDeleteInternetService does nothing if no net is known.
 func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 	internetServiceTestCases := []struct {
 		name                                 string
@@ -859,12 +859,10 @@ func TestReconcileDeleteInternetServiceResourceId(t *testing.T) {
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteInternetServiceErr: errors.New("get net: cluster-api-net-uid does not exist"),
 		},
 		{
-			name:                                 "net does not exist",
-			spec:                                 defaultInternetServiceInitialize,
-			expReconcileDeleteInternetServiceErr: errors.New("get net: test-net-uid does not exist"),
+			name: "net does not exist",
+			spec: defaultInternetServiceInitialize,
 		},
 	}
 

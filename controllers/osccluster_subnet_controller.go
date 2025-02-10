@@ -26,7 +26,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -145,7 +144,6 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 // reconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
 func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	osccluster := clusterScope.OscCluster
 	subnetsSpec := clusterScope.GetSubnet()
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -158,7 +156,8 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	}
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.V(3).Info("No net found, skipping subnet deletion")
+		return reconcile.Result{}, nil //nolint: nilerr
 	}
 	subnetIds, err := subnetSvc.GetSubnetIdsFromNetIds(ctx, netId)
 	if err != nil {
@@ -170,7 +169,6 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		if !slices.Contains(subnetIds, subnetId) {
 			log.V(2).Info("subnet does not exist anymore", "subnetName", subnetName)
-			controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 			return reconcile.Result{}, nil
 		}
 		log.V(2).Info("Deleting subnet", "subnetName", subnetName)

@@ -2017,312 +2017,51 @@ func TestReconcileRouteTableLink(t *testing.T) {
 // TestReconcileDeleteRouteDelete has several tests to cover the code of the function reconcileDeleteRoute
 func TestReconcileDeleteRouteDelete(t *testing.T) {
 	routeTestCases := []struct {
-		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
-		expRouteFound                bool
-		expInternetServiceFound      bool
-		expNatServiceFound           bool
-		expDeleteRouteErr            error
-		expGetRouteTableFromRouteErr error
-		expReconcileDeleteRouteErr   error
-	}{
-		{
-			name:                         "delete Route with internetservice (first time reconcile loop)",
-			spec:                         defaultRouteTableGatewayInitialize,
-			expRouteFound:                true,
-			expInternetServiceFound:      true,
-			expNatServiceFound:           false,
-			expDeleteRouteErr:            nil,
-			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   nil,
-		},
-		{
-			name:                         "delete Route with natservice (first time reconcile loop)",
-			spec:                         defaultRouteTableNatReconcile,
-			expRouteFound:                true,
-			expInternetServiceFound:      false,
-			expNatServiceFound:           true,
-			expDeleteRouteErr:            nil,
-			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   nil,
-		},
-		{
-			name:                         "delete Route with internetservice  and gatewayservice (first time reconcile loop)",
-			spec:                         defaultRouteTableGatewayNatReconcile,
-			expRouteFound:                true,
-			expInternetServiceFound:      true,
-			expNatServiceFound:           true,
-			expDeleteRouteErr:            nil,
-			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   nil,
-		},
-		{
-			name:                         "failed to delete route",
-			spec:                         defaultRouteTableGatewayInitialize,
-			expRouteFound:                true,
-			expInternetServiceFound:      true,
-			expNatServiceFound:           false,
-			expDeleteRouteErr:            errors.New("DeleteRoute generic error"),
-			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   errors.New("cannot delete route: DeleteRoute generic error"),
-		},
-	}
-	for _, rttc := range routeTestCases {
-		t.Run(rttc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscRouteTableInterface, _ := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
-
-			internetServiceName := rttc.spec.Network.InternetService.Name + "-uid"
-			internetServiceId := "igw-" + internetServiceName
-			internetServiceRef := clusterScope.GetInternetServiceRef()
-			internetServiceRef.ResourceMap = make(map[string]string)
-			if rttc.expInternetServiceFound {
-				internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
-			}
-
-			natServiceName := rttc.spec.Network.NatService.Name + "-uid"
-			natServiceId := "nat-" + natServiceName
-			natServiceRef := clusterScope.GetNatServiceRef()
-			natServiceRef.ResourceMap = make(map[string]string)
-			if rttc.expNatServiceFound {
-				natServiceRef.ResourceMap[natServiceName] = natServiceId
-			}
-
-			routeRef := clusterScope.GetRouteRef()
-			routeRef.ResourceMap = make(map[string]string)
-
-			routeTablesRef := clusterScope.GetRouteTablesRef()
-			routeTablesRef.ResourceMap = make(map[string]string)
-
-			var associateRouteTableId string
-			var resourceId string
-			routeTablesSpec := rttc.spec.Network.RouteTables
-			for _, routeTableSpec := range routeTablesSpec {
-				routeTableName := routeTableSpec.Name + "-uid"
-				routeTableId := "rtb-" + routeTableName
-				routeTablesRef.ResourceMap[routeTableName] = routeTableId
-				associateRouteTableId = routeTableId
-				routesSpec := routeTableSpec.Routes
-				for _, routeSpec := range routesSpec {
-					destinationIpRange := routeSpec.Destination
-					resourceType := routeSpec.TargetType
-					routeName := routeSpec.Name + "-uid"
-					routeRef.ResourceMap[routeName] = routeTableId
-					if resourceType == "gateway" {
-						resourceId = internetServiceId
-					} else {
-						resourceId = natServiceId
-					}
-					route := osc.CreateRouteResponse{
-						RouteTable: &osc.RouteTable{
-							RouteTableId: &routeTableId,
-						},
-					}
-
-					readRouteTables := osc.ReadRouteTablesResponse{
-						RouteTables: &[]osc.RouteTable{
-							*route.RouteTable,
-						},
-					}
-
-					readRouteTable := *readRouteTables.RouteTables
-					if rttc.expRouteFound {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
-					} else {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(nil, rttc.expGetRouteTableFromRouteErr)
-					}
-					mockOscRouteTableInterface.
-						EXPECT().
-						DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
-						Return(rttc.expDeleteRouteErr)
-
-					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
-					if rttc.expReconcileDeleteRouteErr != nil {
-						require.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
-					} else {
-						require.NoError(t, err)
-					}
-					t.Logf("Find reconcileDeleteRoute %v\n", reconcileDeleteRoute)
-				}
-			}
-		})
-	}
-}
-
-// TestReconcileDeleteRouteGet has several tests to cover the code of the function reconcileDeleteRoute
-func TestReconcileDeleteRouteGet(t *testing.T) {
-	routeTestCases := []struct {
-		name                         string
-		spec                         infrastructurev1beta1.OscClusterSpec
-		expRouteFound                bool
-		expInternetServiceFound      bool
-		expNatServiceFound           bool
-		expGetRouteTableFromRouteErr error
-		expReconcileDeleteRouteErr   error
-	}{
-		{
-			name:                         "failed to get route",
-			spec:                         defaultRouteTableGatewayInitialize,
-			expRouteFound:                false,
-			expInternetServiceFound:      true,
-			expNatServiceFound:           false,
-			expGetRouteTableFromRouteErr: errors.New("GetRouteTable generic error"),
-			expReconcileDeleteRouteErr:   errors.New("checking route table: GetRouteTable generic error"),
-		},
-		{
-			name:                         "remove finalizer (user delete route without cluster-api)",
-			spec:                         defaultRouteTableGatewayInitialize,
-			expRouteFound:                false,
-			expInternetServiceFound:      true,
-			expNatServiceFound:           true,
-			expGetRouteTableFromRouteErr: nil,
-			expReconcileDeleteRouteErr:   nil,
-		},
-	}
-	for _, rttc := range routeTestCases {
-		t.Run(rttc.name, func(t *testing.T) {
-			clusterScope, ctx, mockOscRouteTableInterface, _ := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
-
-			internetServiceName := rttc.spec.Network.InternetService.Name + "-uid"
-			internetServiceId := "igw-" + internetServiceName
-			internetServiceRef := clusterScope.GetInternetServiceRef()
-			internetServiceRef.ResourceMap = make(map[string]string)
-			if rttc.expInternetServiceFound {
-				internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
-			}
-
-			natServiceName := rttc.spec.Network.NatService.Name + "-uid"
-			natServiceId := "nat-" + natServiceName
-			natServiceRef := clusterScope.GetNatServiceRef()
-			natServiceRef.ResourceMap = make(map[string]string)
-			if rttc.expNatServiceFound {
-				natServiceRef.ResourceMap[natServiceName] = natServiceId
-			}
-
-			routeRef := clusterScope.GetRouteRef()
-			routeRef.ResourceMap = make(map[string]string)
-
-			routeTablesRef := clusterScope.GetRouteTablesRef()
-			routeTablesRef.ResourceMap = make(map[string]string)
-
-			var associateRouteTableId string
-			var resourceId string
-			routeTablesSpec := rttc.spec.Network.RouteTables
-			for _, routeTableSpec := range routeTablesSpec {
-				routeTableName := routeTableSpec.Name + "-uid"
-				routeTableId := "rtb-" + routeTableName
-				routeTablesRef.ResourceMap[routeTableName] = routeTableId
-				associateRouteTableId = routeTableId
-				routesSpec := routeTableSpec.Routes
-				for _, routeSpec := range routesSpec {
-					resourceType := routeSpec.TargetType
-					routeName := routeSpec.Name + "-uid"
-					routeRef.ResourceMap[routeName] = routeTableId
-
-					if resourceType == "gateway" {
-						resourceId = internetServiceId
-					} else {
-						resourceId = natServiceId
-					}
-					route := osc.CreateRouteResponse{
-						RouteTable: &osc.RouteTable{
-							RouteTableId: &routeTableId,
-						},
-					}
-
-					readRouteTables := osc.ReadRouteTablesResponse{
-						RouteTables: &[]osc.RouteTable{
-							*route.RouteTable,
-						},
-					}
-
-					readRouteTable := *readRouteTables.RouteTables
-					if rttc.expRouteFound {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
-					} else {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(nil, rttc.expGetRouteTableFromRouteErr)
-					}
-
-					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
-					if rttc.expReconcileDeleteRouteErr != nil {
-						require.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
-					} else {
-						require.NoError(t, err)
-					}
-					t.Logf("Find reconcileDeleteRoute %v\n", reconcileDeleteRoute)
-				}
-			}
-		})
-	}
-}
-
-// TestReconcileDeleteRouteResourceId has several tests to cover the code of the function reconcileDeleteRoute
-func TestReconcileDeleteRouteResourceId(t *testing.T) {
-	routeTestCases := []struct {
 		name                       string
 		spec                       infrastructurev1beta1.OscClusterSpec
-		expInternetServiceFound    bool
-		expNatServiceFound         bool
+		expRouteFound              bool
+		expDeleteRouteErr          error
 		expReconcileDeleteRouteErr error
 	}{
 		{
-			name:                       "natService does not exist",
-			spec:                       defaultRouteTableNatReconcile,
-			expInternetServiceFound:    false,
-			expNatServiceFound:         false,
-			expReconcileDeleteRouteErr: errors.New("test-natservice-uid does not exist"),
+			name: "no net found, do nothing",
+			spec: defaultRouteTableGatewayInitialize,
 		},
 		{
-			name:                       "internetService does not exist",
+			name:                       "failed to delete route",
 			spec:                       defaultRouteTableGatewayInitialize,
-			expInternetServiceFound:    false,
-			expNatServiceFound:         false,
-			expReconcileDeleteRouteErr: errors.New("test-internetservice-uid does not exist"),
+			expRouteFound:              true,
+			expDeleteRouteErr:          errors.New("DeleteRoute generic error"),
+			expReconcileDeleteRouteErr: errors.New("cannot delete route: DeleteRoute generic error"),
 		},
 		{
-			name:                       "route does not exist",
-			spec:                       defaultRouteTableGatewayInitialize,
-			expInternetServiceFound:    true,
-			expNatServiceFound:         true,
-			expReconcileDeleteRouteErr: errors.New("test-route-uid does not exist"),
+			name:          "route is deleted",
+			spec:          defaultRouteTableGatewayInitialize,
+			expRouteFound: true,
 		},
 	}
 	for _, rttc := range routeTestCases {
 		t.Run(rttc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscRouteTableInterface, _ := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
 
-			internetServiceName := rttc.spec.Network.InternetService.Name + "-uid"
-			internetServiceRef := clusterScope.GetInternetServiceRef()
-			internetServiceRef.ResourceMap = make(map[string]string)
-			internetServiceId := "igw-" + internetServiceName
-			if rttc.expInternetServiceFound {
-				internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
-			}
-
-			natServiceName := rttc.spec.Network.NatService.Name + "-uid"
-			natServiceId := "nat-" + natServiceName
-			natServiceRef := clusterScope.GetNatServiceRef()
-			natServiceRef.ResourceMap = make(map[string]string)
-			if rttc.expNatServiceFound {
-				natServiceRef.ResourceMap[natServiceName] = natServiceId
-			}
+			routeRef := clusterScope.GetRouteRef()
+			routeRef.ResourceMap = make(map[string]string)
 
 			routeTablesSpec := rttc.spec.Network.RouteTables
+
 			for _, routeTableSpec := range routeTablesSpec {
-				routeTableName := routeTableSpec.Name + "-uid"
 				routesSpec := routeTableSpec.Routes
+				routeTableName := routeTableSpec.Name + "-uid"
+				routeTableId := "rtb-" + routeTableName
 				for _, routeSpec := range routesSpec {
+					routeName := routeSpec.Name + "-uid"
+					if rttc.expRouteFound {
+						routeRef.ResourceMap[routeName] = routeTableId
+						mockOscRouteTableInterface.
+							EXPECT().
+							DeleteRoute(gomock.Any(), gomock.Eq(routeSpec.Destination), gomock.Eq(routeTableId)).
+							Return(rttc.expDeleteRouteErr)
+					}
 					reconcileDeleteRoute, err := reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, mockOscRouteTableInterface)
 					if rttc.expReconcileDeleteRouteErr != nil {
 						require.EqualError(t, err, rttc.expReconcileDeleteRouteErr.Error(), "reconcileDeleteRoute() should return the same error")
@@ -2349,7 +2088,7 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 		expReconcileDeleteRouteTableErr  error
 	}{
 		{
-			name:                             "delete Routetable with internetservice route (first time reconcile loop) without spec (with default values)",
+			name:                             "delete Routetable without spec (with default values)",
 			expUnlinkRouteTableErr:           nil,
 			expDeleteRouteErr:                nil,
 			expDeleteRouteTableErr:           nil,
@@ -2362,92 +2101,6 @@ func TestReconcileDeleteRouteTableDeleteWithoutSpec(t *testing.T) {
 		t.Run(rttc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscRouteTableInterface, _ := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
 
-			netName := "cluster-api-net-uid"
-			netId := "vpc-" + netName
-			netRef := clusterScope.GetNetRef()
-			netRef.ResourceMap = make(map[string]string)
-			netRef.ResourceMap[netName] = netId
-
-			internetServiceName := "cluster-api-internetservice-uid"
-			internetServiceId := "igw-" + internetServiceName
-			internetServiceRef := clusterScope.GetInternetServiceRef()
-			internetServiceRef.ResourceMap = make(map[string]string)
-			internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
-
-			natServiceName := "cluster-api-natservice-uid"
-			natServiceId := "nat-" + natServiceName
-			natServiceRef := clusterScope.GetNatServiceRef()
-			natServiceRef.ResourceMap = make(map[string]string)
-			natServiceRef.ResourceMap[natServiceName] = natServiceId
-
-			routeRef := clusterScope.GetRouteRef()
-			routeRef.ResourceMap = make(map[string]string)
-
-			routeTablesRef := clusterScope.GetRouteTablesRef()
-			routeTablesRef.ResourceMap = make(map[string]string)
-
-			linkRouteTableRef := clusterScope.GetLinkRouteTablesRef()
-			if len(linkRouteTableRef) == 0 {
-				linkRouteTableRef = make(map[string][]string)
-			}
-			var associateRouteTableId string
-			var resourceId string
-			var routeTableIds []string
-			routeTableName := "cluster-api-routetable-kw-uid"
-			routeTableId := "rtb-" + routeTableName
-			routeTableIds = append(routeTableIds, routeTableId)
-			linkRouteTableId := "eipalloc-" + routeTableName
-			routeTablesRef.ResourceMap[routeTableName] = routeTableId
-			associateRouteTableId = routeTableId
-
-			linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
-			clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
-			mockOscRouteTableInterface.
-				EXPECT().
-				GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
-				Return(routeTableIds, rttc.expGetRouteTableIdsFromNetIdsErr)
-			mockOscRouteTableInterface.
-				EXPECT().
-				UnlinkRouteTable(gomock.Any(), gomock.Eq(linkRouteTableId)).
-				Return(rttc.expUnlinkRouteTableErr)
-
-			mockOscRouteTableInterface.
-				EXPECT().
-				DeleteRouteTable(gomock.Any(), gomock.Eq(routeTableId)).
-				Return(rttc.expDeleteRouteTableErr)
-
-			destinationIpRange := "0.0.0.0/0"
-			resourceType := "nat"
-			routeName := "cluster-api-route-kw-uid"
-			routeRef.ResourceMap[routeName] = routeTableId
-
-			if resourceType == "gateway" {
-				resourceId = internetServiceId
-			} else {
-				resourceId = natServiceId
-			}
-			route := osc.CreateRouteResponse{
-				RouteTable: &osc.RouteTable{
-					RouteTableId: &routeTableId,
-				},
-			}
-
-			readRouteTables := osc.ReadRouteTablesResponse{
-				RouteTables: &[]osc.RouteTable{
-					*route.RouteTable,
-				},
-			}
-
-			readRouteTable := *readRouteTables.RouteTables
-			mockOscRouteTableInterface.
-				EXPECT().
-				GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-				Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
-
-			mockOscRouteTableInterface.
-				EXPECT().
-				DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
-				Return(rttc.expDeleteRouteErr)
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {
 				require.EqualError(t, err, rttc.expReconcileDeleteRouteTableErr.Error(), "reconcileDeleteRouteTable() should return the same error")
@@ -2549,8 +2202,6 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 
-			var associateRouteTableId string
-			var resourceId string
 			var routeTableIds []string
 			routeTablesSpec := rttc.spec.Network.RouteTables
 
@@ -2561,7 +2212,6 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 				linkRouteTableId := "eipalloc-" + routeTableName
 				if rttc.expRouteTableFound {
 					routeTablesRef.ResourceMap[routeTableName] = routeTableId
-					associateRouteTableId = routeTableId
 				}
 
 				if rttc.expLinkRouteTableFound {
@@ -2592,40 +2242,11 @@ func TestReconcileDeleteRouteTableDelete(t *testing.T) {
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
 					destinationIpRange := routeSpec.Destination
-					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					if rttc.expRouteFound {
 						routeRef.ResourceMap[routeName] = routeTableId
 					}
-					if resourceType == "gateway" {
-						resourceId = internetServiceId
-					} else {
-						resourceId = natServiceId
-					}
-					route := osc.CreateRouteResponse{
-						RouteTable: &osc.RouteTable{
-							RouteTableId: &routeTableId,
-						},
-					}
 
-					readRouteTables := osc.ReadRouteTablesResponse{
-						RouteTables: &[]osc.RouteTable{
-							*route.RouteTable,
-						},
-					}
-
-					readRouteTable := *readRouteTables.RouteTables
-					if rttc.expRouteTableFound {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
-					} else {
-						mockOscRouteTableInterface.
-							EXPECT().
-							GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-							Return(nil, rttc.expGetRouteTableFromRouteErr)
-					}
 					mockOscRouteTableInterface.
 						EXPECT().
 						DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
@@ -2789,15 +2410,12 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 			routeRef := clusterScope.GetRouteRef()
 			routeRef.ResourceMap = make(map[string]string)
 
-			var associateRouteTableId string
-			var resourceId string
 			routeTablesSpec := rttc.spec.Network.RouteTables
 			for _, routeTableSpec := range routeTablesSpec {
 				routeTableName := routeTableSpec.Name + "-uid"
 				routeTableId := "rtb-" + routeTableName
 				linkRouteTableId := "eipalloc-" + routeTableName
 				routeTablesRef.ResourceMap[routeTableName] = routeTableId
-				associateRouteTableId = routeTableId
 
 				linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
 				clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
@@ -2814,31 +2432,8 @@ func TestReconcileDeleteRouteTableUnlink(t *testing.T) {
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
 					destinationIpRange := routeSpec.Destination
-					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					routeRef.ResourceMap[routeName] = routeTableId
-					if resourceType == "gateway" {
-						resourceId = internetServiceId
-					} else {
-						resourceId = natServiceId
-					}
-					route := osc.CreateRouteResponse{
-						RouteTable: &osc.RouteTable{
-							RouteTableId: &routeTableId,
-						},
-					}
-
-					readRouteTables := osc.ReadRouteTablesResponse{
-						RouteTables: &[]osc.RouteTable{
-							*route.RouteTable,
-						},
-					}
-
-					readRouteTable := *readRouteTables.RouteTables
-					mockOscRouteTableInterface.
-						EXPECT().
-						GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-						Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					mockOscRouteTableInterface.
 						EXPECT().
 						DeleteRoute(gomock.Any(), gomock.Eq(destinationIpRange), gomock.Eq(routeTableId)).
@@ -2885,17 +2480,6 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			netRef.ResourceMap = make(map[string]string)
 			netRef.ResourceMap[netName] = netId
 
-			internetServiceName := rttc.spec.Network.InternetService.Name + "-uid"
-			internetServiceId := "igw-" + internetServiceName
-			internetServiceRef := clusterScope.GetInternetServiceRef()
-			internetServiceRef.ResourceMap = make(map[string]string)
-			internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
-
-			natServiceName := rttc.spec.Network.NatService.Name + "-uid"
-			natServiceId := "nat-" + natServiceName
-			natServiceRef := clusterScope.GetNatServiceRef()
-			natServiceRef.ResourceMap = make(map[string]string)
-
 			routeRef := clusterScope.GetRouteRef()
 			routeRef.ResourceMap = make(map[string]string)
 
@@ -2904,15 +2488,12 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 			routeTablesRef := clusterScope.GetRouteTablesRef()
 			routeTablesRef.ResourceMap = make(map[string]string)
 
-			var associateRouteTableId string
-			var resourceId string
 			routeTablesSpec := rttc.spec.Network.RouteTables
 			for _, routeTableSpec := range routeTablesSpec {
 				routeTableName := routeTableSpec.Name + "-uid"
 				routeTableId := "rtb-" + routeTableName
 				linkRouteTableId := "eipalloc-" + routeTableName
 				routeTablesRef.ResourceMap[routeTableName] = routeTableId
-				associateRouteTableId = routeTableId
 
 				linkRouteTableRef[routeTableName] = []string{linkRouteTableId}
 				clusterScope.SetLinkRouteTablesRef(linkRouteTableRef)
@@ -2925,31 +2506,9 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 				routesSpec := routeTableSpec.Routes
 				for _, routeSpec := range routesSpec {
 					destinationIpRange := routeSpec.Destination
-					resourceType := routeSpec.TargetType
 					routeName := routeSpec.Name + "-uid"
 					routeRef.ResourceMap[routeName] = routeTableId
-					if resourceType == "gateway" {
-						resourceId = internetServiceId
-					} else {
-						resourceId = natServiceId
-					}
-					route := osc.CreateRouteResponse{
-						RouteTable: &osc.RouteTable{
-							RouteTableId: &routeTableId,
-						},
-					}
 
-					readRouteTables := osc.ReadRouteTablesResponse{
-						RouteTables: &[]osc.RouteTable{
-							*route.RouteTable,
-						},
-					}
-
-					readRouteTable := *readRouteTables.RouteTables
-					mockOscRouteTableInterface.
-						EXPECT().
-						GetRouteTableFromRoute(gomock.Any(), gomock.Eq(associateRouteTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
-						Return(&readRouteTable[0], rttc.expGetRouteTableFromRouteErr)
 					mockOscRouteTableInterface.
 						EXPECT().
 						DeleteRoute(gomock.Any(), destinationIpRange, routeTableId).
@@ -2967,41 +2526,30 @@ func TestReconcileDeleteRouteDeleteRouteTable(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteRouteTableResourceId has several tests to cover the code of the function reconcileDeleteRouteTable
-func TestReconcileDeleteRouteTableResourceId(t *testing.T) {
+// TestReconcileDeleteRouteTable_NoNetKnown tests that reconciliation succeeds if no net is known.
+func TestReconcileDeleteRouteTable_NoNetKnown(t *testing.T) {
 	routeTableTestCases := []struct {
 		name                            string
 		spec                            infrastructurev1beta1.OscClusterSpec
-		expNetFound                     bool
 		expReconcileDeleteRouteTableErr error
 	}{
 		{
-			name: "check work without net, routeTable and route spec (with default values)",
+			name: "with default values",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expNetFound:                     false,
-			expReconcileDeleteRouteTableErr: errors.New("cluster-api-net-uid does not exist"),
 		},
 		{
-			name:                            "net does not exist",
-			spec:                            defaultRouteTableNatReconcile,
-			expNetFound:                     false,
-			expReconcileDeleteRouteTableErr: errors.New("test-net-uid does not exist"),
+			name: "without net",
+			spec: defaultRouteTableNatReconcile,
 		},
 	}
 	for _, rttc := range routeTableTestCases {
 		t.Run(rttc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscRouteTableInterface, _ := SetupWithRouteTableMock(t, rttc.name, rttc.spec)
 
-			netName := rttc.spec.Network.Net.Name + "-uid"
-			netId := "vpc-" + netName
-
 			netRef := clusterScope.GetNetRef()
 			netRef.ResourceMap = make(map[string]string)
-			if rttc.expNetFound {
-				netRef.ResourceMap[netName] = netId
-			}
 
 			reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, mockOscRouteTableInterface)
 			if rttc.expReconcileDeleteRouteTableErr != nil {

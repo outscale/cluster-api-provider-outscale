@@ -824,24 +824,22 @@ func TestReconcileDeleteSubnetDelete(t *testing.T) {
 	}
 }
 
-// TestReconcileDeleteSubnetResourceId has several tests to cover the code of the function reconcileDeleteSubnet
-func TestReconcileDeleteSubnetResourceId(t *testing.T) {
+// TestReconcileDeleteSubnet_NoNetKnown tests that reconciliation suceeds if no net is known
+func TestReconcileDeleteSubnet_NoNetKnown(t *testing.T) {
 	subnetTestCases := []struct {
 		name                        string
 		spec                        infrastructurev1beta1.OscClusterSpec
 		expReconcileDeleteSubnetErr error
 	}{
 		{
-			name:                        "Net does not exist",
-			spec:                        defaultSubnetReconcile,
-			expReconcileDeleteSubnetErr: errors.New("test-net-uid does not exist"),
+			name: "Net does not exist",
+			spec: defaultSubnetReconcile,
 		},
 		{
 			name: "check failed without net and subnet spec (retrieve default values cluster-api)",
 			spec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{},
 			},
-			expReconcileDeleteSubnetErr: errors.New("cluster-api-net-uid does not exist"),
 		},
 	}
 	for _, stc := range subnetTestCases {

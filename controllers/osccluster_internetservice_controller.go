@@ -25,7 +25,6 @@ import (
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -103,17 +102,16 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 // reconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
 func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	osccluster := clusterScope.OscCluster
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceSpec.SetDefaultValue()
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
-
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
+		log.V(3).Info("No net found, skipping internet service deletion")
+		return reconcile.Result{}, nil //nolint: nilerr
 	}
 
 	internetServiceId := internetServiceSpec.ResourceId
@@ -124,7 +122,6 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	}
 	if internetService == nil {
 		log.V(2).Info("The internetservice is already deleted", "internetServiceName", internetServiceName)
-		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil
 	}
 	log.V(2).Info("Unlinking internetservice", "internetServiceName", internetServiceName)
