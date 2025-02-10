@@ -40,7 +40,29 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: loadBalancerName: Invalid value: \"test-webhook@test\": Invalid Description"),
+			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancername: Invalid value: \"test-webhook@test\": Invalid Description"),
+		},
+		{
+			name: "create with bad loadBalancerType",
+			clusterSpec: OscClusterSpec{
+				Network: OscNetwork{
+					LoadBalancer: OscLoadBalancer{
+						LoadBalancerType: "foo",
+					},
+				},
+			},
+			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancertype: Invalid value: \"foo\": Invalid LoadBalancerType"),
+		},
+		{
+			name: "create with bad cidr",
+			clusterSpec: OscClusterSpec{
+				Network: OscNetwork{
+					Net: OscNet{
+						IpRange: "1.2.3.4",
+					},
+				},
+			},
+			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.net.ipRange: Invalid value: \"1.2.3.4\": invalid CIDR address: 1.2.3.4"),
 		},
 	}
 	for _, ctc := range clusterTestCases {

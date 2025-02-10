@@ -20,7 +20,6 @@ import (
 	"errors"
 	"net"
 	"regexp"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -41,7 +40,17 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	var allErrs field.ErrorList
 
 	if spec.Network.LoadBalancer.LoadBalancerName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerName, field.NewPath("loadBalancerName"), ValidateLoadBalancerName); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerName, field.NewPath("network", "loadBalancer", "loadbalancername"), ValidateLoadBalancerName); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+	if spec.Network.LoadBalancer.LoadBalancerType != "" {
+		if errs := ValidateAndReturnErrorList(spec.Network.LoadBalancer.LoadBalancerType, field.NewPath("network", "loadBalancer", "loadbalancertype"), ValidateLoadBalancerType); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+	if spec.Network.Net.IpRange != "" {
+		if errs := ValidateAndReturnErrorList(spec.Network.Net.IpRange, field.NewPath("network", "net", "ipRange"), ValidateCidr); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
@@ -51,9 +60,6 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 
 // ValidateCidr check that the cidr string is a valide CIDR
 func ValidateCidr(cidr string) (string, error) {
-	if !strings.Contains(cidr, "/") {
-		return cidr, errors.New("Invalid Not A CIDR")
-	}
 	_, _, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return cidr, err

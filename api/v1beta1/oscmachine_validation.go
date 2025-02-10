@@ -35,22 +35,25 @@ const (
 func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	var allErrs field.ErrorList
 	if spec.Node.Vm.KeypairName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.KeypairName, field.NewPath("keypairName"), ValidateKeypairName); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.KeypairName, field.NewPath("node", "vm", "keypairName"), ValidateKeypairName); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
+	if spec.Node.KeyPair.Name != "" && spec.Node.Vm.KeypairName != spec.Node.KeyPair.Name {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("node", "keypair", "name"), spec.Node.Vm.KeypairName, "keypairs must be the same in vm and keypair sections"))
+	}
 	if spec.Node.Vm.DeviceName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.DeviceName, field.NewPath("deviceName"), ValidateDeviceName); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.DeviceName, field.NewPath("node", "vm", "deviceName"), ValidateDeviceName); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
 	if spec.Node.Vm.VmType != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.VmType, field.NewPath("vmType"), ValidateVmType); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.VmType, field.NewPath("node", "vm", "vmType"), ValidateVmType); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
 	if spec.Node.Vm.SubregionName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.SubregionName, field.NewPath("subregionName"), ValidateSubregionName); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.SubregionName, field.NewPath("node", "vm", "subregionName"), ValidateSubregionName); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
@@ -58,53 +61,53 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 		volumesSpec := spec.Node.Volumes
 		for _, volumeSpec := range volumesSpec {
 			if volumeSpec.Iops != 0 {
-				if errs := ValidateAndReturnErrorList(volumeSpec.Iops, field.NewPath("iops"), ValidateIops); len(errs) > 0 {
+				if errs := ValidateAndReturnErrorList(volumeSpec.Iops, field.NewPath("node", "volumes", "iops"), ValidateIops); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
 				}
 			}
 
 			if volumeSpec.Size != 0 {
-				if errs := ValidateAndReturnErrorList(volumeSpec.Size, field.NewPath("size"), ValidateSize); len(errs) > 0 {
+				if errs := ValidateAndReturnErrorList(volumeSpec.Size, field.NewPath("node", "volumes", "size"), ValidateSize); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
 				}
 			}
 
 			if volumeSpec.VolumeType != "" {
-				if errs := ValidateAndReturnErrorList(volumeSpec.VolumeType, field.NewPath("volumeType"), ValidateVolumeType); len(errs) > 0 {
+				if errs := ValidateAndReturnErrorList(volumeSpec.VolumeType, field.NewPath("node", "volumes", "volumeType"), ValidateVolumeType); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
 				}
 			}
 			if volumeSpec.Iops != 0 && volumeSpec.Size != 0 && volumeSpec.VolumeType == "io1" {
 				ratioIopsSize := volumeSpec.Iops / volumeSpec.Size
-				if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("size"), ValidateRatioSizeIops); len(errs) > 0 {
+				if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("node", "volumes", "size"), ValidateRatioSizeIops); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
 				}
 			}
 			if volumeSpec.SubregionName != "" {
-				if errs := ValidateAndReturnErrorList(volumeSpec.SubregionName, field.NewPath("subregionName"), ValidateSubregionName); len(errs) > 0 {
+				if errs := ValidateAndReturnErrorList(volumeSpec.SubregionName, field.NewPath("node", "volumes", "subregionName"), ValidateSubregionName); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
 				}
 			}
 		}
 	}
 	if spec.Node.Vm.RootDisk.RootDiskIops != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskIops, field.NewPath("iops"), ValidateIops); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskIops, field.NewPath("node", "vm", "rootDisk", "rootDiskIops"), ValidateIops); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
 	if spec.Node.Vm.RootDisk.RootDiskSize != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskSize, field.NewPath("size"), ValidateSize); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskSize, field.NewPath("node", "vm", "rootDisk", "rootDiskSize"), ValidateSize); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
 	if spec.Node.Vm.RootDisk.RootDiskType != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskType, field.NewPath("diskType"), ValidateVolumeType); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskType, field.NewPath("node", "vm", "rootDisk", "rootDiskType"), ValidateVolumeType); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
 	if spec.Node.Vm.RootDisk.RootDiskIops != 0 && spec.Node.Vm.RootDisk.RootDiskSize != 0 && spec.Node.Vm.RootDisk.RootDiskType == "io1" {
 		ratioIopsSize := spec.Node.Vm.RootDisk.RootDiskIops / spec.Node.Vm.RootDisk.RootDiskSize
-		if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("size"), ValidateRatioSizeIops); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("node", "vm", "rootDisk", "rootDiskSize"), ValidateRatioSizeIops); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
