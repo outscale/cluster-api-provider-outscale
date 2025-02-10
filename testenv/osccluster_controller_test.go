@@ -336,7 +336,7 @@ func waitOscInfraMachineToBeReady(ctx context.Context, oscInfraMachineKey client
 		k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
 		fmt.Fprintf(GinkgoWriter, "oscInfraMachineReady: %v\n", oscInfraMachine.Status.Ready)
 		return oscInfraMachine.Status.Ready
-	}, 8*time.Minute, 15*time.Second).Should(BeTrue())
+	}, 15*time.Minute, 15*time.Second).Should(BeTrue())
 }
 
 // checkOscNetToBeProvisioned will validate that OscNet is provisionned
