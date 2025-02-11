@@ -20,62 +20,16 @@ import (
 	"context"
 	"testing"
 
-	gomock "github.com/golang/mock/gomock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
 var (
-	defaultVmMachineTemplateClusterInitialize = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
-				Name:        "test-net",
-				IpRange:     "10.0.0.0/16",
-				ClusterName: "test-cluster",
-			},
-			Subnets: []*infrastructurev1beta1.OscSubnet{
-				{
-					Name:          "test-subnet",
-					IpSubnetRange: "10.0.0.0/24",
-				},
-			},
-			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
-				{
-					Name:        "test-securitygroup",
-					Description: "test securitygroup",
-					SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-						{
-							Name:          "test-securitygrouprule",
-							Flow:          "Inbound",
-							IpProtocol:    "tcp",
-							IpRange:       "0.0.0.0/0",
-							FromPortRange: 6443,
-							ToPortRange:   6443,
-						},
-					},
-				},
-			},
-			LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-				LoadBalancerName:  "test-loadbalancer",
-				LoadBalancerType:  "internet-facing",
-				SubnetName:        "test-subnet",
-				SecurityGroupName: "test-securitygroup",
-			},
-			PublicIps: []*infrastructurev1beta1.OscPublicIp{
-				{
-					Name: "test-publicip",
-				},
-			},
-		},
-	}
-
 	defaultVmMachineTemplateInitialize = infrastructurev1beta1.OscMachineTemplateSpec{
 		Template: infrastructurev1beta1.OscMachineTemplateResource{
 			Spec: infrastructurev1beta1.OscMachineSpec{
@@ -123,20 +77,23 @@ var (
 			},
 		},
 	}
+	awsTypeVmMachineTemplate = infrastructurev1beta1.OscMachineTemplateSpec{
+		Template: infrastructurev1beta1.OscMachineTemplateResource{
+			Spec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						VmType: "m4.2xlarge",
+					},
+				},
+			},
+		},
+	}
 )
 
 // Setup set osccluster, oscmachine, machineScope and clusterScope
-func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineTemplateSpec) (clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope) {
+func SetupMachineTemplate(t *testing.T, name string, machineSpec infrastructurev1beta1.OscMachineTemplateSpec) (machineTemplateScope *scope.MachineTemplateScope) {
 	t.Logf("Validate to %s", name)
 
-	oscCluster := infrastructurev1beta1.OscCluster{
-		Spec: clusterSpec,
-		ObjectMeta: metav1.ObjectMeta{
-			UID:       "uid",
-			Name:      "test-osc",
-			Namespace: "test-system",
-		},
-	}
 	oscMachineTemplate := infrastructurev1beta1.OscMachineTemplate{
 		Spec: machineSpec,
 		ObjectMeta: metav1.ObjectMeta{
@@ -146,84 +103,46 @@ func SetupMachineTemplate(t *testing.T, name string, clusterSpec infrastructurev
 		},
 	}
 
-	clusterScope = &scope.ClusterScope{
-		Cluster: &clusterv1.Cluster{
-			ObjectMeta: metav1.ObjectMeta{
-				UID:       "uid",
-				Name:      "test-osc",
-				Namespace: "test-system",
-			},
-		},
-		OscCluster: &oscCluster,
-	}
 	machineTemplateScope = &scope.MachineTemplateScope{
 		OscMachineTemplate: &oscMachineTemplate,
 	}
-	return clusterScope, machineTemplateScope
+	return machineTemplateScope
 }
 
-// SetupWithVmCapacityMock set vmMock with clusterScope, machineScope and oscmachine
-func SetupWithVmCapacityMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineTemplateSpec infrastructurev1beta1.OscMachineTemplateSpec) (clusterScope *scope.ClusterScope, machineTemplateScope *scope.MachineTemplateScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface) {
-	clusterScope, machineTemplateScope = SetupMachineTemplate(t, name, clusterSpec, machineTemplateSpec)
-	mockCtrl := gomock.NewController(t)
-	mockOscVmInterface = mock_compute.NewMockOscVmInterface(mockCtrl)
-	ctx = context.Background()
-	return clusterScope, machineTemplateScope, ctx, mockOscVmInterface
-}
-
-// TestReconcileCapacity has several tests to cover the code of the function reconcileCapacity
+// TestReconcileCapacity tests that reconcileCapacity correctly sets Status.Capacity.
 func TestReconcileCapacity(t *testing.T) {
 	capacityTestCases := []struct {
-		name                    string
-		clusterSpec             infrastructurev1beta1.OscClusterSpec
-		machineTemplateSpec     infrastructurev1beta1.OscMachineTemplateSpec
-		expGetCapacityFound     bool
-		expGetCapacityErr       error
-		expReconcileCapacityErr error
+		name                string
+		machineTemplateSpec infrastructurev1beta1.OscMachineTemplateSpec
+		expGetCapacityFound bool
 	}{
 		{
-			name:                    "create vm (first time reconcile loop)",
-			clusterSpec:             defaultVmMachineTemplateClusterInitialize,
-			machineTemplateSpec:     defaultVmMachineTemplateInitialize,
-			expGetCapacityFound:     true,
-			expGetCapacityErr:       nil,
-			expReconcileCapacityErr: nil,
+			name:                "with tina vm type",
+			machineTemplateSpec: defaultVmMachineTemplateInitialize,
+			expGetCapacityFound: true,
+		},
+		{
+			name:                "with aws vm type, no capacity is found",
+			machineTemplateSpec: awsTypeVmMachineTemplate,
 		},
 	}
 	for _, ctc := range capacityTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
-			clusterScope, machineTemplateScope, ctx, mockOscVmInterface := SetupWithVmCapacityMock(t, ctc.name, ctc.clusterSpec, ctc.machineTemplateSpec)
-			clusterName := ctc.clusterSpec.Network.Net.ClusterName
-			tagKey := "OscK8sClusterID/" + clusterName + "-uid"
-			tagValue := "owned"
-			vmType := ctc.machineTemplateSpec.Template.Spec.Node.Vm.VmType
-			capacity := make(corev1.ResourceList)
-			memory, err := resource.ParseQuantity("4G")
-			require.NoError(t, err)
-			cpu, err := resource.ParseQuantity("2")
-			require.NoError(t, err)
-			capacity[corev1.ResourceMemory] = memory
-			capacity[corev1.ResourceCPU] = cpu
-
+			machineTemplateScope := SetupMachineTemplate(t, ctc.name, ctc.machineTemplateSpec)
+			var capacity corev1.ResourceList
 			if ctc.expGetCapacityFound {
-				mockOscVmInterface.
-					EXPECT().
-					GetCapacity(gomock.Any(), gomock.Eq(tagKey), gomock.Eq(tagValue), gomock.Eq(vmType)).
-					Return(capacity, ctc.expReconcileCapacityErr)
-			} else {
-				mockOscVmInterface.
-					EXPECT().
-					GetCapacity(gomock.Any(), gomock.Eq(tagKey), gomock.Eq(tagValue), gomock.Eq(vmType)).
-					Return(nil, ctc.expReconcileCapacityErr)
-			}
-
-			reconcileCapacity, err := reconcileCapacity(ctx, clusterScope, machineTemplateScope, mockOscVmInterface)
-			if ctc.expReconcileCapacityErr != nil {
-				assert.Equal(t, err, ctc.expReconcileCapacityErr.Error(), "reconcileVmCapacity() should return the same error")
-			} else {
+				capacity = make(corev1.ResourceList)
+				memory, err := resource.ParseQuantity("4Gi")
 				require.NoError(t, err)
+				cpu, err := resource.ParseQuantity("2")
+				require.NoError(t, err)
+				capacity[corev1.ResourceMemory] = memory
+				capacity[corev1.ResourceCPU] = cpu
 			}
-			t.Logf("find reconcileCapacity %v\n", reconcileCapacity)
+			reconcileCapacity, err := reconcileCapacity(context.TODO(), machineTemplateScope)
+			require.NoError(t, err)
+			assert.Zero(t, reconcileCapacity)
+			assert.Equal(t, capacity, machineTemplateScope.GetCapacity())
 		})
 	}
 }

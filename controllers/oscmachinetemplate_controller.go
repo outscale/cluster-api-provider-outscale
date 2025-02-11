@@ -18,15 +18,12 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,11 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-// getVmSvc retrieve vmSvc
-func (r *OscMachineTemplateReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
-	return compute.NewService(ctx, &scope)
-}
 
 type OscMachineTemplateReconciler struct {
 	client.Client
@@ -53,7 +45,6 @@ type OscMachineTemplateReconciler struct {
 // Reconcile manages the lifecycle of an OscMachineTemplate object.
 func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(3).Info("Reconcile OscMachineTemplate")
 
 	machineTemplate := &infrastructurev1beta1.OscMachineTemplate{}
 	if err := r.Get(ctx, req.NamespacedName, machineTemplate); err != nil {
@@ -81,61 +72,18 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return r.reconcileDelete(ctx, machineTemplateScope)
 	}
 
-	clusterName := machineTemplateScope.GetClusterName()
-	labels := map[string]string{"ccm": clusterName + "-crs-ccm"}
-	clusterList := &clusterv1.ClusterList{}
-	cluster := clusterv1.Cluster{}
-	err = r.List(ctx, clusterList, client.InNamespace(machineTemplate.Namespace), client.MatchingLabels(labels))
-	if err != nil {
-		log.V(2).Info("Cluster is not available yet")
-		log.Error(err, "failed to get owning cluster.")
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
-	} else {
-		for _, cluster = range clusterList.Items {
-			log.V(4).Info("Cluster", "cluster", cluster.Name)
-		}
-		if len(clusterList.Items) == 0 {
-			log.V(3).Info("OscCluster is not available yet")
-			return reconcile.Result{RequeueAfter: 60 * time.Second}, nil
-		}
-	}
-	oscCluster := &infrastructurev1beta1.OscCluster{}
-	oscClusterName := client.ObjectKey{
-		Namespace: machineTemplate.Namespace,
-		Name:      cluster.Spec.InfrastructureRef.Name,
-	}
-	if err := r.Client.Get(ctx, oscClusterName, oscCluster); err != nil {
-		log.V(3).Info("OscCluster is not available yet")
-		return reconcile.Result{}, err
-	}
-	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
-		Client:     r.Client,
-		Cluster:    &cluster,
-		OscCluster: oscCluster,
-	})
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)
-	}
-	return r.reconcile(ctx, machineTemplateScope, clusterScope)
+	return r.reconcile(ctx, machineTemplateScope)
 }
 
 // reconcile reconcile the creation of the machine
-func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
-	log.V(2).Info("Reconciling OscMachineTemplate")
-
-	vmSvc := r.getVmSvc(ctx, *clusterScope)
-	reconcileCapacity, err := reconcileCapacity(ctx, clusterScope, machineTemplateScope, vmSvc)
-	if err != nil {
-		return reconcileCapacity, err
-	}
-	return reconcileCapacity, nil
+func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope) (reconcile.Result, error) {
+	return reconcileCapacity(ctx, machineTemplateScope)
 }
 
 // reconcileDelete reconcile the deletion of the machine
 func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(2).Info("Reconciling delete OscMachineTemplate")
+	log.V(2).Info("Deleting OscMachineTemplate")
 	// Previous versions set a oscmachine finalizer, remove it.
 	controllerutil.RemoveFinalizer(machineTemplateScope.OscMachineTemplate, "oscmachine.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil

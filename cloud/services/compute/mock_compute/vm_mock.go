@@ -12,7 +12,6 @@ import (
 	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	scope "github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	v1 "k8s.io/api/core/v1"
 )
 
 // MockOscVmInterface is a mock of OscVmInterface interface.
@@ -94,21 +93,6 @@ func (m *MockOscVmInterface) DeleteVm(ctx context.Context, vmId string) error {
 func (mr *MockOscVmInterfaceMockRecorder) DeleteVm(ctx, vmId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVm", reflect.TypeOf((*MockOscVmInterface)(nil).DeleteVm), ctx, vmId)
-}
-
-// GetCapacity mocks base method.
-func (m *MockOscVmInterface) GetCapacity(ctx context.Context, tagKey, tagValue, vmType string) (v1.ResourceList, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCapacity", ctx, tagKey, tagValue, vmType)
-	ret0, _ := ret[0].(v1.ResourceList)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCapacity indicates an expected call of GetCapacity.
-func (mr *MockOscVmInterfaceMockRecorder) GetCapacity(ctx, tagKey, tagValue, vmType interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapacity", reflect.TypeOf((*MockOscVmInterface)(nil).GetCapacity), ctx, tagKey, tagValue, vmType)
 }
 
 // GetVm mocks base method.
