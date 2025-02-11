@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
-	"strings"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -32,8 +30,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -46,7 +42,6 @@ type OscVmInterface interface {
 	GetVmListFromTag(ctx context.Context, tagKey string, tagName string) ([]osc.Vm, error)
 	GetVmState(ctx context.Context, vmId string) (string, error)
 	AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error
-	GetCapacity(ctx context.Context, tagKey string, tagValue string, vmType string) (corev1.ResourceList, error)
 }
 
 // ValidateIpAddrInCidr check that ipaddr is in cidr
@@ -376,45 +371,6 @@ func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue 
 	}
 }
 
-func (s *Service) GetCapacity(ctx context.Context, tagKey string, tagValue string, vmType string) (corev1.ResourceList, error) {
-	capacity := make(corev1.ResourceList)
-	vmList, err := s.GetVmListFromTag(ctx, tagKey, tagValue)
-	if err != nil {
-		return nil, err
-	}
-	var foundVmType bool
-	for _, vm := range vmList {
-		if *vm.VmType == vmType {
-			foundVmType = true
-			vmCore := strings.SplitN(strings.SplitN(vmType, "c", 2)[1], "r", 2)[0]
-			vmMemory := strings.SplitN(strings.SplitN(vmType, "r", 2)[1], "p", 2)[0]
-			core, err := strconv.Atoi(vmCore)
-			if err != nil {
-				return nil, err
-			}
-			cpu, err := GetCPUQuantityFromInt(core)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse CPU cores %s from Vm Type: %s: %w", vmCore, vmType, err)
-			}
-			capacity[corev1.ResourceCPU] = cpu
-			ram, err := strconv.ParseFloat(vmMemory, 32)
-			if err != nil {
-				return nil, err
-			}
-			memory, err := GetMemoryQuantityFromFloat32(float32(ram))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse Memory %s from Vm type: %s: %w", vmMemory, vmType, err)
-			}
-			capacity[corev1.ResourceMemory] = memory
-		}
-	}
-	if !foundVmType {
-		return nil, fmt.Errorf("failed to find server type for %s", vmType)
-	}
-
-	return capacity, nil
-}
-
 // GetVmState return vm state
 func (s *Service) GetVmState(ctx context.Context, vmId string) (string, error) {
 	vm, err := s.GetVm(ctx, vmId)
@@ -461,12 +417,4 @@ func (s *Service) AddCcmTag(ctx context.Context, clusterName string, hostname st
 		return err
 	}
 	return nil
-}
-
-func GetCPUQuantityFromInt(cores int) (resource.Quantity, error) {
-	return resource.ParseQuantity(strconv.Itoa(cores))
-}
-
-func GetMemoryQuantityFromFloat32(memory float32) (resource.Quantity, error) {
-	return resource.ParseQuantity(fmt.Sprintf("%vG", memory))
 }
