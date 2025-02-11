@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -54,51 +55,6 @@ func SetupWithImageMock(t *testing.T, name string, spec infrastructurev1beta1.Os
 	mockOscImageInterface = mock_compute.NewMockOscImageInterface(mockCtrl)
 	ctx = context.Background()
 	return clusterScope, machineScope, ctx, mockOscImageInterface
-}
-
-// TestGetImageResourceId has several tests to cover the code of the function getImageResourceId
-func TestGetImageResourceId(t *testing.T) {
-	imageTestCases := []struct {
-		name                     string
-		spec                     infrastructurev1beta1.OscClusterSpec
-		machineSpec              infrastructurev1beta1.OscMachineSpec
-		expImageFound            bool
-		expGetImageResourceIdErr error
-	}{
-		{
-			name:                     "get ImageId",
-			spec:                     defaultImageClusterInitialize,
-			machineSpec:              defaultImageInitialize,
-			expImageFound:            true,
-			expGetImageResourceIdErr: nil,
-		},
-		{
-			name:                     "failed to get ImageId",
-			spec:                     defaultImageClusterInitialize,
-			machineSpec:              defaultImageInitialize,
-			expImageFound:            false,
-			expGetImageResourceIdErr: errors.New("test-image does not exist"),
-		},
-	}
-	for _, itc := range imageTestCases {
-		t.Run(itc.name, func(t *testing.T) {
-			_, machineScope := SetupMachine(t, itc.name, itc.spec, itc.machineSpec)
-			imageName := itc.machineSpec.Node.Image.Name
-			imageId := "omi-" + imageName
-			imageRef := machineScope.GetImageRef()
-			imageRef.ResourceMap = make(map[string]string)
-			if itc.expImageFound {
-				imageRef.ResourceMap[imageName] = imageId
-			}
-			imageResourceId, err := getImageResourceId(imageName, machineScope)
-			if itc.expGetImageResourceIdErr != nil {
-				require.EqualError(t, err, itc.expGetImageResourceIdErr.Error(), "GetImageResourceId() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-			t.Logf("find imageResourceId %s", imageResourceId)
-		})
-	}
 }
 
 // TestCheckImageFormatParameters has several tests to cover the code of the function checkImageFormatParameters
@@ -163,10 +119,8 @@ func TestReconcileImageGet(t *testing.T) {
 		spec                 infrastructurev1beta1.OscClusterSpec
 		machineSpec          infrastructurev1beta1.OscMachineSpec
 		expImageFound        bool
-		expImageNameFound    bool
+		expImageByName       bool
 		expImageErr          bool
-		expGetImageIdErr     error
-		expGetImageNameErr   error
 		expGetImageErr       error
 		expReconcileImageErr error
 	}{
@@ -180,13 +134,8 @@ func TestReconcileImageGet(t *testing.T) {
 					},
 				},
 			},
-			expImageFound:        true,
-			expImageNameFound:    true,
-			expReconcileImageErr: nil,
-			expGetImageIdErr:     nil,
-			expGetImageNameErr:   nil,
-			expGetImageErr:       nil,
-			expImageErr:          false,
+			expImageFound:  true,
+			expImageByName: true,
 		},
 		{
 			name: "reconcile image",
@@ -203,115 +152,76 @@ func TestReconcileImageGet(t *testing.T) {
 					},
 				},
 			},
-			expImageFound:        true,
-			expImageNameFound:    true,
-			expReconcileImageErr: nil,
-			expGetImageIdErr:     nil,
-			expGetImageNameErr:   nil,
-			expGetImageErr:       nil,
-			expImageErr:          false,
+			expImageFound:  true,
+			expImageByName: true,
 		},
 		{
-			name: "failed to get image",
+			name: "reconcile image by name and account_id",
 			spec: defaultImageClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Image: infrastructurev1beta1.OscImage{
-						Name:       "test-image",
-						ResourceId: "test-image-uid",
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:    "test-vm",
-						ImageId: "omi-image",
-					},
-				},
-			},
-			expImageFound:        true,
-			expImageNameFound:    true,
-			expGetImageIdErr:     nil,
-			expGetImageNameErr:   nil,
-			expGetImageErr:       errors.New("GetImage generic error"),
-			expReconcileImageErr: errors.New("cannot get image: GetImage generic error"),
-			expImageErr:          true,
-		},
-		{
-			name: "find no image",
-			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
-						Name:       "test-image",
-						ResourceId: "test-image-uid",
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:    "test-vm",
-						ImageId: "omi-image",
-					},
-				},
-			},
-			expImageFound:        true,
-			expImageNameFound:    true,
-			expGetImageIdErr:     nil,
-			expGetImageNameErr:   nil,
-			expGetImageErr:       nil,
-			expReconcileImageErr: nil,
-			expImageErr:          true,
-		},
-		{
-			name: "failed to get imageName",
-			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
-						ImageId: "omi-image",
-					},
-				},
-			},
-			expImageFound:        false,
-			expImageNameFound:    false,
-			expGetImageIdErr:     nil,
-			expGetImageNameErr:   errors.New("GetImageName generic error"),
-			expGetImageErr:       nil,
-			expReconcileImageErr: errors.New("cannot get image: GetImageName generic error"),
-			expImageErr:          false,
-		},
-		{
-			name: "failed to get image",
-			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
-						ImageId: "omi-image",
-					},
-				},
-			},
-			expImageFound:        true,
-			expImageNameFound:    false,
-			expGetImageIdErr:     nil,
-			expGetImageNameErr:   nil,
-			expGetImageErr:       errors.New("GetImage generic error"),
-			expReconcileImageErr: errors.New("cannot get image: GetImage generic error"),
-			expImageErr:          false,
-		},
-		{
-			name: "failed to get ImageId",
-			spec: defaultImageClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Image: infrastructurev1beta1.OscImage{
-						Name: "test-image",
+						Name:      "test-image",
+						AccountId: "0123",
 					},
 					Vm: infrastructurev1beta1.OscVm{
 						Name: "test-vm",
 					},
 				},
 			},
-			expImageFound:        false,
-			expImageNameFound:    true,
-			expImageErr:          false,
-			expGetImageIdErr:     errors.New("GetImageId generic error"),
-			expGetImageNameErr:   nil,
-			expGetImageErr:       nil,
+			expImageFound:  true,
+			expImageByName: true,
+		},
+		{
+			name: "error getting image",
+			spec: defaultImageClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Image: infrastructurev1beta1.OscImage{
+						Name:       "test-image",
+						ResourceId: "test-image-uid",
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						Name:    "test-vm",
+						ImageId: "omi-image",
+					},
+				},
+			},
+			expImageFound:        true,
+			expImageByName:       true,
+			expGetImageErr:       errors.New("GetImage generic error"),
+			expReconcileImageErr: errors.New("cannot get image: GetImage generic error"),
+			expImageErr:          true,
+		},
+		{
+			name: "no image was found",
+			spec: defaultImageClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						ImageId: "omi-image",
+					},
+				},
+			},
+			expReconcileImageErr: errors.New("no image found"),
+		},
+		{
+			name: "failed to get image by name",
+			spec: defaultImageClusterInitialize,
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Image: infrastructurev1beta1.OscImage{
+						Name:      "test-image",
+						AccountId: "0123",
+					},
+					Vm: infrastructurev1beta1.OscVm{
+						Name: "test-vm",
+					},
+				},
+			},
+			expImageFound:        true,
+			expImageByName:       true,
+			expGetImageErr:       errors.New("GetImageId generic error"),
 			expReconcileImageErr: errors.New("cannot get image: GetImageId generic error"),
 		},
 	}
@@ -319,53 +229,40 @@ func TestReconcileImageGet(t *testing.T) {
 		t.Run(itc.name, func(t *testing.T) {
 			_, machineScope, ctx, mockOscimageInterface := SetupWithImageMock(t, itc.name, itc.spec, itc.machineSpec)
 			imageName := itc.machineSpec.Node.Image.Name
+			imageAccount := itc.machineSpec.Node.Image.AccountId
 			imageId := itc.machineSpec.Node.Vm.ImageId
 			imageSpec := machineScope.GetImage()
 			imageRef := machineScope.GetImageRef()
-			image := osc.ReadImagesResponse{
-				Images: &[]osc.Image{
-					{
-						ImageId: &imageId,
-					},
-				},
-			}
 			if len(imageRef.ResourceMap) == 0 {
 				imageRef.ResourceMap = make(map[string]string)
 			}
 			imageSpec.ResourceId = imageId
 
-			if itc.expImageNameFound {
+			var image *osc.Image
+			if itc.expImageFound {
+				image = &osc.Image{
+					ImageId: &imageId,
+				}
+			}
+			if itc.expImageByName {
 				mockOscimageInterface.
 					EXPECT().
-					GetImageId(gomock.Any(), gomock.Eq(imageName)).
-					Return(imageId, itc.expGetImageIdErr)
+					GetImageByName(gomock.Any(), gomock.Eq(imageName), gomock.Eq(imageAccount)).
+					Return(image, itc.expGetImageErr)
 			} else {
 				mockOscimageInterface.
 					EXPECT().
-					GetImageName(gomock.Any(), gomock.Eq(imageId)).
-					Return(imageName, itc.expGetImageNameErr)
-			}
-			if itc.expImageFound {
-				if itc.expImageErr {
-					mockOscimageInterface.
-						EXPECT().
-						GetImage(gomock.Any(), gomock.Eq(imageId)).
-						Return(nil, itc.expGetImageErr)
-				} else {
-					mockOscimageInterface.
-						EXPECT().
-						GetImage(gomock.Any(), gomock.Eq(imageId)).
-						Return(&(*image.Images)[0], itc.expGetImageErr)
-				}
+					GetImage(gomock.Any(), gomock.Eq(imageId)).
+					Return(image, itc.expGetImageErr)
 			}
 
 			reconcileImage, err := reconcileImage(ctx, machineScope, mockOscimageInterface)
 			if itc.expReconcileImageErr != nil {
-				require.EqualError(t, err, itc.expReconcileImageErr.Error(), "reconcileImage() should return the same error")
+				require.EqualError(t, err, itc.expReconcileImageErr.Error(), "reconcileImage() should return the right error")
 			} else {
 				require.NoError(t, err)
 			}
-			t.Logf("find reconcileKeyPair %v\n", reconcileImage)
+			assert.Zero(t, reconcileImage)
 		})
 	}
 }

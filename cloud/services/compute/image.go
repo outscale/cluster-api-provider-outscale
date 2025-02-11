@@ -30,8 +30,7 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_compute/image_mock.go -package mock_compute -source ./image.go
 type OscImageInterface interface {
 	GetImage(ctx context.Context, imageId string) (*osc.Image, error)
-	GetImageId(ctx context.Context, imageName string) (string, error)
-	GetImageName(ctx context.Context, imageId string) (string, error)
+	GetImageByName(ctx context.Context, imageName, accountId string) (*osc.Image, error)
 }
 
 // GetImage retrieve image from imageId
@@ -76,10 +75,15 @@ func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, err
 	return &image, nil
 }
 
-// GetImageId retrieve imageId from imageName
-func (s *Service) GetImageId(ctx context.Context, imageName string) (string, error) {
+// GetImageByName retrieve image from imageName/owner
+func (s *Service) GetImageByName(ctx context.Context, imageName, accountId string) (*osc.Image, error) {
 	readImageRequest := osc.ReadImagesRequest{
-		Filters: &osc.FiltersImage{ImageNames: &[]string{imageName}},
+		Filters: &osc.FiltersImage{
+			ImageNames: &[]string{imageName},
+		},
+	}
+	if accountId != "" {
+		readImageRequest.Filters.AccountIds = &[]string{accountId}
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -107,52 +111,12 @@ func (s *Service) GetImageId(ctx context.Context, imageName string) (string, err
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, readImageCallBack)
 	if waitErr != nil {
-		return "", waitErr
+		return nil, waitErr
 	}
 	if len(readImagesResponse.GetImages()) == 0 {
-		return "", nil
+		return nil, nil
 	}
-	imageId := readImagesResponse.GetImages()[0].ImageId
+	image := readImagesResponse.GetImages()[0]
 
-	return *imageId, nil
-}
-
-// GetImageName retrieve imageId from imageName
-func (s *Service) GetImageName(ctx context.Context, imageId string) (string, error) {
-	readImageRequest := osc.ReadImagesRequest{
-		Filters: &osc.FiltersImage{ImageNames: &[]string{imageId}},
-	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	var readImagesResponse osc.ReadImagesResponse
-	readImageCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
-		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readImageRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readImageCallBack)
-	if waitErr != nil {
-		return "", waitErr
-	}
-	if len(readImagesResponse.GetImages()) == 0 {
-		return "", nil
-	}
-	imageName := readImagesResponse.GetImages()[0].ImageName
-	return *imageName, nil
+	return &image, nil
 }

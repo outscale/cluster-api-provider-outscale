@@ -206,14 +206,6 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	// TODO: useless check if bastion already exist, move this code
-	imageId := bastionSpec.ImageId
-	imageName := bastionSpec.ImageName
-	if imageName != "" {
-		if imageId, err = imageSvc.GetImageId(ctx, imageName); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to find image %s: %w", imageName, err)
-		}
-	}
 
 	var publicIpId string
 	var bastionPublicIpName string
@@ -268,6 +260,18 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
 			return reconcile.Result{}, fmt.Errorf("a bastion with name %s already exists", bastionName)
+		}
+
+		imageId := bastionSpec.ImageId
+		if imageId == "" && bastionSpec.ImageName != "" {
+			image, err := imageSvc.GetImageByName(ctx, bastionSpec.ImageName, bastionSpec.ImageAccountId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("unable to find image %s: %w", bastionSpec.ImageName, err)
+			}
+			if image == nil {
+				return reconcile.Result{}, fmt.Errorf("unable to find image %s", bastionSpec.ImageName)
+			}
+			imageId = *image.ImageId
 		}
 
 		keypairName := bastionSpec.KeypairName

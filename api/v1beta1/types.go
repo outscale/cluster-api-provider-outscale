@@ -334,6 +334,7 @@ type OscNodeResource struct {
 
 type OscImage struct {
 	Name       string `json:"name,omitempty"`
+	AccountId  string `json:"accountId,omitempty"`
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
@@ -384,6 +385,7 @@ type OscBastion struct {
 	Name               string                    `json:"name,omitempty"`
 	ImageId            string                    `json:"imageId,omitempty"`
 	ImageName          string                    `json:"imageName,omitempty"`
+	ImageAccountId     string                    `json:"imageAccountId,omitempty"`
 	KeypairName        string                    `json:"keypairName,omitempty"`
 	VmType             string                    `json:"vmType,omitempty"`
 	DeviceName         string                    `json:"deviceName,omitempty"`
@@ -420,7 +422,6 @@ var (
 
 	DefaultVmName          string = "cluster-api-vm"
 	DefaultVmSubregionName string = "eu-west-2a"
-	DefaultVmImageId       string = "ami-e1a786f1"
 
 	DefaultVmKeypairName string = "cluster-api"
 	DefaultVmType        string = "tinav3.c4r8p1"
@@ -743,9 +744,6 @@ func (vm *OscVm) SetDefaultValue() {
 			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroupKw, securityGroupNode}
 		}
 	}
-	if vm.ImageId == "" {
-		vm.ImageId = DefaultVmImageId
-	}
 	if vm.KeypairName == "" {
 		vm.KeypairName = DefaultVmKeypairName
 	}
@@ -795,13 +793,6 @@ func (bastion *OscBastion) SetDefaultValue() {
 		if bastion.SubregionName == "" {
 			bastion.SubregionName = DefaultVmBastionSubregionName
 		}
-	}
-}
-
-// SetDefaultValue set the image default values
-func (node *OscNode) SetImageDefaultValue() {
-	if node.Image.Name == "" {
-		node.Image.Name = DefaultVmImageId
 	}
 }
 
