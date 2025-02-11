@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -106,7 +107,7 @@ var (
 		},
 	}
 
-	defaultBastionImageInitialize = infrastructurev1beta1.OscClusterSpec{
+	defaultBastionImageNameInitialize = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:        "test-net",
@@ -148,13 +149,13 @@ var (
 				},
 			},
 			Bastion: infrastructurev1beta1.OscBastion{
-				Enable:      true,
-				ClusterName: "test-cluster",
-				Name:        "test-bastion",
-				ImageId:     "ami-00000000",
-				ImageName:   "ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23",
-				DeviceName:  "/dev/xvdb",
-				KeypairName: "rke",
+				Enable:         true,
+				ClusterName:    "test-cluster",
+				Name:           "test-bastion",
+				ImageName:      "ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23",
+				ImageAccountId: "0123",
+				DeviceName:     "/dev/xvdb",
+				KeypairName:    "rke",
 				RootDisk: infrastructurev1beta1.OscRootDisk{
 
 					RootDiskSize: 30,
@@ -1713,17 +1714,18 @@ func TestReconcileBastion(t *testing.T) {
 // TestReconcileBastionResourceId has serveral tests to cover the code of function reconcileBastion
 func TestReconcileBastionResourceId(t *testing.T) {
 	bastionTestCases := []struct {
-		name                   string
-		clusterSpec            infrastructurev1beta1.OscClusterSpec
-		expLinkPublicIpFound   bool
-		expGetImageNameFound   bool
-		expSubnetFound         bool
-		expPublicIpFound       bool
-		expSecurityGroupFound  bool
-		expTagFound            bool
-		expGetImageIdErr       error
-		expReadTagErr          error
-		expReconcileBastionErr error
+		name                     string
+		clusterSpec              infrastructurev1beta1.OscClusterSpec
+		expLinkPublicIpFound     bool
+		expGetImageNameFound     bool
+		expSubnetFound           bool
+		expPublicIpFound         bool
+		expSecurityGroupFound    bool
+		expGetVmListFromTagFound bool
+		expTagFound              bool
+		expGetImageIdErr         error
+		expReadTagErr            error
+		expReconcileBastionErr   error
 	}{
 		{
 			name:                   "PublicIp does not exist",
@@ -1763,16 +1765,17 @@ func TestReconcileBastionResourceId(t *testing.T) {
 			expReconcileBastionErr: errors.New("test-securitygroup-uid does not exist"),
 		},
 		{
-			name:                   "failed to get ImageId",
-			clusterSpec:            defaultBastionImageInitialize,
-			expGetImageNameFound:   true,
-			expSubnetFound:         true,
-			expPublicIpFound:       false,
-			expLinkPublicIpFound:   false,
-			expSecurityGroupFound:  false,
-			expGetImageIdErr:       errors.New("GetImageId generic error"),
-			expReadTagErr:          nil,
-			expReconcileBastionErr: errors.New("unable to find image ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23: GetImageId generic error"),
+			name:                     "error in GetImageByName",
+			clusterSpec:              defaultBastionImageNameInitialize,
+			expGetImageNameFound:     true,
+			expSubnetFound:           true,
+			expPublicIpFound:         true,
+			expLinkPublicIpFound:     false,
+			expSecurityGroupFound:    true,
+			expGetVmListFromTagFound: true,
+			expGetImageIdErr:         errors.New("GetImageId generic error"),
+			expReadTagErr:            nil,
+			expReconcileBastionErr:   errors.New("unable to find image ubuntu-2004-2004-kubernetes-v1.22.11-2022-11-23: GetImageId generic error"),
 		},
 		/*{
 			name:                   "failed to get tag",
@@ -1824,8 +1827,6 @@ func TestReconcileBastionResourceId(t *testing.T) {
 				privateIps = append(privateIps, privateIp)
 			}
 
-			imageName := btc.clusterSpec.Network.Bastion.ImageName
-			imageId := "ami-00000000"
 			var securityGroupIds []string
 			bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
@@ -1839,11 +1840,23 @@ func TestReconcileBastionResourceId(t *testing.T) {
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
+			if btc.expGetVmListFromTagFound {
+				mockOscVmInterface.
+					EXPECT().
+					GetVmListFromTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(bastionName)).
+					Return(nil, nil)
+			}
+
 			if btc.expGetImageNameFound {
+				imageName := btc.clusterSpec.Network.Bastion.ImageName
+				imageAccount := btc.clusterSpec.Network.Bastion.ImageAccountId
+				image := &osc.Image{
+					ImageId: ptr.To("ami-00000000"),
+				}
 				mockOscImageInterface.
 					EXPECT().
-					GetImageId(gomock.Any(), gomock.Eq(imageName)).
-					Return(imageId, btc.expGetImageIdErr)
+					GetImageByName(gomock.Any(), gomock.Eq(imageName), gomock.Eq(imageAccount)).
+					Return(image, btc.expGetImageIdErr)
 			}
 			tag := osc.Tag{
 				ResourceId: &vmId,

@@ -8,7 +8,7 @@ spec:
     clusterName: test-cluster-api
     image:
       name: ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14
-      accountID: "01234"
+      accountId: "01234"
     keypair:
       name: cluster-api
     vm:

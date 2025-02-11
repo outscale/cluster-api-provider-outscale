@@ -18,8 +18,8 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"time"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -47,55 +47,47 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 	return "", nil
 }
 
-// getImageResourceId return the iamgeName from the resourceMap base on resourceName (tag name + cluster uid)
-func getImageResourceId(resourceName string, machineScope *scope.MachineScope) (string, error) {
-	imageRef := machineScope.GetImageRef()
-	if imageId, ok := imageRef.ResourceMap[resourceName]; ok {
-		return imageId, nil
-	} else {
-		return "", fmt.Errorf("%s does not exist", resourceName)
-	}
-}
-
 // reconcileImage reconcile the image of the machine
 func reconcileImage(ctx context.Context, machineScope *scope.MachineScope, imageSvc compute.OscImageInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	imageSpec := machineScope.GetImage()
+
 	imageRef := machineScope.GetImageRef()
-	imageName := imageSpec.Name
-	imageId := machineScope.GetImageId()
+	if len(imageRef.ResourceMap) > 0 {
+		log.V(4).Info("Image found in resource map")
+		return reconcile.Result{}, nil
+	}
+
 	var image *osc.Image
 	var err error
-
-	if len(imageRef.ResourceMap) == 0 {
-		imageRef.ResourceMap = make(map[string]string)
-	}
-
-	if imageName != "" {
-		log.V(4).Info("Finding image id", "imageName", imageName)
-		if imageId, err = imageSvc.GetImageId(ctx, imageName); err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get image: %w", err)
+	if imageSpec.Name != "" {
+		if imageSpec.AccountId == "" {
+			log.V(2).Info("[security] It is recommended to set the image account to control the origin of the image.")
 		}
+		image, err = imageSvc.GetImageByName(ctx, imageSpec.Name, imageSpec.AccountId)
 	} else {
-		log.V(4).Info("Finding image name", "imageId", imageId)
-		if imageName, err = imageSvc.GetImageName(ctx, imageId); err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get image: %w", err)
-		}
+		image, err = imageSvc.GetImage(ctx, machineScope.GetImageId())
 	}
-	if image, err = imageSvc.GetImage(ctx, imageId); err != nil {
+	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get image: %w", err)
 	}
+	if image == nil {
+		return reconcile.Result{}, errors.New("no image found")
+	}
+	imageName, imageId := image.GetImageName(), image.GetImageId()
+	log.V(3).Info("Image found", "name", imageName, "id", imageId)
+
+	if imageRef.ResourceMap == nil {
+		imageRef.ResourceMap = make(map[string]string)
+	}
+	// TODO: it might be better to use a constant key, not the image name
+	// TODO: check use of imageSpec.ResourceId, as imageId is not set on the vm
 	if imageSpec.ResourceId != "" {
 		imageRef.ResourceMap[imageName] = imageSpec.ResourceId
 	} else {
 		machineScope.SetImageId(imageId)
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
-	}
-	if image == nil { // FIXME: This should never occur: if Getimage returns no error, image should be set
-		log.V(2).Info("Image is nil")
-		return reconcile.Result{}, err
-	} else {
 		imageRef.ResourceMap[imageName] = imageId
 	}
+
 	return reconcile.Result{}, nil
 }

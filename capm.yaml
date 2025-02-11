@@ -28,6 +28,8 @@ spec:
       - v1
   group: infrastructure.cluster.x-k8s.io
   names:
+    categories:
+    - cluster-api
     kind: OscCluster
     listKind: OscClusterList
     plural: oscclusters
@@ -84,6 +86,8 @@ spec:
                         type: string
                       enable:
                         type: boolean
+                      imageAccountId:
+                        type: string
                       imageId:
                         type: string
                       imageName:
@@ -144,6 +148,8 @@ spec:
                   image:
                     description: The image configuration
                     properties:
+                      accountId:
+                        type: string
                       name:
                         type: string
                       resourceId:
@@ -673,6 +679,8 @@ spec:
                     type: string
                   image:
                     properties:
+                      accountId:
+                        type: string
                       name:
                         type: string
                       resourceId:
@@ -1025,6 +1033,8 @@ spec:
                             type: string
                           image:
                             properties:
+                              accountId:
+                                type: string
                               name:
                                 type: string
                               resourceId:

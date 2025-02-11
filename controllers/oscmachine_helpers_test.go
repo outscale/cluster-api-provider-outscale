@@ -34,16 +34,12 @@ func patchMoveMachine() patchOSCMachineFunc {
 	}
 }
 
-func mockImageFoundByName(name string) mockFunc {
+func mockImageFoundByName(name, account string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ImageMock.
 			EXPECT().
-			GetImageId(gomock.Any(), gomock.Eq(name)).
-			Return(defaultImageId, nil)
-		s.ImageMock.
-			EXPECT().
-			GetImage(gomock.Any(), gomock.Eq(defaultImageId)).
-			Return(&osc.Image{}, nil)
+			GetImageByName(gomock.Any(), gomock.Eq(name), gomock.Eq(account)).
+			Return(&osc.Image{ImageId: ptr.To(defaultImageId)}, nil)
 	}
 }
 

@@ -45,6 +45,7 @@ type OscClusterStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=oscclusters,scope=Namespaced,categories=cluster-api
 
 // OscCluster is the Schema for the oscclusters API
 type OscCluster struct {

@@ -56,32 +56,17 @@ func (mr *MockOscImageInterfaceMockRecorder) GetImage(ctx, imageId any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockOscImageInterface)(nil).GetImage), ctx, imageId)
 }
 
-// GetImageId mocks base method.
-func (m *MockOscImageInterface) GetImageId(ctx context.Context, imageName string) (string, error) {
+// GetImageByName mocks base method.
+func (m *MockOscImageInterface) GetImageByName(ctx context.Context, imageName, accountId string) (*osc.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageId", ctx, imageName)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "GetImageByName", ctx, imageName, accountId)
+	ret0, _ := ret[0].(*osc.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetImageId indicates an expected call of GetImageId.
-func (mr *MockOscImageInterfaceMockRecorder) GetImageId(ctx, imageName any) *gomock.Call {
+// GetImageByName indicates an expected call of GetImageByName.
+func (mr *MockOscImageInterfaceMockRecorder) GetImageByName(ctx, imageName, accountId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageId", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageId), ctx, imageName)
-}
-
-// GetImageName mocks base method.
-func (m *MockOscImageInterface) GetImageName(ctx context.Context, imageId string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageName", ctx, imageId)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImageName indicates an expected call of GetImageName.
-func (mr *MockOscImageInterfaceMockRecorder) GetImageName(ctx, imageId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageName), ctx, imageId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageByName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageByName), ctx, imageName, accountId)
 }

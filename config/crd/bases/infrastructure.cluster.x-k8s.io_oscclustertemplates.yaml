@@ -116,6 +116,8 @@ spec:
                                 type: string
                               enable:
                                 type: boolean
+                              imageAccountId:
+                                type: string
                               imageId:
                                 type: string
                               imageName:
@@ -177,6 +179,8 @@ spec:
                           image:
                             description: The image configuration
                             properties:
+                              accountId:
+                                type: string
                               name:
                                 type: string
                               resourceId:
