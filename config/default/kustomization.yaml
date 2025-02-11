@@ -75,3 +75,7 @@ vars:
     kind: Service
     name: webhook-service
     version: v1
+images:
+- name: controller
+  newName: outscale/cluster-api-outscale-controllers
+  newTag: dev
