@@ -16,7 +16,7 @@ spec:
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:
     - name: subregionName
-      value: eu-west-2a
+      value: ${OSC_SUBREGION_NAME}
     - name: controlPlaneVmType
       value: tinav6.c4r8p2
     - name: workerVmType

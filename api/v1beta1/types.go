@@ -541,7 +541,7 @@ var (
 	DefaultIpProtocolEtcd                       string = "tcp"
 	DefaultRuleIpRangeEtcd                      string = "10.0.4.0/24"
 	DefaultFromPortRangeEtcd                    int32  = 2378
-	DefaultToPortRangeEtcd                      int32  = 2379
+	DefaultToPortRangeEtcd                      int32  = 2380
 	DefaultSecurityGroupRuleKcpBgpName          string = "cluster-api-securitygrouprule-kcp-bgp"
 	DefaultFlowKcpBgp                           string = "Inbound"
 	DefaultIpProtocolKcpBgp                     string = "tcp"
