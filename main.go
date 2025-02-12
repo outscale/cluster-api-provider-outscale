@@ -81,6 +81,8 @@ func main() {
 		Scheme: scheme,
 		Metrics: server.Options{
 			BindAddress: metricsAddr,
+			// Enable authentication and authorization for metrics
+			//WithAuthenticationAndAuthorization: true,
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
