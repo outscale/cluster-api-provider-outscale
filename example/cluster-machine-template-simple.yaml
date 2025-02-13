@@ -150,7 +150,7 @@ spec:
 # IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
             ipRange: "10.0.4.0/24"
             fromPortRange: 2378
-            toPortRange: 2379
+            toPortRange: 2380
           - name: cluster-api-securitygrouprule-kubelet-kcp
             flow: Inbound
             ipProtocol: tcp
