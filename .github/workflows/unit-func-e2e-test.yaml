@@ -98,7 +98,7 @@ jobs:
         make docker-push
         docker image prune -a -f
       env:
-        IMG: ${{ steps.oks.outputs.harbor_host }}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${{ steps.oks.outputs.harbor_host }}:80/cluster-api-outscale-controller:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: Create ns and set credential
       run: make credential

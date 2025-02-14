@@ -77,9 +77,9 @@ ret=$?
 if [ $ret -ne 0 ]; then
     exit $ret
 fi
-# wait "harbor" "oks-cli cluster kubectl get svc harbor --cluster-name $cluster_name" ".lbu.outscale.com"
-
+wait "harbor" "oks-cli cluster kubectl get svc harbor --cluster-name $cluster_name" ".lbu.outscale.com"
 harbor_host=`kubectl get svc harbor -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
+
 # helm upgrade harbor harbor/harbor --set "expose.type=loadBalancer" \
 #     --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
 #     --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
