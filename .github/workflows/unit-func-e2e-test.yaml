@@ -43,19 +43,20 @@ jobs:
         region=`echo $az|sed 's/[a-d]$//'`
         echo "osc_region=$region" | tee -a $GITHUB_OUTPUT
         echo "osc_subregion=$az" | tee -a $GITHUB_OUTPUT
+        echo "OSC_REGION=$region" >> $GITHUB_ENV
         if [ "$region" = "eu-west-2" ]; then
-          echo "osc_access_key=${{ secrets.OSC_ACCESS_KEY_EU_WEST_2 }}" >> $GITHUB_OUTPUT
-          echo "osc_secret_key=${{ secrets.OSC_SECRET_KEY_EU_WEST_2 }}" >> $GITHUB_OUTPUT
+          echo "OSC_ACCESS_KEY=${{ secrets.OSC_ACCESS_KEY_EU_WEST_2 }}" >> $GITHUB_ENV
+          echo "OSC_SECRET_KEY=${{ secrets.OSC_SECRET_KEY_EU_WEST_2 }}" >> $GITHUB_ENV
         fi
         if [ "$region" = "us-east-2" ]; then
-          echo "osc_access_key=${{ secrets.OSC_ACCESS_KEY_US_EAST_2 }}" >> $GITHUB_OUTPUT
-          echo "osc_secret_key=${{ secrets.OSC_SECRET_KEY_US_EAST_2 }}" >> $GITHUB_OUTPUT
+          echo "OSC_ACCESS_KEY=${{ secrets.OSC_ACCESS_KEY_US_EAST_2 }}" >> $GITHUB_ENV
+          echo "OSC_SECRET_KEY=${{ secrets.OSC_SECRET_KEY_US_EAST_2 }}" >> $GITHUB_ENV
         fi
     - uses: outscale/frieza-github-actions/frieza-clean@master
       with:
-        access_key: ${{steps.region.outputs.osc_access_key}}
-        secret_key: ${{steps.region.outputs.osc_secret_key}}
-        region: ${{steps.region.outputs.osc_region}}
+        access_key: ${{env.OSC_ACCESS_KEY}}
+        secret_key: ${{env.OSC_SECRET_KEY}}
+        region: ${{env.OSC_REGION}}
     - name: Public IP
       id: ip
       uses: haythem/public-ip@v1.3
@@ -80,12 +81,12 @@ jobs:
         max-restarts: -1
       env:
         KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
-    - name: Retrieve Service IP
-      run: |
-        echo HARBOR_EXT_HOST=$(kubectl get -o jsonpath="{.status.loadBalancer.ingress[0].hostname}" services harbor) >> $GITHUB_ENV
-        echo HARBOR_EXT_PORT=$(kubectl get -o jsonpath="{.spec.ports[0].port}" services harbor) >> $GITHUB_ENV
-      env:
-        KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
+    # - name: Retrieve Service IP
+    #   run: |
+    #     echo HARBOR_EXT_HOST=$(kubectl get -o jsonpath="{.status.loadBalancer.ingress[0].hostname}" services harbor) >> $GITHUB_ENV
+    #     echo HARBOR_EXT_PORT=$(kubectl get -o jsonpath="{.spec.ports[0].port}" services harbor) >> $GITHUB_ENV
+    #   env:
+    #     KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
     - name: Install golang
       uses: actions/setup-go@v5
       with:
@@ -104,9 +105,6 @@ jobs:
       run: make credential
       shell: bash
       env:
-         OSC_ACCESS_KEY: ${{steps.region.outputs.osc_access_key}}
-         OSC_SECRET_KEY: ${{steps.region.outputs.osc_secret_key}}
-         OSC_REGION: ${{steps.region.outputs.osc_region}}
          KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
     - name: Deploy cluster-api
       run: make deploy-clusterapi
@@ -136,9 +134,6 @@ jobs:
       id: func-test
       env:
         KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
-        OSC_ACCESS_KEY: ${{steps.region.outputs.osc_access_key}}
-        OSC_SECRET_KEY: ${{steps.region.outputs.osc_secret_key}}
-        OSC_REGION: ${{steps.region.outputs.osc_region}}
         OSC_SUBREGION_NAME: ${{steps.region.outputs.osc_subregion}}
         IMG_UPGRADE_FROM: ${{secrets.IMG_UPGRADE_FROM}}
     - name: Get log capo master
