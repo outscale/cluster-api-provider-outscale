@@ -116,10 +116,13 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 	} else {
 		natServicesSpec = clusterScope.GetNatServices()
 	}
-
 	for _, natServiceSpec := range natServicesSpec {
 		natServiceRef := clusterScope.GetNatServiceRef()
 		natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
+		if natServiceSpec.ResourceId != "" && natServiceSpec.SkipReconcile {
+			natServiceRef.ResourceMap[natServiceName] = natServiceSpec.ResourceId
+			continue
+		}
 		var natService *osc.NatService
 		publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
 		publicIpId, err := getPublicIpResourceId(publicIpName, clusterScope)
@@ -169,9 +172,24 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 // reconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
 func reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
+	var natServicesSpec []*infrastructurev1beta1.OscNatService
+	networkSpec := clusterScope.GetNetwork()
+	if networkSpec.NatServices == nil {
+		// Add backwards compatibility with NatService parameter that used single NatService
+		natServiceSpec := clusterScope.GetNatService()
+		natServiceSpec.SetDefaultValue()
+		natServicesSpec = append(natServicesSpec, natServiceSpec)
+	} else {
+		natServicesSpec = clusterScope.GetNatServices()
+	}
 	natServiceRef := clusterScope.GetNatServiceRef()
-
-	for natServiceName, natServiceId := range natServiceRef.ResourceMap {
+	for _, natServiceSpec := range natServicesSpec {
+		natServiceId := natServiceSpec.ResourceId
+		natServiceName := natServiceSpec.Name
+		if natServiceId != "" && natServiceSpec.SkipReconcile {
+			log.V(2).Info("Not deleting natService because skip reconcile true'", "natServiceId", natServiceId)
+			continue
+		}
 		natService, err := natServiceSvc.GetNatService(ctx, natServiceId)
 		if err != nil {
 			return reconcile.Result{}, err

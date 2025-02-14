@@ -124,12 +124,21 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 	publicIpsSpec := clusterScope.GetPublicIp()
 	var publicIpId string
 	publicIpRef := clusterScope.GetPublicIpRef()
+	if len(publicIpRef.ResourceMap) == 0 {
+		publicIpRef.ResourceMap = make(map[string]string)
+	}
 	var publicIpIds []string
-
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpId = publicIpSpec.ResourceId
+		if publicIpSpec.ResourceId != "" && publicIpSpec.SkipReconcile {
+			continue
+		}
 		publicIpIds = append(publicIpIds, publicIpId)
 	}
+	if len(publicIpIds) == 0 {
+		return reconcile.Result{}, nil
+	}
+
 	log.V(4).Info("Checking publicips")
 	validPublicIpIds, err := publicIpSvc.ValidatePublicIpIds(ctx, publicIpIds)
 	if err != nil {
@@ -139,15 +148,18 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 	log.V(4).Info("Number of publicIp", "publicIpLength", len(publicIpsSpec))
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
+		if publicIpSpec.ResourceId != "" && publicIpSpec.SkipReconcile {
+			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
+			continue
+		}
+
 		tagKey := "Name"
 		tagValue := publicIpName
 		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
-		if len(publicIpRef.ResourceMap) == 0 {
-			publicIpRef.ResourceMap = make(map[string]string)
-		}
+
 		if publicIpSpec.ResourceId != "" {
 			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
 		}
@@ -185,8 +197,16 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	var publicIpId string
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpId = publicIpSpec.ResourceId
+		if publicIpSpec.SkipReconcile {
+			log.V(2).Info("Not Deleting publicIp because skip reconcile true", "publicIpId", publicIpId)
+			continue
+		}
 		publicIpIds = append(publicIpIds, publicIpId)
 	}
+	if len(publicIpIds) == 0 {
+		return reconcile.Result{}, nil
+	}
+
 	validPublicIpIds, err := publicIpSvc.ValidatePublicIpIds(ctx, publicIpIds)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot validate publicips: %w", err)

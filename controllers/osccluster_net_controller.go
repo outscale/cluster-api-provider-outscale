@@ -64,11 +64,14 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	netRef := clusterScope.GetNetRef()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	clusterName := netSpec.ClusterName + "-" + clusterScope.GetUID()
-
 	var net *osc.Net
 	var err error
 	if len(netRef.ResourceMap) == 0 {
 		netRef.ResourceMap = make(map[string]string)
+	}
+	if netSpec.ResourceId != "" && netSpec.SkipReconcile {
+		netRef.ResourceMap[netName] = netSpec.ResourceId
+		return reconcile.Result{}, nil
 	}
 	tagKey := "Name"
 	tagValue := netName
@@ -107,6 +110,10 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 	netSpec.SetDefaultValue()
 	netId := netSpec.ResourceId
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
+	if netSpec.SkipReconcile {
+		log.V(2).Info("Not deleting net because skip reconcile true", "netName", netName)
+		return reconcile.Result{}, nil
+	}
 	net, err := netSvc.GetNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err

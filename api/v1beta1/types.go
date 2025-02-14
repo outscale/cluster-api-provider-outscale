@@ -151,6 +151,9 @@ type OscNet struct {
 	// The Net Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// The flag to determine if the reconciliation loop should be skipped
+	// +optional
+	SkipReconcile bool `json:"skipReconcile,omitempty"`
 }
 
 type OscInternetService struct {
@@ -163,6 +166,9 @@ type OscInternetService struct {
 	// the Internet Service response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// The flag to determine if the reconciliation loop should be skipped
+	// +optional
+	SkipReconcile bool `json:"skipReconcile,omitempty"`
 }
 
 type OscSubnet struct {
@@ -178,6 +184,9 @@ type OscSubnet struct {
 	// The Subnet Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// The flag to determine if the reconciliation loop should be skipped
+	// +optional
+	SkipReconcile bool `json:"skipReconcile,omitempty"`
 }
 
 type OscNatService struct {
@@ -196,6 +205,9 @@ type OscNatService struct {
 	// The Nat Service Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// The flag to determine if the reconciliation loop should be skipped
+	// +optional
+	SkipReconcile bool `json:"skipReconcile,omitempty"`
 }
 
 type OscRouteTable struct {
@@ -236,6 +248,9 @@ type OscPublicIp struct {
 	// +optional
 	ResourceId  string `json:"resourceId,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
+	// The flag to determine if the reconciliation loop should be skipped
+	// +optional
+	SkipReconcile bool `json:"skipReconcile,omitempty"`
 }
 
 type OscRoute struct {

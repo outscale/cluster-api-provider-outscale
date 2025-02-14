@@ -42,12 +42,33 @@ var (
 		},
 	}
 
+	defaultNetInitializeWithSkipReconcile = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:          "test-net",
+				IpRange:       "10.0.0.0/16",
+				SkipReconcile: true,
+			},
+		},
+	}
+
 	defaultNetReconcile = infrastructurev1beta1.OscClusterSpec{
 		Network: infrastructurev1beta1.OscNetwork{
 			Net: infrastructurev1beta1.OscNet{
 				Name:       "test-net",
 				IpRange:    "10.0.0.0/16",
 				ResourceId: "vpc-test-net-uid",
+			},
+		},
+	}
+
+	defaultNetReconcileWithSkipReconcile = infrastructurev1beta1.OscClusterSpec{
+		Network: infrastructurev1beta1.OscNetwork{
+			Net: infrastructurev1beta1.OscNet{
+				Name:          "test-net",
+				IpRange:       "10.0.0.0/16",
+				ResourceId:    "vpc-test-net-uid",
+				SkipReconcile: true,
 			},
 		},
 	}
@@ -223,6 +244,16 @@ func TestReconcileNetCreate(t *testing.T) {
 			expReconcileNetErr: nil,
 		},
 		{
+			name:               "create Net with skip reconile (first time reconcile loop)",
+			spec:               defaultNetInitializeWithSkipReconcile,
+			expNetFound:        false,
+			expCreateNetFound:  true,
+			expTagFound:        false,
+			expCreateNetErr:    nil,
+			expReadTagErr:      nil,
+			expReconcileNetErr: nil,
+		},
+		{
 			name:               "failed create Net",
 			spec:               defaultNetInitialize,
 			expNetFound:        false,
@@ -376,6 +407,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 	netTestCases := []struct {
 		name               string
 		spec               infrastructurev1beta1.OscClusterSpec
+		expSkipReconcile   bool
 		expTagFound        bool
 		expCreateNetErr    error
 		expReadTagErr      error
@@ -390,6 +422,11 @@ func TestReconcileNetResourceId(t *testing.T) {
 			expReadTagErr:      nil,
 			expDescribeNetErr:  nil,
 			expReconcileNetErr: nil,
+		},
+		{
+			name:             "skip reconciliation loop",
+			spec:             defaultNetReconcileWithSkipReconcile,
+			expSkipReconcile: true,
 		},
 		{
 			name:               "failed to get tag",
@@ -411,31 +448,33 @@ func TestReconcileNetResourceId(t *testing.T) {
 			tag := osc.Tag{
 				ResourceId: &netId,
 			}
-			if ntc.expTagFound {
-				mockOscTagInterface.
-					EXPECT().
-					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
-					Return(&tag, ntc.expReadTagErr)
-			} else {
-				net := osc.CreateNetResponse{
-					Net: &osc.Net{
-						NetId: &netId,
-					},
+			if !ntc.expSkipReconcile {
+				if ntc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
+						Return(&tag, ntc.expReadTagErr)
+				} else {
+					net := osc.CreateNetResponse{
+						Net: &osc.Net{
+							NetId: &netId,
+						},
+					}
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
+						Return(nil, ntc.expReadTagErr)
+
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(nil, ntc.expDescribeNetErr)
+
+					mockOscNetInterface.
+						EXPECT().
+						CreateNet(gomock.Any(), gomock.Eq(&netSpec), gomock.Eq(clusterName), gomock.Eq(netName)).
+						Return(net.Net, ntc.expCreateNetErr)
 				}
-				mockOscTagInterface.
-					EXPECT().
-					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
-					Return(nil, ntc.expReadTagErr)
-
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(nil, ntc.expDescribeNetErr)
-
-				mockOscNetInterface.
-					EXPECT().
-					CreateNet(gomock.Any(), gomock.Eq(&netSpec), gomock.Eq(clusterName), gomock.Eq(netName)).
-					Return(net.Net, ntc.expCreateNetErr)
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
 			if ntc.expReconcileNetErr != nil {
@@ -453,6 +492,7 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
 		spec                     infrastructurev1beta1.OscClusterSpec
+		expSkipReconcile         bool
 		expNetFound              bool
 		expDeleteNetErr          error
 		expDescribeNetErr        error
@@ -465,6 +505,11 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 			expDeleteNetErr:          nil,
 			expDescribeNetErr:        nil,
 			expReconcileDeleteNetErr: nil,
+		},
+		{
+			name:             "skip net delete reconciliation loop",
+			spec:             defaultNetReconcileWithSkipReconcile,
+			expSkipReconcile: true,
 		},
 		{
 			name:                     "failed to delete Net",
@@ -490,22 +535,24 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 					*net.Net,
 				},
 			}
-			readNet := *readNets.Nets
-			if ntc.expNetFound {
+			if !ntc.expSkipReconcile {
+				readNet := *readNets.Nets
+				if ntc.expNetFound {
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(&readNet[0], ntc.expDescribeNetErr)
+				} else {
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(nil, ntc.expDescribeNetErr)
+				}
 				mockOscNetInterface.
 					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(&readNet[0], ntc.expDescribeNetErr)
-			} else {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(nil, ntc.expDescribeNetErr)
+					DeleteNet(gomock.Any(), gomock.Eq(netId)).
+					Return(ntc.expDeleteNetErr)
 			}
-			mockOscNetInterface.
-				EXPECT().
-				DeleteNet(gomock.Any(), gomock.Eq(netId)).
-				Return(ntc.expDeleteNetErr)
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if ntc.expReconcileDeleteNetErr != nil {
 				require.EqualError(t, err, ntc.expReconcileDeleteNetErr.Error(), "reconcileDeleteNet() should return the same error")
