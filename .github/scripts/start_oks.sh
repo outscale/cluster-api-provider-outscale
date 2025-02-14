@@ -69,8 +69,8 @@ export KUBECONFIG=$kubeconfig
 
 helm repo add harbor https://helm.goharbor.io
 helm upgrade --install harbor harbor/harbor --set "expose.type=loadBalancer" \
-    --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
-    --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
+    --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
+    --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
     --set "expose.tls.enabled=false" \
     --set "persistence.enabled=false"
 ret=$?
