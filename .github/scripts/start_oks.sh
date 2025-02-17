@@ -68,21 +68,21 @@ fi
 export KUBECONFIG=$kubeconfig
 
 helm repo add harbor https://helm.goharbor.io
-helm upgrade --install harbor harbor/harbor --set "expose.type=loadBalancer" \
-    --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
-    --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
-    --set "expose.tls.enabled=false" \
+helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" \
+    --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
+    --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
+    --set "expose.tls.enabled=true,expose.tls.auto.commonName=*.eu-west-2.lbu.outscale.com" \
     --set "persistence.enabled=false"
 ret=$?
 if [ $ret -ne 0 ]; then
     exit $ret
 fi
 wait "harbor" "oks-cli cluster kubectl get svc harbor --cluster-name $cluster_name" ".lbu.outscale.com"
-harbor_host=`kubectl get svc harbor -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
+harbor_host=`kubectl get svc harbor -o jsonpath="{.status.ingress.ingress[0].hostname}"`
 
-# helm upgrade harbor harbor/harbor --set "expose.type=loadBalancer" \
-#     --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
-#     --set "expose.loadBalancer.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
+# helm upgrade harbor harbor/harbor --set "expose.type=ingress" \
+#     --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
+#     --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-name=harbor-caposc-ci" \
 #     --set "expose.tls.enabled=true,expose.tls.auto.commonName=$harbor_host" \
 #     --set "persistence.enabled=false"
 # ret=$?
