@@ -370,7 +370,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	var securityGroupIds []string
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
 	for _, vmSecurityGroup := range *vmSecurityGroups {
-		log.V(4).Info("Get vmSecurityGroup", "vmSecurityGroup", vmSecurityGroup)
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
 		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
 		log.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
@@ -394,7 +393,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 	if vmState == nil {
 		vms, err := vmSvc.GetVmListFromTag(ctx, "Name", vmName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot not list vms for OscCluster: %w", err)
+			return reconcile.Result{}, fmt.Errorf("cannot not list vms: %w", err)
 		}
 		if len(vms) > 0 {
 			if vmSpec.ResourceId != "" || vmRef.ResourceMap[vmName] != "" { // We should not get in this situation but we sometimes do (To be investigated)
@@ -405,20 +404,16 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				if vmRef.ResourceMap[vmName] != "" {
 					machineScope.SetVmID(vmRef.ResourceMap[vmName])
 				}
-				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("Vm with Name %s is already created: %w", vmName, err)
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			return reconcile.Result{}, fmt.Errorf("Vm with Name %s already exists: %w", vmName, err)
+			return reconcile.Result{}, fmt.Errorf("Vm with Name %s already exists", vmName)
 		}
 
-		log.V(4).Info("Creating vm", "vmName", vmName)
 		imageId := vmSpec.ImageId
-		log.V(4).Info("Info ImageId", "imageId", imageId)
 		keypairName := vmSpec.KeypairName
-		log.V(4).Info("Info keypairName", "keypairName", keypairName)
 		vmType := vmSpec.VmType
-		log.V(4).Info("Info vmType", "vmType", vmType)
 		vmTags := vmSpec.Tags
-		log.V(4).Info("Info tags", "tags", vmTags)
+		log.V(3).Info("Creating vm", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
 
 		vm, err := vmSvc.CreateVm(ctx, machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
 		if err != nil {
@@ -432,7 +427,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		machineScope.SetVmID(vmId)
 		subregionName := vmSpec.SubregionName
 		machineScope.SetProviderID(subregionName, vmId)
-		log.V(4).Info("Vm created", "vmId", vmId)
+		log.V(2).Info("Vm created", "vmId", vmId)
 	}
 
 	if vmState != nil {
@@ -444,7 +439,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				subregionName := vmSpec.SubregionName
 				machineScope.SetProviderID(subregionName, vmId)
 			}
-			log.V(4).Info("Get vmId", "vmId", vmId)
 			_, err = vmSvc.GetVm(ctx, vmId)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -455,11 +449,10 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				return reconcile.Result{}, fmt.Errorf("cannot get vm %s state: %w", vmId, err)
 			}
 			machineScope.SetVmState(infrastructurev1beta1.VmState(currentVmState))
-			log.V(4).Info("Vm state", "vmState", currentVmState)
 
 			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
-				log.V(3).Info("Vm is not yet running", "vmId", vmId)
-				return reconcile.Result{RequeueAfter: 180 * time.Second}, fmt.Errorf("vm %s is not yet running", vmId)
+				log.V(4).Info("Vm is not yet running", "vmId", vmId)
+				return reconcile.Result{RequeueAfter: time.Minute}, nil
 			}
 			vmState = &infrastructurev1beta1.VmStateRunning
 			log.V(3).Info("Vm is running", "vmId", vmId)
@@ -478,7 +471,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot get volume %s available: %w", volumeId, err)
 				}
-				log.V(4).Info("Volume is available", "volumeId", volumeId)
 				log.V(2).Info("Linking volume", "volumeId", volumeId)
 				err = volumeSvc.LinkVolume(ctx, volumeId, vmId, vmVolumeDeviceName)
 				if err != nil {
