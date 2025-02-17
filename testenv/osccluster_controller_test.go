@@ -138,14 +138,14 @@ func deleteObj(ctx context.Context, obj client.Object, key client.ObjectKey, kin
 	EventuallyWithOffset(1, func() error {
 		fmt.Fprintf(GinkgoWriter, "Wait %s %s to be deleted\n", kind, name)
 		return k8sClient.Get(ctx, key, obj)
-	}, 5*time.Minute, 3*time.Second).ShouldNot(Succeed())
+	}, 10*time.Minute, 20*time.Second).ShouldNot(Succeed())
 }
 
 // deletePatchMachineObj will delete and patch machine object
 func deletePatchMachineObj(ctx context.Context, obj client.Object, key client.ObjectKey, kind string, name string) {
 	Eventually(func() error {
 		return k8sClient.Delete(ctx, obj)
-	}, 5*time.Minute, 3*time.Second).Should(Succeed())
+	}, 10*time.Minute, 20*time.Second).Should(Succeed())
 	fmt.Fprintf(GinkgoWriter, "Delete Machine pending \n")
 
 	time.Sleep(5 * time.Second)
@@ -160,7 +160,7 @@ func deletePatchMachineObj(ctx context.Context, obj client.Object, key client.Ob
 	EventuallyWithOffset(1, func() error {
 		fmt.Fprintf(GinkgoWriter, "Wait %s %s to be deleted\n", kind, name)
 		return k8sClient.Get(ctx, key, obj)
-	}, 5*time.Minute, 3*time.Second).ShouldNot(Succeed())
+	}, 10*time.Minute, 20*time.Second).ShouldNot(Succeed())
 }
 
 // deployCapoCluster will deploy capoCluster (create cluster object)
@@ -220,7 +220,7 @@ func WaitControlPlaneDnsNameRegister(clusterScope *scope.ClusterScope) {
 	Eventually(func() (bool, error) {
 		controlPlaneDnsName := GetControlPlaneDnsName(clusterScope)
 		return IsControlPlaneDnsNameRegister(controlPlaneDnsName)
-	}, 5*time.Minute, 20*time.Second).Should(BeTrue())
+	}, 10*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // IsControlPlaneEndpointUp validate that control plane is up and running
@@ -261,7 +261,7 @@ func WaitControlPlaneEndpointUp(clusterScope *scope.ClusterScope) {
 	Eventually(func() (bool, error) {
 		controlPlaneEndpoint := GetControlPlaneEndpoint(clusterScope)
 		return IsControlPlaneEndpointUp(controlPlaneEndpoint)
-	}, 10*time.Minute, 15*time.Second).Should(BeTrue())
+	}, 15*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // deployCapoMachine will deploy capoMachine (create machine object)
@@ -303,7 +303,7 @@ func waitOscClusterToProvision(ctx context.Context, capoClusterKey client.Object
 		k8sClient.Get(ctx, capoClusterKey, capoCluster)
 		fmt.Fprintf(GinkgoWriter, "capoClusterPhase: %v\n", capoCluster.Status.Phase)
 		return capoCluster.Status.Phase, nil
-	}, 5*time.Minute, 3*time.Second).Should(Equal("Provisioned"))
+	}, 15*time.Minute, 20*time.Second).Should(Equal("Provisioned"))
 }
 
 // waitOscMachineToProvision will wait that capi will set capoMachine in provisionned phase
@@ -314,7 +314,7 @@ func waitOscMachineToProvision(ctx context.Context, capoMachineKey client.Object
 		k8sClient.Get(ctx, capoMachineKey, capoMachine)
 		fmt.Fprintf(GinkgoWriter, "capoMachinePhase: %v\n", capoMachine.Status.Phase)
 		return capoMachine.Status.Phase, nil
-	}, 8*time.Minute, 15*time.Second).Should(Equal("Provisioned"))
+	}, 15*time.Minute, 20*time.Second).Should(Equal("Provisioned"))
 }
 
 // waitOscClusterToProvision will wait OscInfraCluster to be deployed and ready (object osccluster create with ready status)
@@ -325,7 +325,7 @@ func waitOscInfraClusterToBeReady(ctx context.Context, oscInfraClusterKey client
 		k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
 		fmt.Fprintf(GinkgoWriter, "oscInfraClusterReady: %v\n", oscInfraCluster.Status.Ready)
 		return oscInfraCluster.Status.Ready
-	}, 5*time.Minute, 3*time.Second).Should(BeTrue())
+	}, 15*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // waitOscMachineToProvision will wait OscInfraCluster to be deployed and ready (object oscmachine create with ready status)
@@ -336,7 +336,7 @@ func waitOscInfraMachineToBeReady(ctx context.Context, oscInfraMachineKey client
 		k8sClient.Get(ctx, oscInfraMachineKey, oscInfraMachine)
 		fmt.Fprintf(GinkgoWriter, "oscInfraMachineReady: %v\n", oscInfraMachine.Status.Ready)
 		return oscInfraMachine.Status.Ready
-	}, 15*time.Minute, 15*time.Second).Should(BeTrue())
+	}, 20*time.Minute, 20*time.Second).Should(BeTrue())
 }
 
 // checkOscNetToBeProvisioned will validate that OscNet is provisionned
@@ -357,7 +357,7 @@ func checkOscNetToBeProvisioned(ctx context.Context, oscInfraClusterKey client.O
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscNet \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscVmToBeProvisioned will validate that OscVm is provisionned
@@ -378,7 +378,7 @@ func checkOscVmToBeProvisioned(ctx context.Context, oscInfraMachineKey client.Ob
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscVm \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscSubnetToBeProvisioned will validate that OscSubnet is provisionned
@@ -405,7 +405,7 @@ func checkOscSubnetToBeProvisioned(ctx context.Context, oscInfraClusterKey clien
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSubnet \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscInternetServiceToBeProvisioned will validate that OscInternetService is provisionned
@@ -426,7 +426,7 @@ func checkOscInternetServiceToBeProvisioned(ctx context.Context, oscInfraCluster
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscInternetService \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscNatServiceToBeProvisioned will validate that OscNatService is provisionned
@@ -447,7 +447,7 @@ func checkOscNatServiceToBeProvisioned(ctx context.Context, oscInfraClusterKey c
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscNatService \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscPublicIpToBeProvisioned will validate that OscPublicIp is provisionned
@@ -476,7 +476,7 @@ func checkOscPublicIpToBeProvisioned(ctx context.Context, oscInfraClusterKey cli
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscPublicIp \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscRouteTableToBeProvisioned will validate that OscRouteTable is provisionned
@@ -503,7 +503,7 @@ func checkOscRouteTableToBeProvisioned(ctx context.Context, oscInfraClusterKey c
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscRouteTable \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscRouteToBeProvisioned will validate that OscRoute is provisionned
@@ -544,7 +544,7 @@ func checkOscRouteToBeProvisioned(ctx context.Context, oscInfraClusterKey client
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscRoute \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscSecurityGroupToBeProvisioned will validate that OscSecurityGroup is provisionned
@@ -569,7 +569,7 @@ func checkOscSecurityGroupToBeProvisioned(ctx context.Context, oscInfraClusterKe
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroup \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscSecurityGroupRuleToBeProvisioned will validate that OscSecurityGroupRule is provisionned
@@ -602,7 +602,7 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 		}
 		fmt.Fprintf(GinkgoWriter, "Found OscSecurityGroupRule \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // checkOscLoadBalancerToBeProvisioned will validate that OscLoadBalancer is provisionned
@@ -623,7 +623,7 @@ func checkOscLoadBalancerToBeProvisioned(ctx context.Context, oscInfraClusterKey
 		fmt.Fprintf(GinkgoWriter, "Check loadBalancer has been received %s\n", *loadbalancer.LoadBalancerName)
 		fmt.Fprintf(GinkgoWriter, "Found OscLoadBalancer \n")
 		return nil
-	}, 5*time.Minute, 1*time.Second).Should(BeNil())
+	}, 10*time.Minute, 10*time.Second).Should(BeNil())
 }
 
 // getClusterScope will setup clusterscope use for our functional test
