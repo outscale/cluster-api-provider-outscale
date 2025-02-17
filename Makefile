@@ -14,7 +14,7 @@
 
 # Image URL to use all building/pushing image targets
 REGISTRY ?= outscale
-IMAGE_NAME ?= cluster-api-provider-osc
+IMAGE_NAME ?= cluster-api-outscale-controllers
 TAG ?= dev
 RELEASE_TAG ?= v0.1.0
 VERSION ?= DEV
