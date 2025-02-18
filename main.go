@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
@@ -97,7 +97,7 @@ func main() {
 
 	ctx := ctrl.SetupSignalHandler()
 
-	cs, err := cloud.NewServices()
+	cs, err := services.NewServices()
 	if err != nil {
 		setupLog.Error(err, "unable to initialize cloud services")
 		os.Exit(1)
