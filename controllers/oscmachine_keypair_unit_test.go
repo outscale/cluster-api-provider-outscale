@@ -43,30 +43,11 @@ var (
 			},
 		},
 	}
-	defaultKeyClusterReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
-				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
-			},
-		},
-	}
 	defaultKeyPairInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			KeyPair: infrastructurev1beta1.OscKeypair{
 				Name:      "test-keypair",
 				PublicKey: generateSSHPublicKey(),
-			},
-		},
-	}
-
-	defaultKeyPairReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			KeyPair: infrastructurev1beta1.OscKeypair{
-				Name:       "test-keypair",
-				PublicKey:  generateSSHPublicKey(),
-				ResourceId: "test-keypair-uid",
 			},
 		},
 	}

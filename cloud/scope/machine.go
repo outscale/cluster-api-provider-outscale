@@ -325,13 +325,13 @@ func (m *MachineScope) PatchObject(ctx context.Context) error {
 }
 
 // GetBootstrapData return bootstrapData
-func (m *MachineScope) GetBootstrapData() (string, error) {
+func (m *MachineScope) GetBootstrapData(ctx context.Context) (string, error) {
 	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
 		return "", errors.New("error retrieving bootstrap data: DataSecretName is not set")
 	}
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Namespace: m.GetNamespace(), Name: *m.Machine.Spec.Bootstrap.DataSecretName}
-	if err := m.client.Get(context.TODO(), key, secret); err != nil {
+	if err := m.client.Get(ctx, key, secret); err != nil {
 		return "", fmt.Errorf("failed to retrieve bootstrap data secret: %w", err)
 	}
 	value, ok := secret.Data["value"]

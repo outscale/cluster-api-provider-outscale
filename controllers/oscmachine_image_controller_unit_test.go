@@ -38,28 +38,10 @@ var (
 			},
 		},
 	}
-	defaultImageClusterReconcile = infrastructurev1beta1.OscClusterSpec{
-		Network: infrastructurev1beta1.OscNetwork{
-			Net: infrastructurev1beta1.OscNet{
-				Name:       "test-net",
-				IpRange:    "10.0.0.0/16",
-				ResourceId: "vpc-test-net-uid",
-			},
-		},
-	}
 	defaultImageInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Image: infrastructurev1beta1.OscImage{
 				Name: "test-image",
-			},
-		},
-	}
-
-	defaultImageReconcile = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Image: infrastructurev1beta1.OscImage{
-				Name:       "test-image",
-				ResourceId: "test-image-uid",
 			},
 		},
 	}
