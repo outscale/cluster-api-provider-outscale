@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,7 +37,7 @@ import (
 
 // MachineScopeParams is a collection of input parameters to create a new scope
 type MachineScopeParams struct {
-	OscClient  *OscClient
+	OscClient  *cloud.OscClient
 	Client     client.Client
 	Cluster    *clusterv1.Cluster
 	Machine    *clusterv1.Machine
@@ -62,28 +63,13 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 		return nil, errors.New("OscMachine is required when creating a MachineScope")
 	}
 
-	client, err := newOscClient()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
-	}
-
-	if params.OscClient == nil {
-		params.OscClient = client
-	}
-	if params.OscClient.api == nil {
-		params.OscClient.api = client.api
-	}
-	if params.OscClient.auth == nil {
-		params.OscClient.auth = client.auth
-	}
-
 	helper, err := patch.NewHelper(params.OscMachine, params.Client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init patch helper: %w", err)
 	}
 	return &MachineScope{
 		client:      params.Client,
+		OscClient:   params.OscClient,
 		Cluster:     params.Cluster,
 		Machine:     params.Machine,
 		OscCluster:  params.OscCluster,
@@ -94,11 +80,11 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 
 // MachineScope is the basic context of the actuator that will be used
 type MachineScope struct {
+	OscClient   *cloud.OscClient
 	client      client.Client
 	patchHelper *patch.Helper
 	Cluster     *clusterv1.Cluster
 	Machine     *clusterv1.Machine
-	OscClient   *OscClient
 	OscCluster  *infrastructurev1beta1.OscCluster
 	OscMachine  *infrastructurev1beta1.OscMachine
 }
@@ -125,12 +111,12 @@ func (m *MachineScope) GetUID() string {
 
 // GetAuth return outscale api context
 func (m *MachineScope) GetAuth() context.Context {
-	return m.OscClient.auth
+	return m.OscClient.Auth
 }
 
 // GetApi return outscale api credential
 func (m *MachineScope) GetApi() *osc.APIClient {
-	return m.OscClient.api
+	return m.OscClient.API
 }
 
 // GetVolume return the volume of the cluster

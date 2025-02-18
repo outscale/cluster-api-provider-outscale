@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -99,8 +100,11 @@ var _ = BeforeSuite(func() {
 		LeaderElectionID:        "controller-leader-election-capo",
 	})
 	Expect(err).ToNot(HaveOccurred())
+	cs, err := services.NewServices()
+	Expect(err).ToNot(HaveOccurred())
 	err = (&controllers.OscClusterReconciler{
 		Client:           k8sManager.GetClient(),
+		Cloud:            cs,
 		Recorder:         k8sManager.GetEventRecorderFor("osc-controller"),
 		ReconcileTimeout: reconcileTimeout,
 	}).SetupWithManager(context.Background(), k8sManager)

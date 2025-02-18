@@ -1,0 +1,145 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Machine
+metadata:
+  creationTimestamp: "2025-02-17T09:48:08Z"
+  finalizers:
+  - machine.cluster.x-k8s.io
+  generation: 3
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+    cluster.x-k8s.io/deployment-name: test-cluster-api-md-0
+    cluster.x-k8s.io/set-name: test-cluster-api-md-0-6p8qk
+    machine-template-hash: 3550316311-6p8qk
+  name: test-cluster-api-md-0-6p8qk-qgvhr
+  namespace: cluster-api-test
+  ownerReferences:
+  - apiVersion: cluster.x-k8s.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: MachineSet
+    name: test-cluster-api-md-0-6p8qk
+    uid: b8a1e8e1-bd8d-438f-aff7-95c9db5adc56
+  resourceVersion: "20217506"
+  uid: a009b2e2-2688-406c-a7db-a0b27a1082fd
+spec:
+  bootstrap:
+    configRef:
+      apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+      kind: KubeadmConfig
+      name: test-cluster-api-md-0-6p8qk-qgvhr
+      namespace: cluster-api-test
+      uid: e38bd1d1-1808-46bb-879b-378aead1ccaf
+    dataSecretName: test-cluster-api-md-0-6p8qk-qgvhr
+  clusterName: test-cluster-api
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscMachine
+    name: test-cluster-api-md-0-6p8qk-qgvhr
+    namespace: cluster-api-test
+    uid: 9c50b5d4-767d-44f1-847b-854100147366
+  nodeDeletionTimeout: 10s
+  providerID: aws:///eu-west-2a/i-046f4bd0
+  version: v1.30.7
+status:
+  addresses:
+  - address: 10.0.3.29
+    type: InternalIP
+  bootstrapReady: true
+  conditions:
+  - lastTransitionTime: "2025-02-17T09:53:50Z"
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2025-02-17T09:53:12Z"
+    status: "True"
+    type: BootstrapReady
+  - lastTransitionTime: "2025-02-17T09:53:50Z"
+    status: "True"
+    type: InfrastructureReady
+  - lastTransitionTime: "2025-02-17T09:56:38Z"
+    message: Node condition Ready is False
+    reason: NodeConditionsFailed
+    severity: Warning
+    status: "False"
+    type: NodeHealthy
+  infrastructureReady: true
+  lastUpdated: "2025-02-17T09:56:38Z"
+  nodeInfo:
+    architecture: amd64
+    bootID: 306dfbd5-af32-4041-86c6-8c66f6423160
+    containerRuntimeVersion: containerd://1.6.15
+    kernelVersion: 5.4.0-146-generic
+    kubeProxyVersion: v1.25.9
+    kubeletVersion: v1.25.9
+    machineID: e6340fdbaed233a596118797a3e10c78
+    operatingSystem: linux
+    osImage: Ubuntu 20.04.6 LTS
+    systemUUID: e6340fdb-aed2-33a5-9611-8797a3e10c78
+  nodeRef:
+    apiVersion: v1
+    kind: Node
+    name: ip-10-0-3-29.eu-west-2.compute.internal
+    uid: 2b508d0f-457d-4a60-97f5-5c3c70ac156e
+  observedGeneration: 3
+  phase: Running
+  v1beta2:
+    conditions:
+    - lastTransitionTime: "2025-02-17T09:48:08Z"
+      message: ""
+      observedGeneration: 3
+      reason: NotReady
+      status: "False"
+      type: Available
+    - lastTransitionTime: "2025-02-17T09:56:38Z"
+      message: |-
+        * NodeHealthy:
+          * Node.Ready: container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin not initialized
+      observedGeneration: 3
+      reason: NotReady
+      status: "False"
+      type: Ready
+    - lastTransitionTime: "2025-02-17T09:48:09Z"
+      message: ""
+      observedGeneration: 3
+      reason: UpToDate
+      status: "True"
+      type: UpToDate
+    - lastTransitionTime: "2025-02-17T09:53:12Z"
+      message: ""
+      observedGeneration: 3
+      reason: Ready
+      status: "True"
+      type: BootstrapConfigReady
+    - lastTransitionTime: "2025-02-17T09:53:50Z"
+      message: ""
+      observedGeneration: 3
+      reason: Ready
+      status: "True"
+      type: InfrastructureReady
+    - lastTransitionTime: "2025-02-17T09:56:38Z"
+      message: '* Node.Ready: container runtime network not ready: NetworkReady=false
+        reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin
+        not initialized'
+      observedGeneration: 3
+      reason: NodeNotHealthy
+      status: "False"
+      type: NodeHealthy
+    - lastTransitionTime: "2025-02-17T09:56:38Z"
+      message: '* Node.Ready: container runtime network not ready: NetworkReady=false
+        reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin
+        not initialized'
+      observedGeneration: 3
+      reason: NodeNotReady
+      status: "False"
+      type: NodeReady
+    - lastTransitionTime: "2025-02-17T09:48:08Z"
+      message: ""
+      observedGeneration: 3
+      reason: NotPaused
+      status: "False"
+      type: Paused
+    - lastTransitionTime: "2025-02-17T09:48:08Z"
+      message: ""
+      observedGeneration: 3
+      reason: NotDeleting
+      status: "False"
+      type: Deleting
