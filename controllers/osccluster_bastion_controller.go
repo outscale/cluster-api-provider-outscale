@@ -309,7 +309,7 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 
 			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
 				log.V(3).Info("Bastion vm is not yet running", "vmId", vmId)
-				return reconcile.Result{RequeueAfter: 30 * time.Second}, fmt.Errorf("bastion %s is not running yet", vmId)
+				return reconcile.Result{RequeueAfter: time.Minute}, nil
 			}
 			bastionState = &infrastructurev1beta1.VmStateRunning
 			log.V(3).Info("Bastion is running", "vmId", vmId)
