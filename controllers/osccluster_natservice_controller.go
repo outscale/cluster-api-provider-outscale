@@ -40,21 +40,6 @@ func getNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 	}
 }
 
-// checkNatServiceOscDuplicateName check that there are no identical names already existing for natServices
-func checkNatServiceOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
-	natServicesSpec := clusterScope.GetNatServices()
-	for _, natServiceSpec := range natServicesSpec {
-		resourceNameList = append(resourceNameList, natServiceSpec.Name)
-	}
-	duplicateResourceErr := alertDuplicate(resourceNameList)
-	if duplicateResourceErr != nil {
-		return duplicateResourceErr
-	} else {
-		return nil
-	}
-}
-
 func checkNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
 	var natServicesSpec []*infrastructurev1beta1.OscNatService
 	networkSpec := clusterScope.GetNetwork()

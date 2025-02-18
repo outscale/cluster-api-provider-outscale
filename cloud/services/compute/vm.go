@@ -69,7 +69,7 @@ func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope
 	placement := osc.Placement{
 		SubregionName: &subregionName,
 	}
-	bootstrapData, err := machineScope.GetBootstrapData()
+	bootstrapData, err := machineScope.GetBootstrapData(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
 	}
