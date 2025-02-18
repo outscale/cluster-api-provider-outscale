@@ -83,13 +83,13 @@ func mockGetVmState(state string) mockFunc {
 	}
 }
 
-func mockLinkLoadBalancer(lb string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
-			LinkLoadBalancerBackendMachines(gomock.Any(), []string{defaultVmId}, lb).
-			Return(nil)
-	}
-}
+// func mockLinkLoadBalancer(lb string) mockFunc {
+// 	return func(s *MockCloudServices) {
+// 		s.LoadBalancerMock.EXPECT().
+// 			LinkLoadBalancerBackendMachines(gomock.Any(), []string{defaultVmId}, lb).
+// 			Return(nil)
+// 	}
+// }
 
 func mockVmReadEmptyCCMTag() mockFunc {
 	return func(s *MockCloudServices) {
