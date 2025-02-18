@@ -3006,7 +3006,6 @@ func TestReconcileDeleteVm(t *testing.T) {
 				vmRef := machineScope.GetVmRef()
 				vmRef.ResourceMap = make(map[string]string)
 				vmRef.ResourceMap[vmName] = vmId
-
 			}
 			var securityGroupIds []string
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
