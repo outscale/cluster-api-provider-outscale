@@ -12,7 +12,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const defaultImageId = "ami-foo"
+const (
+	defaultImageId        = "ami-foo"
+	defaultVmId           = "i-foo"
+	defaultPrivateDnsName = "ip-10-0-3-144.eu-west-2.compute.internal"
+	defaultPrivateIp      = "10.0.3.144"
+)
+
+func patchVmExists(state v1beta1.VmState, ready bool) patchOSCMachineFunc {
+	return func(m *v1beta1.OscMachine) {
+		m.Spec.Node.Vm.ResourceId = defaultVmId
+		m.Status.VmState = &state
+		m.Status.Ready = ready
+	}
+}
+
+func patchMoveMachine() patchOSCMachineFunc {
+	return func(m *v1beta1.OscMachine) {
+		m.Status = v1beta1.OscMachineStatus{}
+	}
+}
 
 func mockImageFoundByName(name string) mockFunc {
 	return func(s *MockCloudServices) {
@@ -45,40 +64,43 @@ func mockNoVmFoundByName(name string) mockFunc {
 	}
 }
 
-const (
-	defaultVmId           = "i-foo"
-	defaultPrivateDnsName = "ip-10-0-3-144.eu-west-2.compute.internal"
-	defaultPrivateIp      = "10.0.3.144"
-)
+func mockVmFoundByName(name string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.VMMock.
+			EXPECT().
+			GetVmListFromTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
+			Return([]osc.Vm{{VmId: ptr.To(defaultVmId)}}, nil)
+	}
+}
 
-func mockCreateVm(subnetId string, securityGroupIds, privateIps []string, vmName string, vmTags map[string]string) mockFunc {
+func mockCreateVm(vmId, subnetId string, securityGroupIds, privateIps []string, vmName string, vmTags map[string]string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.VMMock.
 			EXPECT().
 			CreateVm(gomock.Any(), gomock.Any(),
 				gomock.Any(), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
-			Return(&osc.Vm{VmId: ptr.To(defaultVmId)}, nil)
+			Return(&osc.Vm{VmId: ptr.To(vmId)}, nil)
 	}
 }
 
-func mockGetVm() mockFunc {
+func mockGetVm(vmId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.VMMock.
 			EXPECT().
-			GetVm(gomock.Any(), gomock.Eq(defaultVmId)).
+			GetVm(gomock.Any(), gomock.Eq(vmId)).
 			Return(&osc.Vm{
-				VmId:           ptr.To(defaultVmId),
+				VmId:           ptr.To(vmId),
 				PrivateDnsName: ptr.To(defaultPrivateDnsName),
 				PrivateIp:      ptr.To(defaultPrivateIp),
 			}, nil)
 	}
 }
 
-func mockGetVmState(state string) mockFunc {
+func mockGetVmState(vmId, state string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.VMMock.
 			EXPECT().
-			GetVmState(gomock.Any(), gomock.Eq(defaultVmId)).
+			GetVmState(gomock.Any(), gomock.Eq(vmId)).
 			Return(state, nil)
 	}
 }
@@ -94,28 +116,22 @@ func mockGetVmState(state string) mockFunc {
 func mockVmReadEmptyCCMTag() mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName))
+			ReadTag(gomock.Any(), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
+			Return(nil, nil)
 	}
 }
 
-func mockVmSetCCMTag(clusterName string) mockFunc {
+func mockVmSetCCMTag(vmId, clusterName string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.VMMock.EXPECT().
-			AddCcmTag(gomock.Any(), clusterName, gomock.Eq(defaultPrivateDnsName), gomock.Eq(defaultVmId))
+			AddCcmTag(gomock.Any(), clusterName, gomock.Eq(defaultPrivateDnsName), gomock.Eq(vmId)).
+			Return(nil)
 	}
 }
 
-func patchVmExists(state v1beta1.VmState, ready bool) patchOSCMachineFunc {
-	return func(m *v1beta1.OscMachine) {
-		m.Spec.Node.Vm.ResourceId = defaultVmId
-		m.Status.VmState = &state
-		m.Status.Ready = ready
-	}
-}
-
-func assertVmExists(state v1beta1.VmState, ready bool) assertOSCMachineFunc {
+func assertVmExists(vmId string, state v1beta1.VmState, ready bool) assertOSCMachineFunc {
 	return func(t *testing.T, m *v1beta1.OscMachine) {
-		assert.Equal(t, defaultVmId, m.Spec.Node.Vm.ResourceId)
+		assert.Equal(t, vmId, m.Spec.Node.Vm.ResourceId)
 		require.NotNil(t, m.Status.VmState)
 		assert.Equal(t, state, *m.Status.VmState)
 		assert.Equal(t, ready, m.Status.Ready)

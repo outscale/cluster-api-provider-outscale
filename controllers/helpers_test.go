@@ -136,19 +136,23 @@ func (s *MockCloudServices) Tag(ctx context.Context, scope scope.ClusterScope) t
 	return s.TagMock
 }
 
-type mockFunc func(s *MockCloudServices)
-
+type patchOSCClusterFunc func(m *v1beta1.OscCluster)
 type patchOSCMachineFunc func(m *v1beta1.OscMachine)
 
+type mockFunc func(s *MockCloudServices)
+
 type assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
+type assertOSCClusterFunc func(t *testing.T, m *v1beta1.OscCluster)
 
 type testcase struct {
 	name                     string
 	clusterSpec, machineSpec string
+	clusterPatches           []patchOSCClusterFunc
 	machinePatches           []patchOSCMachineFunc
 	mockFuncs                []mockFunc
 	hasError                 bool
 	requeueAfter             time.Duration
+	clusterAsserts           []assertOSCClusterFunc
 	machineAsserts           []assertOSCMachineFunc
 }
 
