@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
@@ -96,8 +97,15 @@ func main() {
 
 	ctx := ctrl.SetupSignalHandler()
 
+	cs, err := services.NewServices()
+	if err != nil {
+		setupLog.Error(err, "unable to initialize cloud services")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.OscClusterReconciler{
 		Client:           mgr.GetClient(),
+		Cloud:            cs,
 		Recorder:         mgr.GetEventRecorderFor("osccluster-controller"),
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,
@@ -108,6 +116,7 @@ func main() {
 
 	if err = (&controllers.OscMachineReconciler{
 		Client:           mgr.GetClient(),
+		Cloud:            cs,
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,

@@ -1,0 +1,30 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Machine
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+    cluster.x-k8s.io/deployment-name: test-cluster-api-md-0
+    cluster.x-k8s.io/set-name: cluster-api-test-worker
+    machine-template-hash: 3550316311-6p8qk
+  name: cluster-api-test-worker
+  namespace: cluster-api-test
+  ownerReferences:
+  - apiVersion: cluster.x-k8s.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: MachineSet
+    name: cluster-api-test-worker
+spec:
+  bootstrap:
+    configRef:
+      apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+      kind: KubeadmConfig
+      name: cluster-api-test-worker
+      namespace: cluster-api-test
+    dataSecretName: test-cluster-api-md-0-6p8qk-45gbx
+  clusterName: test-cluster-api
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscMachine
+    name: cluster-api-test-worker
+    namespace: cluster-api-test

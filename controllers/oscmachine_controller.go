@@ -23,11 +23,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/storage"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
@@ -50,6 +46,7 @@ import (
 // OscMachineReconciler reconciles a OscMachine object
 type OscMachineReconciler struct {
 	client.Client
+	Cloud            services.Servicer
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
 	WatchFilterValue string
@@ -70,46 +67,6 @@ type OscMachineReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-
-// getVolumeSvc retrieve volumeSvc
-func (r *OscMachineReconciler) getVolumeSvc(ctx context.Context, scope scope.ClusterScope) storage.OscVolumeInterface {
-	return storage.NewService(ctx, &scope)
-}
-
-// getVmSvc retrieve vmSvc
-func (r *OscMachineReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
-	return compute.NewService(ctx, &scope)
-}
-
-// getImageSvc retrieve imageSvc
-func (r *OscMachineReconciler) getImageSvc(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
-	return compute.NewService(ctx, &scope)
-}
-
-// getPublicIpSvc retrieve publicIpSvc
-func (r *OscMachineReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
-	return security.NewService(ctx, &scope)
-}
-
-// getSecurityGroupSvc retrieve securityGroupSvc
-func (r *OscMachineReconciler) getSecurityGroupSvc(ctx context.Context, scope scope.ClusterScope) security.OscSecurityGroupInterface {
-	return security.NewService(ctx, &scope)
-}
-
-// getLoadBalancerSvc retrieve loadBalancerSvc
-func (r *OscMachineReconciler) getLoadBalancerSvc(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
-	return service.NewService(ctx, &scope)
-}
-
-// getKeyPairSvc retrieve keypairSvc
-func (r *OscMachineReconciler) getKeyPairSvc(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface {
-	return security.NewService(ctx, &scope)
-}
-
-// getTagSvc retrieve tagSvc
-func (r *OscMachineReconciler) getTagSvc(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
-	return tag.NewService(ctx, &scope)
-}
 
 func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
@@ -159,6 +116,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     r.Client,
+		OscClient:  r.Cloud.OscClient(),
 		Cluster:    cluster,
 		OscCluster: oscCluster,
 	})
@@ -167,6 +125,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 	machineScope, err := scope.NewMachineScope(scope.MachineScopeParams{
 		Client:     r.Client,
+		OscClient:  r.Cloud.OscClient(),
 		Cluster:    cluster,
 		Machine:    machine,
 		OscCluster: oscCluster,
@@ -281,15 +240,15 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		}
 	}
 
-	imageSvc := r.getImageSvc(ctx, *clusterScope)
+	imageSvc := r.Cloud.Image(ctx, *clusterScope)
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
 	if err != nil {
 		log.V(2).Error(err, "failed to reconcile Image")
 		return reconcileImage, err
 	}
 
-	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
-	tagSvc := r.getTagSvc(ctx, *clusterScope)
+	volumeSvc := r.Cloud.Volume(ctx, *clusterScope)
+	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
 		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
 		if err != nil {
@@ -300,17 +259,17 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	}
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
-	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
+	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
 	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
 	if err != nil {
 		log.V(2).Error(err, "failed to reconcile keypair")
 		return reconcileKeypair, err
 	}
 
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
-	vmSvc := r.getVmSvc(ctx, *clusterScope)
-	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
-	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
+	vmSvc := r.Cloud.VM(ctx, *clusterScope)
+	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
+	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
 
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
@@ -353,21 +312,21 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	log.V(3).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
+		volumeSvc := r.Cloud.Volume(ctx, *clusterScope)
 		reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, volumeSvc)
 		if err != nil {
 			return reconcileDeleteVolume, err
 		}
 	}
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
-	vmSvc := r.getVmSvc(ctx, *clusterScope)
-	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
-	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
+	vmSvc := r.Cloud.VM(ctx, *clusterScope)
+	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
+	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
 	reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
 		return reconcileDeleteVm, err
 	}
-	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
+	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
 	reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, keypairSvc)
 	if err != nil {
 		return reconcileDeleteKeyPair, err

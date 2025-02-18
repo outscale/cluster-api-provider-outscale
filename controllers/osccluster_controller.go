@@ -23,15 +23,11 @@ import (
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
@@ -47,6 +43,7 @@ import (
 // OscClusterReconciler reconciles a OscCluster object
 type OscClusterReconciler struct {
 	client.Client
+	Cloud            services.Servicer
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
 	WatchFilterValue string
@@ -59,61 +56,6 @@ type OscClusterReconciler struct {
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;get;list;patch;update;watch
-
-// getNetSvc retrieve netSvc
-func (r *OscClusterReconciler) getNetSvc(ctx context.Context, scope scope.ClusterScope) net.OscNetInterface {
-	return net.NewService(ctx, &scope)
-}
-
-// getSubnetSvc retrieve subnetSvc
-func (r *OscClusterReconciler) getSubnetSvc(ctx context.Context, scope scope.ClusterScope) net.OscSubnetInterface {
-	return net.NewService(ctx, &scope)
-}
-
-// getInternetServiceSvc retrieve internetServiceSvc
-func (r *OscClusterReconciler) getInternetServiceSvc(ctx context.Context, scope scope.ClusterScope) net.OscInternetServiceInterface {
-	return net.NewService(ctx, &scope)
-}
-
-// getRouteTableSvc retrieve routeTableSvc
-func (r *OscClusterReconciler) getRouteTableSvc(ctx context.Context, scope scope.ClusterScope) security.OscRouteTableInterface {
-	return security.NewService(ctx, &scope)
-}
-
-// getSecurityGroupSvc retrieve securityGroupSvc
-func (r *OscClusterReconciler) getSecurityGroupSvc(ctx context.Context, scope scope.ClusterScope) security.OscSecurityGroupInterface {
-	return security.NewService(ctx, &scope)
-}
-
-// getNatServiceSvc retrieve natServiceSvc
-func (r *OscClusterReconciler) getNatServiceSvc(ctx context.Context, scope scope.ClusterScope) net.OscNatServiceInterface {
-	return net.NewService(ctx, &scope)
-}
-
-// getPublicIpSvc retrieve publicIpSvc
-func (r *OscClusterReconciler) getPublicIpSvc(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
-	return security.NewService(ctx, &scope)
-}
-
-// getLoadBalancerSvc retrieve loadBalancerSvc
-func (r *OscClusterReconciler) getLoadBalancerSvc(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
-	return service.NewService(ctx, &scope)
-}
-
-// getVmSvc retrieve vmSvc
-func (r *OscClusterReconciler) getVmSvc(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
-	return compute.NewService(ctx, &scope)
-}
-
-// getImageSvc retrieve imageSvc
-func (r *OscClusterReconciler) getImageSvc(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
-	return compute.NewService(ctx, &scope)
-}
-
-// getTagSvc retrieve tagSvc
-func (r *OscClusterReconciler) getTagSvc(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
-	return tag.NewService(ctx, &scope)
-}
 
 func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	ctx, cancel := context.WithTimeout(ctx, reconciler.DefaultedLoopTimeout(r.ReconcileTimeout))
@@ -148,6 +90,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     r.Client,
+		OscClient:  r.Cloud.OscClient(),
 		Cluster:    cluster,
 		OscCluster: oscCluster,
 	})
@@ -312,8 +255,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 
 	// Reconcile each element of the cluster
-	netSvc := r.getNetSvc(ctx, *clusterScope)
-	tagSvc := r.getTagSvc(ctx, *clusterScope)
+	netSvc := r.Cloud.Net(ctx, *clusterScope)
+	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
 	reconcileNet, err := reconcileNet(ctx, clusterScope, netSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile net")
@@ -322,7 +265,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
 
-	subnetSvc := r.getSubnetSvc(ctx, *clusterScope)
+	subnetSvc := r.Cloud.Subnet(ctx, *clusterScope)
 	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope, subnetSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile subnet")
@@ -338,7 +281,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		})
 	}
 
-	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
+	internetServiceSvc := r.Cloud.InternetService(ctx, *clusterScope)
 	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetServiceSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile internetService")
@@ -347,7 +290,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
 
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
+	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
 	reconcilePublicIp, err := reconcilePublicIp(ctx, clusterScope, publicIpSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile publicIp")
@@ -356,7 +299,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
 
-	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
 	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile securityGroup")
@@ -365,7 +308,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
-	routeTableSvc := r.getRouteTableSvc(ctx, *clusterScope)
+	routeTableSvc := r.Cloud.RouteTable(ctx, *clusterScope)
 	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile routeTable")
@@ -374,7 +317,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
-	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
+	natServiceSvc := r.Cloud.NatService(ctx, *clusterScope)
 	reconcileNatService, err := reconcileNatService(ctx, clusterScope, natServiceSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile natservice")
@@ -383,6 +326,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
 
+	// TODO: is there a need to call reconcileRouteTable twice ?
 	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile NatRouteTable")
@@ -391,7 +335,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
-	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
 	reconcileLoadBalancer, err := reconcileLoadBalancer(ctx, clusterScope, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
 		log.Error(err, "failed to reconcile LoadBalancer")
@@ -401,8 +345,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		log.V(4).Info("Reconciling bastion Vm")
-		vmSvc := r.getVmSvc(ctx, *clusterScope)
-		imageSvc := r.getImageSvc(ctx, *clusterScope)
+		vmSvc := r.Cloud.VM(ctx, *clusterScope)
+		imageSvc := r.Cloud.Image(ctx, *clusterScope)
 		reconcileBastion, err := reconcileBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc, imageSvc, tagSvc)
 		if err != nil {
 			log.Error(err, "failed to reconcile bastion")
@@ -439,24 +383,23 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
-
-	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
+	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
 
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
-		vmSvc := r.getVmSvc(ctx, *clusterScope)
+		vmSvc := r.Cloud.VM(ctx, *clusterScope)
 		reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc)
 		if err != nil {
 			return reconcileDeleteBastion, err
 		}
 	}
-	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
+	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
 	reconcileDeleteLoadBalancer, err := reconcileDeleteLoadBalancer(ctx, clusterScope, loadBalancerSvc)
 	if err != nil {
 		return reconcileDeleteLoadBalancer, err
 	}
 
-	natServiceSvc := r.getNatServiceSvc(ctx, *clusterScope)
+	natServiceSvc := r.Cloud.NatService(ctx, *clusterScope)
 	reconcileDeleteNatService, err := reconcileDeleteNatService(ctx, clusterScope, natServiceSvc)
 	if err != nil {
 		return reconcileDeleteNatService, err
@@ -466,7 +409,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	if err != nil {
 		return reconcileDeletePublicIp, err
 	}
-	routeTableSvc := r.getRouteTableSvc(ctx, *clusterScope)
+	routeTableSvc := r.Cloud.RouteTable(ctx, *clusterScope)
 	reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, routeTableSvc)
 	if err != nil {
 		return reconcileDeleteRouteTable, err
@@ -477,19 +420,19 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteSecurityGroup, err
 	}
 
-	internetServiceSvc := r.getInternetServiceSvc(ctx, *clusterScope)
+	internetServiceSvc := r.Cloud.InternetService(ctx, *clusterScope)
 	reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, internetServiceSvc)
 	if err != nil {
 		return reconcileDeleteInternetService, err
 	}
 
-	subnetSvc := r.getSubnetSvc(ctx, *clusterScope)
+	subnetSvc := r.Cloud.Subnet(ctx, *clusterScope)
 	reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, subnetSvc)
 	if err != nil {
 		return reconcileDeleteSubnet, err
 	}
 
-	netSvc := r.getNetSvc(ctx, *clusterScope)
+	netSvc := r.Cloud.Net(ctx, *clusterScope)
 	reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, netSvc)
 	if err != nil {
 		return reconcileDeleteNet, err

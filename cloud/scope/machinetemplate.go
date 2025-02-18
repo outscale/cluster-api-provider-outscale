@@ -29,7 +29,6 @@ import (
 
 // MachineScopeParams is a collection of input parameters to create a new scope
 type MachineTemplateScopeParams struct {
-	OscClient          *OscClient
 	Client             client.Client
 	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
 }
@@ -38,22 +37,6 @@ type MachineTemplateScopeParams struct {
 func NewMachineTemplateScope(params MachineTemplateScopeParams) (*MachineTemplateScope, error) {
 	if params.Client == nil {
 		return nil, errors.New("Client is required when creating a MachineTemplateScope")
-	}
-
-	client, err := newOscClient()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
-	}
-
-	if params.OscClient == nil {
-		params.OscClient = client
-	}
-	if params.OscClient.api == nil {
-		params.OscClient.api = client.api
-	}
-	if params.OscClient.auth == nil {
-		params.OscClient.auth = client.auth
 	}
 
 	helper, err := patch.NewHelper(params.OscMachineTemplate, params.Client)

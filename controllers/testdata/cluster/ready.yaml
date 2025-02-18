@@ -1,0 +1,172 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"cluster.x-k8s.io/v1beta1","kind":"Cluster","metadata":{"annotations":{},"labels":{"ccm":"test-cluster-api-crs-ccm","cni":"test-cluster-api-crs-cni"},"name":"test-cluster-api","namespace":"cluster-api-test"},"spec":{"clusterNetwork":{"pods":{"cidrBlocks":["10.42.0.0/16"]}},"controlPlaneRef":{"apiVersion":"controlplane.cluster.x-k8s.io/v1beta1","kind":"KubeadmControlPlane","name":"test-cluster-api-control-plane"},"infrastructureRef":{"apiVersion":"infrastructure.cluster.x-k8s.io/v1beta1","kind":"OscCluster","name":"test-cluster-api"}}}
+  creationTimestamp: "2025-02-17T09:47:38Z"
+  finalizers:
+  - cluster.cluster.x-k8s.io
+  generation: 2
+  labels:
+    ccm: test-cluster-api-crs-ccm
+    cni: test-cluster-api-crs-cni
+  name: test-cluster-api
+  namespace: cluster-api-test
+  resourceVersion: "20362574"
+  uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 10.42.0.0/16
+  controlPlaneEndpoint:
+    host: test-cluster-api-k8s-foo.eu-west-2.lbu.outscale.com
+    port: 6443
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: test-cluster-api-control-plane
+    namespace: cluster-api-test
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: test-cluster-api
+    namespace: cluster-api-test
+status:
+  conditions:
+  - lastTransitionTime: "2025-02-17T09:53:11Z"
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2025-02-17T09:53:11Z"
+    status: "True"
+    type: ControlPlaneInitialized
+  - lastTransitionTime: "2025-02-17T09:53:11Z"
+    status: "True"
+    type: ControlPlaneReady
+  - lastTransitionTime: "2025-02-17T09:48:06Z"
+    status: "True"
+    type: InfrastructureReady
+  infrastructureReady: true
+  observedGeneration: 2
+  phase: Provisioned
+  v1beta2:
+    conditions:
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: |-
+        * WorkersAvailable:
+          * MachineDeployment test-cluster-api-md-0: 0 available replicas, at least 2 required (spec.strategy.rollout.maxUnavailable is 0, spec.replicas is 2)
+      observedGeneration: 2
+      reason: NotAvailable
+      status: "False"
+      type: Available
+    - lastTransitionTime: "2025-02-17T09:53:11Z"
+      message: ""
+      observedGeneration: 2
+      reason: ProbeSucceeded
+      status: "True"
+      type: RemoteConnectionProbe
+    - lastTransitionTime: "2025-02-17T09:48:06Z"
+      message: ""
+      observedGeneration: 2
+      reason: Ready
+      status: "True"
+      type: InfrastructureReady
+    - lastTransitionTime: "2025-02-17T09:53:11Z"
+      message: ""
+      observedGeneration: 2
+      reason: Initialized
+      status: "True"
+      type: ControlPlaneInitialized
+    - lastTransitionTime: "2025-02-17T16:57:42Z"
+      message: ""
+      observedGeneration: 2
+      reason: Available
+      status: "True"
+      type: ControlPlaneAvailable
+    - lastTransitionTime: "2025-02-17T09:47:39Z"
+      message: '* MachineDeployment test-cluster-api-md-0: 0 available replicas,
+        at least 2 required (spec.strategy.rollout.maxUnavailable is 0, spec.replicas
+        is 2)'
+      observedGeneration: 2
+      reason: NotAvailable
+      status: "False"
+      type: WorkersAvailable
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: NotRollingOut
+      status: "False"
+      type: RollingOut
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: NotRemediating
+      status: "False"
+      type: Remediating
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: NotScalingDown
+      status: "False"
+      type: ScalingDown
+    - lastTransitionTime: "2025-02-17T09:48:09Z"
+      message: ""
+      observedGeneration: 2
+      reason: NotScalingUp
+      status: "False"
+      type: ScalingUp
+    - lastTransitionTime: "2025-02-17T09:53:12Z"
+      message: |-
+        * Machine test-cluster-api-control-plane-grd54:
+          * NodeHealthy:
+            * Node.Ready: container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin not initialized
+      observedGeneration: 2
+      reason: NotReady
+      status: "False"
+      type: ControlPlaneMachinesReady
+    - lastTransitionTime: "2025-02-17T09:56:37Z"
+      message: |-
+        * Machines test-cluster-api-md-0-6p8qk-45gbx, test-cluster-api-md-0-6p8qk-qgvhr:
+          * NodeHealthy:
+            * Node.Ready: container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin not initialized
+      observedGeneration: 2
+      reason: NotReady
+      status: "False"
+      type: WorkerMachinesReady
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: UpToDate
+      status: "True"
+      type: ControlPlaneMachinesUpToDate
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: UpToDate
+      status: "True"
+      type: WorkerMachinesUpToDate
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: NotPaused
+      status: "False"
+      type: Paused
+    - lastTransitionTime: "2025-02-17T09:47:38Z"
+      message: ""
+      observedGeneration: 2
+      reason: NotDeleting
+      status: "False"
+      type: Deleting
+    controlPlane:
+      availableReplicas: 0
+      desiredReplicas: 1
+      readyReplicas: 0
+      replicas: 1
+      upToDateReplicas: 1
+    workers:
+      availableReplicas: 0
+      desiredReplicas: 2
+      readyReplicas: 0
+      replicas: 2
+      upToDateReplicas: 2

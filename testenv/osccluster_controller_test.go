@@ -32,6 +32,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
@@ -633,10 +634,15 @@ func getClusterScope(ctx context.Context, capoClusterKey client.ObjectKey, oscIn
 	k8sClient.Get(ctx, capoClusterKey, capoCluster)
 	oscInfraCluster := &infrastructurev1beta1.OscCluster{}
 	k8sClient.Get(ctx, oscInfraClusterKey, oscInfraCluster)
+	cl, err := cloud.NewOscClient()
+	if err != nil {
+		return nil, err
+	}
 	clusterScope, err = scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     k8sClient,
 		Cluster:    capoCluster,
 		OscCluster: oscInfraCluster,
+		OscClient:  cl,
 	})
 	return clusterScope, err
 }
