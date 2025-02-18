@@ -445,6 +445,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				machineScope.SetProviderID(subregionName, vmId)
 			}
 			log.V(4).Info("Get vmId", "vmId", vmId)
+			// TODO: useless, GetVmState catches the same errors
 			_, err = vmSvc.GetVm(ctx, vmId)
 			if err != nil {
 				return reconcile.Result{}, err

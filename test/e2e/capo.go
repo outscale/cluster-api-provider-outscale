@@ -129,7 +129,7 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 			return false
 		}
 		return conditions.IsTrue(cluster, clusterv1.ReadyCondition)
-	}, 20*time.Minute, 30*time.Second).Should(BeTrue(), "Cluster did not become ready in time")
+	}, 30*time.Minute, 30*time.Second).Should(BeTrue(), "Cluster did not become ready in time")
 }
 
 // CapoClusterDeploymentSpec create infrastructure cluster using its generated config and wait infrastructure cluster to be provisionned

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scope
+package cloud
 
 import (
 	"context"
@@ -26,12 +26,12 @@ import (
 
 // OscClient contains input client to use outscale api
 type OscClient struct {
-	auth context.Context
-	api  *osc.APIClient
+	Auth context.Context
+	API  *osc.APIClient
 }
 
 // newOscClient return OscLient using secret credentials
-func newOscClient() (*OscClient, error) {
+func NewOscClient() (*OscClient, error) {
 	accessKey := os.Getenv("OSC_ACCESS_KEY")
 	if accessKey == "" {
 		return nil, errors.New("environment variable OSC_ACCESS_KEY is required")
@@ -55,8 +55,8 @@ func newOscClient() (*OscClient, error) {
 	auth = context.WithValue(auth, osc.ContextServerVariables, map[string]string{"region": os.Getenv("OSC_REGION")})
 
 	oscClient := &OscClient{
-		api:  osc.NewAPIClient(config),
-		auth: auth,
+		API:  osc.NewAPIClient(config),
+		Auth: auth,
 	}
 	return oscClient, nil
 }

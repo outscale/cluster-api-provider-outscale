@@ -1,0 +1,22 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachine
+metadata:
+  name: cluster-api-test-worker
+  namespace: cluster-api-test
+spec:
+  node:
+    clusterName: test-cluster-api
+    image:
+      name: ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14
+      accountID: "01234"
+    keypair:
+      name: cluster-api
+    vm:
+      clusterName: test-cluster-api
+      keypairName: cluster-api
+      rootDisk:
+        rootDiskIops: 500
+        rootDiskSize: 15
+        rootDiskType: gp2
+      subregionName: eu-west-2a
+      vmType: tinav6.c4r8p2
