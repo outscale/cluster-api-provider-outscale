@@ -42,6 +42,7 @@ type OscMachineStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=oscmachines,scope=Namespaced,categories=cluster-api
 
 // OscMachine is the Schema for the oscmachines API
 type OscMachine struct {

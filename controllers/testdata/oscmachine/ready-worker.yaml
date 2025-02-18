@@ -1,0 +1,75 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachine
+metadata:
+  annotations:
+    cluster.x-k8s.io/cloned-from-groupkind: OscMachineTemplate.infrastructure.cluster.x-k8s.io
+    cluster.x-k8s.io/cloned-from-name: test-cluster-api-md-0
+  creationTimestamp: "2025-02-17T09:48:08Z"
+  finalizers:
+  - oscmachine.infrastructure.cluster.x-k8s.io
+  generation: 2
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+    cluster.x-k8s.io/deployment-name: test-cluster-api-md-0
+    cluster.x-k8s.io/set-name: test-cluster-api-md-0-6p8qk
+    machine-template-hash: 3550316311-6p8qk
+  name: test-cluster-api-md-0-6p8qk-qgvhr
+  namespace: cluster-api-test
+  ownerReferences:
+  - apiVersion: cluster.x-k8s.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Machine
+    name: test-cluster-api-md-0-6p8qk-qgvhr
+    uid: a009b2e2-2688-406c-a7db-a0b27a1082fd
+  resourceVersion: "20216450"
+  uid: 9c50b5d4-767d-44f1-847b-854100147366
+spec:
+  node:
+    clusterName: test-cluster-api
+    image:
+      accountId: "01234"
+      name: ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14
+    keypair:
+      name: cluster-api
+    vm:
+      clusterName: test-cluster-api
+      deviceName: /dev/sda1
+      imageId: ami-67e3b38f
+      keypairName: cluster-api
+      name: test-cluster-api-vm-kw
+      resourceId: i-046f4bd0
+      rootDisk:
+        rootDiskIops: 500
+        rootDiskSize: 15
+        rootDiskType: gp2
+      securityGroupNames:
+      - name: test-cluster-api-securitygroup-kw
+      - name: test-cluster-api-securitygroup-node
+      subnetName: test-cluster-api-subnet-kw
+      subregionName: eu-west-2a
+      vmType: tinav6.c4r8p2
+  providerID: aws:///eu-west-2a/i-046f4bd0
+status:
+  addresses:
+  - address: 10.0.3.29
+    type: InternalIP
+  conditions:
+  - lastTransitionTime: "2025-02-17T09:53:50Z"
+    status: "True"
+    type: VmReady
+  - lastTransitionTime: "2025-02-17T09:53:16Z"
+    status: "True"
+    type: VolumeReady
+  node:
+    imageRef:
+      resourceMap:
+        ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14: ami-67e3b38f
+    keypairRef:
+      resourceMap:
+        cluster-api: cluster-api
+    vmRef:
+      resourceMap:
+        test-cluster-api-vm-kw-a009b2e2-2688-406c-a7db-a0b27a1082fd: i-046f4bd0
+  ready: true
+  vmState: running

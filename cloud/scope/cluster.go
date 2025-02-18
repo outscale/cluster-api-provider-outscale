@@ -34,7 +34,7 @@ const clusterUIDLabel = "outscale.com/clusterUID"
 
 // ClusterScopeParams is a collection of input parameters to create a new scope
 type ClusterScopeParams struct {
-	OscClient  *OscClient
+	OscClient  *cloud.OscClient
 	Client     client.Client
 	Cluster    *clusterv1.Cluster
 	OscCluster *infrastructurev1beta1.OscCluster
@@ -48,24 +48,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	if params.OscCluster == nil {
 		return nil, errors.New("OscCluster is required when creating a ClusterScope")
-	}
-
-	client, err := newOscClient()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Osc Client: %w", err)
-	}
-
-	if params.OscClient == nil {
-		params.OscClient = client
-	}
-
-	if params.OscClient.api == nil {
-		params.OscClient.api = client.api
-	}
-
-	if params.OscClient.auth == nil {
-		params.OscClient.auth = client.auth
 	}
 
 	helper, err := patch.NewHelper(params.OscCluster, params.Client)
@@ -86,7 +68,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 type ClusterScope struct {
 	Client      client.Client
 	patchHelper *patch.Helper
-	OscClient   *OscClient
+	OscClient   *cloud.OscClient
 	Cluster     *clusterv1.Cluster
 	OscCluster  *infrastructurev1beta1.OscCluster
 }
@@ -126,12 +108,12 @@ func (s *ClusterScope) EnsureExplicitUID() {
 
 // GetAuth return outscale api context
 func (s *ClusterScope) GetAuth() context.Context {
-	return s.OscClient.auth
+	return s.OscClient.Auth
 }
 
 // GetApi return outscale api credential
 func (s *ClusterScope) GetApi() *osc.APIClient {
-	return s.OscClient.api
+	return s.OscClient.API
 }
 
 // GetInternetService return the internetService of the cluster
@@ -328,16 +310,6 @@ func (s *ClusterScope) SetNotReady() {
 // SetReady set the ready status of the cluster
 func (s *ClusterScope) SetReady() {
 	s.OscCluster.Status.Ready = true
-}
-
-// InfraCluster return the Outscale infrastructure cluster
-func (s *ClusterScope) InfraCluster() cloud.ClusterObject {
-	return s.OscCluster
-}
-
-// ClusterObj return the cluster object
-func (s *ClusterScope) ClusterObj() cloud.ClusterObject {
-	return s.Cluster
 }
 
 // GetBastion return the vm bastion
