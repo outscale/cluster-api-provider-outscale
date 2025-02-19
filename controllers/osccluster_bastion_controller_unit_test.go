@@ -1420,7 +1420,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 							RootDiskIops: 1500,
 							RootDiskType: "io1",
 						},
-						SubregionName: "eu-west-2c",
+						SubregionName: "eu-west-2d",
 						SubnetName:    "test-subnet",
 						VmType:        "tinav3.c2r4p2",
 						PublicIpName:  "test-publicip@test",

@@ -1484,7 +1484,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 							RootDiskType: "io1",
 						},
 						KeypairName:      "rke",
-						SubregionName:    "eu-west-2c",
+						SubregionName:    "eu-west-2d",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
 						VmType:           "tinav3.c2r4p2",

@@ -7,6 +7,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestValidateSubregion(t *testing.T) {
+	var tcs = []struct {
+		subregion string
+		valid     bool
+	}{
+		{subregion: "eu-west-2a", valid: true},
+		{subregion: "eu-west-2b", valid: true},
+
+		{subregion: "cloudgouv-eu-west-1a", valid: true},
+		{subregion: "cloudgouv-eu-west-1b", valid: true},
+		{subregion: "cloudgouv-eu-west-1c", valid: true},
+
+		{subregion: "us-east-2a", valid: true},
+		{subregion: "us-east-2b", valid: true},
+
+		{subregion: "us-west-1a", valid: true},
+		{subregion: "us-west-1b", valid: true},
+
+		{subregion: "ap-northeast-1a", valid: true},
+		{subregion: "ap-northeast-1b", valid: true},
+	}
+	for _, tc := range tcs {
+		_, err := v1beta1.ValidateSubregionName(tc.subregion)
+		if tc.valid {
+			require.NoError(t, err)
+		} else {
+			require.Error(t, err)
+		}
+	}
+}
+
 func TestValidateVmType(t *testing.T) {
 	var tcs = []struct {
 		vmType string
