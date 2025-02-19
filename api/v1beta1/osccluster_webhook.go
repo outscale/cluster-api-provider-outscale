@@ -23,12 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
-
-var oscClusterLog = logf.Log.WithName("osccluster-resource")
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OscCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -42,7 +39,6 @@ var _ webhook.Defaulter = &OscCluster{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (m *OscCluster) Default() {
-	oscClusterLog.Info("default", "name", m.Name)
 }
 
 //+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta1,name=vosccluster.kb.io,admissionReviewVersions=v1
@@ -51,9 +47,7 @@ var _ webhook.Validator = &OscCluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (m *OscCluster) ValidateCreate() (admission.Warnings, error) {
-	oscMachineLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscClusterSpec(m.Spec); len(allErrs) > 0 {
-		oscClusterLog.Info("validate error", "error", allErrs)
 		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), m.Name, allErrs)
 	}
 	return nil, nil
@@ -61,12 +55,8 @@ func (m *OscCluster) ValidateCreate() (admission.Warnings, error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
-	oscClusterLog.Info("validate update", "name", r.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscCluster)
-
-	oscClusterLog.Info("validate update old loadBalanceName", "loadBalanceName", old.Spec.Network.LoadBalancer.LoadBalancerName)
-	oscClusterLog.Info("validate update old loadBalanceName", "loadBalanceName", r.Spec.Network.LoadBalancer.LoadBalancerName)
 
 	if !reflect.DeepEqual(r.Spec.Network.LoadBalancer.LoadBalancerName, old.Spec.Network.LoadBalancer.LoadBalancerName) {
 		allErrs = append(allErrs,
@@ -82,6 +72,5 @@ func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, 
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *OscCluster) ValidateDelete() (admission.Warnings, error) {
-	oscClusterLog.Info("validate delete", "name", r.Name)
 	return nil, nil
 }

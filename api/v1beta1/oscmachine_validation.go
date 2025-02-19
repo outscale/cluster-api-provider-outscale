@@ -183,10 +183,12 @@ func ValidateVolumeType(volumeType string) (string, error) {
 	}
 }
 
+var isValidSubregion = regexp.MustCompile(`(cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]`).MatchString
+
 // ValidateSubregionName check that subregionName is a valid az format
 func ValidateSubregionName(subregionName string) (string, error) {
 	switch {
-	case strings.HasSuffix(subregionName, "1a") || strings.HasSuffix(subregionName, "1b") || strings.HasSuffix(subregionName, "2a") || strings.HasSuffix(subregionName, "2b"):
+	case isValidSubregion(subregionName):
 		return subregionName, nil
 	default:
 		return subregionName, errors.New("Invalid subregionName")
