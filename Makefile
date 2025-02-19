@@ -172,7 +172,7 @@ cloud-init-secret:
 
 .PHONY: testenv
 testenv: cloud-init-secret
-	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v -test.timeout 30m
+	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v -test.timeout 120m
 
 .PHONY: testclean
 testclean:

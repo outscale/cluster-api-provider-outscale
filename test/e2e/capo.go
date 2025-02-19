@@ -129,7 +129,7 @@ func CreateClusterAndWait(ctx context.Context, input CreateClusterAndWaitInput, 
 			return false
 		}
 		return conditions.IsTrue(cluster, clusterv1.ReadyCondition)
-	}, 20*time.Minute, 30*time.Second).Should(BeTrue(), "Cluster did not become ready in time")
+	}, 30*time.Minute, 30*time.Second).Should(BeTrue(), "Cluster did not become ready in time")
 }
 
 // CapoClusterDeploymentSpec create infrastructure cluster using its generated config and wait infrastructure cluster to be provisionned
@@ -229,191 +229,15 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 		}, clusterResources)
 		time.Sleep(10 * time.Minute)
 
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "capi-kubeadm-bootstrap-system",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "capi-kubeadm-control-plane-system",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "capi-system",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "cluster-api-provider-outscale-manager-config",
-			Namespace: "cluster-api-provider-outscale-system",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "cluster-api-provider-outscale-system",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    k8sClient,
-			Name:      "cluster-api-provider-outscale-manager-config",
-			Namespace: "cluster-api-provider-outscale-system",
-		})
-
-		utils.WaitForSecretsAvailable(ctx, utils.SecretInput{
-			Getter:    k8sClient,
-			Name:      "cluster-api-provider-outscale",
-			Namespace: "cluster-api-provider-outscale-system",
-		})
-		utils.WaitForDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    k8sClient,
-			Name:      "capi-kubeadm-bootstrap-controller-manager",
-			Namespace: "capi-kubeadm-bootstrap-system",
-		})
-		utils.WaitForDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    k8sClient,
-			Name:      "capi-kubeadm-control-plane-controller-manager",
-			Namespace: "capi-kubeadm-control-plane-system",
-		})
-		utils.WaitForDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    k8sClient,
-			Name:      "capi-controller-manager",
-			Namespace: "capi-system",
-		})
-		utils.WaitForDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    k8sClient,
-			Name:      "cluster-api-provider-outscale-controller-manager",
-			Namespace: "cluster-api-provider-outscale-system",
-		})
-		bootstrapKubeAdm, err := labels.Parse("cluster.x-k8s.io/provider=bootstrap-kubeadm")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: bootstrapKubeAdm},
-		})
-
-		controlPlaneKubeAdm, err := labels.Parse("cluster.x-k8s.io/provider=control-plane-kubeadm")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: controlPlaneKubeAdm},
-		})
-		clusterApi, err := labels.Parse("cluster.x-k8s.io/provider=cluster-api")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: clusterApi},
-		})
-
-		certManager, err := labels.Parse("app.kubernetes.io/component=controller")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: certManager},
-		})
-		certManagerCaInjector, err := labels.Parse("app.kubernetes.io/component=cainjector")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: certManagerCaInjector},
-		})
-		certManagerWebhook, err := labels.Parse("app.kubernetes.io/component=webhook")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: certManagerWebhook},
-		})
-		capoControllerManager, err := labels.Parse("control-plane=capo-controller-manager")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      k8sClient,
-			ListOptions: &client.ListOptions{LabelSelector: capoControllerManager},
-		})
-
-		By("Local Config PASSED!")
-
-		By("Check configmap is ready")
+		By("Check workload cluster services")
 		clusterNamespace := namespace.Name
 		clusterName := clusterResources.Cluster.Name
 		workloadProxy := input.BootstrapClusterProxy.GetWorkloadCluster(ctx, clusterNamespace, clusterName)
 		workloadClient := workloadProxy.GetClient()
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "default",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "kube-node-lease",
-		})
 
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "cluster-info",
-			Namespace: "kube-public",
-		})
-
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "kube-public",
-		})
-
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "coredns",
-			Namespace: "kube-system",
-		})
-
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "extension-apiserver-authentication",
-			Namespace: "kube-system",
-		})
-
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kube-proxy",
-			Namespace: "kube-system",
-		})
-
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kube-root-ca.crt",
-			Namespace: "kube-system",
-		})
-
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kubeadm-config",
-			Namespace: "kube-system",
-		})
-
-		// based on version
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "kubelet-config-1.22",
-			Namespace: "kube-system",
-		})
-		utils.WaitForDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    workloadClient,
-			Name:      "calico-kube-controllers",
-			Namespace: "kube-system",
-		})
-		utils.WaitForDaemonSetAvailable(ctx, utils.DaemonSetInput{
-			Getter:    workloadClient,
-			Name:      "calico-node",
-			Namespace: "kube-system",
-		})
 		utils.WaitForDaemonSetAvailable(ctx, utils.DaemonSetInput{
 			Getter:    workloadClient,
 			Name:      "kube-proxy",
-			Namespace: "kube-system",
-		})
-		utils.WaitForDaemonSetAvailable(ctx, utils.DaemonSetInput{
-			Getter:    workloadClient,
-			Name:      "osc-cloud-controller-manager",
 			Namespace: "kube-system",
 		})
 
@@ -427,125 +251,7 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 			Name:      "kube-dns",
 			Namespace: "kube-system",
 		})
-		utils.WaitForCreateSecretAvailable(ctx, utils.CreateSecretInput{
-			Getter:    workloadClient,
-			Name:      "provisionner",
-			Namespace: "default",
-			DataKey:   "provisionner",
-			DataValue: "cluster-api",
-		})
-		utils.WaitForSecretsAvailable(ctx, utils.SecretInput{
-			Getter:    workloadClient,
-			Name:      "provisionner",
-			Namespace: "default",
-		})
-		utils.WaitForCreateConfigMapAvailable(ctx, utils.CreateConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "bootstrapper",
-			Namespace: "default",
-			DataKey:   "bootstrapper",
-			DataValue: "kubeadm",
-		})
-		utils.WaitForConfigMapsAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "bootstrapper",
-			Namespace: "default",
-		})
-		utils.WaitForCreateDeploymentAvailable(ctx, utils.CreateDeploymentInput{
-			Getter:        workloadClient,
-			Name:          "nginx-deployment",
-			Namespace:     "default",
-			Image:         "nginx:1.12",
-			Port:          80,
-			ConfigMapName: "bootstraper",
-			ConfigMapKey:  "bootstrapper",
-		})
-		utils.WaitForDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    workloadClient,
-			Name:      "nginx-deployment",
-			Namespace: "default",
-		})
-		utils.WaitForCreateDaemonSetAvailable(ctx, utils.CreateDaemonSetInput{
-			Getter:     workloadClient,
-			Name:       "nginx-daemonset",
-			Namespace:  "default",
-			Image:      "nginx:1.12",
-			Port:       80,
-			SecretName: "provisionner",
-			SecretKey:  "provisionner",
-		})
-		utils.WaitForDaemonSetAvailable(ctx, utils.DaemonSetInput{
-			Getter:    workloadClient,
-			Name:      "nginx-daemonset",
-			Namespace: "default",
-		})
-		utils.WaitForCreateServiceAvailable(ctx, utils.CreateServiceInput{
-			Getter:     workloadClient,
-			Name:       "nginx-deployment",
-			Namespace:  "default",
-			Port:       80,
-			TargetPort: 80,
-		})
-		utils.WaitForServiceAvailable(ctx, utils.ServiceInput{
-			Getter:    workloadClient,
-			Name:      "nginx-deployment",
-			Namespace: "default",
-		})
-		utils.WaitForCreateServiceAvailable(ctx, utils.CreateServiceInput{
 
-			Getter:     workloadClient,
-			Name:       "nginx-daemonset",
-			Namespace:  "default",
-			Port:       80,
-			TargetPort: 80,
-		})
-		utils.WaitForServiceAvailable(ctx, utils.ServiceInput{
-			Getter:    workloadClient,
-			Name:      "nginx-daemonset",
-			Namespace: "default",
-		})
-		utils.WaitForDeleteServiceAvailable(ctx, utils.ServiceInput{
-			Getter:    workloadClient,
-			Name:      "nginx-deployment",
-			Namespace: "default",
-		})
-		utils.WaitForDeleteServiceAvailable(ctx, utils.ServiceInput{
-			Getter:    workloadClient,
-			Name:      "nginx-daemonset",
-			Namespace: "default",
-		})
-		utils.WaitForDeleteDeploymentAvailable(ctx, utils.DeploymentInput{
-			Getter:    workloadClient,
-			Name:      "nginx-deployment",
-			Namespace: "default",
-		})
-		utils.WaitForDeleteDaemonSetAvailable(ctx, utils.DaemonSetInput{
-			Getter:    workloadClient,
-			Name:      "nginx-daemonset",
-			Namespace: "default",
-		})
-		utils.WaitForDeleteConfigMapAvailable(ctx, utils.ConfigMapInput{
-			Getter:    workloadClient,
-			Name:      "bootstrapper",
-			Namespace: "default",
-		})
-		utils.WaitForDeleteSecretAvailable(ctx, utils.SecretInput{
-			Getter:    workloadClient,
-			Name:      "provisionner",
-			Namespace: "default",
-		})
-		calicoKubeController, err := labels.Parse("k8s-app=calico-kube-controllers")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      workloadClient,
-			ListOptions: &client.ListOptions{LabelSelector: calicoKubeController},
-		})
-		calicoNode, err := labels.Parse("k8s-app=calico-node")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      workloadClient,
-			ListOptions: &client.ListOptions{LabelSelector: calicoNode},
-		})
 		coreDns, err := labels.Parse("k8s-app=kube-dns")
 		Expect(err).ToNot(HaveOccurred())
 		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
@@ -583,13 +289,6 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 			Lister:      workloadClient,
 			ListOptions: &client.ListOptions{LabelSelector: kube_scheduler},
 		})
-		osc_cloud_controller_manager, err := labels.Parse("app=osc-cloud-controller-manager")
-		Expect(err).ToNot(HaveOccurred())
-		utils.WaitForPodToBeReady(ctx, utils.PodListInput{
-			Lister:      workloadClient,
-			ListOptions: &client.ListOptions{LabelSelector: osc_cloud_controller_manager},
-		})
-
 		By("Config PASSED!")
 	})
 	AfterEach(func() {

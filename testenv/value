@@ -27,7 +27,7 @@ write_files:
       dns: {}
       etcd: {}
       kind: ClusterConfiguration
-      kubernetesVersion: v1.22.9
+      kubernetesVersion: v1.27.9
       networking:
         podSubnet: 10.42.0.0/16
       scheduler: {}
