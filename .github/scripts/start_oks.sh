@@ -67,32 +67,30 @@ if [ $ret -ne 0 ]; then
 fi
 export KUBECONFIG=$kubeconfig
 
-harbor_host=`kubectl get ingress harbor-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
-if [ -z "$harbor_host" ]; then
-    # NGinx ingress
-    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.6.2/deploy/crds.yaml
+# NGinx ingress
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.6.2/deploy/crds.yaml
 
-    helm upgrade --install nginx-ingress oci://ghcr.io/nginxinc/charts/nginx-ingress --version 1.3.2 \
-    --set controller.kind="daemonset" \
-    --set controller.nodeSelector.node-pool=github-runner \
-    --set controller.service.type="LoadBalancer" \
-    --set controller.ingressClass.name="internal-nginx" \
-    --set controller.ingressClass.create="true" \
-    --set controller.service.annotations."service\.beta\.kubernetes\.io/osc-load-balancer-name"=harbor-ingress  \
-    --set controller.service.annotations."service\.beta\.kubernetes\.io/osc-load-balancer-target-node-pools"=github-runner \
-    --set "controller.config.use-proxy-protocol=true" \
-    --set "controller.config.use-forwarded-headers=true" \
-    --set "controller.config.compute-full-forwarded-for=true" \
-    --set "controller.config.enable-real-ip=true"
-    ret=$?
-    if [ $ret -ne 0 ]; then
-        exit $ret
-    fi
+helm upgrade --install nginx-ingress oci://ghcr.io/nginxinc/charts/nginx-ingress --version 1.3.2 \
+--set controller.kind="daemonset" \
+--set controller.nodeSelector.node-pool=github-runner \
+--set controller.service.type="LoadBalancer" \
+--set controller.ingressClass.name="internal-nginx" \
+--set controller.ingressClass.create="true" \
+--set controller.service.annotations."service\.beta\.kubernetes\.io/osc-load-balancer-name"=harbor-ingress  \
+--set controller.service.annotations."service\.beta\.kubernetes\.io/osc-load-balancer-target-node-pools"=github-runner \
+--set "controller.config.use-proxy-protocol=true" \
+--set "controller.config.use-forwarded-headers=true" \
+--set "controller.config.compute-full-forwarded-for=true" \
+--set "controller.config.enable-real-ip=true"
+ret=$?
+if [ $ret -ne 0 ]; then
+    exit $ret
+fi
 
-    # cert manager
-    helm upgrade --install cert-manager oci://registry-1.docker.io/bitnamicharts/cert-manager --set installCRDs=true
+# cert manager
+helm upgrade --install cert-manager oci://registry-1.docker.io/bitnamicharts/cert-manager --set installCRDs=true
 
-    kubectl apply -f - << EOF
+kubectl apply -f - << EOF
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -124,6 +122,8 @@ spec:
     group: cert-manager.io
 EOF
 
+harbor_host=`kubectl get ingress harbor-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
+if [ -z "$harbor_host" ]; then
     # Harbor
     helm repo add harbor https://helm.goharbor.io
     helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" --set "expose.ingress.className=internal-nginx" \
