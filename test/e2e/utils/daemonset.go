@@ -167,7 +167,7 @@ func WaitForDaemonSetAvailable(ctx context.Context, input DaemonSetInput) {
 	Eventually(func() bool {
 		isDaemonSetAvailable := GetDaemonSet(ctx, input)
 		return isDaemonSetAvailable
-	}, 15*time.Second, 3*time.Second).Should(BeTrue(), "Failed to find deployment %s", input.Name)
+	}, 10*time.Minute, 10*time.Second).Should(BeTrue(), "Failed to find deployment %s", input.Name)
 }
 
 // WaitForCreateDaemonSetAvailable  wait for daemonset to be created

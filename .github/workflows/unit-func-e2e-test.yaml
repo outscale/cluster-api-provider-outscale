@@ -45,19 +45,21 @@ jobs:
       uses: imranismail/setup-kustomize@v1
       with:
         kustomize-version: v4.5.7
+    - name: Set ak/sk name based on runner region
+      run: .github/scripts/runneraksk.sh
     - uses: outscale/frieza-github-actions/frieza-clean@master
       with:
-        access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        region: ${{ secrets.OSC_REGION }}
+        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        region: ${{ env.OSC_REGION }}
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
       with:
         repository_folder: "rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
-        image_id: ${{ vars.OMI_ID }}
+        osc_access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        osc_secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        osc_region: ${{ env.OSC_REGION }}
+        image_id: ${{ vars[env.OMI_ID_NAME] }}
         control_plane_vm_type: ${{ vars.CP_VMTYPE }}
         bastion_vm_type:  ${{ vars.BASTION_VMTYPE }}
         worker_vm_type: ${{ vars.WORKER_VMTYPE }}
@@ -108,9 +110,8 @@ jobs:
       shell: bash
       env:
          KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-         OSC_REGION: ${{ secrets.OSC_REGION }}
+         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
     - name: Deploy cluster-api
       run: make deploy-clusterapi
       id: deploy-capi
@@ -138,12 +139,10 @@ jobs:
       shell: bash
       id: func-test
       env:
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-        OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-        OSC_REGION: ${{ secrets.OSC_REGION }}
-        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
-        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
+        IMG_UPGRADE_FROM: ${{ vars[env.IMG_UPGRADE_FROM_NAME] }}
     - name: Get log capo master
       run: make logs-capo
       if: ${{ failure() && steps.func-test.conclusion == 'failure' }}
@@ -170,9 +169,9 @@ jobs:
       if: ${{ always() }}
       with:
         repository_folder: "./rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
+        osc_access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        osc_secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        osc_region: ${{ env.OSC_REGION }}
   unit_test:
     runs-on: ubuntu-latest
     steps:
@@ -213,19 +212,21 @@ jobs:
       uses: imranismail/setup-kustomize@v1
       with:
         kustomize-version: v4.5.7
+    - name: Set ak/sk name based on runner region
+      run: .github/scripts/runneraksk.sh
     - uses: outscale/frieza-github-actions/frieza-clean@master
       with:
-        access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        region: ${{ secrets.OSC_REGION }}
+        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        region: ${{ env.OSC_REGION }}
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
       with:
         repository_folder: "rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }}
-        image_id: ${{ vars.OMI_ID }}
+        osc_access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        osc_secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        osc_region: ${{ env.OSC_REGION }}
+        image_id: ${{ vars[env.OMI_ID_NAME] }}
         control_plane_vm_type: ${{ vars.CP_VMTYPE }}
         bastion_vm_type:  ${{ vars.BASTION_VMTYPE }}
         worker_vm_type: ${{ vars.WORKER_VMTYPE }}
@@ -280,21 +281,19 @@ jobs:
       shell: bash
       env:
          KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-         OSC_REGION: ${{ secrets.OSC_REGION }}
+         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
     - name: Launch e2etest
-      run:  KUBECONFIG=$GITHUB_WORKSPACE/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml make e2etestexistingcluster
+      run:  make e2etestexistingcluster
       shell: bash
       id: e2etest
       env:
+        KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
-        OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
-        OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
-        OSC_REGION: ${{ secrets.OSC_REGION }}
-        OSC_SUBREGION_NAME: ${{ secrets.OSC_SUBREGION_NAME }}
-        IMG_UPGRADE_FROM: ${{ secrets.IMG_UPGRADE_FROM }}
-        IMG_UPGRADE_TO: ${{ secrets.IMG_UPGRADE_TO }}
+        IMG_UPGRADE_FROM: ${{ vars[env.IMG_UPGRADE_FROM_NAME] }}
+        IMG_UPGRADE_TO: ${{ vars[env.IMG_UPGRADE_TO_NAME] }}
     - name: Get cluster api outscale logs
       run: make logs-capo
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
@@ -314,6 +313,6 @@ jobs:
       if: ${{ always() }}
       with:
         repository_folder: "./rke-cluster-for-cluster-api"
-        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
-        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
-        osc_region: ${{ secrets.OSC_REGION }} 
+        osc_access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        osc_secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        osc_region: ${{ env.OSC_REGION }} 

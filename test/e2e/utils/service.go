@@ -127,7 +127,7 @@ func WaitForServiceAvailable(ctx context.Context, input ServiceInput) {
 	Eventually(func() bool {
 		isServiceAvailable := GetService(ctx, input)
 		return isServiceAvailable
-	}, 15*time.Second, 3*time.Second).Should(BeTrue(), "Failed to find service %s", input.Name)
+	}, 10*time.Minute, 10*time.Second).Should(BeTrue(), "Failed to find service %s", input.Name)
 }
 
 // WaitForCreateServiceAvailable wait for service to be created

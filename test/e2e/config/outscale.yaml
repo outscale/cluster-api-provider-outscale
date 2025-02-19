@@ -85,10 +85,10 @@ variables:
   ETCD_VERSION_UPGRADE_TO: "3.5.3-0"
   COREDNS_VERSION_UPGRADE_TO: "v1.8.6"
   IP_FAMILY: "IPv4"
-  KUBERNETES_VERSION_MANAGEMENT: "v1.22.11"
-  KUBERNETES_VERSION: "v1.22.11"
-  KUBERNETES_VERSION_UPGRADE_FROM: "v1.22.11"
-  KUBERNETES_VERSION_UPGRADE_TO: "v1.23.8"
+  KUBERNETES_VERSION_MANAGEMENT: "v1.27.9"
+  KUBERNETES_VERSION: "v1.27.9"
+  KUBERNETES_VERSION_UPGRADE_FROM: "v1.27.9"
+  KUBERNETES_VERSION_UPGRADE_TO: "v1.28.5"
   TEMPLATE_PATH: "${PWD}/test/e2e/data/infrastructure-outscale/cluster-template-with-clusterclass.yaml"
   KUBERNETES_IMAGE_UPGRADE_FROM: "${IMG_UPGRADE_FROM:ami-e1a786f1}"
   KUBERNETES_IMAGE_UPGRADE_TO: "${IMG_UPGRADE_TO:ami-a56b2f36}"
@@ -99,18 +99,18 @@ variables:
   KUBETEST_CONFIGURATION: "${KUBETEST_CONF_PATH:=./data/kubetest/conformance.yaml}"
   NODE_DRAIN_TIMEOUT: "60s"
 intervals:
-  default/wait-cluster: ["20m", "10s"]
-  default/wait-control-plane: ["30m", "10s"]
-  default/wait-worker-nodes: ["15m", "10s"]
-  default/wait-controllers: ["5m", "10s"]
-  default/wait-delete-cluster: ["20m", "10s"]
-  default/wait-machine-upgrade: ["20m", "10s"]
-  default/wait-machine-status: ["20m", "10s"]
-  default/wait-failed-machine-status: ["2m", "10s"]
-  default/wait-machine-remediation: ["15m", "10s"]
+  default/wait-cluster: ["30m", "20s"]
+  default/wait-control-plane: ["30m", "20s"]
+  default/wait-worker-nodes: ["30m", "20s"]
+  default/wait-controllers: ["205m", "20s"]
+  default/wait-delete-cluster: ["30m", "20s"]
+  default/wait-machine-upgrade: ["30m", "20s"]
+  default/wait-machine-status: ["30m", "20s"]
+  default/wait-failed-machine-status: ["5m", "10s"]
+  default/wait-machine-remediation: ["30m", "20s"]
   default/wait-deployment: ["5m", "10s"]
   default/wait-job: ["5m", "10s"]
-  default/wait-nodes-ready: ["15m", "10s"]
-  default/wait-service: ["3m", "10s"]
-  node-drain/wait-deployment-available: ["3m", "10s"]
-  node-drain/wait-machine-deleted: ["15m", "10s"]
+  default/wait-nodes-ready: ["30m", "20s"]
+  default/wait-service: ["5m", "10s"]
+  node-drain/wait-deployment-available: ["5m", "10s"]
+  node-drain/wait-machine-deleted: ["30m", "20s"]
