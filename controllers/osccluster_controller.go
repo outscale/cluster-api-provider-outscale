@@ -364,7 +364,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 // reconcileDelete reconcile the deletion of the cluster
 func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.V(2).Info("Reconcile OscCluster")
+	log.V(3).Info("Cluster needs to be deleted")
 	osccluster := clusterScope.OscCluster
 
 	// reconcile deletion of each element of the cluster
@@ -379,8 +379,8 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 			names[i] = "machine/" + m.Name
 		}
 		nameMachineList := strings.Join(names, ", ")
-		log.V(2).Info("Machine are still running, postpone oscCluster deletion", "nameMachineList", nameMachineList)
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		log.V(3).Info("Machines are still running; postpone oscCluster deletion", "nameMachineList", nameMachineList)
+		return reconcile.Result{RequeueAfter: time.Minute}, nil
 	}
 
 	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
