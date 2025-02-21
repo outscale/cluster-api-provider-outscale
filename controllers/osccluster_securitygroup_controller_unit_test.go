@@ -713,34 +713,34 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 
 func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expCreateSecurityGroupRuleFound             bool
-		expTagFound                                 bool
-		expGetSecurityGroupFromSecurityGroupRuleErr error
-		expCreateSecurityGroupRuleErr               error
-		expReadTagErr                               error
-		expReconcileSecurityGroupRuleErr            error
+		name                             string
+		spec                             infrastructurev1beta1.OscClusterSpec
+		expCreateSecurityGroupRuleFound  bool
+		expTagFound                      bool
+		expSecurityGroupHasRuleErr       error
+		expCreateSecurityGroupRuleErr    error
+		expReadTagErr                    error
+		expReconcileSecurityGroupRuleErr error
 	}{
 		{
-			name:                            "create securityGroupRule  (first time reconcileloop)",
-			spec:                            defaultSecurityGroupInitialize,
-			expCreateSecurityGroupRuleFound: true,
-			expTagFound:                     false,
-			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
-			expCreateSecurityGroupRuleErr:               nil,
-			expReadTagErr:                               nil,
-			expReconcileSecurityGroupRuleErr:            nil,
+			name:                             "create securityGroupRule  (first time reconcileloop)",
+			spec:                             defaultSecurityGroupInitialize,
+			expCreateSecurityGroupRuleFound:  true,
+			expTagFound:                      false,
+			expSecurityGroupHasRuleErr:       nil,
+			expCreateSecurityGroupRuleErr:    nil,
+			expReadTagErr:                    nil,
+			expReconcileSecurityGroupRuleErr: nil,
 		},
 		{
-			name:                            "failed to create securityGroupRule",
-			spec:                            defaultSecurityGroupInitialize,
-			expCreateSecurityGroupRuleFound: false,
-			expTagFound:                     false,
-			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
-			expCreateSecurityGroupRuleErr:               errors.New("CreateSecurityGroupRule generic errors"),
-			expReadTagErr:                               nil,
-			expReconcileSecurityGroupRuleErr:            errors.New("cannot create securityGroupRule: CreateSecurityGroupRule generic errors"),
+			name:                             "failed to create securityGroupRule",
+			spec:                             defaultSecurityGroupInitialize,
+			expCreateSecurityGroupRuleFound:  false,
+			expTagFound:                      false,
+			expSecurityGroupHasRuleErr:       nil,
+			expCreateSecurityGroupRuleErr:    errors.New("CreateSecurityGroupRule generic errors"),
+			expReadTagErr:                    nil,
+			expReconcileSecurityGroupRuleErr: errors.New("cannot create securityGroupRule: CreateSecurityGroupRule generic errors"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -779,8 +779,8 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 
 					mockOscSecurityGroupInterface.
 						EXPECT().
-						GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-						Return(nil, sgrtc.expGetSecurityGroupFromSecurityGroupRuleErr)
+						SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+						Return(false, sgrtc.expSecurityGroupHasRuleErr)
 
 					if sgrtc.expCreateSecurityGroupRuleFound {
 						mockOscSecurityGroupInterface.
@@ -809,40 +809,40 @@ func TestReconcileSecurityGroupRuleCreate(t *testing.T) {
 // TestReconcileSecurityGroupRuleGet has several tests to cover the code of the function reconcileSecurityGroupRule
 func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expSecurityGroupRuleFound                   bool
-		expTagFound                                 bool
-		expGetSecurityGroupFromSecurityGroupRuleErr error
-		expReadTagErr                               error
-		expReconcileSecurityGroupRuleErr            error
+		name                             string
+		spec                             infrastructurev1beta1.OscClusterSpec
+		expSecurityGroupRuleFound        bool
+		expTagFound                      bool
+		expSecurityGroupHasRuleErr       error
+		expReadTagErr                    error
+		expReconcileSecurityGroupRuleErr error
 	}{
 		{
-			name:                      "get securityGroupRule ((second time reconcile loop)",
-			spec:                      defaultSecurityGroupReconcile,
-			expSecurityGroupRuleFound: true,
-			expTagFound:               false,
-			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
+			name:                             "get securityGroupRule ((second time reconcile loop)",
+			spec:                             defaultSecurityGroupReconcile,
+			expSecurityGroupRuleFound:        true,
+			expTagFound:                      false,
+			expSecurityGroupHasRuleErr:       nil,
 			expReadTagErr:                    nil,
 			expReconcileSecurityGroupRuleErr: nil,
 		},
 		{
-			name:                      "get securityGroupRule ((second time reconcile loop)) with extraSecurityGroupRule",
-			spec:                      defaultSecurityGroupReconcileExtraSecurityGroupRule,
-			expSecurityGroupRuleFound: true,
-			expTagFound:               false,
-			expGetSecurityGroupFromSecurityGroupRuleErr: nil,
+			name:                             "get securityGroupRule ((second time reconcile loop)) with extraSecurityGroupRule",
+			spec:                             defaultSecurityGroupReconcileExtraSecurityGroupRule,
+			expSecurityGroupRuleFound:        true,
+			expTagFound:                      false,
+			expSecurityGroupHasRuleErr:       nil,
 			expReadTagErr:                    nil,
 			expReconcileSecurityGroupRuleErr: nil,
 		},
 		{
-			name:                      "failed to get securityGroup",
-			spec:                      defaultSecurityGroupReconcile,
-			expSecurityGroupRuleFound: true,
-			expTagFound:               false,
-			expReadTagErr:             nil,
-			expGetSecurityGroupFromSecurityGroupRuleErr: errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
-			expReconcileSecurityGroupRuleErr:            errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			name:                             "failed to get securityGroup",
+			spec:                             defaultSecurityGroupReconcile,
+			expSecurityGroupRuleFound:        true,
+			expTagFound:                      false,
+			expReadTagErr:                    nil,
+			expSecurityGroupHasRuleErr:       errors.New("SecurityGroupHasRule generic errors"),
+			expReconcileSecurityGroupRuleErr: errors.New("SecurityGroupHasRule generic errors"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -874,23 +874,12 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 					securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
 					securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
 					securityGroupMemberId := ""
-					securityGroupRule := osc.CreateSecurityGroupRuleResponse{
-						SecurityGroup: &osc.SecurityGroup{
-							SecurityGroupId: &securityGroupId,
-						},
-					}
 
-					readSecurityGroups := osc.ReadSecurityGroupsResponse{
-						SecurityGroups: &[]osc.SecurityGroup{
-							*securityGroupRule.SecurityGroup,
-						},
-					}
-					readSecurityGroup := *readSecurityGroups.SecurityGroups
 					if sgrtc.expSecurityGroupRuleFound {
 						mockOscSecurityGroupInterface.
 							EXPECT().
-							GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-							Return(&readSecurityGroup[0], sgrtc.expGetSecurityGroupFromSecurityGroupRuleErr)
+							SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+							Return(true, sgrtc.expSecurityGroupHasRuleErr)
 					}
 					reconcileSecurityGroupRule, err := reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
 					if sgrtc.expReconcileSecurityGroupRuleErr != nil {
@@ -908,25 +897,25 @@ func TestReconcileSecurityGroupRuleGet(t *testing.T) {
 // TestReconcileDeleteSecurityGroupRuleDelete has several tests to cover the code of the function reconcileDeleteSecurityGroupRule
 func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expGetSecurityGroupfromSecurityGroupRuleErr error
-		expDeleteSecurityGroupRuleErr               error
-		expReconcileDeleteSecurityGroupRuleErr      error
+		name                                   string
+		spec                                   infrastructurev1beta1.OscClusterSpec
+		expSecurityGroupHasRuleErr             error
+		expDeleteSecurityGroupRuleErr          error
+		expReconcileDeleteSecurityGroupRuleErr error
 	}{
 		{
-			name: "failed to delete securityGroupRule",
-			spec: defaultSecurityGroupReconcile,
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               errors.New("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupRuleErr:      errors.New("cannot delete securityGroupRule: DeleteSecurityGroupRule generic error"),
+			name:                                   "failed to delete securityGroupRule",
+			spec:                                   defaultSecurityGroupReconcile,
+			expSecurityGroupHasRuleErr:             nil,
+			expDeleteSecurityGroupRuleErr:          errors.New("DeleteSecurityGroupRule generic error"),
+			expReconcileDeleteSecurityGroupRuleErr: errors.New("cannot delete securityGroupRule: DeleteSecurityGroupRule generic error"),
 		},
 		{
-			name: "delete securityGroupRule",
-			spec: defaultSecurityGroupReconcile,
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               nil,
-			expReconcileDeleteSecurityGroupRuleErr:      nil,
+			name:                                   "delete securityGroupRule",
+			spec:                                   defaultSecurityGroupReconcile,
+			expSecurityGroupHasRuleErr:             nil,
+			expDeleteSecurityGroupRuleErr:          nil,
+			expReconcileDeleteSecurityGroupRuleErr: nil,
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -947,22 +936,11 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 					securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
 					securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
 					securityGroupMemberId := ""
-					securityGroupRule := osc.CreateSecurityGroupRuleResponse{
-						SecurityGroup: &osc.SecurityGroup{
-							SecurityGroupId: &securityGroupId,
-						},
-					}
 
-					readSecurityGroups := osc.ReadSecurityGroupsResponse{
-						SecurityGroups: &[]osc.SecurityGroup{
-							*securityGroupRule.SecurityGroup,
-						},
-					}
-					readSecurityGroup := *readSecurityGroups.SecurityGroups
 					mockOscSecurityGroupInterface.
 						EXPECT().
-						GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-						Return(&readSecurityGroup[0], sgrtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+						SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+						Return(true, sgrtc.expSecurityGroupHasRuleErr)
 					mockOscSecurityGroupInterface.
 						EXPECT().
 						DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
@@ -983,23 +961,23 @@ func TestReconcileDeleteSecurityGroupRuleDelete(t *testing.T) {
 // TestReconcileDeleteSecurityGroupRuleGet has several tests to cover the code of the function reconcileDeleteSecurityGroupRule
 func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 	securityGroupRuleTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expGetSecurityGroupfromSecurityGroupRuleErr error
-		expReconcileDeleteSecurityGroupRuleErr      error
+		name                                   string
+		spec                                   infrastructurev1beta1.OscClusterSpec
+		expSecurityGroupHasRuleErr             error
+		expReconcileDeleteSecurityGroupRuleErr error
 	}{
 		{
-			name: "failed to get securityGroupRule",
-			spec: defaultSecurityGroupReconcile,
-			expGetSecurityGroupfromSecurityGroupRuleErr: errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			name:                       "failed to get securityGroupRule",
+			spec:                       defaultSecurityGroupReconcile,
+			expSecurityGroupHasRuleErr: errors.New("SecurityGroupHasRule generic errors"),
 
-			expReconcileDeleteSecurityGroupRuleErr: errors.New("GetSecurityGroupFromSecurityGroupRule generic errors"),
+			expReconcileDeleteSecurityGroupRuleErr: errors.New("SecurityGroupHasRule generic errors"),
 		},
 		{
-			name: "remove finalizer (user delete securityGroup without cluster-api)",
-			spec: defaultSecurityGroupReconcile,
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expReconcileDeleteSecurityGroupRuleErr:      nil,
+			name:                                   "remove finalizer (user delete securityGroup without cluster-api)",
+			spec:                                   defaultSecurityGroupReconcile,
+			expSecurityGroupHasRuleErr:             nil,
+			expReconcileDeleteSecurityGroupRuleErr: nil,
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -1022,8 +1000,8 @@ func TestReconcileDeleteSecurityGroupRuleGet(t *testing.T) {
 					securityGroupMemberId := ""
 					mockOscSecurityGroupInterface.
 						EXPECT().
-						GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-						Return(nil, sgrtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+						SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+						Return(false, sgrtc.expSecurityGroupHasRuleErr)
 					reconcileDeleteSecurityGroupRule, err := reconcileDeleteSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, mockOscSecurityGroupInterface)
 					if sgrtc.expReconcileDeleteSecurityGroupRuleErr != nil {
 						require.EqualError(t, err, sgrtc.expReconcileDeleteSecurityGroupRuleErr.Error(), "reconcileDeleteSecuritygroupRules() should return the same error")
@@ -1173,13 +1151,13 @@ func TestReconcileCreateSecurityGroupCreate(t *testing.T) {
 						if sgtc.expSecurityGroupRuleFound {
 							mockOscSecurityGroupInterface.
 								EXPECT().
-								GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+								SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
 								Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupRuleErr)
 						} else {
 							mockOscSecurityGroupInterface.
 								EXPECT().
-								GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-								Return(nil, sgtc.expGetSecurityGroupRuleErr)
+								SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+								Return(false, sgtc.expGetSecurityGroupRuleErr)
 							if sgtc.expCreateSecurityGroupRuleFound {
 								mockOscSecurityGroupInterface.
 									EXPECT().
@@ -1552,30 +1530,30 @@ func TestDeleteSecurityGroup(t *testing.T) {
 // TestReconcileDeleteSecurityGroup has several tests to cover the code of the function reconcileDeleteSecurityGroup
 func TestReconcileDeleteSecurityGroup(t *testing.T) {
 	securityGroupTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expNetFound                                 bool
-		expSecurityGroupFound                       bool
-		expSecurityGroupRuleFound                   bool
-		expDeleteSecurityGroupFound                 bool
-		expDeleteSecurityGroupRuleFound             bool
-		expGetSecurityGroupfromSecurityGroupRuleErr error
-		expGetSecurityGroupFromNetIdsErr            error
-		expDeleteSecurityGroupRuleErr               error
-		expReconcileDeleteSecurityGroupErr          error
+		name                               string
+		spec                               infrastructurev1beta1.OscClusterSpec
+		expNetFound                        bool
+		expSecurityGroupFound              bool
+		expSecurityGroupRuleFound          bool
+		expDeleteSecurityGroupFound        bool
+		expDeleteSecurityGroupRuleFound    bool
+		expSecurityGroupHasRuleErr         error
+		expGetSecurityGroupFromNetIdsErr   error
+		expDeleteSecurityGroupRuleErr      error
+		expReconcileDeleteSecurityGroupErr error
 	}{
 		{
-			name:                             "failed to delete securityGroupRule",
-			spec:                             defaultSecurityGroupReconcile,
-			expNetFound:                      true,
-			expSecurityGroupFound:            true,
-			expSecurityGroupRuleFound:        true,
-			expDeleteSecurityGroupFound:      false,
-			expDeleteSecurityGroupRuleFound:  false,
-			expGetSecurityGroupFromNetIdsErr: nil,
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               errors.New("DeleteSecurityGroupRule generic error"),
-			expReconcileDeleteSecurityGroupErr:          errors.New("cannot delete securityGroupRule: DeleteSecurityGroupRule generic error"),
+			name:                               "failed to delete securityGroupRule",
+			spec:                               defaultSecurityGroupReconcile,
+			expNetFound:                        true,
+			expSecurityGroupFound:              true,
+			expSecurityGroupRuleFound:          true,
+			expDeleteSecurityGroupFound:        false,
+			expDeleteSecurityGroupRuleFound:    false,
+			expGetSecurityGroupFromNetIdsErr:   nil,
+			expSecurityGroupHasRuleErr:         nil,
+			expDeleteSecurityGroupRuleErr:      errors.New("DeleteSecurityGroupRule generic error"),
+			expReconcileDeleteSecurityGroupErr: errors.New("cannot delete securityGroupRule: DeleteSecurityGroupRule generic error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1622,28 +1600,17 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 							securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
 							securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
 							securityGroupMemberId := ""
-							securityGroupRule := osc.CreateSecurityGroupRuleResponse{
-								SecurityGroup: &osc.SecurityGroup{
-									SecurityGroupId: &securityGroupId,
-								},
-							}
 
-							readSecurityGroups := osc.ReadSecurityGroupsResponse{
-								SecurityGroups: &[]osc.SecurityGroup{
-									*securityGroupRule.SecurityGroup,
-								},
-							}
-							readSecurityGroup := *readSecurityGroups.SecurityGroups
 							if sgtc.expSecurityGroupRuleFound {
 								mockOscSecurityGroupInterface.
 									EXPECT().
-									GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-									Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+									SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+									Return(true, sgtc.expSecurityGroupHasRuleErr)
 							} else {
 								mockOscSecurityGroupInterface.
 									EXPECT().
-									GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-									Return(nil, sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+									SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+									Return(false, sgtc.expSecurityGroupHasRuleErr)
 							}
 							mockOscSecurityGroupInterface.
 								EXPECT().
@@ -1667,34 +1634,34 @@ func TestReconcileDeleteSecurityGroup(t *testing.T) {
 // TestReconcileDeleteSecurityGroupDelete has several tests to cover the code of the function reconcileDeleteSecurityGroup
 func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 	securityGroupTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expSecurityGroupFound                       bool
-		expGetSecurityGroupFromNetIdsErr            error
-		expGetSecurityGroupfromSecurityGroupRuleErr error
-		expDeleteSecurityGroupRuleErr               error
-		expDeleteSecurityGroupErr                   error
-		expReconcileDeleteSecurityGroupErr          error
+		name                               string
+		spec                               infrastructurev1beta1.OscClusterSpec
+		expSecurityGroupFound              bool
+		expGetSecurityGroupFromNetIdsErr   error
+		expSecurityGroupHasRuleErr         error
+		expDeleteSecurityGroupRuleErr      error
+		expDeleteSecurityGroupErr          error
+		expReconcileDeleteSecurityGroupErr error
 	}{
 		{
-			name:                             "delete securityGroup",
-			spec:                             defaultSecurityGroupReconcile,
-			expSecurityGroupFound:            true,
-			expGetSecurityGroupFromNetIdsErr: nil,
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               nil,
-			expDeleteSecurityGroupErr:                   nil,
-			expReconcileDeleteSecurityGroupErr:          nil,
+			name:                               "delete securityGroup",
+			spec:                               defaultSecurityGroupReconcile,
+			expSecurityGroupFound:              true,
+			expGetSecurityGroupFromNetIdsErr:   nil,
+			expSecurityGroupHasRuleErr:         nil,
+			expDeleteSecurityGroupRuleErr:      nil,
+			expDeleteSecurityGroupErr:          nil,
+			expReconcileDeleteSecurityGroupErr: nil,
 		},
 		{
-			name:                             "failed to delete securityGroup",
-			spec:                             defaultSecurityGroupReconcile,
-			expSecurityGroupFound:            true,
-			expGetSecurityGroupFromNetIdsErr: nil,
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expDeleteSecurityGroupRuleErr:               nil,
-			expDeleteSecurityGroupErr:                   errors.New("DeleteSecurityGroup error"),
-			expReconcileDeleteSecurityGroupErr:          errors.New("cannot delete securityGroup: DeleteSecurityGroup error"),
+			name:                               "failed to delete securityGroup",
+			spec:                               defaultSecurityGroupReconcile,
+			expSecurityGroupFound:              true,
+			expGetSecurityGroupFromNetIdsErr:   nil,
+			expSecurityGroupHasRuleErr:         nil,
+			expDeleteSecurityGroupRuleErr:      nil,
+			expDeleteSecurityGroupErr:          errors.New("DeleteSecurityGroup error"),
+			expReconcileDeleteSecurityGroupErr: errors.New("cannot delete securityGroup: DeleteSecurityGroup error"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1729,22 +1696,11 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 					securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
 					securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
 					securityGroupMemberId := ""
-					securityGroupRule := osc.CreateSecurityGroupRuleResponse{
-						SecurityGroup: &osc.SecurityGroup{
-							SecurityGroupId: &securityGroupId,
-						},
-					}
 
-					readSecurityGroups := osc.ReadSecurityGroupsResponse{
-						SecurityGroups: &[]osc.SecurityGroup{
-							*securityGroupRule.SecurityGroup,
-						},
-					}
-					readSecurityGroup := *readSecurityGroups.SecurityGroups
 					mockOscSecurityGroupInterface.
 						EXPECT().
-						GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
-						Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+						SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
+						Return(true, sgtc.expSecurityGroupHasRuleErr)
 					mockOscSecurityGroupInterface.
 						EXPECT().
 						DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleFlow), gomock.Eq(securityGroupRuleIpProtocol), gomock.Eq(securityGroupRuleIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleFromPortRange), gomock.Eq(securityGroupRuleToPortRange)).
@@ -1769,21 +1725,21 @@ func TestReconcileDeleteSecurityGroupDelete(t *testing.T) {
 // TestReconcileDeleteSecurityGroupDeleteWithoutSpec has several tests to cover the code of the function reconcileDeleteSecurityGroup
 func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 	securityGroupTestCases := []struct {
-		name                                        string
-		spec                                        infrastructurev1beta1.OscClusterSpec
-		expGetSecurityGroupfromSecurityGroupRuleErr error
-		expGetSecurityGroupFromNetIdsErr            error
-		expDeleteSecurityGroupRuleErr               error
-		expDeleteSecurityGroupErr                   error
-		expReconcileDeleteSecurityGroupErr          error
+		name                               string
+		spec                               infrastructurev1beta1.OscClusterSpec
+		expSecurityGroupHasRuleErr         error
+		expGetSecurityGroupFromNetIdsErr   error
+		expDeleteSecurityGroupRuleErr      error
+		expDeleteSecurityGroupErr          error
+		expReconcileDeleteSecurityGroupErr error
 	}{
 		{
-			name: "delete securityGroup without spec (with default values)",
-			expGetSecurityGroupfromSecurityGroupRuleErr: nil,
-			expGetSecurityGroupFromNetIdsErr:            nil,
-			expDeleteSecurityGroupRuleErr:               nil,
-			expDeleteSecurityGroupErr:                   nil,
-			expReconcileDeleteSecurityGroupErr:          nil,
+			name:                               "delete securityGroup without spec (with default values)",
+			expSecurityGroupHasRuleErr:         nil,
+			expGetSecurityGroupFromNetIdsErr:   nil,
+			expDeleteSecurityGroupRuleErr:      nil,
+			expDeleteSecurityGroupErr:          nil,
+			expReconcileDeleteSecurityGroupErr: nil,
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -1835,18 +1791,6 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 			var securityGroupRuleKcpBgpFromPortRange int32 = 179
 			var securityGroupRuleKcpBgpToPortRange int32 = 179
 
-			securityGroupRule := osc.CreateSecurityGroupRuleResponse{
-				SecurityGroup: &osc.SecurityGroup{
-					SecurityGroupId: &securityGroupId,
-				},
-			}
-
-			readSecurityGroups := osc.ReadSecurityGroupsResponse{
-				SecurityGroups: &[]osc.SecurityGroup{
-					*securityGroupRule.SecurityGroup,
-				},
-			}
-			readSecurityGroup := *readSecurityGroups.SecurityGroups
 			mockOscSecurityGroupInterface.
 				EXPECT().
 				GetSecurityGroupIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
@@ -1854,8 +1798,8 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 
 			mockOscSecurityGroupInterface.
 				EXPECT().
-				GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKubeletKwFlow), gomock.Eq(securityGroupRuleKubeletKwIpProtocol), gomock.Eq(securityGroupRuleKubeletKwIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKubeletKwFromPortRange), gomock.Eq(securityGroupRuleKubeletKwToPortRange)).
-				Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+				SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKubeletKwFlow), gomock.Eq(securityGroupRuleKubeletKwIpProtocol), gomock.Eq(securityGroupRuleKubeletKwIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKubeletKwFromPortRange), gomock.Eq(securityGroupRuleKubeletKwToPortRange)).
+				Return(true, sgtc.expSecurityGroupHasRuleErr)
 			mockOscSecurityGroupInterface.
 				EXPECT().
 				DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKubeletKwFlow), gomock.Eq(securityGroupRuleKubeletKwIpProtocol), gomock.Eq(securityGroupRuleKubeletKwIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKubeletKwFromPortRange), gomock.Eq(securityGroupRuleKubeletKwToPortRange)).
@@ -1863,8 +1807,8 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 
 			mockOscSecurityGroupInterface.
 				EXPECT().
-				GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKubeletKcpFlow), gomock.Eq(securityGroupRuleKubeletKcpIpProtocol), gomock.Eq(securityGroupRuleKubeletKcpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKubeletKcpFromPortRange), gomock.Eq(securityGroupRuleKubeletKcpToPortRange)).
-				Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+				SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKubeletKcpFlow), gomock.Eq(securityGroupRuleKubeletKcpIpProtocol), gomock.Eq(securityGroupRuleKubeletKcpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKubeletKcpFromPortRange), gomock.Eq(securityGroupRuleKubeletKcpToPortRange)).
+				Return(true, sgtc.expSecurityGroupHasRuleErr)
 
 			mockOscSecurityGroupInterface.
 				EXPECT().
@@ -1873,16 +1817,16 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 
 			mockOscSecurityGroupInterface.
 				EXPECT().
-				GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleNodeIpKwFlow), gomock.Eq(securityGroupRuleNodeIpKwIpProtocol), gomock.Eq(securityGroupRuleNodeIpKwIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleNodeIpKwFromPortRange), gomock.Eq(securityGroupRuleNodeIpKwToPortRange)).
-				Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+				SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleNodeIpKwFlow), gomock.Eq(securityGroupRuleNodeIpKwIpProtocol), gomock.Eq(securityGroupRuleNodeIpKwIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleNodeIpKwFromPortRange), gomock.Eq(securityGroupRuleNodeIpKwToPortRange)).
+				Return(true, sgtc.expSecurityGroupHasRuleErr)
 			mockOscSecurityGroupInterface.
 				EXPECT().
 				DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleNodeIpKwFlow), gomock.Eq(securityGroupRuleNodeIpKwIpProtocol), gomock.Eq(securityGroupRuleNodeIpKwIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleNodeIpKwFromPortRange), gomock.Eq(securityGroupRuleNodeIpKwToPortRange)).
 				Return(sgtc.expDeleteSecurityGroupRuleErr)
 			mockOscSecurityGroupInterface.
 				EXPECT().
-				GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleNodeIpKcpFlow), gomock.Eq(securityGroupRuleNodeIpKcpIpProtocol), gomock.Eq(securityGroupRuleNodeIpKcpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleNodeIpKcpFromPortRange), gomock.Eq(securityGroupRuleNodeIpKcpToPortRange)).
-				Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+				SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleNodeIpKcpFlow), gomock.Eq(securityGroupRuleNodeIpKcpIpProtocol), gomock.Eq(securityGroupRuleNodeIpKcpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleNodeIpKcpFromPortRange), gomock.Eq(securityGroupRuleNodeIpKcpToPortRange)).
+				Return(true, sgtc.expSecurityGroupHasRuleErr)
 			mockOscSecurityGroupInterface.
 				EXPECT().
 				DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleNodeIpKcpFlow), gomock.Eq(securityGroupRuleNodeIpKcpIpProtocol), gomock.Eq(securityGroupRuleNodeIpKcpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleNodeIpKcpFromPortRange), gomock.Eq(securityGroupRuleNodeIpKcpToPortRange)).
@@ -1890,8 +1834,8 @@ func TestReconcileDeleteSecurityGroupDeleteWithoutSpec(t *testing.T) {
 
 			mockOscSecurityGroupInterface.
 				EXPECT().
-				GetSecurityGroupFromSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKcpBgpFlow), gomock.Eq(securityGroupRuleKcpBgpIpProtocol), gomock.Eq(securityGroupRuleKcpBgpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKcpBgpFromPortRange), gomock.Eq(securityGroupRuleKcpBgpToPortRange)).
-				Return(&readSecurityGroup[0], sgtc.expGetSecurityGroupfromSecurityGroupRuleErr)
+				SecurityGroupHasRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKcpBgpFlow), gomock.Eq(securityGroupRuleKcpBgpIpProtocol), gomock.Eq(securityGroupRuleKcpBgpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKcpBgpFromPortRange), gomock.Eq(securityGroupRuleKcpBgpToPortRange)).
+				Return(true, sgtc.expSecurityGroupHasRuleErr)
 			mockOscSecurityGroupInterface.
 				EXPECT().
 				DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(securityGroupId), gomock.Eq(securityGroupRuleKcpBgpFlow), gomock.Eq(securityGroupRuleKcpBgpIpProtocol), gomock.Eq(securityGroupRuleKcpBgpIpRange), gomock.Eq(securityGroupMemberId), gomock.Eq(securityGroupRuleKcpBgpFromPortRange), gomock.Eq(securityGroupRuleKcpBgpToPortRange)).

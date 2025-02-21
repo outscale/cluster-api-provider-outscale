@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	network "net"
@@ -591,13 +592,12 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 				IpRange := securityGroupRuleSpec.IpRange
 				FromPortRange := securityGroupRuleSpec.FromPortRange
 				ToPortRange := securityGroupRuleSpec.ToPortRange
-				securityGroupFromSecurityGroupRule, err := securitysvc.GetSecurityGroupFromSecurityGroupRule(ctx, securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+				hasRule, err := securitysvc.SecurityGroupHasRule(ctx, securityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId received %s\n", securityGroupFromSecurityGroupRule.GetSecurityGroupId())
-				if securityGroupId != securityGroupFromSecurityGroupRule.GetSecurityGroupId() {
-					return fmt.Errorf("SecurityGroupRule %s does not exist", securityGroupRuleName)
+				if !hasRule {
+					return errors.New("rule does not exist")
 				}
 			}
 		}

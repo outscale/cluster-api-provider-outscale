@@ -3011,7 +3011,7 @@ func TestReconcileDeleteVm(t *testing.T) {
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			for _, vmSecurityGroup := range *vmSecurityGroups {
+			for _, vmSecurityGroup := range vmSecurityGroups {
 				securityGroupName := vmSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
@@ -3178,7 +3178,7 @@ func TestReconcileDeleteVmUnlinkPublicIp(t *testing.T) {
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			for _, vmSecurityGroup := range *vmSecurityGroups {
+			for _, vmSecurityGroup := range vmSecurityGroups {
 				securityGroupName := vmSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
@@ -3278,7 +3278,7 @@ func TestReconcileDeleteVmSecurityGroup(t *testing.T) {
 			vmSecurityGroups := machineScope.GetVmSecurityGroups()
 			securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 			securityGroupsRef.ResourceMap = make(map[string]string)
-			for _, vmSecurityGroup := range *vmSecurityGroups {
+			for _, vmSecurityGroup := range vmSecurityGroups {
 				securityGroupName := vmSecurityGroup.Name + "-uid"
 				securityGroupId := "sg-" + securityGroupName
 				securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId

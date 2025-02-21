@@ -104,13 +104,29 @@ func mockGetVmState(vmId, state string) mockFunc {
 	}
 }
 
-// func mockLinkLoadBalancer(lb string) mockFunc {
-// 	return func(s *MockCloudServices) {
-// 		s.LoadBalancerMock.EXPECT().
-// 			LinkLoadBalancerBackendMachines(gomock.Any(), []string{defaultVmId}, lb).
-// 			Return(nil)
-// 	}
-// }
+func mockLinkLoadBalancer(vmId, lb string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.LoadBalancerMock.EXPECT().
+			LinkLoadBalancerBackendMachines(gomock.Any(), []string{vmId}, lb).
+			Return(nil)
+	}
+}
+
+func mockSecurityGroupHasRule(sg, flow, proto, ipRanges, memberSg string, portFrom, portTo int32, found bool) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SecurityGroupMock.EXPECT().
+			SecurityGroupHasRule(gomock.Any(), sg, flow, proto, ipRanges, memberSg, portFrom, portTo).
+			Return(found, nil)
+	}
+}
+
+func mockSecurityGroupCreateRule(sg, flow, proto, ipRanges, memberSg string, portFrom, portTo int32) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SecurityGroupMock.EXPECT().
+			CreateSecurityGroupRule(gomock.Any(), sg, flow, proto, ipRanges, memberSg, portFrom, portTo).
+			Return(&osc.SecurityGroup{SecurityGroupId: ptr.To(sg)}, nil)
+	}
+}
 
 func mockVmReadEmptyCCMTag() mockFunc {
 	return func(s *MockCloudServices) {

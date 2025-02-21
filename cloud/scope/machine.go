@@ -156,13 +156,13 @@ func (m *MachineScope) GetImageId() string {
 }
 
 // GetVmPrivateIps return the vm privateIps
-func (m *MachineScope) GetVmPrivateIps() *[]infrastructurev1beta1.OscPrivateIpElement {
-	return &m.GetVm().PrivateIps
+func (m *MachineScope) GetVmPrivateIps() []infrastructurev1beta1.OscPrivateIpElement {
+	return m.GetVm().PrivateIps
 }
 
 // GetVmSecurityGroups return the vm securityGroups
-func (m *MachineScope) GetVmSecurityGroups() *[]infrastructurev1beta1.OscSecurityGroupElement {
-	return &m.GetVm().SecurityGroupNames
+func (m *MachineScope) GetVmSecurityGroups() []infrastructurev1beta1.OscSecurityGroupElement {
+	return m.GetVm().SecurityGroupNames
 }
 
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)

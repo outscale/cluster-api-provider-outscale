@@ -72,13 +72,14 @@ func runMachineTest(t *testing.T, tc testcase) {
 
 func TestReconcileOSCMachine_Create(t *testing.T) {
 	tcs := []testcase{
+		// Worker node, with 3 reconciliation loops
 		{
 			name:        "Creating a worker with base parameters, vm is pending",
 			clusterSpec: "ready", machineSpec: "base-worker",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
 				mockNoVmFoundByName("test-cluster-api-vm-kw-"),
-				mockCreateVm("i-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, nil, "test-cluster-api-vm-kw-", nil),
+				mockCreateVm("i-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kw-", nil),
 				mockGetVm("i-foo"), mockGetVmState("i-foo", "pending"),
 			},
 			hasError: true,
@@ -108,6 +109,45 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockGetVm("i-foo"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
 			machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", v1beta1.VmStateRunning, true)},
+		},
+		// Control plane node
+		{
+			name:        "Creating a controlplane with base parameters, vm is running & security groups are ok",
+			clusterSpec: "ready", machineSpec: "base-controlplane",
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
+				mockNoVmFoundByName("test-cluster-api-vm-kcp-"),
+				mockCreateVm("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
+				mockGetVm("i-foo"), mockGetVmState("i-foo", "running"),
+				mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
+				mockSecurityGroupHasRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443, true),
+				mockSecurityGroupHasRule("sg-750ae810", "Inbound", "tcp", "", "sg-7eb16ccb", 6443, 6443, true),
+				mockGetVm("i-foo"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertHasFinalizer(),
+				assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+			},
+		},
+		{
+			name:        "Creating a controlplane with base parameters, vm is running & security groups are not ok",
+			clusterSpec: "ready", machineSpec: "base-controlplane",
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
+				mockNoVmFoundByName("test-cluster-api-vm-kcp-"),
+				mockCreateVm("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
+				mockGetVm("i-foo"), mockGetVmState("i-foo", "running"),
+				mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
+				mockSecurityGroupHasRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443, false),
+				mockSecurityGroupCreateRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443),
+				mockSecurityGroupHasRule("sg-750ae810", "Inbound", "tcp", "", "sg-7eb16ccb", 6443, 6443, false),
+				mockSecurityGroupCreateRule("sg-750ae810", "Inbound", "tcp", "", "sg-7eb16ccb", 6443, 6443),
+				mockGetVm("i-foo"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertHasFinalizer(),
+				assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+			},
 		},
 	}
 	for _, tc := range tcs {
