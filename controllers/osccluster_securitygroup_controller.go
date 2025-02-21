@@ -178,18 +178,18 @@ func reconcileSecurityGroupRule(ctx context.Context, clusterScope *scope.Cluster
 	ToPortRange := securityGroupRuleSpec.ToPortRange
 	associateSecurityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 	log.V(4).Info("Checking securityGroupRule", "securityGroup", associateSecurityGroupId, "securityGroupRuleName", securityGroupRuleName)
-	securityGroupFromSecurityGroupRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(ctx, associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+	hasRule, err := securityGroupSvc.SecurityGroupHasRule(ctx, associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if securityGroupFromSecurityGroupRule == nil {
+	if !hasRule {
 		log.V(2).Info("Creating securityGroupRule", "securityGroupRuleName", securityGroupRuleName)
-		securityGroupFromSecurityGroupRule, err = securityGroupSvc.CreateSecurityGroupRule(ctx, associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+		sg, err := securityGroupSvc.CreateSecurityGroupRule(ctx, associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create securityGroupRule: %w", err)
 		}
+		securityGroupRuleRef.ResourceMap[securityGroupRuleName] = sg.GetSecurityGroupId()
 	}
-	securityGroupRuleRef.ResourceMap[securityGroupRuleName] = securityGroupFromSecurityGroupRule.GetSecurityGroupId()
 	return reconcile.Result{}, nil
 }
 
@@ -327,12 +327,12 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 	ToPortRange := securityGroupRuleSpec.ToPortRange
 	associateSecurityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
 	log.V(4).Info("Check if securityGroupRule exist", "securityGroupRuleName", securityGroupRuleName)
-	securityGroupFromSecurityGroupRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(ctx, associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
+	hasRule, err := securityGroupSvc.SecurityGroupHasRule(ctx, associateSecurityGroupId, Flow, IpProtocol, IpRange, "", FromPortRange, ToPortRange)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if securityGroupFromSecurityGroupRule == nil {
+	if !hasRule {
 		log.V(2).Info("securityGroupRule does not exist anymore", "securityGroupRuleName", securityGroupRuleName)
 		controllerutil.RemoveFinalizer(osccluster, "oscclusters.infrastructure.cluster.x-k8s.io")
 		return reconcile.Result{}, nil

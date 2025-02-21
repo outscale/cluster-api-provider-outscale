@@ -40,7 +40,7 @@ type OscSecurityGroupInterface interface {
 	DeleteSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocol string, ipRange string, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
 	DeleteSecurityGroup(ctx context.Context, securityGroupId string) error
 	GetSecurityGroup(ctx context.Context, securityGroupId string) (*osc.SecurityGroup, error)
-	GetSecurityGroupFromSecurityGroupRule(ctx context.Context, securityGroupId string, Flow string, IpProtocols string, IpRanges string, securityGroupMemberId string, FromPortRanges int32, ToPortRanges int32) (*osc.SecurityGroup, error)
+	SecurityGroupHasRule(ctx context.Context, securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (bool, error)
 	GetSecurityGroupIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
 }
 
@@ -316,23 +316,20 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 	}
 }
 
-// GetSecurityGroupFromSecurityGroupRule retrieve security group rule object from the security group id
-func (s *Service) GetSecurityGroupFromSecurityGroupRule(ctx context.Context, securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (*osc.SecurityGroup, error) {
+// SecurityGroupHasRule checks if a security group has a specific rule.
+func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (bool, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
 	if ipProtocols == "-1" {
 		fromPortRanges = -1
 		toPortRanges = -1
 	}
-	if fromPortRanges == 53 && toPortRanges == 53 {
-		ipProtocols = "udp"
-	}
+
 	switch {
 	case flow == "Inbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
 			Filters: &osc.FiltersSecurityGroup{
 				SecurityGroupIds:          &[]string{securityGroupId},
 				InboundRuleProtocols:      &[]string{ipProtocols},
-				InboundRuleIpRanges:       &[]string{ipRanges},
 				InboundRuleFromPortRanges: &[]int32{fromPortRanges},
 				InboundRuleToPortRanges:   &[]int32{toPortRanges},
 			},
@@ -343,23 +340,25 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(ctx context.Context, sec
 			Filters: &osc.FiltersSecurityGroup{
 				SecurityGroupIds:           &[]string{securityGroupId},
 				OutboundRuleProtocols:      &[]string{ipProtocols},
-				OutboundRuleIpRanges:       &[]string{ipRanges},
 				OutboundRuleFromPortRanges: &[]int32{fromPortRanges},
 				OutboundRuleToPortRanges:   &[]int32{toPortRanges},
 			},
 		}
 	default:
-		return nil, errors.New("Invalid Flow")
+		return false, errors.New("Invalid Flow")
 	}
 
-	if securityGroupMemberId != "" && ipRanges == "" && flow == "Inbound" {
+	switch {
+	case securityGroupMemberId != "" && ipRanges != "":
+		return false, errors.New("Get Both IpRange and securityGroupMemberId")
+	case securityGroupMemberId != "" && flow == "Inbound":
 		readSecurityGroupRuleRequest.Filters.SetInboundRuleSecurityGroupIds([]string{securityGroupMemberId})
-	} else if securityGroupMemberId != "" && ipRanges == "" && flow == "Outbound" {
+	case securityGroupMemberId != "" && flow == "Outbound":
 		readSecurityGroupRuleRequest.Filters.SetOutboundRuleSecurityGroupIds([]string{securityGroupMemberId})
-	} else if securityGroupMemberId != "" && ipRanges != "" {
-		return nil, errors.New("Get Both IpRange and securityGroupMemberId")
-	} else {
-		fmt.Printf("Have IpRange and no securityGroupMemberId\n")
+	case ipRanges != "" && flow == "Inbound":
+		readSecurityGroupRuleRequest.Filters.SetInboundRuleIpRanges([]string{ipRanges})
+	case ipRanges != "" && flow == "Outbound":
+		readSecurityGroupRuleRequest.Filters.SetOutboundRuleIpRanges([]string{ipRanges})
 	}
 
 	oscApiClient := s.scope.GetApi()
@@ -388,18 +387,13 @@ func (s *Service) GetSecurityGroupFromSecurityGroupRule(ctx context.Context, sec
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, readSecurityGroupRulesCallBack)
 	if waitErr != nil {
-		return nil, waitErr
+		return false, waitErr
 	}
 	securityGroups, ok := readSecurityGroupRulesResponse.GetSecurityGroupsOk()
 	if !ok {
-		return nil, errors.New("Can not get securityGroup")
+		return false, errors.New("Can not get securityGroup")
 	}
-	if len(*securityGroups) == 0 {
-		return nil, nil
-	} else {
-		securityGroup := *securityGroups
-		return &securityGroup[0], nil
-	}
+	return len(*securityGroups) > 0, nil
 }
 
 // GetSecurityGroupIdsFromNetIds return the security group id resource that exist from the net id

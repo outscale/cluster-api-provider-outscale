@@ -106,7 +106,7 @@ func checkVmSecurityGroupOscAssociateResourceName(machineScope *scope.MachineSco
 	vmSpec := machineScope.GetVm()
 	vmSpec.SetDefaultValue()
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
-	for _, vmSecurityGroup := range *vmSecurityGroups {
+	for _, vmSecurityGroup := range vmSecurityGroups {
 		vmSecurityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
 		vmSecurityGroupNameList = append(vmSecurityGroupNameList, vmSecurityGroupName)
 	}
@@ -225,7 +225,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	vmPrivateIps := machineScope.GetVmPrivateIps()
 	networkSpec := clusterScope.GetNetwork()
 	networkSpec.SetSubnetDefaultValue()
-	for _, vmPrivateIp := range *vmPrivateIps {
+	for _, vmPrivateIp := range vmPrivateIps {
 		privateIp := vmPrivateIp.PrivateIp
 		_, err := compute.ValidateIpAddrInCidr(privateIp, ipSubnetRange)
 		if err != nil {
@@ -266,7 +266,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
 	var resourceNameList []string
 	vmPrivateIps := machineScope.GetVmPrivateIps()
-	for _, vmPrivateIp := range *vmPrivateIps {
+	for _, vmPrivateIp := range vmPrivateIps {
 		privateIpName := vmPrivateIp.Name
 		resourceNameList = append(resourceNameList, privateIpName)
 	}
@@ -351,13 +351,11 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			linkPublicIpRef.ResourceMap = make(map[string]string)
 		}
 	}
-	var privateIps []string
 	vmPrivateIps := machineScope.GetVmPrivateIps()
-	if len(*vmPrivateIps) > 0 {
-		for _, vmPrivateIp := range *vmPrivateIps {
-			privateIp := vmPrivateIp.PrivateIp
-			privateIps = append(privateIps, privateIp)
-		}
+	privateIps := make([]string, 0, len(vmPrivateIps))
+	for _, vmPrivateIp := range vmPrivateIps {
+		privateIp := vmPrivateIp.PrivateIp
+		privateIps = append(privateIps, privateIp)
 	}
 
 	if vmSpec.KeypairName != "" {
@@ -367,9 +365,9 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 	}
 
-	var securityGroupIds []string
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
-	for _, vmSecurityGroup := range *vmSecurityGroups {
+	securityGroupIds := make([]string, 0, len(vmSecurityGroups))
+	for _, vmSecurityGroup := range vmSecurityGroups {
 		log.V(4).Info("Get vmSecurityGroup", "vmSecurityGroup", vmSecurityGroup)
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
 		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
@@ -517,25 +515,26 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				fromPortRange := loadBalancerSpec.Listener.BackendPort
 				toPortRange := loadBalancerSpec.Listener.BackendPort
 				loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-" + clusterScope.GetUID()
-				associateSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
-				securityGroupFromSecurityGroupOutboundRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(ctx, associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+				lbSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
+				hasOutboundRule, err := securityGroupSvc.SecurityGroupHasRule(ctx, lbSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot get outbound securityGroupRule: %w", err)
 				}
-				if securityGroupFromSecurityGroupOutboundRule == nil {
+				// FIXME: those rules should probably be created by the OscCluster.
+				if !hasOutboundRule {
 					log.V(2).Info("Creating outbound securityGroup rule")
-					_, err = securityGroupSvc.CreateSecurityGroupRule(ctx, associateSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
+					_, err = securityGroupSvc.CreateSecurityGroupRule(ctx, lbSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
 					if err != nil {
 						return reconcile.Result{}, fmt.Errorf("cannot create outbound securityGroupRule: %w", err)
 					}
 				}
-				securityGroupFromSecurityGroupInboundRule, err := securityGroupSvc.GetSecurityGroupFromSecurityGroupRule(ctx, securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
+				hasInboundRule, err := securityGroupSvc.SecurityGroupHasRule(ctx, securityGroupIds[0], "Inbound", ipProtocol, "", lbSecurityGroupId, fromPortRange, toPortRange)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot get inbound securityGroupRule: %w", err)
 				}
-				if securityGroupFromSecurityGroupInboundRule == nil {
+				if !hasInboundRule {
 					log.V(2).Info("Creating inbound securityGroup rule")
-					_, err = securityGroupSvc.CreateSecurityGroupRule(ctx, securityGroupIds[0], "Inbound", ipProtocol, "", associateSecurityGroupId, fromPortRange, toPortRange)
+					_, err = securityGroupSvc.CreateSecurityGroupRule(ctx, securityGroupIds[0], "Inbound", ipProtocol, "", lbSecurityGroupId, fromPortRange, toPortRange)
 					if err != nil {
 						return reconcile.Result{}, fmt.Errorf("cannot create inbound securityGroupRule: %w", err)
 					}
@@ -622,7 +621,7 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 
 	var securityGroupIds []string
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
-	for _, vmSecurityGroup := range *vmSecurityGroups {
+	for _, vmSecurityGroup := range vmSecurityGroups {
 		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
 		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
 		if err != nil {
