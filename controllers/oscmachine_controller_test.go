@@ -56,11 +56,10 @@ func runMachineTest(t *testing.T, tc testcase) {
 	res, err := rec.Reconcile(context.TODO(), controllerruntime.Request{NamespacedName: nsn})
 	if tc.hasError {
 		require.Error(t, err)
-		// TODO: activate after cleanup
-		// assert.Zero(t, res)
+		assert.Zero(t, res)
 	} else {
 		require.NoError(t, err)
-		assert.Equal(t, tc.requeueAfter, res.RequeueAfter)
+		assert.Equal(t, tc.requeue, res.RequeueAfter > 0 || res.Requeue)
 	}
 	var out v1beta1.OscMachine
 	err = client.Get(context.TODO(), nsn, &out)

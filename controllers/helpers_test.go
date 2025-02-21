@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -153,7 +152,7 @@ type testcase struct {
 	machinePatches           []patchOSCMachineFunc
 	mockFuncs                []mockFunc
 	hasError                 bool
-	requeueAfter             time.Duration
+	requeue                  bool
 	clusterAsserts           []assertOSCClusterFunc
 	machineAsserts           []assertOSCMachineFunc
 }
