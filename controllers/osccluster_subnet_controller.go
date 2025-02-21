@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
@@ -108,8 +109,15 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		return reconcile.Result{}, err
 	}
 	log.V(4).Info("Number of subnet", "subnet_length", len(subnetsSpec))
+	if len(subnetRef.ResourceMap) == 0 {
+		subnetRef.ResourceMap = make(map[string]string)
+	}
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
+		if subnetSpec.ResourceId != "" && subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetSpec.ResourceId)] != v1beta1.ManagedByValueCapi {
+			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
+			continue
+		}
 		tagKey := "Name"
 		tagValue := subnetName
 		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
@@ -118,9 +126,6 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		}
 		subnetId := subnetSpec.ResourceId
 		log.V(4).Info("Get subnetId", "subnetId", subnetId)
-		if len(subnetRef.ResourceMap) == 0 {
-			subnetRef.ResourceMap = make(map[string]string)
-		}
 		if subnetSpec.ResourceId != "" {
 			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
 		}
@@ -136,6 +141,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 			}
 			subnetRef.ResourceMap[subnetName] = subnet.GetSubnetId()
 			subnetSpec.ResourceId = subnet.GetSubnetId()
+			subnetRef.ResourceMap[v1beta1.ManagedByKey(subnet.GetSubnetId())] = v1beta1.ManagedByValueCapi
 		}
 	}
 	return reconcile.Result{}, nil
@@ -145,6 +151,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	subnetsSpec := clusterScope.GetSubnet()
+	subnetRef := clusterScope.GetSubnetRef()
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
@@ -167,6 +174,10 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	for _, subnetSpec := range subnetsSpec {
 		subnetId := subnetSpec.ResourceId
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
+		if subnetRef.ResourceMap[v1beta1.ManagedByKey(subnetId)] != v1beta1.ManagedByValueCapi {
+			log.V(2).Info("Not deleting the desired subnet because it's not managed by capi", "subnetName", subnetName)
+			continue
+		}
 		if !slices.Contains(subnetIds, subnetId) {
 			log.V(2).Info("subnet does not exist anymore", "subnetName", subnetName)
 			return reconcile.Result{}, nil

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net/mock_net"
@@ -205,22 +206,26 @@ func TestReconcileNetCreate(t *testing.T) {
 	netTestCases := []struct {
 		name               string
 		spec               infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi   bool
 		expNetFound        bool
 		expCreateNetFound  bool
 		expTagFound        bool
 		expCreateNetErr    error
 		expReconcileNetErr error
 		expReadTagErr      error
+		expManagedByCapi   bool
 	}{
 		{
 			name:               "create Net (first time reconcile loop)",
 			spec:               defaultNetInitialize,
+			notManagedByCapi:   true,
 			expNetFound:        false,
 			expCreateNetFound:  true,
 			expTagFound:        false,
 			expCreateNetErr:    nil,
 			expReadTagErr:      nil,
 			expReconcileNetErr: nil,
+			expManagedByCapi:   true,
 		},
 		{
 			name:               "failed create Net",
@@ -231,6 +236,7 @@ func TestReconcileNetCreate(t *testing.T) {
 			expCreateNetErr:    errors.New("CreateNet generic error"),
 			expReadTagErr:      nil,
 			expReconcileNetErr: errors.New("cannot create net: CreateNet generic error"),
+			expManagedByCapi:   true,
 		},
 	}
 	for _, ntc := range netTestCases {
@@ -239,6 +245,11 @@ func TestReconcileNetCreate(t *testing.T) {
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netSpec := ntc.spec.Network.Net
 			netId := "vpc-" + netName
+			netRef := clusterScope.GetNetRef()
+			netRef.ResourceMap = make(map[string]string)
+			if !ntc.notManagedByCapi {
+				netRef.ResourceMap[v1beta1.ManagedByKey(netId)] = v1beta1.ManagedByValueCapi
+			}
 			clusterName := ntc.spec.Network.ClusterName + "-uid"
 			tag := osc.Tag{
 				ResourceId: &netId,
@@ -277,6 +288,15 @@ func TestReconcileNetCreate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+			resourceMapValues := make([]string, 0, len(netRef.ResourceMap))
+			for _, value := range netRef.ResourceMap {
+				resourceMapValues = append(resourceMapValues, value)
+			}
+			if ntc.expManagedByCapi {
+				require.Contains(t, resourceMapValues, infrastructurev1beta1.ManagedByValueCapi)
+			} else {
+				require.NotContains(t, resourceMapValues, infrastructurev1beta1.ManagedByValueCapi)
+			}
 			t.Logf("Find reconcileNet %v\n", reconcileNet)
 		})
 	}
@@ -287,6 +307,8 @@ func TestReconcileNetGet(t *testing.T) {
 	netTestCases := []struct {
 		name               string
 		spec               infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi   bool
+		expSkip            bool
 		expNetFound        bool
 		expTagFound        bool
 		expCreateNetFound  bool
@@ -317,48 +339,61 @@ func TestReconcileNetGet(t *testing.T) {
 			expDescribeNetErr:  errors.New("GetNet generic error"),
 			expReconcileNetErr: errors.New("GetNet generic error"),
 		},
+		{
+			name:             "skip reconcile because not managed by capi",
+			spec:             defaultInternetServiceReconcile,
+			notManagedByCapi: true,
+			expSkip:          true,
+		},
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface, mockOscTagInterface := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
+			netRef := clusterScope.GetNetRef()
+			netRef.ResourceMap = make(map[string]string)
+			if !ntc.notManagedByCapi {
+				netRef.ResourceMap[v1beta1.ManagedByKey(netId)] = v1beta1.ManagedByValueCapi
+			}
 			tag := osc.Tag{
 				ResourceId: &netId,
 			}
 
-			if ntc.expTagFound {
-				mockOscTagInterface.
-					EXPECT().
-					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
-					Return(&tag, ntc.expReadTagErr)
-			} else {
-				mockOscTagInterface.
-					EXPECT().
-					ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
-					Return(nil, ntc.expReadTagErr)
-			}
-			net := osc.CreateNetResponse{
-				Net: &osc.Net{
-					NetId: &netId,
-				},
-			}
-			readNets := osc.ReadNetsResponse{
-				Nets: &[]osc.Net{
-					*net.Net,
-				},
-			}
-			readNet := *readNets.Nets
-			if ntc.expNetFound {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(&readNet[0], ntc.expDescribeNetErr)
-			} else {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(nil, ntc.expDescribeNetErr)
+			if !ntc.expSkip {
+				if ntc.expTagFound {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
+						Return(&tag, ntc.expReadTagErr)
+				} else {
+					mockOscTagInterface.
+						EXPECT().
+						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(netName)).
+						Return(nil, ntc.expReadTagErr)
+				}
+				net := osc.CreateNetResponse{
+					Net: &osc.Net{
+						NetId: &netId,
+					},
+				}
+				readNets := osc.ReadNetsResponse{
+					Nets: &[]osc.Net{
+						*net.Net,
+					},
+				}
+				readNet := *readNets.Nets
+				if ntc.expNetFound {
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(&readNet[0], ntc.expDescribeNetErr)
+				} else {
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(nil, ntc.expDescribeNetErr)
+				}
 			}
 			reconcileNet, err := reconcileNet(ctx, clusterScope, mockOscNetInterface, mockOscTagInterface)
 			if ntc.expReconcileNetErr != nil {
@@ -376,6 +411,7 @@ func TestReconcileNetResourceId(t *testing.T) {
 	netTestCases := []struct {
 		name               string
 		spec               infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi   bool
 		expTagFound        bool
 		expCreateNetErr    error
 		expReadTagErr      error
@@ -408,6 +444,11 @@ func TestReconcileNetResourceId(t *testing.T) {
 			netSpec := ntc.spec.Network.Net
 			clusterName := ntc.spec.Network.ClusterName + "-uid"
 			netId := "vpc-" + netName
+			netRef := clusterScope.GetNetRef()
+			netRef.ResourceMap = make(map[string]string)
+			if !ntc.notManagedByCapi {
+				netRef.ResourceMap[v1beta1.ManagedByKey(netId)] = v1beta1.ManagedByValueCapi
+			}
 			tag := osc.Tag{
 				ResourceId: &netId,
 			}
@@ -453,6 +494,7 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
 		spec                     infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi         bool
 		expNetFound              bool
 		expDeleteNetErr          error
 		expDescribeNetErr        error
@@ -480,6 +522,11 @@ func TestReconcileDeleteNetDelete(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface, _ := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
+			netRef := clusterScope.GetNetRef()
+			netRef.ResourceMap = make(map[string]string)
+			if !ntc.notManagedByCapi {
+				netRef.ResourceMap[v1beta1.ManagedByKey(netId)] = v1beta1.ManagedByValueCapi
+			}
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
 					NetId: &netId,
@@ -522,6 +569,7 @@ func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
 		spec                     infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi         bool
 		expNetFound              bool
 		expDeleteNetErr          error
 		expDescribeNetErr        error
@@ -540,6 +588,11 @@ func TestReconcileDeleteNetDeleteWithoutSpec(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface, _ := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := "cluster-api-net-uid"
 			netId := "vpc-" + netName
+			netRef := clusterScope.GetNetRef()
+			netRef.ResourceMap = make(map[string]string)
+			if !ntc.notManagedByCapi {
+				netRef.ResourceMap[v1beta1.ManagedByKey(netId)] = v1beta1.ManagedByValueCapi
+			}
 			clusterScope.OscCluster.Spec.Network.Net.ResourceId = netId
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
@@ -576,6 +629,8 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 	netTestCases := []struct {
 		name                     string
 		spec                     infrastructurev1beta1.OscClusterSpec
+		notManagedByCapi         bool
+		expSkip                  bool
 		expNetFound              bool
 		expDescribeNetErr        error
 		expReconcileDeleteNetErr error
@@ -594,12 +649,23 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 			expDescribeNetErr:        errors.New("GetNet generic error"),
 			expReconcileDeleteNetErr: errors.New("GetNet generic error"),
 		},
+		{
+			name:             "skip reconcile delete because not managed by capi",
+			spec:             defaultInternetServiceReconcile,
+			notManagedByCapi: true,
+			expSkip:          true,
+		},
 	}
 	for _, ntc := range netTestCases {
 		t.Run(ntc.name, func(t *testing.T) {
 			clusterScope, ctx, mockOscNetInterface, _ := SetupWithNetMock(t, ntc.name, ntc.spec)
 			netName := ntc.spec.Network.Net.Name + "-uid"
 			netId := "vpc-" + netName
+			netRef := clusterScope.GetNetRef()
+			netRef.ResourceMap = make(map[string]string)
+			if !ntc.notManagedByCapi {
+				netRef.ResourceMap[v1beta1.ManagedByKey(netId)] = v1beta1.ManagedByValueCapi
+			}
 			net := osc.CreateNetResponse{
 				Net: &osc.Net{
 					NetId: &netId,
@@ -611,16 +677,18 @@ func TestReconcileDeleteNetGet(t *testing.T) {
 				},
 			}
 			readNet := *readNets.Nets
-			if ntc.expNetFound {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(&readNet[0], ntc.expDescribeNetErr)
-			} else {
-				mockOscNetInterface.
-					EXPECT().
-					GetNet(gomock.Any(), gomock.Eq(netId)).
-					Return(nil, ntc.expDescribeNetErr)
+			if !ntc.expSkip {
+				if ntc.expNetFound {
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(&readNet[0], ntc.expDescribeNetErr)
+				} else {
+					mockOscNetInterface.
+						EXPECT().
+						GetNet(gomock.Any(), gomock.Eq(netId)).
+						Return(nil, ntc.expDescribeNetErr)
+				}
 			}
 			reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, mockOscNetInterface)
 			if ntc.expReconcileDeleteNetErr != nil {

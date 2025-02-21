@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
@@ -64,12 +65,15 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	netRef := clusterScope.GetNetRef()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	clusterName := netSpec.ClusterName + "-" + clusterScope.GetUID()
-
-	var net *osc.Net
-	var err error
 	if len(netRef.ResourceMap) == 0 {
 		netRef.ResourceMap = make(map[string]string)
 	}
+	if netSpec.ResourceId != "" && netRef.ResourceMap[v1beta1.ManagedByKey(netSpec.ResourceId)] != v1beta1.ManagedByValueCapi {
+		netRef.ResourceMap[netName] = netSpec.ResourceId
+		return reconcile.Result{}, nil
+	}
+	var net *osc.Net
+	var err error
 	tagKey := "Name"
 	tagValue := netName
 	tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
@@ -95,6 +99,7 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 		netSpec.ResourceId = *net.NetId
 		netRef.ResourceMap[netName] = net.GetNetId()
 		netSpec.ResourceId = net.GetNetId()
+		netRef.ResourceMap[v1beta1.ManagedByKey(net.GetNetId())] = v1beta1.ManagedByValueCapi
 	}
 	return reconcile.Result{}, nil
 }
@@ -107,6 +112,11 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 	netSpec.SetDefaultValue()
 	netId := netSpec.ResourceId
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
+	netRef := clusterScope.GetNetRef()
+	if netRef.ResourceMap[v1beta1.ManagedByKey(netId)] != v1beta1.ManagedByValueCapi {
+		log.V(2).Info("Not deleting net because it's not managed by capi", "netName", netName)
+		return reconcile.Result{}, nil
+	}
 	net, err := netSvc.GetNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
