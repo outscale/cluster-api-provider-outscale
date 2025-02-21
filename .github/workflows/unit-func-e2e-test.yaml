@@ -21,7 +21,7 @@ on:
       - "!hack/json-format/tests/*.rs"
 jobs:
   testenv:
-    runs-on: [self-hosted, linux, us-east-2]
+    runs-on: [self-hosted, linux]
     needs: [unit_test]
     steps:
     - name: Checkout cluster-api-outscale
@@ -173,7 +173,7 @@ jobs:
         cat covers.txt
       shell: bash  
   e2etest:
-    runs-on: [self-hosted, linux, us-east-2]
+    runs-on: [self-hosted, linux]
     needs: [unit_test, testenv]
     steps:
     - name: Checkout cluster-api-outscales
