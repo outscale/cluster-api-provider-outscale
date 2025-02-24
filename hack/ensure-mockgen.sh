@@ -48,7 +48,7 @@ install_mockgen() {
 		if ! [ -d "${BIN_ROOT}" ]; then
 			mkdir -p "${BIN_ROOT}"
 		fi
-		go install -v "github.com/golang/mock/mockgen@v${MINIMUM_MOCKGEN_VERSION}"
+		go install -v "go.uber.org/mock/mockgen@v${MINIMUM_MOCKGEN_VERSION}"
 		cp "$GOPATH/bin/mockgen" "${BIN_ROOT}/mockgen"
 	else
 		set +x

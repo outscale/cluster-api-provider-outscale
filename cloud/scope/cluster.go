@@ -242,11 +242,11 @@ func (s *ClusterScope) GetIpSubnetRange(name string) string {
 }
 
 // GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
-func (s *ClusterScope) GetSecurityGroupRule(name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
+func (s *ClusterScope) GetSecurityGroupRule(name string) []infrastructurev1beta1.OscSecurityGroupRule {
 	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
 	for _, securityGroup := range securityGroups {
 		if securityGroup.Name == name {
-			return &securityGroup.SecurityGroupRules
+			return securityGroup.SecurityGroupRules
 		}
 	}
 	return nil
