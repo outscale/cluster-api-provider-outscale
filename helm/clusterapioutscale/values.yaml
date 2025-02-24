@@ -43,22 +43,6 @@ deployment:
       requests: 100m
       # -- Container cpu limts
       limits: 100m
-  # -- Proxy image
-  proxyImage: gcr.io/kubebuilder/kube-rbac-proxy
-  # -- Proxy image tag
-  proxyImageTag: "v0.8.0"
-  # -- Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
-  proxyResources:
-    memory:
-      # -- Container proxy memory requests
-      requests: 64Mi
-      # -- Container proxy memory limits
-      limits: 64Mi
-    cpu:
-      # -- Container proxy cpu requests
-      requests: 100m
-      # -- Container proxy cpu limits
-      limits: 100m
 crd:
   # -- enable crd
   enable: True
