@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.2
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: oscclustertemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -116,6 +116,8 @@ spec:
                                 type: string
                               enable:
                                 type: boolean
+                              imageAccountId:
+                                type: string
                               imageId:
                                 type: string
                               imageName:
@@ -131,8 +133,6 @@ spec:
                                       type: string
                                     privateIp:
                                       type: string
-                                  required:
-                                  - privateIp
                                   type: object
                                 type: array
                               publicIpName:
@@ -179,6 +179,8 @@ spec:
                           image:
                             description: The image configuration
                             properties:
+                              accountId:
+                                type: string
                               name:
                                 type: string
                               resourceId:
@@ -279,7 +281,7 @@ spec:
                                 description: The tag name associate with the Nat Service
                                 type: string
                               publicipname:
-                                description: The Public Ip tag name associated wtih
+                                description: The Public Ip tag name associated with
                                   a Public Ip
                                 type: string
                               resourceId:
@@ -302,7 +304,7 @@ spec:
                                     Service
                                   type: string
                                 publicipname:
-                                  description: The Public Ip tag name associated wtih
+                                  description: The Public Ip tag name associated with
                                     a Public Ip
                                   type: string
                                 resourceId:
