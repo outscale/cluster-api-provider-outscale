@@ -120,7 +120,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 // CreateRoute create the route associated with the routetable and the net
 func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
-	valideDestinationIpRange, err := infrastructurev1beta1.ValidateCidr(destinationIpRange)
+	err := infrastructurev1beta1.ValidateCidr(destinationIpRange)
 	if err != nil {
 		return nil, err
 	}
@@ -128,13 +128,13 @@ func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, ro
 	switch {
 	case resourceType == "gateway":
 		routeRequest = osc.CreateRouteRequest{
-			DestinationIpRange: valideDestinationIpRange,
+			DestinationIpRange: destinationIpRange,
 			RouteTableId:       routeTableId,
 			GatewayId:          &resourceId,
 		}
 	case resourceType == "nat":
 		routeRequest = osc.CreateRouteRequest{
-			DestinationIpRange: valideDestinationIpRange,
+			DestinationIpRange: destinationIpRange,
 			RouteTableId:       routeTableId,
 			NatServiceId:       &resourceId,
 		}

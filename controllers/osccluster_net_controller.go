@@ -49,7 +49,7 @@ func checkNetFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 		return netTagName, err
 	}
 	netIpRange := netSpec.IpRange
-	_, err = infrastructurev1beta1.ValidateCidr(netIpRange)
+	err = infrastructurev1beta1.ValidateCidr(netIpRange)
 	if err != nil {
 		return netTagName, err
 	}

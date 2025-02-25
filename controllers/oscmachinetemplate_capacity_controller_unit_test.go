@@ -36,11 +36,10 @@ var (
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{

@@ -188,11 +188,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	By("Initializing a runtime.Scheme with all the GVK relevant for this test")
 	scheme := initScheme()
 
-	By(fmt.Sprintf("Loading the e2e test configuration from %q", configPath))
+	By("Loading the e2e test configuration from " + configPath)
 	e2eConfig = loadE2EConfig(ctx, configPath)
 
 	By("Loading the e2e test")
-	By(fmt.Sprintf("Creating a clusterctl local repositorry into %q", artifactFolder))
+	By("Creating a clusterctl local repository into " + artifactFolder)
 	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"), useCni)
 
 	By("Setting up the bootstrap cluster")

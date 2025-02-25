@@ -111,19 +111,6 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return r.reconcile(ctx, clusterScope)
 }
 
-// alertDuplicate alert if item is present more than once in array
-func alertDuplicate(nameArray []string) error {
-	checkMap := make(map[string]bool, 0)
-	for _, name := range nameArray {
-		if checkMap[name] {
-			return fmt.Errorf("%s already exist", name)
-		} else {
-			checkMap[name] = true
-		}
-	}
-	return nil
-}
-
 // reconcile reconcile the creation of the cluster
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)

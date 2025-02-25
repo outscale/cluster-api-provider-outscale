@@ -28,6 +28,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -56,33 +57,20 @@ func getSecurityGroupRulesResourceId(resourceName string, clusterScope *scope.Cl
 
 // checkSecurityGroupOscDuplicateName check that there are not the same name for securityGroup
 func checkSecurityGroupOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
-	securityGroupsSpec := clusterScope.GetSecurityGroups()
-	for _, securityGroupSpec := range securityGroupsSpec {
-		resourceNameList = append(resourceNameList, securityGroupSpec.Name)
-	}
-	duplicateResourceErr := alertDuplicate(resourceNameList)
-	if duplicateResourceErr != nil {
-		return duplicateResourceErr
-	} else {
-		return nil
-	}
+	return utils.CheckDuplicates(clusterScope.GetSecurityGroups(), func(sg *infrastructurev1beta1.OscSecurityGroup) string {
+		return sg.Name
+	})
 }
 
 // checkSecurityGroupRuleOscDuplicateName check that there are not the same name for securityGroupRule
 func checkSecurityGroupRuleOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
 	for _, securityGroupSpec := range securityGroupsSpec {
-		securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-		for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
-			resourceNameList = append(resourceNameList, securityGroupRuleSpec.Name)
-		}
-		duplicateResourceErr := alertDuplicate(resourceNameList)
-		if duplicateResourceErr != nil {
-			return duplicateResourceErr
-		} else {
-			return nil
+		err := utils.CheckDuplicates(clusterScope.GetSecurityGroupRule(securityGroupSpec.Name), func(sgr infrastructurev1beta1.OscSecurityGroupRule) string {
+			return sgr.Name
+		})
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -105,7 +93,7 @@ func checkSecurityGroupFormatParameters(clusterScope *scope.ClusterScope) (strin
 			return securityGroupTagName, err
 		}
 		securityGroupDescription := securityGroupSpec.Description
-		_, err = infrastructurev1beta1.ValidateDescription(securityGroupDescription)
+		err = infrastructurev1beta1.ValidateDescription(securityGroupDescription)
 		if err != nil {
 			return securityGroupTagName, err
 		}
@@ -125,34 +113,34 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 	}
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-		for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+		for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 			securityGroupRuleName := securityGroupRuleSpec.Name + "-" + clusterScope.GetUID()
 			securityGroupRuleTagName, err := tag.ValidateTagNameValue(securityGroupRuleName)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleFlow := securityGroupRuleSpec.Flow
-			_, err = infrastructurev1beta1.ValidateFlow(securityGroupRuleFlow)
+			err = infrastructurev1beta1.ValidateFlow(securityGroupRuleFlow)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleIpProtocol := securityGroupRuleSpec.IpProtocol
-			_, err = infrastructurev1beta1.ValidateIpProtocol(securityGroupRuleIpProtocol)
+			err = infrastructurev1beta1.ValidateIpProtocol(securityGroupRuleIpProtocol)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
-			_, err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
+			err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
-			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleFromPortRange)
+			err = infrastructurev1beta1.ValidatePort(securityGroupRuleFromPortRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
 			securityGroupRuleToPortRange := securityGroupRuleSpec.ToPortRange
-			_, err = infrastructurev1beta1.ValidatePort(securityGroupRuleToPortRange)
+			err = infrastructurev1beta1.ValidatePort(securityGroupRuleToPortRange)
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
@@ -283,8 +271,8 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 
 			log.V(3).Info("Checking securityGroupRules")
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(*securityGroupRulesSpec))
-			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(securityGroupRulesSpec))
+			for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 				log.V(4).Info("Create securityGroupRule for securityGroup", "securityGroupName", securityGroupName)
 				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
 				if err != nil {
@@ -296,8 +284,8 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		if slices.Contains(securityGroupIds, securityGroupId) && extraSecurityGroupRule {
 			log.V(4).Info("Extra Security Group Rule activated")
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(*securityGroupRulesSpec))
-			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(securityGroupRulesSpec))
+			for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 				log.V(4).Info("Get sgrule", "sgRuleName", securityGroupRuleSpec.Name)
 				log.V(4).Info("Create securityGroupRule for securityGroup", "securityGroupName", securityGroupName)
 				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
@@ -381,8 +369,8 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 			return reconcile.Result{}, nil
 		}
 		securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-		log.V(4).Info("Number of securityGroupRule", "securityGroupLength", len(*securityGroupRulesSpec))
-		for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+		log.V(4).Info("Number of securityGroupRule", "securityGroupLength", len(securityGroupRulesSpec))
+		for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 			_, err = reconcileDeleteSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
 			if err != nil {
 				return reconcile.Result{}, err

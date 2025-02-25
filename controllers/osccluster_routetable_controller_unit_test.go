@@ -758,7 +758,7 @@ func TestCheckRouteTableOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteTableOscDuplicateNameErr: errors.New("test-routetable already exist"),
+			expCheckRouteTableOscDuplicateNameErr: errors.New("test-routetable appears multiple times"),
 		},
 	}
 	for _, rttc := range routeTableTestCases {
@@ -840,7 +840,7 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteOscDuplicateNameErr: errors.New("test-route already exist"),
+			expCheckRouteOscDuplicateNameErr: errors.New("test-route appears multiple times"),
 		},
 		{
 			name: "check route duplicate  nat service name",
@@ -884,7 +884,7 @@ func TestCheckRouteOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckRouteOscDuplicateNameErr: errors.New("test-route already exist"),
+			expCheckRouteOscDuplicateNameErr: errors.New("test-route appears multiple times"),
 		},
 		{
 			name: "check no routetable",

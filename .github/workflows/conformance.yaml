@@ -86,7 +86,7 @@ jobs:
         make docker-push
         docker image prune -a -f
       env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: Retrieve NodePort Ip and NodePort
       run: |
@@ -111,7 +111,7 @@ jobs:
       shell: bash
       id: e2etest
       env:
-        IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controllers:${{ github.sha }}
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
         OSC_REGION: ${{ secrets.OSC_REGION }}

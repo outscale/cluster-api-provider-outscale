@@ -94,14 +94,10 @@ spec:
                               type: string
                             privateIp:
                               type: string
-                          required:
-                          - privateIp
                           type: object
                         type: array
                       publicIpName:
                         type: string
-                      publicIpNameAfterBastion:
-                        type: boolean
                       resourceId:
                         type: string
                       rootDisk:
@@ -238,7 +234,7 @@ spec:
                         description: The tag name associate with the Nat Service
                         type: string
                       publicipname:
-                        description: The Public Ip tag name associated wtih a Public
+                        description: The Public Ip tag name associated with a Public
                           Ip
                         type: string
                       resourceId:
@@ -259,7 +255,7 @@ spec:
                           description: The tag name associate with the Nat Service
                           type: string
                         publicipname:
-                          description: The Public Ip tag name associated wtih a Public
+                          description: The Public Ip tag name associated with a Public
                             Ip
                           type: string
                         resourceId:
@@ -633,6 +629,8 @@ spec:
       - v1
   group: infrastructure.cluster.x-k8s.io
   names:
+    categories:
+    - cluster-api
     kind: OscMachine
     listKind: OscMachineList
     plural: oscmachines
@@ -709,8 +707,6 @@ spec:
                               type: string
                             privateIp:
                               type: string
-                          required:
-                          - privateIp
                           type: object
                         type: array
                       publicIp:
@@ -746,6 +742,10 @@ spec:
                         type: string
                       subregionName:
                         type: string
+                      tags:
+                        additionalProperties:
+                          type: string
+                        type: object
                       vmType:
                         type: string
                       volumeDeviceName:
@@ -756,6 +756,8 @@ spec:
                   volumes:
                     items:
                       properties:
+                        device:
+                          type: string
                         iops:
                           format: int32
                           type: integer
@@ -770,6 +772,8 @@ spec:
                           type: string
                         volumeType:
                           type: string
+                      required:
+                      - device
                       type: object
                     type: array
                 type: object
@@ -969,12 +973,10 @@ spec:
                       ObjectMeta is metadata that all persisted resources must have, which includes all objects
                       users must create. This is a copy of customizable fields from metav1.ObjectMeta.
 
-
                       ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template` and `MachineSet.Template`,
                       which are not top-level Kubernetes objects. Given that metav1.ObjectMeta has lots of special cases
                       and read-only fields which end up in the generated CRD validation, having it as a subset simplifies
                       the API and some issues that can impact user experience.
-
 
                       During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054)
                       for v1alpha2, we noticed a failure would occur running Cluster API test suite against the new CRDs,
@@ -982,12 +984,10 @@ spec:
                       The investigation showed that `controller-tools@v2` behaves differently than its previous version
                       when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1) package.
 
-
                       In more details, we found that embedded (non-top level) types that embedded `metav1.ObjectMeta`
                       had validation properties, including for `creationTimestamp` (metav1.Time).
                       The `metav1.Time` type specifies a custom json marshaller that, when IsZero() is true, returns `null`
                       which breaks validation because the field isn't marked as nullable.
-
 
                       In future versions, controller-tools@v2 might allow overriding the type and validation for embedded
                       types. When that happens, this hack should be revisited.
@@ -1059,8 +1059,6 @@ spec:
                                       type: string
                                     privateIp:
                                       type: string
-                                  required:
-                                  - privateIp
                                   type: object
                                 type: array
                               publicIp:
@@ -1110,6 +1108,8 @@ spec:
                           volumes:
                             items:
                               properties:
+                                device:
+                                  type: string
                                 iops:
                                   format: int32
                                   type: integer
@@ -1124,6 +1124,8 @@ spec:
                                   type: string
                                 volumeType:
                                   type: string
+                              required:
+                              - device
                               type: object
                             type: array
                         type: object

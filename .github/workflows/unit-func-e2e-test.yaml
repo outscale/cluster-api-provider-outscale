@@ -97,7 +97,7 @@ jobs:
         make docker-push
         docker image prune -a -f
       env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: Retrieve NodePort Ip and NodePort
       run: |
@@ -124,7 +124,7 @@ jobs:
       id: deploy-capo
       env:
         KUBECONFIG: rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
-        IMG: ${nodeport_ip}:${nodeport_port}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${nodeport_ip}:${nodeport_port}/cluster-api-outscale-controllers:${{ github.sha }}
     - name: Wait until cluster-api-outscale is ready
       uses: jupyterhub/action-k8s-await-workloads@v3
       with:
@@ -249,7 +249,7 @@ jobs:
         make docker-push
         docker image prune -a -f
       env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: Retrieve NodePort Ip and NodePort
       run: |
@@ -276,7 +276,7 @@ jobs:
         KUBECONFIG: ${{ github.workspace }}/rke-cluster-for-cluster-api/rke/kube_config_cluster.yml
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${{ env.NODEPORT_IP }}:${{ env.NODEPORT_PORT }}/cluster-api-outscale-controllers:${{ github.sha }}
         IMG_UPGRADE_FROM: ${{ vars[env.IMG_UPGRADE_FROM_NAME] }}
         IMG_UPGRADE_TO: ${{ vars[env.IMG_UPGRADE_TO_NAME] }}
     - name: Get cluster api outscale logs

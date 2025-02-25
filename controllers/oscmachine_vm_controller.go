@@ -28,9 +28,8 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/storage"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,25 +43,6 @@ func getVmResourceId(resourceName string, machineScope *scope.MachineScope) (str
 		return vmId, nil
 	} else {
 		return "", fmt.Errorf("%s does not exist", resourceName)
-	}
-}
-
-// checkVmVolumeOscAssociateResourceName check that Volume dependencies tag name in both resource configuration are the same.
-func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) error {
-	var resourceNameList []string
-	vmSpec := machineScope.GetVm()
-	vmSpec.SetDefaultValue()
-	vmVolumeName := vmSpec.VolumeName + "-" + machineScope.GetUID()
-	volumesSpec := machineScope.GetVolume()
-	for _, volumeSpec := range volumesSpec {
-		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
-		resourceNameList = append(resourceNameList, volumeName)
-	}
-	checkOscAssociate := slices.Contains(resourceNameList, vmVolumeName)
-	if checkOscAssociate {
-		return nil
-	} else {
-		return fmt.Errorf("%s volume does not exist in vm", vmVolumeName)
 	}
 }
 
@@ -80,20 +60,6 @@ func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScop
 		return nil
 	} else {
 		return fmt.Errorf("%s loadBalancer does not exist in vm", vmLoadBalancerName)
-	}
-}
-
-func checkVmVolumeSubregionName(machineScope *scope.MachineScope) error {
-	vmSpec := machineScope.GetVm()
-	vmSpec.SetDefaultValue()
-	vmVolumeName := vmSpec.VolumeName
-	volumeSubregionName := machineScope.GetVolumeSubregionName(vmVolumeName)
-	vmSubregionName := vmSpec.SubregionName
-	vmName := vmSpec.Name
-	if vmSubregionName != volumeSubregionName {
-		return fmt.Errorf("volume %s and vm %s are not in the same subregion %s", vmVolumeName, vmName, vmSubregionName)
-	} else {
-		return nil
 	}
 }
 
@@ -177,44 +143,31 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	imageName := imageSpec.Name
 
 	if imageName != "" {
-		_, err = infrastructurev1beta1.ValidateImageName(imageName)
+		err = infrastructurev1beta1.ValidateImageName(imageName)
 		if err != nil {
 			return vmTagName, err
 		}
 	} else {
-		_, err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
+		err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 
 	vmKeypairName := vmSpec.KeypairName
-	_, err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
+	err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmType := vmSpec.VmType
-	_, err = infrastructurev1beta1.ValidateVmType(vmType)
+	err = infrastructurev1beta1.ValidateVmType(vmType)
 	if err != nil {
 		return vmTagName, err
-	}
-
-	vmDeviceName := vmSpec.DeviceName
-	_, err = infrastructurev1beta1.ValidateDeviceName(vmDeviceName)
-	if err != nil {
-		return vmTagName, err
-	}
-	if vmSpec.VolumeDeviceName != "" {
-		vmVolumeDeviceName := vmSpec.VolumeDeviceName
-		_, err = infrastructurev1beta1.ValidateDeviceName(vmVolumeDeviceName)
-		if err != nil {
-			return vmTagName, err
-		}
 	}
 
 	vmSubregionName := vmSpec.SubregionName
-	_, err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
+	err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -226,7 +179,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	networkSpec.SetSubnetDefaultValue()
 	for _, vmPrivateIp := range vmPrivateIps {
 		privateIp := vmPrivateIp.PrivateIp
-		_, err := compute.ValidateIpAddrInCidr(privateIp, ipSubnetRange)
+		err := compute.ValidateIpAddrInCidr(privateIp, ipSubnetRange)
 		if err != nil {
 			return vmTagName, err
 		}
@@ -234,26 +187,26 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 
 	if vmSpec.RootDisk.RootDiskIops != 0 {
 		rootDiskIops := vmSpec.RootDisk.RootDiskIops
-		_, err := infrastructurev1beta1.ValidateIops(rootDiskIops)
+		err := infrastructurev1beta1.ValidateIops(rootDiskIops)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 	rootDiskSize := vmSpec.RootDisk.RootDiskSize
-	_, err = infrastructurev1beta1.ValidateSize(rootDiskSize)
+	err = infrastructurev1beta1.ValidateSize(rootDiskSize)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	rootDiskType := vmSpec.RootDisk.RootDiskType
-	_, err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
+	err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	if vmSpec.RootDisk.RootDiskType == "io1" && vmSpec.RootDisk.RootDiskIops != 0 && vmSpec.RootDisk.RootDiskSize != 0 {
 		ratioRootDiskSizeIops := vmSpec.RootDisk.RootDiskIops / vmSpec.RootDisk.RootDiskSize
-		_, err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
+		err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
 		if err != nil {
 			return vmTagName, err
 		}
@@ -263,18 +216,9 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 
 // checkVmPrivateIpOscDuplicateName check that there are not the same name for vm resource
 func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
-	var resourceNameList []string
-	vmPrivateIps := machineScope.GetVmPrivateIps()
-	for _, vmPrivateIp := range vmPrivateIps {
-		privateIpName := vmPrivateIp.Name
-		resourceNameList = append(resourceNameList, privateIpName)
-	}
-	duplicateResourceErr := alertDuplicate(resourceNameList)
-	if duplicateResourceErr != nil {
-		return duplicateResourceErr
-	} else {
-		return nil
-	}
+	return utils.CheckDuplicates(machineScope.GetVmPrivateIps(), func(ip infrastructurev1beta1.OscPrivateIpElement) string {
+		return ip.Name
+	})
 }
 
 func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
@@ -292,21 +236,11 @@ func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.Mach
 }
 
 // reconcileVm reconcile the vm of the machine
-func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	vmSpec := machineScope.GetVm()
 	vmRef := machineScope.GetVmRef()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
-
-	var volumeId string
-	var err error
-	if vmSpec.VolumeName != "" {
-		volumeName := vmSpec.VolumeName + "-" + machineScope.GetUID()
-		volumeId, err = getVolumeResourceId(volumeName, machineScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
 
 	subnetName := vmSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
@@ -376,12 +310,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
 
-	var vmVolumeDeviceName string
-	if vmSpec.VolumeDeviceName != "" {
-		vmVolumeDeviceName = vmSpec.VolumeDeviceName
-	}
-	var vm *osc.Vm
-	var vmId string
 	if len(vmRef.ResourceMap) == 0 {
 		vmRef.ResourceMap = make(map[string]string)
 	}
@@ -411,13 +339,14 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		vmType := vmSpec.VmType
 		vmTags := vmSpec.Tags
 		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
+		volumes := machineScope.GetVolume()
 
-		vm, err := vmSvc.CreateVm(ctx, machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
+		vm, err := vmSvc.CreateVm(ctx, machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags, volumes)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
 		}
 
-		vmId = vm.GetVmId()
+		vmId := vm.GetVmId()
 		machineScope.SetVmState(infrastructurev1beta1.VmStatePending)
 		vmState = &infrastructurev1beta1.VmStatePending
 		vmRef.ResourceMap[vmName] = vmId
@@ -463,22 +392,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				subregionName := vmSpec.SubregionName
 				machineScope.SetProviderID(subregionName, vmId)
 			}
-			if vmSpec.VolumeName != "" {
-				err = volumeSvc.CheckVolumeState(ctx, 20, 240, "available", volumeId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot get volume %s available: %w", volumeId, err)
-				}
-				log.V(2).Info("Linking volume", "volumeId", volumeId)
-				err = volumeSvc.LinkVolume(ctx, volumeId, vmId, vmVolumeDeviceName)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot link volume %s with vm %s: %w", volumeId, vmId, err)
-				}
-				err = volumeSvc.CheckVolumeState(ctx, 20, 240, "in-use", volumeId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot get volume %s in use: %w", volumeId, err)
-				}
-				log.V(4).Info("Volume is in-use", "volumeId", volumeId)
-			}
 
 			if vmSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[vmPublicIpName] == "" {
 				log.V(2).Info("Linking public ip", "publicIpId", publicIpId)
@@ -489,6 +402,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				log.V(4).Info("Linked public ip", "linkPublicIpId", linkPublicIpId)
 				linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 			}
+
 			if vmSpec.LoadBalancerName != "" {
 				loadBalancerName := vmSpec.LoadBalancerName
 				vmIds := []string{vmId}
@@ -532,7 +446,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			}
 
 			clusterName := vmSpec.ClusterName + "-" + clusterScope.GetUID()
-			vm, err = vmSvc.GetVm(ctx, vmId)
+			vm, err := vmSvc.GetVm(ctx, vmId)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -561,6 +475,17 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 				})
 			}
 			machineScope.SetAddresses(addresses)
+
+			// expose volumes
+			if vm.BlockDeviceMappings != nil {
+				volRef := machineScope.GetVolumeRef()
+				if volRef.ResourceMap == nil {
+					volRef.ResourceMap = map[string]string{}
+				}
+				for _, mapping := range *vm.BlockDeviceMappings {
+					volRef.ResourceMap[mapping.GetDeviceName()] = mapping.Bsu.GetVolumeId()
+				}
+			}
 
 			tag, err := tagSvc.ReadTag(ctx, "OscK8sNodeName", *privateDnsName)
 			if err != nil {

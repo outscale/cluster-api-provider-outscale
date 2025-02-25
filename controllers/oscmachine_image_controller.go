@@ -40,7 +40,7 @@ func checkImageFormatParameters(machineScope *scope.MachineScope) (string, error
 		imageSpec = machineScope.GetImage()
 	}
 	imageName := imageSpec.Name
-	imageName, err = infrastructurev1beta1.ValidateImageName(imageName)
+	err = infrastructurev1beta1.ValidateImageName(imageName)
 	if err != nil {
 		return imageName, err
 	}

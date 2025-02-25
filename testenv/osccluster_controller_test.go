@@ -523,7 +523,7 @@ func checkOscRouteToBeProvisioned(ctx context.Context, oscInfraClusterKey client
 			routeTableId := routeTableSpec.ResourceId
 			fmt.Fprintf(GinkgoWriter, "Check RouteTableId %s\n", routeTableId)
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-			for _, routeSpec := range *routesSpec {
+			for _, routeSpec := range routesSpec {
 				routeName := routeSpec.Name + clusterScope.GetUID()
 				fmt.Fprintf(GinkgoWriter, "Check Route %s exist \n", routeName)
 				resourceType := routeSpec.TargetType
@@ -584,7 +584,7 @@ func checkOscSecurityGroupRuleToBeProvisioned(ctx context.Context, oscInfraClust
 			securityGroupId := securityGroupSpec.ResourceId
 			fmt.Fprintf(GinkgoWriter, "Check SecurityGroupId %s\n", securityGroupId)
 			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-			for _, securityGroupRuleSpec := range *securityGroupRulesSpec {
+			for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 				securityGroupRuleName := securityGroupRuleSpec.Name + "-" + clusterScope.GetUID()
 				fmt.Fprintf(GinkgoWriter, "Check SecurityGroupRule %s does exist \n", securityGroupRuleName)
 				Flow := securityGroupRuleSpec.Flow

@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -74,14 +75,14 @@ func checkRouteFormatParameters(clusterScope *scope.ClusterScope) (string, error
 	routeTablesSpec := clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-		for _, routeSpec := range *routesSpec {
+		for _, routeSpec := range routesSpec {
 			routeName := routeSpec.Name + "-" + clusterScope.GetUID()
 			routeTagName, err := tag.ValidateTagNameValue(routeName)
 			if err != nil {
 				return routeTagName, err
 			}
 			destinationIpRange := routeSpec.Destination
-			_, err = infrastructurev1beta1.ValidateCidr(destinationIpRange)
+			err = infrastructurev1beta1.ValidateCidr(destinationIpRange)
 			if err != nil {
 				return routeTagName, err
 			}
@@ -117,33 +118,20 @@ func checkRouteTableSubnetOscAssociateResourceName(clusterScope *scope.ClusterSc
 
 // checkRouteTableOscDuplicateName check that there are not the same name for RouteTable.
 func checkRouteTableOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
-	routeTablesSpec := clusterScope.GetRouteTables()
-	for _, routeTableSpec := range routeTablesSpec {
-		resourceNameList = append(resourceNameList, routeTableSpec.Name)
-	}
-	duplicateResourceErr := alertDuplicate(resourceNameList)
-	if duplicateResourceErr != nil {
-		return duplicateResourceErr
-	} else {
-		return nil
-	}
+	return utils.CheckDuplicates(clusterScope.GetRouteTables(), func(rt *infrastructurev1beta1.OscRouteTable) string {
+		return rt.Name
+	})
 }
 
 // checkRouteOscDuplicateName check that there are not the same name for route.
 func checkRouteOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
 	routeTablesSpec := clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
-		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-		for _, routeSpec := range *routesSpec {
-			resourceNameList = append(resourceNameList, routeSpec.Name)
-		}
-		duplicateResourceErr := alertDuplicate(resourceNameList)
-		if duplicateResourceErr != nil {
-			return duplicateResourceErr
-		} else {
-			return nil
+		err := utils.CheckDuplicates(clusterScope.GetRoute(routeTableSpec.Name), func(r infrastructurev1beta1.OscRoute) string {
+			return r.Name
+		})
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -263,8 +251,8 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 		if !slices.Contains(routeTableIds, routeTableId) && tag == nil {
 			routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-			log.V(4).Info("Number of routes", "routeLength", len(*routesSpec))
-			for _, routeSpec := range *routesSpec {
+			log.V(4).Info("Number of routes", "routeLength", len(routesSpec))
+			for _, routeSpec := range routesSpec {
 				resourceType := routeSpec.TargetType
 				log.V(4).Info("Get resourceType", "ResourceType", resourceType)
 				if resourceType == "nat" {
@@ -305,7 +293,7 @@ func reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, 
 
 			linkRouteTablesRef[routeTableName] = linkRouteTableIdArray
 			clusterScope.SetLinkRouteTablesRef(linkRouteTablesRef)
-			for _, routeSpec := range *routesSpec {
+			for _, routeSpec := range routesSpec {
 				log.V(2).Info("Create route for routetable", "routeTableName", routeTableName)
 				_, err = reconcileRoute(ctx, clusterScope, routeSpec, routeTableName, routeTableSvc)
 				if err != nil {
@@ -356,8 +344,8 @@ func reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterS
 			return reconcile.Result{}, nil
 		}
 		routesSpec := clusterScope.GetRoute(routeTableSpec.Name)
-		log.V(4).Info("Number of route", "routeLength", len(*routesSpec))
-		for _, routeSpec := range *routesSpec {
+		log.V(4).Info("Number of route", "routeLength", len(routesSpec))
+		for _, routeSpec := range routesSpec {
 			_, err = reconcileDeleteRoute(ctx, clusterScope, routeSpec, routeTableName, routeTableSvc)
 			if err != nil {
 				return reconcile.Result{}, err

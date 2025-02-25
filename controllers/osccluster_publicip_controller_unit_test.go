@@ -360,7 +360,7 @@ func TestCheckPublicIpOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckPublicIpOscDuplicateNameErr: errors.New("test-publicip-first already exist"),
+			expCheckPublicIpOscDuplicateNameErr: errors.New("test-publicip-first appears multiple times"),
 		},
 	}
 	for _, pitc := range publicIpTestCases {

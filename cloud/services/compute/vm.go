@@ -31,11 +31,14 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/ptr"
 )
+
+const vmRootDeviceName string = "/dev/sda1"
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error)
+	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error)
 	CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
@@ -45,18 +48,20 @@ type OscVmInterface interface {
 }
 
 // ValidateIpAddrInCidr check that ipaddr is in cidr
-func ValidateIpAddrInCidr(ipAddr string, cidr string) (string, error) {
+func ValidateIpAddrInCidr(ipAddr, cidr string) error {
 	_, ipnet, _ := net.ParseCIDR(cidr)
 	ip := net.ParseIP(ipAddr)
 	if ipnet.Contains(ip) {
-		return ipAddr, nil
+		return nil
 	} else {
-		return ipAddr, errors.New("Invalid ip in cidr")
+		return errors.New("ip is not in subnet")
 	}
 }
 
 // CreateVm create machine vm
-func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string) (*osc.Vm, error) {
+func (s *Service) CreateVm(ctx context.Context,
+	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string,
+	volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
 	imageId := spec.ImageId
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
@@ -64,7 +69,6 @@ func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope
 	rootDiskIops := spec.RootDisk.RootDiskIops
 	rootDiskSize := spec.RootDisk.RootDiskSize
 	rootDiskType := spec.RootDisk.RootDiskType
-	deviceName := spec.DeviceName
 
 	placement := osc.Placement{
 		SubregionName: &subregionName,
@@ -80,23 +84,37 @@ func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope
 			VolumeType: &rootDiskType,
 			VolumeSize: &rootDiskSize,
 		},
-		DeviceName: &deviceName,
+		DeviceName: ptr.To(vmRootDeviceName),
 	}
 	if rootDiskType == "io1" {
-		rootDisk.Bsu.SetIops(rootDiskIops)
+		rootDisk.Bsu.Iops = &rootDiskIops
+	}
+	volMappings := []osc.BlockDeviceMappingVmCreation{
+		rootDisk,
+	}
+	for _, vol := range volumes {
+		bsuVol := osc.BlockDeviceMappingVmCreation{
+			Bsu: &osc.BsuToCreate{
+				VolumeSize: &vol.Size,
+				VolumeType: &vol.VolumeType,
+			},
+			DeviceName: &vol.Device,
+		}
+		if vol.VolumeType == "io1" {
+			bsuVol.Bsu.Iops = &vol.Iops
+		}
+		volMappings = append(volMappings, bsuVol)
 	}
 
 	vmOpt := osc.CreateVmsRequest{
-		ImageId:          imageId,
-		KeypairName:      &keypairName,
-		VmType:           &vmType,
-		SubnetId:         &subnetId,
-		SecurityGroupIds: &securityGroupIds,
-		UserData:         &mergedUserDataEnc,
-		BlockDeviceMappings: &[]osc.BlockDeviceMappingVmCreation{
-			rootDisk,
-		},
-		Placement: &placement,
+		ImageId:             imageId,
+		KeypairName:         &keypairName,
+		VmType:              &vmType,
+		SubnetId:            &subnetId,
+		SecurityGroupIds:    &securityGroupIds,
+		UserData:            &mergedUserDataEnc,
+		BlockDeviceMappings: &volMappings,
+		Placement:           &placement,
 	}
 
 	if len(privateIps) > 0 {
@@ -183,7 +201,7 @@ func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *i
 		DeviceName: &deviceName,
 	}
 	if rootDiskType == "io1" {
-		rootDisk.Bsu.SetIops(rootDiskIops)
+		rootDisk.Bsu.Iops = &rootDiskIops
 	}
 
 	vmOpt := osc.CreateVmsRequest{

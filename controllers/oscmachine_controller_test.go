@@ -42,9 +42,6 @@ func runMachineTest(t *testing.T, tc testcase) {
 		WithStatusSubresource(om).WithObjects(c, oc, m, om).Build()
 	mockCtrl := gomock.NewController(t)
 	cs := newMockCloudServices(mockCtrl)
-	for _, fn := range tc.mockFuncs {
-		fn(cs)
-	}
 	rec := controllers.OscMachineReconciler{
 		Client: client,
 		Cloud:  cs,
@@ -53,19 +50,26 @@ func runMachineTest(t *testing.T, tc testcase) {
 		Namespace: om.Namespace,
 		Name:      om.Name,
 	}
-	res, err := rec.Reconcile(context.TODO(), controllerruntime.Request{NamespacedName: nsn})
-	if tc.hasError {
-		require.Error(t, err)
-		assert.Zero(t, res)
-	} else {
-		require.NoError(t, err)
-		assert.Equal(t, tc.requeue, res.RequeueAfter > 0 || res.Requeue)
-	}
-	var out v1beta1.OscMachine
-	err = client.Get(context.TODO(), nsn, &out)
-	require.NoError(t, err, "resource was not found")
-	for _, fn := range tc.machineAsserts {
-		fn(t, &out)
+	step := &tc
+	for step != nil {
+		for _, fn := range step.mockFuncs {
+			fn(cs)
+		}
+		res, err := rec.Reconcile(context.TODO(), controllerruntime.Request{NamespacedName: nsn})
+		if step.hasError {
+			require.Error(t, err)
+			assert.Zero(t, res)
+		} else {
+			require.NoError(t, err)
+			assert.Equal(t, tc.requeue, res.RequeueAfter > 0 || res.Requeue)
+		}
+		var out v1beta1.OscMachine
+		err = client.Get(context.TODO(), nsn, &out)
+		require.NoError(t, err, "resource was not found")
+		for _, fn := range step.machineAsserts {
+			fn(t, &out)
+		}
+		step = step.next
 	}
 }
 
@@ -78,7 +82,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
 				mockNoVmFoundByName("test-cluster-api-vm-kw-"),
-				mockCreateVm("i-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kw-", nil),
+				mockCreateVmNoVolumes("i-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kw-", nil),
 				mockGetVm("i-foo"), mockGetVmState("i-foo", "pending"),
 			},
 			hasError: true,
@@ -105,10 +109,14 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
 				mockGetVm("i-foo"), mockGetVmState("i-foo", "running"),
-				mockGetVm("i-foo"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockGetVm("i-foo"), mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
-			machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", v1beta1.VmStateRunning, true)},
+			machineAsserts: []assertOSCMachineFunc{
+				assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+				assertVolumesAreConfigured(),
+			},
 		},
+
 		// Control plane node
 		{
 			name:        "Creating a controlplane with base parameters, vm is running & security groups are ok",
@@ -116,12 +124,12 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
 				mockNoVmFoundByName("test-cluster-api-vm-kcp-"),
-				mockCreateVm("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
+				mockCreateVmNoVolumes("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
 				mockGetVm("i-foo"), mockGetVmState("i-foo", "running"),
 				mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
 				mockSecurityGroupHasRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443, true),
 				mockSecurityGroupHasRule("sg-750ae810", "Inbound", "tcp", "", "sg-7eb16ccb", 6443, 6443, true),
-				mockGetVm("i-foo"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockGetVm("i-foo"), mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasFinalizer(),
@@ -134,18 +142,42 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
 				mockNoVmFoundByName("test-cluster-api-vm-kcp-"),
-				mockCreateVm("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
+				mockCreateVmNoVolumes("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
 				mockGetVm("i-foo"), mockGetVmState("i-foo", "running"),
 				mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
 				mockSecurityGroupHasRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443, false),
 				mockSecurityGroupCreateRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443),
 				mockSecurityGroupHasRule("sg-750ae810", "Inbound", "tcp", "", "sg-7eb16ccb", 6443, 6443, false),
 				mockSecurityGroupCreateRule("sg-750ae810", "Inbound", "tcp", "", "sg-7eb16ccb", 6443, 6443),
-				mockGetVm("i-foo"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockGetVm("i-foo"), mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+			},
+		},
+
+		// Volumes
+		{
+			name:        "Creating a vm with an additional volume",
+			clusterSpec: "ready", machineSpec: "base-worker-volumes",
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
+				mockNoVmFoundByName("test-cluster-api-vm-kw-"),
+				mockCreateVmWithVolumes("i-foo", []*infrastructurev1beta1.OscVolume{{
+					Name:       "data",
+					Size:       15,
+					VolumeType: "io1",
+					Iops:       500,
+					Device:     "/dev/sdb",
+				}}),
+				mockGetVm("i-foo", "/dev/sdb", "vol-bar"), mockGetVmState("i-foo", "running"),
+				mockGetVm("i-foo", "/dev/sdb", "vol-bar"), mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertHasFinalizer(),
+				assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+				assertVolumesAreConfigured("/dev/sdb", "vol-bar"),
 			},
 		},
 	}
@@ -167,10 +199,17 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
 				mockVmFoundByName("test-cluster-api-vm-kw-a009b2e2-2688-406c-a7db-a0b27a1082fd", "i-foo"),
 				// mockGetVm("i-046f4bd0"), mockGetVmState("i-046f4bd0", "running"),
-				// mockGetVm("i-046f4bd0"), mockVmReadEmptyCCMTag(), mockVmSetCCMTag("i-046f4bd0", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				// mockGetVm("i-046f4bd0"), mockVmReadCCMTag(false), mockVmSetCCMTag("i-046f4bd0", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
 			hasError: true,
 			// machineAsserts: []assertOSCMachineFunc{assertVmExists("i-046f4bd0", v1beta1.VmStateRunning, true)},
+			next: &testcase{
+				mockFuncs: []mockFunc{
+					mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14"), mockKeyPairFound("cluster-api"),
+					mockGetVm("i-046f4bd0"), mockGetVmState("i-046f4bd0", "running"),
+					mockGetVm("i-046f4bd0"), mockVmReadCCMTag(true),
+				},
+			},
 		},
 	}
 	for _, tc := range tcs {

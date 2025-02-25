@@ -304,7 +304,7 @@ func TestCheckSecurityGroupOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupOscDuplicateNameErr: errors.New("test-securitygroup already exist"),
+			expCheckSecurityGroupOscDuplicateNameErr: errors.New("test-securitygroup appears multiple times"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -373,7 +373,7 @@ func TestCheckSecurityGroupRuleOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleOscDuplicateNameErr: errors.New("test-securitygrouprule already exist"),
+			expCheckSecurityGroupRuleOscDuplicateNameErr: errors.New("test-securitygrouprule appears multiple times"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {
@@ -462,7 +462,7 @@ func TestCheckSecurityGroupFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupFormatParametersErr: errors.New("Invalid Description"),
+			expCheckSecurityGroupFormatParametersErr: errors.New("invalid description"),
 		},
 	}
 	for _, sgtc := range securityGroupTestCases {
@@ -552,7 +552,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid flow"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("invalid flow (allowed: Inbound, Outbound)"),
 		},
 		{
 			name: "check Bad IpProtocol SecurityGroupRule",
@@ -580,7 +580,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid protocol"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("invalid protocol"),
 		},
 		{
 			name: "check Bad Ip Range Prefix securityGroupRule",
@@ -664,7 +664,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid Port"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("invalid port"),
 		},
 		{
 			name: "check bad ToPortRange securityGroupRule",
@@ -692,7 +692,7 @@ func TestCheckSecurityGroupRuleFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckSecurityGroupRuleFormatParametersErr: errors.New("Invalid Port"),
+			expCheckSecurityGroupRuleFormatParametersErr: errors.New("invalid port"),
 		},
 	}
 	for _, sgrtc := range securityGroupRuleTestCases {

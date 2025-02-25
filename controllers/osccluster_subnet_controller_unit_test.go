@@ -203,7 +203,7 @@ func TestCheckSubnetOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckSubnetOscDuplicateNameErr: errors.New("test-subnet-first already exist"),
+			expCheckSubnetOscDuplicateNameErr: errors.New("test-subnet-first appears multiple times"),
 		},
 	}
 	for _, stc := range subnetTestCases {

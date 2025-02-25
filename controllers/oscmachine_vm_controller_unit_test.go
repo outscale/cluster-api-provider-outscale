@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -56,7 +57,6 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
-					SubregionName: "eu-west-2a",
 				},
 			},
 			SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
@@ -101,7 +101,6 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
-					SubregionName: "eu-west-2a",
 					ResourceId:    "subnet-test-subnet-uid",
 				},
 			},
@@ -147,7 +146,6 @@ var (
 				{
 					Name:          "test-subnet",
 					IpSubnetRange: "10.0.0.0/24",
-					SubregionName: "eu-west-2a",
 				},
 				{
 					Name:          failureDomainSubnet,
@@ -184,96 +182,14 @@ var (
 			},
 		},
 	}
-	defaultVmVolumeInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
-				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-				},
-			},
-			Vm: infrastructurev1beta1.OscVm{
-				Name:             "test-vm",
-				ImageId:          "ami-00000000",
-				Role:             "controlplane",
-				DeviceName:       "/dev/sda1",
-				VolumeName:       "test-volume",
-				VolumeDeviceName: "/dev/xvdb",
-				RootDisk: infrastructurev1beta1.OscRootDisk{
-					RootDiskSize: 300,
-					RootDiskIops: 1500,
-					RootDiskType: "io1",
-				},
-				KeypairName:      "rke",
-				SubregionName:    "eu-west-2a",
-				SubnetName:       "test-subnet",
-				LoadBalancerName: "test-loadbalancer",
-				PublicIpName:     "test-publicip",
-				VmType:           "tinav3.c2r4p2",
-				Replica:          1,
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-					{
-						Name: "test-securitygroup",
-					},
-				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-					{
-						Name:      "test-privateip",
-						PrivateIp: "10.0.0.17",
-					},
-				},
-			},
-		},
-	}
-	defaultVmVolumeNotAvaiInitialize = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
-				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-				},
-			},
-			Vm: infrastructurev1beta1.OscVm{
-				Name:             "test-vm",
-				ImageId:          "ami-00000000",
-				Role:             "controlplane",
-				VolumeName:       "test-volume",
-				KeypairName:      "rke",
-				SubregionName:    "eu-west-2a",
-				SubnetName:       "test-subnet",
-				LoadBalancerName: "test-loadbalancer",
-				PublicIpName:     "test-publicip",
-				VmType:           "tinav3.c2r4p2",
-				Replica:          1,
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-					{
-						Name: "test-securitygroup",
-					},
-				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-					{
-						Name:      "test-privateip",
-						PrivateIp: "10.0.0.17",
-					},
-				},
-			},
-		},
-	}
 	defaultVmInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
 				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
+					Name:       "test-volume",
+					Iops:       1000,
+					Size:       50,
+					VolumeType: "io1",
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
@@ -313,11 +229,10 @@ var (
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
 				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
+					Name:       "test-volume",
+					Iops:       1000,
+					Size:       50,
+					VolumeType: "io1",
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
@@ -352,59 +267,14 @@ var (
 			},
 		},
 	}
-
-	defaultVmInitializeWithoutPublicIp = infrastructurev1beta1.OscMachineSpec{
-		Node: infrastructurev1beta1.OscNode{
-			Volumes: []*infrastructurev1beta1.OscVolume{
-				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-				},
-			},
-			Vm: infrastructurev1beta1.OscVm{
-				ClusterName: "test-cluster",
-				Name:        "test-vm",
-				ImageId:     "ami-00000000",
-				Role:        "controlplane",
-				DeviceName:  "/dev/sda1",
-				RootDisk: infrastructurev1beta1.OscRootDisk{
-					RootDiskSize: 30,
-					RootDiskIops: 1500,
-					RootDiskType: "gp2",
-				},
-				KeypairName:      "rke",
-				SubregionName:    "eu-west-2a",
-				SubnetName:       "test-subnet",
-				LoadBalancerName: "test-loadbalancer",
-				VmType:           "tinav3.c2r4p2",
-				Replica:          1,
-				SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-					{
-						Name: "test-securitygroup",
-					},
-				},
-				PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-					{
-						Name:      "test-privateip",
-						PrivateIp: "10.0.0.17",
-					},
-				},
-			},
-		},
-	}
-
 	defaultMultiVmInitialize = infrastructurev1beta1.OscMachineSpec{
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
 				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
+					Name:       "test-volume",
+					Iops:       1000,
+					Size:       50,
+					VolumeType: "io1",
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
@@ -447,12 +317,11 @@ var (
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
 				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-uid",
+					Name:       "test-volume",
+					Iops:       1000,
+					Size:       50,
+					VolumeType: "io1",
+					ResourceId: "volume-test-volume-uid",
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
@@ -493,12 +362,11 @@ var (
 		Node: infrastructurev1beta1.OscNode{
 			Volumes: []*infrastructurev1beta1.OscVolume{
 				{
-					Name:          "test-volume",
-					Iops:          1000,
-					Size:          50,
-					VolumeType:    "io1",
-					SubregionName: "eu-west-2a",
-					ResourceId:    "volume-test-volume-uid",
+					Name:       "test-volume",
+					Iops:       1000,
+					Size:       50,
+					VolumeType: "io1",
+					ResourceId: "volume-test-volume-uid",
 				},
 			},
 			Vm: infrastructurev1beta1.OscVm{
@@ -536,6 +404,57 @@ var (
 		},
 	}
 )
+
+func SetupMachine(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) {
+	t.Logf("Validate to %s", name)
+
+	oscCluster := infrastructurev1beta1.OscCluster{
+		Spec: clusterSpec,
+		ObjectMeta: metav1.ObjectMeta{
+			UID:       "uid",
+			Name:      "test-osc",
+			Namespace: "test-system",
+		},
+	}
+	oscMachine := infrastructurev1beta1.OscMachine{
+		Spec: machineSpec,
+		ObjectMeta: metav1.ObjectMeta{
+			UID:       "uid",
+			Name:      "test-osc",
+			Namespace: "test-system",
+		},
+	}
+
+	clusterScope = &scope.ClusterScope{
+		Cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       "uid",
+				Name:      "test-osc",
+				Namespace: "test-system",
+			},
+		},
+		OscCluster: &oscCluster,
+	}
+	machineScope = &scope.MachineScope{
+		Cluster: &clusterv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       "uid",
+				Name:      "test-osc",
+				Namespace: "test-system",
+			},
+		},
+		Machine: &clusterv1.Machine{
+			ObjectMeta: metav1.ObjectMeta{
+				UID:       "uid",
+				Name:      "test-osc",
+				Namespace: "test-system",
+			},
+		},
+		OscCluster: &oscCluster,
+		OscMachine: &oscMachine,
+	}
+	return clusterScope, machineScope
+}
 
 // SetupWithVmMock set vmMock with clusterScope, machineScope and oscmachine
 func SetupWithVmMock(t *testing.T, name string, clusterSpec infrastructurev1beta1.OscClusterSpec, machineSpec infrastructurev1beta1.OscMachineSpec) (clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, ctx context.Context, mockOscVmInterface *mock_compute.MockOscVmInterface, mockOscVolumeInterface *mock_storage.MockOscVolumeInterface, mockOscPublicIpInterface *mock_security.MockOscPublicIpInterface, mockOscLoadBalancerInterface *mock_service.MockOscLoadBalancerInterface, mockOscSecurityGroupInterface *mock_security.MockOscSecurityGroupInterface, mockOscTagInterface *mock_tag.MockOscTagInterface) {
@@ -596,98 +515,6 @@ func TestGetVmResourceId(t *testing.T) {
 	}
 }
 
-// TestCheckVmVolumeOscAssociateResourceName has several tests to cover the code of the function checkVmVolumeOscAssociateResourceName
-func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
-	vmTestCases := []struct {
-		name                                        string
-		clusterSpec                                 infrastructurev1beta1.OscClusterSpec
-		machineSpec                                 infrastructurev1beta1.OscMachineSpec
-		expCheckVmVolumeOscAssociateResourceNameErr error
-	}{
-		{
-			name:        "check volume associate with vm",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: defaultVmVolumeInitialize,
-			expCheckVmVolumeOscAssociateResourceNameErr: nil,
-		},
-		{
-			name:        "check work without vm spec (with default values)",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
-						VolumeName: "test-volume",
-					},
-				},
-			},
-			expCheckVmVolumeOscAssociateResourceNameErr: errors.New("test-volume-uid volume does not exist in vm"),
-		},
-		{
-			name:        "check Bad name volume",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:        "test-vm",
-						ImageId:     "ami-00000000",
-						Role:        "controlplane",
-						VolumeName:  "test-volume@test",
-						DeviceName:  "/dev/sda1",
-						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-							{
-								Name:      "test-privateip-second",
-								PrivateIp: "10.0.0.18",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmVolumeOscAssociateResourceNameErr: errors.New("test-volume@test-uid volume does not exist in vm"),
-		},
-	}
-	for _, vtc := range vmTestCases {
-		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			err := checkVmVolumeOscAssociateResourceName(machineScope)
-			if vtc.expCheckVmVolumeOscAssociateResourceNameErr != nil {
-				require.EqualError(t, err, vtc.expCheckVmVolumeOscAssociateResourceNameErr.Error(), "checkVmVolumeOscAssociateResourceName() should return the same eror")
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
 // TestCheckVmLoadBalancerOscAssociateResourceName has several tests to cover the code of the function checkVmLoadBalancerOscAssociateResourceName
 func TestCheckVmLoadBalancerOscAssociateResourceName(t *testing.T) {
 	vmTestCases := []struct {
@@ -721,11 +548,10 @@ func TestCheckVmLoadBalancerOscAssociateResourceName(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -809,21 +635,19 @@ func TestCheckVmSecurityGroupOscAssociateResourceName(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
-						Name:          "test-vm",
-						ImageId:       "ami-00000000",
-						Role:          "controlplane",
-						VolumeName:    "test-volume",
-						DeviceName:    "/dev/sda1",
-						KeypairName:   "rke",
-						SubregionName: "eu-west-2a",
+						Name:        "test-vm",
+						ImageId:     "ami-00000000",
+						Role:        "controlplane",
+						VolumeName:  "test-volume",
+						DeviceName:  "/dev/sda1",
+						KeypairName: "rke",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 
 							RootDiskSize: 30,
@@ -901,11 +725,10 @@ func TestCheckVmPublicIpOscAssociateResourceName(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -981,11 +804,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1023,67 +845,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 			expCheckVmFormatParametersErr: errors.New("Invalid Tag Name"),
 		},
 		{
-			name:        "check Bad name volumeDeviceName",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:             "test-vm",
-						ImageId:          "ami-00000000",
-						Role:             "controlplane",
-						VolumeName:       "test-volume",
-						VolumeDeviceName: "/dev/xvdaa",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmFormatParametersErr: errors.New("Invalid deviceName"),
-		},
-		{
 			name:        "check Bad imageId",
 			clusterSpec: defaultVmClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
 					Vm: infrastructurev1beta1.OscVm{
 						Name:       "test-vm",
 						ImageId:    "omi-00000000",
@@ -1116,22 +881,13 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid imageId"),
+			expCheckVmFormatParametersErr: errors.New("invalid image id"),
 		},
 		{
 			name:        "check bad image Name",
 			clusterSpec: defaultVmClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
 					Image: infrastructurev1beta1.OscImage{
 						Name: "!test-image@Name",
 					},
@@ -1166,7 +922,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid Image Name"),
+			expCheckVmFormatParametersErr: errors.New("invalid image name"),
 		},
 		{
 			name:        "check Bad keypairname",
@@ -1175,11 +931,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1214,22 +969,13 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid KeypairName"),
+			expCheckVmFormatParametersErr: errors.New("invalid keypair name"),
 		},
 		{
 			name:        "check empty imageId",
 			clusterSpec: defaultVmClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
 					Image: infrastructurev1beta1.OscImage{
 						Name: "omi-000",
 					},
@@ -1267,65 +1013,16 @@ func TestCheckVmFormatParameters(t *testing.T) {
 			expCheckVmFormatParametersErr: nil,
 		},
 		{
-			name:        "check Bad device name",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:       "test-vm",
-						ImageId:    "ami-00000000",
-						Role:       "controlplane",
-						VolumeName: "test-volume",
-						DeviceName: "/dev/sdab1",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "gp2",
-						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmFormatParametersErr: errors.New("Invalid deviceName"),
-		},
-		{
 			name:        "check empty device name",
 			clusterSpec: defaultVmClusterInitialize,
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1368,11 +1065,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1407,7 +1103,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid vmType"),
+			expCheckVmFormatParametersErr: errors.New("invalid vm type"),
 		},
 		{
 			name:        "Check Bad IpAddr",
@@ -1416,11 +1112,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1455,7 +1150,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid ip in cidr"),
+			expCheckVmFormatParametersErr: errors.New("ip is not in subnet"),
 		},
 		{
 			name:        "Check Bad subregionname",
@@ -1464,11 +1159,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1503,7 +1197,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid subregionName"),
+			expCheckVmFormatParametersErr: errors.New("invalid subregion name"),
 		},
 		{
 			name:        "Check Bad root device size",
@@ -1512,11 +1206,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1551,7 +1244,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid size"),
+			expCheckVmFormatParametersErr: errors.New("invalid size"),
 		},
 		{
 			name:        "Check Bad rootDeviceIops",
@@ -1560,11 +1253,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1599,7 +1291,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid iops"),
+			expCheckVmFormatParametersErr: errors.New("invalid iops"),
 		},
 		{
 			name:        "Check bad rootDiskType",
@@ -1608,11 +1300,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1647,7 +1338,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid volumeType"),
+			expCheckVmFormatParametersErr: errors.New("invalid volume type (allowed: standard, gp2, io1)"),
 		},
 		{
 			name:        "Check Bad ratio root disk Iops Size",
@@ -1656,11 +1347,10 @@ func TestCheckVmFormatParameters(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1695,7 +1385,7 @@ func TestCheckVmFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmFormatParametersErr: errors.New("Invalid ratio Iops size that exceed 300"),
+			expCheckVmFormatParametersErr: errors.New("iops/size should be lower than 300"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -1746,11 +1436,10 @@ func TestCheckVmSubnetAssociateResourceName(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1826,11 +1515,10 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 				Node: infrastructurev1beta1.OscNode{
 					Volumes: []*infrastructurev1beta1.OscVolume{
 						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
+							Name:       "test-volume",
+							Iops:       1000,
+							Size:       50,
+							VolumeType: "io1",
 						},
 					},
 					Vm: infrastructurev1beta1.OscVm{
@@ -1869,7 +1557,7 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 					},
 				},
 			},
-			expCheckVmPrivateIpsOscDuplicateNameErr: errors.New("test-privateip-first already exist"),
+			expCheckVmPrivateIpsOscDuplicateNameErr: errors.New("test-privateip-first appears multiple times"),
 		},
 	}
 	for _, vtc := range vmTestCases {
@@ -1878,124 +1566,6 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 			err := checkVmPrivateIpOscDuplicateName(machineScope)
 			if vtc.expCheckVmPrivateIpsOscDuplicateNameErr != nil {
 				require.EqualError(t, err, vtc.expCheckVmPrivateIpsOscDuplicateNameErr.Error(), "checkVmPrivateIpsOscDuplicateName() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-// TestCheckVmVolumeSubregionName has several tests to cover the code of the function checkVmVolumeSubregionName
-func TestCheckVmVolumeSubregionName(t *testing.T) {
-	vmTestCases := []struct {
-		name                             string
-		clusterSpec                      infrastructurev1beta1.OscClusterSpec
-		machineSpec                      infrastructurev1beta1.OscMachineSpec
-		expCheckVmVolumeSubregionNameErr error
-	}{
-		{
-			name:        "get the same volume and vm subregion name",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:       "test-vm",
-						ImageId:    "ami-00000000",
-						Role:       "controlplane",
-						VolumeName: "test-volume",
-						DeviceName: "/dev/sda1",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmVolumeSubregionNameErr: nil,
-		},
-		{
-			name:        "can not get the same volume and vm subregion name",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:       "test-vm",
-						ImageId:    "ami-00000000",
-						Role:       "controlplane",
-						VolumeName: "test-volume",
-						DeviceName: "/dev/sda1",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2b",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmVolumeSubregionNameErr: errors.New("volume test-volume and vm test-vm are not in the same subregion eu-west-2b"),
-		},
-	}
-	for _, vtc := range vmTestCases {
-		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			err := checkVmVolumeSubregionName(machineScope)
-			if vtc.expCheckVmVolumeSubregionNameErr != nil {
-				require.EqualError(t, err, vtc.expCheckVmVolumeSubregionNameErr.Error(), "checkVmVolumeSubregionName() should return the same error")
 			} else {
 				require.NoError(t, err)
 			}

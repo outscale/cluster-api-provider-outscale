@@ -165,12 +165,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		log.V(3).Info("Bootstrap data secret reference is not yet availablle")
 		return ctrl.Result{}, nil
 	}
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		log.V(2).Info("Find volumes")
-		volumeName, err := checkVolumeFormatParameters(machineScope)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create volume %s: %w", volumeName, err)
-		}
+	volumeName, err := checkVolumeFormatParameters(machineScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot create volume %s: %w", volumeName, err)
 	}
 
 	UseFailureDomain(clusterScope, machineScope)
@@ -195,12 +192,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	duplicateResourceVmPrivateIpErr := checkVmPrivateIpOscDuplicateName(machineScope)
 	if duplicateResourceVmPrivateIpErr != nil {
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
-	}
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		checkOscAssociateVmVolumeErr := checkVmVolumeOscAssociateResourceName(machineScope)
-		if checkOscAssociateVmVolumeErr != nil {
-			return reconcile.Result{}, checkOscAssociateVmVolumeErr
-		}
 	}
 
 	checkKeypairSameNameErr := checkKeypairSameName(machineScope)
@@ -233,12 +224,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 			return reconcile.Result{}, checkOscAssociateVmLoadBalancerErr
 		}
 	}
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		checkVmVolumeSubregionNameErr := checkVmVolumeSubregionName(machineScope)
-		if checkVmVolumeSubregionNameErr != nil {
-			return reconcile.Result{}, checkVmVolumeSubregionNameErr
-		}
-	}
 
 	imageSvc := r.Cloud.Image(ctx, *clusterScope)
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
@@ -246,18 +231,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		log.V(2).Error(err, "failed to reconcile Image")
 		return reconcileImage, err
 	}
-
-	volumeSvc := r.Cloud.Volume(ctx, *clusterScope)
-	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
-		if err != nil {
-			log.V(2).Error(err, "failed to reconcile volume")
-			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-			return reconcileVolume, err
-		}
-	}
-	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
 	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
 	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
@@ -270,8 +243,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	vmSvc := r.Cloud.VM(ctx, *clusterScope)
 	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
 	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
+	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
 
-	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
+	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		log.V(2).Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
@@ -311,13 +285,6 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	log := ctrl.LoggerFrom(ctx)
 	log.V(3).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		volumeSvc := r.Cloud.Volume(ctx, *clusterScope)
-		reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, volumeSvc)
-		if err != nil {
-			return reconcileDeleteVolume, err
-		}
-	}
 	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
 	vmSvc := r.Cloud.VM(ctx, *clusterScope)
 	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)

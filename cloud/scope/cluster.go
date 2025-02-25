@@ -220,11 +220,11 @@ func (s ClusterScope) SetLinkRouteTablesRef(linkRouteTableRef map[string][]strin
 }
 
 // Route return slices of routes associated with routetable Name
-func (s *ClusterScope) GetRoute(name string) *[]infrastructurev1beta1.OscRoute {
+func (s *ClusterScope) GetRoute(name string) []infrastructurev1beta1.OscRoute {
 	routeTables := s.OscCluster.Spec.Network.RouteTables
 	for _, routeTable := range routeTables {
 		if routeTable.Name == name {
-			return &routeTable.Routes
+			return routeTable.Routes
 		}
 	}
 	return nil
@@ -242,11 +242,11 @@ func (s *ClusterScope) GetIpSubnetRange(name string) string {
 }
 
 // GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
-func (s *ClusterScope) GetSecurityGroupRule(name string) *[]infrastructurev1beta1.OscSecurityGroupRule {
+func (s *ClusterScope) GetSecurityGroupRule(name string) []infrastructurev1beta1.OscSecurityGroupRule {
 	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
 	for _, securityGroup := range securityGroups {
 		if securityGroup.Name == name {
-			return &securityGroup.SecurityGroupRules
+			return securityGroup.SecurityGroupRules
 		}
 	}
 	return nil

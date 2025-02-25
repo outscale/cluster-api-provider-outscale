@@ -40,12 +40,12 @@ type OscNetInterface interface {
 
 // CreateNet create the net from spec (in order to retrieve ip range)
 func (s *Service) CreateNet(ctx context.Context, spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error) {
-	ipRange, err := infrastructurev1beta1.ValidateCidr(spec.IpRange)
+	err := infrastructurev1beta1.ValidateCidr(spec.IpRange)
 	if err != nil {
 		return nil, err
 	}
 	netRequest := osc.CreateNetRequest{
-		IpRange: ipRange,
+		IpRange: spec.IpRange,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
