@@ -155,6 +155,8 @@ type testcase struct {
 	requeue                  bool
 	clusterAsserts           []assertOSCClusterFunc
 	machineAsserts           []assertOSCMachineFunc
+
+	next *testcase
 }
 
 func loadClusterSpecs(t *testing.T, spec string) (*clusterv1.Cluster, *v1beta1.OscCluster) {

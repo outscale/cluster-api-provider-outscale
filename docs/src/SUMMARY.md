@@ -6,6 +6,7 @@
     - [Troubleshooting](./topics/troubleshooting.md)
     - [Cluster-Autoscaler](./topics/cluster-autoscaler.md)
     - [How to config](./topics/config.md)
+    - [Adding volumes to VMs](./topics/adding-volumes-to-vm.md)
     - [How to upgrade](./topics/upgrade-cluster.md)
 - [Development](./developers/develop.md)
     - [How to develop](./developers/developement.md)

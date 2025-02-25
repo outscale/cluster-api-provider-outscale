@@ -40,7 +40,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancername: Invalid value: \"test-webhook@test\": Invalid Description"),
+			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancername: Invalid value: \"test-webhook@test\": invalid description"),
 		},
 		{
 			name: "create with bad loadBalancerType",
@@ -51,7 +51,7 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancertype: Invalid value: \"foo\": Invalid LoadBalancerType"),
+			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancertype: Invalid value: \"foo\": invalid loadBalancer type (allowed: internet-facing, internal)"),
 		},
 		{
 			name: "create with bad cidr",

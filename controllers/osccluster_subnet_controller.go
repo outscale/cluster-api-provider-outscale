@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -57,12 +58,12 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 			return subnetTagName, err
 		}
 		subnetIpRange := subnetSpec.IpSubnetRange
-		_, err = infrastructurev1beta1.ValidateCidr(subnetIpRange)
+		err = infrastructurev1beta1.ValidateCidr(subnetIpRange)
 		if err != nil {
 			return subnetTagName, err
 		}
 		subnetSubregionName := subnetSpec.SubregionName
-		_, err = infrastructurev1beta1.ValidateSubregionName(subnetSubregionName)
+		err = infrastructurev1beta1.ValidateSubregionName(subnetSubregionName)
 		if err != nil {
 			return subnetTagName, err
 		}
@@ -72,17 +73,9 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 
 // checkSubnetOscDuplicateName check that there are not the same name for subnet
 func checkSubnetOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
-	subnetsSpec := clusterScope.GetSubnet()
-	for _, subnetSpec := range subnetsSpec {
-		resourceNameList = append(resourceNameList, subnetSpec.Name)
-	}
-	duplicateResourceErr := alertDuplicate(resourceNameList)
-	if duplicateResourceErr != nil {
-		return duplicateResourceErr
-	} else {
-		return nil
-	}
+	return utils.CheckDuplicates(clusterScope.GetSubnet(), func(sn *infrastructurev1beta1.OscSubnet) string {
+		return sn.Name
+	})
 }
 
 // reconcileSubnet reconcile the subnet of the cluster.

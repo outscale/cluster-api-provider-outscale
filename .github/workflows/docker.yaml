@@ -66,14 +66,14 @@ jobs:
         run: |
           make docker-buildx
         env:
-          IMG: cluster-api-outscale-controller:${{ github.sha }}
+          IMG: cluster-api-outscale-controllers:${{ github.sha }}
           DOCKER_BUILDKIT: 1
 
       # Trivy Scan
       - name: Trivy Scan
         run: bash -c "make trivy-scan"
         env:
-          IMG: cluster-api-outscale-controller:${{ github.sha }}
+          IMG: cluster-api-outscale-controllers:${{ github.sha }}
         # Mount cached Trivy DB to avoid redundant downloads
         # with:
         #   args: |
@@ -83,7 +83,7 @@ jobs:
       - name: Trivy Ignore Check
         run: bash -c "make trivy-ignore-check"
         env:
-          IMG: cluster-api-outscale-controller:${{ github.sha }}
+          IMG: cluster-api-outscale-controllers:${{ github.sha }}
 
       # Upload Trivy SARIF report if errors
       - name: Upload Scan if Errors

@@ -40,18 +40,18 @@ type OscSubnetInterface interface {
 
 // CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
-	ipSubnetRange, err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
+	err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
 	if err != nil {
 		return nil, err
 	}
-	subregionName, err := infrastructurev1beta1.ValidateSubregionName(spec.SubregionName)
+	err = infrastructurev1beta1.ValidateSubregionName(spec.SubregionName)
 	if err != nil {
 		return nil, err
 	}
 	subnetRequest := osc.CreateSubnetRequest{
-		IpRange:       ipSubnetRange,
+		IpRange:       spec.IpSubnetRange,
 		NetId:         netId,
-		SubregionName: &subregionName,
+		SubregionName: &spec.SubregionName,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()

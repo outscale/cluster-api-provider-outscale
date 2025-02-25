@@ -42,7 +42,7 @@ jobs:
     - name: Build image
       run: make docker-buildx
       env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: Deploy Cluster
       uses: ./rke-cluster-for-cluster-api/github_actions/deploy_cluster/
@@ -80,7 +80,7 @@ jobs:
       shell: bash
       id: e2etestkind
       env:
-        IMG: 127.0.0.1:4242/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: 127.0.0.1:4242/cluster-api-outscale-controllers:${{ github.sha }}
         OSC_ACCESS_KEY: ${{secrets.OSC_ACCESS_KEY}}
         OSC_SECRET_KEY: ${{secrets.OSC_SECRET_KEY}}
         OSC_REGION: ${{ secrets.OSC_REGION }}

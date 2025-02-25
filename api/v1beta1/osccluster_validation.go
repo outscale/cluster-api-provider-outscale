@@ -35,7 +35,7 @@ const (
 	maxTimeout   = 61
 )
 
-// ValidateOscClusterSpec validate each parameters of oscCluster spec
+// ValidateOscClusterSpec validates a OscClusterSpec.
 func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	var allErrs field.ErrorList
 
@@ -58,115 +58,114 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	return allErrs
 }
 
-// ValidateCidr check that the cidr string is a valide CIDR
-func ValidateCidr(cidr string) (string, error) {
+// ValidateCidr checks that the cidr string is a valid CIDR
+func ValidateCidr(cidr string) error {
 	_, _, err := net.ParseCIDR(cidr)
-	if err != nil {
-		return cidr, err
-	}
-	return cidr, nil
+	return err
 }
 
-// ValidateIpProtocol check that ipProtocol is valid
-func ValidateIpProtocol(protocol string) (string, error) {
-	switch {
-	case protocol == "tcp" || protocol == "udp" || protocol == "icmp" || protocol == "-1":
-		return protocol, nil
+// ValidateIpProtocol checks that ipProtocol is valid
+func ValidateIpProtocol(protocol string) error {
+	switch protocol {
+	case "tcp", "udp", "icmp", "-1":
+		return nil
 	default:
-		return protocol, errors.New("Invalid protocol")
+		return errors.New("invalid protocol")
 	}
 }
 
-// ValidateFlow check that flow is valid
-func ValidateFlow(flow string) (string, error) {
-	switch {
-	case flow == "Inbound" || flow == "Outbound":
-		return flow, nil
+// ValidateFlow checks that flow is valid
+func ValidateFlow(flow string) error {
+	switch flow {
+	case "Inbound", "Outbound":
+		return nil
 	default:
-		return flow, errors.New("Invalid flow")
+		return errors.New("invalid flow (allowed: Inbound, Outbound)")
 	}
 }
 
-// ValidateDescription check that description is valid
-func ValidateDescription(description string) (string, error) {
+// ValidateDescription checks that description is valid
+func ValidateDescription(description string) error {
 	isValidateDescription := regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
 	if isValidateDescription(description) {
-		return description, nil
+		return nil
 	} else {
-		return description, errors.New("Invalid Description")
+		return errors.New("invalid description")
 	}
 }
 
-// ValidatePort check that the  port is a valide port
-func ValidatePort(port int32) (int32, error) {
+// ValidatePort checks that the  port is a valid port
+func ValidatePort(port int32) error {
 	if port > minPort && port < maxPort {
-		return port, nil
+		return nil
 	} else {
-		return port, errors.New("Invalid Port")
+		return errors.New("invalid port")
 	}
 }
 
-// ValidateLoadBalancerType check that the  loadBalancerType is a valid
-func ValidateLoadBalancerType(loadBalancerType string) (string, error) {
-	if loadBalancerType == "internet-facing" || loadBalancerType == "internal" {
-		return loadBalancerType, nil
-	} else {
-		return loadBalancerType, errors.New("Invalid LoadBalancerType")
-	}
-}
-
-// ValidateInterval check that the interval is a valide time of second
-func ValidateInterval(interval int32) (int32, error) {
-	if interval > minInterval && interval < maxInterval {
-		return interval, nil
-	} else {
-		return interval, errors.New("Invalid Interval")
-	}
-}
-
-// ValidateThreshold check that the threshold is a valide number of ping
-func ValidateThreshold(threshold int32) (int32, error) {
-	if threshold > minThreshold && threshold < maxThreshold {
-		return threshold, nil
-	} else {
-		return threshold, errors.New("Invalid threshold")
-	}
-}
-
-// ValidateProtocol check that the protocol string is a valide protocol
-func ValidateProtocol(protocol string) (string, error) {
-	switch {
-	case protocol == "HTTP" || protocol == "TCP":
-		return protocol, nil
-	case protocol == "SSL" || protocol == "HTTPS":
-		return protocol, errors.New("Ssl certificat is required")
+// ValidateLoadBalancerType checks that the  loadBalancerType is a valid
+func ValidateLoadBalancerType(loadBalancerType string) error {
+	switch loadBalancerType {
+	case "internet-facing", "internal":
+		return nil
 	default:
-		return protocol, errors.New("Invalid protocol")
+		return errors.New("invalid loadBalancer type (allowed: internet-facing, internal)")
 	}
 }
 
-// ValidateTimeout check that the timeoout is a valide maximum time of second
-func ValidateTimeout(timeout int32) (int32, error) {
+// ValidateInterval checks that the interval is a valid time of second
+func ValidateInterval(interval int32) error {
+	if interval > minInterval && interval < maxInterval {
+		return nil
+	} else {
+		return errors.New("invalid interval")
+	}
+}
+
+// ValidateThreshold checks that the threshold is a valid number of ping
+func ValidateThreshold(threshold int32) error {
+	if threshold > minThreshold && threshold < maxThreshold {
+		return nil
+	} else {
+		return errors.New("invalid threshold")
+	}
+}
+
+// ValidateProtocol checks that the protocol string is a valid protocol
+func ValidateProtocol(protocol string) error {
+	switch protocol {
+	case "HTTP", "TCP":
+		return nil
+	case "SSL", "HTTPS":
+		return errors.New("SSL certificate is required")
+	default:
+		return errors.New("invalid protocol")
+	}
+}
+
+// ValidateTimeout checks that the timeoout is a valid maximum time of second
+func ValidateTimeout(timeout int32) error {
 	if timeout > minTimeout && timeout < maxTimeout {
-		return timeout, nil
+		return nil
 	} else {
-		return timeout, errors.New("Invalid Timeout")
+		return errors.New("invalid timeout")
 	}
 }
 
-// ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
-func ValidateLoadBalancerName(loadBalancerName string) (string, error) {
-	isValidateLoadBalancerName := regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
+var isValidateLoadBalancerName = regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
+
+// ValidateLoadBalancerName checks that the loadBalancerName is a valid name of load balancer
+func ValidateLoadBalancerName(loadBalancerName string) error {
 	if isValidateLoadBalancerName(loadBalancerName) {
-		return loadBalancerName, nil
+		return nil
 	} else {
-		return loadBalancerName, errors.New("Invalid Description")
+		return errors.New("invalid description")
 	}
 }
 
-func ValidateAndReturnErrorList[T any](value T, fieldPath *field.Path, validateFunc func(T) (T, error)) field.ErrorList {
+func ValidateAndReturnErrorList[T any](value T, fieldPath *field.Path, validateFunc func(T) error) field.ErrorList {
 	allErrs := field.ErrorList{}
-	_, err := validateFunc(value)
+	err := validateFunc(value)
 	if err != nil {
 		allErrs = append(allErrs, field.Invalid(fieldPath, value, err.Error()))
 		return allErrs

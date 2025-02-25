@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -105,17 +106,9 @@ func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) err
 
 // checkPublicIpOscDuplicateName check that there are not the same name for PublicIp resource.
 func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
-	var resourceNameList []string
-	publicIpsSpec := clusterScope.GetPublicIp()
-	for _, publicIpSpec := range publicIpsSpec {
-		resourceNameList = append(resourceNameList, publicIpSpec.Name)
-	}
-	duplicateResourceErr := alertDuplicate(resourceNameList)
-	if duplicateResourceErr != nil {
-		return duplicateResourceErr
-	} else {
-		return nil
-	}
+	return utils.CheckDuplicates(clusterScope.GetPublicIp(), func(ip *infrastructurev1beta1.OscPublicIp) string {
+		return ip.Name
+	})
 }
 
 // reconcilePublicIp reconcile the PublicIp of the cluster.

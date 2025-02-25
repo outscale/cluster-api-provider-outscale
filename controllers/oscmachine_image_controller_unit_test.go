@@ -139,7 +139,7 @@ func TestCheckImageFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckImageFormatParametersErr: errors.New("Invalid Image Name"),
+			expCheckImageFormatParametersErr: errors.New("invalid image name"),
 		},
 	}
 	for _, itc := range imageTestCases {

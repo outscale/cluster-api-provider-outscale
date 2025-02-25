@@ -124,17 +124,6 @@ func (m *MachineScope) GetVolume() []*infrastructurev1beta1.OscVolume {
 	return m.OscMachine.Spec.Node.Volumes
 }
 
-// GetVolumeSubregionName return the volume subregionName
-func (m *MachineScope) GetVolumeSubregionName(name string) string {
-	volumes := m.OscMachine.Spec.Node.Volumes
-	for _, volume := range volumes {
-		if volume.Name == name {
-			return volume.SubregionName
-		}
-	}
-	return ""
-}
-
 // GetVm return the vm
 func (m *MachineScope) GetVm() *infrastructurev1beta1.OscVm {
 	return &m.OscMachine.Spec.Node.Vm
@@ -192,7 +181,11 @@ func (m *MachineScope) GetDeleteKeypair() bool {
 
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceReference {
-	return &m.OscMachine.Status.Node.VolumeRef
+	ref := &m.OscMachine.Status.Node.VolumeRef
+	if ref.ResourceMap == nil {
+		ref.ResourceMap = make(map[string]string)
+	}
+	return ref
 }
 
 // GetVmRef get the status of vm (a Map with tag name with machine uid associate with resource response id)

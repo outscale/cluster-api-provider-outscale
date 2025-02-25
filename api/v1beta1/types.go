@@ -338,9 +338,12 @@ type OscImage struct {
 }
 
 type OscVolume struct {
-	Name          string `json:"name,omitempty"`
-	Iops          int32  `json:"iops,omitempty"`
-	Size          int32  `json:"size,omitempty"`
+	Name string `json:"name,omitempty"`
+	//+kubebuilder:validation:Required
+	Device string `json:"device"`
+	Iops   int32  `json:"iops,omitempty"`
+	Size   int32  `json:"size,omitempty"`
+	//+kubebuilder:deprecatedversion
 	SubregionName string `json:"subregionName,omitempty"`
 	VolumeType    string `json:"volumeType,omitempty"`
 	ResourceId    string `json:"resourceId,omitempty"`
@@ -421,39 +424,28 @@ var (
 
 	DefaultVmKeypairName string = "cluster-api"
 	DefaultVmType        string = "tinav3.c4r8p1"
-	DefaultVmDeviceName  string = "/dev/sda1"
 
 	DefaultVmBastionImageId       string = "ami-bb490c7e"
 	DefaultVmBastionKeypairName   string = "cluster-api"
 	DefaultVmBastionSubregionName string = "eu-west-2a"
 
-	DefaultVmKwName               string = "cluster-api-vm-kw"
-	DefaultVmKwType               string = "tinav3.c4r8p1"
-	DefaultVmKcpName              string = "cluster-api-vm-kcp"
-	DefaultVmKcpType              string = "tinav3.c4r8p1"
-	DefaultVmBastionName          string = "cluster-api-vm-bastion"
-	DefaultVmBastionType          string = "tinav3.c2r2p1"
-	DefaultVolumeKcpName          string = "cluster-api-volume-kcp"
-	DefaultVolumeKcpIops          int32  = 1000
-	DefaultVolumeKcpSize          int32  = 30
-	DefaultVolumeKcpSubregionName string = "eu-west-2a"
-	DefaultVolumeKcpType          string = "io1"
+	DefaultVmKwName      string = "cluster-api-vm-kw"
+	DefaultVmKwType      string = "tinav3.c4r8p1"
+	DefaultVmKcpName     string = "cluster-api-vm-kcp"
+	DefaultVmKcpType     string = "tinav3.c4r8p1"
+	DefaultVmBastionName string = "cluster-api-vm-bastion"
+	DefaultVmBastionType string = "tinav3.c2r2p1"
 
-	DefaultRootDiskKwType string = "io1"
-	DefaultRootDiskKwSize int32  = 60
-	DefaultRootDiskKwIops int32  = 1500
+	DefaultRootDiskKwType      string = "io1"
+	DefaultRootDiskKwSize      int32  = 60
+	DefaultRootDiskKwIops      int32  = 1500
+	DefaultRootDiskKcpType     string = "io1"
+	DefaultRootDiskKcpSize     int32  = 60
+	DefaultRootDiskKcpIops     int32  = 1500
+	DefaultRootDiskBastionType string = "io1"
+	DefaultRootDiskBastionSize int32  = 15
+	DefaultRootDiskBastionIops int32  = 1000
 
-	DefaultRootDiskKcpType                      string = "io1"
-	DefaultRootDiskKcpSize                      int32  = 60
-	DefaultRootDiskKcpIops                      int32  = 1500
-	DefaultRootDiskBastionType                  string = "io1"
-	DefaultRootDiskBastionSize                  int32  = 15
-	DefaultRootDiskBastionIops                  int32  = 1000
-	DefaultVolumeKwName                         string = "cluster-api-volume-kw"
-	DefaultVolumeKwIops                         int32  = 1000
-	DefaultVolumeKwSize                         int32  = 30
-	DefaultVolumeKwSubregionName                string = "eu-west-2a"
-	DefaultVolumeKwType                         string = "io1"
 	DefaultSubregionName                        string = "eu-west-2a"
 	DefaultLoadBalancerName                     string = "OscClusterApi-1"
 	DefaultLoadBalancerType                     string = "internet-facing"
@@ -635,41 +627,6 @@ func (net *OscNet) SetDefaultValue() {
 	}
 }
 
-// SetVolumeDefaultValue set the Volume default values from volume configuration
-func (node *OscNode) SetVolumeDefaultValue() {
-	if len(node.Volumes) == 0 {
-		var volume OscVolume
-		var volumeKcpName string = DefaultVolumeKcpName
-		var volumeKwName string = DefaultVolumeKwName
-		var volumeKcpSubregionName string = DefaultVolumeKcpSubregionName
-		var volumeKwSubregionName string = DefaultVolumeKwSubregionName
-		if node.ClusterName != "" {
-			volumeKcpName = strings.ReplaceAll(DefaultVolumeKcpName, DefaultClusterName, node.ClusterName)
-			volumeKwName = strings.ReplaceAll(DefaultVolumeKwName, DefaultClusterName, node.ClusterName)
-			volumeKcpSubregionName = strings.ReplaceAll(DefaultVolumeKcpSubregionName, DefaultClusterName, node.ClusterName)
-			volumeKwSubregionName = strings.ReplaceAll(DefaultVolumeKwSubregionName, DefaultClusterName, node.ClusterName)
-		}
-		if node.Vm.Role == "controlplane" {
-			volume = OscVolume{
-				Name:          volumeKcpName,
-				Iops:          DefaultVolumeKcpIops,
-				Size:          DefaultVolumeKcpSize,
-				SubregionName: volumeKcpSubregionName,
-				VolumeType:    DefaultVolumeKcpType,
-			}
-		} else {
-			volume = OscVolume{
-				Name:          volumeKwName,
-				Iops:          DefaultVolumeKwIops,
-				Size:          DefaultVolumeKwSize,
-				SubregionName: volumeKwSubregionName,
-				VolumeType:    DefaultVolumeKwType,
-			}
-		}
-		node.Volumes = append(node.Volumes, &volume)
-	}
-}
-
 // SetKeyPairDefaultValue set the KeyPair default values
 func (node *OscNode) SetKeyPairDefaultValue() {
 	if len(node.KeyPair.PublicKey) == 0 {
@@ -792,9 +749,6 @@ func (vm *OscVm) SetDefaultValue() {
 	if vm.KeypairName == "" {
 		vm.KeypairName = DefaultVmKeypairName
 	}
-	if vm.DeviceName == "" {
-		vm.DeviceName = DefaultVmDeviceName
-	}
 	if vm.SubregionName == "" {
 		vm.SubregionName = DefaultVmSubregionName
 	}
@@ -837,9 +791,6 @@ func (bastion *OscBastion) SetDefaultValue() {
 		}
 		if bastion.KeypairName == "" {
 			bastion.KeypairName = DefaultVmBastionKeypairName
-		}
-		if bastion.DeviceName == "" {
-			bastion.DeviceName = DefaultVmDeviceName
 		}
 		if bastion.SubregionName == "" {
 			bastion.SubregionName = DefaultVmBastionSubregionName

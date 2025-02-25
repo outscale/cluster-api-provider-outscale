@@ -220,7 +220,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("test-loadbalancer@test is an invalid loadBalancer name: Invalid Description"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("test-loadbalancer@test is an invalid loadBalancer name: invalid description"),
 		},
 		{
 			name: "check invalid type loadBalancer",
@@ -234,7 +234,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("internet is an invalid loadBalancer type: Invalid LoadBalancerType"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("internet is an invalid loadBalancer type: invalid loadBalancer type (allowed: internet-facing, internal)"),
 		},
 		{
 			name: "check invalid backend port loadBalancer",
@@ -250,7 +250,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an Invalid Port for loadBalancer backend"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an invalid port for loadBalancer backend"),
 		},
 		{
 			name: "check invalid backend protocol loadBalancer",
@@ -266,7 +266,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an Invalid protocol for loadBalancer backend"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an invalid protocol for loadBalancer backend"),
 		},
 		{
 			name: "check invalid loadBalancer port",
@@ -282,7 +282,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an Invalid Port for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an invalid port for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer protocol",
@@ -298,7 +298,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an Invalid protocol for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an invalid protocol for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer health check interval",
@@ -316,7 +316,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("602 is an Invalid Interval for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("602 is an invalid interval for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck healthy threshold",
@@ -334,7 +334,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("12 is an Invalid threshold for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("12 is an invalid threshold for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck port",
@@ -352,7 +352,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an Invalid Port for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("65537 is an invalid port for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck protocol",
@@ -370,7 +370,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an Invalid protocol for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("SCTP is an invalid protocol for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck timeout",
@@ -388,7 +388,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("62 is an Invalid Timeout for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("62 is an invalid timeout for loadBalancer"),
 		},
 		{
 			name: "check invalid loadBalancer healthcheck unhealthy threshold",
@@ -406,7 +406,7 @@ func TestCheckLoadBalancerFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckLoadBalancerFormatParametersErr: errors.New("12 is an Invalid threshold for loadBalancer"),
+			expCheckLoadBalancerFormatParametersErr: errors.New("12 is an invalid threshold for loadBalancer"),
 		},
 	}
 	for _, lbtc := range loadBalancerTestCases {

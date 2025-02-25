@@ -55,14 +55,14 @@ func (s *Service) GetName(ctx context.Context, spec *infrastructurev1beta1.OscLo
 		clusterName = infrastructurev1beta1.OscReplaceName(s.scope.GetName())
 		name = clusterName + "-" + "apiserver" + "-" + s.scope.GetUID()
 	}
-	_, err := infrastructurev1beta1.ValidateLoadBalancerName(name)
+	err := infrastructurev1beta1.ValidateLoadBalancerName(name)
 	if err != nil {
 		return "", err
 	}
 	return name, nil
 }
 
-// ValidateProtocol check that the protocol string is a valide protocol
+// ValidateProtocol check that the protocol string is a valid protocol
 func ValidateProtocol(protocol string) (string, error) {
 	switch {
 	case protocol == "HTTP" || protocol == "TCP":

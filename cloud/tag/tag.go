@@ -93,7 +93,7 @@ func (s *Service) ReadTag(ctx context.Context, tagKey string, tagValue string) (
 	}
 }
 
-// ValidateTagNameValue check that tag name value is a valide name
+// ValidateTagNameValue check that tag name value is a valid name
 func ValidateTagNameValue(tagValue string) (string, error) {
 	isValidateTagNameValue := regexp.MustCompile(`^[0-9A-Za-z\-]{0,255}$`).MatchString
 	if isValidateTagNameValue(tagValue) {

@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
@@ -34,19 +32,16 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
 type OscVolumeInterface interface {
-	CreateVolume(ctx context.Context, spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error)
+	CreateVolume(ctx context.Context, spec *infrastructurev1beta1.OscVolume, volumeName, subregionName string) (*osc.Volume, error)
 	DeleteVolume(ctx context.Context, volumeId string) error
 	GetVolume(ctx context.Context, volumeId string) (*osc.Volume, error)
-	ValidateVolumeIds(ctx context.Context, volumeIds []string) ([]string, error)
 	LinkVolume(ctx context.Context, volumeId string, vmId string, deviceName string) error
-	CheckVolumeState(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error
 	UnlinkVolume(ctx context.Context, volumeId string) error
 }
 
 // CreateVolume create machine volume
-func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.OscVolume, volumeName string) (*osc.Volume, error) {
+func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.OscVolume, volumeName, subregionName string) (*osc.Volume, error) {
 	size := spec.Size
-	subregionName := spec.SubregionName
 	volumeType := spec.VolumeType
 	volumeRequest := osc.CreateVolumeRequest{
 		Size:          &size,
@@ -264,80 +259,6 @@ func (s *Service) DeleteVolume(ctx context.Context, volumeId string) error {
 	waitErr := wait.ExponentialBackoff(backoff, deleteVolumeCallBack)
 	if waitErr != nil {
 		return waitErr
-	}
-	return nil
-}
-
-// ValidatePublicIpIds validate the list of id by checking each volume resource and return volume resource that currently exist
-func (s *Service) ValidateVolumeIds(ctx context.Context, volumeIds []string) ([]string, error) {
-	readVolumeRequest := osc.ReadVolumesRequest{
-		Filters: &osc.FiltersVolume{
-			VolumeIds: &volumeIds,
-		},
-	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	var readVolumesResponse osc.ReadVolumesResponse
-	readVolumesCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readVolumesResponse, httpRes, err = oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumeRequest).Execute()
-		utils.LogAPICall(ctx, "ReadVolumes", readVolumeRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readVolumeRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readVolumesCallBack)
-	if waitErr != nil {
-		return nil, waitErr
-	}
-	var validVolumeIds []string
-	volumes, ok := readVolumesResponse.GetVolumesOk()
-	if !ok {
-		return nil, errors.New("Can not get volume")
-	}
-	if len(*volumes) != 0 {
-		for _, volume := range *volumes {
-			volumeId := volume.GetVolumeId()
-			validVolumeIds = append(validVolumeIds, volumeId)
-		}
-	}
-	return validVolumeIds, nil
-}
-
-// CheckVolumeState check volume in state
-func (s *Service) CheckVolumeState(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, state string, volumeId string) error {
-	clock_time := clock.New()
-	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	getVolumeState := false
-	for !getVolumeState {
-		volume, err := s.GetVolume(ctx, volumeId)
-		if err != nil {
-			return err
-		}
-		volumeState, ok := volume.GetStateOk()
-		if !ok {
-			return errors.New("Can not get volume state")
-		}
-		if *volumeState == state {
-			break
-		}
-		time.Sleep(clockInsideLoop * time.Second)
-		if clock_time.Now().After(currentTimeout) {
-			return fmt.Errorf("Volume still not in %s state", state)
-		}
 	}
 	return nil
 }

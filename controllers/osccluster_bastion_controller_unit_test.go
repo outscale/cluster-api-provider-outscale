@@ -817,7 +817,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid imageId"),
+			expCheckBastionFormatParametersErr: errors.New("invalid image id"),
 		},
 		{
 			name: "check empty imageId and imagename",
@@ -905,7 +905,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid Image Name"),
+			expCheckBastionFormatParametersErr: errors.New("invalid image name"),
 		},
 		{
 			name: "check Bad keypairname",
@@ -981,7 +981,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid KeypairName"),
+			expCheckBastionFormatParametersErr: errors.New("invalid keypair name"),
 		},
 		{
 			name: "check empty imageId",
@@ -1034,157 +1034,6 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 						ClusterName: "test-cluster",
 						Name:        "test-bastion",
 						DeviceName:  "/dev/xvdb",
-						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						SubregionName: "eu-west-2a",
-						SubnetName:    "test-subnet",
-						VmType:        "tinav3.c2r4p2",
-						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckBastionFormatParametersErr: nil,
-		},
-		{
-			name: "check Bad device name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:        "test-net",
-						IpRange:     "10.0.0.0/16",
-						ClusterName: "test-cluster",
-					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
-						{
-							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
-						{
-							Name:        "test-securitygroup",
-							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-								{
-									Name:          "test-securitygrouprule",
-									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
-									FromPortRange: 6443,
-									ToPortRange:   6443,
-								},
-							},
-						},
-					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						LoadBalancerName:  "test-loadbalancer",
-						LoadBalancerType:  "internet-facing",
-						SubnetName:        "test-subnet",
-						SecurityGroupName: "test-securitygroup",
-					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
-						{
-							Name: "test-publicip",
-						},
-					},
-					Bastion: infrastructurev1beta1.OscBastion{
-						Enable:      true,
-						ClusterName: "test-cluster",
-						Name:        "test-bastion",
-						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/sdab1",
-						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						SubregionName: "eu-west-2a",
-						SubnetName:    "test-subnet",
-						VmType:        "tinav3.c2r4p2",
-						PublicIpName:  "test-publicip@test",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid deviceName"),
-		},
-		{
-			name: "check empty device name",
-			clusterSpec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
-					Net: infrastructurev1beta1.OscNet{
-						Name:        "test-net",
-						IpRange:     "10.0.0.0/16",
-						ClusterName: "test-cluster",
-					},
-					Subnets: []*infrastructurev1beta1.OscSubnet{
-						{
-							Name:          "test-subnet",
-							IpSubnetRange: "10.0.0.0/24",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					SecurityGroups: []*infrastructurev1beta1.OscSecurityGroup{
-						{
-							Name:        "test-securitygroup",
-							Description: "test securitygroup",
-							SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-								{
-									Name:          "test-securitygrouprule",
-									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "0.0.0.0/0",
-									FromPortRange: 6443,
-									ToPortRange:   6443,
-								},
-							},
-						},
-					},
-					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
-						LoadBalancerName:  "test-loadbalancer",
-						LoadBalancerType:  "internet-facing",
-						SubnetName:        "test-subnet",
-						SecurityGroupName: "test-securitygroup",
-					},
-					PublicIps: []*infrastructurev1beta1.OscPublicIp{
-						{
-							Name: "test-publicip",
-						},
-					},
-					Bastion: infrastructurev1beta1.OscBastion{
-						Enable:      true,
-						ClusterName: "test-cluster",
-						Name:        "test-bastion",
-						ImageId:     "ami-00000000",
 						KeypairName: "rke",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 
@@ -1286,7 +1135,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid vmType"),
+			expCheckBastionFormatParametersErr: errors.New("invalid vm type"),
 		},
 		{
 			name: "Check Bad IpAddr",
@@ -1362,7 +1211,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid ip in cidr"),
+			expCheckBastionFormatParametersErr: errors.New("ip is not in subnet"),
 		},
 		{
 			name: "Check Bad subregionname",
@@ -1438,7 +1287,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid subregionName"),
+			expCheckBastionFormatParametersErr: errors.New("invalid subregion name"),
 		},
 		{
 			name: "Check Bad root device size",
@@ -1514,7 +1363,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid size"),
+			expCheckBastionFormatParametersErr: errors.New("invalid size"),
 		},
 		{
 			name: "Check Bad rootDeviceIops",
@@ -1590,7 +1439,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid iops"),
+			expCheckBastionFormatParametersErr: errors.New("invalid iops"),
 		},
 		{
 			name: "Check bad rootDiskType",
@@ -1666,7 +1515,7 @@ func TestCheckBastionFormatParameters(t *testing.T) {
 					},
 				},
 			},
-			expCheckBastionFormatParametersErr: errors.New("Invalid volumeType"),
+			expCheckBastionFormatParametersErr: errors.New("invalid volume type (allowed: standard, gp2, io1)"),
 		},
 	}
 	for _, btc := range bastionTestCases {
