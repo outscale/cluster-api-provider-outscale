@@ -27,7 +27,7 @@ func TestConvertsTagsToUserDataOutscaleSection(t *testing.T) {
 
 	expected := `-----BEGIN OUTSCALE SECTION-----
 filter_private_section=true
-key1=value1
+tags.key1=value1
 -----END OUTSCALE SECTION-----
 `
 	assert.Equal(t, expected, ConvertsTagsToUserDataOutscaleSection(map[string]string{"key1": "value1"}))

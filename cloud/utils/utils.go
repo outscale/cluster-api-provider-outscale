@@ -17,20 +17,20 @@ limitations under the License.
 package utils
 
 import (
-	"bytes"
 	"fmt"
+	"strings"
 )
 
 func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 	if len(tags) == 0 {
 		return ""
 	}
-	b := new(bytes.Buffer)
-	fmt.Fprintln(b, "-----BEGIN OUTSCALE SECTION-----")
-	fmt.Fprintln(b, "filter_private_section=true")
+	b := &strings.Builder{}
+	_, _ = fmt.Fprintln(b, "-----BEGIN OUTSCALE SECTION-----")
+	_, _ = fmt.Fprintln(b, "filter_private_section=true")
 	for key, value := range tags {
-		fmt.Fprintf(b, "%s=%s\n", key, value)
+		_, _ = fmt.Fprintf(b, "tags.%s=%s\n", key, value)
 	}
-	fmt.Fprintln(b, "-----END OUTSCALE SECTION-----")
+	_, _ = fmt.Fprintln(b, "-----END OUTSCALE SECTION-----")
 	return b.String()
 }
