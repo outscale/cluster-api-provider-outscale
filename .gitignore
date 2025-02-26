@@ -4,11 +4,11 @@
 *.dll
 *.so
 *.dylib
-test/e2e/data/ccm/ccm.yaml
 artifact/*
 example/cluster-machine-template-with-clusterclass.yaml
 example/clusterclass.yaml
-test/e2e/config/*.-envsubst.yaml
+test/e2e/config/*-envsubst.yaml
+test/e2e/data/ccm/ccm.yaml
 # Test binary, built with `go test -c`
 *.test
 # Output of the go coverage tool, specifically when used with LiteIDE
@@ -17,7 +17,7 @@ apicovers.txt
 covers.txt
 apicovers.html
 covers.html
-
+getstarted.yaml
 secret.*
 *.kubeconfig
 # Dependency directories (remove the comment below to include it)

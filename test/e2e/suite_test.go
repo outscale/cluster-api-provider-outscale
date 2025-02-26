@@ -19,12 +19,10 @@ package e2e
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,37 +35,29 @@ import (
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/test/framework/ginkgoextensions"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-const kubeconfigEnvVar = "KUBECONFIG"
+const (
+	CCMPath      = "CCM"
+	CCMResources = "CCM_RESOURCES"
+
+	OutscaleProvicer = "OUTSCALE_PROVIDER"
+)
 
 // Test suite flags.
 var (
 	// configPath is the path to the e2e config file.
 	configPath string
-
 	// useExistingCluster instructs the test to use the current cluster instead of creating a new one (default discovery rules apply).
 	useExistingCluster bool
-
-	useCni bool
-
-	useCcm        bool
-	validateStack bool
 	// artifactFolder is the folder to store e2e test artifacts.
 	artifactFolder string
-
 	// skipCleanup prevents cleanup of test resources e.g. for debug purposes.
 	skipCleanup bool
-)
 
-var (
-	k8sClient client.Client
-	testEnv   *envtest.Environment
-	cancel    context.CancelFunc
+	infraProvider string
 )
 
 // Test suite global vars.
@@ -90,9 +80,6 @@ var (
 	// kubetestConfigFilePath is the path to the kubetest configuration file
 	kubetestConfigFilePath string
 
-	// useCIArtifacts specifies whether or not to use the latest build from the main branch of the Kubernetes repository
-	useCIArtifacts bool
-
 	// alsoLogToFile enables additional logging to the 'ginkgo-log.txt' file in the artifact folder.
 	// These logs also contain timestamps.
 	alsoLogToFile bool
@@ -101,13 +88,9 @@ var (
 func init() {
 	flag.StringVar(&configPath, "e2e.config", "", "path to the e2e config file")
 	flag.StringVar(&artifactFolder, "e2e.artifacts-folder", "", "folder where e2e test artifact should be stored")
+	flag.BoolVar(&alsoLogToFile, "e2e.also-log-to-file", false, "if true, ginkgo logs are additionally written to the `ginkgo-log.txt` file in the artifacts folder (including timestamps)")
 	flag.BoolVar(&skipCleanup, "e2e.skip-resource-cleanup", false, "if true, the resource cleanup after tests will be skipped")
 	flag.BoolVar(&useExistingCluster, "e2e.use-existing-cluster", true, "if true, the test uses the current cluster instead of creating a new one (default discovery rules apply)")
-	flag.BoolVar(&useCni, "e2e.use-cni", false, "if true, the test will use cni clusterclass")
-	flag.BoolVar(&useCcm, "e2e.use-ccm", false, "if true, the test will use ccm clusterclass")
-	flag.BoolVar(&validateStack, "e2e.validate-stack", false, "if true, the test will validate stack")
-	flag.BoolVar(&useCIArtifacts, "kubetest.use-ci-artifacts", false, "use the latest build from the main branch of the Kubernetes repository. Set KUBERNETES_VERSION environment variable to latest-1.xx to use the build from 1.xx release branch.")
-
 	flag.StringVar(&kubetestConfigFilePath, "kubetest.config-file", "", "path to the kubetest configuration file")
 }
 
@@ -122,38 +105,7 @@ func TestE2E(t *testing.T) {
 		defer w.Close()
 	}
 
-	RunSpecs(t, "capo-e2e")
-}
-
-func getK8sClient() {
-	if os.Getenv(kubeconfigEnvVar) == "" {
-		kubeconfig := filepath.Join("/root", ".kube", "config")
-		os.Setenv(kubeconfigEnvVar, kubeconfig)
-	}
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	ctx, cancel = context.WithCancel(context.TODO())
-	testEnv = &envtest.Environment{}
-	cfg, err := testEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
-	retryPeriod := 30 * time.Second
-	leaseDuration := 80 * time.Second
-	renewDeadline := 20 * time.Second
-	k8sManager, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		LeaseDuration: &leaseDuration,
-		RenewDeadline: &renewDeadline,
-		RetryPeriod:   &retryPeriod,
-	})
-	Expect(err).ToNot(HaveOccurred())
-	go func() {
-		defer GinkgoRecover()
-		err = k8sManager.Start(ctx)
-		if err != nil {
-			Expect(err).NotTo(HaveOccurred())
-		}
-	}()
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
+	RunSpecs(t, "caposc-e2e")
 }
 
 func addCredential(name string, namespace string, timeout string, interval string) {
@@ -181,6 +133,8 @@ func addCredential(name string, namespace string, timeout string, interval strin
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+	log.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
 	// Before all ParallelNodes.
 	Expect(configPath).To(BeAnExistingFile(), "Invalid test suite argument. e2e.config should be an existing file.")
 	Expect(os.MkdirAll(artifactFolder, 0755)).To(Succeed(), "Invalid test suite argument. Can't create e2e.artifacts-folder %q", artifactFolder)
@@ -193,14 +147,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	By("Loading the e2e test")
 	By("Creating a clusterctl local repository into " + artifactFolder)
-	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"), useCni)
+	clusterctlConfigPath = createClusterctlLocalRepository(ctx, e2eConfig, filepath.Join(artifactFolder, "repository"))
 
 	By("Setting up the bootstrap cluster")
 	bootstrapClusterProvider, bootstrapClusterProxy = setupBootstrapCluster(e2eConfig, scheme, useExistingCluster)
-
-	if validateStack {
-		getK8sClient()
-	}
 
 	if !useExistingCluster {
 		By("Setting up the cluster api outscale provider credential")
@@ -209,10 +159,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	By("Initializing the bootstrap cluster")
 	initBootstrapCluster(ctx, bootstrapClusterProxy, e2eConfig, clusterctlConfigPath, artifactFolder)
 
-	if os.Getenv(kubeconfigEnvVar) == "" {
-		kubeconfig := filepath.Join("/root", ".kube", "config")
-		os.Setenv(kubeconfigEnvVar, kubeconfig)
-	}
 	return []byte(
 		strings.Join([]string{
 			artifactFolder,
@@ -244,12 +190,6 @@ var _ = SynchronizedAfterSuite(func() {
 	if !skipCleanup {
 		tearDown(ctx, bootstrapClusterProvider, bootstrapClusterProxy)
 	}
-	if validateStack {
-		cancel()
-		By("Tearing down the test environment")
-		err := testEnv.Stop()
-		Expect(err).NotTo(HaveOccurred())
-	}
 })
 
 func initScheme() *runtime.Scheme {
@@ -264,34 +204,27 @@ func initScheme() *runtime.Scheme {
 func loadE2EConfig(ctx context.Context, configPath string) *clusterctl.E2EConfig {
 	config := clusterctl.LoadE2EConfig(ctx, clusterctl.LoadE2EConfigInput{ConfigPath: configPath})
 	Expect(config).ToNot(BeNil(), "Failed to load E2E config from %s", configPath)
-
+	infraProvider = config.GetVariable(OutscaleProvicer)
 	return config
 }
 
 // createClusterctlLocalRepository create clusterctl local repository with clusterctlConfig
-func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2EConfig, repositoryFolder string, useCni bool) string {
+func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2EConfig, repositoryFolder string) string {
 	createRepositoryInput := CreateRepositoryInput{
 		E2EConfig:        config,
 		RepositoryFolder: repositoryFolder,
 	}
 
-	if useCni {
-		By("Find CNI")
-		Expect(config.Variables).To(HaveKey(capi_e2e.CNIPath), "Missing %s variable in the config", capi_e2e.CNIPath)
-		cniPath := config.GetVariable(capi_e2e.CNIPath)
-		Expect(cniPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", capi_e2e.CNIPath)
-		By(fmt.Sprintf("Find path %s", cniPath))
-		createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(cniPath, "CNI_RESOURCES")
-	}
+	Expect(config.Variables).To(HaveKey(capi_e2e.CNIPath), "Missing %s variable in the config", capi_e2e.CNIPath)
+	cniPath := config.GetVariable(capi_e2e.CNIPath)
+	Expect(cniPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", capi_e2e.CNIPath)
+	createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(cniPath, capi_e2e.CNIResources)
 
-	if useCcm {
-		By("Find CCm")
-		Expect(config.Variables).To(HaveKey("CCM"), "Missing %s variable in the config", "CCM")
-		ccmPath := config.GetVariable("CCM")
-		Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", "CCM")
-		By(fmt.Sprintf("Find path %s", ccmPath))
-		createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(ccmPath, "CCM_RESOURCES")
-	}
+	Expect(config.Variables).To(HaveKey("CCM"), "Missing %s variable in the config", CCMPath)
+	ccmPath := config.GetVariable("CCM")
+	Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", CCMPath)
+	createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(ccmPath, CCMResources)
+
 	clusterctlConfig := CreateRepository(ctx, createRepositoryInput)
 	Expect(clusterctlConfig).To(BeAnExistingFile(), "the clusterctl config file does not exists in the local repository %s", repositoryFolder)
 
