@@ -24,17 +24,15 @@ import (
 )
 
 var _ = Describe("[conformance] Test kubernetes conformance", func() {
-	ctx := context.TODO()
-
 	Context("Run the k8s conformance", func() {
-		capi_e2e.K8SConformanceSpec(ctx, func() capi_e2e.K8SConformanceSpecInput {
+		capi_e2e.K8SConformanceSpec(context.TODO(), func() capi_e2e.K8SConformanceSpecInput {
 			return capi_e2e.K8SConformanceSpecInput{
-				E2EConfig:             e2eConfig,
-				ClusterctlConfigPath:  clusterctlConfigPath,
-				BootstrapClusterProxy: bootstrapClusterProxy,
-				ArtifactFolder:        artifactFolder,
-				SkipCleanup:           skipCleanup,
-				Flavor:                "with-clusterclass",
+				E2EConfig:              e2eConfig,
+				ClusterctlConfigPath:   clusterctlConfigPath,
+				InfrastructureProvider: &infraProvider,
+				BootstrapClusterProxy:  bootstrapClusterProxy,
+				ArtifactFolder:         artifactFolder,
+				SkipCleanup:            skipCleanup,
 			}
 		})
 	})

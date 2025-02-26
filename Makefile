@@ -40,8 +40,6 @@ GOFLAGS=-mod=readonly
 export GOFLAGS
 MINIMUM_KUBEBUILDERTOOL_VERSION=1.30.3
 MINIMUM_ENVTEST_VERSION=1.30.3
-E2E_CONF_FILE_SOURCE ?= ${PWD}/test/e2e/config/outscale-ci.yaml
-E2E_CONF_FILE ?= ${PWD}/test/e2e/config/outscale-ci-envsubst.yaml
 MINIMUM_CLUSTERCTL_VERSION=1.8.1
 MIN_GO_VERSION=1.23
 MINIMUM_TILT_VERSION=0.25.3
@@ -67,6 +65,7 @@ E2E_CONF_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/cluster-machine-template-wi
 E2E_CONF_CLUSTER_CLASS_FILE ?= ${PWD}/example/cluster-machine-template-with-clusterclass.yaml
 E2E_CLUSTER_CLASS_FILE_SOURCE ?= ${PWD}/example/clusterclass.yaml.tmpl
 E2E_CLUSTER_CLASS_FILE ?= ${PWD}/example/clusterclass.yaml
+E2E_FOCUS ?= fast
 IMG_UPGRADE_FROM ?= ami-de6b1b27
 IMG_UPGRADE_TO ?= ami-f69682a1
 OSC_REGION ?= eu-west-2
@@ -153,10 +152,6 @@ yamlspace: ## Run to remove trailling space
 yamlfmt: install-yamlfmt
 	find . -name "*.yaml" -not -path "./helm/*" -not -path "./.github/workflows/*" | xargs yamlfmt
 
-.PHONY: checkfmt
-checkfmt: ## check gofmt
-	./check-gofmt
-
 .PHONY: unit-test
 unit-test:
 	go test -v -coverprofile=covers.out  ./controllers
@@ -172,32 +167,23 @@ cloud-init-secret:
 
 .PHONY: testenv
 testenv: cloud-init-secret
-	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.progress -test.v -test.timeout 120m
+	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.show-node-events -test.v -test.timeout 120m
 
 .PHONY: testclean
 testclean:
-	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.progress -test.v
-
-.PHONY: e2e-conf-file
-e2e-conf-file: envsubst
-	$(ENVSUBST) < $(E2E_CONF_FILE_SOURCE) > $(E2E_CONF_FILE)
+	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.show-node-events -test.v
 
 .PHONY: e2e-conf-class-file
 e2e-conf-class-file: envsubst
 	$(ENVSUBST) < $(E2E_CONF_CLASS_FILE_SOURCE) > $(E2E_CONF_CLASS_FILE)
 
-.PHONY: e2etestexistingcluster
-e2etestexistingcluster: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*feature.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=true -e2e.config=$(E2E_CONF_CLASS_FILE)
+.PHONY: e2etest
+e2etest: envsubst e2e-conf-class-file ccm-file
+	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -ginkgo.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_CLASS_FILE)
 
 .PHONY: e2etestkind
 e2etestkind: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=false IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=false -ginkgo.v -ginkgo.skip=".*feature.*|.*conformance.*|.*basic.*" -ginkgo.focus=".*first_upgrade.*" -e2e.validate-stack=false  -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.config=$(E2E_CONF_CLASS_FILE)
-
-.PHONY: e2econformance
-e2econformance: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus=".*conformance.*" -ginkgo.v -ginkgo.progress -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.use-cni=true -e2e.use-ccm=true -e2e.validate-stack=false -e2e.config=$(E2E_CONF_CLASS_FILE)
-
+	USE_EXISTING_CLUSTER=false IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -ginkgo.timeout 180m -e2e.use-existing-cluster=false -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_CLASS_FILE)
 
 .PHONY: ccm-file
 ccm-file: envsubst

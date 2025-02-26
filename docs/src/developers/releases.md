@@ -12,14 +12,14 @@
 
 
 # Release
-### Versioning
+## Versioning
 Please use this semantic version:
 - Pre-release: `v0.1.1-alpha.1`
 - Minor release: `v0.1.0`
 - Patch release: `v0.1.1`
 - Major release: `v1.0.0`
 
-### Update metadata.yaml
+## Update metadata.yaml
 You should have update metadata.yaml to included new release version for cluster-api contract-version. You don't have to do it for patch/minor version.
 Add in metadata.yaml:
 ```yaml
@@ -30,32 +30,40 @@ releaseSeries:
     minor: 5
     contract: v1beta1
 ```
-### Update config test
+## Update config test
 Please also update `type: InfrastructureProvider` spec of config.
 
-### Create a tag
+## Create a tag
 Create a new branch for release.
 :warning: Never use the main
 And create tag
 
-For patch/major release:
+For minor/major release:
 ```bash
-git checkout release-1.x
+export RELEASE_VERSION=1.2.3
+git checkout release-${RELEASE_VERSION}
 git fetch upstream
-git rebase upstream/release-1.x
+git rebase upstream/release--${RELEASE_VERSION}
 ```
+
+Push the release branch to trigger conformance e2e tests:
+```bash
+git push upstream release--${RELEASE_VERSION}
+```
+
+Check CI that conformance tests are OK.
 
 Create tag with git:
 ```bash
 export RELEASE_TAG=v1.2.3
-git tag -s ${RELEASE_TAG} -m "${RELEASE_TAG}
+git tag -s ${RELEASE_TAG} -m "${RELEASE_TAG}"
 git push upstream ${RELEASE_TAG}
 ```
 
 This will trigger this github action [release][release]
 This github action will generate image, and will create the new release.
 
-### Test locally
+## Test locally
 If you want to test locally what is done by github action you can test you get changelog:
 ```bash
 make release
