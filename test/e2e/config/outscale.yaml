@@ -59,6 +59,8 @@ providers:
           - sourcePath: "../../../metadata.yaml"
             targetName: "metadata.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-topology.yaml"
+          - sourcePath: "../data/infrastructure-outscale/clusterclass-cluster-class.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrades.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade-scale-in.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-node-drain.yaml"
@@ -99,11 +101,11 @@ variables:
   KUBETEST_CONFIGURATION: "${KUBETEST_CONF_PATH:=./data/kubetest/conformance.yaml}"
   NODE_DRAIN_TIMEOUT: "60s"
 intervals:
-  default/wait-cluster: ["30m", "10s"]
+  default/wait-cluster: ["15m", "10s"]
   default/wait-control-plane: ["30m", "10s"]
   default/wait-worker-nodes: ["30m", "10s"]
-  default/wait-controllers: ["20m", "10s"]
-  default/wait-delete-cluster: ["30m", "10s"]
+  default/wait-controllers: ["15m", "10s"]
+  default/wait-delete-cluster: ["15m", "10s"]
   default/wait-machine-upgrade: ["30m", "10s"]
   default/wait-machine-status: ["30m", "10s"]
   default/wait-failed-machine-status: ["5m", "10s"]
@@ -113,4 +115,4 @@ intervals:
   default/wait-nodes-ready: ["30m", "10s"]
   default/wait-service: ["5m", "10s"]
   node-drain/wait-deployment-available: ["5m", "10s"]
-  node-drain/wait-machine-deleted: ["30m", "10s"]
+  node-drain/wait-machine-deleted: ["15m", "10s"]
