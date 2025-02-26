@@ -449,7 +449,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 
 			if infrastructurev1beta1.VmState(currentVmState) != infrastructurev1beta1.VmStateRunning {
 				log.V(4).Info("VM is not yet running", "vmId", vmId)
-				return reconcile.Result{}, fmt.Errorf("vm %s is not yet running", vmId)
+				return reconcile.Result{}, fmt.Errorf("VM %s is not yet running", vmId)
 			}
 			vmState = &infrastructurev1beta1.VmStateRunning
 			log.V(3).Info("Vm is running", "vmId", vmId)
