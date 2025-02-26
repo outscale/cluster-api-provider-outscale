@@ -1,0 +1,66 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: "${CLUSTER_NAME}"
+  labels:
+    cni: "${CLUSTER_NAME}-crs-cni"
+    ccm: "${CLUSTER_NAME}-crs-ccm"
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["10.42.0.0/16"]
+  topology:
+    class: "cluster-class"
+    version: "${KUBERNETES_VERSION}"
+    controlPlane:
+      replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+    variables:
+    - name: subregionName
+      value: eu-west-2a
+    - name: controlPlaneVmType
+      value: tinav6.c4r8p2
+    - name: workerVmType
+      value: tinav6.c4r8p2
+    workers:
+      machineDeployments:
+        - class: "cluster-class-worker"
+          name: "md-0"
+          replicas: ${WORKER_MACHINE_COUNT}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${CLUSTER_NAME}-crs-ccm"
+data: ${CCM_RESOURCES}
+---
+apiVersion: addons.cluster.x-k8s.io/v1beta1
+kind: ClusterResourceSet
+metadata:
+  name: "${CLUSTER_NAME}-crs-ccm"
+spec:
+  strategy: ApplyOnce
+  clusterSelector:
+    matchLabels:
+      ccm: "${CLUSTER_NAME}-crs-ccm"
+  resources:
+    - name: "${CLUSTER_NAME}-crs-ccm"
+      kind: ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${CLUSTER_NAME}-crs-cni"
+data: ${CNI_RESOURCES}
+---
+apiVersion: addons.cluster.x-k8s.io/v1beta1
+kind: ClusterResourceSet
+metadata:
+  name: "${CLUSTER_NAME}-crs-cni"
+spec:
+  strategy: ApplyOnce
+  clusterSelector:
+    matchLabels:
+      cni: "${CLUSTER_NAME}-crs-cni"
+  resources:
+    - name: "${CLUSTER_NAME}-crs-cni"
+      kind: ConfigMap

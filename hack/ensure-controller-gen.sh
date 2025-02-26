@@ -50,7 +50,7 @@ install_controller_gen() {
 		if ! [ -d "${BIN_ROOT}" ]; then
 			mkdir -p "${BIN_ROOT}"
 		fi
-		go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@master
+		go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@main
 		cp "$GOPATH/bin/controller-gen" "${BIN_ROOT}/controller-gen"
 	else
 		set +x

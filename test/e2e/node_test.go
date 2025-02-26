@@ -25,7 +25,7 @@ import (
 )
 
 var _ = Describe("Node drain", func() {
-	Context("[node-drain] Run node drain test", func() {
+	Context("[node-drain][all] Run node drain test", func() {
 		capi_e2e.NodeDrainTimeoutSpec(context.TODO(), func() capi_e2e.NodeDrainTimeoutSpecInput {
 			return capi_e2e.NodeDrainTimeoutSpecInput{
 				E2EConfig:              e2eConfig,

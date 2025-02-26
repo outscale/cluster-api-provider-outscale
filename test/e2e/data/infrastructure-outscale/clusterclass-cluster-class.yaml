@@ -1,0 +1,285 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  name: "cluster-class"
+spec:
+  controlPlane:
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+      kind: KubeadmControlPlaneTemplate
+      name: "cluster-class-control-plane"
+    machineInfrastructure:
+      ref:
+        kind: OscMachineTemplate
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        name: "cluster-class-control-plane"
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: OscClusterTemplate
+      name: "cluster-class"
+  workers:
+    machineDeployments:
+      - class: cluster-class-worker
+        template:
+          bootstrap:
+            ref:
+              apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+              kind: KubeadmConfigTemplate
+              name: "cluster-class-worker"
+          infrastructure:
+            ref:
+              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+              kind: OscMachineTemplate
+              name: "cluster-class-worker"
+  variables:
+    - name: subregionName
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: string
+          default: eu-west-2b
+    - name: controlPlaneVmType
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: string
+          default: tinav5.c4r8p2
+    - name: workerVmType
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: string
+          default: tinav5.c4r8p2
+  patches:
+    - name: oscClusterTemplate
+      definitions:
+        - selector:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: OscClusterTemplate
+            matchResources:
+              infrastructureCluster: true
+          jsonPatches:
+            - op: replace
+              path: /spec/template/spec/network/subregionName
+              valueFrom:
+                variable: subregionName
+            - op: replace
+              path: /spec/template/spec/network/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/network/net/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/network/internetService/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/network/loadBalancer/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/network/loadBalancer/loadbalancername
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/network/natService/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/network/bastion/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+    - name: OscMachineTemplateControlPlane
+      definitions:
+        - selector:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: OscMachineTemplate
+            matchResources:
+              controlPlane: true
+          jsonPatches:
+            - op: replace
+              path: /spec/template/spec/node/vm/vmType
+              valueFrom:
+                variable: controlPlaneVmType
+            - op: replace
+              path: /spec/template/spec/node/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/node/vm/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/node/vm/loadBalancerName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/node/vm/subregionName
+              valueFrom:
+                variable: subregionName
+    - name: OscMachineTemplateControlWorker
+      definitions:
+        - selector:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: OscMachineTemplate
+            matchResources:
+              machineDeploymentClass:
+                names:
+                  - cluster-class-worker
+          jsonPatches:
+            - op: replace
+              path: /spec/template/spec/node/vm/vmType
+              valueFrom:
+                variable: workerVmType
+            - op: replace
+              path: /spec/template/spec/node/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/node/vm/clusterName
+              valueFrom:
+                variable: builtin.cluster.name
+            - op: replace
+              path: /spec/template/spec/node/vm/subregionName
+              valueFrom:
+                variable: subregionName
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscClusterTemplate
+metadata:
+  name: "cluster-class"
+spec:
+  template:
+    spec:
+      network:
+        clusterName: "REPLACEME"
+        subregionName: "eu-west-2b"
+        loadBalancer:
+          loadbalancername: "REPLACEME"
+          clusterName: "REPLACEME"
+        net:
+          clusterName: "REPLACEME"
+        internetService:
+          clusterName: "REPLACEME"
+        natService:
+          clusterName: "REPLACEME"
+        bastion:
+          clusterName: "REPLACEME"
+          enable: false
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "cluster-class-worker"
+spec:
+  template:
+    spec:
+      node:
+        clusterName: "REPLACEME"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
+        vm:
+          clusterName: "REPLACEME"
+          imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS}
+            rootDiskType: "${OSC_VOLUME_TYPE}"
+          keypairName: "${OSC_KEYPAIR_NAME}"
+          subregionName: "eu-west-2b"
+          vmType: "tinav9.c1r1p1"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "cluster-class-control-plane"
+spec:
+  template:
+    spec:
+      node:
+        clusterName: "REPLACEME"
+        keypair:
+          name: "${OSC_KEYPAIR_NAME}"
+          deleteKeypair: false
+        vm:
+          clusterName: "REPLACEME"
+          imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS}
+            rootDiskType: "${OSC_VOLUME_TYPE}"
+          subregionName: "eu-west-2b"
+          keypairName: "${OSC_KEYPAIR_NAME}"
+          role: controlplane
+          loadBalancerName: "REPLACEME"
+          vmType: "tinav9.c1r1p1"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: "cluster-class-worker"
+spec:
+  template:
+    spec:
+      files:
+        - content: |
+            #!/bin/sh
+
+            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+            chmod +x /tmp/runc.amd64
+            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+          owner: root:root
+          path: /tmp/set_runc.sh
+          permissions: "0744"
+      joinConfiguration:
+        nodeRegistration:
+          name: "{{ ds.meta_data.local_hostname }}"
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+      preKubeadmCommands:
+        - sh /tmp/set_runc.sh
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlaneTemplate
+metadata:
+  name: "cluster-class-control-plane"
+spec:
+  template:
+    spec:
+      kubeadmConfigSpec:
+        clusterConfiguration:
+          apiServer:
+            extraArgs:
+              cloud-provider: external
+          controllerManager:
+            extraArgs:
+              cloud-provider: external
+        initConfiguration:
+          nodeRegistration:
+            name: '{{ ds.meta_data.local_hostname }}'
+            kubeletExtraArgs:
+              cloud-provider: external
+              provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+        files:
+          - content: |
+              #!/bin/sh
+
+              curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+              chmod +x /tmp/runc.amd64
+              cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+            owner: root:root
+            path: /tmp/set_runc.sh
+            permissions: "0744"
+        joinConfiguration:
+          nodeRegistration:
+            name: "{{ ds.meta_data.local_hostname }}"
+            kubeletExtraArgs:
+              cloud-provider: external
+              provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+        preKubeadmCommands:
+          - sh /tmp/set_runc.sh

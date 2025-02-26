@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/cluster-api/util"
 )
 
-var _ = Describe("[e2e] Running the Cluster API E2E tests", func() {
+var _ = Describe("[e2e][all] Running the Cluster API E2E tests", func() {
 	var (
 		ctx           = context.TODO()
 		specName      = "e2e"
