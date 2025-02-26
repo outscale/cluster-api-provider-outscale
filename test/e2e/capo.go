@@ -227,7 +227,6 @@ func CapoClusterMachineDeploymentSpec(ctx context.Context, inputGetter func() Ca
 			WaitForControlPlaneIntervals: input.E2EConfig.GetIntervals(specName, "wait-control-plane"),
 			WaitForMachineDeployments:    input.E2EConfig.GetIntervals(specName, "wait-worker-nodes"),
 		}, clusterResources)
-		time.Sleep(10 * time.Minute)
 
 		By("Check workload cluster services")
 		clusterNamespace := namespace.Name

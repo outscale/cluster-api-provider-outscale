@@ -213,7 +213,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		kubeconfig := filepath.Join("/root", ".kube", "config")
 		os.Setenv(kubeconfigEnvVar, kubeconfig)
 	}
-	time.Sleep(3 * time.Minute)
 	return []byte(
 		strings.Join([]string{
 			artifactFolder,
