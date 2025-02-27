@@ -108,8 +108,15 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		return reconcile.Result{}, err
 	}
 	log.V(4).Info("Number of subnet", "subnet_length", len(subnetsSpec))
+	if len(subnetRef.ResourceMap) == 0 {
+		subnetRef.ResourceMap = make(map[string]string)
+	}
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
+		if subnetSpec.ResourceId != "" && subnetSpec.SkipReconcile {
+			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
+			continue
+		}
 		tagKey := "Name"
 		tagValue := subnetName
 		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
@@ -118,9 +125,6 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 		}
 		subnetId := subnetSpec.ResourceId
 		log.V(4).Info("Get subnetId", "subnetId", subnetId)
-		if len(subnetRef.ResourceMap) == 0 {
-			subnetRef.ResourceMap = make(map[string]string)
-		}
 		if subnetSpec.ResourceId != "" {
 			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
 		}
@@ -167,6 +171,10 @@ func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope
 	for _, subnetSpec := range subnetsSpec {
 		subnetId := subnetSpec.ResourceId
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
+		if subnetSpec.SkipReconcile {
+			log.V(2).Info("Not deleting the desired subnet because skip reconcile true", "subnetName", subnetName)
+			continue
+		}
 		if !slices.Contains(subnetIds, subnetId) {
 			log.V(2).Info("subnet does not exist anymore", "subnetName", subnetName)
 			return reconcile.Result{}, nil
