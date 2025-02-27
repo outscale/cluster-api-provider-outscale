@@ -95,7 +95,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 	err, httpRes := tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -112,7 +112,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 		err, httpRes := tag.AddTag(ctx, mainSecurityGroupTagRequest, resourceIds, oscApiClient, oscAuthClient)
 		if err != nil {
 			if httpRes != nil {
-				return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return nil, utils.ExtractOAPIError(err, httpRes)
 			} else {
 				return nil, err
 			}
@@ -164,7 +164,7 @@ func (s *Service) CreateSecurityGroupRule(ctx context.Context, securityGroupId s
 				if httpRes.StatusCode == 409 {
 					return true, nil
 				}
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", createSecurityGroupRuleRequest)
 			if reconciler.KeepRetryWithError(
@@ -229,7 +229,7 @@ func (s *Service) DeleteSecurityGroupRule(ctx context.Context, securityGroupId s
 		utils.LogAPICall(ctx, "DeleteSecurityGroupRule", deleteSecurityGroupRuleRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteSecurityGroupRuleRequest)
 			if reconciler.KeepRetryWithError(
@@ -286,7 +286,7 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readSecurityGroupRequest)
 			if reconciler.KeepRetryWithError(
@@ -371,7 +371,7 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRuleRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readSecurityGroupRuleRequest)
 			if reconciler.KeepRetryWithError(
@@ -413,7 +413,7 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(ctx context.Context, netId strin
 		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readSecurityGroupRequest)
 			if reconciler.KeepRetryWithError(

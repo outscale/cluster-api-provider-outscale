@@ -51,7 +51,7 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 		utils.LogAPICall(ctx, "CreateInternetService", internetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", internetServiceRequest)
 			if reconciler.KeepRetryWithError(
@@ -81,7 +81,7 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 	err, httpRes := tag.AddTag(ctx, internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func (s *Service) DeleteInternetService(ctx context.Context, internetServiceId s
 		utils.LogAPICall(ctx, "DeleteInternetService", deleteInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteInternetServiceRequest)
 			if reconciler.KeepRetryWithError(
@@ -141,7 +141,7 @@ func (s *Service) LinkInternetService(ctx context.Context, internetServiceId str
 		utils.LogAPICall(ctx, "LinkInternetService", linkInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", linkInternetServiceRequest)
 			if reconciler.KeepRetryWithError(
@@ -177,7 +177,7 @@ func (s *Service) UnlinkInternetService(ctx context.Context, internetServiceId s
 		utils.LogAPICall(ctx, "UnlinkInternetService", unlinkInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", unlinkInternetServiceRequest)
 			if reconciler.KeepRetryWithError(
@@ -215,7 +215,7 @@ func (s *Service) GetInternetService(ctx context.Context, internetServiceId stri
 		utils.LogAPICall(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readInternetServiceRequest)
 			if reconciler.KeepRetryWithError(

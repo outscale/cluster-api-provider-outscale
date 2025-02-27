@@ -84,7 +84,7 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subne
 	err, httpRes := tag.AddTag(ctx, natServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subne
 	subnet, err := s.GetSubnet(ctx, subnetId)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -109,7 +109,7 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subne
 	err, httpRes = tag.AddTag(ctx, natServiceClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (s *Service) DeleteNatService(ctx context.Context, natServiceId string) err
 		utils.LogAPICall(ctx, "DeleteNatService", deleteNatServiceRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteNatServiceRequest)
 			if reconciler.KeepRetryWithError(
@@ -168,7 +168,7 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}

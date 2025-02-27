@@ -51,7 +51,7 @@ func (s *Service) CreateKeyPair(ctx context.Context, keypairName string) (*osc.K
 		utils.LogAPICall(ctx, "CreateKeypair", keyPairRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", keyPairRequest)
 			if reconciler.KeepRetryWithError(
@@ -108,7 +108,7 @@ func (s *Service) GetKeyPair(ctx context.Context, keyPairName string) (*osc.Keyp
 		utils.LogAPICall(ctx, "ReadKeypairs", readKeypairsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readKeypairsRequest)
 			if reconciler.KeepRetryWithError(
@@ -151,7 +151,7 @@ func (s *Service) DeleteKeyPair(ctx context.Context, keyPairName string) error {
 		utils.LogAPICall(ctx, "DeleteKeypair", deleteKeypairRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteKeypairRequest)
 			if reconciler.KeepRetryWithError(

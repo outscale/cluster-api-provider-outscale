@@ -50,7 +50,7 @@ func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, err
 		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readImageRequest)
 			if reconciler.KeepRetryWithError(
@@ -91,7 +91,7 @@ func (s *Service) GetImageId(ctx context.Context, imageName string) (string, err
 		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readImageRequest)
 			if reconciler.KeepRetryWithError(
@@ -132,7 +132,7 @@ func (s *Service) GetImageName(ctx context.Context, imageId string) (string, err
 		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readImageRequest)
 			if reconciler.KeepRetryWithError(
