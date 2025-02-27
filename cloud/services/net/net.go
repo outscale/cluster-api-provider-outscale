@@ -54,7 +54,7 @@ func (s *Service) CreateNet(ctx context.Context, spec *infrastructurev1beta1.Osc
 	utils.LogAPICall(ctx, "CreateNet", netRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		}
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *Service) CreateNet(ctx context.Context, spec *infrastructurev1beta1.Osc
 	err, httpRes = tag.AddTag(ctx, netTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -109,7 +109,7 @@ func (s *Service) DeleteNet(ctx context.Context, netId string) error {
 		utils.LogAPICall(ctx, "DeleteNet", deleteNetRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteNetRequest)
 			if reconciler.KeepRetryWithError(
@@ -144,7 +144,7 @@ func (s *Service) GetNet(ctx context.Context, netId string) (*osc.Net, error) {
 	if err != nil {
 		if httpRes != nil {
 			fmt.Printf("Error with http result %s", httpRes.Status)
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}

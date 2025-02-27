@@ -67,7 +67,7 @@ func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.
 		utils.LogAPICall(ctx, "CreateVolume", volumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 
 			requestStr := fmt.Sprintf("%v", volumeRequest)
@@ -104,7 +104,7 @@ func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.
 	err, httpRes := tag.AddTag(ctx, volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func (s *Service) GetVolume(ctx context.Context, volumeId string) (*osc.Volume, 
 		utils.LogAPICall(ctx, "ReadVolumes", readVolumesRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readVolumesRequest)
 			if reconciler.KeepRetryWithError(
@@ -178,7 +178,7 @@ func (s *Service) LinkVolume(ctx context.Context, volumeId string, vmId string, 
 		utils.LogAPICall(ctx, "LinkVolume", linkVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", linkVolumeRequest)
 			if reconciler.KeepRetryWithError(
@@ -214,7 +214,7 @@ func (s *Service) UnlinkVolume(ctx context.Context, volumeId string) error {
 		utils.LogAPICall(ctx, "UnlinkVolume", unlinkVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", unlinkVolumeRequest)
 			if reconciler.KeepRetryWithError(
@@ -247,7 +247,7 @@ func (s *Service) DeleteVolume(ctx context.Context, volumeId string) error {
 		utils.LogAPICall(ctx, "DeleteVolume", deleteVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteVolumeRequest)
 			if reconciler.KeepRetryWithError(
@@ -285,7 +285,7 @@ func (s *Service) ValidateVolumeIds(ctx context.Context, volumeIds []string) ([]
 		utils.LogAPICall(ctx, "ReadVolumes", readVolumeRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readVolumeRequest)
 			if reconciler.KeepRetryWithError(

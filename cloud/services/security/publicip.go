@@ -56,7 +56,7 @@ func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string) (*osc
 		utils.LogAPICall(ctx, "CreatePublicIp", publicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", publicIpRequest)
 			if reconciler.KeepRetryWithError(
@@ -110,7 +110,7 @@ func (s *Service) DeletePublicIp(ctx context.Context, publicIpId string) error {
 		utils.LogAPICall(ctx, "DeletePublicIp", deletePublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deletePublicIpRequest)
 			if reconciler.KeepRetryWithError(
@@ -149,7 +149,7 @@ func (s *Service) GetPublicIp(ctx context.Context, publicIpId string) (*osc.Publ
 		utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readPublicIpRequest)
 			if reconciler.KeepRetryWithError(
@@ -196,7 +196,7 @@ func (s *Service) ValidatePublicIpIds(ctx context.Context, publicIpIds []string)
 		utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readPublicIpRequest)
 			if reconciler.KeepRetryWithError(
@@ -244,7 +244,7 @@ func (s *Service) LinkPublicIp(ctx context.Context, publicIpId string, vmId stri
 		utils.LogAPICall(ctx, "LinkPublicIp", linkPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", linkPublicIpRequest)
 			if reconciler.KeepRetryWithError(
@@ -283,7 +283,7 @@ func (s *Service) UnlinkPublicIp(ctx context.Context, linkPublicIpId string) err
 		utils.LogAPICall(ctx, "UnlinkPublicIp", unlinkPublicIpRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", unlinkPublicIpRequest)
 			if reconciler.KeepRetryWithError(

@@ -58,7 +58,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 		utils.LogAPICall(ctx, "CreateRouteTable", routeTableRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", routeTableRequest)
 			if reconciler.KeepRetryWithError(
@@ -88,7 +88,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 	err, httpRes := tag.AddTag(ctx, routeTableTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 	err, httpRes = tag.AddTag(ctx, clusterRouteTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, ro
 	utils.LogAPICall(ctx, "CreateRoute", routeRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -171,7 +171,7 @@ func (s *Service) DeleteRouteTable(ctx context.Context, routeTableId string) err
 		utils.LogAPICall(ctx, "DeleteRouteTable", deleteRouteTableRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteRouteTableRequest)
 			if reconciler.KeepRetryWithError(
@@ -207,7 +207,7 @@ func (s *Service) DeleteRoute(ctx context.Context, destinationIpRange string, ro
 		utils.LogAPICall(ctx, "DeleteRoute", deleteRouteRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteRouteRequest)
 			if reconciler.KeepRetryWithError(
@@ -241,7 +241,7 @@ func (s *Service) GetRouteTable(ctx context.Context, routeTableId []string) (*os
 	utils.LogAPICall(ctx, "ReadRouteTables", readRouteTableRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -286,7 +286,7 @@ func (s *Service) GetRouteTableFromRoute(ctx context.Context, routeTableId strin
 	utils.LogAPICall(ctx, "ReadRouteTables", readRouteRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -319,7 +319,7 @@ func (s *Service) LinkRouteTable(ctx context.Context, routeTableId string, subne
 		utils.LogAPICall(ctx, "LinkRouteTable", linkRouteTableRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", linkRouteTableRequest)
 			if reconciler.KeepRetryWithError(
@@ -359,7 +359,7 @@ func (s *Service) UnlinkRouteTable(ctx context.Context, linkRouteTableId string)
 		utils.LogAPICall(ctx, "UnlinkRouteTable", unlinkRouteTableRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", unlinkRouteTableRequest)
 			if reconciler.KeepRetryWithError(
@@ -393,7 +393,7 @@ func (s *Service) GetRouteTableIdsFromNetIds(ctx context.Context, netId string) 
 	utils.LogAPICall(ctx, "ReadRouteTables", readRouteTablesRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}

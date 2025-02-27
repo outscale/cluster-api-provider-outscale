@@ -113,7 +113,7 @@ func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope
 		utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", vmOpt)
 			if reconciler.KeepRetryWithError(
@@ -148,7 +148,7 @@ func (s *Service) CreateVm(ctx context.Context, machineScope *scope.MachineScope
 	err, httpRes := tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -228,7 +228,7 @@ func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *i
 	err, httpRes = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -253,7 +253,7 @@ func (s *Service) DeleteVm(ctx context.Context, vmId string) error {
 		utils.LogAPICall(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteVmsRequest)
 			if reconciler.KeepRetryWithError(
@@ -291,7 +291,7 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 		utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readVmsRequest)
 			if reconciler.KeepRetryWithError(
@@ -340,7 +340,7 @@ func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue 
 		utils.LogAPICall(ctx, "ReadVms", readVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readVmsRequest)
 			if reconciler.KeepRetryWithError(

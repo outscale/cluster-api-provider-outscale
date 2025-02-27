@@ -63,7 +63,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.
 		utils.LogAPICall(ctx, "CreateSubnet", subnetRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", subnetRequest)
 			if reconciler.KeepRetryWithError(
@@ -94,7 +94,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.
 	err, httpRes := tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -110,7 +110,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.
 	err, httpRes = tag.AddTag(ctx, subnetClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		} else {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func (s *Service) DeleteSubnet(ctx context.Context, subnetId string) error {
 		utils.LogAPICall(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 
 			requestStr := fmt.Sprintf("%v", deleteSubnetRequest)
@@ -205,7 +205,7 @@ func (s *Service) GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]s
 		utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readSubnetsRequest)
 			if reconciler.KeepRetryWithError(

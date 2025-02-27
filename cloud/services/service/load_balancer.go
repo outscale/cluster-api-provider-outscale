@@ -109,7 +109,7 @@ func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructure
 		utils.LogAPICall(ctx, "UpdateLoadBalancer", updateLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", updateLoadBalancerRequest)
 			if reconciler.KeepRetryWithError(
@@ -149,7 +149,7 @@ func (s *Service) LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []s
 		utils.LogAPICall(ctx, "LinkLoadBalancerBackendMachines", linkLoadBalancerBackendMachinesRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", linkLoadBalancerBackendMachinesRequest)
 			if reconciler.KeepRetryWithError(
@@ -186,7 +186,7 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds [
 		utils.LogAPICall(ctx, "UnlinkLoadBalancerBackendMachines", unlinkLoadBalancerBackendMachinesRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", unlinkLoadBalancerBackendMachinesRequest)
 			if reconciler.KeepRetryWithError(
@@ -231,7 +231,7 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 					reconciler.ThrottlingErrors) {
 					return false, nil
 				} else {
-					return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+					return false, utils.ExtractOAPIError(err, httpRes)
 				}
 			}
 			return false, err
@@ -275,7 +275,7 @@ func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1
 		utils.LogAPICall(ctx, "ReadLoadBalancerTags", readLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", readLoadBalancerTagRequest)
 			if reconciler.KeepRetryWithError(
@@ -385,7 +385,7 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 		utils.LogAPICall(ctx, "CreateLoadBalancer", loadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", loadBalancerRequest)
 			if reconciler.KeepRetryWithError(
@@ -428,7 +428,7 @@ func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1
 		utils.LogAPICall(ctx, "DeleteLoadBalancer", deleteLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteLoadBalancerRequest)
 			if reconciler.KeepRetryWithError(
@@ -468,7 +468,7 @@ func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructur
 		utils.LogAPICall(ctx, "DeleteLoadBalancerTags", deleteLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
+				return false, utils.ExtractOAPIError(err, httpRes)
 			}
 			requestStr := fmt.Sprintf("%v", deleteLoadBalancerTagRequest)
 			if reconciler.KeepRetryWithError(
