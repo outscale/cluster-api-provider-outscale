@@ -23,7 +23,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install https://$OKS_CLI_DOWNLOAD_USER:$OKS_CLI_DOWNLOAD_PASSWORD@oks-docs.prd2-eu-west-2.oks.outscale.com/oks_cli.zip
 
-oks-cli profile add --profile-name "default" --access-key $OSC_ACCESS_KEY --secret-key $OSC_SECRET_KEY --region eu-west-2 --endpoint "https://api.prd2-eu-west-2.oks.outscale.com/api/v2/"
+oks-cli profile add --profile-name "default" --access-key $OSC_ACCESS_KEY --secret-key $OSC_SECRET_KEY --region eu-west-2
 if [ $? -ne 0 ]; then
     exit $?
 fi
