@@ -68,8 +68,8 @@ jobs:
       env:
         OKS_CLI_DOWNLOAD_USER: ${{ secrets.OKS_CLI_DOWNLOAD_USER }}
         OKS_CLI_DOWNLOAD_PASSWORD: ${{ secrets.OKS_CLI_DOWNLOAD_PASSWORD }}
-        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         CLUSTER_NAME: ${{ runner.name }}
         WORKER_VMTYPE: ${{ vars.WORKER_VMTYPE }}
         PUBLIC_IP: ${{ steps.ip.outputs.ipv4 }}
@@ -119,7 +119,7 @@ jobs:
       id: deploy-capo
       env:
         KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
-        IMG: ${{ env.HARBOR_EXT_HOST }}:${{ env.HARBOR_EXT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${{ steps.oks.outputs.harbor_host }}:${{ env.HARBOR_EXT_PORT }}/cluster-api-outscale-controller:${{ github.sha }}
     - name: Wait until cluster-api-outscale is ready
       uses: jupyterhub/action-k8s-await-workloads@v3
       with:
@@ -161,4 +161,4 @@ jobs:
       if: ${{ always() && steps.deploy-capo.conclusion == 'success' }}
       env:
         KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
-        IMG: ${{ env.HARBOR_EXT_HOST }}/cluster-api-outscale-controller:${{ github.sha }}
+        IMG: ${{ steps.oks.outputs.harbor_host }}/cluster-api-outscale-controller:${{ github.sha }}
