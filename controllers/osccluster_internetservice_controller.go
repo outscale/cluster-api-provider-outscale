@@ -56,6 +56,13 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
+	if len(internetServiceRef.ResourceMap) == 0 {
+		internetServiceRef.ResourceMap = make(map[string]string)
+	}
+	if internetServiceSpec.ResourceId != "" && internetServiceSpec.SkipReconcile {
+		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
+		return reconcile.Result{}, nil
+	}
 	var internetService *osc.InternetService
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -63,9 +70,6 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	netId, err := getNetResourceId(netName, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-	if len(internetServiceRef.ResourceMap) == 0 {
-		internetServiceRef.ResourceMap = make(map[string]string)
 	}
 	tagKey := "Name"
 	tagValue := internetServiceName
@@ -104,6 +108,12 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	log := ctrl.LoggerFrom(ctx)
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceSpec.SetDefaultValue()
+	internetServiceId := internetServiceSpec.ResourceId
+	internetServiceName := internetServiceSpec.Name
+	if internetServiceId != "" && internetServiceSpec.SkipReconcile {
+		log.V(2).Info("Not unlinking/deleting the desired internetservice because skip reconcile is true", "internetServiceName", internetServiceName)
+		return reconcile.Result{}, nil
+	}
 
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
@@ -114,8 +124,6 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 		return reconcile.Result{}, nil //nolint: nilerr
 	}
 
-	internetServiceId := internetServiceSpec.ResourceId
-	internetServiceName := internetServiceSpec.Name
 	internetService, err := internetServiceSvc.GetInternetService(ctx, internetServiceId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("get internetservice: %w", err)
@@ -134,5 +142,6 @@ func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.Clu
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete internetService: %w", err)
 	}
+
 	return reconcile.Result{}, nil
 }
