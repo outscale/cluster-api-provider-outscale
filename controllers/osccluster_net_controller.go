@@ -106,6 +106,9 @@ func reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope, n
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netId := netSpec.ResourceId
+	if netId == "" {
+		return reconcile.Result{}, nil
+	}
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	net, err := netSvc.GetNet(ctx, netId)
 	if err != nil {

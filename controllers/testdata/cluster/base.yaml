@@ -1,0 +1,35 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"cluster.x-k8s.io/v1beta1","kind":"Cluster","metadata":{"annotations":{},"labels":{"ccm":"test-cluster-api-crs-ccm","cni":"test-cluster-api-crs-cni"},"name":"test-cluster-api","namespace":"cluster-api-test"},"spec":{"clusterNetwork":{"pods":{"cidrBlocks":["10.42.0.0/16"]}},"controlPlaneRef":{"apiVersion":"controlplane.cluster.x-k8s.io/v1beta1","kind":"KubeadmControlPlane","name":"test-cluster-api-control-plane"},"infrastructureRef":{"apiVersion":"infrastructure.cluster.x-k8s.io/v1beta1","kind":"OscCluster","name":"test-cluster-api"}}}
+  creationTimestamp: "2025-02-17T09:47:38Z"
+  finalizers:
+  - cluster.cluster.x-k8s.io
+  generation: 2
+  labels:
+    ccm: test-cluster-api-crs-ccm
+    cni: test-cluster-api-crs-cni
+  name: test-cluster-api
+  namespace: cluster-api-test
+  resourceVersion: "20362574"
+  uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 10.42.0.0/16
+  controlPlaneEndpoint:
+    host: test-cluster-api-k8s-foo.eu-west-2.lbu.outscale.com
+    port: 6443
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: test-cluster-api-control-plane
+    namespace: cluster-api-test
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: OscCluster
+    name: test-cluster-api
+    namespace: cluster-api-test

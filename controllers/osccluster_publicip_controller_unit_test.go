@@ -847,15 +847,6 @@ func TestReconcileDeletePublicIpGet(t *testing.T) {
 		expReconcileDeletePublicIpErr error
 	}{
 		{
-			name: "check work without publicIp spec (with default values)",
-			spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{},
-			},
-			expPublicIpFound:              false,
-			expValidatePublicIpIdsErr:     nil,
-			expReconcileDeletePublicIpErr: nil,
-		},
-		{
 			name:                          "failed to validate publicIp",
 			spec:                          defaultPublicIpReconcile,
 			expPublicIpFound:              false,

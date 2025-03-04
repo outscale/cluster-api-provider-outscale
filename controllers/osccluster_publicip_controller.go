@@ -174,11 +174,14 @@ func reconcileDeletePublicIp(ctx context.Context, clusterScope *scope.ClusterSco
 	} else {
 		publicIpsSpec = clusterScope.GetPublicIp()
 	}
-	var publicIpIds []string
-	var publicIpId string
+	publicIpIds := make([]string, 0, len(publicIpsSpec))
 	for _, publicIpSpec := range publicIpsSpec {
-		publicIpId = publicIpSpec.ResourceId
-		publicIpIds = append(publicIpIds, publicIpId)
+		if publicIpSpec.ResourceId != "" {
+			publicIpIds = append(publicIpIds, publicIpSpec.ResourceId)
+		}
+	}
+	if len(publicIpIds) == 0 {
+		return reconcile.Result{}, nil
 	}
 	validPublicIpIds, err := publicIpSvc.ValidatePublicIpIds(ctx, publicIpIds)
 	if err != nil {
