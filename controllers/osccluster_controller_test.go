@@ -222,6 +222,15 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
+			name:           "Cluster is deleted event if no resource has been created",
+			clusterSpec:    "base",
+			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
+			mockFuncs: []mockFunc{
+				mockLoadBalancerFound("test-cluster-api-k8s", false),
+			},
+			assertDeleted: true,
+		},
+		{
 			name:           "If LB is already deleted, continue with the rest",
 			clusterSpec:    "ready",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},

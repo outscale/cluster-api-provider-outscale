@@ -1,0 +1,229 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"infrastructure.cluster.x-k8s.io/v1beta1","kind":"OscCluster","metadata":{"annotations":{},"name":"test-cluster-api","namespace":"cluster-api-test"},"spec":{"network":{"bastion":{"clusterName":"test-cluster-api","enable":false},"clusterName":"test-cluster-api","internetService":{"clusterName":"test-cluster-api"},"loadBalancer":{"clusterName":"test-cluster-api","loadbalancername":"test-cluster-api-k8s"},"natService":{"clusterName":"test-cluster-api"},"net":{"clusterName":"test-cluster-api"},"subregionName":"eu-west-2a"}}}
+  creationTimestamp: "2025-02-17T09:47:38Z"
+  finalizers:
+  - oscclusters.infrastructure.cluster.x-k8s.io
+  generation: 3
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+    outscale.com/clusterUID: 9e1db9c4-bf0a-4583-8999-203ec002c520
+  name: test-cluster-api
+  namespace: cluster-api-test
+  ownerReferences:
+  - apiVersion: cluster.x-k8s.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: test-cluster-api
+    uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+  resourceVersion: "20214284"
+  uid: 4973cd7c-439b-4108-b61f-39805379aa0e
+spec:
+  controlPlaneEndpoint:
+    host: test-cluster-api-k8s-foo.eu-west-2.lbu.outscale.com
+    port: 6443
+  network:
+    bastion:
+      clusterName: test-cluster-api
+      enable: false
+    clusterName: test-cluster-api
+    internetService:
+      clusterName: test-cluster-api
+      name: test-cluster-api-internetservice
+    loadBalancer:
+      clusterName: test-cluster-api
+      healthCheck:
+        checkinterval: 5
+        healthythreshold: 5
+        port: 6443
+        protocol: TCP
+        timeout: 5
+        unhealthythreshold: 2
+      listener:
+        backendport: 6443
+        backendprotocol: TCP
+        loadbalancerport: 6443
+        loadbalancerprotocol: TCP
+      loadbalancername: test-cluster-api-k8s
+      loadbalancertype: internet-facing
+      securitygroupname: test-cluster-api-securitygroup-lb
+      subnetname: test-cluster-api-subnet-public
+    natService:
+      clusterName: test-cluster-api
+      name: test-cluster-api-natservice
+      publicipname: test-cluster-api-publicip-nat
+      subnetname: test-cluster-api-subnet-public
+    net:
+      clusterName: test-cluster-api
+      ipRange: 10.0.0.0/16
+      name: test-cluster-api-net
+    publicIps:
+    - name: test-cluster-api-publicip-nat
+    routeTables:
+    - name: test-cluster-api-routetable-kw
+      routes:
+      - destination: 0.0.0.0/0
+        name: test-cluster-api-route-kw
+        targetName: test-cluster-api-natservice
+        targetType: nat
+      subnets:
+      - test-cluster-api-subnet-kw
+    - name: test-cluster-api-routetable-kcp
+      routes:
+      - destination: 0.0.0.0/0
+        name: test-cluster-api-route-kcp
+        targetName: test-cluster-api-natservice
+        targetType: nat
+      subnets:
+      - test-cluster-api-subnet-kcp
+    - name: test-cluster-api-routetable-public
+      routes:
+      - destination: 0.0.0.0/0
+        name: test-cluster-api-route-public
+        targetName: test-cluster-api-internetservice
+        targetType: gateway
+      subnets:
+      - test-cluster-api-subnet-public
+    securityGroups:
+    - description: Security Group Kw with cluster-api
+      name: test-cluster-api-securitygroup-kw
+      securityGroupRules:
+      - flow: Inbound
+        fromPortRange: 179
+        ipProtocol: tcp
+        ipRange: 10.0.0.0/16
+        name: test-cluster-api-securitygrouprule-kw-bgp
+        toPortRange: 179
+      - flow: Inbound
+        fromPortRange: 10250
+        ipProtocol: tcp
+        ipRange: 10.0.3.0/24
+        name: test-cluster-api-securitygrouprule-api-kubelet-kw
+        toPortRange: 10250
+      - flow: Inbound
+        fromPortRange: 30000
+        ipProtocol: tcp
+        ipRange: 10.0.4.0/24
+        name: test-cluster-api-securitygrouprule-kw-nodeip-kcp
+        toPortRange: 32767
+      - flow: Inbound
+        fromPortRange: 10250
+        ipProtocol: tcp
+        ipRange: 10.0.4.0/24
+        name: test-cluster-api-securitygrouprule-api-kubelet-kcp
+        toPortRange: 10250
+      - flow: Inbound
+        fromPortRange: 30000
+        ipProtocol: tcp
+        ipRange: 10.0.3.0/24
+        name: test-cluster-api-securitygrouprule-kw-nodeip-kw
+        toPortRange: 32767
+    - description: Security Group Kcp with cluster-api
+      name: test-cluster-api-securitygroup-kcp
+      securityGroupRules:
+      - flow: Inbound
+        fromPortRange: 179
+        ipProtocol: tcp
+        ipRange: 10.0.0.0/16
+        name: test-cluster-api-securitygrouprule-kcp-bgp
+        toPortRange: 179
+      - flow: Inbound
+        fromPortRange: 6443
+        ipProtocol: tcp
+        ipRange: 10.0.3.0/24
+        name: test-cluster-api-securitygrouprule-api-kw
+        toPortRange: 6443
+      - flow: Inbound
+        fromPortRange: 6443
+        ipProtocol: tcp
+        ipRange: 10.0.4.0/24
+        name: test-cluster-api-securitygrouprule-api-kcp
+        toPortRange: 6443
+      - flow: Inbound
+        fromPortRange: 30000
+        ipProtocol: tcp
+        ipRange: 10.0.3.0/24
+        name: test-cluster-api-securitygrouprule-kcp-nodeip-kw
+        toPortRange: 32767
+      - flow: Inbound
+        fromPortRange: 2378
+        ipProtocol: tcp
+        ipRange: 10.0.4.0/24
+        name: test-cluster-api-securitygrouprule-etcd
+        toPortRange: 2379
+      - flow: Inbound
+        fromPortRange: 10250
+        ipProtocol: tcp
+        ipRange: 10.0.4.0/24
+        name: test-cluster-api-securitygrouprule-kubelet-kcp
+        toPortRange: 10252
+      - flow: Inbound
+        fromPortRange: 30000
+        ipProtocol: tcp
+        ipRange: 10.0.4.0/24
+        name: test-cluster-api-securitugrouprule-kcp-nodeip-kcp
+        toPortRange: 32767
+    - description: Security Group Lb with cluster-api
+      name: test-cluster-api-securitygroup-lb
+      securityGroupRules:
+      - flow: Inbound
+        fromPortRange: 6443
+        ipProtocol: tcp
+        ipRange: 0.0.0.0/0
+        name: test-cluster-api-securitygrouprule-lb
+        toPortRange: 6443
+    - description: Security Group Node with cluster-api
+      name: test-cluster-api-securitygroup-node
+      securityGroupRules:
+      - flow: Inbound
+        fromPortRange: 4789
+        ipProtocol: udp
+        ipRange: 10.0.0.0/16
+        name: cluster-api-securitygroup-calico-vxlan
+        toPortRange: 4789
+      - flow: Inbound
+        fromPortRange: 5473
+        ipProtocol: udp
+        ipRange: 10.0.0.0/16
+        name: cluster-api-securitygroup-typha
+        toPortRange: 5473
+      - flow: Inbound
+        fromPortRange: 51820
+        ipProtocol: udp
+        ipRange: 10.0.0.0/16
+        name: cluster-api-securitygroup-wireguard
+        toPortRange: 51820
+      - flow: Inbound
+        fromPortRange: 51821
+        ipProtocol: udp
+        ipRange: 10.0.0.0/16
+        name: cluster-api-securitygroup-wireguard-ipv6
+        toPortRange: 51821
+      - flow: Inbound
+        fromPortRange: 8285
+        ipProtocol: udp
+        ipRange: 10.0.0.0/16
+        name: cluster-api-securitygroup-flannel-udp
+        toPortRange: 8285
+      - flow: Inbound
+        fromPortRange: 8472
+        ipProtocol: udp
+        ipRange: 10.0.0.0/16
+        name: cluster-api-securityrgroup-flannel-vxlan
+        toPortRange: 8472
+      tag: OscK8sMainSG
+    subnets:
+    - ipSubnetRange: 10.0.4.0/24
+      name: test-cluster-api-subnet-kcp
+      subregionName: eu-west-2a
+    - ipSubnetRange: 10.0.3.0/24
+      name: test-cluster-api-subnet-kw
+      subregionName: eu-west-2a
+    - ipSubnetRange: 10.0.2.0/24
+      name: test-cluster-api-subnet-public
+      subregionName: eu-west-2a
+    subregionName: eu-west-2a
