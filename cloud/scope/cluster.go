@@ -133,6 +133,11 @@ func (s *ClusterScope) GetNatService() *infrastructurev1beta1.OscNatService {
 
 // GetNatServices return the natServices of the cluster
 func (s *ClusterScope) GetNatServices() []*infrastructurev1beta1.OscNatService {
+	if len(s.OscCluster.Spec.Network.NatServices) == 0 {
+		nat := s.GetNatService()
+		nat.SetDefaultValue()
+		return []*infrastructurev1beta1.OscNatService{nat}
+	}
 	return s.OscCluster.Spec.Network.NatServices
 }
 

@@ -56,7 +56,6 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	internetServiceSpec := clusterScope.GetInternetService()
 	internetServiceRef := clusterScope.GetInternetServiceRef()
 	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
-	var internetService *osc.InternetService
 	netSpec := clusterScope.GetNet()
 	netSpec.SetDefaultValue()
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
@@ -67,35 +66,42 @@ func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterSc
 	if len(internetServiceRef.ResourceMap) == 0 {
 		internetServiceRef.ResourceMap = make(map[string]string)
 	}
-	tagKey := "Name"
-	tagValue := internetServiceName
-	tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
+	if internetServiceSpec.ResourceId == "" {
+		tag, err := tagSvc.ReadTag(ctx, "Name", internetServiceName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
+		}
+		if tag.GetResourceId() != "" {
+			internetServiceSpec.ResourceId = tag.GetResourceId()
+		}
 	}
+
+	var internetService *osc.InternetService
 	if internetServiceSpec.ResourceId != "" {
-		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
-		internetServiceId := internetServiceSpec.ResourceId
-		log.V(4).Info("Checking internetservice", "internetserviceName", internetServiceName)
-		internetService, err = internetServiceSvc.GetInternetService(ctx, internetServiceId)
+		internetService, err = internetServiceSvc.GetInternetService(ctx, internetServiceSpec.ResourceId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
-	if (internetService == nil && tag == nil) || (internetServiceSpec.ResourceId == "" && tag == nil) {
-		log.V(2).Info("Creating internetservice", "internetServiceName", internetServiceName)
-		internetService, err := internetServiceSvc.CreateInternetService(ctx, internetServiceName)
+	switch {
+	case internetService != nil && internetService.NetId != nil:
+		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
+		return reconcile.Result{}, err
+	case internetService == nil:
+		log.V(3).Info("Creating internetservice", "internetServiceName", internetServiceName)
+		internetService, err = internetServiceSvc.CreateInternetService(ctx, internetServiceName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create internetservice: %w", err)
 		}
-		log.V(2).Info("Linking internetservice", "internetServiceName", internetServiceName, "netId", netId)
-		err = internetServiceSvc.LinkInternetService(ctx, *internetService.InternetServiceId, netId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot link internetService: %w", err)
-		}
-		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
-		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
+		log.V(2).Info("Created internetservice", "internetServiceId", internetService.GetInternetServiceId())
 	}
+	log.V(3).Info("Linking internetservice", "internetServiceName", internetServiceName, "netId", netId)
+	err = internetServiceSvc.LinkInternetService(ctx, *internetService.InternetServiceId, netId)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot link internetService: %w", err)
+	}
+	internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
+	internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
 	return reconcile.Result{}, nil
 }
 

@@ -15,6 +15,27 @@ func patchMoveCluster() patchOSCClusterFunc {
 	}
 }
 
+func patchClusterNoResourceId() patchOSCClusterFunc {
+	return func(m *v1beta1.OscCluster) {
+		m.Spec.Network.Bastion.ResourceId = ""
+		m.Spec.Network.InternetService.ResourceId = ""
+		m.Spec.Network.NatService.ResourceId = ""
+		m.Spec.Network.Net.ResourceId = ""
+		for i := range m.Spec.Network.Subnets {
+			m.Spec.Network.Subnets[i].ResourceId = ""
+		}
+		for i := range m.Spec.Network.PublicIps {
+			m.Spec.Network.PublicIps[i].ResourceId = ""
+		}
+		for i := range m.Spec.Network.RouteTables {
+			m.Spec.Network.RouteTables[i].ResourceId = ""
+		}
+		for i := range m.Spec.Network.SecurityGroups {
+			m.Spec.Network.SecurityGroups[i].ResourceId = ""
+		}
+	}
+}
+
 func patchDeleteCluster() patchOSCClusterFunc {
 	return func(m *v1beta1.OscCluster) {
 		m.DeletionTimestamp = ptr.To(metav1.Now())

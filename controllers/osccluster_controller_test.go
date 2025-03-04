@@ -74,46 +74,139 @@ func runClusterTest(t *testing.T, tc testcase) {
 	}
 }
 
+func TestReconcileOSCCluster_Create(t *testing.T) {
+	tcs := []testcase{
+		{
+			name:        "creating a cluster",
+			clusterSpec: "base",
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-24ba90ce"), mockGetSubnetIdsFromNetIds("vpc-24ba90ce", []string{
+					"subnet-c1a282b0", "subnet-1555ea91", "subnet-174f5ec4",
+				}),
+				mockReadTagByNameFound("test-cluster-api-subnet-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-subnet-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-subnet-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockReadTagByNameFound("test-cluster-api-internetservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockInternetServiceFound("igw-c3c49899"),
+
+				mockValidatePublicIpIdsOk([]string{"eipalloc-da72a57c"}),
+				mockReadTagByNameFound("test-cluster-api-publicip-nat-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockSecurityGroupsForNetFound("vpc-24ba90ce", []string{"sg-750ae810", "sg-a093d014", "sg-7eb16ccb", "sg-0cd1f87e"}),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockRouteTablesForNetFound("vpc-24ba90ce", []string{"rtb-194c971e", "rtb-0a4640a6", "rtb-eeacfe8a"}),
+				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockReadTagByNameFound("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockNatServiceFound("nat-223a4dd4"),
+
+				mockRouteTablesForNetFound("vpc-24ba90ce", []string{"rtb-194c971e", "rtb-0a4640a6", "rtb-eeacfe8a"}),
+				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockLoadBalancerFound("test-cluster-api-k8s", true),
+				mockLoadBalancerTagFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			runClusterTest(t, tc)
+		})
+	}
+}
+
 func TestReconcileOSCCluster_Update(t *testing.T) {
 	tcs := []testcase{
+		{
+			// TODO: assert that status is correctly setup
+			name:           "when no resource id are stored, resources are found by tag",
+			clusterSpec:    "ready",
+			clusterPatches: []patchOSCClusterFunc{patchClusterNoResourceId()},
+			mockFuncs: []mockFunc{
+				mockReadTagByNameFound("test-cluster-api-net-9e1db9c4-bf0a-4583-8999-203ec002c520", "vpc-24ba90ce"),
+				mockGetSubnetIdsFromNetIds("vpc-24ba90ce", []string{
+					"subnet-c1a282b0", "subnet-1555ea91", "subnet-174f5ec4",
+				}),
+				mockReadTagByNameFound("test-cluster-api-subnet-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-subnet-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-subnet-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockReadTagByNameFound("test-cluster-api-internetservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockInternetServiceFound("igw-c3c49899"),
+
+				mockValidatePublicIpIdsOk([]string{"eipalloc-da72a57c"}),
+				mockReadTagByNameFound("test-cluster-api-publicip-nat-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockSecurityGroupsForNetFound("vpc-24ba90ce", []string{"sg-750ae810", "sg-a093d014", "sg-7eb16ccb", "sg-0cd1f87e"}),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockRouteTablesForNetFound("vpc-24ba90ce", []string{"rtb-194c971e", "rtb-0a4640a6", "rtb-eeacfe8a"}),
+				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockReadTagByNameFound("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockNatServiceFound("nat-223a4dd4"),
+
+				mockRouteTablesForNetFound("vpc-24ba90ce", []string{"rtb-194c971e", "rtb-0a4640a6", "rtb-eeacfe8a"}),
+				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+
+				mockLoadBalancerFound("test-cluster-api-k8s", true),
+				mockLoadBalancerTagFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+		},
 		{
 			// TODO: assert that status is correctly setup
 			name:           "cluster has been moved by clusterctl move, status is updated",
 			clusterSpec:    "ready",
 			clusterPatches: []patchOSCClusterFunc{patchMoveCluster()},
 			mockFuncs: []mockFunc{
-				mockReadTagByNameFound("test-cluster-api-net-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockNetFound("vpc-24ba90ce"), mockGetSubnetIdsFromNetIds("vpc-24ba90ce", []string{
+				mockNetFound("vpc-24ba90ce"),
+				mockGetSubnetIdsFromNetIds("vpc-24ba90ce", []string{
 					"subnet-c1a282b0", "subnet-1555ea91", "subnet-174f5ec4",
 				}),
-				mockReadTagByNameFound("test-cluster-api-subnet-kw-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-subnet-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-subnet-public-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-subnet-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-subnet-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-subnet-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 
-				mockReadTagByNameFound("test-cluster-api-internetservice-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-internetservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 				mockInternetServiceFound("igw-c3c49899"),
 
 				mockValidatePublicIpIdsOk([]string{"eipalloc-da72a57c"}),
-				mockReadTagByNameFound("test-cluster-api-publicip-nat-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-publicip-nat-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 
 				mockSecurityGroupsForNetFound("vpc-24ba90ce", []string{"sg-750ae810", "sg-a093d014", "sg-7eb16ccb", "sg-0cd1f87e"}),
-				mockReadTagByNameFound("test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 
 				mockRouteTablesForNetFound("vpc-24ba90ce", []string{"rtb-194c971e", "rtb-0a4640a6", "rtb-eeacfe8a"}),
-				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 
-				mockReadTagByNameFound("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 				mockNatServiceFound("nat-223a4dd4"),
 
 				mockRouteTablesForNetFound("vpc-24ba90ce", []string{"rtb-194c971e", "rtb-0a4640a6", "rtb-eeacfe8a"}),
-				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
+				mockReadTagByNameFound("test-cluster-api-routetable-public-9e1db9c4-bf0a-4583-8999-203ec002c520", "foo"),
 
 				mockLoadBalancerFound("test-cluster-api-k8s", true),
 				mockLoadBalancerTagFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),

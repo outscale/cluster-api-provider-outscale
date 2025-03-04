@@ -24,7 +24,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -65,37 +64,38 @@ func reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope, netSvc 
 	netName := netSpec.Name + "-" + clusterScope.GetUID()
 	clusterName := netSpec.ClusterName + "-" + clusterScope.GetUID()
 
-	var net *osc.Net
-	var err error
-	if len(netRef.ResourceMap) == 0 {
+	if netRef.ResourceMap == nil {
 		netRef.ResourceMap = make(map[string]string)
-	}
-	tagKey := "Name"
-	tagValue := netName
-	tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 	}
 	if netSpec.ResourceId != "" {
 		netRef.ResourceMap[netName] = netSpec.ResourceId
 		netId := netSpec.ResourceId
-		log.V(4).Info("Checking net", "netName", netName)
-		net, err = netSvc.GetNet(ctx, netId)
+		net, err := netSvc.GetNet(ctx, netId)
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("cannot get net: %w", err)
+		}
+		if net != nil {
+			return reconcile.Result{}, nil
+		}
+	} else {
+		tag, err := tagSvc.ReadTag(ctx, "Name", netName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
+		}
+		if tag.GetResourceId() != "" {
+			netRef.ResourceMap[netName] = tag.GetResourceId()
+			netSpec.ResourceId = tag.GetResourceId()
+			return reconcile.Result{}, nil
 		}
 	}
-	if (net == nil && tag == nil) || (netSpec.ResourceId == "" && tag == nil) {
-		log.V(2).Info("Creating net", "netName", netName)
-		net, err := netSvc.CreateNet(ctx, netSpec, clusterName, netName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
-		}
-		netRef.ResourceMap[netName] = net.GetNetId()
-		netSpec.ResourceId = *net.NetId
-		netRef.ResourceMap[netName] = net.GetNetId()
-		netSpec.ResourceId = net.GetNetId()
+	log.V(3).Info("Creating net", "netName", netName)
+	net, err := netSvc.CreateNet(ctx, netSpec, clusterName, netName)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
 	}
+	log.V(3).Info("Created net", "netId", net.GetNetId())
+	netRef.ResourceMap[netName] = net.GetNetId()
+	netSpec.ResourceId = net.GetNetId()
 	return reconcile.Result{}, nil
 }
 

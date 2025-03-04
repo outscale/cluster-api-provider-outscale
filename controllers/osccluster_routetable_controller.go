@@ -163,17 +163,17 @@ func reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, route
 	}
 	destinationIpRange := routeSpec.Destination
 	associateRouteTableId := routeTablesRef.ResourceMap[routeTableName]
-	log.V(4).Info("Checking route", "routename", routeName)
 	routeTableFromRoute, err := routeTableSvc.GetRouteTableFromRoute(ctx, associateRouteTableId, resourceId, resourceType)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get route table: %w", err)
 	}
 	if routeTableFromRoute == nil {
-		log.V(2).Info("Creating route", "routeName", routeName)
+		log.V(3).Info("Creating route", "routeName", routeName)
 		routeTableFromRoute, err = routeTableSvc.CreateRoute(ctx, destinationIpRange, routeTablesRef.ResourceMap[routeTableName], resourceId, resourceType)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create route: %w", err)
 		}
+		log.V(2).Info("Created route", "routeId", routeTableFromRoute.GetRouteTableId())
 	}
 
 	routeRef.ResourceMap[routeName] = routeTableFromRoute.GetRouteTableId()
