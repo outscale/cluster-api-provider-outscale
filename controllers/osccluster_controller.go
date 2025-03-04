@@ -320,6 +320,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileLoadBalancer, err
 	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		log.V(4).Info("Reconciling bastion Vm")
@@ -330,8 +331,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 			conditions.MarkFalse(osccluster, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 			return reconcileBastion, err
 		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.VmReadyCondition)
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.VmReadyCondition)
 
 	log.V(2).Info("Set OscCluster status to ready")
 	clusterScope.SetReady()
