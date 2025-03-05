@@ -100,36 +100,36 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	log.V(4).Info("Number of subnet", "subnet_length", len(subnetsSpec))
+	if subnetRef.ResourceMap == nil {
+		subnetRef.ResourceMap = make(map[string]string)
+	}
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
-		tagKey := "Name"
-		tagValue := subnetName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+		subnetId := subnetSpec.ResourceId
+
+		if subnetId != "" && slices.Contains(subnetIds, subnetId) {
+			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
+			continue
+		}
+
+		tag, err := tagSvc.ReadTag(ctx, "Name", subnetName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
-		subnetId := subnetSpec.ResourceId
-		log.V(4).Info("Get subnetId", "subnetId", subnetId)
-		if len(subnetRef.ResourceMap) == 0 {
-			subnetRef.ResourceMap = make(map[string]string)
+		if tag.GetResourceId() != "" {
+			subnetSpec.ResourceId = tag.GetResourceId()
+			subnetRef.ResourceMap[subnetName] = tag.GetResourceId()
+			continue
 		}
-		if subnetSpec.ResourceId != "" {
-			subnetRef.ResourceMap[subnetName] = subnetSpec.ResourceId
+
+		log.V(3).Info("Creating subnet", "subnetName", subnetName)
+		subnet, err := subnetSvc.CreateSubnet(ctx, subnetSpec, netId, clusterName, subnetName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
 		}
-		_, resourceMapExist := subnetRef.ResourceMap[subnetName]
-		if resourceMapExist {
-			subnetSpec.ResourceId = subnetRef.ResourceMap[subnetName]
-		}
-		if !slices.Contains(subnetIds, subnetId) && tag == nil {
-			log.V(2).Info("Creating subnet", "subnetName", subnetName)
-			subnet, err := subnetSvc.CreateSubnet(ctx, subnetSpec, netId, clusterName, subnetName)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
-			}
-			subnetRef.ResourceMap[subnetName] = subnet.GetSubnetId()
-			subnetSpec.ResourceId = subnet.GetSubnetId()
-		}
+		log.V(2).Info("Created subnet", "subnetId", subnet.GetSubnetId())
+		subnetRef.ResourceMap[subnetName] = subnet.GetSubnetId()
+		subnetSpec.ResourceId = subnet.GetSubnetId()
 	}
 	return reconcile.Result{}, nil
 }
