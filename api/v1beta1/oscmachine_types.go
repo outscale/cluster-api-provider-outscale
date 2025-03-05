@@ -40,9 +40,11 @@ type OscMachineStatus struct {
 	Conditions     clusterv1.Conditions       `json:"conditions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=oscmachines,scope=Namespaced,categories=cluster-api
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=oscmachines,scope=Namespaced,categories=cluster-api
+// +kubebuilder:printcolumn:name="VM",type=string,JSONPath=".spec.node.vm.resourceId"
+// +kubebuilder:printcolumn:name="State",type=string,JSONPath=".status.vmState"
 
 // OscMachine is the Schema for the oscmachines API
 type OscMachine struct {
