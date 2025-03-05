@@ -108,7 +108,7 @@ spec:
     solvers:
     - http01:
         ingress:
-          ingressClassName: internal-nginx
+          ingressClassName: nginx
 EOF
 ret=$?
 if [ $ret -ne 0 ]; then
@@ -119,7 +119,7 @@ fi
 helm repo add harbor https://helm.goharbor.io
 harbor_host=`kubectl get ingress harbor-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
 if [ -z "$harbor_host" ]; then
-    helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" --set "expose.ingress.className=internal-nginx" \
+    helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" --set "expose.ingress.className=nginx" \
         --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
         --set "expose.tls.enabled=false" \
         --set "persistence.enabled=false"
@@ -131,7 +131,7 @@ if [ -z "$harbor_host" ]; then
     harbor_host=`kubectl get ingress harbor-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
 fi
 
-helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" --set "expose.ingress.className=internal-nginx" \
+helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" --set "expose.ingress.className=nginx" \
     --set "expose.ingress.annotations.service\.beta\.kubernetes\.io/osc-load-balancer-source-ranges=$PUBLIC_IP/32" \
     --set "expose.ingress.annotations.cert-manager\.io/issuer=letsencrypt-issuer" \
     --set "expose.ingress.annotations.ingress\.kubernetes\.io/ssl-redirect=\"false\"" \
