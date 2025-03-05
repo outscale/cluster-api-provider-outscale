@@ -228,14 +228,12 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	imageSvc := r.Cloud.Image(ctx, *clusterScope)
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
 	if err != nil {
-		log.V(2).Error(err, "failed to reconcile Image")
 		return reconcileImage, err
 	}
 
 	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
 	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
 	if err != nil {
-		log.V(2).Error(err, "failed to reconcile keypair")
 		return reconcileKeypair, err
 	}
 
@@ -247,11 +245,11 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 
 	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
-		log.V(2).Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileVm, err
 	}
 
+	// TODO: clean this. if VmState is not "running", reconcileVm returns an error.
 	vmState := machineScope.GetVmState()
 	switch *vmState {
 	case infrastructurev1beta1.VmStatePending:
@@ -274,7 +272,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		machineScope.SetNotReady()
 		log.V(4).Info("Vm state is undefined", "state", vmState)
 		machineScope.SetFailureReason(capierrors.UpdateMachineError)
-		machineScope.SetFailureMessage(fmt.Errorf("instance state %+v  is undefined", vmState))
+		machineScope.SetFailureMessage(fmt.Errorf("instance state %+v is undefined", vmState))
 		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
 	}
 	return reconcile.Result{}, nil
