@@ -1133,7 +1133,20 @@ spec:
     singular: oscmachine
   scope: Namespaced
   versions:
-  - name: v1beta1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.node.vm.resourceId
+      name: VM
+      type: string
+    - jsonPath: .spec.node.vm.vmType
+      name: VM Type
+      type: string
+    - jsonPath: .spec.node.vm.subregionName
+      name: SubRegion
+      type: string
+    - jsonPath: .status.vmState
+      name: State
+      type: string
+    name: v1beta1
     schema:
       openAPIV3Schema:
         description: OscMachine is the Schema for the oscmachines API
