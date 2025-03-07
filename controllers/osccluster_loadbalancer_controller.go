@@ -185,23 +185,23 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	}
 
 	if loadbalancer == nil {
-		log.V(2).Info("Creating loadBalancer", "loadBalancerName", loadBalancerName)
+		log.V(3).Info("Creating loadBalancer", "loadBalancerName", loadBalancerName)
 		_, err := loadBalancerSvc.CreateLoadBalancer(ctx, loadBalancerSpec, subnetId, securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create loadBalancer: %w", err)
 		}
-		log.V(2).Info("Deleting default outbound sg rule for loadBalancer", "loadBalancerName", loadBalancerName)
+		log.V(2).Info("Created loadBalancer", "loadBalancerName", loadBalancerName)
+		log.V(4).Info("Deleting default outbound sg rule for loadBalancer", "loadBalancerName", loadBalancerName)
 		err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroupId, "Outbound", "-1", "0.0.0.0/0", "", 0, 0)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete default sg rules for loadBalancer: %w", err)
 		}
-		log.V(2).Info("Configuring loadBalancer healthcheck", "loadBalancerName", loadBalancerName)
+		log.V(3).Info("Configuring loadBalancer healthcheck", "loadBalancerName", loadBalancerName)
 		loadbalancer, err = loadBalancerSvc.ConfigureHealthCheck(ctx, loadBalancerSpec)
-		log.V(4).Info("Get loadbalancer", "loadbalancer", loadbalancer)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot configure healthcheck: %w", err)
 		}
-		log.V(2).Info("Creating loadBalancer tag name", "loadBalancerName", loadBalancerName)
+		log.V(3).Info("Creating loadBalancer tag name", "loadBalancerName", loadBalancerName)
 		err = loadBalancerSvc.CreateLoadBalancerTag(ctx, loadBalancerSpec, nameTag)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot tag loadBalancer: %w", err)
