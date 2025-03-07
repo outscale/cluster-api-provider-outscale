@@ -136,7 +136,7 @@ jobs:
       run: |
         ns=`kubectl get ns|grep quick-start|awk '{print $1}'`
         if [ -n "$ns" ]; then
-          kubectl delete ns $ns
+          kubectl delete ns $ns --timeout 5m
         fi
         kubectl delete ns capi-kubeadm-bootstrap-system capi-kubeadm-control-plane-system capi-system
         kubectl delete ns cluster-api-provider-outscale-system
