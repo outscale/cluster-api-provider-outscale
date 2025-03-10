@@ -1,9 +1,9 @@
 
-# Prerequisite 
+# Prerequisites
 - Install [kubectl][kubectl]
 
-- Outscale account with ak/sk [Outscale Access Key and Secret Key][Outscale Access Key and Secret Key]
-- A Kubernetes cluster:
+- Outscale account with [an Access Key and a Secret Key][Outscale Access Key and Secret Key]
+- A management Kubernetes cluster:
     - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
     - You can use a container with [kind][kind]. 
     - You can use a rke cluster with [osc-rke][osc-rke].
@@ -18,7 +18,7 @@ Please clone the project:
 git clone https://github.com/outscale-dev/cluster-api-provider-outscale
 ```
 
-If you use your own cluster for production (with backup, disaster recovery, ...) and expose it:
+If you use your own management cluster:
 ```
  export KUBECONFIG=<...>
 ```
@@ -32,50 +32,65 @@ Check cluster is ready:
 ```bash
    kubectl cluster-info
 ```
-# Install clusterctl
-:warning: In order to install tools (clusterctl, ...) with makefile, you need to have installed golang to download binaries [golang][golang]
-You can install clusterctl for linux with:
+
+## Install clusterctl
+
+Install clusterctl using the Makefile:
 ```bash
-  make install-clusterctl
+make install-clusterctl
 ```
-Or you can install clusterctl with the clusterctl section ([cluster-api][cluster-api]).
+
+> In order to install tools (clusterctl, ...) with the Makefile, you need to have [golang][golang] installed.
+
+Or using [Cluster Api Quickstart][cluster-api].
+
 And check version which is already installed:
 ```bash
 ./bin/clusterctl version
-clusterctl version: &version.Info{Major:"1", Minor:"2", GitVersion:"v1.2.4", GitCommit:"8b5cd363e11b023c2b67a1937a2af680ead9e35c", GitTreeState:"clean", BuildDate:"2022-10-17T13:37:39Z", GoVersion:"go1.18.7", Compiler:"gc", Platform:"linux/amd64"}
+
+clusterctl version: &version.Info{Major:"1", Minor:"8", GitVersion:"v1.8.1", GitCommit:"02769254e95db17afbd6ec4036aacbd294d9424c", GitTreeState:"clean", BuildDate:"2024-08-14T05:53:36Z", GoVersion:"go1.22.5", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-## Initialize clusterctl
-You can enable [clusterresourceset][clusterresourceset] with 
+## Setup clusterctl
+
+You can enable [ClusterResourceSet][ClusterResourceSet] with 
 ```bash
 export EXP_CLUSTER_RESOURCE_SET=true
 ```
 
-Please create  $HOME/.cluster-api/clusterctl.yaml: 
+You can enable [ClusterClass][ClusterClass] with
+```bash
+export CLUSTER_TOPOLOGY=true
 ```
+
+Please create `$HOME/.cluster-api/clusterctl.yaml`:
+```yaml
 providers:
 - name: outscale
   type: InfrastructureProvider
   url: https://github.com/outscale/cluster-api-provider-outscale/releases/latest/infrastructure-components.yaml
 ```
 
-You can initialize clusterctl with credential with:
-```
+Install credentials for your workload cluster Outscale account:
+```bash
 export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
 export OSC_REGION=<your-region>
+
 make credential
+```
+Install Cluster Api controllers:
+```bash
 ./bin/clusterctl init --infrastructure outscale
 ```
 
-# Create our cluster
+# Create a workload cluster
 
-## Launch your stack with clusterctl
+## Generate cluster configuration
 
-You can create a keypair before if you want.
-You can access nodes shell (with [openlens][openlens], [lens][lens], ...)
-You have to set:
-```
+Create a keypair.
+
+```bash
 export OSC_IOPS=<osc-iops>
 export OSC_VOLUME_SIZE=<osc-volume-size>
 export OSC_VOLUME_TYPE=<osc-volume-type>
@@ -83,39 +98,38 @@ export OSC_KEYPAIR_NAME=<osc-keypairname>
 export OSC_SUBREGION_NAME=<osc-subregion>
 export OSC_VM_TYPE=<osc-vm-type>
 export OSC_IMAGE_NAME=<osc-image-name>
-```
-Then you will generate:
-```
+
 ./bin/clusterctl generate cluster <cluster-name>   --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
-**WARNING**: Kubernetes version must match the kubernetes version which is included in image name in [omi][omi]
 
-You can then change to get what you want which is based on doc.
+> **WARNING**: Kubernetes version must match the kubernetes version which is included in image name in [omi][omi]
+
+You can adapt the generated yaml file to your needs.
 
 Then apply:
 ```
 kubectl apply -f getstarted.yaml
 ```
 
-## Add security group rule after
+## CNI & CCM
 
-You can add security group rule if you set extraSecurityGroupRule = true after you have already create a cluster and you want to set new security group rule.
+In order for nodes to be ready, you must have a CNI and CCM.
 
-```yaml
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscCluster
-metadata:
-  name: cluster-api
-  namespace: default
-spec:
-  network:
-    extraSecurityGroupRule: false
-```
+You can use [ClusterResourceSet][ClusterResourceSet] with label **clustername** + **crs-cni** and label **clustername** + **crs-ccm** where clustername is the name of your cluster.
 
+To install CNI you can use a [helm][helm] chart or a ClusterResourceSet.
 
-### Get Kubeconfig
+* [calico][calico]
+* [cillium][cillium]
+* [canal][canal]
+
+To install CCM, you can use a [helm][helm] chart or a ClusterResourceSet.
+
+* [cloud-provider-outscale][cloud-provider-outscale]
+
+## Cluster Api status
 You can then get the status:
-```
+```bash
 root@cidev-admin v1beta1]# kubectl get cluster-api  -A
 NAMESPACE   NAME                                                                       CLUSTER       AGE
 default     kubeadmconfig.bootstrap.cluster.x-k8s.io/cluster-api-control-plane-lzj65   cluster-api   95m
@@ -150,43 +164,40 @@ default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-contr
 default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-md-0            95m
 
 ```
-## Get kubeconfig
+## Connect to a workload cluster
 
-In order to get kubeconfig please use:
-[kubeconfig][kubeconfig] 
+You can get a kubeconfig to connect to your workload cluster with
+[clusterctl get kubeconfig][kubeconfig].
 
-## Node Ready
+## Add a security group rule to an existing workload cluster
 
-In order to have node ready, you must have a CNI and CCM.
+You can add security group rule if you set extraSecurityGroupRule = true after you have already create a cluster and you want to set new security group rule.
 
-You can use [clusterresourceset][clusterresourceset] with label **clustername** + **crs-cni** and label **clustername** + **crs-ccm** where clustername is the name of your cluster.
-
-To install cni you can use helm charts or clusteresourceset.
-
-To install helm,please follow [helm][helm]
-
-A list of cni:
-* To install [calico][calico]
-* To install [cillium][cillium]
-* To install [canal][canal]
-
-To install ccm, you can use helm charts or clusteresourceset.
-
-* [cloud-provider-outscale][cloud-provider-outscale]
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  name: cluster-api
+  namespace: default
+spec:
+  network:
+    extraSecurityGroupRule: false
+```
 
 # Delete Cluster api
 
 ## Delete cluster
 
 To delete our cluster:
-```
+```bash
 kubectl delete -f getstarted.yaml
 ```
 
 To delete cluster-api:
-```
+```bash
 clusterctl delete --all
 ```
+
 <!-- References -->
 [canal]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/flannel/flannel
 [cillium]: https://docs.cilium.io/en/stable/installation/k8s-toc/
@@ -195,7 +206,8 @@ clusterctl delete --all
 [cloud-provider-outscale]: https://github.com/outscale-dev/cloud-provider-osc/blob/OSC-MIGRATION/deploy/README.md
 [kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [helm]: https://helm.sh/docs/intro/install/
-[clusterresourceset]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-resource-set.html
+[ClusterResourceSet]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-resource-set.html
+[ClusterClass]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/
 [kind]: https://github.com/kubernetes-sigs/kind#installation-and-usage
 [kubeadm]: https://kubernetes.io/fr/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
