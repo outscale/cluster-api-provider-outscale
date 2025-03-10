@@ -416,6 +416,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
 		return reconcileLoadBalancer, err
 	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
+
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		clusterScope.V(4).Info("Reconciling bastion Vm")
 		vmSvc := r.getVmSvc(ctx, *clusterScope)
