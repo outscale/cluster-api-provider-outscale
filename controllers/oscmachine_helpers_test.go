@@ -30,6 +30,7 @@ func patchVmExists(vmId string, state v1beta1.VmState, ready bool) patchOSCMachi
 
 func patchMoveMachine() patchOSCMachineFunc {
 	return func(m *v1beta1.OscMachine) {
+		m.UID = "foo"
 		m.Status = v1beta1.OscMachineStatus{}
 	}
 }
@@ -90,7 +91,7 @@ func mockCreateVmWithVolumes(vmId string, volumes []*infrastructurev1beta1.OscVo
 	}
 }
 
-func mockGetVm(vmId string, deviceAndVolume ...string) mockFunc {
+func mockGetVm(vmId, state string, deviceAndVolume ...string) mockFunc {
 	volumes := []osc.BlockDeviceMappingCreated{{
 		DeviceName: ptr.To("/dev/sda1"),
 		Bsu: &osc.BsuCreated{
@@ -114,6 +115,7 @@ func mockGetVm(vmId string, deviceAndVolume ...string) mockFunc {
 				PrivateDnsName:      ptr.To(defaultPrivateDnsName),
 				PrivateIp:           ptr.To(defaultPrivateIp),
 				BlockDeviceMappings: &volumes,
+				State:               &state,
 			}, nil)
 	}
 }
