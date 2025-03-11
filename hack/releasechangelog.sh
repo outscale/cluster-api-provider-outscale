@@ -42,7 +42,7 @@ while getopts ":g:o:p:t:r:i:" option; do
 	esac
 done
 
-echo "# Release notes for Cluster API Provider Outscale (CAPO) $RELEASE_TAG"
+echo "# Release notes for Cluster API Provider Outscale (CAPOSC) $RELEASE_TAG"
 echo "# Changelog since $PREVIOUS_RELEASE_TAG"
 
 if [ "$PREVIOUS_RELEASE_TAG" == "None" ]; then
