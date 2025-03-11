@@ -1,27 +1,23 @@
 
-# Prerequisite 
-- Install [kubectl][kubectl]
-- Install [kustomize][kustomize]  `v3.1.0+`
-- Outscale account with ak/sk [Outscale Access Key and Secret Key][Outscale Access Key and Secret Key]
-- A Kubernetes cluster:
-    - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
-    - You can use a container with [kind][kind]. 
-    - You can use a rke cluster with [osc-rke][osc-rke].
-- Container registry to store container image
-- Registry secret [registry-secret][registry-secret]
-
-
 # Release
+
+## Prerequisites
+
+You should have run the full e2e suite.
+
+```bash
+CCM_OSC_REGION=eu-west-2 KUBECONFIG=~/.kube/config IMG={repository host}/outscale/cluster-api-outscale-controllers IMG_UPGRADE_FROM=ami-29e3ca13 IMG_UPGRADE_TO=ami-92d61a16 E2E_FOCUS=e2e make e2etest
+```
+
 ## Versioning
 Please use this semantic version:
-- Pre-release: `v0.1.1-alpha.1`
+- Pre-release: `v0.1.1-alpha1`
+- Major release: `v1.0.0`
 - Minor release: `v0.1.0`
 - Patch release: `v0.1.1`
-- Major release: `v1.0.0`
 
 ## Update metadata.yaml
-You should have update metadata.yaml to included new release version for cluster-api contract-version. You don't have to do it for patch/minor version.
-Add in metadata.yaml:
+Major/minor versions should register their contract version in metadata.yaml:
 ```yaml
 apiVersion: clusterctl.cluster.x-k8s.io/v1alpha3
 releaseSeries:
@@ -30,58 +26,41 @@ releaseSeries:
     minor: 5
     contract: v1beta1
 ```
-## Update config test
-Please also update `type: InfrastructureProvider` spec of config.
 
-## Create a tag
-Create a new branch for release.
-:warning: Never use the main
-And create tag
+## Create a release branch
+Create a new branch for each major/minor release.
 
-For minor/major release:
 ```bash
 export RELEASE_VERSION=1.2.3
 git checkout release-${RELEASE_VERSION}
 git fetch upstream
-git rebase upstream/release--${RELEASE_VERSION}
+git rebase upstream/release-${RELEASE_VERSION}
 ```
 
-Push the release branch to trigger conformance e2e tests:
+For patch releases, use the minor release branch.
+
+Push the release branch:
 ```bash
-git push upstream release--${RELEASE_VERSION}
+git push upstream release-${RELEASE_VERSION}
 ```
 
-Check CI that conformance tests are OK.
-
-Create tag with git:
+## Create a release tag
+Create & push tag:
 ```bash
 export RELEASE_TAG=v1.2.3
-git tag -s ${RELEASE_TAG} -m "${RELEASE_TAG}"
+git tag -s ${RELEASE_TAG} -m "🔖 ${RELEASE_TAG}"
 git push upstream ${RELEASE_TAG}
 ```
 
-This will trigger this github action [release][release]
-This github action will generate image, and will create the new release.
+This will trigger the [release github action][release].
+It will publish the docker image, and will create the new release.
 
 ## Test locally
-If you want to test locally what is done by github action you can test you get changelog:
+If you want to test locally what is done by github action:
 ```bash
 make release
 make release-changelog
 ```
 
-
-
-
 <!-- References -->
-[kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[kustomize]: https://github.com/kubernetes-sigs/kustomize/releases
-[kind]: https://github.com/kubernetes-sigs/kind#installation-and-usage
-[kubeadm]: https://kubernetes.io/fr/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
-[Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
-[osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
-[Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
-[cluster-api]: https://cluster-api.sigs.k8s.io/developer/providers/implementers-guide/building_running_and_testing.html
 [release]: https://github.com/outscale-dev/cluster-api-provider-outscale/blob/main/.github/workflows/release.yml 
-[registry-secret]: https://kubernetes.io/fr/docs/tasks/configure-pod-container/pull-image-private-registry/
-
