@@ -18,8 +18,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security/mock_security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service/mock_service"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/storage"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/storage/mock_storage"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -52,7 +50,6 @@ type MockCloudServices struct {
 	PublicIpMock        *mock_security.MockOscPublicIpInterface
 	LoadBalancerMock    *mock_service.MockOscLoadBalancerInterface
 
-	VolumeMock  *mock_storage.MockOscVolumeInterface
 	VMMock      *mock_compute.MockOscVmInterface
 	ImageMock   *mock_compute.MockOscImageInterface
 	KeyPairMock *mock_security.MockOscKeyPairInterface
@@ -72,7 +69,6 @@ func newMockCloudServices(mockCtrl *gomock.Controller) *MockCloudServices {
 		PublicIpMock:        mock_security.NewMockOscPublicIpInterface(mockCtrl),
 		LoadBalancerMock:    mock_service.NewMockOscLoadBalancerInterface(mockCtrl),
 
-		VolumeMock:  mock_storage.NewMockOscVolumeInterface(mockCtrl),
 		VMMock:      mock_compute.NewMockOscVmInterface(mockCtrl),
 		ImageMock:   mock_compute.NewMockOscImageInterface(mockCtrl),
 		KeyPairMock: mock_security.NewMockOscKeyPairInterface(mockCtrl),
@@ -115,10 +111,6 @@ func (s *MockCloudServices) PublicIp(ctx context.Context, scope scope.ClusterSco
 
 func (s *MockCloudServices) LoadBalancer(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
 	return s.LoadBalancerMock
-}
-
-func (s *MockCloudServices) Volume(ctx context.Context, scope scope.ClusterScope) storage.OscVolumeInterface {
-	return s.VolumeMock
 }
 
 func (s *MockCloudServices) VM(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {

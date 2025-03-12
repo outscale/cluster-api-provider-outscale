@@ -9,7 +9,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/storage"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 )
 
@@ -26,7 +25,6 @@ type Servicer interface {
 	PublicIp(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface
 	LoadBalancer(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface
 
-	Volume(ctx context.Context, scope scope.ClusterScope) storage.OscVolumeInterface
 	VM(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface
 	Image(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface
 	KeyPair(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface
@@ -79,11 +77,6 @@ func (Services) SecurityGroup(ctx context.Context, scope scope.ClusterScope) sec
 // getNatServiceSvc retrieve natServiceSvc
 func (Services) NatService(ctx context.Context, scope scope.ClusterScope) net.OscNatServiceInterface {
 	return net.NewService(ctx, &scope)
-}
-
-// getVolumeSvc retrieve volumeSvc
-func (Services) Volume(ctx context.Context, scope scope.ClusterScope) storage.OscVolumeInterface {
-	return storage.NewService(ctx, &scope)
 }
 
 // getVmSvc retrieve vmSvc
