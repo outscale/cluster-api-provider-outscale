@@ -120,15 +120,6 @@ func mockGetVm(vmId, state string, deviceAndVolume ...string) mockFunc {
 	}
 }
 
-func mockGetVmState(vmId, state string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.VMMock.
-			EXPECT().
-			GetVmState(gomock.Any(), gomock.Eq(vmId)).
-			Return(state, nil)
-	}
-}
-
 func mockLinkLoadBalancer(vmId, lb string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
