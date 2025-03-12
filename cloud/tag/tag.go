@@ -24,7 +24,6 @@ import (
 	"regexp"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -41,21 +40,14 @@ func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourc
 		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
 		utils.LogAPICall(ctx, "CreateTags", createTagRequest, httpRes, err)
 		if err != nil {
-			if httpRes != nil {
-				fmt.Printf("Error with http result %s", httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", createTagRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
+			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, fmt.Errorf("failed to add Tag Name: %w", err)
+			return false, utils.ExtractOAPIError(err, httpRes)
 		}
 		return true, err
 	}
-	backoff := reconciler.EnvBackoff()
+	backoff := utils.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, addTagNameCallBack)
 	if waitErr != nil {
 		return waitErr, httpRes

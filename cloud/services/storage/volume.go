@@ -19,15 +19,11 @@ package storage
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_storage/volume_mock.go -package mock_storage -source ./volume.go
@@ -55,32 +51,10 @@ func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	var volumeResponse osc.CreateVolumeResponse
-	createVolumeCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		volumeResponse, httpRes, err = oscApiClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
-		utils.LogAPICall(ctx, "CreateVolume", volumeRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-
-			requestStr := fmt.Sprintf("%v", volumeRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createVolumeCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	volumeResponse, httpRes, err := oscApiClient.VolumeApi.CreateVolume(oscAuthClient).CreateVolumeRequest(volumeRequest).Execute()
+	utils.LogAPICall(ctx, "CreateVolume", volumeRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	volume, ok := volumeResponse.GetVolumeOk()
@@ -96,7 +70,7 @@ func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{volumeTag},
 	}
-	err, httpRes := tag.AddTag(ctx, volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, utils.ExtractOAPIError(err, httpRes)
@@ -119,30 +93,10 @@ func (s *Service) GetVolume(ctx context.Context, volumeId string) (*osc.Volume, 
 	oscAuthClient := s.scope.GetAuth()
 
 	var readVolumesResponse osc.ReadVolumesResponse
-	readVolumesCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readVolumesResponse, httpRes, err = oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
-		utils.LogAPICall(ctx, "ReadVolumes", readVolumesRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readVolumesRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readVolumesCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readVolumesResponse, httpRes, err := oscApiClient.VolumeApi.ReadVolumes(oscAuthClient).ReadVolumesRequest(readVolumesRequest).Execute()
+	utils.LogAPICall(ctx, "ReadVolumes", readVolumesRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	volumes, ok := readVolumesResponse.GetVolumesOk()
@@ -166,32 +120,9 @@ func (s *Service) LinkVolume(ctx context.Context, volumeId string, vmId string, 
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	linkVolumeCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
-		utils.LogAPICall(ctx, "LinkVolume", linkVolumeRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", linkVolumeRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, linkVolumeCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.VolumeApi.LinkVolume(oscAuthClient).LinkVolumeRequest(linkVolumeRequest).Execute()
+	utils.LogAPICall(ctx, "LinkVolume", linkVolumeRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // UnlinkVolume unlink machine volume
@@ -202,32 +133,9 @@ func (s *Service) UnlinkVolume(ctx context.Context, volumeId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 
-	unlinkVolumeCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
-		utils.LogAPICall(ctx, "UnlinkVolume", unlinkVolumeRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", unlinkVolumeRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, err
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, unlinkVolumeCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.VolumeApi.UnlinkVolume(oscAuthClient).UnlinkVolumeRequest(unlinkVolumeRequest).Execute()
+	utils.LogAPICall(ctx, "UnlinkVolume", unlinkVolumeRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // DeleteVolume delete machine volume
@@ -235,30 +143,7 @@ func (s *Service) DeleteVolume(ctx context.Context, volumeId string) error {
 	deleteVolumeRequest := osc.DeleteVolumeRequest{VolumeId: volumeId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	deleteVolumeCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteVolume", deleteVolumeRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteVolumeRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteVolumeCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.VolumeApi.DeleteVolume(oscAuthClient).DeleteVolumeRequest(deleteVolumeRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteVolume", deleteVolumeRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }

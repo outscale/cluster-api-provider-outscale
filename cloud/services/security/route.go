@@ -19,13 +19,11 @@ package security
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -50,31 +48,10 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var routeTableResponse osc.CreateRouteTableResponse
-	createRouteTableCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		routeTableResponse, httpRes, err = oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
-		utils.LogAPICall(ctx, "CreateRouteTable", routeTableRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", routeTableRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createRouteTableCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	routeTableResponse, httpRes, err := oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
+	utils.LogAPICall(ctx, "CreateRouteTable", routeTableRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	resourceIds := []string{*routeTableResponse.RouteTable.RouteTableId}
 	routeTableTag := osc.ResourceTag{
@@ -85,13 +62,9 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{routeTableTag},
 	}
-	err, httpRes := tag.AddTag(ctx, routeTableTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, routeTableTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterName,
@@ -103,11 +76,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 	}
 	err, httpRes = tag.AddTag(ctx, clusterRouteTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	routeTable, ok := routeTableResponse.GetRouteTableOk()
@@ -164,32 +133,9 @@ func (s *Service) DeleteRouteTable(ctx context.Context, routeTableId string) err
 	deleteRouteTableRequest := osc.DeleteRouteTableRequest{RouteTableId: routeTableId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	deleteRouteCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteRouteTable", deleteRouteTableRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteRouteTableRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteRouteCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteRouteTable", deleteRouteTableRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // DeleteRoute delete the route associated with the routetable
@@ -200,32 +146,9 @@ func (s *Service) DeleteRoute(ctx context.Context, destinationIpRange string, ro
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	deleteRouteCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteRoute", deleteRouteRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteRouteRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteRouteCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteRoute", deleteRouteRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // GetRouteTable retrieve routetable object from the route table id
@@ -318,21 +241,14 @@ func (s *Service) LinkRouteTable(ctx context.Context, routeTableId string, subne
 		linkRouteTableResponse, httpRes, err = oscApiClient.RouteTableApi.LinkRouteTable(oscAuthClient).LinkRouteTableRequest(linkRouteTableRequest).Execute()
 		utils.LogAPICall(ctx, "LinkRouteTable", linkRouteTableRequest, httpRes, err)
 		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", linkRouteTableRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
+			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, err
+			return false, utils.ExtractOAPIError(err, httpRes)
 		}
 		return true, err
 	}
-	backoff := reconciler.EnvBackoff()
+	backoff := utils.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, linkRouteTableCallBack)
 	if waitErr != nil {
 		return "", waitErr
@@ -352,32 +268,9 @@ func (s *Service) UnlinkRouteTable(ctx context.Context, linkRouteTableId string)
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 
-	unlinkRouteTableCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
-		utils.LogAPICall(ctx, "UnlinkRouteTable", unlinkRouteTableRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", unlinkRouteTableRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, err
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, unlinkRouteTableCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
+	utils.LogAPICall(ctx, "UnlinkRouteTable", unlinkRouteTableRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // GetRouteTableIdsFromNetIds return the routeTable id resource that exist from the net id

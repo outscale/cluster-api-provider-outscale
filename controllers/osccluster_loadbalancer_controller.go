@@ -190,6 +190,7 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create loadBalancer: %w", err)
 		}
+		// TODO: this has no link to SG, move to SG reconciliation
 		log.V(2).Info("Deleting default outbound sg rule for loadBalancer", "loadBalancerName", loadBalancerName)
 		err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroupId, "Outbound", "-1", "0.0.0.0/0", "", 0, 0)
 		if err != nil {

@@ -26,6 +26,9 @@ func (err OAPIError) Error() string {
 }
 
 func ExtractOAPIError(err error, httpRes *http.Response) error {
+	if err == nil {
+		return nil
+	}
 	var genericError osc.GenericOpenAPIError
 	if errors.As(err, &genericError) {
 		errorsResponse, ok := genericError.Model().(osc.ErrorResponse)
