@@ -20,7 +20,7 @@ wait() {
 set -x
 python3 -m venv .venv
 source .venv/bin/activate
-pip install https://outscale:$OKS_CLI_DOWNLOAD_PASSWORD@docs.eu-west-2.oks.outscale.com/oks_cli.zip
+pip install https://docs.eu-west-2.oks.outscale.com/oks-cli/oks_cli-latest.zip
 ret=$?
 if [ $ret -ne 0 ]; then
     exit $ret
