@@ -19,14 +19,10 @@ package security
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // ErrResourceConflict is returned by DeleteSecurityGroup when SG cannot be deleted because another resource requires it.
@@ -54,31 +50,10 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var securityGroupResponse osc.CreateSecurityGroupResponse
-	createSecurityGroupCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		securityGroupResponse, httpRes, err = oscApiClient.SecurityGroupApi.CreateSecurityGroup(oscAuthClient).CreateSecurityGroupRequest(securityGroupRequest).Execute()
-		utils.LogAPICall(ctx, "CreateSecurityGroup", securityGroupRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				fmt.Printf("Error with http result %s", httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", securityGroupRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createSecurityGroupCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	securityGroupResponse, httpRes, err := oscApiClient.SecurityGroupApi.CreateSecurityGroup(oscAuthClient).CreateSecurityGroupRequest(securityGroupRequest).Execute()
+	utils.LogAPICall(ctx, "CreateSecurityGroup", securityGroupRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	securityGroup, ok := securityGroupResponse.GetSecurityGroupOk()
 	if !ok {
@@ -93,7 +68,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err := tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		return nil, err
 	}
@@ -146,34 +121,12 @@ func (s *Service) CreateSecurityGroupRule(ctx context.Context, securityGroupId s
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 
-	var securityGroupRuleResponse osc.CreateSecurityGroupRuleResponse
-	createSecurityGroupRuleCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		securityGroupRuleResponse, httpRes, err = oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
-		utils.LogAPICall(ctx, "CreateSecurityGroupRule", createSecurityGroupRuleRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				if httpRes.StatusCode == 409 {
-					return true, nil
-				}
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", createSecurityGroupRuleRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
+	securityGroupRuleResponse, httpRes, err := oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
+	utils.LogAPICall(ctx, "CreateSecurityGroupRule", createSecurityGroupRuleRequest, httpRes, err)
+	if err != nil {
+		if httpRes == nil || httpRes.StatusCode != 409 {
+			return nil, utils.ExtractOAPIError(err, httpRes)
 		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createSecurityGroupRuleCallBack)
-	if waitErr != nil {
-		return nil, waitErr
 	}
 	securityGroupRule, ok := securityGroupRuleResponse.GetSecurityGroupOk()
 	if !ok {
@@ -214,33 +167,9 @@ func (s *Service) DeleteSecurityGroupRule(ctx context.Context, securityGroupId s
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 
-	deleteSecurityGroupCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-
-		_, httpRes, err = oscApiClient.SecurityGroupRuleApi.DeleteSecurityGroupRule(oscAuthClient).DeleteSecurityGroupRuleRequest(deleteSecurityGroupRuleRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteSecurityGroupRule", deleteSecurityGroupRuleRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteSecurityGroupRuleRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteSecurityGroupCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.SecurityGroupRuleApi.DeleteSecurityGroupRule(oscAuthClient).DeleteSecurityGroupRuleRequest(deleteSecurityGroupRuleRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteSecurityGroupRule", deleteSecurityGroupRuleRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // DeleteSecurityGroup delete the securitygroup associated with the net
@@ -248,30 +177,9 @@ func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId strin
 	deleteSecurityGroupRequest := osc.DeleteSecurityGroupRequest{SecurityGroupId: &securityGroupId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	deleteSecurityGroupCallBack := func() (bool, error) {
-		_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, fmt.Errorf("error %w httpRes %s", err, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", deleteSecurityGroupRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteSecurityGroupCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // GetSecurityGroup retrieve security group object from the security group id
@@ -283,31 +191,10 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readSecurityGroupsResponse osc.ReadSecurityGroupsResponse
-	readSecurityGroupsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
-		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readSecurityGroupRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readSecurityGroupsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
+	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -330,31 +217,10 @@ func (s *Service) GetSecurityGroupFromName(ctx context.Context, name string) (*o
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readSecurityGroupsResponse osc.ReadSecurityGroupsResponse
-	readSecurityGroupsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
-		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readSecurityGroupRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readSecurityGroupsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
+	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -415,31 +281,10 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readSecurityGroupRulesResponse osc.ReadSecurityGroupsResponse
-	readSecurityGroupRulesCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readSecurityGroupRulesResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()
-		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRuleRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readSecurityGroupRuleRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readSecurityGroupRulesCallBack)
-	if waitErr != nil {
-		return false, waitErr
+	readSecurityGroupRulesResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()
+	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRuleRequest, httpRes, err)
+	if err != nil {
+		return false, utils.ExtractOAPIError(err, httpRes)
 	}
 	securityGroups, ok := readSecurityGroupRulesResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -457,31 +302,10 @@ func (s *Service) GetSecurityGroupsFromNet(ctx context.Context, netId string) ([
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readSecurityGroupsResponse osc.ReadSecurityGroupsResponse
-	readSecurityGroupsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
-		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readSecurityGroupRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readSecurityGroupsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
+	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	return readSecurityGroupsResponse.GetSecurityGroups(), nil
 }
