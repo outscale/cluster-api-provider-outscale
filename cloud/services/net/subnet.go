@@ -20,14 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/subnet_mock.go -package mock_net -source ./subnet.go
@@ -47,31 +44,10 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var subnetResponse osc.CreateSubnetResponse
-	createSubnetCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		subnetResponse, httpRes, err = oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
-		utils.LogAPICall(ctx, "CreateSubnet", subnetRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", subnetRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createSubnetCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	subnetResponse, httpRes, err := oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
+	utils.LogAPICall(ctx, "CreateSubnet", subnetRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	resourceIds := []string{*subnetResponse.Subnet.SubnetId}
@@ -87,7 +63,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{subnetTag, clusterTag},
 	}
-	err := tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		return nil, err
 	}
@@ -105,33 +81,9 @@ func (s *Service) DeleteSubnet(ctx context.Context, subnetId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 
-	deleteSubnetCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-
-			requestStr := fmt.Sprintf("%v", deleteSubnetRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteSubnetCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // GetSubnet retrieve Subnet object from subnet Id
@@ -146,15 +98,11 @@ func (s *Service) GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, 
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
-		} else {
-			return nil, err
-		}
+		return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
 	}
 	subnets, ok := readSubnetsResponse.GetSubnetsOk()
 	if !ok {
-		return nil, errors.New("Can not get Subnets")
+		return nil, errors.New("cannot get Subnets")
 	}
 	if len(*subnets) == 0 {
 		return nil, nil
@@ -174,35 +122,14 @@ func (s *Service) GetSubnetFromNet(ctx context.Context, netId, ipRange string) (
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readSubnetsResponse osc.ReadSubnetsResponse
-	readSubnetsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readSubnetsResponse, httpRes, err = oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
-		utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readSubnetsRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readSubnetsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+	utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	subnets, ok := readSubnetsResponse.GetSubnetsOk()
 	if !ok {
-		return nil, errors.New("Can not get Subnets")
+		return nil, errors.New("cannot get Subnets")
 	}
 	if len(*subnets) == 0 {
 		return nil, nil

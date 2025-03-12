@@ -23,7 +23,6 @@ import (
 	"regexp"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -60,23 +59,16 @@ func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourc
 		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
 		utils.LogAPICall(ctx, "CreateTags", createTagRequest, httpRes, err)
 		if err != nil {
-			requestStr := fmt.Sprintf("%v", createTagRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
+			// we wish to retry on TCP errors, but not on 400 errors.
+			if utils.RetryIf(httpRes) || httpRes == nil {
 				return false, nil
 			}
 			return false, utils.ExtractOAPIError(err, httpRes)
 		}
 		return true, nil
 	}
-	backoff := reconciler.EnvBackoff()
-	err := wait.ExponentialBackoff(backoff, addTagNameCallBack)
-	if err != nil {
-		return fmt.Errorf("add tags: %w", err)
-	}
-	return nil
+	backoff := utils.EnvBackoff()
+	return wait.ExponentialBackoff(backoff, addTagNameCallBack)
 }
 
 // ReadTag read a tag of a resource

@@ -25,7 +25,6 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -90,21 +89,14 @@ func (s *Service) DeleteNet(ctx context.Context, netId string) error {
 		_, httpRes, err = oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
 		utils.LogAPICall(ctx, "DeleteNet", deleteNetRequest, httpRes, err)
 		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteNetRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
+			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, err
+			return false, utils.ExtractOAPIError(err, httpRes)
 		}
 		return true, err
 	}
-	backoff := reconciler.EnvBackoff()
+	backoff := utils.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, deleteNetCallBack)
 	if waitErr != nil {
 		return waitErr
