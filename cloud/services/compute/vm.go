@@ -43,7 +43,6 @@ type OscVmInterface interface {
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
 	GetVmListFromTag(ctx context.Context, tagKey string, tagName string) ([]osc.Vm, error)
-	GetVmState(ctx context.Context, vmId string) (string, error)
 	AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error
 }
 
@@ -387,19 +386,6 @@ func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue 
 		vmList := *vms
 		return vmList, nil
 	}
-}
-
-// GetVmState return vm state
-func (s *Service) GetVmState(ctx context.Context, vmId string) (string, error) {
-	vm, err := s.GetVm(ctx, vmId)
-	if err != nil {
-		return "", err
-	}
-	vmState, ok := vm.GetStateOk()
-	if !ok {
-		return "", errors.New("cannot get vm state")
-	}
-	return *vmState, nil
 }
 
 // AddCcmTag add ccm tag
