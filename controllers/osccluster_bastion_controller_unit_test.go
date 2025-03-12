@@ -1675,12 +1675,7 @@ func TestReconcileBastion(t *testing.T) {
 						// Mock GetVm
 					mockOscVmInterface.EXPECT().
 						GetVm(gomock.Any(), vmId).
-						Return(&osc.Vm{VmId: &vmId}, nil)
-
-					// Mock GetVmState
-					mockOscVmInterface.EXPECT().
-						GetVmState(gomock.Any(), vmId).
-						Return("running", nil)
+						Return(&osc.Vm{VmId: &vmId, State: ptr.To("running")}, nil)
 
 					if btc.expLinkPublicIpFound {
 						mockOscPublicIpInterface.EXPECT().
