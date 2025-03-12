@@ -81,33 +81,17 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 		Key:   "Name",
 		Value: routeTableName,
 	}
-	routeTableTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{routeTableTag},
-	}
-	err, httpRes := tag.AddTag(ctx, routeTableTagRequest, resourceIds, oscApiClient, oscAuthClient)
-	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
-	}
 	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterName,
 		Value: "owned",
 	}
-	clusterRouteTagRequest := osc.CreateTagsRequest{
+	routeTableTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{clusterTag},
+		Tags:        []osc.ResourceTag{routeTableTag, clusterTag},
 	}
-	err, httpRes = tag.AddTag(ctx, clusterRouteTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err := tag.AddTag(ctx, routeTableTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	routeTable, ok := routeTableResponse.GetRouteTableOk()

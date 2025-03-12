@@ -78,13 +78,9 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{internetServiceTag},
 	}
-	err, httpRes := tag.AddTag(ctx, internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err := tag.AddTag(ctx, internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	internetService, ok := internetServiceResponse.GetInternetServiceOk()
 	if !ok {
