@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"regexp"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
@@ -35,15 +34,11 @@ type OscTagInterface interface {
 }
 
 // AddTag add a tag to a resource
-func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) (error, *http.Response) {
-	var httpRes *http.Response
+func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) error {
 	addTagNameCallBack := func() (bool, error) {
 		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
 		utils.LogAPICall(ctx, "CreateTags", createTagRequest, httpRes, err)
 		if err != nil {
-			if httpRes != nil {
-				fmt.Printf("Error with http result %s", httpRes.Status)
-			}
 			requestStr := fmt.Sprintf("%v", createTagRequest)
 			if reconciler.KeepRetryWithError(
 				requestStr,
@@ -51,16 +46,16 @@ func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourc
 				reconciler.ThrottlingErrors) {
 				return false, nil
 			}
-			return false, fmt.Errorf("failed to add Tag Name: %w", err)
+			return false, utils.ExtractOAPIError(err, httpRes)
 		}
-		return true, err
+		return true, nil
 	}
 	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, addTagNameCallBack)
-	if waitErr != nil {
-		return waitErr, httpRes
+	err := wait.ExponentialBackoff(backoff, addTagNameCallBack)
+	if err != nil {
+		return fmt.Errorf("add tags: %w", err)
 	}
-	return nil, httpRes
+	return nil
 }
 
 // ReadTag read a tag of a resource

@@ -87,33 +87,17 @@ func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.
 		Key:   "Name",
 		Value: subnetName,
 	}
-	subnetTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{subnetTag},
-	}
-	err, httpRes := tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
-	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
-	}
-	subnetClusterTag := osc.ResourceTag{
+	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterName,
 		Value: "owned",
 	}
-	subnetClusterTagRequest := osc.CreateTagsRequest{
+	subnetTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{subnetClusterTag},
+		Tags:        []osc.ResourceTag{subnetTag, clusterTag},
 	}
-	err, httpRes = tag.AddTag(ctx, subnetClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	subnet, ok := subnetResponse.GetSubnetOk()

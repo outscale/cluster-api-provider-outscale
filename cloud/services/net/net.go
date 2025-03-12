@@ -63,31 +63,17 @@ func (s *Service) CreateNet(ctx context.Context, spec *infrastructurev1beta1.Osc
 		Key:   "Name",
 		Value: netName,
 	}
-	netTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{netTag},
-	}
-
-	err, httpRes = tag.AddTag(ctx, netTagRequest, resourceIds, oscApiClient, oscAuthClient)
-	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
-	}
-	clusterNetTag := osc.ResourceTag{
+	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterName,
 		Value: "owned",
 	}
-	netTagRequest = osc.CreateTagsRequest{
+	netTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{clusterNetTag},
+		Tags:        []osc.ResourceTag{netTag, clusterTag},
 	}
 
-	err, httpRes = tag.AddTag(ctx, netTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, netTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	net, ok := netResponse.GetNetOk()

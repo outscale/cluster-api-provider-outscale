@@ -92,13 +92,9 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err, httpRes := tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
+	err := tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	if securityGroupTag == "OscK8sMainSG" {
 		mainTag := osc.ResourceTag{
@@ -109,13 +105,9 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 			ResourceIds: resourceIds,
 			Tags:        []osc.ResourceTag{mainTag},
 		}
-		err, httpRes := tag.AddTag(ctx, mainSecurityGroupTagRequest, resourceIds, oscApiClient, oscAuthClient)
+		err := tag.AddTag(ctx, mainSecurityGroupTagRequest, resourceIds, oscApiClient, oscAuthClient)
 		if err != nil {
-			if httpRes != nil {
-				return nil, utils.ExtractOAPIError(err, httpRes)
-			} else {
-				return nil, err
-			}
+			return nil, err
 		}
 	}
 

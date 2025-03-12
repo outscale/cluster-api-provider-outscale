@@ -77,44 +77,18 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subne
 		Key:   "Name",
 		Value: natServiceName,
 	}
-	natServiceTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{natServiceTag},
-	}
-	err, httpRes := tag.AddTag(ctx, natServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
-	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
-	}
-	subnet, err := s.GetSubnet(ctx, subnetId)
-	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
-	}
-	resourceIds = []string{*subnet.SubnetId}
-	natServiceClusterTag := osc.ResourceTag{
+	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterName,
 		Value: "owned",
 	}
-	natServiceClusterTagRequest := osc.CreateTagsRequest{
+	natServiceTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{natServiceClusterTag},
+		Tags:        []osc.ResourceTag{natServiceTag, clusterTag},
 	}
-	err, httpRes = tag.AddTag(ctx, natServiceClusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err := tag.AddTag(ctx, natServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
-
 	natService, ok := natServiceResponse.GetNatServiceOk()
 	if !ok {
 		return nil, errors.New("Can not create natSrvice")
