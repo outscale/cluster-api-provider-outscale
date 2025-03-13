@@ -19,13 +19,9 @@ package security
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/keypair_mock.go -package mock_security -source ./keypair.go
@@ -43,31 +39,10 @@ func (s *Service) CreateKeyPair(ctx context.Context, keypairName string) (*osc.K
 
 	oscAPIClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var keyPairResponse osc.CreateKeypairResponse
-	createKeyPairCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		keyPairResponse, httpRes, err = oscAPIClient.KeypairApi.CreateKeypair(oscAuthClient).CreateKeypairRequest(keyPairRequest).Execute()
-		utils.LogAPICall(ctx, "CreateKeypair", keyPairRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", keyPairRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createKeyPairCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	keyPairResponse, httpRes, err := oscAPIClient.KeypairApi.CreateKeypair(oscAuthClient).CreateKeypairRequest(keyPairRequest).Execute()
+	utils.LogAPICall(ctx, "CreateKeypair", keyPairRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	req := osc.ReadKeypairsRequest{
@@ -100,31 +75,10 @@ func (s *Service) GetKeyPair(ctx context.Context, keyPairName string) (*osc.Keyp
 	}
 	oscAPIClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readKeypairsResponse osc.ReadKeypairsResponse
-	readKeypairsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readKeypairsResponse, httpRes, err = oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(readKeypairsRequest).Execute()
-		utils.LogAPICall(ctx, "ReadKeypairs", readKeypairsRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readKeypairsRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readKeypairsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readKeypairsResponse, httpRes, err := oscAPIClient.KeypairApi.ReadKeypairs(oscAuthClient).ReadKeypairsRequest(readKeypairsRequest).Execute()
+	utils.LogAPICall(ctx, "ReadKeypairs", readKeypairsRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	keypairs, ok := readKeypairsResponse.GetKeypairsOk()
 	if !ok {
@@ -144,30 +98,7 @@ func (s *Service) DeleteKeyPair(ctx context.Context, keyPairName string) error {
 	deleteKeypairRequest := osc.DeleteKeypairRequest{KeypairName: &keyPairName}
 	oscAPIClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	deleteKeypairCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscAPIClient.KeypairApi.DeleteKeypair(oscAuthClient).DeleteKeypairRequest(deleteKeypairRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteKeypair", deleteKeypairRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteKeypairRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteKeypairCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscAPIClient.KeypairApi.DeleteKeypair(oscAuthClient).DeleteKeypairRequest(deleteKeypairRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteKeypair", deleteKeypairRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }

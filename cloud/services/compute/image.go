@@ -18,13 +18,9 @@ package compute
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_compute/image_mock.go -package mock_compute -source ./image.go
@@ -41,31 +37,10 @@ func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, err
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 
-	var readImagesResponse osc.ReadImagesResponse
-	readImageCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
-		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readImageRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readImageCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readImagesResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+	utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	if len(readImagesResponse.GetImages()) == 0 {
 		return nil, nil
@@ -87,31 +62,10 @@ func (s *Service) GetImageByName(ctx context.Context, imageName, accountId strin
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readImagesResponse osc.ReadImagesResponse
-	readImageCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readImagesResponse, httpRes, err = oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
-		utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readImageRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readImageCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readImagesResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+	utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	if len(readImagesResponse.GetImages()) == 0 {
 		return nil, nil
