@@ -21,11 +21,9 @@ import (
 	"fmt"
 	"slices"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -41,16 +39,7 @@ func getNatResourceId(resourceName string, clusterScope *scope.ClusterScope) (st
 }
 
 func checkNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	var natServicesSpec []*infrastructurev1beta1.OscNatService
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.NatServices == nil {
-		// Add backwards compatibility with NatService parameter that used single NatService
-		natServiceSpec := clusterScope.GetNatService()
-		natServiceSpec.SetDefaultValue()
-		natServicesSpec = append(natServicesSpec, natServiceSpec)
-	} else {
-		natServicesSpec = clusterScope.GetNatServices()
-	}
+	natServicesSpec := clusterScope.GetNatServices()
 	for _, natServiceSpec := range natServicesSpec {
 		natName := natServiceSpec.Name + "-" + clusterScope.GetUID()
 		natSubnetName := natServiceSpec.SubnetName + "-" + clusterScope.GetUID()
@@ -74,16 +63,7 @@ func checkNatFormatParameters(clusterScope *scope.ClusterScope) (string, error) 
 // checkNatSubnetOscAssociateResourceName check that Nat Subnet dependencies tag name in both resource configuration are the same.
 func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
-	var natServicesSpec []*infrastructurev1beta1.OscNatService
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.NatServices == nil {
-		// Add backwards compatibility with NatService parameter that used single NatService
-		natServiceSpec := clusterScope.GetNatService()
-		natServiceSpec.SetDefaultValue()
-		natServicesSpec = append(natServicesSpec, natServiceSpec)
-	} else {
-		natServicesSpec = clusterScope.GetNatServices()
-	}
+	natServicesSpec := clusterScope.GetNatServices()
 
 	subnetsSpec := clusterScope.GetSubnet()
 	for _, subnetSpec := range subnetsSpec {
@@ -106,21 +86,11 @@ func checkNatSubnetOscAssociateResourceName(clusterScope *scope.ClusterScope) er
 // reconcileNatService reconcile the NatService of the cluster.
 func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, natServiceSvc net.OscNatServiceInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	var natServicesSpec []*infrastructurev1beta1.OscNatService
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.NatServices == nil {
-		// Add backwards compatibility with NatService parameter that used single NatService
-		natServiceSpec := clusterScope.GetNatService()
-		natServiceSpec.SetDefaultValue()
-		natServicesSpec = append(natServicesSpec, natServiceSpec)
-	} else {
-		natServicesSpec = clusterScope.GetNatServices()
-	}
+	natServicesSpec := clusterScope.GetNatServices()
 
 	for _, natServiceSpec := range natServicesSpec {
 		natServiceRef := clusterScope.GetNatServiceRef()
 		natServiceName := natServiceSpec.Name + "-" + clusterScope.GetUID()
-		var natService *osc.NatService
 		publicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
 		publicIpId, err := getPublicIpResourceId(publicIpName, clusterScope)
 		if err != nil {
@@ -133,35 +103,41 @@ func reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope, 
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		if len(natServiceRef.ResourceMap) == 0 {
+		if natServiceRef.ResourceMap == nil {
 			natServiceRef.ResourceMap = make(map[string]string)
-		}
-		tagKey := "Name"
-		tagValue := natServiceName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
 		if natServiceSpec.ResourceId != "" {
 			natServiceRef.ResourceMap[natServiceName] = natServiceSpec.ResourceId
 			natServiceId := natServiceSpec.ResourceId
 			log.V(4).Info("Checking natService", "natService", natServiceId)
-			natService, err = natServiceSvc.GetNatService(ctx, natServiceId)
+			natService, err := natServiceSvc.GetNatService(ctx, natServiceId)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-		}
-		if (natService == nil && tag == nil) || (natServiceSpec.ResourceId == "" && tag == nil) {
-			log.V(2).Info("Creating natService", "natServiceName", natServiceName)
-			networkSpec := clusterScope.GetNetwork()
-			clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
-			natService, err := natServiceSvc.CreateNatService(ctx, publicIpId, subnetId, natServiceName, clusterName)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
+			if natService != nil {
+				continue
 			}
-			natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
-			natServiceSpec.ResourceId = natService.GetNatServiceId()
 		}
+		tag, err := tagSvc.ReadTag(ctx, "Name", natServiceName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
+		}
+		if tag.GetResourceId() != "" {
+			natServiceSpec.ResourceId = tag.GetResourceId()
+			natServiceRef.ResourceMap[natServiceName] = tag.GetResourceId()
+			continue
+		}
+
+		log.V(3).Info("Creating natService", "natServiceName", natServiceName)
+		networkSpec := clusterScope.GetNetwork()
+		clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
+		natService, err := natServiceSvc.CreateNatService(ctx, publicIpId, subnetId, natServiceName, clusterName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
+		}
+		log.V(2).Info("Created natService", "natService", natService.GetNatServiceId())
+		natServiceRef.ResourceMap[natServiceName] = natService.GetNatServiceId()
+		natServiceSpec.ResourceId = natService.GetNatServiceId()
 	}
 	return reconcile.Result{}, nil
 }
