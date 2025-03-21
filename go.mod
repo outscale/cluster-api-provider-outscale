@@ -1,6 +1,6 @@
 module github.com/outscale/cluster-api-provider-outscale
 
-go 1.23
+go 1.23.7
 
 require (
 	github.com/benbjohnson/clock v1.3.0
