@@ -96,13 +96,9 @@ func (s *Service) CreateVolume(ctx context.Context, spec *infrastructurev1beta1.
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{volumeTag},
 	}
-	err, httpRes := tag.AddTag(ctx, volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err := tag.AddTag(ctx, volumeTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	return volume, nil

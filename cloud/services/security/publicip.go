@@ -84,9 +84,8 @@ func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string) (*osc
 		Tags:        []osc.ResourceTag{publicIpTag},
 	}
 
-	err, httpRes := tag.AddTag(ctx, publicIpTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err := tag.AddTag(ctx, publicIpTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
 	}
 	publicIp, ok := publicIpResponse.GetPublicIpOk()

@@ -163,13 +163,9 @@ func (s *Service) CreateVm(ctx context.Context,
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err, httpRes := tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	if len(*vms) == 0 {
 		return nil, nil
@@ -243,13 +239,9 @@ func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *i
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err, httpRes = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	if len(*vms) == 0 {
 		return nil, nil
@@ -411,28 +403,13 @@ func (s *Service) AddCcmTag(ctx context.Context, clusterName string, hostname st
 		Key:   "OscK8sNodeName",
 		Value: hostname,
 	}
-	nodeTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{nodeTag},
-	}
-	err, httpRes := tag.AddTag(ctx, nodeTagRequest, resourceIds, oscApiClient, oscAuthClient)
-	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
-	}
 	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterName,
 		Value: "owned",
 	}
-	clusterTagRequest := osc.CreateTagsRequest{
+	nodeTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{clusterTag},
+		Tags:        []osc.ResourceTag{nodeTag, clusterTag},
 	}
-
-	err, httpRes = tag.AddTag(ctx, clusterTagRequest, resourceIds, oscApiClient, oscAuthClient)
-	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return err
-	}
-	return nil
+	return tag.AddTag(ctx, nodeTagRequest, resourceIds, oscApiClient, oscAuthClient)
 }
