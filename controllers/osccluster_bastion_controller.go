@@ -293,15 +293,11 @@ func reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmS
 	if bastionState != nil {
 		if *bastionState != infrastructurev1beta1.VmStateRunning {
 			vmId := bastionSpec.ResourceId
-			_, err = vmSvc.GetVm(ctx, vmId)
+			vm, err := vmSvc.GetVm(ctx, vmId)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			currentVmState, err := vmSvc.GetVmState(ctx, vmId)
-			if err != nil {
-				clusterScope.SetVmState(infrastructurev1beta1.VmState("unknown"))
-				return reconcile.Result{}, fmt.Errorf("cannot get bastion %s state: %w", vmId, err)
-			}
+			currentVmState := vm.GetState()
 			clusterScope.SetVmState(infrastructurev1beta1.VmState(currentVmState))
 			log.V(4).Info("Bastion vm state", "vmState", currentVmState)
 

@@ -130,18 +130,3 @@ func (mr *MockOscVmInterfaceMockRecorder) GetVmListFromTag(ctx, tagKey, tagName 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmListFromTag", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmListFromTag), ctx, tagKey, tagName)
 }
-
-// GetVmState mocks base method.
-func (m *MockOscVmInterface) GetVmState(ctx context.Context, vmId string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVmState", ctx, vmId)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVmState indicates an expected call of GetVmState.
-func (mr *MockOscVmInterfaceMockRecorder) GetVmState(ctx, vmId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmState", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmState), ctx, vmId)
-}
