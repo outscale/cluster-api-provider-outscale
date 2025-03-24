@@ -72,16 +72,7 @@ func checkPublicIpFormatParameters(clusterScope *scope.ClusterScope) (string, er
 // checkPublicIpOscAssociateResourceName check that PublicIp dependencies tag name in both resource configuration are the same.
 func checkPublicIpOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
-	var natServicesSpec []*infrastructurev1beta1.OscNatService
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.NatServices == nil {
-		// Add backwards compatibility with NatService parameter that used single NatService
-		natServiceSpec := clusterScope.GetNatService()
-		natServiceSpec.SetDefaultValue()
-		natServicesSpec = append(natServicesSpec, natServiceSpec)
-	} else {
-		natServicesSpec = clusterScope.GetNatServices()
-	}
+	natServicesSpec := clusterScope.GetNatServices()
 
 	for _, natServiceSpec := range natServicesSpec {
 		natPublicIpName := natServiceSpec.PublicIpName + "-" + clusterScope.GetUID()
@@ -115,50 +106,54 @@ func checkPublicIpOscDuplicateName(clusterScope *scope.ClusterScope) error {
 func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, publicIpSvc security.OscPublicIpInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	publicIpsSpec := clusterScope.GetPublicIp()
-	var publicIpId string
+
+	publicIpIds := make([]string, 0, len(publicIpsSpec))
+	for _, publicIpSpec := range publicIpsSpec {
+		if publicIpSpec.ResourceId != "" {
+			publicIpIds = append(publicIpIds, publicIpSpec.ResourceId)
+		}
+	}
+	var validPublicIpIds []string
+	if len(publicIpIds) > 0 {
+		var err error
+		validPublicIpIds, err = publicIpSvc.ValidatePublicIpIds(ctx, publicIpIds)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	publicIpRef := clusterScope.GetPublicIpRef()
-	var publicIpIds []string
-
-	for _, publicIpSpec := range publicIpsSpec {
-		publicIpId = publicIpSpec.ResourceId
-		publicIpIds = append(publicIpIds, publicIpId)
-	}
-	log.V(4).Info("Checking publicips")
-	validPublicIpIds, err := publicIpSvc.ValidatePublicIpIds(ctx, publicIpIds)
-	if err != nil {
-		return reconcile.Result{}, err
+	if publicIpRef.ResourceMap == nil {
+		publicIpRef.ResourceMap = make(map[string]string)
 	}
 
-	log.V(4).Info("Number of publicIp", "publicIpLength", len(publicIpsSpec))
 	for _, publicIpSpec := range publicIpsSpec {
+		publicIpId := publicIpSpec.ResourceId
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
-		tagKey := "Name"
-		tagValue := publicIpName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+
+		if publicIpId != "" && slices.Contains(validPublicIpIds, publicIpId) {
+			publicIpRef.ResourceMap[publicIpName] = publicIpId
+			continue
+		}
+
+		tag, err := tagSvc.ReadTag(ctx, "Name", publicIpName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
-		if len(publicIpRef.ResourceMap) == 0 {
-			publicIpRef.ResourceMap = make(map[string]string)
-		}
-		if publicIpSpec.ResourceId != "" {
-			publicIpRef.ResourceMap[publicIpName] = publicIpSpec.ResourceId
-		}
-		_, resourceMapExist := publicIpRef.ResourceMap[publicIpName]
-		if resourceMapExist {
-			publicIpSpec.ResourceId = publicIpRef.ResourceMap[publicIpName]
+		if tag.GetResourceId() != "" {
+			publicIpSpec.ResourceId = tag.GetResourceId()
+			publicIpRef.ResourceMap[publicIpName] = tag.GetResourceId()
+			continue
 		}
 
-		publicIpId := publicIpRef.ResourceMap[publicIpName]
-		if !slices.Contains(validPublicIpIds, publicIpId) && tag == nil {
-			publicIp, err := publicIpSvc.CreatePublicIp(ctx, publicIpName)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot create publicIp: %w", err)
-			}
-			log.V(4).Info("Get publicIp", "publicip", publicIp)
-			publicIpRef.ResourceMap[publicIpName] = publicIp.GetPublicIpId()
-			publicIpSpec.ResourceId = publicIp.GetPublicIpId()
+		log.V(3).Info("Creating publicIp")
+		publicIp, err := publicIpSvc.CreatePublicIp(ctx, publicIpName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot create publicIp: %w", err)
 		}
+		log.V(2).Info("Created publicIp", "publicIpId", publicIp.GetPublicIpId())
+		publicIpRef.ResourceMap[publicIpName] = publicIp.GetPublicIpId()
+		publicIpSpec.ResourceId = publicIp.GetPublicIpId()
 	}
 	return reconcile.Result{}, nil
 }

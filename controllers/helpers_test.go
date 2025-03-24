@@ -184,11 +184,13 @@ func mockReadTagByNameNoneFound(name string) mockFunc {
 	}
 }
 
-func mockReadTagByNameFound(name string) mockFunc {
+func mockReadTagByNameFound(name, resourceId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
 			ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
-			Return(&osc.Tag{}, nil)
+			Return(&osc.Tag{
+				ResourceId: &resourceId,
+			}, nil)
 	}
 }
 

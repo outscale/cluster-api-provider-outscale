@@ -26,7 +26,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -200,87 +199,54 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 	}
 	networkSpec := clusterScope.GetNetwork()
 	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
-	extraSecurityGroupRule := clusterScope.GetExtraSecurityGroupRule()
 
-	log.V(4).Info("List all securitygroups in net", "netId", netId)
 	securityGroupIds, err := securityGroupSvc.GetSecurityGroupIdsFromNetIds(ctx, netId)
-	log.V(4).Info("Get securityGroup Id", "securityGroup", securityGroupIds)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
-	log.V(4).Info("Number of securityGroup", "securityGroupLength", len(securityGroupsSpec))
+	if securityGroupsRef.ResourceMap == nil {
+		securityGroupsRef.ResourceMap = make(map[string]string)
+	}
 	for _, securityGroupSpec := range securityGroupsSpec {
+		securityGroupId := securityGroupSpec.ResourceId
 		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
-		log.V(4).Info("Checking securityGroup", "securityGroupName", securityGroupName)
 		securityGroupDescription := securityGroupSpec.Description
+		if securityGroupId != "" && slices.Contains(securityGroupIds, securityGroupId) {
+			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupId
+			continue
+		}
 
-		tagKey := "Name"
-		tagValue := securityGroupName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+		tag, err := tagSvc.ReadTag(ctx, "Name", securityGroupName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
-		securityGroupTag := securityGroupSpec.Tag
-		if len(securityGroupsRef.ResourceMap) == 0 {
-			securityGroupsRef.ResourceMap = make(map[string]string)
+		if tag.GetResourceId() != "" {
+			securityGroupSpec.ResourceId = tag.GetResourceId()
+			securityGroupsRef.ResourceMap[securityGroupName] = tag.GetResourceId()
+			continue
 		}
 
-		if securityGroupSpec.ResourceId != "" {
-			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
+		log.V(3).Info("Creating securitygroup", "securityGroupName", securityGroupName)
+		securityGroup, err := securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterName, securityGroupName, securityGroupDescription, securityGroupSpec.Tag)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
 		}
-		_, resourceMapExist := securityGroupsRef.ResourceMap[securityGroupName]
-		if resourceMapExist {
-			securityGroupSpec.ResourceId = securityGroupsRef.ResourceMap[securityGroupName]
-		}
-		var securityGroup *osc.SecurityGroup
-		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
+		log.V(2).Info("Created securitygroup", "securityGroupId", securityGroup.GetSecurityGroupId())
+		securityGroupsRef.ResourceMap[securityGroupName] = securityGroup.GetSecurityGroupId()
+		securityGroupSpec.ResourceId = securityGroup.GetSecurityGroupId()
+	}
 
-		if !slices.Contains(securityGroupIds, securityGroupId) && tag == nil {
-			if extraSecurityGroupRule && (len(securityGroupsRef.ResourceMap) == len(securityGroupsSpec)) {
-				log.V(4).Info("Extra Security Group Rule activated")
-			} else {
-				log.V(2).Info("Creating securitygroup", "securityGroupName", securityGroupName)
-				if securityGroupTag == "OscK8sMainSG" {
-					securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterName, securityGroupName, securityGroupDescription, "OscK8sMainSG")
-				} else {
-					securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterName, securityGroupName, securityGroupDescription, "")
-				}
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
-				}
-				securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
-				securityGroupSpec.ResourceId = *securityGroup.SecurityGroupId
-			}
-
-			log.V(3).Info("Checking securityGroupRules")
-			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(securityGroupRulesSpec))
-			for _, securityGroupRuleSpec := range securityGroupRulesSpec {
-				log.V(4).Info("Create securityGroupRule for securityGroup", "securityGroupName", securityGroupName)
-				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-			}
-		}
-
-		if slices.Contains(securityGroupIds, securityGroupId) && extraSecurityGroupRule {
-			log.V(4).Info("Extra Security Group Rule activated")
-			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(securityGroupRulesSpec))
-			for _, securityGroupRuleSpec := range securityGroupRulesSpec {
-				log.V(4).Info("Get sgrule", "sgRuleName", securityGroupRuleSpec.Name)
-				log.V(4).Info("Create securityGroupRule for securityGroup", "securityGroupName", securityGroupName)
-				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
+	for _, securityGroupSpec := range securityGroupsSpec {
+		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
+		for _, securityGroupRuleSpec := range securityGroupSpec.SecurityGroupRules {
+			_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
+			if err != nil {
+				return reconcile.Result{}, err
 			}
 		}
 	}
 
-	clusterScope.SetExtraSecurityGroupRule(false)
 	return reconcile.Result{}, nil
 }
 
