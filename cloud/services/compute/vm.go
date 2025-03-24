@@ -22,15 +22,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 )
 
@@ -58,7 +55,7 @@ func ValidateIpAddrInCidr(ipAddr, cidr string) error {
 	}
 }
 
-// CreateVm create machine vm
+// CreateVm creates a VM.
 func (s *Service) CreateVm(ctx context.Context,
 	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string,
 	volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
@@ -123,31 +120,10 @@ func (s *Service) CreateVm(ctx context.Context,
 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var vmResponse osc.CreateVmsResponse
-	createVmCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		vmResponse, httpRes, err = oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
-		utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", vmOpt)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createVmCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
+	utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 	vms, ok := vmResponse.GetVmsOk()
 	if !ok {
@@ -163,7 +139,7 @@ func (s *Service) CreateVm(ctx context.Context,
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err, httpRes := tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err, httpRes = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
 		if httpRes != nil {
 			return nil, utils.ExtractOAPIError(err, httpRes)
@@ -264,32 +240,9 @@ func (s *Service) DeleteVm(ctx context.Context, vmId string) error {
 	deleteVmsRequest := osc.DeleteVmsRequest{VmIds: []string{vmId}}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	deleteVmsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		_, httpRes, err = oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", deleteVmsRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteVmsCallBack)
-	if waitErr != nil {
-		return waitErr
-	}
-	return nil
+	_, httpRes, err := oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
+	utils.LogAPICall(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
+	return utils.ExtractOAPIError(err, httpRes)
 }
 
 // GetVm retrieve vm from vmId
@@ -301,31 +254,10 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readVmsResponse osc.ReadVmsResponse
-	readVmsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
-		utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readVmsRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readVmsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+	utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	vms, ok := readVmsResponse.GetVmsOk()
@@ -350,31 +282,10 @@ func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue 
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
-	var readVmsResponse osc.ReadVmsResponse
-	readVmsCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
-		utils.LogAPICall(ctx, "ReadVms", readVmsRequest, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				return false, utils.ExtractOAPIError(err, httpRes)
-			}
-			requestStr := fmt.Sprintf("%v", readVmsRequest)
-			if reconciler.KeepRetryWithError(
-				requestStr,
-				httpRes.StatusCode,
-				reconciler.ThrottlingErrors) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, err
-	}
-	backoff := reconciler.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readVmsCallBack)
-	if waitErr != nil {
-		return nil, waitErr
+	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+	utils.LogAPICall(ctx, "ReadVms", readVmsRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
 	}
 
 	vms, ok := readVmsResponse.GetVmsOk()
