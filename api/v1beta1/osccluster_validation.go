@@ -49,19 +49,37 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 			allErrs = append(allErrs, errs...)
 		}
 	}
-	if spec.Network.Net.IpRange != "" {
-		if errs := ValidateAndReturnErrorList(spec.Network.Net.IpRange, field.NewPath("network", "net", "ipRange"), ValidateCidr); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
+	allErrs = append(allErrs, ValidateNet(spec.Network.Net)...)
 
 	return allErrs
 }
 
+func ValidateNet(spec OscNet) field.ErrorList {
+	switch {
+	case spec == OscNet{}:
+		return nil
+	case spec.ResourceId != "" && spec.UseExisting:
+		msg := "must not be set when reusing a resource"
+		return MergeValidation(
+			ValidateEmpty(field.NewPath("network", "net", "ipRange"), spec.IpRange, msg),
+		)
+	default:
+		return MergeValidation(
+			ValidateCidr(field.NewPath("network", "net", "ipRange"), spec.IpRange),
+		)
+	}
+}
+
 // ValidateCidr checks that the cidr string is a valid CIDR
-func ValidateCidr(cidr string) error {
+func ValidateCidr(p *field.Path, cidr string) *field.Error {
+	if cidr == "" {
+		return field.Required(p, "a CIDR is required")
+	}
 	_, _, err := net.ParseCIDR(cidr)
-	return err
+	if err != nil {
+		return field.Invalid(p, cidr, err.Error())
+	}
+	return nil
 }
 
 // ValidateIpProtocol checks that ipProtocol is valid

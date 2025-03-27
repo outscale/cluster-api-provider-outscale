@@ -27,6 +27,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -52,10 +53,9 @@ type MockCloudServices struct {
 	PublicIpMock        *mock_security.MockOscPublicIpInterface
 	LoadBalancerMock    *mock_service.MockOscLoadBalancerInterface
 
-	VolumeMock  *mock_storage.MockOscVolumeInterface
-	VMMock      *mock_compute.MockOscVmInterface
-	ImageMock   *mock_compute.MockOscImageInterface
-	KeyPairMock *mock_security.MockOscKeyPairInterface
+	VolumeMock *mock_storage.MockOscVolumeInterface
+	VMMock     *mock_compute.MockOscVmInterface
+	ImageMock  *mock_compute.MockOscImageInterface
 
 	TagMock *mock_tag.MockOscTagInterface
 }
@@ -72,10 +72,9 @@ func newMockCloudServices(mockCtrl *gomock.Controller) *MockCloudServices {
 		PublicIpMock:        mock_security.NewMockOscPublicIpInterface(mockCtrl),
 		LoadBalancerMock:    mock_service.NewMockOscLoadBalancerInterface(mockCtrl),
 
-		VolumeMock:  mock_storage.NewMockOscVolumeInterface(mockCtrl),
-		VMMock:      mock_compute.NewMockOscVmInterface(mockCtrl),
-		ImageMock:   mock_compute.NewMockOscImageInterface(mockCtrl),
-		KeyPairMock: mock_security.NewMockOscKeyPairInterface(mockCtrl),
+		VolumeMock: mock_storage.NewMockOscVolumeInterface(mockCtrl),
+		VMMock:     mock_compute.NewMockOscVmInterface(mockCtrl),
+		ImageMock:  mock_compute.NewMockOscImageInterface(mockCtrl),
 
 		TagMock: mock_tag.NewMockOscTagInterface(mockCtrl),
 	}
@@ -129,10 +128,6 @@ func (s *MockCloudServices) Image(ctx context.Context, scope scope.ClusterScope)
 	return s.ImageMock
 }
 
-func (s *MockCloudServices) KeyPair(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface {
-	return s.KeyPairMock
-}
-
 func (s *MockCloudServices) Tag(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
 	return s.TagMock
 }
@@ -176,19 +171,21 @@ func loadMachineSpecs(t *testing.T, spec string) (*clusterv1.Machine, *v1beta1.O
 	return &machine, &oscmachine
 }
 
-func mockReadTagByNameNoneFound(name string) mockFunc {
+func mockReadTagByNameNoneFound(typ tag.ResourceType, name string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
+			ReadTag(gomock.Any(), gomock.Eq(typ), gomock.Eq(tag.NameKey), gomock.Eq(name)).
 			Return(nil, nil)
 	}
 }
 
-func mockReadTagByNameFound(name string) mockFunc {
+func mockReadTagByNameFound(typ tag.ResourceType, name, value string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
-			Return(&osc.Tag{}, nil)
+			ReadTag(gomock.Any(), gomock.Eq(typ), gomock.Eq(tag.NameKey), gomock.Eq(name)).
+			Return(&osc.Tag{
+				Value: ptr.To(value),
+			}, nil)
 	}
 }
 

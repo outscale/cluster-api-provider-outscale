@@ -43,7 +43,7 @@ func (m *MockOscNetInterface) EXPECT() *MockOscNetInterfaceMockRecorder {
 }
 
 // CreateNet mocks base method.
-func (m *MockOscNetInterface) CreateNet(ctx context.Context, spec *v1beta1.OscNet, clusterName, netName string) (*osc.Net, error) {
+func (m *MockOscNetInterface) CreateNet(ctx context.Context, spec v1beta1.OscNet, clusterName, netName string) (*osc.Net, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNet", ctx, spec, clusterName, netName)
 	ret0, _ := ret[0].(*osc.Net)

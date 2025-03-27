@@ -125,11 +125,12 @@ func checkSecurityGroupRuleFormatParameters(clusterScope *scope.ClusterScope) (s
 			if err != nil {
 				return securityGroupRuleTagName, err
 			}
-			securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
-			err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
-			if err != nil {
-				return securityGroupRuleTagName, err
-			}
+			// FIXME
+			// securityGroupRuleIpRange := securityGroupRuleSpec.IpRange
+			// err = infrastructurev1beta1.ValidateCidr(securityGroupRuleIpRange)
+			// if err != nil {
+			// 	return securityGroupRuleTagName, err
+			// }
 			securityGroupRuleFromPortRange := securityGroupRuleSpec.FromPortRange
 			err = infrastructurev1beta1.ValidatePort(securityGroupRuleFromPortRange)
 			if err != nil {
@@ -187,14 +188,11 @@ func deleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, 
 }
 
 // reconcileSecurityGroup reconcile the securityGroup of the cluster.
-func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
 
-	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -215,9 +213,7 @@ func reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScop
 		log.V(4).Info("Checking securityGroup", "securityGroupName", securityGroupName)
 		securityGroupDescription := securityGroupSpec.Description
 
-		tagKey := "Name"
-		tagValue := securityGroupName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+		tag, err := tagSvc.ReadTag(ctx, tag.SecurityGroupResourceType, tag.NameKey, securityGroupName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
@@ -313,7 +309,7 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 }
 
 // reconcileDeleteSecurityGroup reconcile the deletetion of securityGroup of the cluster.
-func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
@@ -326,10 +322,7 @@ func reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.Clust
 	}
 	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 
-	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		log.V(3).Info("No net found, skipping security group deletion")
 		return reconcile.Result{}, nil //nolint: nilerr

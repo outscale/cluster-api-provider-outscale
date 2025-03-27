@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net/http"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
@@ -120,11 +119,6 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 // CreateRoute create the route associated with the routetable and the net
 func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
-	err := infrastructurev1beta1.ValidateCidr(destinationIpRange)
-	if err != nil {
-		return nil, err
-	}
-
 	switch {
 	case resourceType == "gateway":
 		routeRequest = osc.CreateRouteRequest{

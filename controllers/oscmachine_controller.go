@@ -167,7 +167,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	}
 	volumeName, err := checkVolumeFormatParameters(machineScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create volume %s: %w", volumeName, err)
+		return reconcile.Result{}, fmt.Errorf("invalid volume %s: %w", volumeName, err)
 	}
 
 	UseFailureDomain(clusterScope, machineScope)
@@ -177,9 +177,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", vmName, err)
 	}
 
-	keypairName, err := checkKeypairFormatParameters(machineScope)
+	err = checkKeypairFormatParameters(machineScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", keypairName, err)
+		return reconcile.Result{}, fmt.Errorf("invalid keypair: %w", err)
 	}
 
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
@@ -192,11 +192,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	duplicateResourceVmPrivateIpErr := checkVmPrivateIpOscDuplicateName(machineScope)
 	if duplicateResourceVmPrivateIpErr != nil {
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
-	}
-
-	checkKeypairSameNameErr := checkKeypairSameName(machineScope)
-	if checkKeypairSameNameErr != nil {
-		return reconcile.Result{}, checkKeypairSameNameErr
 	}
 
 	checkOscAssociateVmSecurityGroupErr := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
@@ -229,12 +224,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
 	if err != nil {
 		return reconcileImage, err
-	}
-
-	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
-	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
-	if err != nil {
-		return reconcileKeypair, err
 	}
 
 	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
@@ -290,11 +279,6 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
 	if err != nil {
 		return reconcileDeleteVm, err
-	}
-	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
-	reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, keypairSvc)
-	if err != nil {
-		return reconcileDeleteKeyPair, err
 	}
 	controllerutil.RemoveFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
 	return reconcile.Result{}, nil

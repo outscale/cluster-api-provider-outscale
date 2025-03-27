@@ -43,6 +43,7 @@ import (
 // OscClusterReconciler reconciles a OscCluster object
 type OscClusterReconciler struct {
 	client.Client
+	Tracker          *ResourceTracker
 	Cloud            services.Servicer
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
@@ -121,10 +122,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	clusterScope.EnsureExplicitUID()
 	// Check that every element of the cluster spec has the good format (CIDR, Tag, ...)
-	netName, err := checkNetFormatParameters(clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create net %s: %w", netName, err)
-	}
 	subnetName, err := checkSubnetFormatParameters(clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create subnet %s: %w", subnetName, err)
@@ -242,17 +239,16 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 
 	// Reconcile each element of the cluster
-	netSvc := r.Cloud.Net(ctx, *clusterScope)
-	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
-	reconcileNet, err := reconcileNet(ctx, clusterScope, netSvc, tagSvc)
+	_, err = r.reconcileNet(ctx, clusterScope)
 	if err != nil {
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.NetReadyCondition, infrastructurev1beta1.NetReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcileNet, err
+		return reconcile.Result{}, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NetReadyCondition)
 
 	subnetSvc := r.Cloud.Subnet(ctx, *clusterScope)
-	reconcileSubnets, err := reconcileSubnet(ctx, clusterScope, subnetSvc, tagSvc)
+	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
+	reconcileSubnets, err := r.reconcileSubnet(ctx, clusterScope, subnetSvc, tagSvc)
 	if err != nil {
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SubnetsReadyCondition, infrastructurev1beta1.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileSubnets, err
@@ -267,7 +263,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 
 	internetServiceSvc := r.Cloud.InternetService(ctx, *clusterScope)
-	reconcileInternetService, err := reconcileInternetService(ctx, clusterScope, internetServiceSvc, tagSvc)
+	reconcileInternetService, err := r.reconcileInternetService(ctx, clusterScope, internetServiceSvc, tagSvc)
 	if err != nil {
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileInternetService, err
@@ -283,20 +279,12 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.PublicIpsReadyCondition)
 
 	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
-	reconcileSecurityGroups, err := reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc, tagSvc)
+	reconcileSecurityGroups, err := r.reconcileSecurityGroup(ctx, clusterScope, securityGroupSvc, tagSvc)
 	if err != nil {
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileSecurityGroups, err
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
-
-	routeTableSvc := r.Cloud.RouteTable(ctx, *clusterScope)
-	reconcileRouteTables, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcileRouteTables, err
-	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
 	natServiceSvc := r.Cloud.NatService(ctx, *clusterScope)
 	reconcileNatService, err := reconcileNatService(ctx, clusterScope, natServiceSvc, tagSvc)
@@ -306,8 +294,8 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
 
-	// TODO: is there a need to call reconcileRouteTable twice ?
-	reconcileNatRouteTable, err := reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
+	routeTableSvc := r.Cloud.RouteTable(ctx, *clusterScope)
+	reconcileNatRouteTable, err := r.reconcileRouteTable(ctx, clusterScope, routeTableSvc, tagSvc)
 	if err != nil {
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileNatRouteTable, err
@@ -388,30 +376,29 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeletePublicIp, err
 	}
 	routeTableSvc := r.Cloud.RouteTable(ctx, *clusterScope)
-	reconcileDeleteRouteTable, err := reconcileDeleteRouteTable(ctx, clusterScope, routeTableSvc)
+	reconcileDeleteRouteTable, err := r.reconcileDeleteRouteTable(ctx, clusterScope, routeTableSvc)
 	if err != nil {
 		return reconcileDeleteRouteTable, err
 	}
 
-	reconcileDeleteSecurityGroup, err := reconcileDeleteSecurityGroup(ctx, clusterScope, securityGroupSvc)
+	reconcileDeleteSecurityGroup, err := r.reconcileDeleteSecurityGroup(ctx, clusterScope, securityGroupSvc)
 	if err != nil {
 		return reconcileDeleteSecurityGroup, err
 	}
 
 	internetServiceSvc := r.Cloud.InternetService(ctx, *clusterScope)
-	reconcileDeleteInternetService, err := reconcileDeleteInternetService(ctx, clusterScope, internetServiceSvc)
+	reconcileDeleteInternetService, err := r.reconcileDeleteInternetService(ctx, clusterScope, internetServiceSvc)
 	if err != nil {
 		return reconcileDeleteInternetService, err
 	}
 
 	subnetSvc := r.Cloud.Subnet(ctx, *clusterScope)
-	reconcileDeleteSubnet, err := reconcileDeleteSubnet(ctx, clusterScope, subnetSvc)
+	reconcileDeleteSubnet, err := r.reconcileDeleteSubnet(ctx, clusterScope, subnetSvc)
 	if err != nil {
 		return reconcileDeleteSubnet, err
 	}
 
-	netSvc := r.Cloud.Net(ctx, *clusterScope)
-	reconcileDeleteNet, err := reconcileDeleteNet(ctx, clusterScope, netSvc)
+	reconcileDeleteNet, err := r.reconcileDeleteNet(ctx, clusterScope)
 	if err != nil {
 		return reconcileDeleteNet, err
 	}

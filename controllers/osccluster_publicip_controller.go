@@ -132,9 +132,7 @@ func reconcilePublicIp(ctx context.Context, clusterScope *scope.ClusterScope, pu
 	log.V(4).Info("Number of publicIp", "publicIpLength", len(publicIpsSpec))
 	for _, publicIpSpec := range publicIpsSpec {
 		publicIpName := publicIpSpec.Name + "-" + clusterScope.GetUID()
-		tagKey := "Name"
-		tagValue := publicIpName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+		tag, err := tagSvc.ReadTag(ctx, tag.PublicIPResourceType, tag.NameKey, publicIpName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}

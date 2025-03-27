@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security/mock_security"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag/mock_tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
@@ -1858,19 +1859,19 @@ func TestReconcileBastionResourceId(t *testing.T) {
 					GetImageByName(gomock.Any(), gomock.Eq(imageName), gomock.Eq(imageAccount)).
 					Return(image, btc.expGetImageIdErr)
 			}
-			tag := osc.Tag{
+			tg := osc.Tag{
 				ResourceId: &vmId,
 			}
 			if btc.expSubnetFound && btc.expPublicIpFound && btc.expLinkPublicIpFound && btc.expSecurityGroupFound {
 				if btc.expTagFound {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(bastionName)).
-						Return(&tag, btc.expReadTagErr)
+						ReadTag(gomock.Any(), gomock.Eq(tag.VmResourceType), gomock.Eq(tag.NameKey), gomock.Eq(bastionName)).
+						Return(&tg, btc.expReadTagErr)
 				} else {
 					mockOscTagInterface.
 						EXPECT().
-						ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(bastionName)).
+						ReadTag(gomock.Any(), gomock.Eq(tag.VmResourceType), gomock.Eq(tag.NameKey), gomock.Eq(bastionName)).
 						Return(nil, btc.expReadTagErr)
 				}
 			}

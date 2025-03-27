@@ -88,48 +88,6 @@ func SetupWithNetMock(t *testing.T, name string, spec infrastructurev1beta1.OscC
 	return clusterScope, ctx, mockOscNetInterface, mockOscTagInterface
 }
 
-// TestGetNetResourceId has several tests to cover the code of the function getNetResourceId
-func TestGetNetResourceId(t *testing.T) {
-	netTestCases := []struct {
-		name                   string
-		spec                   infrastructurev1beta1.OscClusterSpec
-		expNetFound            bool
-		expGetNetResourceIdErr error
-	}{
-		{
-			name:                   "get NetId",
-			spec:                   defaultNetInitialize,
-			expNetFound:            true,
-			expGetNetResourceIdErr: nil,
-		},
-		{
-			name:                   "can not get netId",
-			spec:                   defaultNetInitialize,
-			expNetFound:            false,
-			expGetNetResourceIdErr: errors.New("test-net-uid does not exist"),
-		},
-	}
-	for _, ntc := range netTestCases {
-		t.Run(ntc.name, func(t *testing.T) {
-			clusterScope := Setup(t, ntc.name, ntc.spec)
-			netName := ntc.spec.Network.Net.Name + "-uid"
-			netId := "vpc-" + netName
-			if ntc.expNetFound {
-				netRef := clusterScope.GetNetRef()
-				netRef.ResourceMap = make(map[string]string)
-				netRef.ResourceMap[netName] = netId
-			}
-			netResourceId, err := getNetResourceId(netName, clusterScope)
-			if ntc.expGetNetResourceIdErr != nil {
-				require.EqualError(t, err, ntc.expGetNetResourceIdErr.Error(), "getNetResourceId() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-			t.Logf("find netResourceId %s", netResourceId)
-		})
-	}
-}
-
 // TestCheckNetFormatParameters has several tests to cover the code of the func checkNetFormatParameters
 func TestCheckNetFormatParameters(t *testing.T) {
 	netTestCases := []struct {

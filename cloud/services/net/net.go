@@ -33,17 +33,13 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_net/net_mock.go -package mock_net -source ./net.go
 
 type OscNetInterface interface {
-	CreateNet(ctx context.Context, spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error)
+	CreateNet(ctx context.Context, spec infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error)
 	DeleteNet(ctx context.Context, netId string) error
 	GetNet(ctx context.Context, netId string) (*osc.Net, error)
 }
 
 // CreateNet create the net from spec (in order to retrieve ip range)
-func (s *Service) CreateNet(ctx context.Context, spec *infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error) {
-	err := infrastructurev1beta1.ValidateCidr(spec.IpRange)
-	if err != nil {
-		return nil, err
-	}
+func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscNet, clusterName string, netName string) (*osc.Net, error) {
 	netRequest := osc.CreateNetRequest{
 		IpRange: spec.IpRange,
 	}

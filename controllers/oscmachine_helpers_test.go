@@ -5,6 +5,7 @@ import (
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,15 +42,6 @@ func mockImageFoundByName(name, account string) mockFunc {
 			EXPECT().
 			GetImageByName(gomock.Any(), gomock.Eq(name), gomock.Eq(account)).
 			Return(&osc.Image{ImageId: ptr.To(defaultImageId)}, nil)
-	}
-}
-
-func mockKeyPairFound(name string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.KeyPairMock.
-			EXPECT().
-			GetKeyPair(gomock.Any(), gomock.Eq(name)).
-			Return(&osc.Keypair{}, nil)
 	}
 }
 
@@ -149,13 +141,13 @@ func mockVmReadCCMTag(found bool) mockFunc {
 	if found {
 		return func(s *MockCloudServices) {
 			s.TagMock.EXPECT().
-				ReadTag(gomock.Any(), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
+				ReadTag(gomock.Any(), gomock.Eq(tag.VmResourceType), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
 				Return(&osc.Tag{}, nil)
 		}
 	}
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
+			ReadTag(gomock.Any(), gomock.Eq(tag.VmResourceType), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
 			Return(nil, nil)
 	}
 }

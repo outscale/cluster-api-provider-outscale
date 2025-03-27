@@ -164,21 +164,6 @@ func (m *MachineScope) GetPublicIpIdRef() *infrastructurev1beta1.OscResourceRefe
 	return &m.OscMachine.Status.Node.PublicIpIdRef
 }
 
-// GetKeyPair return the keypair of the cluster
-func (m *MachineScope) GetKeypair() *infrastructurev1beta1.OscKeypair {
-	return &m.OscMachine.Spec.Node.KeyPair
-}
-
-// SetDeleteKeyPair set deleteKeypair
-func (m *MachineScope) SetDeleteKeypair(deleteKeypair bool) {
-	m.OscMachine.Spec.Node.KeyPair.DeleteKeypair = deleteKeypair
-}
-
-// GetDeleteKeyPair return deleteKeypair
-func (m *MachineScope) GetDeleteKeypair() bool {
-	return m.OscMachine.Spec.Node.KeyPair.DeleteKeypair
-}
-
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceReference {
 	ref := &m.OscMachine.Status.Node.VolumeRef

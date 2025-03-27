@@ -80,7 +80,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a worker with base parameters, vm is pending",
 			clusterSpec: "ready", machineSpec: "base-worker",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockNoVmFoundByName("test-cluster-api-vm-kw-"),
 				mockCreateVmNoVolumes("i-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kw-", nil),
 			},
@@ -95,7 +95,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			clusterSpec: "ready", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", v1beta1.VmStatePending, false)},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockGetVm("i-foo", "pending"),
 			},
 			hasError:       true,
@@ -106,7 +106,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			clusterSpec: "ready", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", v1beta1.VmStatePending, false)},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockGetVm("i-foo", "running"),
 				mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
@@ -121,7 +121,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a controlplane with base parameters, vm is running & security groups are ok",
 			clusterSpec: "ready", machineSpec: "base-controlplane",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockNoVmFoundByName("test-cluster-api-vm-kcp-"),
 				mockCreateVmNoVolumes("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
 			},
@@ -132,7 +132,6 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			hasError: true,
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockKeyPairFound("cluster-api"),
 					mockGetVm("i-foo", "running"),
 					mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
 					mockSecurityGroupHasRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443, true),
@@ -149,7 +148,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a controlplane with base parameters, vm is running & security groups are not ok",
 			clusterSpec: "ready", machineSpec: "base-controlplane",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockNoVmFoundByName("test-cluster-api-vm-kcp-"),
 				mockCreateVmNoVolumes("i-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "test-cluster-api-vm-kcp-", nil),
 			},
@@ -160,7 +159,6 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockKeyPairFound("cluster-api"),
 					mockGetVm("i-foo", "running"),
 					mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
 					mockSecurityGroupHasRule("sg-7eb16ccb", "Outbound", "tcp", "", "sg-750ae810", 6443, 6443, false),
@@ -181,7 +179,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a vm with an additional volume",
 			clusterSpec: "ready", machineSpec: "base-worker-volumes",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockNoVmFoundByName("test-cluster-api-vm-kw-"),
 				mockCreateVmWithVolumes("i-foo", []*infrastructurev1beta1.OscVolume{{
 					Name:       "data",
@@ -198,7 +196,6 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockKeyPairFound("cluster-api"),
 					mockGetVm("i-foo", "running", "/dev/sdb", "vol-bar"),
 					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				},
@@ -224,7 +221,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			clusterSpec: "ready", machineSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"), mockKeyPairFound("cluster-api"),
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234"),
 				mockGetVm("i-046f4bd0", "running"),
 				mockVmReadCCMTag(true),
 			},

@@ -17,14 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	base64 "encoding/base64"
-	"log"
 	"strings"
-
-	"golang.org/x/crypto/ssh"
 )
 
 type OscNode struct {
@@ -139,18 +132,27 @@ type OscLoadBalancerHealthCheck struct {
 }
 
 type OscNet struct {
-	// the tag name associate with the Net
+	// the network name
 	// +optional
 	Name string `json:"name,omitempty"`
 	// the net ip range with CIDR notation
 	// +optional
-	IpRange string `json:"ipRange,omitempty"`
-	// the name of the cluster
-	// +optional
+	IpRange     string `json:"ipRange,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	// The Net Id response
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// Use the already existing network defined by resourceId
+	// +optional
+	UseExisting bool `json:"useExisting,omitempty"`
+}
+
+func (o *OscNet) IsZero() bool {
+	return o.IpRange == "" && o.ResourceId == ""
+}
+
+var DefaultNet = OscNet{
+	IpRange: "10.0.0.0/16",
 }
 
 type OscInternetService struct {
@@ -323,6 +325,24 @@ type OscNetworkResource struct {
 	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
 }
 
+type OscClusterResources struct {
+	Net             map[string]string `json:"net,omitempty"`
+	Subnet          map[string]string `json:"subnet,omitempty"`
+	InternetService map[string]string `json:"internetService,omitempty"`
+	RouteTable      map[string]string `json:"routeTable,omitempty"`
+	SecurityGroup   map[string]string `json:"securityGroup,omitempty"`
+	NatService      map[string]string `json:"natService,omitempty"`
+	Bastion         map[string]string `json:"bastion,omitempty"`
+}
+
+type Reconciler string
+
+const (
+	ReconcilerNet Reconciler = "net"
+)
+
+type OscReconcilerGeneration map[Reconciler]int64
+
 type OscNodeResource struct {
 	VolumeRef       OscResourceReference `json:"volumeRef,omitempty"`
 	ImageRef        OscResourceReference `json:"imageRef,omitempty"`
@@ -340,27 +360,34 @@ type OscImage struct {
 
 type OscVolume struct {
 	Name string `json:"name,omitempty"`
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	Device string `json:"device"`
 	Iops   int32  `json:"iops,omitempty"`
-	Size   int32  `json:"size,omitempty"`
-	//+kubebuilder:deprecatedversion
+	// +kubebuilder:validation:Required
+	Size int32 `json:"size,omitempty"`
+	// Deprecated
 	SubregionName string `json:"subregionName,omitempty"`
 	VolumeType    string `json:"volumeType,omitempty"`
 	ResourceId    string `json:"resourceId,omitempty"`
 }
 
 type OscKeypair struct {
-	Name          string `json:"name,omitempty"`
-	PublicKey     string `json:"publicKey,omitempty"`
-	ResourceId    string `json:"resourceId,omitempty"`
-	ClusterName   string `json:"clusterName,omitempty"`
-	DeleteKeypair bool   `json:"deleteKeypair,omitempty"`
+	// Deprecated
+	Name string `json:"name,omitempty"`
+	// Deprecated
+	PublicKey string `json:"publicKey,omitempty"`
+	// Deprecated
+	ResourceId string `json:"resourceId,omitempty"`
+	// Deprecated
+	ClusterName string `json:"clusterName,omitempty"`
+	// Deprecated
+	DeleteKeypair bool `json:"deleteKeypair,omitempty"`
 }
 
 type OscVm struct {
-	Name               string                    `json:"name,omitempty"`
-	ImageId            string                    `json:"imageId,omitempty"`
+	Name    string `json:"name,omitempty"`
+	ImageId string `json:"imageId,omitempty"`
+	// +kubebuilder:validation:Required
 	KeypairName        string                    `json:"keypairName,omitempty"`
 	VmType             string                    `json:"vmType,omitempty"`
 	VolumeName         string                    `json:"volumeName,omitempty"`
@@ -460,7 +487,6 @@ var (
 	DefaultTimeout                              int32  = 5
 	DefaultProtocol                             string = "TCP"
 	DefaultPort                                 int32  = 6443
-	DefaultIpRange                              string = "10.0.0.0/16"
 	DefaultIpSubnetKcpRange                     string = "10.0.4.0/24"
 	DefaultIpSubnetKwRange                      string = "10.0.3.0/24"
 	DefaultIpSubnetPublicRange                  string = "10.0.2.0/24"
@@ -613,39 +639,6 @@ var (
 	DefaultFromPortRangeFlannelVxlan            int32  = 8472
 	DefaultToPortRangeFlannelVxlan              int32  = 8472
 )
-
-// SetDefaultValue set the Net default values
-func (net *OscNet) SetDefaultValue() {
-	var netName string = DefaultNetName
-	if net.ClusterName != "" {
-		netName = strings.ReplaceAll(DefaultNetName, DefaultClusterName, net.ClusterName)
-	}
-	if net.IpRange == "" {
-		net.IpRange = DefaultIpRange
-	}
-	if net.Name == "" {
-		net.Name = netName
-	}
-}
-
-// SetKeyPairDefaultValue set the KeyPair default values
-func (node *OscNode) SetKeyPairDefaultValue() {
-	if len(node.KeyPair.PublicKey) == 0 {
-		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		node.KeyPair.PublicKey = base64.StdEncoding.EncodeToString(ssh.MarshalAuthorizedKey(publicKey))
-	}
-	if len(node.KeyPair.Name) == 0 {
-		node.KeyPair.Name = DefaultKeypairName
-	}
-}
 
 // SetDefaultValue set the Internet Service default values
 func (igw *OscInternetService) SetDefaultValue() {

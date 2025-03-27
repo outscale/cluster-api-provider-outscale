@@ -57,11 +57,12 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 		if err != nil {
 			return subnetTagName, err
 		}
-		subnetIpRange := subnetSpec.IpSubnetRange
-		err = infrastructurev1beta1.ValidateCidr(subnetIpRange)
-		if err != nil {
-			return subnetTagName, err
-		}
+		// FIXME
+		// subnetIpRange := subnetSpec.IpSubnetRange
+		// err = infrastructurev1beta1.ValidateCidr(subnetIpRange)
+		// if err != nil {
+		// 	return subnetTagName, err
+		// }
 		subnetSubregionName := subnetSpec.SubregionName
 		err = infrastructurev1beta1.ValidateSubregionName(subnetSubregionName)
 		if err != nil {
@@ -79,12 +80,9 @@ func checkSubnetOscDuplicateName(clusterScope *scope.ClusterScope) error {
 }
 
 // reconcileSubnet reconcile the subnet of the cluster.
-func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -103,9 +101,7 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 	log.V(4).Info("Number of subnet", "subnet_length", len(subnetsSpec))
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
-		tagKey := "Name"
-		tagValue := subnetName
-		tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+		tag, err := tagSvc.ReadTag(ctx, tag.SubnetResourceType, tag.NameKey, subnetName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 		}
@@ -135,19 +131,16 @@ func reconcileSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subn
 }
 
 // reconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
-func reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteSubnet(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	subnetsSpec := clusterScope.GetSubnet()
-	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.GetUID()
 
 	networkSpec := clusterScope.GetNetwork()
 	if networkSpec.Subnets == nil {
 		networkSpec.SetSubnetDefaultValue()
 		subnetsSpec = networkSpec.Subnets
 	}
-	netId, err := getNetResourceId(netName, clusterScope)
+	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		log.V(3).Info("No net found, skipping subnet deletion")
 		return reconcile.Result{}, nil //nolint: nilerr

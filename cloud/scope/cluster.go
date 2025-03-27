@@ -147,8 +147,21 @@ func (s *ClusterScope) GetLoadBalancer() *infrastructurev1beta1.OscLoadBalancer 
 }
 
 // GetNet return the net of the cluster
-func (s *ClusterScope) GetNet() *infrastructurev1beta1.OscNet {
-	return &s.OscCluster.Spec.Network.Net
+func (s *ClusterScope) GetNet() infrastructurev1beta1.OscNet {
+	if s.OscCluster.Spec.Network.Net.IsZero() {
+		d := infrastructurev1beta1.DefaultNet
+		d.Name = s.GetNetName()
+		return d
+	}
+	return s.OscCluster.Spec.Network.Net
+}
+
+// GetNetName return the name of the net
+func (s *ClusterScope) GetNetName() string {
+	if s.OscCluster.Spec.Network.Net.Name != "" {
+		return s.OscCluster.Spec.Network.Net.Name
+	}
+	return "Net for " + s.OscCluster.ObjectMeta.Name + " cluster"
 }
 
 // GetExtraSecurityGroupRule return the extraSecurityGroupRule
@@ -177,31 +190,37 @@ func (s *ClusterScope) GetSecurityGroups() []*infrastructurev1beta1.OscSecurityG
 }
 
 // GetRouteTablesRef get the status of routeTable (a Map with tag name with cluster uid associate with resource response id)
+// Deprecated
 func (s *ClusterScope) GetRouteTablesRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.RouteTablesRef
 }
 
 // GetSecurityGroupsRef get the status of securityGroup
+// Deprecated
 func (s *ClusterScope) GetSecurityGroupsRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.SecurityGroupsRef
 }
 
 // GetRouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id)
+// Deprecated
 func (s *ClusterScope) GetRouteRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.RouteRef
 }
 
 // GetSecurityGroupRuleRef get the status of securityGroup rule
+// Deprecated
 func (s *ClusterScope) GetSecurityGroupRuleRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.SecurityGroupRuleRef
 }
 
 // PublicIpRef get the status of publicip (a Map with tag name with cluster uid associate with resource response id)
+// Deprecated
 func (s *ClusterScope) GetPublicIpRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.PublicIpRef
 }
 
 // LinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
+// Deprecated
 func (s ClusterScope) GetLinkRouteTablesRef() map[string][]string {
 	return s.OscCluster.Status.Network.LinkRouteTableRef
 }
@@ -215,6 +234,7 @@ func (s *ClusterScope) SetFailureDomain(id string, spec clusterv1.FailureDomainS
 }
 
 // SetLinkRouteTableRef set the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
+// Deprecated
 func (s ClusterScope) SetLinkRouteTablesRef(linkRouteTableRef map[string][]string) {
 	s.OscCluster.Status.Network.LinkRouteTableRef = linkRouteTableRef
 }
@@ -253,6 +273,7 @@ func (s *ClusterScope) GetSecurityGroupRule(name string) []infrastructurev1beta1
 }
 
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with bastion uid associate with resource response id)
+// Deprecated
 func (s *ClusterScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.LinkPublicIpRef
 }
@@ -263,6 +284,7 @@ func (s *ClusterScope) GetPublicIp() []*infrastructurev1beta1.OscPublicIp {
 }
 
 // GetLinkRouteTablesRef get the status of route associate with a routeTables (a Map with tag name with cluster uid associate with resource response id)
+// Deprecated
 func (s *ClusterScope) GetNetRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.NetRef
 }
@@ -345,6 +367,27 @@ func (s *ClusterScope) SetVmState(v infrastructurev1beta1.VmState) {
 // SetVmState set vmstate
 func (s *ClusterScope) GetVmState() *infrastructurev1beta1.VmState {
 	return s.OscCluster.Status.VmState
+}
+
+// GetResources returns the resource list from the OscCluster status.
+func (s *ClusterScope) GetResources() *infrastructurev1beta1.OscClusterResources {
+	return &s.OscCluster.Status.Resources
+}
+
+// NeedReconciliation returns true if a reconciler needs to run.
+func (s *ClusterScope) NeedReconciliation(reconciler infrastructurev1beta1.Reconciler) bool {
+	if s.OscCluster.Status.ReconcilerGeneration == nil {
+		return true
+	}
+	return s.OscCluster.Status.ReconcilerGeneration[reconciler] < s.OscCluster.Generation
+}
+
+// SetReconciliationGeneration marks a reconciler as having finished its job for a specific cluster generation.
+func (s *ClusterScope) SetReconciliationGeneration(reconciler infrastructurev1beta1.Reconciler) {
+	if s.OscCluster.Status.ReconcilerGeneration == nil {
+		s.OscCluster.Status.ReconcilerGeneration = map[infrastructurev1beta1.Reconciler]int64{}
+	}
+	s.OscCluster.Status.ReconcilerGeneration[reconciler] = s.OscCluster.Generation
 }
 
 // PatchObject keep the cluster configuration and status

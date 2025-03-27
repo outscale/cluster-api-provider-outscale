@@ -292,13 +292,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		privateIps = append(privateIps, privateIp)
 	}
 
-	if vmSpec.KeypairName != "" {
-		_, err = getKeyPairResourceId(vmSpec.KeypairName, machineScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
 	securityGroupIds := make([]string, 0, len(vmSecurityGroups))
 	for _, vmSecurityGroup := range vmSecurityGroups {
@@ -461,7 +454,7 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		}
 	}
 
-	tag, err := tagSvc.ReadTag(ctx, "OscK8sNodeName", *privateDnsName)
+	tag, err := tagSvc.ReadTag(ctx, tag.VmResourceType, "OscK8sNodeName", *privateDnsName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
 	}
@@ -500,10 +493,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		log.V(2).Info("vm is already destroyed", "vmName", vmName)
 		return reconcile.Result{}, nil
 	}
-
-	keypairSpec := machineScope.GetKeypair()
-	log.V(4).Info("Check keypair", "keypair", keypairSpec.Name)
-	deleteKeypair := machineScope.GetDeleteKeypair()
 
 	var securityGroupIds []string
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
@@ -553,7 +542,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		var machineSize int
 		var machineKcpCount int32
 		var machineKwCount int32
-		var machineCount int32
 
 		var machines []*clusterv1.Machine
 		if vmSpec.Replica != 1 {
@@ -566,7 +554,6 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 		} else {
 			machineSize = 1
 			machineKcpCount = 1
-			machineCount = 1
 		}
 
 		if machineSize > 0 {
@@ -585,14 +572,8 @@ func reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, ma
 						}
 					}
 				}
-				machineCount = machineKwCount + machineKcpCount
-			}
-			if machineCount != 1 {
-				machineScope.SetDeleteKeypair(false)
-				log.V(3).Info("Keep Keypair from vm")
 			}
 			if machineKcpCount == 1 {
-				machineScope.SetDeleteKeypair(deleteKeypair)
 				securityGroupsRef := clusterScope.GetSecurityGroupsRef()
 				loadBalancerSpec := clusterScope.GetLoadBalancer()
 				loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName

@@ -29,7 +29,6 @@ type Servicer interface {
 	Volume(ctx context.Context, scope scope.ClusterScope) storage.OscVolumeInterface
 	VM(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface
 	Image(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface
-	KeyPair(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface
 
 	Tag(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface
 }
@@ -104,11 +103,6 @@ func (Services) PublicIp(ctx context.Context, scope scope.ClusterScope) security
 // getLoadBalancerSvc retrieve loadBalancerSvc
 func (Services) LoadBalancer(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
 	return service.NewService(ctx, &scope)
-}
-
-// getKeyPairSvc retrieve keypairSvc
-func (Services) KeyPair(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface {
-	return security.NewService(ctx, &scope)
 }
 
 // getTagSvc retrieve tagSvc
