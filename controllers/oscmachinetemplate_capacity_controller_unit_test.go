@@ -34,7 +34,7 @@ var (
 		Template: infrastructurev1beta1.OscMachineTemplateResource{
 			Spec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-volume",
 							Iops:       1000,

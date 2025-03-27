@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250303100717-fe6de3528e9a
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250407052638-f3ae3e4c0f49
   name: oscmachines.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -70,14 +70,19 @@ spec:
                   keypair:
                     properties:
                       clusterName:
+                        description: Deprecated
                         type: string
                       deleteKeypair:
+                        description: Deprecated
                         type: boolean
                       name:
+                        description: Deprecated
                         type: string
                       publicKey:
+                        description: Deprecated
                         type: string
                       resourceId:
+                        description: Deprecated
                         type: string
                     type: object
                   vm:
@@ -146,6 +151,8 @@ spec:
                         type: string
                       volumeName:
                         type: string
+                    required:
+                    - keypairName
                     type: object
                   volumes:
                     items:
@@ -163,11 +170,13 @@ spec:
                           format: int32
                           type: integer
                         subregionName:
+                          description: Deprecated
                           type: string
                         volumeType:
                           type: string
                       required:
                       - device
+                      - size
                       type: object
                     type: array
                 type: object
@@ -239,6 +248,8 @@ spec:
                   - type
                   type: object
                 type: array
+              failureDomain:
+                type: string
               failureMessage:
                 type: string
               failureReason:
@@ -304,6 +315,26 @@ spec:
                 type: object
               ready:
                 type: boolean
+              reconcilerGeneration:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              resources:
+                properties:
+                  image:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  vm:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  volumes:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
               vmState:
                 type: string
             type: object

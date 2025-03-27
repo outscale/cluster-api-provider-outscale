@@ -24,19 +24,10 @@ metadata:
   name: "${CLUSTER_NAME}"
 spec:
   network:
-    clusterName: "${CLUSTER_NAME}"
     subregionName: ${OSC_SUBREGION_NAME}
     loadBalancer:
       loadbalancername: "remediation-again"
-      clusterName: "${CLUSTER_NAME}"
-    net:
-      clusterName: "${CLUSTER_NAME}"
-    internetService:
-      clusterName: "${CLUSTER_NAME}"
-    natService:
-      clusterName: "${CLUSTER_NAME}"
     bastion:
-      clusterName: "${CLUSTER_NAME}"
       enable: false
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -47,12 +38,7 @@ spec:
   template:
     spec:
       node:
-        clusterName: "${CLUSTER_NAME}"
-        keypair:
-          name: "${OSC_KEYPAIR_NAME}"
-          deleteKeypair: false
         vm:
-          clusterName: "${CLUSTER_NAME}"
           name: "${CLUSTER_NAME}"
           imageId: "${KUBERNETES_IMAGE_UPGRADE_TO}"
           rootDisk:
@@ -94,12 +80,7 @@ spec:
   template:
     spec:
       node:
-        clusterName: "${CLUSTER_NAME}"
-        keypair:
-          name: "${OSC_KEYPAIR_NAME}"
-          deleteKeypair: false
         vm:
-          clusterName: "${CLUSTER_NAME}"
           imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           rootDisk:
@@ -108,7 +89,6 @@ spec:
             rootDiskType: "${OSC_VOLUME_TYPE}"
           subregionName: ${OSC_SUBREGION_NAME}
           role: controlplane
-          loadBalancerName: "remediation-again"
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1

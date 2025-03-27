@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -41,17 +42,32 @@ func (m *MockOscTagInterface) EXPECT() *MockOscTagInterfaceMockRecorder {
 	return m.recorder
 }
 
-// ReadTag mocks base method.
-func (m *MockOscTagInterface) ReadTag(ctx context.Context, tagKey, tagValue string) (*osc.Tag, error) {
+// ReadOwnedByTag mocks base method.
+func (m *MockOscTagInterface) ReadOwnedByTag(ctx context.Context, rsrcType tag.ResourceType, cluster string) (*osc.Tag, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadTag", ctx, tagKey, tagValue)
+	ret := m.ctrl.Call(m, "ReadOwnedByTag", ctx, rsrcType, cluster)
+	ret0, _ := ret[0].(*osc.Tag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReadOwnedByTag indicates an expected call of ReadOwnedByTag.
+func (mr *MockOscTagInterfaceMockRecorder) ReadOwnedByTag(ctx, rsrcType, cluster any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadOwnedByTag", reflect.TypeOf((*MockOscTagInterface)(nil).ReadOwnedByTag), ctx, rsrcType, cluster)
+}
+
+// ReadTag mocks base method.
+func (m *MockOscTagInterface) ReadTag(ctx context.Context, rsrcType tag.ResourceType, key, value string) (*osc.Tag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadTag", ctx, rsrcType, key, value)
 	ret0, _ := ret[0].(*osc.Tag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ReadTag indicates an expected call of ReadTag.
-func (mr *MockOscTagInterfaceMockRecorder) ReadTag(ctx, tagKey, tagValue any) *gomock.Call {
+func (mr *MockOscTagInterfaceMockRecorder) ReadTag(ctx, rsrcType, key, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadTag", reflect.TypeOf((*MockOscTagInterface)(nil).ReadTag), ctx, tagKey, tagValue)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadTag", reflect.TypeOf((*MockOscTagInterface)(nil).ReadTag), ctx, rsrcType, key, value)
 }

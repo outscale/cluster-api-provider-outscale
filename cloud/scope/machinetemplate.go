@@ -86,11 +86,11 @@ func (m *MachineTemplateScope) GetTags() map[string]string {
 func (m *MachineTemplateScope) GetReplica() int32 {
 	return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Replica
 }
-func (m *MachineTemplateScope) GetRole() string {
+func (m *MachineTemplateScope) GetRole() infrastructurev1beta1.OscRole {
 	if m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Role != "" {
 		return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Role
 	}
-	return ""
+	return infrastructurev1beta1.RoleWorker
 }
 
 func (m *MachineTemplateScope) GetClusterName() string {

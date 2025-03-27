@@ -42,18 +42,18 @@ func (m *MockOscNatServiceInterface) EXPECT() *MockOscNatServiceInterfaceMockRec
 }
 
 // CreateNatService mocks base method.
-func (m *MockOscNatServiceInterface) CreateNatService(ctx context.Context, publicIpId, subnetId, natServiceName, clusterName string) (*osc.NatService, error) {
+func (m *MockOscNatServiceInterface) CreateNatService(ctx context.Context, publicIpId, subnetId, clientToken, natServiceName, clusterID string) (*osc.NatService, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNatService", ctx, publicIpId, subnetId, natServiceName, clusterName)
+	ret := m.ctrl.Call(m, "CreateNatService", ctx, publicIpId, subnetId, clientToken, natServiceName, clusterID)
 	ret0, _ := ret[0].(*osc.NatService)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateNatService indicates an expected call of CreateNatService.
-func (mr *MockOscNatServiceInterfaceMockRecorder) CreateNatService(ctx, publicIpId, subnetId, natServiceName, clusterName any) *gomock.Call {
+func (mr *MockOscNatServiceInterfaceMockRecorder) CreateNatService(ctx, publicIpId, subnetId, clientToken, natServiceName, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNatService", reflect.TypeOf((*MockOscNatServiceInterface)(nil).CreateNatService), ctx, publicIpId, subnetId, natServiceName, clusterName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNatService", reflect.TypeOf((*MockOscNatServiceInterface)(nil).CreateNatService), ctx, publicIpId, subnetId, clientToken, natServiceName, clusterID)
 }
 
 // DeleteNatService mocks base method.
@@ -83,4 +83,34 @@ func (m *MockOscNatServiceInterface) GetNatService(ctx context.Context, natServi
 func (mr *MockOscNatServiceInterfaceMockRecorder) GetNatService(ctx, natServiceId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNatService", reflect.TypeOf((*MockOscNatServiceInterface)(nil).GetNatService), ctx, natServiceId)
+}
+
+// GetNatServiceFromClientToken mocks base method.
+func (m *MockOscNatServiceInterface) GetNatServiceFromClientToken(ctx context.Context, clientToken string) (*osc.NatService, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNatServiceFromClientToken", ctx, clientToken)
+	ret0, _ := ret[0].(*osc.NatService)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNatServiceFromClientToken indicates an expected call of GetNatServiceFromClientToken.
+func (mr *MockOscNatServiceInterfaceMockRecorder) GetNatServiceFromClientToken(ctx, clientToken any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNatServiceFromClientToken", reflect.TypeOf((*MockOscNatServiceInterface)(nil).GetNatServiceFromClientToken), ctx, clientToken)
+}
+
+// ListNatServices mocks base method.
+func (m *MockOscNatServiceInterface) ListNatServices(tx context.Context, netId string) ([]osc.NatService, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListNatServices", tx, netId)
+	ret0, _ := ret[0].([]osc.NatService)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListNatServices indicates an expected call of ListNatServices.
+func (mr *MockOscNatServiceInterfaceMockRecorder) ListNatServices(tx, netId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNatServices", reflect.TypeOf((*MockOscNatServiceInterface)(nil).ListNatServices), tx, netId)
 }

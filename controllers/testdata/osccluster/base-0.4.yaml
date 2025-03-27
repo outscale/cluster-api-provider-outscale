@@ -1,13 +1,7 @@
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"infrastructure.cluster.x-k8s.io/v1beta1","kind":"OscCluster","metadata":{"annotations":{},"name":"test-cluster-api","namespace":"cluster-api-test"},"spec":{"network":{"bastion":{"clusterName":"test-cluster-api","enable":false},"clusterName":"test-cluster-api","internetService":{"clusterName":"test-cluster-api"},"loadBalancer":{"clusterName":"test-cluster-api","loadbalancername":"test-cluster-api-k8s"},"natService":{"clusterName":"test-cluster-api"},"net":{"clusterName":"test-cluster-api"},"subregionName":"eu-west-2a"}}}
-  creationTimestamp: "2025-02-17T09:47:38Z"
-  finalizers:
-  - oscclusters.infrastructure.cluster.x-k8s.io
-  generation: 3
+  generation: 1
   labels:
     cluster.x-k8s.io/cluster-name: test-cluster-api
     outscale.com/clusterUID: 9e1db9c4-bf0a-4583-8999-203ec002c520
@@ -23,9 +17,6 @@ metadata:
   resourceVersion: "20214284"
   uid: 4973cd7c-439b-4108-b61f-39805379aa0e
 spec:
-  controlPlaneEndpoint:
-    host: test-cluster-api-k8s-foo.eu-west-2.lbu.outscale.com
-    port: 6443
   network:
     bastion:
       clusterName: test-cluster-api
