@@ -71,7 +71,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&watchFilterValue, "watch-filter", "", fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
-	flag.DurationVar(&syncPeriod, "sync-period", 10*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
+	flag.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
 
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
@@ -109,8 +109,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	tracker := &controllers.ClusterResourceTracker{
+		Cloud: cs,
+	}
 	if err = (&controllers.OscClusterReconciler{
 		Client:           mgr.GetClient(),
+		Tracker:          tracker,
 		Cloud:            cs,
 		Recorder:         mgr.GetEventRecorderFor("osccluster-controller"),
 		ReconcileTimeout: reconcileTimeout,
@@ -120,8 +124,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	mtracker := &controllers.MachineResourceTracker{
+		Cloud: cs,
+	}
 	if err = (&controllers.OscMachineReconciler{
 		Client:           mgr.GetClient(),
+		ClusterTracker:   tracker,
+		Tracker:          mtracker,
 		Cloud:            cs,
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
 		ReconcileTimeout: reconcileTimeout,

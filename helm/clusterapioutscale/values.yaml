@@ -23,7 +23,7 @@ deployment:
   # -- Outscale provider image
   image: registry.hub.docker.com/outscale/cluster-api-outscale-controllers
   # -- Outscale provider image tag
-  imageTag: "v0.1.0"
+  imageTag: "v0.4.0"
   # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
   imagePullPolicy: IfNotPresent
   # -- Specify image pull secrets

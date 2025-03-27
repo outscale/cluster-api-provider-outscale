@@ -39,27 +39,9 @@ type OscLoadBalancerInterface interface {
 	DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error
 	LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
 	UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
-	CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error
 	GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error)
-	CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error
+	CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error
 	DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
-}
-
-// GetName return the name of the loadBalancer
-func (s *Service) GetName(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (string, error) {
-	var name string
-	var clusterName string
-	if spec.LoadBalancerName != "" {
-		name = spec.LoadBalancerName
-	} else {
-		clusterName = infrastructurev1beta1.OscReplaceName(s.scope.GetName())
-		name = clusterName + "-" + "apiserver" + "-" + s.scope.GetUID()
-	}
-	err := infrastructurev1beta1.ValidateLoadBalancerName(name)
-	if err != nil {
-		return "", err
-	}
-	return name, nil
 }
 
 // ValidateProtocol check that the protocol string is a valid protocol
@@ -76,10 +58,6 @@ func ValidateProtocol(protocol string) (string, error) {
 
 // ConfigureHealthCheck update loadBalancer to configure healthCheck
 func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return nil, err
-	}
 	checkInterval := spec.HealthCheck.CheckInterval
 	healthyThreshold := spec.HealthCheck.HealthyThreshold
 	port := spec.HealthCheck.Port
@@ -95,7 +73,7 @@ func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructure
 		UnhealthyThreshold: unhealthyThreshold,
 	}
 	updateLoadBalancerRequest := osc.UpdateLoadBalancerRequest{
-		LoadBalancerName: loadBalancerName,
+		LoadBalancerName: spec.LoadBalancerName,
 		HealthCheck:      &healthCheck,
 	}
 	oscApiClient := s.scope.GetApi()
@@ -258,14 +236,10 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 
 // GetLoadBalancerTag retrieve loadBalancer object from spec
 func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return nil, err
-	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readLoadBalancerTagRequest := osc.ReadLoadBalancerTagsRequest{
-		LoadBalancerNames: []string{loadBalancerName},
+		LoadBalancerNames: []string{spec.LoadBalancerName},
 	}
 	var readLoadBalancerTagsResponse osc.ReadLoadBalancerTagsResponse
 	readLoadBalancerTagCallBack := func() (bool, error) {
@@ -307,14 +281,10 @@ func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1
 }
 
 // CreateLoadBalancerTag create the load balancer tag
-func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return err
-	}
+func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
 	createLoadBalancerTagRequest := osc.CreateLoadBalancerTagsRequest{
-		LoadBalancerNames: []string{loadBalancerName},
-		Tags:              []osc.ResourceTag{loadBalancerTag},
+		LoadBalancerNames: []string{spec.LoadBalancerName},
+		Tags:              []osc.ResourceTag{*loadBalancerTag},
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -346,20 +316,12 @@ func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructur
 
 // CreateLoadBalancer create the load balancer
 func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return nil, err
-	}
-
 	loadBalancerType := spec.LoadBalancerType
 	backendPort := spec.Listener.BackendPort
 	loadBalancerPort := spec.Listener.LoadBalancerPort
 	backendProtocol := spec.Listener.BackendProtocol
 	loadBalancerProtocol := spec.Listener.LoadBalancerProtocol
 
-	if err != nil {
-		return nil, err
-	}
 	first_listener := osc.ListenerForCreation{
 		BackendPort:          backendPort,
 		BackendProtocol:      &backendProtocol,
@@ -368,7 +330,7 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 	}
 
 	loadBalancerRequest := osc.CreateLoadBalancerRequest{
-		LoadBalancerName: loadBalancerName,
+		LoadBalancerName: spec.LoadBalancerName,
 		LoadBalancerType: &loadBalancerType,
 		Listeners:        []osc.ListenerForCreation{first_listener},
 		SecurityGroups:   &[]string{securityGroupId},
@@ -401,7 +363,7 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 	backoff := reconciler.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, createLoadBalancerCallBack)
 	if waitErr != nil {
-		return nil, err
+		return nil, waitErr
 	}
 	loadBalancer, ok := loadBalancerResponse.GetLoadBalancerOk()
 	if !ok {
@@ -412,12 +374,8 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 
 // DeleteLoadBalancer delete the loadbalancer
 func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return err
-	}
 	deleteLoadBalancerRequest := osc.DeleteLoadBalancerRequest{
-		LoadBalancerName: loadBalancerName,
+		LoadBalancerName: spec.LoadBalancerName,
 	}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -451,12 +409,8 @@ func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1
 
 // DeleteLoadBalancerTag delete the loadbalancerTag
 func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return err
-	}
 	deleteLoadBalancerTagRequest := osc.DeleteLoadBalancerTagsRequest{
-		LoadBalancerNames: []string{loadBalancerName},
+		LoadBalancerNames: []string{spec.LoadBalancerName},
 		Tags:              []osc.ResourceLoadBalancerTag{loadBalancerTag},
 	}
 	oscApiClient := s.scope.GetApi()
@@ -491,16 +445,12 @@ func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructur
 
 // CheckLoadBalancerDeregisterVm check vm is deregister as vm backend in loadBalancer
 func (s *Service) CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
-	loadBalancerName, err := s.GetName(ctx, spec)
-	if err != nil {
-		return err
-	}
 	clock_time := clock.New()
 	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
 	getLoadBalancerDeregisterVm := false
 	for !getLoadBalancerDeregisterVm {
 		time.Sleep(clockInsideLoop * time.Second)
-		loadBalancer, err := s.GetLoadBalancer(ctx, loadBalancerName)
+		loadBalancer, err := s.GetLoadBalancer(ctx, spec.LoadBalancerName)
 		if err != nil {
 			return err
 		}

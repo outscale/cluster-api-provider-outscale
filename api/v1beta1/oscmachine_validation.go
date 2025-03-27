@@ -177,8 +177,6 @@ func ValidateVolumeType(volumeType string) error {
 	}
 }
 
-var isValidSubregion = regexp.MustCompile(`(cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]`).MatchString
-
 // ValidateSubregionName checks that subregionName is a valid az format
 func ValidateSubregionName(subregionName string) error {
 	switch {
@@ -213,4 +211,14 @@ func ValidateVmType(vmType string) error {
 	default:
 		return errors.New("invalid vm type")
 	}
+}
+
+func ValidateAndReturnErrorList[T any](value T, fieldPath *field.Path, validateFunc func(T) error) field.ErrorList {
+	allErrs := field.ErrorList{}
+	err := validateFunc(value)
+	if err != nil {
+		allErrs = append(allErrs, field.Invalid(fieldPath, value, err.Error()))
+		return allErrs
+	}
+	return allErrs
 }

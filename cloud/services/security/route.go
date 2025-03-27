@@ -22,17 +22,17 @@ import (
 	"fmt"
 	"net/http"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/ptr"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_security/route_mock.go -package mock_security -source ./route.go
 type OscRouteTableInterface interface {
-	CreateRouteTable(ctx context.Context, netId string, clusterName string, routeTableName string) (*osc.RouteTable, error)
+	CreateRouteTable(ctx context.Context, netId string, clusterID string, routeTableName string) (*osc.RouteTable, error)
 	CreateRoute(ctx context.Context, destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
 	DeleteRouteTable(ctx context.Context, routeTableId string) error
 	DeleteRoute(ctx context.Context, destinationIpRange string, routeTableId string) error
@@ -40,11 +40,11 @@ type OscRouteTableInterface interface {
 	GetRouteTableFromRoute(ctx context.Context, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
 	LinkRouteTable(ctx context.Context, routeTableId string, subnetId string) (string, error)
 	UnlinkRouteTable(ctx context.Context, linkRouteTableId string) error
-	GetRouteTableIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
+	GetRouteTablesFromNet(ctx context.Context, netId string) ([]osc.RouteTable, error)
 }
 
 // CreateRouteTable create the routetable associated with the net
-func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterName string, routeTableName string) (*osc.RouteTable, error) {
+func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterID string, routeTableName string) (*osc.RouteTable, error) {
 	routeTableRequest := osc.CreateRouteTableRequest{
 		NetId: netId,
 	}
@@ -82,7 +82,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 		Value: routeTableName,
 	}
 	clusterTag := osc.ResourceTag{
-		Key:   "OscK8sClusterID/" + clusterName,
+		Key:   "OscK8sClusterID/" + clusterID,
 		Value: "owned",
 	}
 	routeTableTagRequest := osc.CreateTagsRequest{
@@ -104,11 +104,6 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterNam
 // CreateRoute create the route associated with the routetable and the net
 func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
-	err := infrastructurev1beta1.ValidateCidr(destinationIpRange)
-	if err != nil {
-		return nil, err
-	}
-
 	switch {
 	case resourceType == "gateway":
 		routeRequest = osc.CreateRouteRequest{
@@ -364,11 +359,12 @@ func (s *Service) UnlinkRouteTable(ctx context.Context, linkRouteTableId string)
 	return nil
 }
 
-// GetRouteTableIdsFromNetIds return the routeTable id resource that exist from the net id
-func (s *Service) GetRouteTableIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
+// GetRouteTablesFromNet returns all non main route tables present in a net.
+func (s *Service) GetRouteTablesFromNet(ctx context.Context, netId string) ([]osc.RouteTable, error) {
 	readRouteTablesRequest := osc.ReadRouteTablesRequest{
 		Filters: &osc.FiltersRouteTable{
-			NetIds: &[]string{netId},
+			NetIds:             &[]string{netId},
+			LinkRouteTableMain: ptr.To(false),
 		},
 	}
 	oscApiClient := s.scope.GetApi()
@@ -382,16 +378,5 @@ func (s *Service) GetRouteTableIdsFromNetIds(ctx context.Context, netId string) 
 			return nil, err
 		}
 	}
-	var routetableIds []string
-	routetables, ok := readRouteTablesResponse.GetRouteTablesOk()
-	if !ok {
-		return nil, errors.New("Can not get routeTable")
-	}
-	if len(*routetables) != 0 {
-		for _, routetable := range *routetables {
-			routetableId := routetable.GetRouteTableId()
-			routetableIds = append(routetableIds, routetableId)
-		}
-	}
-	return routetableIds, nil
+	return readRouteTablesResponse.GetRouteTables(), nil
 }

@@ -31,113 +31,37 @@ metadata:
   namespace: default
 spec:
   network:
-    clusterName: cluster-api-multi-az
     loadBalancer:
       loadbalancername: cluster-api-multi-az-lb
-      clusterName: cluster-api-multi-az
-      loadbalancertype: internet-facing
-      subnetname: cluster-api-multi-az-subnet-2a-private
-      securitygroupname: cluster-api-multi-az-securitygroup-lb
     net:
-      name: cluster-api-multi-az-net
-      clusterName: cluster-api-multi-az
       ipRange: "10.0.0.0/16"
-    internetService:
-      name: cluster-api-multi-az-igw
-      clusterName: cluster-api-multi-az
-    controlPlaneSubnets:
-      - cluster-api-multi-az-subnet-2a-private
-      - cluster-api-multi-az-subnet-2b-private
     subnets:
-    - name: cluster-api-multi-az-subnet-2a-private
-      ipSubnetRange: "10.0.0.0/24"
+    - ipSubnetRange: "10.0.0.0/24"
       subregionName: eu-west-2a
-    - name: cluster-api-multi-az-subnet-2b-private
-      ipSubnetRange: "10.0.1.0/24"
+      roles:
+      - worker
+    - ipSubnetRange: "10.0.1.0/24"
       subregionName: eu-west-2b
-    - name: cluster-api-multi-az-subnet-2a-public
-      ipSubnetRange: "10.0.2.0/24"
+      roles:
+      - worker
+    - ipSubnetRange: "10.0.2.0/24"
       subregionName: eu-west-2a
-    - name: cluster-api-multi-az-subnet-2b-public
-      ipSubnetRange: "10.0.3.0/24"
+      roles:
+      - controlplane
+    - ipSubnetRange: "10.0.3.0/24"
       subregionName: eu-west-2b
-    natServices:
-    - name: cluster-api-multi-az-2a-nat
-      clusterName: cluster-api-multi-az
-      publicipname: cluster-api-multi-az-publicip-2a-nat
-      subnetname: cluster-api-multi-az-subnet-2a-public
-    - name: cluster-api-multi-az-2b-nat
-      clusterName: cluster-api-multi-az
-      publicipname: cluster-api-multi-az-publicip-2b-nat
-      subnetname: cluster-api-multi-az-subnet-2b-public
-    publicIps:
-      - name: cluster-api-multi-az-publicip-2a-nat
-        clusterName: cluster-api-multi-az
-      - name: cluster-api-multi-az-publicip-2b-nat
-        clusterName: cluster-api-multi-az
-    routeTables:
-    - name: cluster-api-multi-az-rtb-2a-private
-      subnets:
-      - cluster-api-multi-az-subnet-2a-private
-      routes:
-      - name: cluster-api-multi-az-route-2a-nat
-        targetName: cluster-api-multi-az-2a-nat
-        targetType: nat
-        destination: "0.0.0.0/0"
-    - name: cluster-api-multi-az-rtb-2b-private
-      subnets:
-      - cluster-api-multi-az-subnet-2b-private
-      routes:
-      - name: cluster-api-multi-az-route-2b-nat
-        targetName: cluster-api-multi-az-2b-nat
-        targetType: nat
-        destination: "0.0.0.0/0"
-    - name: cluster-api-multi-az-rtb-2a-public
-      subnets:
-      - cluster-api-multi-az-subnet-2a-public
-      routes:
-      - name: cluster-api-multi-az-route-2a-igw
-        targetName: cluster-api-multi-az-igw
-        targetType: gateway
-        destination: "0.0.0.0/0"
-    - name: cluster-api-multi-az-rtb-2b-public
-      subnets:
-      - cluster-api-multi-az-subnet-2b-public
-      routes:
-      - name: cluster-api-multi-az-route-2b-igw
-        targetName: cluster-api-multi-az-igw
-        targetType: gateway
-        destination: "0.0.0.0/0"
-    securityGroups:
-    - name: cluster-api-multi-az-securitygroup-lb
-      description: Cluster-api Load Balancer Security Group
-      securityGroupRules:
-      - name: cluster-api-securitygrouprule-calico-vxlan
-        flow: Inbound
-        ipProtocol: tcp
-        ipRange: "0.0.0.0/0"
-        fromPortRange: 6443
-        toPortRange: 6443
-    - name: cluster-api-multi-az-securitygroup-control-plane
-      description: Cluster-api Control Plane Security Group
-      securityGroupRules:
-      - name: cluster-api-securitygrouprule-nodes
-        flow: Inbound
-        ipProtocol: "-1"
-        ipRange: "10.0.0.0/16"
-        fromPortRange: 1
-        toPortRange: 65535
-    - name: cluster-api-multi-az-securitygroup-worker
-      description: Cluster-api Worker Security Group
-      securityGroupRules:
-      - name: cluster-api-securitygrouprule-nodes
-        flow: Inbound
-        ipProtocol: "-1"
-        ipRange: "10.0.0.0/16"
-        fromPortRange: 1
-        toPortRange: 65535
+      roles:
+      - controlplane
+    - ipSubnetRange: "10.0.4.0/24"
+      subregionName: eu-west-2a
+      roles:
+      - loadbalancer
+      - nat
+    - ipSubnetRange: "10.0.5.0/24"
+      subregionName: eu-west-2b
+      roles:
+      - nat
     bastion:
-      clusterName: cluster-api-multi-az
       enable: false
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -149,31 +73,18 @@ spec:
   template:
     spec:
       node:
-        clusterName: cluster-api-multi-az
         image:
          name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
-        keypair:
-          name: cluster-api
-          deleteKeypair: false
         vm:
-          clusterName: cluster-api-multi-az
           name: cluster-api-multi-az-vm-control-plane
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
-            rootDiskIops: 1500
             rootDiskType: gp2
-          deviceName: /dev/sda1
-          # Set at empty to use the failure domain
-          # subregionName: ""
-          # subnetName: ""
           role: controlplane
-          loadBalancerName: cluster-api-multi-az-lb
-          securityGroupNames:
-            - name: cluster-api-multi-az-securitygroup-control-plane
           vmType: "tinav6.c4r8p1"
           tags:
-              tags.osc.fcu.repulse_server: vm-control-plane
+              osc.fcu.repulse_server: vm-control-plane
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -223,25 +134,14 @@ spec:
   template:
     spec:
       node:
-        clusterName: cluster-api-multi-az
         image:
          name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
-        keypair:
-          name: cluster-api
-          deleteKeypair: false
         vm:
-          clusterName: cluster-api-multi-az
-          name: cluster-api-multi-az-vm-worker-2a
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
-            rootDiskIops: 1500
             rootDiskType: gp2
-          deviceName: /dev/sda1
           subregionName: eu-west-2a
-          subnetName: cluster-api-multi-az-subnet-2a-private
-          securityGroupNames:
-            - name: cluster-api-multi-az-securitygroup-worker
           vmType: "tinav6.c4r8p2"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -253,25 +153,14 @@ spec:
   template:
     spec:
       node:
-        clusterName: cluster-api-multi-az
         image:
          name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
-        keypair:
-          name: cluster-api
-          deleteKeypair: false
         vm:
-          clusterName: cluster-api-multi-az
-          name: cluster-api-multi-az-vm-worker-2b
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
-            rootDiskIops: 1500
             rootDiskType: gp2
-          deviceName: /dev/sda1
           subregionName: eu-west-2b
-          subnetName: cluster-api-multi-az-subnet-2b-private
-          securityGroupNames:
-            - name: cluster-api-multi-az-securitygroup-worker
           vmType: "tinav6.c4r8p2"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1

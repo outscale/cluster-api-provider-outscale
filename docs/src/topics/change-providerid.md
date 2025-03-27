@@ -1,4 +1,4 @@
-# How to migrate with new providerid
+# Migrating from pre v0.2.2 versions
 
 Until version v0.2.2, our providerId use the following format aws://availability-zone/instance-id
 
@@ -6,9 +6,7 @@ New version of cluster-api-provider-outscale will use the following format aws:/
 
 This documentation is only for kubeadm bootstrapper.
 
-## How to migrate
-
-### Cluster-api provider outscale requirement
+## Provider requirements
 
 ```
 root@ip-10-9-24-171:/home/outscale# kubectl get deployment -n cluster-api-provider-outscale-system 
@@ -22,7 +20,8 @@ Please make sure you have the version of the manager v0.2.2 in cluster-api-provi
 outscale/cluster-api-outscale-controllers:v0.2.2
 ```
 
-### Control Plane requirement
+## Control Plane requirements
+
 Please make sure you have 3 replicas of kubeadmControlPlane.
 
 In kubeadmControlPlane config:
@@ -44,7 +43,7 @@ default        capu-quickstart-md-0-c54f966f8xjqbbf-pnhv9   capu-quickstart  ip-
 default        capu-quickstart-md-0-c54f966f8xjqbbf-x55lv   capu-quickstart   ip-10-0-3-10.eu-west-2.compute.internal    aws:///eu-west-2a/i-817cc83b   Running    11h   v1.22.11
 ```
 
-### Worker requirement
+## Worker requirements
 
 Please make sure you have at least 2 replica of machineDeployment
 
@@ -65,7 +64,7 @@ kubectl get machinedeployment -A
 default        capu-quickstart-md-0   capu-quickstart   1                  1         1             ScalingUp   13h   v1.22.11
 ```
 
-#### Change worker node
+## Change worker nodes
 
 Please upgrade cluster-api-outscale-controllers to 0.3.1:
 
@@ -102,7 +101,7 @@ A new node with the new providerId config will be available.
 
 Please repeat this procedure for each node.
 
-#### Change master node
+## Change master nodes
 
 Replace in KubeadmControlPlane:
 

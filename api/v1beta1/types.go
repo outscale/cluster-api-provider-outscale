@@ -17,22 +17,26 @@ limitations under the License.
 package v1beta1
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	base64 "encoding/base64"
-	"log"
+	"slices"
 	"strings"
+)
 
-	"golang.org/x/crypto/ssh"
+type OscRole string
+
+const (
+	RoleControlPlane OscRole = "controlplane"
+	RoleWorker       OscRole = "worker"
+	RoleLoadBalancer OscRole = "loadbalancer"
+	RoleBastion      OscRole = "bastion"
+	RoleNat          OscRole = "nat"
 )
 
 type OscNode struct {
-	Vm          OscVm        `json:"vm,omitempty"`
-	Image       OscImage     `json:"image,omitempty"`
-	Volumes     []*OscVolume `json:"volumes,omitempty"`
-	KeyPair     OscKeypair   `json:"keypair,omitempty"`
-	ClusterName string       `json:"clusterName,omitempty"`
+	Vm          OscVm       `json:"vm,omitempty"`
+	Image       OscImage    `json:"image,omitempty"`
+	Volumes     []OscVolume `json:"volumes,omitempty"`
+	KeyPair     OscKeypair  `json:"keypair,omitempty"`
+	ClusterName string      `json:"clusterName,omitempty"`
 }
 
 type OscNetwork struct {
@@ -46,7 +50,7 @@ type OscNetwork struct {
 	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
 	// The Subnet configuration
 	// +optional
-	Subnets []*OscSubnet `json:"subnets,omitempty"`
+	Subnets []OscSubnet `json:"subnets,omitempty"`
 	// The Internet Service configuration
 	// +optional
 	InternetService OscInternetService `json:"internetService,omitempty"`
@@ -55,27 +59,26 @@ type OscNetwork struct {
 	NatService OscNatService `json:"natService,omitempty"`
 	// The Nat Services configuration
 	// +optional
-	NatServices []*OscNatService `json:"natServices,omitempty"`
+	NatServices []OscNatService `json:"natServices,omitempty"`
 	// The Route Table configuration
 	// +optional
-	RouteTables    []*OscRouteTable    `json:"routeTables,omitempty"`
-	SecurityGroups []*OscSecurityGroup `json:"securityGroups,omitempty"`
+	RouteTables    []OscRouteTable    `json:"routeTables,omitempty"`
+	SecurityGroups []OscSecurityGroup `json:"securityGroups,omitempty"`
 	// The Public Ip configuration
 	// +optional
 	PublicIps []*OscPublicIp `json:"publicIps,omitempty"`
-	// The name of the cluster
+	// The name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// The image configuration
+	// The image configuration (unused)
 	// +optional
 	Image OscImage `json:"image,omitempty"`
 	// The bastion configuration
 	// + optional
 	Bastion OscBastion `json:"bastion,omitempty"`
-	// The subregion name
-	// + optional
+	// The default subregion name
 	SubregionName string `json:"subregionName,omitempty"`
-	// Add SecurityGroup Rule after the cluster is created
+	// Add SecurityGroup Rule after the cluster is created (unused)
 	// + optional
 	ExtraSecurityGroupRule bool `json:"extraSecurityGroupRule,omitempty"`
 }
@@ -84,26 +87,27 @@ type OscLoadBalancer struct {
 	// The Load Balancer unique name
 	// +optional
 	LoadBalancerName string `json:"loadbalancername,omitempty"`
-	// The Load Balancer Type internet-facing or internal
+	// The Load Balancer type (internet-facing or internal)
 	// +optional
 	LoadBalancerType string `json:"loadbalancertype,omitempty"`
-	// The subnet tag name associate with a Subnet
+	// The subnet name where to add the load balancer.
 	// +optional
 	SubnetName string `json:"subnetname,omitempty"`
-	// The security group tag name associate with a security group
+	// The security group name for the load-balancer
 	// +optional
 	SecurityGroupName string `json:"securitygroupname,omitempty"`
-	// The Listener cofiguration of the loadBalancer
+	// The Listener configuration of the loadBalancer
 	// +optional
 	Listener OscLoadBalancerListener `json:"listener,omitempty"`
-	// The healthCheck configuration  of the Load Balancer
+	// The healthCheck configuration of the Load Balancer
 	// +optional
 	HealthCheck OscLoadBalancerHealthCheck `json:"healthCheck,omitempty"`
-	ClusterName string                     `json:"clusterName,omitempty"`
+	// unused
+	ClusterName string `json:"clusterName,omitempty"`
 }
 
 type OscLoadBalancerListener struct {
-	// The port on which the backend vm will listen
+	// The port on which the backend VMs will listen
 	// +optional
 	BackendPort int32 `json:"backendport,omitempty"`
 	// The protocol ('HTTP'|'TCP') to route the traffic to the backend vm
@@ -139,61 +143,78 @@ type OscLoadBalancerHealthCheck struct {
 }
 
 type OscNet struct {
-	// the tag name associate with the Net
+	// the network name
 	// +optional
 	Name string `json:"name,omitempty"`
-	// the net ip range with CIDR notation
+	// the ip range in CIDR notation of the Net
 	// +optional
 	IpRange string `json:"ipRange,omitempty"`
-	// the name of the cluster
+	// the name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// The Net Id response
+	// The Id of the Net to reuise (if useExisting is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// Reuse an existing network defined by resourceId ?
+	// +optional
+	UseExisting bool `json:"useExisting,omitempty"`
+}
+
+func (o *OscNet) IsZero() bool {
+	return o.IpRange == "" && o.ResourceId == ""
+}
+
+var DefaultNet = OscNet{
+	IpRange: "10.0.0.0/16",
 }
 
 type OscInternetService struct {
-	// The tag name associate with the Subnet
+	// The name of the Internet service
 	// +optional
 	Name string `json:"name,omitempty"`
-	// the name of the cluster
+	// the name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// the Internet Service response
+	// the Internet Service resource id (unused)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscSubnet struct {
-	// The tag name associate with the Subnet
+	// The name of the Subnet
 	// +optional
 	Name string `json:"name,omitempty"`
-	// Subnet Ip range with CIDR notation
+	// The role of the Subnet (controlplane, worker, loadbalancer, bastion or nat)
+	// +optional
+	Roles []OscRole `json:"roles,omitempty"`
+	// the Ip range in CIDR notation of the Subnet
 	// +optional
 	IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 	// The subregion name of the Subnet
 	// +optional
 	SubregionName string `json:"subregionName,omitempty"`
-	// The Subnet Id response
+	// The id of the Subnet to reuse (if net.useExisting is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscNatService struct {
-	// The tag name associate with the Nat Service
+	// The name of the Nat Service
 	// +optional
 	Name string `json:"name,omitempty"`
-	// The Public Ip tag name associated with a Public Ip
+	// The Public Ip name (unused)
 	// +optional
 	PublicIpName string `json:"publicipname,omitempty"`
-	// The subnet tag name associate with a Subnet
+	// The name of the Subnet to which the Nat Service will be attached
 	// +optional
 	SubnetName string `json:"subnetname,omitempty"`
-	// The name of the cluster
+	// The name of the Subregion to which the Nat Service will be attached, unless a subnet has been defined (unused)
+	// +optional
+	SubregionName string `json:"subregionName,omitempty"`
+	// The name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// The Nat Service Id response
+	// The resource id (unused)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 }
@@ -203,7 +224,9 @@ type OscRouteTable struct {
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The subnet tag name associate with a Subnet
-	Subnets []string `json:"subnets,omitempty"`
+	Subnets       []string `json:"subnets,omitempty"`
+	Role          OscRole  `json:"role,omitempty"`
+	SubregionName string   `json:"subregionName,omitempty"`
 	// The Route configuration
 	// +optional
 	Routes []OscRoute `json:"routes,omitempty"`
@@ -213,19 +236,37 @@ type OscRouteTable struct {
 }
 
 type OscSecurityGroup struct {
-	// The tag name associate with the security group
+	// The name of the security group
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The description of the security group
 	// +optional
 	Description string `json:"description,omitempty"`
-	// The Security Group Rules configuration
+	// The list of rules for this securityGroup.
 	// +optional
 	SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
-	// The Security Group Id response
-	// +optional
+	// When reusing network, the id of an existing securityGroup to use.
 	ResourceId string `json:"resourceId,omitempty"`
 	Tag        string `json:"tag,omitempty"`
+
+	// The roles the securityGroup applies to.
+	Roles []OscRole `json:"roles,omitempty"`
+}
+
+func (sg *OscSecurityGroup) HasRole(role OscRole) bool {
+	if len(sg.Roles) > 0 {
+		return slices.Contains(sg.Roles, role)
+	}
+	if strings.Contains(sg.Name, "kcp") {
+		return role == RoleControlPlane
+	}
+	if strings.Contains(sg.Name, "kw") {
+		return role == RoleWorker
+	}
+	if strings.Contains(sg.Name, "node") {
+		return role == RoleControlPlane || role == RoleWorker
+	}
+	return false
 }
 
 type OscPublicIp struct {
@@ -275,9 +316,12 @@ type OscSecurityGroupRule struct {
 	// The ip protocol name (tcp, udp, icmp or -1)
 	// +optional
 	IpProtocol string `json:"ipProtocol,omitempty"`
-	// The ip range of the security group rule
+	// The ip range of the security group rule (deprecated)
 	// +optional
 	IpRange string `json:"ipRange,omitempty"`
+	// The list of ip ranges of the security group rule
+	// +optional
+	IpRanges []string `json:"ipRanges,omitempty"`
 	// The beginning of the port range
 	// +optional
 	FromPortRange int32 `json:"fromPortRange,omitempty"`
@@ -287,6 +331,16 @@ type OscSecurityGroupRule struct {
 	// The security group rule id
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+}
+
+func (sgr *OscSecurityGroupRule) GetIpRanges() []string {
+	if len(sgr.IpRanges) > 0 {
+		return sgr.IpRanges
+	}
+	if sgr.IpRange != "" {
+		return []string{sgr.IpRange}
+	}
+	return nil
 }
 
 // Map between resourceId and resourceName (tag Name with cluster UID)
@@ -323,6 +377,33 @@ type OscNetworkResource struct {
 	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
 }
 
+type OscClusterResources struct {
+	Net             map[string]string `json:"net,omitempty"`
+	Subnet          map[string]string `json:"subnet,omitempty"`
+	InternetService map[string]string `json:"internetService,omitempty"`
+	SecurityGroup   map[string]string `json:"securityGroup,omitempty"`
+	NatService      map[string]string `json:"natService,omitempty"`
+	Bastion         map[string]string `json:"bastion,omitempty"`
+	PublicIPs       map[string]string `json:"publicIps,omitempty"`
+}
+
+type Reconciler string
+
+const (
+	ReconcilerBastion         Reconciler = "bastion"
+	ReconcilerNet             Reconciler = "net"
+	ReconcilerSubnet          Reconciler = "subnet"
+	ReconcilerInternetService Reconciler = "internetService"
+	ReconcilerNatService      Reconciler = "natService"
+	ReconcilerRouteTable      Reconciler = "routeTable"
+	ReconcilerSecurityGroup   Reconciler = "securityGroup"
+	ReconcilerLoadbalancer    Reconciler = "loadbalancer"
+
+	ReconcilerVm Reconciler = "vm"
+)
+
+type OscReconcilerGeneration map[Reconciler]int64
+
 type OscNodeResource struct {
 	VolumeRef       OscResourceReference `json:"volumeRef,omitempty"`
 	ImageRef        OscResourceReference `json:"imageRef,omitempty"`
@@ -330,6 +411,12 @@ type OscNodeResource struct {
 	VmRef           OscResourceReference `json:"vmRef,omitempty"`
 	LinkPublicIpRef OscResourceReference `json:"linkPublicIpRef,omitempty"`
 	PublicIpIdRef   OscResourceReference `json:"publicIpIdRef,omitempty"`
+}
+
+type OscMachineResources struct {
+	Vm      map[string]string `json:"vm,omitempty"`
+	Image   map[string]string `json:"image,omitempty"`
+	Volumes map[string]string `json:"volumes,omitempty"`
 }
 
 type OscImage struct {
@@ -340,27 +427,34 @@ type OscImage struct {
 
 type OscVolume struct {
 	Name string `json:"name,omitempty"`
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	Device string `json:"device"`
 	Iops   int32  `json:"iops,omitempty"`
-	Size   int32  `json:"size,omitempty"`
-	//+kubebuilder:deprecatedversion
+	// +kubebuilder:validation:Required
+	Size int32 `json:"size,omitempty"`
+	// Deprecated
 	SubregionName string `json:"subregionName,omitempty"`
 	VolumeType    string `json:"volumeType,omitempty"`
 	ResourceId    string `json:"resourceId,omitempty"`
 }
 
 type OscKeypair struct {
-	Name          string `json:"name,omitempty"`
-	PublicKey     string `json:"publicKey,omitempty"`
-	ResourceId    string `json:"resourceId,omitempty"`
-	ClusterName   string `json:"clusterName,omitempty"`
-	DeleteKeypair bool   `json:"deleteKeypair,omitempty"`
+	// Deprecated
+	Name string `json:"name,omitempty"`
+	// Deprecated
+	PublicKey string `json:"publicKey,omitempty"`
+	// Deprecated
+	ResourceId string `json:"resourceId,omitempty"`
+	// Deprecated
+	ClusterName string `json:"clusterName,omitempty"`
+	// Deprecated
+	DeleteKeypair bool `json:"deleteKeypair,omitempty"`
 }
 
 type OscVm struct {
-	Name               string                    `json:"name,omitempty"`
-	ImageId            string                    `json:"imageId,omitempty"`
+	Name    string `json:"name,omitempty"`
+	ImageId string `json:"imageId,omitempty"`
+	// +kubebuilder:validation:Required
 	KeypairName        string                    `json:"keypairName,omitempty"`
 	VmType             string                    `json:"vmType,omitempty"`
 	VolumeName         string                    `json:"volumeName,omitempty"`
@@ -375,23 +469,34 @@ type OscVm struct {
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	ResourceId         string                    `json:"resourceId,omitempty"`
-	Role               string                    `json:"role,omitempty"`
+	Role               OscRole                   `json:"role,omitempty"`
 	ClusterName        string                    `json:"clusterName,omitempty"`
 	Replica            int32                     `json:"replica,omitempty"`
 	Tags               map[string]string         `json:"tags,omitempty"`
 }
 
+func (vm *OscVm) GetRole() OscRole {
+	if vm.Role != "" {
+		return vm.Role
+	}
+	return RoleWorker
+}
+
 type OscBastion struct {
-	Name               string                    `json:"name,omitempty"`
-	ImageId            string                    `json:"imageId,omitempty"`
-	ImageName          string                    `json:"imageName,omitempty"`
-	ImageAccountId     string                    `json:"imageAccountId,omitempty"`
-	KeypairName        string                    `json:"keypairName,omitempty"`
-	VmType             string                    `json:"vmType,omitempty"`
-	DeviceName         string                    `json:"deviceName,omitempty"`
-	SubnetName         string                    `json:"subnetName,omitempty"`
-	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
-	PublicIpName       string                    `json:"publicIpName,omitempty"`
+	Name           string      `json:"name,omitempty"`
+	ImageId        string      `json:"imageId,omitempty"`
+	ImageName      string      `json:"imageName,omitempty"`
+	ImageAccountId string      `json:"imageAccountId,omitempty"`
+	KeypairName    string      `json:"keypairName,omitempty"`
+	VmType         string      `json:"vmType,omitempty"`
+	DeviceName     string      `json:"deviceName,omitempty"`
+	SubnetName     string      `json:"subnetName,omitempty"`
+	RootDisk       OscRootDisk `json:"rootDisk,omitempty"`
+	// unused
+	PublicIpName string `json:"publicIpName,omitempty"`
+	// The ID of an existing public IP to use for this VM.
+	// +optional
+	PublicIpId         string                    `json:"PublicIpId,omitempty"`
 	SubregionName      string                    `json:"subregionName,omitempty"`
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
@@ -423,813 +528,65 @@ var (
 	DefaultVmName          string = "cluster-api-vm"
 	DefaultVmSubregionName string = "eu-west-2a"
 
-	DefaultVmKeypairName string = "cluster-api"
-	DefaultVmType        string = "tinav3.c4r8p1"
+	DefaultVmType       string = "tinav6.c4r8p1"
+	DefaultRootDiskType string = "io1"
+	DefaultRootDiskSize int32  = 60
+	DefaultRootDiskIops int32  = 1500
 
-	DefaultVmBastionImageId       string = "ami-bb490c7e"
-	DefaultVmBastionKeypairName   string = "cluster-api"
-	DefaultVmBastionSubregionName string = "eu-west-2a"
-
-	DefaultVmKwName      string = "cluster-api-vm-kw"
-	DefaultVmKwType      string = "tinav3.c4r8p1"
-	DefaultVmKcpName     string = "cluster-api-vm-kcp"
-	DefaultVmKcpType     string = "tinav3.c4r8p1"
-	DefaultVmBastionName string = "cluster-api-vm-bastion"
-	DefaultVmBastionType string = "tinav3.c2r2p1"
-
-	DefaultRootDiskKwType      string = "io1"
-	DefaultRootDiskKwSize      int32  = 60
-	DefaultRootDiskKwIops      int32  = 1500
-	DefaultRootDiskKcpType     string = "io1"
-	DefaultRootDiskKcpSize     int32  = 60
-	DefaultRootDiskKcpIops     int32  = 1500
-	DefaultRootDiskBastionType string = "io1"
+	DefaultVmBastionType       string = "tinav6.c1r1p2"
+	DefaultRootDiskBastionType string = "gp2"
 	DefaultRootDiskBastionSize int32  = 15
-	DefaultRootDiskBastionIops int32  = 1000
 
-	DefaultSubregionName                        string = "eu-west-2a"
-	DefaultLoadBalancerName                     string = "OscClusterApi-1"
-	DefaultLoadBalancerType                     string = "internet-facing"
-	DefaultBackendPort                          int32  = 6443
-	DefaultBackendProtocol                      string = "TCP"
-	DefaultLoadBalancerPort                     int32  = 6443
-	DefaultLoadBalancerProtocol                 string = "TCP"
-	DefaultCheckInterval                        int32  = 5
-	DefaultHealthyThreshold                     int32  = 5
-	DefaultUnhealthyThreshold                   int32  = 2
-	DefaultTimeout                              int32  = 5
-	DefaultProtocol                             string = "TCP"
-	DefaultPort                                 int32  = 6443
-	DefaultIpRange                              string = "10.0.0.0/16"
-	DefaultIpSubnetKcpRange                     string = "10.0.4.0/24"
-	DefaultIpSubnetKwRange                      string = "10.0.3.0/24"
-	DefaultIpSubnetPublicRange                  string = "10.0.2.0/24"
-	DefaultTargetType                           string = "gateway"
-	DefaultTargetKwName                         string = "cluster-api-natservice"
-	DefaultTargetKwType                         string = "nat"
-	DefaultDestinationKw                        string = "0.0.0.0/0"
-	DefaultRouteTableKwName                     string = "cluster-api-routetable-kw"
-	DefaultRouteKwName                          string = "cluster-api-route-kw"
-	DefaultTargetKcpName                        string = "cluster-api-natservice"
-	DefaultTargetKcpType                        string = "nat"
-	DefaultDestinationKcp                       string = "0.0.0.0/0"
-	DefaultRouteTableKcpName                    string = "cluster-api-routetable-kcp"
-	DefaultRouteKcpName                         string = "cluster-api-route-kcp"
-	DefaultTargetPublicName                     string = "cluster-api-internetservice"
-	DefaultTargetPublicType                     string = "gateway"
-	DefaultDestinationPublic                    string = "0.0.0.0/0"
-	DefaultRouteTablePublicName                 string = "cluster-api-routetable-public"
-	DefaultRoutePublicName                      string = "cluster-api-route-public"
-	DefaultTargetNatName                        string = "cluster-api-internetservice"
-	DefaultTargetNatType                        string = "gateway"
-	DefaultDestinationNat                       string = "0.0.0.0/0"
-	DefaultRouteTableNatName                    string = "cluster-api-routetable-nat"
-	DefaultRouteNatName                         string = "cluster-api-route-nat"
-	DefaultPublicIpNatName                      string = "cluster-api-publicip-nat"
-	DefaultNatServiceName                       string = "cluster-api-natservice"
-	DefaultSubnetName                           string = "cluster-api-subnet"
-	DefaultSubnetKcpName                        string = "cluster-api-subnet-kcp"
-	DefaultSubnetKwName                         string = "cluster-api-subnet-kw"
-	DefaultSubnetPublicName                     string = "cluster-api-subnet-public"
-	DefaultSubnetNatName                        string = "cluster-api-subnet-nat"
-	DefaultNetName                              string = "cluster-api-net"
-	DefaultInternetServiceName                  string = "cluster-api-internetservice"
-	DefaultSecurityGroupKwName                  string = "cluster-api-securitygroup-kw"
-	DefaultDescriptionKw                        string = "Security Group Kw with cluster-api"
-	DefaultSecurityGroupRuleApiKubeletKwName    string = "cluster-api-securitygrouprule-api-kubelet-kw"
-	DefaultFlowApiKubeletKw                     string = "Inbound"
-	DefaultIpProtocolApiKubeletKw               string = "tcp"
-	DefaultRuleIpRangeApiKubeletKw              string = "10.0.3.0/24"
-	DefaultFromPortRangeApiKubeletKw            int32  = 10250
-	DefaultToPortRangeApiKubeletKw              int32  = 10250
-	DefaultSecurityGroupRuleApiKubeletKcpName   string = "cluster-api-securitygrouprule-api-kubelet-kcp"
-	DefaultFlowApiKubeletKcp                    string = "Inbound"
-	DefaultIpProtocolApiKubeletKcp              string = "tcp"
-	DefaultRuleIpRangeApiKubeletKcp             string = "10.0.4.0/24"
-	DefaultFromPortRangeApiKubeletKcp           int32  = 10250
-	DefaultToPortRangeApiKubeletKcp             int32  = 10250
-	DefaultSecurityGroupRuleKwNodeIpKwName      string = "cluster-api-securitygrouprule-kw-nodeip-kw"
-	DefaultSecurityGroupRuleKcpNodeIpKwName     string = "cluster-api-securitygrouprule-kcp-nodeip-kw"
-	DefaultFlowNodeIpKw                         string = "Inbound"
-	DefaultIpProtocolNodeIpKw                   string = "tcp"
-	DefaultRuleIpRangeNodeIpKw                  string = "10.0.3.0/24"
-	DefaultFromPortRangeNodeIpKw                int32  = 30000
-	DefaultToPortRangeNodeIpKw                  int32  = 32767
-	DefaultSecurityGroupRuleKcpNodeIpKcpName    string = "cluster-api-securitugrouprule-kcp-nodeip-kcp"
-	DefaultSecurityGroupRuleKwNodeIpKcpName     string = "cluster-api-securitygrouprule-kw-nodeip-kcp"
-	DefaultFlowNodeIpKcp                        string = "Inbound"
-	DefaultIpProtocolNodeIpKcp                  string = "tcp"
-	DefaultRuleIpRangeNodeIpKcp                 string = "10.0.4.0/24"
-	DefaultFromPortRangeNodeIpKcp               int32  = 30000
-	DefaultToPortRangeNodeIpKcp                 int32  = 32767
-	DefaultSecurityGroupKcpName                 string = "cluster-api-securitygroup-kcp"
-	DefaultDescriptionKcp                       string = "Security Group Kcp with cluster-api"
-	DefaultSecurityGroupRuleApiKwName           string = "cluster-api-securitygrouprule-api-kw"
-	DefaultFlowApiKw                            string = "Inbound"
-	DefaultIpProtocolApiKw                      string = "tcp"
-	DefaultRuleIpRangeApiKw                     string = "10.0.3.0/24"
-	DefaultFromPortRangeApiKw                   int32  = 6443
-	DefaultToPortRangeApiKw                     int32  = 6443
-	DefaultSecurityGroupRuleApiKcpName          string = "cluster-api-securitygrouprule-api-kcp"
-	DefaultFlowApiKcp                           string = "Inbound"
-	DefaultIpProtocolApiKcp                     string = "tcp"
-	DefaultRuleIpRangeApiKcp                    string = "10.0.4.0/24"
-	DefaultFromPortRangeApiKcp                  int32  = 6443
-	DefaultToPortRangeApiKcp                    int32  = 6443
-	DefaultSecurityGroupRuleEtcdName            string = "cluster-api-securitygrouprule-etcd"
-	DefaultFlowEtcd                             string = "Inbound"
-	DefaultIpProtocolEtcd                       string = "tcp"
-	DefaultRuleIpRangeEtcd                      string = "10.0.4.0/24"
-	DefaultFromPortRangeEtcd                    int32  = 2378
-	DefaultToPortRangeEtcd                      int32  = 2380
-	DefaultSecurityGroupRuleKcpBgpName          string = "cluster-api-securitygrouprule-kcp-bgp"
-	DefaultFlowKcpBgp                           string = "Inbound"
-	DefaultIpProtocolKcpBgp                     string = "tcp"
-	DefaultRuleIpRangeKcpBgp                    string = "10.0.0.0/16"
-	DefaultFromPortRangeKcpBgp                  int32  = 179
-	DefaultToPortRangeKcpBgp                    int32  = 179
-	DefaultSecurityGroupRuleKwBgpName           string = "cluster-api-securitygrouprule-kw-bgp"
-	DefaultFlowKwBgp                            string = "Inbound"
-	DefaultIpProtocolKwBgp                      string = "tcp"
-	DefaultRuleIpRangeKwBgp                     string = "10.0.0.0/16"
-	DefaultFromPortRangeKwBgp                   int32  = 179
-	DefaultToPortRangeKwBgp                     int32  = 179
-	DefaultSecurityGroupRuleKubeletKcpName      string = "cluster-api-securitygrouprule-kubelet-kcp"
-	DefaultFlowKubeletKcp                       string = "Inbound"
-	DefaultIpProtocolKubeletKcp                 string = "tcp"
-	DefaultRuleIpRangeKubeletKcp                string = "10.0.4.0/24"
-	DefaultFromPortRangeKubeletKcp              int32  = 10250
-	DefaultToPortRangeKubeletKcp                int32  = 10252
-	DefaultSecurityGroupPublicName              string = "cluster-api-securitygroup-lb"
-	DefaultDescriptionLb                        string = "Security Group Lb with cluster-api"
-	DefaultSecurityGroupRuleLbName              string = "cluster-api-securitygrouprule-lb"
-	DefaultFlowLb                               string = "Inbound"
-	DefaultIpProtocolLb                         string = "tcp"
-	DefaultRuleIpRangeLb                        string = "0.0.0.0/0"
-	DefaultFromPortRangeLb                      int32  = 6443
-	DefaultToPortRangeLb                        int32  = 6443
-	DefaultSecurityGroupNodeName                string = "cluster-api-securitygroup-node"
-	DefaultDescriptionNode                      string = "Security Group Node with cluster-api"
-	DefaultSecurityGroupRuleCalicoVxlanName     string = "cluster-api-securitygroup-calico-vxlan"
-	DefaultFlowCalicoVxlan                      string = "Inbound"
-	DefaultIpProtocolCalicoVxlan                string = "udp"
-	DefaultRuleIpRangeCalicoVxlan               string = "10.0.0.0/16"
-	DefaultFromPortRangeCalicoVxlan             int32  = 4789
-	DefaultToPortRangeCalicoVxlan               int32  = 4789
-	DefaultSecurityGroupRuleCalicoTypha         string = "cluster-api-securitygroup-typha"
-	DefaultFlowCalicoTypha                      string = "Inbound"
-	DefaultIpProtocolCalicoTypha                string = "udp"
-	DefaultRuleIpRangeCalicoTypha               string = "10.0.0.0/16"
-	DefaultFromPortRangeCalicoTypha             int32  = 5473
-	DefaultToPortRangeCalicoTypha               int32  = 5473
-	DefaultSecurityGroupRuleCalicoWireguard     string = "cluster-api-securitygroup-wireguard"
-	DefaultFlowCalicoWireguard                  string = "Inbound"
-	DefaultIpProtocolCalicoWireguard            string = "udp"
-	DefaultRuleIpRangeCalicoWireguard           string = "10.0.0.0/16"
-	DefaultFromPortRangeCalicoWireguard         int32  = 51820
-	DefaultToPortRangeCalicoWireguard           int32  = 51820
-	DefaultSecurityGroupRuleCalicoWireguardIpv6 string = "cluster-api-securitygroup-wireguard-ipv6"
-	DefaultFlowCalicoWireguardIpv6              string = "Inbound"
-	DefaultIpProtocolCalicoWireguardIpv6        string = "udp"
-	DefaultRuleIpRangeCalicoWireguardIpv6       string = "10.0.0.0/16"
-	DefaultFromPortRangeCalicoWireguardIpv6     int32  = 51821
-	DefaultToPortRangeCalicoWireguardIpv6       int32  = 51821
-	DefaultSecurityGroupRuleFlannel             string = "cluster-api-securitygroup-flannel"
-	DefaultFlowFlannel                          string = "Inbound"
-	DefaultIpProtocolFlannel                    string = "udp"
-	DefaultRuleIpRangeFlannel                   string = "10.0.0.0/16"
-	DefaultFromPortRangeFlannel                 int32  = 4789
-	DefaultToPortRangeFlannel                   int32  = 4789
-	DefaultSecurityGroupRuleFlannelUdp          string = "cluster-api-securitygroup-flannel-udp"
-	DefaultFlowFlannelUdp                       string = "Inbound"
-	DefaultIpProtocolFlannelUdp                 string = "udp"
-	DefaultRuleIpRangeFlannelUdp                string = "10.0.0.0/16"
-	DefaultFromPortRangeFlannelUdp              int32  = 8285
-	DefaultToPortRangeFlannelUdp                int32  = 8285
-	DefaultSecurityGroupRuleFlannelVxlan        string = "cluster-api-securityrgroup-flannel-vxlan"
-	DefaultFlowFlannelVxlan                     string = "Inbound"
-	DefaultIpProtocolFlannelVxlan               string = "udp"
-	DefaultRuleIpRangeFlannelVxlan              string = "10.0.0.0/16"
-	DefaultFromPortRangeFlannelVxlan            int32  = 8472
-	DefaultToPortRangeFlannelVxlan              int32  = 8472
+	DefaultLoadBalancerType     string = "internet-facing"
+	DefaultLoadBalancerPort     int32  = 6443
+	DefaultLoadBalancerProtocol string = "TCP"
+	DefaultCheckInterval        int32  = 10
+	DefaultHealthyThreshold     int32  = 3
+	DefaultUnhealthyThreshold   int32  = 3
+	DefaultTimeout              int32  = 10
 )
-
-// SetDefaultValue set the Net default values
-func (net *OscNet) SetDefaultValue() {
-	var netName string = DefaultNetName
-	if net.ClusterName != "" {
-		netName = strings.ReplaceAll(DefaultNetName, DefaultClusterName, net.ClusterName)
-	}
-	if net.IpRange == "" {
-		net.IpRange = DefaultIpRange
-	}
-	if net.Name == "" {
-		net.Name = netName
-	}
-}
-
-// SetKeyPairDefaultValue set the KeyPair default values
-func (node *OscNode) SetKeyPairDefaultValue() {
-	if len(node.KeyPair.PublicKey) == 0 {
-		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		node.KeyPair.PublicKey = base64.StdEncoding.EncodeToString(ssh.MarshalAuthorizedKey(publicKey))
-	}
-	if len(node.KeyPair.Name) == 0 {
-		node.KeyPair.Name = DefaultKeypairName
-	}
-}
-
-// SetDefaultValue set the Internet Service default values
-func (igw *OscInternetService) SetDefaultValue() {
-	var internetServiceName string = DefaultInternetServiceName
-	if igw.ClusterName != "" {
-		internetServiceName = strings.ReplaceAll(DefaultInternetServiceName, DefaultClusterName, igw.ClusterName)
-	}
-	if igw.Name == "" {
-		igw.Name = internetServiceName
-	}
-}
 
 // SetDefaultValue set the vm default values
 func (vm *OscVm) SetDefaultValue() {
-	var vmKcpName string = DefaultVmKcpName
-	var vmKwName string = DefaultVmKwName
-	var subnetKcpName string = DefaultSubnetKcpName
-	var subnetKwName string = DefaultSubnetKwName
-	var securityGroupKcpName string = DefaultSecurityGroupKcpName
-	var securityGroupKwName string = DefaultSecurityGroupKwName
-	var securityGroupNodeName string = DefaultSecurityGroupNodeName
-	if vm.ClusterName != "" {
-		vmKcpName = strings.ReplaceAll(DefaultVmKcpName, DefaultClusterName, vm.ClusterName)
-		vmKwName = strings.ReplaceAll(DefaultVmKwName, DefaultClusterName, vm.ClusterName)
-		subnetKcpName = strings.ReplaceAll(DefaultSubnetKcpName, DefaultClusterName, vm.ClusterName)
-		subnetKwName = strings.ReplaceAll(DefaultSubnetKwName, DefaultClusterName, vm.ClusterName)
-		securityGroupKcpName = strings.ReplaceAll(DefaultSecurityGroupKcpName, DefaultClusterName, vm.ClusterName)
-		securityGroupKwName = strings.ReplaceAll(DefaultSecurityGroupKwName, DefaultClusterName, vm.ClusterName)
-		securityGroupNodeName = strings.ReplaceAll(DefaultSecurityGroupNodeName, DefaultClusterName, vm.ClusterName)
+	if vm.VmType == "" {
+		vm.VmType = DefaultVmType
 	}
-	if vm.Role == "controlplane" {
-		if vm.Name == "" {
-			vm.Name = vmKcpName
-		}
-		if vm.VmType == "" {
-			vm.VmType = DefaultVmKcpType
-		}
-		if vm.SubnetName == "" {
-			vm.SubnetName = subnetKcpName
-		}
-
-		if vm.RootDisk.RootDiskIops == 0 && vm.RootDisk.RootDiskType == "io1" {
-			vm.RootDisk.RootDiskIops = DefaultRootDiskKcpIops
-		}
-
-		if vm.RootDisk.RootDiskType == "" {
-			vm.RootDisk.RootDiskType = DefaultRootDiskKcpType
-		}
-
-		if vm.RootDisk.RootDiskSize == 0 {
-			vm.RootDisk.RootDiskSize = DefaultRootDiskKcpSize
-		}
-
-		if vm.LoadBalancerName == "" {
-			vm.LoadBalancerName = DefaultLoadBalancerName
-		}
-		if len(vm.SecurityGroupNames) == 0 {
-			securityGroupKw := OscSecurityGroupElement{
-				Name: securityGroupKcpName,
-			}
-			securityGroupNode := OscSecurityGroupElement{
-				Name: securityGroupNodeName,
-			}
-			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroupKw, securityGroupNode}
-		}
-	} else {
-		if vm.Name == "" {
-			vm.Name = vmKwName
-		}
-		if vm.VmType == "" {
-			vm.VmType = DefaultVmKwType
-		}
-
-		if vm.RootDisk.RootDiskIops == 0 && vm.RootDisk.RootDiskType == "io1" {
-			vm.RootDisk.RootDiskIops = DefaultRootDiskKwIops
-		}
-
-		if vm.RootDisk.RootDiskType == "" {
-			vm.RootDisk.RootDiskType = DefaultRootDiskKwType
-		}
-
-		if vm.RootDisk.RootDiskSize == 0 {
-			vm.RootDisk.RootDiskSize = DefaultRootDiskKwSize
-		}
-
-		if vm.SubnetName == "" {
-			vm.SubnetName = subnetKwName
-		}
-		if len(vm.SecurityGroupNames) == 0 {
-			securityGroupKw := OscSecurityGroupElement{
-				Name: securityGroupKwName,
-			}
-			securityGroupNode := OscSecurityGroupElement{
-				Name: securityGroupNodeName,
-			}
-			vm.SecurityGroupNames = []OscSecurityGroupElement{securityGroupKw, securityGroupNode}
-		}
+	if vm.RootDisk.RootDiskType == "" {
+		vm.RootDisk.RootDiskType = DefaultRootDiskType
 	}
-	if vm.KeypairName == "" {
-		vm.KeypairName = DefaultVmKeypairName
+	if vm.RootDisk.RootDiskIops == 0 && vm.RootDisk.RootDiskType == "io1" {
+		vm.RootDisk.RootDiskIops = DefaultRootDiskIops
 	}
-	if vm.SubregionName == "" {
-		vm.SubregionName = DefaultVmSubregionName
+	if vm.RootDisk.RootDiskSize == 0 {
+		vm.RootDisk.RootDiskSize = DefaultRootDiskSize
 	}
 }
 
 // SetDefaultValue set the bastion default values
 func (bastion *OscBastion) SetDefaultValue() {
-	var vmBastionName string = DefaultVmBastionName
-	var subnetPublicName string = DefaultSubnetPublicName
-	var securityGroupPublicName string = DefaultSecurityGroupPublicName
 	if bastion.Enable {
-		if bastion.ClusterName != "" {
-			vmBastionName = strings.ReplaceAll(DefaultVmBastionName, DefaultClusterName, bastion.ClusterName)
-			subnetPublicName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, bastion.ClusterName)
-			securityGroupPublicName = strings.ReplaceAll(DefaultSecurityGroupPublicName, DefaultClusterName, bastion.ClusterName)
-		}
-		if bastion.Name == "" {
-			bastion.Name = vmBastionName
-		}
 		if bastion.VmType == "" {
 			bastion.VmType = DefaultVmBastionType
-		}
-		if bastion.RootDisk.RootDiskIops == 0 && bastion.RootDisk.RootDiskType == "io1" {
-			bastion.RootDisk.RootDiskIops = DefaultRootDiskBastionIops
 		}
 		if bastion.RootDisk.RootDiskType == "" {
 			bastion.RootDisk.RootDiskType = DefaultRootDiskBastionType
 		}
-		if bastion.SubnetName == "" {
-			bastion.SubnetName = subnetPublicName
-		}
-		if len(bastion.SecurityGroupNames) == 0 {
-			securityGroupPublic := OscSecurityGroupElement{
-				Name: securityGroupPublicName,
-			}
-			bastion.SecurityGroupNames = []OscSecurityGroupElement{securityGroupPublic}
-		}
-		if bastion.ImageId == "" {
-			bastion.ImageId = DefaultVmBastionImageId
-		}
-		if bastion.KeypairName == "" {
-			bastion.KeypairName = DefaultVmBastionKeypairName
-		}
-		if bastion.SubregionName == "" {
-			bastion.SubregionName = DefaultVmBastionSubregionName
-		}
-	}
-}
-
-// SetDefaultValue set the Nat Service default values
-func (nat *OscNatService) SetDefaultValue() {
-	var natServiceName string = DefaultNatServiceName
-	var publicIpNatName string = DefaultPublicIpNatName
-	var subnetNatName string = DefaultSubnetPublicName
-	if nat.ClusterName != "" {
-		natServiceName = strings.ReplaceAll(DefaultNatServiceName, DefaultClusterName, nat.ClusterName)
-		publicIpNatName = strings.ReplaceAll(DefaultPublicIpNatName, DefaultClusterName, nat.ClusterName)
-		subnetNatName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, nat.ClusterName)
-	}
-	if nat.Name == "" {
-		nat.Name = natServiceName
-	}
-	if nat.PublicIpName == "" {
-		nat.PublicIpName = publicIpNatName
-	}
-	if nat.SubnetName == "" {
-		nat.SubnetName = subnetNatName
-	}
-}
-
-// SetRouteTableDefaultValue set the Route Table default values from network configuration
-func (network *OscNetwork) SetRouteTableDefaultValue() {
-	if len(network.RouteTables) == 0 {
-		var routeKwName string = DefaultRouteKwName
-		var targetKwName string = DefaultTargetKwName
-		var routeTableKwName string = DefaultRouteTableKwName
-		var subnetKwName string = DefaultSubnetKwName
-
-		var routeKcpName string = DefaultRouteKcpName
-		var targetKcpName string = DefaultTargetKcpName
-		var routeTableKcpName string = DefaultRouteTableKcpName
-		var subnetKcpName string = DefaultSubnetKcpName
-
-		var routePublicName string = DefaultRoutePublicName
-		var targetPublicName string = DefaultTargetPublicName
-		var routeTablePublicName string = DefaultRouteTablePublicName
-		var subnetPublicName string = DefaultSubnetPublicName
-
-		if network.ClusterName != "" {
-			routeKwName = strings.ReplaceAll(DefaultRouteKwName, DefaultClusterName, network.ClusterName)
-			targetKwName = strings.ReplaceAll(DefaultTargetKwName, DefaultClusterName, network.ClusterName)
-			routeTableKwName = strings.ReplaceAll(DefaultRouteTableKwName, DefaultClusterName, network.ClusterName)
-			subnetKwName = strings.ReplaceAll(DefaultSubnetKwName, DefaultClusterName, network.ClusterName)
-			routeKcpName = strings.ReplaceAll(DefaultRouteKcpName, DefaultClusterName, network.ClusterName)
-			targetKcpName = strings.ReplaceAll(DefaultTargetKcpName, DefaultClusterName, network.ClusterName)
-			routeTableKcpName = strings.ReplaceAll(DefaultRouteTableKcpName, DefaultClusterName, network.ClusterName)
-			subnetKcpName = strings.ReplaceAll(DefaultSubnetKcpName, DefaultClusterName, network.ClusterName)
-
-			routePublicName = strings.ReplaceAll(DefaultRoutePublicName, DefaultClusterName, network.ClusterName)
-			targetPublicName = strings.ReplaceAll(DefaultTargetPublicName, DefaultClusterName, network.ClusterName)
-			routeTablePublicName = strings.ReplaceAll(DefaultRouteTablePublicName, DefaultClusterName, network.ClusterName)
-			subnetPublicName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, network.ClusterName)
-		}
-
-		routeKw := OscRoute{
-			Name:        routeKwName,
-			TargetName:  targetKwName,
-			TargetType:  DefaultTargetKwType,
-			Destination: DefaultDestinationKw,
-		}
-
-		routeKcp := OscRoute{
-			Name:        routeKcpName,
-			TargetName:  targetKcpName,
-			TargetType:  DefaultTargetKcpType,
-			Destination: DefaultDestinationKcp,
-		}
-		routePublic := OscRoute{
-			Name:        routePublicName,
-			TargetName:  targetPublicName,
-			TargetType:  DefaultTargetPublicType,
-			Destination: DefaultDestinationPublic,
-		}
-
-		subnetKw := []string{subnetKwName}
-		subnetKcp := []string{subnetKcpName}
-		subnetPublic := []string{subnetPublicName}
-		routeTableKw := OscRouteTable{
-			Name:   routeTableKwName,
-			Routes: []OscRoute{routeKw},
-		}
-
-		network.RouteTables = append(network.RouteTables, &routeTableKw)
-		routeTableKw.Subnets = subnetKw
-		routeTableKcp := OscRouteTable{
-			Name:   routeTableKcpName,
-			Routes: []OscRoute{routeKcp},
-		}
-		network.RouteTables = append(network.RouteTables, &routeTableKcp)
-		routeTableKcp.Subnets = subnetKcp
-
-		routeTablePublic := OscRouteTable{
-			Name:   routeTablePublicName,
-			Routes: []OscRoute{routePublic},
-		}
-		network.RouteTables = append(network.RouteTables, &routeTablePublic)
-		routeTablePublic.Subnets = subnetPublic
-	}
-}
-
-// SetSecurityGroupDefaultValue set the security group default value
-func (network *OscNetwork) SetSecurityGroupDefaultValue() {
-	if len(network.SecurityGroups) == 0 {
-		var securityGroupRuleApiKubeletKwName string = DefaultSecurityGroupRuleApiKubeletKwName
-		var securityGroupRuleApiKubeletKcpName string = DefaultSecurityGroupRuleApiKubeletKcpName
-		var securityGroupRuleKwNodeIpKwName string = DefaultSecurityGroupRuleKwNodeIpKwName
-		var securityGroupRuleKcpNodeIpKwName string = DefaultSecurityGroupRuleKcpNodeIpKwName
-		var securityGroupRuleKcpNodeIpKcpName string = DefaultSecurityGroupRuleKcpNodeIpKcpName
-		var securityGroupRuleKwNodeIpKcpName string = DefaultSecurityGroupRuleKwNodeIpKcpName
-		var securityGroupKwName string = DefaultSecurityGroupKwName
-		var securityGroupRuleApiKwName string = DefaultSecurityGroupRuleApiKwName
-		var securityGroupRuleApiKcpName string = DefaultSecurityGroupRuleApiKcpName
-		var securityGroupRuleEtcdName string = DefaultSecurityGroupRuleEtcdName
-		var securityGroupRuleKwBgpName string = DefaultSecurityGroupRuleKwBgpName
-		var securityGroupRuleKcpBgpName string = DefaultSecurityGroupRuleKcpBgpName
-		var securityGroupRuleKubeletKcpName string = DefaultSecurityGroupRuleKubeletKcpName
-		var securityGroupKcpName string = DefaultSecurityGroupKcpName
-		var securityGroupRuleLbName string = DefaultSecurityGroupRuleLbName
-		var securityGroupLbName string = DefaultSecurityGroupPublicName
-		var securityGroupNodeName string = DefaultSecurityGroupNodeName
-		if network.ClusterName != "" {
-			securityGroupRuleApiKubeletKwName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKubeletKwName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleApiKubeletKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKubeletKcpName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKwNodeIpKwName = strings.ReplaceAll(DefaultSecurityGroupRuleKwNodeIpKwName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKcpNodeIpKwName = strings.ReplaceAll(DefaultSecurityGroupRuleKcpNodeIpKwName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKcpNodeIpKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleKcpNodeIpKcpName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKwNodeIpKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleKwNodeIpKcpName, DefaultClusterName, network.ClusterName)
-			securityGroupKwName = strings.ReplaceAll(DefaultSecurityGroupKwName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleApiKwName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKwName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleApiKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleApiKcpName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleEtcdName = strings.ReplaceAll(DefaultSecurityGroupRuleEtcdName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKwBgpName = strings.ReplaceAll(DefaultSecurityGroupRuleKwBgpName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKcpBgpName = strings.ReplaceAll(DefaultSecurityGroupRuleKcpBgpName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleKubeletKcpName = strings.ReplaceAll(DefaultSecurityGroupRuleKubeletKcpName, DefaultClusterName, network.ClusterName)
-			securityGroupKcpName = strings.ReplaceAll(DefaultSecurityGroupKcpName, DefaultClusterName, network.ClusterName)
-			securityGroupRuleLbName = strings.ReplaceAll(DefaultSecurityGroupRuleLbName, DefaultClusterName, network.ClusterName)
-			securityGroupLbName = strings.ReplaceAll(DefaultSecurityGroupPublicName, DefaultClusterName, network.ClusterName)
-			securityGroupNodeName = strings.ReplaceAll(DefaultSecurityGroupNodeName, DefaultClusterName, network.ClusterName)
-		}
-		securityGroupRuleApiKubeletKw := OscSecurityGroupRule{
-			Name:          securityGroupRuleApiKubeletKwName,
-			Flow:          DefaultFlowApiKubeletKw,
-			IpProtocol:    DefaultIpProtocolApiKubeletKw,
-			IpRange:       DefaultRuleIpRangeApiKubeletKw,
-			FromPortRange: DefaultFromPortRangeApiKubeletKw,
-			ToPortRange:   DefaultToPortRangeApiKubeletKw,
-		}
-
-		securityGroupRuleApiKubeletKcp := OscSecurityGroupRule{
-			Name:          securityGroupRuleApiKubeletKcpName,
-			Flow:          DefaultFlowApiKubeletKcp,
-			IpProtocol:    DefaultIpProtocolApiKubeletKcp,
-			IpRange:       DefaultRuleIpRangeApiKubeletKcp,
-			FromPortRange: DefaultFromPortRangeApiKubeletKcp,
-			ToPortRange:   DefaultToPortRangeApiKubeletKcp,
-		}
-
-		securityGroupRuleKwNodeIpKw := OscSecurityGroupRule{
-			Name:          securityGroupRuleKwNodeIpKwName,
-			Flow:          DefaultFlowNodeIpKw,
-			IpProtocol:    DefaultIpProtocolNodeIpKw,
-			IpRange:       DefaultRuleIpRangeNodeIpKw,
-			FromPortRange: DefaultFromPortRangeNodeIpKw,
-			ToPortRange:   DefaultToPortRangeNodeIpKw,
-		}
-
-		securityGroupRuleKwNodeIpKcp := OscSecurityGroupRule{
-			Name:          securityGroupRuleKwNodeIpKcpName,
-			Flow:          DefaultFlowNodeIpKcp,
-			IpProtocol:    DefaultIpProtocolNodeIpKcp,
-			IpRange:       DefaultRuleIpRangeNodeIpKcp,
-			FromPortRange: DefaultFromPortRangeNodeIpKcp,
-			ToPortRange:   DefaultToPortRangeNodeIpKcp,
-		}
-
-		securityGroupRuleKwBgp := OscSecurityGroupRule{
-			Name:          securityGroupRuleKwBgpName,
-			Flow:          DefaultFlowKwBgp,
-			IpProtocol:    DefaultIpProtocolKwBgp,
-			IpRange:       DefaultRuleIpRangeKwBgp,
-			FromPortRange: DefaultFromPortRangeKwBgp,
-			ToPortRange:   DefaultToPortRangeKwBgp,
-		}
-
-		securityGroupKw := OscSecurityGroup{
-			Name:               securityGroupKwName,
-			Description:        DefaultDescriptionKw,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKwBgp, securityGroupRuleApiKubeletKw, securityGroupRuleKwNodeIpKcp, securityGroupRuleApiKubeletKcp, securityGroupRuleKwNodeIpKw},
-		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKw)
-
-		securityGroupRuleApiKw := OscSecurityGroupRule{
-			Name:          securityGroupRuleApiKwName,
-			Flow:          DefaultFlowApiKw,
-			IpProtocol:    DefaultIpProtocolApiKw,
-			IpRange:       DefaultRuleIpRangeApiKw,
-			FromPortRange: DefaultFromPortRangeApiKw,
-			ToPortRange:   DefaultToPortRangeApiKw,
-		}
-
-		securityGroupRuleApiKcp := OscSecurityGroupRule{
-			Name:          securityGroupRuleApiKcpName,
-			Flow:          DefaultFlowApiKcp,
-			IpProtocol:    DefaultIpProtocolApiKcp,
-			IpRange:       DefaultRuleIpRangeApiKcp,
-			FromPortRange: DefaultFromPortRangeApiKcp,
-			ToPortRange:   DefaultToPortRangeApiKcp,
-		}
-
-		securityGroupRuleEtcd := OscSecurityGroupRule{
-			Name:          securityGroupRuleEtcdName,
-			Flow:          DefaultFlowEtcd,
-			IpProtocol:    DefaultIpProtocolEtcd,
-			IpRange:       DefaultRuleIpRangeEtcd,
-			FromPortRange: DefaultFromPortRangeEtcd,
-			ToPortRange:   DefaultToPortRangeEtcd,
-		}
-
-		securityGroupRuleKubeletKcp := OscSecurityGroupRule{
-			Name:          securityGroupRuleKubeletKcpName,
-			Flow:          DefaultFlowKubeletKcp,
-			IpProtocol:    DefaultIpProtocolKubeletKcp,
-			IpRange:       DefaultRuleIpRangeKubeletKcp,
-			FromPortRange: DefaultFromPortRangeKubeletKcp,
-			ToPortRange:   DefaultToPortRangeKubeletKcp,
-		}
-
-		securityGroupRuleKcpBgp := OscSecurityGroupRule{
-			Name:          securityGroupRuleKcpBgpName,
-			Flow:          DefaultFlowKcpBgp,
-			IpProtocol:    DefaultIpProtocolKcpBgp,
-			IpRange:       DefaultRuleIpRangeKcpBgp,
-			FromPortRange: DefaultFromPortRangeKcpBgp,
-			ToPortRange:   DefaultToPortRangeKcpBgp,
-		}
-
-		securityGroupRuleKcpNodeIpKw := OscSecurityGroupRule{
-			Name:          securityGroupRuleKcpNodeIpKwName,
-			Flow:          DefaultFlowNodeIpKw,
-			IpProtocol:    DefaultIpProtocolNodeIpKw,
-			IpRange:       DefaultRuleIpRangeNodeIpKw,
-			FromPortRange: DefaultFromPortRangeNodeIpKw,
-			ToPortRange:   DefaultToPortRangeNodeIpKw,
-		}
-
-		securityGroupRuleKcpNodeIpKcp := OscSecurityGroupRule{
-			Name:          securityGroupRuleKcpNodeIpKcpName,
-			Flow:          DefaultFlowNodeIpKcp,
-			IpProtocol:    DefaultIpProtocolNodeIpKcp,
-			IpRange:       DefaultRuleIpRangeNodeIpKcp,
-			FromPortRange: DefaultFromPortRangeNodeIpKcp,
-			ToPortRange:   DefaultToPortRangeNodeIpKcp,
-		}
-
-		securityGroupKcp := OscSecurityGroup{
-			Name:               securityGroupKcpName,
-			Description:        DefaultDescriptionKcp,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKcpBgp, securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleKcpNodeIpKw, securityGroupRuleEtcd, securityGroupRuleKubeletKcp, securityGroupRuleKcpNodeIpKcp},
-		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKcp)
-
-		securityGroupRuleLb := OscSecurityGroupRule{
-			Name:          securityGroupRuleLbName,
-			Flow:          DefaultFlowLb,
-			IpProtocol:    DefaultIpProtocolLb,
-			IpRange:       DefaultRuleIpRangeLb,
-			FromPortRange: DefaultFromPortRangeLb,
-			ToPortRange:   DefaultToPortRangeLb,
-		}
-		securityGroupLb := OscSecurityGroup{
-			Name:               securityGroupLbName,
-			Description:        DefaultDescriptionLb,
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleLb},
-		}
-
-		securityGroupRuleCalicoVxlan := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleCalicoVxlanName,
-			Flow:          DefaultFlowCalicoVxlan,
-			IpProtocol:    DefaultIpProtocolCalicoVxlan,
-			IpRange:       DefaultRuleIpRangeCalicoVxlan,
-			FromPortRange: DefaultFromPortRangeCalicoVxlan,
-			ToPortRange:   DefaultToPortRangeCalicoVxlan,
-		}
-
-		securityGroupRuleCalicoTypha := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleCalicoTypha,
-			Flow:          DefaultFlowCalicoTypha,
-			IpProtocol:    DefaultIpProtocolCalicoTypha,
-			IpRange:       DefaultRuleIpRangeCalicoTypha,
-			FromPortRange: DefaultFromPortRangeCalicoTypha,
-			ToPortRange:   DefaultToPortRangeCalicoTypha,
-		}
-
-		securityGroupRuleCalicoWireguard := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleCalicoWireguard,
-			Flow:          DefaultFlowCalicoWireguard,
-			IpProtocol:    DefaultIpProtocolCalicoWireguard,
-			IpRange:       DefaultRuleIpRangeCalicoWireguard,
-			FromPortRange: DefaultFromPortRangeCalicoWireguard,
-			ToPortRange:   DefaultToPortRangeCalicoWireguard,
-		}
-
-		securityGroupRuleCalicoWireguardIpv6 := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleCalicoWireguardIpv6,
-			Flow:          DefaultFlowCalicoWireguardIpv6,
-			IpProtocol:    DefaultIpProtocolCalicoWireguardIpv6,
-			IpRange:       DefaultRuleIpRangeCalicoWireguardIpv6,
-			FromPortRange: DefaultFromPortRangeCalicoWireguardIpv6,
-			ToPortRange:   DefaultToPortRangeCalicoWireguardIpv6,
-		}
-
-		securityGroupRuleFlannel := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleFlannel,
-			Flow:          DefaultFlowFlannel,
-			IpProtocol:    DefaultIpProtocolFlannel,
-			IpRange:       DefaultRuleIpRangeFlannel,
-			FromPortRange: DefaultFromPortRangeFlannel,
-			ToPortRange:   DefaultToPortRangeFlannel,
-		}
-
-		securityGroupRuleFlannelUdp := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleFlannelUdp,
-			Flow:          DefaultFlowFlannelUdp,
-			IpProtocol:    DefaultIpProtocolFlannelUdp,
-			IpRange:       DefaultRuleIpRangeFlannelUdp,
-			FromPortRange: DefaultFromPortRangeFlannelUdp,
-			ToPortRange:   DefaultToPortRangeFlannelUdp,
-		}
-
-		securityGroupRuleFlannelVxlan := OscSecurityGroupRule{
-			Name:          DefaultSecurityGroupRuleFlannelVxlan,
-			Flow:          DefaultFlowFlannelVxlan,
-			IpProtocol:    DefaultIpProtocolFlannelVxlan,
-			IpRange:       DefaultRuleIpRangeFlannelVxlan,
-			FromPortRange: DefaultFromPortRangeFlannelVxlan,
-			ToPortRange:   DefaultToPortRangeFlannelVxlan,
-		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupLb)
-		securityGroupNode := OscSecurityGroup{
-			Name:               securityGroupNodeName,
-			Description:        DefaultDescriptionNode,
-			Tag:                "OscK8sMainSG",
-			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleCalicoVxlan, securityGroupRuleCalicoTypha, securityGroupRuleCalicoWireguard, securityGroupRuleCalicoWireguardIpv6, securityGroupRuleFlannel, securityGroupRuleFlannelUdp, securityGroupRuleFlannelVxlan},
-		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupNode)
-	}
-}
-
-// SetPublicIpDefaultDefaultValue set the Public Ip default values from publicip configuration
-func (network *OscNetwork) SetPublicIpDefaultValue() {
-	if len(network.PublicIps) == 0 {
-		var publicIpNatName string = DefaultPublicIpNatName
-		if network.ClusterName != "" {
-			publicIpNatName = strings.ReplaceAll(DefaultPublicIpNatName, DefaultClusterName, network.ClusterName)
-		}
-		publicIp := OscPublicIp{
-			Name: publicIpNatName,
-		}
-		network.PublicIps = append(network.PublicIps, &publicIp)
-	}
-}
-
-// SetSubnetDefaultValue set the Subnet default values from subnet configuration
-func (network *OscNetwork) SetSubnetDefaultValue() {
-	if len(network.Subnets) == 0 {
-		var subnetKcpName string = DefaultSubnetKcpName
-		var subnetKwName string = DefaultSubnetKwName
-		var subnetPublicName string = DefaultSubnetPublicName
-
-		if network.ClusterName != "" {
-			subnetKcpName = strings.ReplaceAll(subnetKcpName, DefaultClusterName, network.ClusterName)
-			subnetKwName = strings.ReplaceAll(subnetKwName, DefaultClusterName, network.ClusterName)
-			subnetPublicName = strings.ReplaceAll(subnetPublicName, DefaultClusterName, network.ClusterName)
-		}
-		subnetKcp := OscSubnet{
-			Name:          subnetKcpName,
-			IpSubnetRange: DefaultIpSubnetKcpRange,
-		}
-		subnetKw := OscSubnet{
-			Name:          subnetKwName,
-			IpSubnetRange: DefaultIpSubnetKwRange,
-		}
-		subnetPublic := OscSubnet{
-			Name:          subnetPublicName,
-			IpSubnetRange: DefaultIpSubnetPublicRange,
-		}
-		network.Subnets = []*OscSubnet{
-			&subnetKcp,
-			&subnetKw,
-			&subnetPublic,
-		}
-	}
-}
-
-// SetSubnetSubregionNameValue set the Subnet Subregion Name values from OscNetwork configuration
-func (network *OscNetwork) SetSubnetSubregionNameDefaultValue() {
-	var defaultSubregionName string = DefaultSubregionName
-	if network.SubregionName != "" {
-		defaultSubregionName = network.SubregionName
-	}
-	for _, subnet := range network.Subnets {
-		if subnet.SubregionName == "" {
-			subnet.SubregionName = defaultSubregionName
+		if bastion.RootDisk.RootDiskSize == 0 {
+			bastion.RootDisk.RootDiskSize = DefaultRootDiskBastionSize
 		}
 	}
 }
 
 // SetDefaultValue set the LoadBalancer Service default values
 func (lb *OscLoadBalancer) SetDefaultValue() {
-	var subnetPublicName string = DefaultSubnetPublicName
-	var securityGroupLbName string = DefaultSecurityGroupPublicName
-	if lb.ClusterName != "" {
-		subnetPublicName = strings.ReplaceAll(DefaultSubnetPublicName, DefaultClusterName, lb.ClusterName)
-		securityGroupLbName = strings.ReplaceAll(DefaultSecurityGroupPublicName, DefaultClusterName, lb.ClusterName)
-	}
-	if lb.LoadBalancerName == "" {
-		lb.LoadBalancerName = DefaultLoadBalancerName
-	}
 	if lb.LoadBalancerType == "" {
 		lb.LoadBalancerType = DefaultLoadBalancerType
 	}
-	if lb.SubnetName == "" {
-		lb.SubnetName = subnetPublicName
-	}
-	if lb.SecurityGroupName == "" {
-		lb.SecurityGroupName = securityGroupLbName
-	}
-
 	if lb.Listener.BackendPort == 0 {
-		lb.Listener.BackendPort = DefaultBackendPort
+		lb.Listener.BackendPort = DefaultLoadBalancerPort
 	}
 	if lb.Listener.BackendProtocol == "" {
-		lb.Listener.BackendProtocol = DefaultBackendProtocol
+		lb.Listener.BackendProtocol = DefaultLoadBalancerProtocol
 	}
 	if lb.Listener.LoadBalancerPort == 0 {
 		lb.Listener.LoadBalancerPort = DefaultLoadBalancerPort
@@ -1250,9 +607,9 @@ func (lb *OscLoadBalancer) SetDefaultValue() {
 		lb.HealthCheck.Timeout = DefaultTimeout
 	}
 	if lb.HealthCheck.Protocol == "" {
-		lb.HealthCheck.Protocol = DefaultProtocol
+		lb.HealthCheck.Protocol = DefaultLoadBalancerProtocol
 	}
 	if lb.HealthCheck.Port == 0 {
-		lb.HealthCheck.Port = DefaultPort
+		lb.HealthCheck.Port = DefaultLoadBalancerPort
 	}
 }

@@ -31,15 +31,16 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_net/internetservice_mock.go -package mock_net -source ./internetservice.go
 type OscInternetServiceInterface interface {
-	CreateInternetService(ctx context.Context, internetServiceName string) (*osc.InternetService, error)
+	CreateInternetService(ctx context.Context, internetServiceName, clusterID string) (*osc.InternetService, error)
 	DeleteInternetService(ctx context.Context, internetServiceId string) error
-	LinkInternetService(ctx context.Context, internetServiceId string, netId string) error
-	UnlinkInternetService(ctx context.Context, internetServiceId string, netId string) error
+	LinkInternetService(ctx context.Context, internetServiceId, netId string) error
+	UnlinkInternetService(ctx context.Context, internetServiceId, netId string) error
 	GetInternetService(ctx context.Context, internetServiceId string) (*osc.InternetService, error)
+	GetInternetServiceForNet(ctx context.Context, netId string) (*osc.InternetService, error)
 }
 
 // CreateInternetService launch the internet service
-func (s *Service) CreateInternetService(ctx context.Context, internetServiceName string) (*osc.InternetService, error) {
+func (s *Service) CreateInternetService(ctx context.Context, internetServiceName, clusterID string) (*osc.InternetService, error) {
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -74,9 +75,13 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 		Key:   "Name",
 		Value: internetServiceName,
 	}
+	clusterTag := osc.ResourceTag{
+		Key:   "OscK8sClusterID/" + clusterID,
+		Value: "owned",
+	}
 	internetServiceTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{internetServiceTag},
+		Tags:        []osc.ResourceTag{internetServiceTag, clusterTag},
 	}
 	err := tag.AddTag(ctx, internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
@@ -199,6 +204,53 @@ func (s *Service) GetInternetService(ctx context.Context, internetServiceId stri
 	readInternetServiceRequest := osc.ReadInternetServicesRequest{
 		Filters: &osc.FiltersInternetService{
 			InternetServiceIds: &[]string{internetServiceId},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	var readInternetServicesResponse osc.ReadInternetServicesResponse
+	readInternetServiceCallBack := func() (bool, error) {
+		var httpRes *http.Response
+		var err error
+		readInternetServicesResponse, httpRes, err = oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
+		if err != nil {
+			if httpRes != nil {
+				return false, utils.ExtractOAPIError(err, httpRes)
+			}
+			requestStr := fmt.Sprintf("%v", readInternetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readInternetServiceCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	internetServices, ok := readInternetServicesResponse.GetInternetServicesOk()
+	if !ok {
+		return nil, errors.New("Can not read internetService")
+	}
+	if len(*internetServices) == 0 {
+		return nil, nil
+	} else {
+		internetService := *internetServices
+		return &internetService[0], nil
+	}
+}
+
+// GetInternetServiceForNet retrieve internet service object using internet service id
+func (s *Service) GetInternetServiceForNet(ctx context.Context, netId string) (*osc.InternetService, error) {
+	readInternetServiceRequest := osc.ReadInternetServicesRequest{
+		Filters: &osc.FiltersInternetService{
+			LinkNetIds: &[]string{netId},
 		},
 	}
 	oscApiClient := s.scope.GetApi()

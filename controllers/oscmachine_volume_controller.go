@@ -25,20 +25,20 @@ import (
 
 // checkVolumeOscDuplicateName check that there are not the same name for volume resource
 func checkVolumeOscDuplicateName(machineScope *scope.MachineScope) error {
-	err := utils.CheckDuplicates(machineScope.GetVolume(), func(vol *infrastructurev1beta1.OscVolume) string {
+	err := utils.CheckDuplicates(machineScope.GetVolumes(), func(vol infrastructurev1beta1.OscVolume) string {
 		return vol.Name
 	})
 	if err != nil {
 		return err
 	}
-	return utils.CheckDuplicates(machineScope.GetVolume(), func(vol *infrastructurev1beta1.OscVolume) string {
+	return utils.CheckDuplicates(machineScope.GetVolumes(), func(vol infrastructurev1beta1.OscVolume) string {
 		return vol.Device
 	})
 }
 
 // checkVolumeFormatParameters check Volume parameters format
 func checkVolumeFormatParameters(machineScope *scope.MachineScope) (string, error) {
-	for _, volumeSpec := range machineScope.GetVolume() {
+	for _, volumeSpec := range machineScope.GetVolumes() {
 		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
 		volumeTagName, err := tag.ValidateTagNameValue(volumeName)
 		if err != nil {
