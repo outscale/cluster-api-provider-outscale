@@ -1,23 +1,49 @@
 package controllers_test
 
 import (
-	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"testing"
+
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func patchMoveCluster() patchOSCClusterFunc {
-	return func(m *v1beta1.OscCluster) {
-		m.Status = v1beta1.OscClusterStatus{}
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Status = infrastructurev1beta1.OscClusterStatus{}
 	}
 }
 
 func patchDeleteCluster() patchOSCClusterFunc {
-	return func(m *v1beta1.OscCluster) {
+	return func(m *infrastructurev1beta1.OscCluster) {
 		m.DeletionTimestamp = ptr.To(metav1.Now())
+		if len(m.Finalizers) == 0 {
+			m.Finalizers = []string{"oscclusters.infrastructure.cluster.x-k8s.io"}
+		}
+	}
+}
+
+func patchUseExistingNet() patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.Net.UseExisting = true
+	}
+}
+
+func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Generation++
+		for i, sg := range m.Spec.Network.SecurityGroups {
+			if sg.Name == name {
+				m.Spec.Network.SecurityGroups[i].SecurityGroupRules = append(m.Spec.Network.SecurityGroups[i].SecurityGroupRules, r)
+				return
+			}
+		}
 	}
 }
 
@@ -29,11 +55,19 @@ func mockNetFound(id string) mockFunc {
 	}
 }
 
-func mockGetSubnetIdsFromNetIds(net string, subnets []string) mockFunc {
+func mockGetNet(id string, net *osc.Net) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SubnetMock.EXPECT().
-			GetSubnetIdsFromNetIds(gomock.Any(), gomock.Eq(net)).
-			Return(subnets, nil)
+		s.NetMock.EXPECT().
+			GetNet(gomock.Any(), gomock.Eq(id)).
+			Return(net, nil)
+	}
+}
+
+func mockCreateNet(spec infrastructurev1beta1.OscNet, clusterID, netName, netId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetMock.EXPECT().
+			CreateNet(gomock.Any(), gomock.Eq(spec), gomock.Eq(clusterID), gomock.Eq(netName)).
+			Return(&osc.Net{NetId: &netId}, nil)
 	}
 }
 
@@ -45,6 +79,38 @@ func mockDeleteNet(id string) mockFunc {
 	}
 }
 
+func mockGetSubnetFromNet(netId, ipRange string, sn *osc.Subnet) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SubnetMock.EXPECT().
+			GetSubnetFromNet(gomock.Any(), gomock.Eq(netId), gomock.Eq(ipRange)).
+			Return(sn, nil)
+	}
+}
+
+func mockGetSubnet(id string, subnet *osc.Subnet) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SubnetMock.EXPECT().
+			GetSubnet(gomock.Any(), gomock.Eq(id)).
+			Return(subnet, nil)
+	}
+}
+
+func mockSubnetFound(id string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SubnetMock.EXPECT().
+			GetSubnet(gomock.Any(), gomock.Eq(id)).
+			Return(&osc.Subnet{SubnetId: ptr.To(id)}, nil)
+	}
+}
+
+func mockCreateSubnet(spec infrastructurev1beta1.OscSubnet, netId, clusterID, name, subnetId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SubnetMock.EXPECT().
+			CreateSubnet(gomock.Any(), gomock.Eq(spec), gomock.Eq(netId), gomock.Eq(clusterID), gomock.Eq(name)).
+			Return(&osc.Subnet{SubnetId: &subnetId, NetId: &netId, IpRange: &spec.IpSubnetRange}, nil)
+	}
+}
+
 func mockDeleteSubnet(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.SubnetMock.EXPECT().
@@ -53,13 +119,40 @@ func mockDeleteSubnet(id string) mockFunc {
 	}
 }
 
-func mockInternetServiceFound(id string) mockFunc {
+func mockInternetServiceFound(netId, id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.InternetServiceMock.EXPECT().
-			GetInternetService(gomock.Any(), gomock.Eq(id)).
+			GetInternetServiceForNet(gomock.Any(), gomock.Eq(netId)).
 			Return(&osc.InternetService{
 				InternetServiceId: ptr.To(id),
+				NetId:             ptr.To(netId),
 			}, nil)
+	}
+}
+
+func mockGetInternetServiceForNet(netId string, is *osc.InternetService) mockFunc {
+	return func(s *MockCloudServices) {
+		s.InternetServiceMock.EXPECT().
+			GetInternetServiceForNet(gomock.Any(), gomock.Eq(netId)).
+			Return(is, nil)
+	}
+}
+
+func mockCreateInternetService(name, clusterId, internetServiceId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.InternetServiceMock.EXPECT().
+			CreateInternetService(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterId)).
+			Return(&osc.InternetService{
+				InternetServiceId: &internetServiceId,
+			}, nil)
+	}
+}
+
+func mockLinkInternetService(id, netId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.InternetServiceMock.EXPECT().
+			LinkInternetService(gomock.Any(), gomock.Eq(id), gomock.Eq(netId)).
+			Return(nil)
 	}
 }
 
@@ -79,22 +172,15 @@ func mockDeleteInternetService(id string) mockFunc {
 	}
 }
 
-func mockValidatePublicIpIdsOk(ips []string) mockFunc {
+func mockCreatePublicIp(name, clusterID, publicIpId, publicIp string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
-			ValidatePublicIpIds(gomock.Any(), gomock.Eq(ips)).
-			Return(ips, nil)
+			CreatePublicIp(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterID)).
+			Return(&osc.PublicIp{PublicIpId: &publicIpId, PublicIp: &publicIp}, nil)
 	}
 }
 
-func mockCheckPublicIpUnlink(ip string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.PublicIpMock.EXPECT().
-			CheckPublicIpUnlink(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(ip)).
-			Return(nil)
-	}
-}
-
+//nolint:unused
 func mockDeletePublicIp(ip string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
@@ -103,11 +189,36 @@ func mockDeletePublicIp(ip string) mockFunc {
 	}
 }
 
-func mockSecurityGroupsForNetFound(netId string, sgs []string) mockFunc {
+func mockGetSecurityGroupFromName(name string, sg *osc.SecurityGroup) mockFunc {
 	return func(s *MockCloudServices) {
 		s.SecurityGroupMock.EXPECT().
-			GetSecurityGroupIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
-			Return(sgs, nil)
+			GetSecurityGroupFromName(gomock.Any(), gomock.Eq(name)).
+			Return(sg, nil)
+	}
+}
+
+func mockGetSecurityGroup(sgId string, sg *osc.SecurityGroup) mockFunc {
+	return func(s *MockCloudServices) {
+		sg.SecurityGroupId = &sgId
+		s.SecurityGroupMock.EXPECT().
+			GetSecurityGroup(gomock.Any(), gomock.Eq(sgId)).
+			Return(sg, nil)
+	}
+}
+
+func mockCreateSecurityGroup(netId, clusterId, name, description, tag, sgId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SecurityGroupMock.EXPECT().
+			CreateSecurityGroup(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterId), gomock.Eq(name), gomock.Eq(description), gomock.Eq(tag)).
+			Return(&osc.SecurityGroup{SecurityGroupId: &sgId}, nil)
+	}
+}
+
+func mockCreateSecurityGroupRule(sg, flow, proto, ipRanges string, portFrom, portTo int32) mockFunc {
+	return func(s *MockCloudServices) {
+		s.SecurityGroupMock.EXPECT().
+			CreateSecurityGroupRule(gomock.Any(), sg, flow, proto, ipRanges, "", portFrom, portTo).
+			Return(&osc.SecurityGroup{SecurityGroupId: ptr.To(sg)}, nil)
 	}
 }
 
@@ -127,19 +238,35 @@ func mockDeleteSecurityGroup(sg string, err error) mockFunc {
 	}
 }
 
-func mockRouteTablesForNetFound(netId string, rts []string) mockFunc {
+func mockGetRouteTablesFromNet(netId string, rts []osc.RouteTable) mockFunc {
 	return func(s *MockCloudServices) {
 		s.RouteTableMock.EXPECT().
-			GetRouteTableIdsFromNetIds(gomock.Any(), gomock.Eq(netId)).
+			GetRouteTablesFromNet(gomock.Any(), gomock.Eq(netId)).
 			Return(rts, nil)
 	}
 }
 
-func mockDeleteRoute(id, dest string) mockFunc {
+func mockCreateRouteTable(netId, clusterID, name, routeTableId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.RouteTableMock.EXPECT().
-			DeleteRoute(gomock.Any(), gomock.Eq(dest), gomock.Eq(id)).
-			Return(nil)
+			CreateRouteTable(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterID), gomock.Eq(name)).
+			Return(&osc.RouteTable{RouteTableId: &routeTableId}, nil)
+	}
+}
+
+func mockLinkRouteTable(routeTableId, subnetId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.RouteTableMock.EXPECT().
+			LinkRouteTable(gomock.Any(), gomock.Eq(routeTableId), gomock.Eq(subnetId)).
+			Return("", nil)
+	}
+}
+
+func mockCreateRoute(routeTableId, dest, resourceId, resourceType string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.RouteTableMock.EXPECT().
+			CreateRoute(gomock.Any(), gomock.Eq(dest), gomock.Eq(routeTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
+			Return(&osc.RouteTable{}, nil)
 	}
 }
 
@@ -151,11 +278,29 @@ func mockUnlinkRouteTable(id string) mockFunc {
 	}
 }
 
-func mockDeleteRouteTable(id string) mockFunc {
+func mockDeleteRouteTable(routeTableId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.RouteTableMock.EXPECT().
-			DeleteRouteTable(gomock.Any(), gomock.Eq(id)).
+			DeleteRouteTable(gomock.Any(), gomock.Eq(routeTableId)).
 			Return(nil)
+	}
+}
+
+func mockListNatServices(netId, natId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NatServiceMock.EXPECT().
+			ListNatServices(gomock.Any(), gomock.Eq(netId)).
+			Return([]osc.NatService{{
+				NatServiceId: ptr.To(natId),
+			}}, nil)
+	}
+}
+
+func mockGetNatServiceFromClientToken(token string, ns *osc.NatService) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NatServiceMock.EXPECT().
+			GetNatServiceFromClientToken(gomock.Any(), gomock.Eq(token)).
+			Return(ns, nil)
 	}
 }
 
@@ -169,6 +314,14 @@ func mockNatServiceFound(id string) mockFunc {
 	}
 }
 
+func mockCreateNatService(publicIpId, subnetId, clientToken, name, clusterID, natServiceId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NatServiceMock.EXPECT().
+			CreateNatService(gomock.Any(), gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(clientToken), gomock.Eq(name), gomock.Eq(clusterID)).
+			Return(&osc.NatService{NatServiceId: &natServiceId}, nil)
+	}
+}
+
 func mockDeleteNatService(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NatServiceMock.EXPECT().
@@ -177,54 +330,61 @@ func mockDeleteNatService(id string) mockFunc {
 	}
 }
 
-func mockLoadBalancerFound(name string, found bool) mockFunc {
-	if !found {
-		return func(s *MockCloudServices) {
-			s.LoadBalancerMock.EXPECT().
-				GetLoadBalancer(gomock.Any(), gomock.Eq(name)).
-				Return(nil, nil)
-		}
+func mockGetLoadBalancer(name string, lb *osc.LoadBalancer) mockFunc {
+	return func(s *MockCloudServices) {
+		s.LoadBalancerMock.EXPECT().
+			GetLoadBalancer(gomock.Any(), gomock.Eq(name)).
+			Return(lb, nil)
 	}
+}
+
+func mockLoadBalancerFound(name, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
 			GetLoadBalancer(gomock.Any(), gomock.Eq(name)).
 			Return(&osc.LoadBalancer{
 				LoadBalancerName: ptr.To(name),
 				DnsName:          ptr.To(name + ".lbu.outscale.com"),
+				Tags:             &[]osc.ResourceTag{{Key: tag.NameKey, Value: nameTag}},
+				HealthCheck:      &osc.HealthCheck{},
 			}, nil)
 	}
 }
 
-func mockLoadBalancerTagFound(name, tagValue string) mockFunc {
+func mockCreateLoadBalancer(loadBalancerName, loadBalancerType, subnetId, securityGroupId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
-			GetLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == name
-			})).
-			Return(&osc.LoadBalancerTag{
-				LoadBalancerName: ptr.To(name),
-				Key:              ptr.To("Name"),
-				Value:            ptr.To(tagValue),
+			CreateLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+				return spec.LoadBalancerName == loadBalancerName && spec.LoadBalancerType == loadBalancerType
+			}), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
+			Return(&osc.LoadBalancer{
+				LoadBalancerName: &loadBalancerName,
+				DnsName:          ptr.To(loadBalancerName + ".outscale.dev"),
+				Listeners:        &[]osc.Listener{{LoadBalancerPort: ptr.To[int32](6443)}},
 			}, nil)
 	}
 }
 
-func mockCheckLoadBalancerDeregisterVm(name string) mockFunc {
+func mockConfigureHealthCheck(loadBalancerName string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
-			CheckLoadBalancerDeregisterVm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == name
+			ConfigureHealthCheck(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+				return spec.LoadBalancerName == loadBalancerName
 			})).
-			Return(nil)
+			Return(&osc.LoadBalancer{
+				LoadBalancerName: &loadBalancerName,
+				DnsName:          ptr.To(loadBalancerName + ".outscale.dev"),
+				Listeners:        &[]osc.Listener{{LoadBalancerPort: ptr.To[int32](6443)}},
+			}, nil)
 	}
 }
 
-func mockDeleteLoadBalancerTag(name string) mockFunc {
+func mockCreateLoadBalancerTag(loadBalancerName, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
-			DeleteLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == name
-			}), gomock.Any()).
+			CreateLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+				return spec.LoadBalancerName == loadBalancerName
+			}), gomock.Eq(&osc.ResourceTag{Key: tag.NameKey, Value: nameTag})).
 			Return(nil)
 	}
 }
@@ -236,5 +396,53 @@ func mockDeleteLoadBalancer(name string) mockFunc {
 				return spec.LoadBalancerName == name
 			})).
 			Return(nil)
+	}
+}
+
+func mockReadOwnedByTagNoneFound(rsrcType tag.ResourceType, clusterID string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.TagMock.EXPECT().
+			ReadOwnedByTag(gomock.Any(), gomock.Eq(rsrcType), gomock.Eq(clusterID)).
+			Return(nil, nil).MinTimes(1)
+	}
+}
+
+func mockCreateVmBastion(vmId, subnetId string, securityGroupIds, privateIps []string, vmName, clientToken, imageId string, vmTags map[string]string) mockFunc {
+	created := []osc.BlockDeviceMappingCreated{{
+		DeviceName: ptr.To("/dev/sda1"),
+		Bsu: &osc.BsuCreated{
+			VolumeId: ptr.To(string(defaultRootVolumeId)),
+		},
+	}}
+	return func(s *MockCloudServices) {
+		s.VMMock.
+			EXPECT().
+			CreateVmBastion(gomock.Any(), gomock.Any(),
+				gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(clientToken), gomock.Eq(imageId), gomock.Eq(vmTags)).
+			Return(&osc.Vm{
+				VmId:                ptr.To(vmId),
+				PrivateDnsName:      ptr.To(defaultPrivateDnsName),
+				PrivateIp:           ptr.To(defaultPrivateIp),
+				BlockDeviceMappings: &created,
+				State:               ptr.To("pending"),
+			}, nil)
+	}
+}
+
+func assertStatusResources(rsrcs infrastructurev1beta1.OscClusterResources) assertOSCClusterFunc {
+	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
+		assert.Equal(t, rsrcs, c.Status.Resources)
+	}
+}
+
+func assertControlPlaneEndpoint(endpoint string) assertOSCClusterFunc {
+	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
+		assert.Equal(t, endpoint, c.Spec.ControlPlaneEndpoint.Host)
+	}
+}
+
+func assertHasClusterFinalizer() assertOSCClusterFunc {
+	return func(t *testing.T, m *infrastructurev1beta1.OscCluster) {
+		assert.True(t, controllerutil.ContainsFinalizer(m, controllers.OscClusterFinalizer))
 	}
 }

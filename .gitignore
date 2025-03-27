@@ -17,7 +17,7 @@ apicovers.txt
 covers.txt
 apicovers.html
 covers.html
-getstarted.yaml
+getstarted.*
 secret.*
 *.kubeconfig
 # Dependency directories (remove the comment below to include it)

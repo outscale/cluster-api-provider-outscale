@@ -43,18 +43,18 @@ func (m *MockOscNetInterface) EXPECT() *MockOscNetInterfaceMockRecorder {
 }
 
 // CreateNet mocks base method.
-func (m *MockOscNetInterface) CreateNet(ctx context.Context, spec *v1beta1.OscNet, clusterName, netName string) (*osc.Net, error) {
+func (m *MockOscNetInterface) CreateNet(ctx context.Context, spec v1beta1.OscNet, clusterID, netName string) (*osc.Net, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNet", ctx, spec, clusterName, netName)
+	ret := m.ctrl.Call(m, "CreateNet", ctx, spec, clusterID, netName)
 	ret0, _ := ret[0].(*osc.Net)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateNet indicates an expected call of CreateNet.
-func (mr *MockOscNetInterfaceMockRecorder) CreateNet(ctx, spec, clusterName, netName any) *gomock.Call {
+func (mr *MockOscNetInterfaceMockRecorder) CreateNet(ctx, spec, clusterID, netName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNet", reflect.TypeOf((*MockOscNetInterface)(nil).CreateNet), ctx, spec, clusterName, netName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNet", reflect.TypeOf((*MockOscNetInterface)(nil).CreateNet), ctx, spec, clusterID, netName)
 }
 
 // DeleteNet mocks base method.

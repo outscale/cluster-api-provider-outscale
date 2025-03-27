@@ -57,18 +57,18 @@ func (mr *MockOscPublicIpInterfaceMockRecorder) CheckPublicIpUnlink(ctx, clockIn
 }
 
 // CreatePublicIp mocks base method.
-func (m *MockOscPublicIpInterface) CreatePublicIp(ctx context.Context, publicIpName string) (*osc.PublicIp, error) {
+func (m *MockOscPublicIpInterface) CreatePublicIp(ctx context.Context, publicIpName, clusterUUID string) (*osc.PublicIp, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePublicIp", ctx, publicIpName)
+	ret := m.ctrl.Call(m, "CreatePublicIp", ctx, publicIpName, clusterUUID)
 	ret0, _ := ret[0].(*osc.PublicIp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePublicIp indicates an expected call of CreatePublicIp.
-func (mr *MockOscPublicIpInterfaceMockRecorder) CreatePublicIp(ctx, publicIpName any) *gomock.Call {
+func (mr *MockOscPublicIpInterfaceMockRecorder) CreatePublicIp(ctx, publicIpName, clusterUUID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CreatePublicIp), ctx, publicIpName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CreatePublicIp), ctx, publicIpName, clusterUUID)
 }
 
 // DeletePublicIp mocks base method.
@@ -127,19 +127,4 @@ func (m *MockOscPublicIpInterface) UnlinkPublicIp(ctx context.Context, linkPubli
 func (mr *MockOscPublicIpInterfaceMockRecorder) UnlinkPublicIp(ctx, linkPublicIpId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).UnlinkPublicIp), ctx, linkPublicIpId)
-}
-
-// ValidatePublicIpIds mocks base method.
-func (m *MockOscPublicIpInterface) ValidatePublicIpIds(ctx context.Context, publicIpIds []string) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidatePublicIpIds", ctx, publicIpIds)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ValidatePublicIpIds indicates an expected call of ValidatePublicIpIds.
-func (mr *MockOscPublicIpInterfaceMockRecorder) ValidatePublicIpIds(ctx, publicIpIds any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatePublicIpIds", reflect.TypeOf((*MockOscPublicIpInterface)(nil).ValidatePublicIpIds), ctx, publicIpIds)
 }

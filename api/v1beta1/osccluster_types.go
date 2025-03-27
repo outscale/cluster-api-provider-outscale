@@ -36,11 +36,13 @@ type OscClusterSpec struct {
 
 // OscClusterStatus defines the observed state of OscCluster
 type OscClusterStatus struct {
-	Ready          bool                     `json:"ready,omitempty"`
-	Network        OscNetworkResource       `json:"network,omitempty"`
-	FailureDomains clusterv1.FailureDomains `json:"failureDomains,omitempty"`
-	Conditions     clusterv1.Conditions     `json:"conditions,omitempty"`
-	VmState        *VmState                 `json:"vmState,omitempty"`
+	Ready                bool                     `json:"ready,omitempty"`
+	Network              OscNetworkResource       `json:"network,omitempty"`
+	Resources            OscClusterResources      `json:"resources,omitempty"`
+	ReconcilerGeneration OscReconcilerGeneration  `json:"reconcilerGeneration,omitempty"`
+	FailureDomains       clusterv1.FailureDomains `json:"failureDomains,omitempty"`
+	Conditions           clusterv1.Conditions     `json:"conditions,omitempty"`
+	VmState              *VmState                 `json:"vmState,omitempty"`
 }
 
 //+kubebuilder:object:root=true

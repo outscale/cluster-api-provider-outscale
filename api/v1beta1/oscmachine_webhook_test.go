@@ -71,7 +71,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with bad iops",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -127,7 +127,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with bad volumeType",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -144,7 +144,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with good io1 volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -161,7 +161,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with bad io1 ratio size iops",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -178,7 +178,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with good gp2 volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -194,7 +194,7 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 			name: "create with good standard volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -238,7 +238,7 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 						DeviceName:  "/dev/xvda",
 						VmType:      "tinav4.c2r4p2",
 					},
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "update-webhook",
 							Iops:       15,
@@ -256,7 +256,7 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 						DeviceName:  "/dev/xvda",
 						VmType:      "tinav4.c2r4p2",
 					},
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "update-webhook",
 							Iops:       15,

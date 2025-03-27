@@ -8,7 +8,6 @@ New OMI will be builded and publish every two weeks for each supported Os Distri
 ## Supported Outscale Regions
 - eu-west-2
 - us-east-2
-- 
 
 ## Supported Image on eu-west-2:
 ubuntu:

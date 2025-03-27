@@ -34,15 +34,17 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const vmRootDeviceName string = "/dev/sda1"
+const (
+	AutoAttachExternapIPTag = "osc.fcu.eip.auto-attach"
+)
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error)
-	CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
+	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string, volumes []infrastructurev1beta1.OscVolume) (*osc.Vm, error)
+	CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error)
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
-	GetVmListFromTag(ctx context.Context, tagKey string, tagName string) ([]osc.Vm, error)
+	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
 	AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error
 }
 
@@ -59,19 +61,13 @@ func ValidateIpAddrInCidr(ipAddr, cidr string) error {
 
 // CreateVm create machine vm
 func (s *Service) CreateVm(ctx context.Context,
-	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string,
-	volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
-	imageId := spec.ImageId
+	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
+	volumes []infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
-	subregionName := spec.SubregionName
 	rootDiskIops := spec.RootDisk.RootDiskIops
 	rootDiskSize := spec.RootDisk.RootDiskSize
 	rootDiskType := spec.RootDisk.RootDiskType
-
-	placement := osc.Placement{
-		SubregionName: &subregionName,
-	}
 	bootstrapData, err := machineScope.GetBootstrapData(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
@@ -83,7 +79,7 @@ func (s *Service) CreateVm(ctx context.Context,
 			VolumeType: &rootDiskType,
 			VolumeSize: &rootDiskSize,
 		},
-		DeviceName: ptr.To(vmRootDeviceName),
+		DeviceName: ptr.To("/dev/sda1"),
 	}
 	if rootDiskType == "io1" {
 		rootDisk.Bsu.Iops = &rootDiskIops
@@ -113,7 +109,7 @@ func (s *Service) CreateVm(ctx context.Context,
 		SecurityGroupIds:    &securityGroupIds,
 		UserData:            &mergedUserDataEnc,
 		BlockDeviceMappings: &volMappings,
-		Placement:           &placement,
+		ClientToken:         &vmClientToken,
 	}
 
 	if len(privateIps) > 0 {
@@ -174,26 +170,21 @@ func (s *Service) CreateVm(ctx context.Context,
 	}
 }
 
-// CreateVmUserData create machine vm
-func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
+// CreateVmBastion create a bastion vm
+func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
-	subregionName := spec.SubregionName
 	rootDiskIops := spec.RootDisk.RootDiskIops
 	rootDiskSize := spec.RootDisk.RootDiskSize
 	rootDiskType := spec.RootDisk.RootDiskType
-	deviceName := spec.DeviceName
 
-	placement := osc.Placement{
-		SubregionName: &subregionName,
-	}
-	userDataEnc := b64.StdEncoding.EncodeToString([]byte(userData))
+	userDataEnc := b64.StdEncoding.EncodeToString([]byte(utils.ConvertsTagsToUserDataOutscaleSection(tags)))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
 		Bsu: &osc.BsuToCreate{
 			VolumeType: &rootDiskType,
 			VolumeSize: &rootDiskSize,
 		},
-		DeviceName: &deviceName,
+		DeviceName: ptr.To("/dev/sda1"),
 	}
 	if rootDiskType == "io1" {
 		rootDisk.Bsu.Iops = &rootDiskIops
@@ -209,7 +200,7 @@ func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *i
 		BlockDeviceMappings: &[]osc.BlockDeviceMappingVmCreation{
 			rootDisk,
 		},
-		Placement: &placement,
+		ClientToken: &vmClientToken,
 	}
 
 	if len(privateIps) > 0 {
@@ -331,12 +322,11 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 	}
 }
 
-// GetVm retrieve vm from vmId
-func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue string) ([]osc.Vm, error) {
+// GetVmFromClientToken retrieve vm from vmId
+func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error) {
 	readVmsRequest := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
-			TagKeys:   &[]string{tagKey},
-			TagValues: &[]string{tagValue},
+			ClientTokens: &[]string{clientToken},
 		},
 	}
 	oscApiClient := s.scope.GetApi()
@@ -346,7 +336,7 @@ func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue 
 		var httpRes *http.Response
 		var err error
 		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
-		utils.LogAPICall(ctx, "ReadVms", readVmsRequest, httpRes, err)
+		utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
 		if err != nil {
 			if httpRes != nil {
 				return false, utils.ExtractOAPIError(err, httpRes)
@@ -375,8 +365,8 @@ func (s *Service) GetVmListFromTag(ctx context.Context, tagKey string, tagValue 
 	if len(*vms) == 0 {
 		return nil, nil
 	} else {
-		vmList := *vms
-		return vmList, nil
+		vm := *vms
+		return &vm[0], nil
 	}
 }
 

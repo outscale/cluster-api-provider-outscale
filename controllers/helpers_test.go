@@ -1,10 +1,10 @@
-//nolint:unused
 package controllers_test
 
 import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -50,9 +50,8 @@ type MockCloudServices struct {
 	PublicIpMock        *mock_security.MockOscPublicIpInterface
 	LoadBalancerMock    *mock_service.MockOscLoadBalancerInterface
 
-	VMMock      *mock_compute.MockOscVmInterface
-	ImageMock   *mock_compute.MockOscImageInterface
-	KeyPairMock *mock_security.MockOscKeyPairInterface
+	VMMock    *mock_compute.MockOscVmInterface
+	ImageMock *mock_compute.MockOscImageInterface
 
 	TagMock *mock_tag.MockOscTagInterface
 }
@@ -69,9 +68,8 @@ func newMockCloudServices(mockCtrl *gomock.Controller) *MockCloudServices {
 		PublicIpMock:        mock_security.NewMockOscPublicIpInterface(mockCtrl),
 		LoadBalancerMock:    mock_service.NewMockOscLoadBalancerInterface(mockCtrl),
 
-		VMMock:      mock_compute.NewMockOscVmInterface(mockCtrl),
-		ImageMock:   mock_compute.NewMockOscImageInterface(mockCtrl),
-		KeyPairMock: mock_security.NewMockOscKeyPairInterface(mockCtrl),
+		VMMock:    mock_compute.NewMockOscVmInterface(mockCtrl),
+		ImageMock: mock_compute.NewMockOscImageInterface(mockCtrl),
 
 		TagMock: mock_tag.NewMockOscTagInterface(mockCtrl),
 	}
@@ -121,10 +119,6 @@ func (s *MockCloudServices) Image(ctx context.Context, scope scope.ClusterScope)
 	return s.ImageMock
 }
 
-func (s *MockCloudServices) KeyPair(ctx context.Context, scope scope.ClusterScope) security.OscKeyPairInterface {
-	return s.KeyPairMock
-}
-
 func (s *MockCloudServices) Tag(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
 	return s.TagMock
 }
@@ -135,70 +129,77 @@ type patchOSCMachineFunc func(m *v1beta1.OscMachine)
 type mockFunc func(s *MockCloudServices)
 
 type assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
-type assertOSCClusterFunc func(t *testing.T, m *v1beta1.OscCluster)
+type assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
 
 type testcase struct {
-	name                     string
-	clusterSpec, machineSpec string
-	clusterPatches           []patchOSCClusterFunc
-	machinePatches           []patchOSCMachineFunc
-	mockFuncs                []mockFunc
-	hasError                 bool
-	requeue                  bool
-	assertDeleted            bool
-	clusterAsserts           []assertOSCClusterFunc
-	machineAsserts           []assertOSCMachineFunc
+	name                             string
+	clusterSpec, machineSpec         string
+	clusterBaseSpec, machineBaseSpec string
+	clusterPatches                   []patchOSCClusterFunc
+	machinePatches                   []patchOSCMachineFunc
+	mockFuncs                        []mockFunc
+	hasError                         bool
+	requeue                          bool
+	assertDeleted                    bool
+	clusterAsserts                   []assertOSCClusterFunc
+	machineAsserts                   []assertOSCMachineFunc
 
 	next *testcase
 }
 
-func loadClusterSpecs(t *testing.T, spec string) (*clusterv1.Cluster, *v1beta1.OscCluster) {
+var reVersion = regexp.MustCompile("-[0-9.]+$")
+
+func trimVersion(spec string) string {
+	return reVersion.ReplaceAllString(spec, "")
+}
+
+func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *v1beta1.OscCluster) {
 	var cluster clusterv1.Cluster
-	decode(t, "cluster/"+spec+".yaml", &cluster)
+	if base != "" {
+		decode(t, "cluster/"+base+".yaml", &cluster)
+	} else {
+		decode(t, "cluster/"+trimVersion(spec)+".yaml", &cluster)
+	}
 	var osccluster v1beta1.OscCluster
 	decode(t, "osccluster/"+spec+".yaml", &osccluster)
 	return &cluster, &osccluster
 }
 
-func loadMachineSpecs(t *testing.T, spec string) (*clusterv1.Machine, *v1beta1.OscMachine) {
+func loadMachineSpecs(t *testing.T, spec, base string) (*clusterv1.Machine, *v1beta1.OscMachine) {
 	var machine clusterv1.Machine
-	decode(t, "machine/"+spec+".yaml", &machine)
+	if base != "" {
+		decode(t, "machine/"+base+".yaml", &machine)
+	} else {
+		decode(t, "machine/"+trimVersion(spec)+".yaml", &machine)
+	}
 	var oscmachine v1beta1.OscMachine
 	decode(t, "oscmachine/"+spec+".yaml", &oscmachine)
 	return &machine, &oscmachine
 }
 
-func mockReadTagByNameNoneFound(name string) mockFunc {
+func mockReadTagByNameNoneFound(typ tag.ResourceType, name string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
-			Return(nil, nil)
+			ReadTag(gomock.Any(), gomock.Eq(typ), gomock.Eq(tag.NameKey), gomock.Eq(name)).
+			Return(nil, nil).MinTimes(1)
 	}
 }
 
-func mockReadTagByNameFound(name string) mockFunc {
+func mockReadTagByNameFound(typ tag.ResourceType, name, resourceId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
-			Return(&osc.Tag{}, nil)
+			ReadTag(gomock.Any(), gomock.Eq(typ), gomock.Eq(tag.NameKey), gomock.Eq(name)).
+			Return(&osc.Tag{
+				Value:      &name,
+				ResourceId: &resourceId,
+			}, nil)
 	}
 }
 
-func mockSecurityGroupHasRule(sg, flow, proto, ipRanges, memberSg string, portFrom, portTo int32, found bool) mockFunc {
+func mockGetSecurityGroupsFromNet(netId string, sgs []osc.SecurityGroup) mockFunc {
 	return func(s *MockCloudServices) {
 		s.SecurityGroupMock.EXPECT().
-			SecurityGroupHasRule(gomock.Any(), gomock.Eq(sg), gomock.Eq(flow), gomock.Eq(proto), gomock.Eq(ipRanges), gomock.Eq(memberSg), gomock.Eq(portFrom), gomock.Eq(portTo)).
-			Return(found, nil)
-	}
-}
-
-func mockSecurityGroupCleanAllRules(sg string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
-			SecurityGroupHasRule(gomock.Any(), gomock.Eq(sg), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).MinTimes(1)
-		s.SecurityGroupMock.EXPECT().
-			DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(sg), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(nil).MinTimes(1)
+			GetSecurityGroupsFromNet(gomock.Any(), gomock.Eq(netId)).
+			Return(sgs, nil)
 	}
 }

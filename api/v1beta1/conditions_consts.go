@@ -68,11 +68,6 @@ const (
 )
 
 const (
-	PublicIpsReadyCondition clusterv1.ConditionType = "PublicIpsReady"
-	PublicIpsFailedReason   string                  = "PublicIpsFailed"
-)
-
-const (
 	VolumeReadyCondition             clusterv1.ConditionType = "VolumeReady"
 	VolumeReconciliationFailedReason string                  = "VolumeFailed"
 )

@@ -2,6 +2,7 @@
 
 Use cluster-autoscaler
 Please look at [cluster-api][cluster-api]  first.
+
 ### Install with helm
 We will use kubeconfig-incluster mode
 

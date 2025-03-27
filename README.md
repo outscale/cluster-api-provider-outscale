@@ -13,11 +13,11 @@ The Cluster API allows you to deploy kubernetes across multiple cloud provider. 
  
 The project is Work in Progress,  in an Alpha state.
 
-
 ## Compatibility with Cluster API and Kubernetes Versions
 
 The provider version has currently been tested with the following version of Cluster API (v1beta1)
 The provider version has currently been tested with the following version of kubernetes (v1.22.x)
+
 # Features
 
 - Cluster infrastructure Outscale controller (https://cluster-api.sigs.k8s.io/developer/providers/cluster-infrastructure.html#cluster-infrastructure-provider-specification)
@@ -30,10 +30,6 @@ Please look at [Development](./docs/src/developers/developement.md)
 
 # Contribution
 Please look at [Contribution](CONTRIBUTING.md)
-
-# cluster api outscale site
-
-You can see all documentation in [cluster-api-outscale](https://cluster-api-outscale.oos-website.eu-west-2.outscale.com)
 
 # License
 

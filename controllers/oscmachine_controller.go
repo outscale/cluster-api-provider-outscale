@@ -28,7 +28,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -43,9 +42,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const OscMachineFinalizer = "oscmachine.infrastructure.cluster.x-k8s.io"
+
 // OscMachineReconciler reconciles a OscMachine object
 type OscMachineReconciler struct {
 	client.Client
+	Tracker          *MachineResourceTracker
+	ClusterTracker   *ClusterResourceTracker
 	Cloud            services.Servicer
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
@@ -73,7 +76,6 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	defer cancel()
 
 	log := ctrl.LoggerFrom(ctx)
-	log.V(3).Info("Reconciling OscMachine")
 
 	oscMachine := &infrastructurev1beta1.OscMachine{}
 	if err := r.Get(ctx, req.NamespacedName, oscMachine); err != nil {
@@ -154,7 +156,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, nil
 	}
 
-	controllerutil.AddFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
+	controllerutil.AddFinalizer(oscmachine, OscMachineFinalizer)
 
 	if !machineScope.Cluster.Status.InfrastructureReady {
 		log.V(3).Info("Cluster infrastructure is not ready yet")
@@ -162,24 +164,17 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return ctrl.Result{}, nil
 	}
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
-		log.V(3).Info("Bootstrap data secret reference is not yet availablle")
+		log.V(3).Info("Bootstrap data secret reference is not yet available")
 		return ctrl.Result{}, nil
 	}
 	volumeName, err := checkVolumeFormatParameters(machineScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create volume %s: %w", volumeName, err)
+		return reconcile.Result{}, fmt.Errorf("invalid volume %s: %w", volumeName, err)
 	}
-
-	UseFailureDomain(clusterScope, machineScope)
 
 	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", vmName, err)
-	}
-
-	keypairName, err := checkKeypairFormatParameters(machineScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", keypairName, err)
 	}
 
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
@@ -194,87 +189,12 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
 	}
 
-	checkKeypairSameNameErr := checkKeypairSameName(machineScope)
-	if checkKeypairSameNameErr != nil {
-		return reconcile.Result{}, checkKeypairSameNameErr
-	}
-
-	checkOscAssociateVmSecurityGroupErr := checkVmSecurityGroupOscAssociateResourceName(machineScope, clusterScope)
-	if checkOscAssociateVmSecurityGroupErr != nil {
-		return reconcile.Result{}, checkOscAssociateVmSecurityGroupErr
-	}
-
-	checkOscAssociateVmSubnetErr := checkVmSubnetOscAssociateResourceName(machineScope, clusterScope)
-	if checkOscAssociateVmSubnetErr != nil {
-		return reconcile.Result{}, checkOscAssociateVmSubnetErr
-	}
-
-	vmSpec := machineScope.GetVm()
-	vmSpec.SetDefaultValue()
-	if vmSpec.PublicIpName != "" {
-		checkOscAssociateVmPublicIpErr := checkVmPublicIpOscAssociateResourceName(machineScope, clusterScope)
-		if checkOscAssociateVmPublicIpErr != nil {
-			return reconcile.Result{}, checkOscAssociateVmPublicIpErr
-		}
-	}
-
-	if vmSpec.LoadBalancerName != "" {
-		checkOscAssociateVmLoadBalancerErr := checkVmLoadBalancerOscAssociateResourceName(machineScope, clusterScope)
-		if checkOscAssociateVmLoadBalancerErr != nil {
-			return reconcile.Result{}, checkOscAssociateVmLoadBalancerErr
-		}
-	}
-
-	imageSvc := r.Cloud.Image(ctx, *clusterScope)
-	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
-	if err != nil {
-		return reconcileImage, err
-	}
-
-	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
-	reconcileKeypair, err := reconcileKeypair(ctx, machineScope, keypairSvc)
-	if err != nil {
-		return reconcileKeypair, err
-	}
-
-	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
-	vmSvc := r.Cloud.VM(ctx, *clusterScope)
-	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
-	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
-	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
-
-	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
+	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope)
 	if err != nil {
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileVm, err
 	}
-
-	// TODO: clean this. if VmState is not "running", reconcileVm returns an error.
-	vmState := machineScope.GetVmState()
-	switch *vmState {
-	case infrastructurev1beta1.VmStatePending:
-		machineScope.SetNotReady()
-		log.V(4).Info("Vm pending", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "")
-	case infrastructurev1beta1.VmStateStopping, infrastructurev1beta1.VmStateStopped:
-		machineScope.SetNotReady()
-		log.V(4).Info("Vm stopped", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmStoppedReason, clusterv1.ConditionSeverityWarning, "")
-	case infrastructurev1beta1.VmStateRunning:
-		machineScope.SetReady()
-		log.V(4).Info("Vm running", "state", vmState)
-		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
-	case infrastructurev1beta1.VmStateShuttingDown, infrastructurev1beta1.VmStateTerminated:
-		machineScope.SetNotReady()
-		log.V(4).Info("Unexpected vm termination", "state", vmState)
-		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmTerminatedReason, clusterv1.ConditionSeverityError, "")
-	default:
-		machineScope.SetNotReady()
-		log.V(4).Info("Vm state is undefined", "state", vmState)
-		machineScope.SetFailureReason(capierrors.UpdateMachineError)
-		machineScope.SetFailureMessage(fmt.Errorf("instance state %+v is undefined", vmState))
-		conditions.MarkUnknown(oscmachine, infrastructurev1beta1.VmReadyCondition, "", "")
-	}
+	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
 	return reconcile.Result{}, nil
 }
 
@@ -283,20 +203,11 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	log := ctrl.LoggerFrom(ctx)
 	log.V(3).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
-	publicIpSvc := r.Cloud.PublicIp(ctx, *clusterScope)
-	vmSvc := r.Cloud.VM(ctx, *clusterScope)
-	loadBalancerSvc := r.Cloud.LoadBalancer(ctx, *clusterScope)
-	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
-	reconcileDeleteVm, err := reconcileDeleteVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc)
+	reconcileDeleteVm, err := r.reconcileDeleteVm(ctx, clusterScope, machineScope)
 	if err != nil {
 		return reconcileDeleteVm, err
 	}
-	keypairSvc := r.Cloud.KeyPair(ctx, *clusterScope)
-	reconcileDeleteKeyPair, err := reconcileDeleteKeypair(ctx, machineScope, keypairSvc)
-	if err != nil {
-		return reconcileDeleteKeyPair, err
-	}
-	controllerutil.RemoveFinalizer(oscmachine, "oscmachine.infrastructure.cluster.x-k8s.io")
+	controllerutil.RemoveFinalizer(oscmachine, OscMachineFinalizer)
 	return reconcile.Result{}, nil
 }
 

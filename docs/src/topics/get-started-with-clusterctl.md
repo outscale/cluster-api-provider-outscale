@@ -1,7 +1,9 @@
 
-# Prerequisites
-- Install [kubectl][kubectl]
+# Getting started with clusterctl
 
+## Prerequisites
+
+- Install [kubectl][kubectl]
 - Outscale account with [an Access Key and a Secret Key][Outscale Access Key and Secret Key]
 - A management Kubernetes cluster:
     - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
@@ -9,44 +11,19 @@
     - You can use a rke cluster with [osc-rke][osc-rke].
 - Look at cluster-api note ([cluster-api][cluster-api])
 
-# Deploy Cluster Api
-
-## Clone
-
-Please clone the project:
-```
-git clone https://github.com/outscale-dev/cluster-api-provider-outscale
-```
-
-If you use your own management cluster:
-```
- export KUBECONFIG=<...>
-```
-
-Or you can use kind (only for local dev):
-Create kind:
-```bash
-   kind create cluster
-```
-Check cluster is ready:
-```bash
-   kubectl cluster-info
-```
-
 ## Install clusterctl
 
-Install clusterctl using the Makefile:
+On a Linux/amd64 platform:
 ```bash
-make install-clusterctl
+curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.9.6/clusterctl-linux-amd64 -o clusterctl
+sudo install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
 ```
 
-> In order to install tools (clusterctl, ...) with the Makefile, you need to have [golang][golang] installed.
+> For other platforms, please refer to the [Cluster Api Quickstart][cluster-api].
 
-Or using [Cluster Api Quickstart][cluster-api].
-
-And check version which is already installed:
+Check version which is already installed:
 ```bash
-./bin/clusterctl version
+clusterctl version
 
 clusterctl version: &version.Info{Major:"1", Minor:"8", GitVersion:"v1.8.1", GitCommit:"02769254e95db17afbd6ec4036aacbd294d9424c", GitTreeState:"clean", BuildDate:"2024-08-14T05:53:36Z", GoVersion:"go1.22.5", Compiler:"gc", Platform:"linux/amd64"}
 ```
@@ -77,16 +54,16 @@ export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
 export OSC_REGION=<your-region>
 
-make credential
+kubectl create namespace cluster-api-provider-outscale-system
+kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY --from-literal=region=$OSC_REGION  -n cluster-api-provider-outscale-system
 ```
+
 Install Cluster Api controllers:
 ```bash
 ./bin/clusterctl init --infrastructure outscale
 ```
 
-# Create a workload cluster
-
-## Generate cluster configuration
+## Generate a default workload cluster configuration
 
 Create a keypair.
 
@@ -99,7 +76,7 @@ export OSC_SUBREGION_NAME=<osc-subregion>
 export OSC_VM_TYPE=<osc-vm-type>
 export OSC_IMAGE_NAME=<osc-image-name>
 
-./bin/clusterctl generate cluster <cluster-name>   --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
+./bin/clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
 
 > **WARNING**: Kubernetes version must match the kubernetes version which is included in image name in [omi][omi]
@@ -168,21 +145,6 @@ default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-md-0 
 
 You can get a kubeconfig to connect to your workload cluster with
 [clusterctl get kubeconfig][kubeconfig].
-
-## Add a security group rule to an existing workload cluster
-
-You can add security group rule if you set extraSecurityGroupRule = true after you have already create a cluster and you want to set new security group rule.
-
-```yaml
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscCluster
-metadata:
-  name: cluster-api
-  namespace: default
-spec:
-  network:
-    extraSecurityGroupRule: false
-```
 
 # Delete Cluster api
 

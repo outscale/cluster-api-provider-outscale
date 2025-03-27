@@ -98,6 +98,13 @@ func (m *MachineScope) Close(ctx context.Context) error {
 func (m *MachineScope) GetName() string {
 	return m.OscMachine.Name
 }
+func (m *MachineScope) GetClientToken(clusterScope *ClusterScope) string {
+	ct := m.OscMachine.Name + "-" + clusterScope.GetUID()
+	if len(ct) > 64 {
+		ct = ct[len(ct)-64:]
+	}
+	return ct
+}
 
 // GetNamespace return the namespace of the machine
 func (m *MachineScope) GetNamespace() string {
@@ -119,14 +126,14 @@ func (m *MachineScope) GetApi() *osc.APIClient {
 	return m.OscClient.API
 }
 
-// GetVolume return the volume of the cluster
-func (m *MachineScope) GetVolume() []*infrastructurev1beta1.OscVolume {
+// GetVolumes return the volume of the cluster
+func (m *MachineScope) GetVolumes() []infrastructurev1beta1.OscVolume {
 	return m.OscMachine.Spec.Node.Volumes
 }
 
 // GetVm return the vm
-func (m *MachineScope) GetVm() *infrastructurev1beta1.OscVm {
-	return &m.OscMachine.Spec.Node.Vm
+func (m *MachineScope) GetVm() infrastructurev1beta1.OscVm {
+	return m.OscMachine.Spec.Node.Vm
 }
 
 // GetImage return the image
@@ -136,7 +143,7 @@ func (m *MachineScope) GetImage() *infrastructurev1beta1.OscImage {
 
 // SetImageId set ImageId
 func (m *MachineScope) SetImageId(imageId string) {
-	m.GetVm().ImageId = imageId
+	m.OscMachine.Spec.Node.Vm.ImageId = imageId
 }
 
 // GetImageId return ImageId
@@ -162,21 +169,6 @@ func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceRe
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
 func (m *MachineScope) GetPublicIpIdRef() *infrastructurev1beta1.OscResourceReference {
 	return &m.OscMachine.Status.Node.PublicIpIdRef
-}
-
-// GetKeyPair return the keypair of the cluster
-func (m *MachineScope) GetKeypair() *infrastructurev1beta1.OscKeypair {
-	return &m.OscMachine.Spec.Node.KeyPair
-}
-
-// SetDeleteKeyPair set deleteKeypair
-func (m *MachineScope) SetDeleteKeypair(deleteKeypair bool) {
-	m.OscMachine.Spec.Node.KeyPair.DeleteKeypair = deleteKeypair
-}
-
-// GetDeleteKeyPair return deleteKeypair
-func (m *MachineScope) GetDeleteKeypair() bool {
-	return m.OscMachine.Spec.Node.KeyPair.DeleteKeypair
 }
 
 // GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
@@ -244,11 +236,6 @@ func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
 	m.OscMachine.Spec.ProviderID = ptr.To(pid)
 }
 
-// SetVmID set the instanceID
-func (m *MachineScope) SetVmID(vmId string) {
-	m.OscMachine.Spec.Node.Vm.ResourceId = vmId
-}
-
 // GetVmState return the vmState
 func (m *MachineScope) GetVmState() *infrastructurev1beta1.VmState {
 	return m.OscMachine.Status.VmState
@@ -282,6 +269,32 @@ func (m *MachineScope) SetFailureReason(v capierrors.MachineStatusError) {
 // SetAddresses set node address
 func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 	m.OscMachine.Status.Addresses = addrs
+}
+
+// SetFailureDomain set failure domain.
+func (m *MachineScope) SetFailureDomain(subregion string) {
+	m.OscMachine.Status.FailureDomain = &subregion
+}
+
+// GetResources returns the resource list from the OscCluster status.
+func (s *MachineScope) GetResources() *infrastructurev1beta1.OscMachineResources {
+	return &s.OscMachine.Status.Resources
+}
+
+// NeedReconciliation returns true if a reconciler needs to run.
+func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta1.Reconciler) bool {
+	if s.OscMachine.Status.ReconcilerGeneration == nil {
+		return true
+	}
+	return s.OscMachine.Status.ReconcilerGeneration[reconciler] < s.OscMachine.Generation
+}
+
+// SetReconciliationGeneration marks a reconciler as having finished its job for a specific cluster generation.
+func (s *MachineScope) SetReconciliationGeneration(reconciler infrastructurev1beta1.Reconciler) {
+	if s.OscMachine.Status.ReconcilerGeneration == nil {
+		s.OscMachine.Status.ReconcilerGeneration = map[infrastructurev1beta1.Reconciler]int64{}
+	}
+	s.OscMachine.Status.ReconcilerGeneration[reconciler] = s.OscMachine.Generation
 }
 
 // PatchObject keep the machine configuration and status

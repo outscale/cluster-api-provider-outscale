@@ -31,209 +31,12 @@ metadata:
     cluster.x-k8s.io/watch-filter: "dev"
 spec:
   network:
-    extraSecurityGroupRule: true
     clusterName: cluster-api
     subregionName: eu-west-2a
     loadBalancer:
       loadbalancername: osc-k8s
-      loadbalancertype: internet-facing
-      subnetname: cluster-api-subnet-public
-      securitygroupname: cluster-api-securitygroup-lb
-      clusterName: cluster-api
-    net:
-      name: cluster-api-net
-      clusterName: cluster-api
-      ipRange: "10.0.0.0/16"
-    subnets:
-      - name: cluster-api-subnet-kcp
-        ipSubnetRange: "10.0.4.0/24"
-      - name: cluster-api-subnet-kw
-        ipSubnetRange: "10.0.3.0/24"
-      - name: cluster-api-subnet-public
-        ipSubnetRange: "10.0.2.0/24"
-    publicIps:
-      - name: cluster-api-publicip-nat
-    internetService:
-      clusterName: cluster-api
-      name: cluster-api-internetservice
-    natService:
-      clusterName: cluster-api
-      name: cluster-api-natservice
-      publicipname: cluster-api-publicip-nat
-      subnetname: cluster-api-subnet-public
     bastion:
-      clusterName: cluster-api
       enable: false
-    routeTables:
-      - name: cluster-api-routetable-kw
-        subnets:
-          - cluster-api-subnet-kw
-        routes:
-          - name: cluster-api-routes-kw
-            targetName: cluster-api-natservice
-            targetType: nat
-            destination: "0.0.0.0/0"
-      - name: cluster-api-routetable-kcp
-        subnets:
-          - cluster-api-subnet-kcp
-        routes:
-          - name: cluster-api-routes-kcp
-            targetName: cluster-api-natservice
-            targetType: nat
-            destination: "0.0.0.0/0"
-      - name: cluster-api-routetable-public
-        subnets:
-          - cluster-api-subnet-public
-        routes:
-          - name: cluster-api-routes-public
-            targetName: cluster-api-internetservice
-            targetType: gateway
-            destination: "0.0.0.0/0"
-    securityGroups:
-      - name: cluster-api-securitygroups-kw
-        description: Security Group with cluster-api
-        securityGroupRules:
-          - name: cluster-api-securitygrouprule-api-kubelet-kw
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.3.0/24"
-            fromPortRange: 10250
-            toPortRange: 10250
-          - name: cluster-api-securitygrouprule-api-kubelet-kcp
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.4.0/24"
-            fromPortRange: 10250
-            toPortRange: 10250
-          - name: cluster-api-securitygrouprule-kcp-nodeip-kw
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.3.0/24"
-            fromPortRange: 30000
-            toPortRange: 32767
-          - name: cluster-api-securitygrouprule-kcp-nodeip-kcp
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.4.0/24"
-            fromPortRange: 30000
-            toPortRange: 32767
-          - name: cluster-api-securitygrouprule-kw-bgp
-            flow: Inbound
-            ipProtocol: tcp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 179
-            toPortRange: 179
-      - name: cluster-api-securitygroups-kcp
-        description: Security Group with cluster-api
-        securityGroupRules:
-          - name: cluster-api-securitygrouprule-api-kw
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.3.0/24"
-            fromPortRange: 6443
-            toPortRange: 6443
-          - name: cluster-api-securitygrouprule-api-kcp
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.4.0/24"
-            fromPortRange: 6443
-            toPortRange: 6443
-          - name: cluster-api-securitygrouprule-etcd
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.4.0/24"
-            fromPortRange: 2378
-            toPortRange: 2380
-          - name: cluster-api-securitygrouprule-kubelet-kcp
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.4.0/24"
-            fromPortRange: 10250
-            toPortRange: 10252
-          - name: cluster-api-securitygrouprule-kcp-bgp
-            flow: Inbound
-            ipProtocol: tcp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 179
-            toPortRange: 179
-          - name: cluster-api-securitygrouprule-kw-nodeip-kw
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.3.0/24"
-            fromPortRange: 30000
-            toPortRange: 32767
-          - name: cluster-api-securitygrouprule-kw-nodeip-kcp
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "10.0.4.0/24"
-            fromPortRange: 30000
-            toPortRange: 32767
-      - name: cluster-api-securitygroup-lb
-        description: Security Group lb with cluster-api
-        securityGroupRules:
-          - name: cluste-api-securitygrouprule-lb
-            flow: Inbound
-            ipProtocol: tcp
-# IpRange to authorize access to kubernetes endpoints (kube-apiserver), you must keep it and change it with a CIDR that best suits with your environment.
-            ipRange: "0.0.0.0/0"
-            fromPortRange: 6443
-            toPortRange: 6443
-      - name: cluster-api-securitygroups-node
-        description: Security Group node with cluster-api
-        tag: OscK8sMainSG
-        securityGroupRules:
-          - name: cluster-api-securitygrouprule-calico-vxlan
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 4789
-            toPortRange: 4789
-          - name: cluster-api-securitygrouprule-calico-typha
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 5473
-            toPortRange: 5473
-          - name: cluster-api-securitygrouprule-calico-wireguard
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 51820
-            toPortRange: 51820
-          - name: cluster-api-securitygrouprule-calico-wireguard-ipv6
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 51821
-            toPortRange: 51821
-          - name: cluster-api-securitygrouprule-flannel
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 4789
-            toPortRange: 4789
-          - name: cluster-api-securitygrouperule-flannel-udp
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 8285
-            toPortRange: 8285
-          - name: cluster-api-securitygroup-flannel-vxlan
-            flow: Inbound
-            ipProtocol: udp
-            ipRange: "10.0.0.0/16"
-            fromPortRange: 8472
-            toPortRange: 8472
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -274,29 +77,15 @@ spec:
   template:
     spec:
       node:
-        clusterName: cluster-api
         image:
           name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
-        keypair:
-          name: cluster-api
-          deleteKeypair: false
         vm:
-          clusterName: cluster-api
-          name: cluster-api-vm-kw
           keypairName: cluster-api
-          deviceName: /dev/sda1
           rootDisk:
             rootDiskSize: 30
-            rootDiskIops: 1500
             rootDiskType: gp2
-          subnetName: cluster-api-subnet-kw
           subregionName: eu-west-2a
-          securityGroupNames:
-            - name: cluster-api-securitygroups-kw
-            - name: cluster-api-securitygroups-node
           vmType: "tinav6.c4r8p2"
-          tags:
-              tags.osc.fcu.repulse_server: vm-control-plane
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -309,28 +98,14 @@ spec:
   template:
     spec:
       node:
-        clusterName: cluster-api
         image:
          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
-        keypair:
-          name: cluster-api
-          deleteKeypair: false
         vm:
-          clusterName: cluster-api
-          name: cluster-api-vm-kcp
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 30
-            rootDiskIops: 1500
             rootDiskType: gp2
-          deviceName: /dev/sda1
-          subregionName: eu-west-2a
-          subnetName: cluster-api-subnet-kcp
           role: controlplane
-          loadBalancerName: osc-k8s
-          securityGroupNames:
-            - name: cluster-api-securitygroups-kcp
-            - name: cluster-api-securitygroups-node
           vmType: "tinav6.c4r8p1"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1

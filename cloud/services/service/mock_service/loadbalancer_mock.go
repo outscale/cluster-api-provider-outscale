@@ -12,7 +12,6 @@ package mock_service
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -41,20 +40,6 @@ func NewMockOscLoadBalancerInterface(ctrl *gomock.Controller) *MockOscLoadBalanc
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOscLoadBalancerInterface) EXPECT() *MockOscLoadBalancerInterfaceMockRecorder {
 	return m.recorder
-}
-
-// CheckLoadBalancerDeregisterVm mocks base method.
-func (m *MockOscLoadBalancerInterface) CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop, clockLoop time.Duration, spec *v1beta1.OscLoadBalancer) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckLoadBalancerDeregisterVm", ctx, clockInsideLoop, clockLoop, spec)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckLoadBalancerDeregisterVm indicates an expected call of CheckLoadBalancerDeregisterVm.
-func (mr *MockOscLoadBalancerInterfaceMockRecorder) CheckLoadBalancerDeregisterVm(ctx, clockInsideLoop, clockLoop, spec any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLoadBalancerDeregisterVm", reflect.TypeOf((*MockOscLoadBalancerInterface)(nil).CheckLoadBalancerDeregisterVm), ctx, clockInsideLoop, clockLoop, spec)
 }
 
 // ConfigureHealthCheck mocks base method.
@@ -88,7 +73,7 @@ func (mr *MockOscLoadBalancerInterfaceMockRecorder) CreateLoadBalancer(ctx, spec
 }
 
 // CreateLoadBalancerTag mocks base method.
-func (m *MockOscLoadBalancerInterface) CreateLoadBalancerTag(ctx context.Context, spec *v1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceTag) error {
+func (m *MockOscLoadBalancerInterface) CreateLoadBalancerTag(ctx context.Context, spec *v1beta1.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLoadBalancerTag", ctx, spec, loadBalancerTag)
 	ret0, _ := ret[0].(error)

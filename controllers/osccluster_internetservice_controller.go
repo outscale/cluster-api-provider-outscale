@@ -18,119 +18,88 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
-	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getInternetServiceResourceId return the InternetServiceId from the resourceMap base on resourceName (tag name + cluster object uid)
-func getInternetServiceResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
-	internetServiceRef := clusterScope.GetInternetServiceRef()
-	if internetServiceId, ok := internetServiceRef.ResourceMap[resourceName]; ok {
-		return internetServiceId, nil
-	} else {
-		return "", fmt.Errorf("%s does not exist", resourceName)
-	}
-}
-
-// checkInternetServiceFormatParameters check InternetService parameters format
-func checkInternetServiceFormatParameters(clusterScope *scope.ClusterScope) (string, error) {
-	internetServiceSpec := clusterScope.GetInternetService()
-	internetServiceSpec.SetDefaultValue()
-	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
-	internetServiceTagName, err := tag.ValidateTagNameValue(internetServiceName)
-	if err != nil {
-		return internetServiceTagName, err
-	}
-	return "", nil
-}
-
-// ReconcileInternetService reconcile the InternetService of the cluster.
-func reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+// reconcileInternetService reconcile the InternetService of the cluster.
+func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	internetServiceSpec := clusterScope.GetInternetService()
-	internetServiceRef := clusterScope.GetInternetServiceRef()
-	internetServiceName := internetServiceSpec.Name + "-" + clusterScope.GetUID()
-	var internetService *osc.InternetService
+	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService) {
+		log.V(4).Info("No need for internetService reconciliation")
+		return reconcile.Result{}, nil
+	}
 	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
+	if netSpec.UseExisting {
+		log.V(3).Info("Reusing existing internetService")
+		return reconcile.Result{}, nil
+	}
+	log.V(4).Info("Reconciling internetService")
+
+	internetService, err := r.Tracker.getInternetService(ctx, clusterScope)
+	switch {
+	case errors.Is(err, ErrNoResourceFound):
+	case err != nil:
+		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
+	case internetService.NetId != nil:
+		log.V(4).Info("Found existing internetService", "internetServiceId", internetService.GetInternetServiceId())
+		clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerInternetService)
+		return reconcile.Result{}, nil
+	}
+	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if len(internetServiceRef.ResourceMap) == 0 {
-		internetServiceRef.ResourceMap = make(map[string]string)
+	if internetService == nil {
+		log.V(3).Info("Creating internet service")
+		internetService, err = r.Cloud.InternetService(ctx, *clusterScope).CreateInternetService(ctx, clusterScope.GetInternetServiceName(), clusterScope.GetUID())
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot create internetService: %w", err)
+		}
+		log.V(2).Info("Created internet service", "internetServiceId", internetService.GetInternetServiceId())
 	}
-	tagKey := "Name"
-	tagValue := internetServiceName
-	tag, err := tagSvc.ReadTag(ctx, tagKey, tagValue)
+	log.V(2).Info("Linking internet service to net", "internetServiceId", internetService.GetInternetServiceId(), "netId", netId)
+	err = r.Cloud.InternetService(ctx, *clusterScope).LinkInternetService(ctx, internetService.GetInternetServiceId(), netId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
+		return reconcile.Result{}, fmt.Errorf("cannot link internetService: %w", err)
 	}
-	if internetServiceSpec.ResourceId != "" {
-		internetServiceRef.ResourceMap[internetServiceName] = internetServiceSpec.ResourceId
-		internetServiceId := internetServiceSpec.ResourceId
-		log.V(4).Info("Checking internetservice", "internetserviceName", internetServiceName)
-		internetService, err = internetServiceSvc.GetInternetService(ctx, internetServiceId)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-	if (internetService == nil && tag == nil) || (internetServiceSpec.ResourceId == "" && tag == nil) {
-		log.V(2).Info("Creating internetservice", "internetServiceName", internetServiceName)
-		internetService, err := internetServiceSvc.CreateInternetService(ctx, internetServiceName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create internetservice: %w", err)
-		}
-		log.V(2).Info("Linking internetservice", "internetServiceName", internetServiceName, "netId", netId)
-		err = internetServiceSvc.LinkInternetService(ctx, *internetService.InternetServiceId, netId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot link internetService: %w", err)
-		}
-		internetServiceRef.ResourceMap[internetServiceName] = internetService.GetInternetServiceId()
-		internetServiceSpec.ResourceId = internetService.GetInternetServiceId()
-	}
+	r.Tracker.setInternetServiceId(clusterScope, internetService.GetInternetServiceId())
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerInternetService)
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
-func reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope, internetServiceSvc net.OscInternetServiceInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	internetServiceSpec := clusterScope.GetInternetService()
-	internetServiceSpec.SetDefaultValue()
-
 	netSpec := clusterScope.GetNet()
-	netSpec.SetDefaultValue()
-	netName := netSpec.Name + "-" + clusterScope.GetUID()
-	netId, err := getNetResourceId(netName, clusterScope)
-	if err != nil {
-		log.V(3).Info("No net found, skipping internet service deletion")
-		return reconcile.Result{}, nil //nolint: nilerr
-	}
-
-	internetServiceId := internetServiceSpec.ResourceId
-	internetServiceName := internetServiceSpec.Name
-	internetService, err := internetServiceSvc.GetInternetService(ctx, internetServiceId)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get internetservice: %w", err)
-	}
-	if internetService == nil {
-		log.V(2).Info("The internetservice is already deleted", "internetServiceName", internetServiceName)
+	if netSpec.UseExisting {
+		log.V(4).Info("Not deleting existing internet service")
 		return reconcile.Result{}, nil
 	}
-	log.V(2).Info("Unlinking internetservice", "internetServiceName", internetServiceName)
-	err = internetServiceSvc.UnlinkInternetService(ctx, internetServiceId, netId)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot unlink internetService and net: %w", err)
+	internetService, err := r.Tracker.getInternetService(ctx, clusterScope)
+	switch {
+	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+		log.V(4).Info("The internet service is already deleted")
+		return reconcile.Result{}, nil
+	case err != nil:
+		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 	}
-	log.V(2).Info("Deleting internetservice", "internetServiceName", internetServiceName)
-	err = internetServiceSvc.DeleteInternetService(ctx, internetServiceId)
+
+	internetServiceId := internetService.GetInternetServiceId()
+	if internetService.NetId != nil {
+		log.V(2).Info("Unlinking internetservice", "internetServiceId", internetServiceId)
+		err = r.Cloud.InternetService(ctx, *clusterScope).UnlinkInternetService(ctx, internetServiceId, *internetService.NetId)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot unlink internetService: %w", err)
+		}
+	}
+	log.V(2).Info("Deleting internetservice", "internetServiceId", internetServiceId)
+	err = r.Cloud.InternetService(ctx, *clusterScope).DeleteInternetService(ctx, internetServiceId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete internetService: %w", err)
 	}

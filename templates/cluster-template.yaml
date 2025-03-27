@@ -24,19 +24,23 @@ metadata:
   name: "${CLUSTER_NAME}"
 spec:
   network:
-    clusterName: "${CLUSTER_NAME}"
     subregionName: ${OSC_SUBREGION_NAME}
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
-      clusterName: "${CLUSTER_NAME}"
     net:
-      clusterName: "${CLUSTER_NAME}"
-    internetService:
-      clusterName: "${CLUSTER_NAME}"
-    natService:
-      clusterName: "${CLUSTER_NAME}"
+      ipRange: 10.0.0.0/16
+    subnets:
+    - ipSubnetRange: 10.0.4.0/24
+      roles:
+      - controlplane
+    - ipSubnetRange: 10.0.3.0/24
+      roles:
+      - worker
+    - ipSubnetRange: 10.0.2.0/24
+      roles:
+      - loadbalancer
+      - nat
     bastion:
-      clusterName: "${CLUSTER_NAME}"
       enable: false
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -70,13 +74,9 @@ spec:
   template:
     spec:
       node:
-        clusterName: "${CLUSTER_NAME}"
         image:
           name: "${OSC_IMAGE_NAME}"
-        keypair:
-          name: "${OSC_KEYPAIR_NAME}"
         vm:
-          clusterName: "${CLUSTER_NAME}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
@@ -93,21 +93,15 @@ spec:
   template:
     spec:
       node:
-        clusterName: "${CLUSTER_NAME}"
         image:
           name: "${OSC_IMAGE_NAME}"
-        keypair:
-          name: "${OSC_KEYPAIR_NAME}"
         vm:
-          clusterName: "${CLUSTER_NAME}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_SUBREGION_NAME}
           role: controlplane
-          loadBalancerName: "${CLUSTER_NAME}-k8s"
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
@@ -118,15 +112,15 @@ spec:
   template:
     spec:
       files:
-        - content: |
-            #!/bin/sh
+      - content: |
+          #!/bin/sh
 
-            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-            chmod +x /tmp/runc.amd64
-            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-          owner: root:root
-          path: /tmp/set_runc.sh
-          permissions: "0744"
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        owner: root:root
+        path: /tmp/set_runc.sh
+        permissions: "0744"
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
@@ -134,7 +128,7 @@ spec:
             cloud-provider: external
             provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
       preKubeadmCommands:
-        - sh /tmp/set_runc.sh
+      - sh /tmp/set_runc.sh
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -148,6 +142,9 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        timeoutForControlPlane: 20m0s
     initConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
@@ -155,20 +152,20 @@ spec:
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     files:
-      - content: |
-          #!/bin/sh
+    - content: |
+        #!/bin/sh
 
-          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-          chmod +x /tmp/runc.amd64
-          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-        owner: root:root
-        path: /tmp/set_runc.sh
-        permissions: "0744"
+        curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+        chmod +x /tmp/runc.amd64
+        cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+      owner: root:root
+      path: /tmp/set_runc.sh
+      permissions: "0744"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
-      - sh /tmp/set_runc.sh
+    - sh /tmp/set_runc.sh
   version: "${KUBERNETES_VERSION}"
