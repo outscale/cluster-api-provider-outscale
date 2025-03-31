@@ -126,11 +126,6 @@ jobs:
       env:
         KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
         CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
-    - name: ⬆️ Upload artifacts
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        path: artifact
     - name: 🧹 Remove CAPI + CAPOSC
       if: always()
       run: |
