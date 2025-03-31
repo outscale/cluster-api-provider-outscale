@@ -96,7 +96,7 @@ func checkVmSubnetOscAssociateResourceName(machineScope *scope.MachineScope, clu
 	vmSpec := machineScope.GetVm()
 	vmSpec.SetDefaultValue()
 	vmSubnetName := vmSpec.SubnetName + "-" + clusterScope.GetUID()
-	subnetsSpec := clusterScope.GetSubnet()
+	subnetsSpec := clusterScope.GetSubnets()
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
@@ -227,7 +227,7 @@ func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.Mach
 		machineScope.GetVm().SubnetName = *machineScope.Machine.Spec.FailureDomain
 
 		subnetName := machineScope.GetVm().SubnetName + "-" + clusterScope.GetUID()
-		subnetSpecs := clusterScope.GetSubnet()
+		subnetSpecs := clusterScope.GetSubnets()
 		for _, subnetSpec := range subnetSpecs {
 			if subnetSpec.Name+"-"+clusterScope.GetUID() == subnetName {
 				machineScope.GetVm().SubregionName = subnetSpec.SubregionName
@@ -237,16 +237,19 @@ func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.Mach
 }
 
 // reconcileVm reconcile the vm of the machine
-func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	vmSpec := machineScope.GetVm()
 	vmRef := machineScope.GetVmRef()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
 
-	subnetName := vmSpec.SubnetName + "-" + clusterScope.GetUID()
-	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
+	subnetSpec, err := clusterScope.GetSubnet(vmSpec.SubnetName, vmSpec.Role, vmSpec.SubregionName)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("reconcile vm: %w")
+	}
+	subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("reconcile vm: %w")
 	}
 
 	var publicIpId string

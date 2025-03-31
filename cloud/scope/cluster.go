@@ -117,28 +117,77 @@ func (s *ClusterScope) GetApi() *osc.APIClient {
 }
 
 // GetInternetService return the internetService of the cluster
-func (s *ClusterScope) GetInternetService() *infrastructurev1beta1.OscInternetService {
-	return &s.OscCluster.Spec.Network.InternetService
+func (s *ClusterScope) GetInternetService() infrastructurev1beta1.OscInternetService {
+	return s.OscCluster.Spec.Network.InternetService
 }
 
-// GetInternetServiceRef get the status of internetService (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetInternetServiceRef() *infrastructurev1beta1.OscResourceReference {
-	return &s.OscCluster.Status.Network.InternetServiceRef
+// GetInternetServiceName return the name of the net
+func (s *ClusterScope) GetInternetServiceName() string {
+	if s.OscCluster.Spec.Network.InternetService.Name != "" {
+		return s.OscCluster.Spec.Network.InternetService.Name
+	}
+	return "Internet Service for " + s.OscCluster.ObjectMeta.Name + " cluster"
 }
+
+var ErrNoNatFound = errors.New("natService not found")
 
 // GetNatService return the natService of the cluster
-func (s *ClusterScope) GetNatService() *infrastructurev1beta1.OscNatService {
-	return &s.OscCluster.Spec.Network.NatService
+func (s *ClusterScope) GetNatService(name string, subregion string) (infrastructurev1beta1.OscNatService, error) {
+	nats := s.GetNatServices()
+	if len(nats) == 1 {
+		return nats[0], nil
+	}
+	for _, spec := range nats {
+		if spec.SubregionName == "" {
+			spec.SubregionName = s.OscCluster.Spec.Network.SubregionName
+		}
+		switch {
+		case name != "" && spec.Name == name:
+			return spec, nil
+		case spec.SubregionName == subregion || subregion == "":
+			return spec, nil
+		}
+	}
+	return infrastructurev1beta1.OscNatService{}, ErrNoNatFound
 }
 
 // GetNatServices return the natServices of the cluster
-func (s *ClusterScope) GetNatServices() []*infrastructurev1beta1.OscNatService {
+func (s *ClusterScope) GetNatServices() []infrastructurev1beta1.OscNatService {
+	if len(s.OscCluster.Spec.Network.NatServices) == 0 && !s.OscCluster.Spec.Network.Net.UseExisting {
+		var nss []infrastructurev1beta1.OscNatService
+		srdone := map[string]bool{}
+		for _, subnet := range s.OscCluster.Spec.Network.Subnets {
+			sr := subnet.SubregionName
+			if sr == "" {
+				sr = s.OscCluster.Spec.Network.SubregionName
+			}
+			if srdone[sr] {
+				continue
+			}
+			nss = append(nss, infrastructurev1beta1.OscNatService{
+				SubregionName: sr,
+			})
+			srdone[sr] = true
+		}
+		return nss
+	}
 	return s.OscCluster.Spec.Network.NatServices
 }
 
-// GetNatServiceRef get the status of natService (a Map with tag name with cluster uid associate with resource response id)
-func (s *ClusterScope) GetNatServiceRef() *infrastructurev1beta1.OscResourceReference {
-	return &s.OscCluster.Status.Network.NatServiceRef
+// GetNatServiceClientToken return the name of the net
+func (s *ClusterScope) GetNatServiceClientToken(nat infrastructurev1beta1.OscNatService) string {
+	if nat.Name != "" {
+		return nat.Name + "-" + s.GetUID()
+	}
+	return nat.SubregionName + "-" + s.GetUID()
+}
+
+// GetNatServiceClientToken return the name of the net
+func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta1.OscNatService) string {
+	if nat.Name != "" {
+		return nat.Name
+	}
+	return "Nat service in for " + s.OscCluster.ObjectMeta.Name + " cluster"
 }
 
 // GetLoadBalancer return the loadbalanacer of the cluster
@@ -164,6 +213,33 @@ func (s *ClusterScope) GetNetName() string {
 	return "Net for " + s.OscCluster.ObjectMeta.Name + " cluster"
 }
 
+// GetNetName return the name of the net
+func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta1.OscSubnet) string {
+	if spec.Name != "" {
+		return spec.Name
+	}
+
+	return string(spec.GetRole()) + " subnet for " + s.OscCluster.ObjectMeta.Name + " cluster"
+}
+
+var ErrNoSubnetFound = errors.New("subnet not found")
+
+func (s *ClusterScope) GetSubnet(name string, role infrastructurev1beta1.OscRole, subregion string) (infrastructurev1beta1.OscSubnet, error) {
+	for _, spec := range s.OscCluster.Spec.Network.Subnets {
+		if spec.SubregionName == "" {
+			spec.SubregionName = s.OscCluster.Spec.Network.SubregionName
+		}
+		switch {
+		case name != "" && spec.Name == name:
+			return spec, nil
+		case spec.GetRole() != role:
+		case spec.SubregionName == subregion || subregion == "":
+			return spec, nil
+		}
+	}
+	return infrastructurev1beta1.OscSubnet{}, ErrNoSubnetFound
+}
+
 // GetExtraSecurityGroupRule return the extraSecurityGroupRule
 func (s *ClusterScope) GetExtraSecurityGroupRule() bool {
 	return s.OscCluster.Spec.Network.ExtraSecurityGroupRule
@@ -180,31 +256,39 @@ func (s *ClusterScope) GetNetwork() *infrastructurev1beta1.OscNetwork {
 }
 
 // GetRouteTables return the routeTables of the cluster
-func (s *ClusterScope) GetRouteTables() []*infrastructurev1beta1.OscRouteTable {
+func (s *ClusterScope) GetRouteTables() []infrastructurev1beta1.OscRouteTable {
+	if len(s.OscCluster.Spec.Network.RouteTables) == 0 {
+		rtbls := []infrastructurev1beta1.OscRouteTable{
+			{
+				Role:   infrastructurev1beta1.RolePublic,
+				Routes: []infrastructurev1beta1.OscRoute{{Destination: "0.0.0.0/0", TargetType: "gateway"}},
+			},
+			{
+				Role:   infrastructurev1beta1.RoleControlPlane,
+				Routes: []infrastructurev1beta1.OscRoute{{Destination: "0.0.0.0/0", TargetType: "nat"}},
+			},
+		}
+		for _, subnet := range s.OscCluster.Spec.Network.Subnets {
+			rtbls = append(rtbls, infrastructurev1beta1.OscRouteTable{
+				Role:          infrastructurev1beta1.RoleWorker,
+				SubregionName: subnet.SubregionName,
+				Routes:        []infrastructurev1beta1.OscRoute{{Destination: "0.0.0.0/0", TargetType: "nat"}},
+			})
+		}
+		return rtbls
+	}
 	return s.OscCluster.Spec.Network.RouteTables
 }
 
 // GetSecurityGroups return the securitygroup of the cluster
-func (s *ClusterScope) GetSecurityGroups() []*infrastructurev1beta1.OscSecurityGroup {
+func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
 	return s.OscCluster.Spec.Network.SecurityGroups
-}
-
-// GetRouteTablesRef get the status of routeTable (a Map with tag name with cluster uid associate with resource response id)
-// Deprecated
-func (s *ClusterScope) GetRouteTablesRef() *infrastructurev1beta1.OscResourceReference {
-	return &s.OscCluster.Status.Network.RouteTablesRef
 }
 
 // GetSecurityGroupsRef get the status of securityGroup
 // Deprecated
 func (s *ClusterScope) GetSecurityGroupsRef() *infrastructurev1beta1.OscResourceReference {
 	return &s.OscCluster.Status.Network.SecurityGroupsRef
-}
-
-// GetRouteRef get the status of route (a Map with tag name with cluster uid associate with resource response id)
-// Deprecated
-func (s *ClusterScope) GetRouteRef() *infrastructurev1beta1.OscResourceReference {
-	return &s.OscCluster.Status.Network.RouteRef
 }
 
 // GetSecurityGroupRuleRef get the status of securityGroup rule
@@ -290,7 +374,7 @@ func (s *ClusterScope) GetNetRef() *infrastructurev1beta1.OscResourceReference {
 }
 
 // GetSubnet return the subnet of the cluster
-func (s *ClusterScope) GetSubnet() []*infrastructurev1beta1.OscSubnet {
+func (s *ClusterScope) GetSubnets() []infrastructurev1beta1.OscSubnet {
 	return s.OscCluster.Spec.Network.Subnets
 }
 
@@ -337,6 +421,14 @@ func (s *ClusterScope) SetReady() {
 // GetBastion return the vm bastion
 func (s *ClusterScope) GetBastion() *infrastructurev1beta1.OscBastion {
 	return &s.OscCluster.Spec.Network.Bastion
+}
+
+// GetBastionName return the name of the bastion
+func (s *ClusterScope) GetBastionName() string {
+	if s.OscCluster.Spec.Network.Bastion.Name != "" {
+		return s.OscCluster.Spec.Network.Bastion.Name
+	}
+	return "Bastion for " + s.OscCluster.ObjectMeta.Name + " cluster"
 }
 
 // GetBastionRef get the bastion (a Map with cluster uid associate with resource response id)

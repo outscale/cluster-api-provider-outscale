@@ -34,14 +34,18 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const vmRootDeviceName string = "/dev/sda1"
+const (
+	vmRootDeviceName        string = "/dev/sda1"
+	AutoAttachExternapIPTag        = "osc.fcu.eip.auto-attach"
+)
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
 	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error)
-	CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error)
+	CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string, tags map[string]string) (*osc.Vm, error)
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
+	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
 	GetVmListFromTag(ctx context.Context, tagKey string, tagName string) ([]osc.Vm, error)
 	GetVmState(ctx context.Context, vmId string) (string, error)
 	AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error
@@ -179,8 +183,8 @@ func (s *Service) CreateVm(ctx context.Context,
 	}
 }
 
-// CreateVmUserData create machine vm
-func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string) (*osc.Vm, error) {
+// CreateVmBastion create a bastion vm
+func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string, tags map[string]string) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
 	subregionName := spec.SubregionName
@@ -192,7 +196,7 @@ func (s *Service) CreateVmUserData(ctx context.Context, userData string, spec *i
 	placement := osc.Placement{
 		SubregionName: &subregionName,
 	}
-	userDataEnc := b64.StdEncoding.EncodeToString([]byte(userData))
+	userDataEnc := b64.StdEncoding.EncodeToString([]byte(utils.ConvertsTagsToUserDataOutscaleSection(tags)))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
 		Bsu: &osc.BsuToCreate{
 			VolumeType: &rootDiskType,
@@ -297,6 +301,54 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 	readVmsRequest := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			VmIds: &[]string{vmId},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	var readVmsResponse osc.ReadVmsResponse
+	readVmsCallBack := func() (bool, error) {
+		var httpRes *http.Response
+		var err error
+		readVmsResponse, httpRes, err = oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+		utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
+		if err != nil {
+			if httpRes != nil {
+				return false, utils.ExtractOAPIError(err, httpRes)
+			}
+			requestStr := fmt.Sprintf("%v", readVmsRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readVmsCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+
+	vms, ok := readVmsResponse.GetVmsOk()
+	if !ok {
+		return nil, errors.New("Can not get vm")
+	}
+	if len(*vms) == 0 {
+		return nil, nil
+	} else {
+		vm := *vms
+		return &vm[0], nil
+	}
+}
+
+// GetVmFromClientToken retrieve vm from vmId
+func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error) {
+	readVmsRequest := osc.ReadVmsRequest{
+		Filters: &osc.FiltersVm{
+			ClientTokens: &[]string{clientToken},
 		},
 	}
 	oscApiClient := s.scope.GetApi()

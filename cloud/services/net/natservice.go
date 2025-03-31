@@ -32,13 +32,15 @@ import (
 //go:generate ../../../bin/mockgen -destination mock_net/natservice_mock.go -package mock_net -source ./natservice.go
 
 type OscNatServiceInterface interface {
-	CreateNatService(ctx context.Context, publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error)
+	CreateNatService(ctx context.Context, publicIpId string, subnetId string, natServiceName string, clusterID string) (*osc.NatService, error)
 	DeleteNatService(ctx context.Context, natServiceId string) error
 	GetNatService(ctx context.Context, natServiceId string) (*osc.NatService, error)
+	GetNatServiceFromClientToken(ctx context.Context, clientToken string) (*osc.NatService, error)
+	ListNatServices(tx context.Context, netId string) ([]*osc.NatService, error)
 }
 
 // CreateNatService create the nat in the public subnet of the net
-func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subnetId string, natServiceName string, clusterName string) (*osc.NatService, error) {
+func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subnetId string, natServiceName string, clusterID string) (*osc.NatService, error) {
 	natServiceRequest := osc.CreateNatServiceRequest{
 		PublicIpId: publicIpId,
 		SubnetId:   subnetId,
@@ -99,7 +101,7 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId string, subne
 	}
 	resourceIds = []string{*subnet.SubnetId}
 	natServiceClusterTag := osc.ResourceTag{
-		Key:   "OscK8sClusterID/" + clusterName,
+		Key:   "OscK8sClusterID/" + clusterID,
 		Value: "owned",
 	}
 	natServiceClusterTagRequest := osc.CreateTagsRequest{
@@ -183,4 +185,59 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 		natService := *natServices
 		return &natService[0], nil
 	}
+}
+
+// GetNatService retrieve nat service object using nat service id
+func (s *Service) GetNatServiceFromClientToken(ctx context.Context, clientToken string) (*osc.NatService, error) {
+	readNatServicesRequest := osc.ReadNatServicesRequest{
+		Filters: &osc.FiltersNatService{
+			ClientTokens: &[]string{clientToken},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
+	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
+	if err != nil {
+		if httpRes != nil {
+			return nil, utils.ExtractOAPIError(err, httpRes)
+		} else {
+			return nil, err
+		}
+	}
+	natServices, ok := readNatServicesResponse.GetNatServicesOk()
+	if !ok {
+		return nil, errors.New("Can not get natService")
+	}
+	if len(*natServices) == 0 {
+		return nil, nil
+	} else {
+		natService := *natServices
+		return &natService[0], nil
+	}
+}
+
+// ListNatServices lists all nat services in a net.
+func (s *Service) ListNatServices(ctx context.Context, netId string) ([]osc.NatService, error) {
+	readNatServicesRequest := osc.ReadNatServicesRequest{
+		Filters: &osc.FiltersNatService{
+			NetIds: &[]string{netId},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
+	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
+	if err != nil {
+		if httpRes != nil {
+			return nil, utils.ExtractOAPIError(err, httpRes)
+		} else {
+			return nil, err
+		}
+	}
+	natServices, ok := readNatServicesResponse.GetNatServicesOk()
+	if !ok {
+		return nil, errors.New("Can not get natService")
+	}
+	return *natServices, nil
 }

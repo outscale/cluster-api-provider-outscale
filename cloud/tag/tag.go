@@ -128,3 +128,12 @@ func ValidateTagNameValue(tagValue string) (string, error) {
 		return tagValue, errors.New("Invalid Tag Name")
 	}
 }
+
+func GetTagValue(key string, tags []osc.ResourceTag) string {
+	for _, tg := range tags {
+		if key == tg.GetKey() {
+			return tg.GetValue()
+		}
+	}
+	return ""
+}

@@ -123,51 +123,6 @@ func SetupWithSubnetMock(t *testing.T, name string, spec infrastructurev1beta1.O
 	return clusterScope, ctx, mockOscSubnetInterface, mockOscTagInterface
 }
 
-// TestGetSubnetResourceId has several tests to cover the code of the function getSubnetResourceId
-func TestGetSubnetResourceId(t *testing.T) {
-	subnetTestCases := []struct {
-		name                      string
-		spec                      infrastructurev1beta1.OscClusterSpec
-		expSubnetFound            bool
-		expGetSubnetResourceIdErr error
-	}{
-		{
-			name:                      "get SubnetId",
-			spec:                      defaultSubnetInitialize,
-			expSubnetFound:            true,
-			expGetSubnetResourceIdErr: nil,
-		},
-		{
-			name:                      "failed to get Subnet",
-			spec:                      defaultSubnetInitialize,
-			expSubnetFound:            false,
-			expGetSubnetResourceIdErr: errors.New("test-subnet-uid does not exist"),
-		},
-	}
-	for _, stc := range subnetTestCases {
-		t.Run(stc.name, func(t *testing.T) {
-			clusterScope := Setup(t, stc.name, stc.spec)
-			subnetsSpec := stc.spec.Network.Subnets
-			for _, subnetSpec := range subnetsSpec {
-				subnetName := subnetSpec.Name + "-uid"
-				subnetId := "subnet-" + subnetName
-				if stc.expSubnetFound {
-					subnetRef := clusterScope.GetSubnetRef()
-					subnetRef.ResourceMap = make(map[string]string)
-					subnetRef.ResourceMap[subnetName] = subnetId
-				}
-				subnetResourceId, err := getSubnetResourceId(subnetName, clusterScope)
-				if stc.expGetSubnetResourceIdErr != nil {
-					require.EqualError(t, err, stc.expGetSubnetResourceIdErr.Error(), "getSubnetResourceId() should return the same error")
-				} else {
-					require.NoError(t, err)
-				}
-				t.Logf("Find subnetResourceId %s\n", subnetResourceId)
-			}
-		})
-	}
-}
-
 // TestCheckSubnetOscDuplicateName has several tests to cover the code of the func checkSubnetOscDuplicateName
 func TestCheckSubnetOscDuplicateName(t *testing.T) {
 	subnetTestCases := []struct {

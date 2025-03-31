@@ -94,7 +94,7 @@ func TestOscCluster_ValidateUpdate(t *testing.T) {
 						Name:    "test-webhook",
 						IpRange: "10.0.0.0/24",
 					},
-					Subnets: []*OscSubnet{
+					Subnets: []OscSubnet{
 						{
 							Name:          "test-webhook",
 							IpSubnetRange: "10.0.0.32/28",
@@ -140,7 +140,7 @@ func TestOscCluster_ValidateUpdate(t *testing.T) {
 						Name:    "test-webhook",
 						IpRange: "10.0.0.0/24",
 					},
-					Subnets: []*OscSubnet{
+					Subnets: []OscSubnet{
 						{
 							Name:          "test-webhook",
 							IpSubnetRange: "10.0.0.32/28",

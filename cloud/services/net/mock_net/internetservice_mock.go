@@ -85,6 +85,21 @@ func (mr *MockOscInternetServiceInterfaceMockRecorder) GetInternetService(ctx, i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInternetService", reflect.TypeOf((*MockOscInternetServiceInterface)(nil).GetInternetService), ctx, internetServiceId)
 }
 
+// GetInternetServiceForNet mocks base method.
+func (m *MockOscInternetServiceInterface) GetInternetServiceForNet(ctx context.Context, netId string) (*osc.InternetService, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInternetServiceForNet", ctx, netId)
+	ret0, _ := ret[0].(*osc.InternetService)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInternetServiceForNet indicates an expected call of GetInternetServiceForNet.
+func (mr *MockOscInternetServiceInterfaceMockRecorder) GetInternetServiceForNet(ctx, netId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInternetServiceForNet", reflect.TypeOf((*MockOscInternetServiceInterface)(nil).GetInternetServiceForNet), ctx, netId)
+}
+
 // LinkInternetService mocks base method.
 func (m *MockOscInternetServiceInterface) LinkInternetService(ctx context.Context, internetServiceId, netId string) error {
 	m.ctrl.T.Helper()

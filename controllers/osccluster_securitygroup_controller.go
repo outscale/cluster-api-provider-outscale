@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -196,68 +196,27 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	networkSpec := clusterScope.GetNetwork()
-	clusterName := networkSpec.ClusterName + "-" + clusterScope.GetUID()
-	extraSecurityGroupRule := clusterScope.GetExtraSecurityGroupRule()
 
-	log.V(4).Info("List all securitygroups in net", "netId", netId)
-	securityGroupIds, err := securityGroupSvc.GetSecurityGroupIdsFromNetIds(ctx, netId)
-	log.V(4).Info("Get securityGroup Id", "securityGroup", securityGroupIds)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
-	log.V(4).Info("Number of securityGroup", "securityGroupLength", len(securityGroupsSpec))
 	for _, securityGroupSpec := range securityGroupsSpec {
-		securityGroupName := securityGroupSpec.Name + "-" + clusterScope.GetUID()
-		log.V(4).Info("Checking securityGroup", "securityGroupName", securityGroupName)
-		securityGroupDescription := securityGroupSpec.Description
-
-		tag, err := tagSvc.ReadTag(ctx, tag.SecurityGroupResourceType, tag.NameKey, securityGroupName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
-		}
-		securityGroupTag := securityGroupSpec.Tag
-		if len(securityGroupsRef.ResourceMap) == 0 {
-			securityGroupsRef.ResourceMap = make(map[string]string)
-		}
-
-		if securityGroupSpec.ResourceId != "" {
-			securityGroupsRef.ResourceMap[securityGroupName] = securityGroupSpec.ResourceId
-		}
-		_, resourceMapExist := securityGroupsRef.ResourceMap[securityGroupName]
-		if resourceMapExist {
-			securityGroupSpec.ResourceId = securityGroupsRef.ResourceMap[securityGroupName]
-		}
-		var securityGroup *osc.SecurityGroup
-		securityGroupId := securityGroupsRef.ResourceMap[securityGroupName]
-
-		if !slices.Contains(securityGroupIds, securityGroupId) && tag == nil {
-			if extraSecurityGroupRule && (len(securityGroupsRef.ResourceMap) == len(securityGroupsSpec)) {
-				log.V(4).Info("Extra Security Group Rule activated")
-			} else {
-				log.V(2).Info("Creating securitygroup", "securityGroupName", securityGroupName)
-				if securityGroupTag == "OscK8sMainSG" {
-					securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterName, securityGroupName, securityGroupDescription, "OscK8sMainSG")
-				} else {
-					securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterName, securityGroupName, securityGroupDescription, "")
-				}
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
-				}
-				securityGroupsRef.ResourceMap[securityGroupName] = *securityGroup.SecurityGroupId
-				securityGroupSpec.ResourceId = *securityGroup.SecurityGroupId
+		securityGroup, err := r.Tracker.getSecurityGroup(ctx, securityGroupSpec, clusterScope)
+		switch {
+		case errors.Is(err, ErrNoResourceFound):
+			securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterScope.GetName(), securityGroupSpec.Name, *securityGroup.Description, securityGroupSpec.Tag)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
 			}
+		case err != nil:
+			return reconcile.Result{}, fmt.Errorf("reconcile securityGroup: %w", err)
+		}
 
-			log.V(3).Info("Checking securityGroupRules")
-			securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
-			log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(securityGroupRulesSpec))
-			for _, securityGroupRuleSpec := range securityGroupRulesSpec {
-				log.V(4).Info("Create securityGroupRule for securityGroup", "securityGroupName", securityGroupName)
-				_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
+		log.V(3).Info("Checking securityGroupRules")
+		securityGroupRulesSpec := clusterScope.GetSecurityGroupRule(securityGroupSpec.Name)
+		log.V(4).Info("Number of securityGroupRule", "securityGroupRuleLength", len(securityGroupRulesSpec))
+		for _, securityGroupRuleSpec := range securityGroupRulesSpec {
+			log.V(4).Info("Create securityGroupRule for securityGroup", "securityGroupName", securityGroupName)
+			_, err = reconcileSecurityGroupRule(ctx, clusterScope, securityGroupRuleSpec, securityGroupName, securityGroupSvc)
+			if err != nil {
+				return reconcile.Result{}, err
 			}
 		}
 
@@ -312,15 +271,17 @@ func reconcileDeleteSecurityGroupRule(ctx context.Context, clusterScope *scope.C
 func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	var securityGroupsSpec []*infrastructurev1beta1.OscSecurityGroup
-	networkSpec := clusterScope.GetNetwork()
-	if networkSpec.SecurityGroups == nil {
-		networkSpec.SetSecurityGroupDefaultValue()
-		securityGroupsSpec = networkSpec.SecurityGroups
-	} else {
-		securityGroupsSpec = clusterScope.GetSecurityGroups()
+	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerSecurityGroup) {
+		log.V(4).Info("No need for securityGroup reconciliation")
+		return reconcile.Result{}, nil
 	}
-	securityGroupsRef := clusterScope.GetSecurityGroupsRef()
+	netSpec := clusterScope.GetNet()
+	if netSpec.UseExisting {
+		log.V(3).Info("Using existing securityGroups")
+		return reconcile.Result{}, nil
+	}
+
+	securityGroupsSpec := clusterScope.GetSecurityGroups()
 
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {

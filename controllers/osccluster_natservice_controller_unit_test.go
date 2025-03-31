@@ -98,50 +98,6 @@ func SetupWithNatServiceMock(t *testing.T, name string, spec infrastructurev1bet
 	return clusterScope, ctx, mockOscNatServiceInterface, mockOscTagInterface
 }
 
-// TestGetNatResourceId has several tests to cover the code of the function getNatResourceId
-func TestGetNatResourceId(t *testing.T) {
-	natServiceTestCases := []struct {
-		name                   string
-		spec                   infrastructurev1beta1.OscClusterSpec
-		expNatServiceFound     bool
-		expGetNatResourceIdErr error
-	}{
-		{
-			name:                   "get natServiceId",
-			spec:                   defaultNatServiceInitialize,
-			expNatServiceFound:     true,
-			expGetNatResourceIdErr: nil,
-		},
-		{
-			name:                   "can not get natServiceId",
-			spec:                   defaultNatServiceInitialize,
-			expNatServiceFound:     false,
-			expGetNatResourceIdErr: errors.New("test-natservice-uid does not exist"),
-		},
-	}
-	for _, nstc := range natServiceTestCases {
-		t.Run(nstc.name, func(t *testing.T) {
-			clusterScope := Setup(t, nstc.name, nstc.spec)
-
-			natServiceName := nstc.spec.Network.NatService.Name + "-uid"
-			natServiceId := "nat-" + natServiceName
-			natServiceRef := clusterScope.GetNatServiceRef()
-			natServiceRef.ResourceMap = make(map[string]string)
-			if nstc.expNatServiceFound {
-				natServiceRef.ResourceMap[natServiceName] = natServiceId
-			}
-
-			natResourceId, err := getNatResourceId(natServiceName, clusterScope)
-			if nstc.expGetNatResourceIdErr != nil {
-				require.EqualError(t, err, nstc.expGetNatResourceIdErr.Error(), "GetNatResourceId() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-			t.Logf("find natResourceId %s", natResourceId)
-		})
-	}
-}
-
 // TestCheckNatFormatParameters has several tests to cover the code of the function checkNatFormatParameters
 func TestCheckNatFormatParameters(t *testing.T) {
 	natServiceTestCases := []struct {

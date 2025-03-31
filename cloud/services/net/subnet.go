@@ -35,19 +35,11 @@ type OscSubnetInterface interface {
 	CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error)
 	DeleteSubnet(ctx context.Context, subnetId string) error
 	GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, error)
-	GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
+	GetSubnetFromNet(ctx context.Context, netId, ipRange string) (*osc.Subnet, error)
 }
 
 // CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(ctx context.Context, spec *infrastructurev1beta1.OscSubnet, netId string, clusterName string, subnetName string) (*osc.Subnet, error) {
-	err := infrastructurev1beta1.ValidateCidr(spec.IpSubnetRange)
-	if err != nil {
-		return nil, err
-	}
-	err = infrastructurev1beta1.ValidateSubregionName(spec.SubregionName)
-	if err != nil {
-		return nil, err
-	}
 	subnetRequest := osc.CreateSubnetRequest{
 		IpRange:       spec.IpSubnetRange,
 		NetId:         netId,
@@ -188,11 +180,12 @@ func (s *Service) GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, 
 	}
 }
 
-// GetSubnetIdsFromNetIds return subnet id resource which eist from the net id
-func (s *Service) GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
+// GetSubnetFromNet finds the subnet having a specific range within a net.
+func (s *Service) GetSubnetFromNet(ctx context.Context, netId, ipRange string) (*osc.Subnet, error) {
 	readSubnetsRequest := osc.ReadSubnetsRequest{
 		Filters: &osc.FiltersSubnet{
-			NetIds: &[]string{netId},
+			NetIds:   &[]string{netId},
+			IpRanges: &[]string{ipRange},
 		},
 	}
 	oscApiClient := s.scope.GetApi()
@@ -223,16 +216,14 @@ func (s *Service) GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]s
 	if waitErr != nil {
 		return nil, waitErr
 	}
-	var subnetIds []string
 	subnets, ok := readSubnetsResponse.GetSubnetsOk()
 	if !ok {
 		return nil, errors.New("Can not get Subnets")
 	}
-	if len(*subnets) != 0 {
-		for _, subnet := range *subnets {
-			subnetId := subnet.SubnetId
-			subnetIds = append(subnetIds, *subnetId)
-		}
+	if len(*subnets) == 0 {
+		return nil, nil
+	} else {
+		subnet := *subnets
+		return &subnet[0], nil
 	}
-	return subnetIds, nil
 }

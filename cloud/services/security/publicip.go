@@ -33,7 +33,7 @@ import (
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
 type OscPublicIpInterface interface {
-	CreatePublicIp(ctx context.Context, publicIpName string) (*osc.PublicIp, error)
+	CreatePublicIp(ctx context.Context, publicIpName, clusterUUID string) (*osc.PublicIp, error)
 	DeletePublicIp(ctx context.Context, publicIpId string) error
 	GetPublicIp(ctx context.Context, publicIpId string) (*osc.PublicIp, error)
 	LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error)

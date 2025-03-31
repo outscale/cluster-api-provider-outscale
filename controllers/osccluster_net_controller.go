@@ -28,7 +28,7 @@ import (
 )
 
 // reconcileNet reconcile the Net of the cluster.
-func (c *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNet) {
 		log.V(4).Info("No need for net reconciliation")
@@ -39,43 +39,45 @@ func (c *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 	if len(errs) > 0 {
 		return reconcile.Result{}, errs.ToAggregate()
 	}
-	net, err := c.Tracker.getNet(ctx, clusterScope)
+	_, err := r.Tracker.getNet(ctx, clusterScope)
 	switch {
 	case errors.Is(err, ErrNoResourceFound):
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("reconcile net: %w", err)
 	default:
+		log.V(4).Info("Found existing net")
+		clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNet)
 		return reconcile.Result{}, nil
 	}
-	log.V(2).Info("Creating net")
-	net, err = c.Cloud.Net(ctx, *clusterScope).CreateNet(ctx, netSpec, clusterScope.GetName(), clusterScope.GetNetName())
+	log.V(3).Info("Creating net")
+	net, err := r.Cloud.Net(ctx, *clusterScope).CreateNet(ctx, netSpec, clusterScope.GetName(), clusterScope.GetNetName())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
 	}
 	log.V(2).Info("Created net", "netId", net.GetNetId())
-	c.Tracker.setNetId(clusterScope, net.GetNetId())
+	r.Tracker.setNetId(clusterScope, net.GetNetId())
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNet)
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
-func (c *OscClusterReconciler) reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	netSpec := clusterScope.GetNet()
 	if netSpec.UseExisting {
+		log.V(4).Info("Not deleting existing net")
 		return reconcile.Result{}, nil
 	}
-	net, err := c.Tracker.getNet(ctx, clusterScope)
+	net, err := r.Tracker.getNet(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound):
+	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
 		log.V(4).Info("The net is already deleted")
 		return reconcile.Result{}, nil
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("reconcile delete net: %w", err)
-	default:
 	}
 	log.V(2).Info("Deleting net", "netId", net.GetNetId())
-	err = c.Cloud.Net(ctx, *clusterScope).DeleteNet(ctx, net.GetNetId())
+	err = r.Cloud.Net(ctx, *clusterScope).DeleteNet(ctx, net.GetNetId())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete net: %w", err)
 	}

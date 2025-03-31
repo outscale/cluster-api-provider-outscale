@@ -68,48 +68,6 @@ func SetupWithInternetServiceMock(t *testing.T, name string, spec infrastructure
 	return clusterScope, ctx, mockOscInternetServiceInterface, mockOscTagInterface
 }
 
-// TestGetInternetServiceResourceId has several tests to cover the code of the function getInternetServiceResourceId
-func TestGetInternetServiceResourceId(t *testing.T) {
-	internetServiceTestCases := []struct {
-		name                               string
-		spec                               infrastructurev1beta1.OscClusterSpec
-		expInternetServiceFound            bool
-		expGetInternetServiceResourceIdErr error
-	}{
-		{
-			name:                               "get InternetServiceId",
-			spec:                               defaultInternetServiceInitialize,
-			expInternetServiceFound:            true,
-			expGetInternetServiceResourceIdErr: nil,
-		},
-		{
-			name:                               "can not get InternetServiceId",
-			spec:                               defaultInternetServiceInitialize,
-			expInternetServiceFound:            false,
-			expGetInternetServiceResourceIdErr: errors.New("test-internetservice-uid does not exist"),
-		},
-	}
-	for _, istc := range internetServiceTestCases {
-		t.Run(istc.name, func(t *testing.T) {
-			clusterScope := Setup(t, istc.name, istc.spec)
-			internetServiceName := istc.spec.Network.InternetService.Name + "-uid"
-			internetServiceId := "igw-" + internetServiceName
-			internetServiceRef := clusterScope.GetInternetServiceRef()
-			internetServiceRef.ResourceMap = make(map[string]string)
-			if istc.expInternetServiceFound {
-				internetServiceRef.ResourceMap[internetServiceName] = internetServiceId
-			}
-			internetServiceResourceId, err := getInternetServiceResourceId(internetServiceName, clusterScope)
-			if istc.expGetInternetServiceResourceIdErr != nil {
-				require.EqualError(t, err, istc.expGetInternetServiceResourceIdErr.Error(), "GetInternetServiceResourceId() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-			t.Logf("find internetServiceResourceId %s", internetServiceResourceId)
-		})
-	}
-}
-
 // TestCheckInternetServiceFormatParameters has several tests to cover the code of the func checkInternetServiceFormatParameters
 func TestCheckInternetServiceFormatParameters(t *testing.T) {
 	internetServiceTestCases := []struct {

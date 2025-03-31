@@ -39,7 +39,7 @@ type OscRouteTableInterface interface {
 	GetRouteTableFromRoute(ctx context.Context, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
 	LinkRouteTable(ctx context.Context, routeTableId string, subnetId string) (string, error)
 	UnlinkRouteTable(ctx context.Context, linkRouteTableId string) error
-	GetRouteTableIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
+	GetRouteTablesFromNet(ctx context.Context, netId string) ([]osc.RouteTable, error)
 }
 
 // CreateRouteTable create the routetable associated with the net
@@ -374,8 +374,8 @@ func (s *Service) UnlinkRouteTable(ctx context.Context, linkRouteTableId string)
 	return nil
 }
 
-// GetRouteTableIdsFromNetIds return the routeTable id resource that exist from the net id
-func (s *Service) GetRouteTableIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
+// GetRouteTablesFromNet returns all the route tables persent in a net.
+func (s *Service) GetRouteTablesFromNet(ctx context.Context, netId string) ([]osc.RouteTable, error) {
 	readRouteTablesRequest := osc.ReadRouteTablesRequest{
 		Filters: &osc.FiltersRouteTable{
 			NetIds: &[]string{netId},
@@ -392,16 +392,5 @@ func (s *Service) GetRouteTableIdsFromNetIds(ctx context.Context, netId string) 
 			return nil, err
 		}
 	}
-	var routetableIds []string
-	routetables, ok := readRouteTablesResponse.GetRouteTablesOk()
-	if !ok {
-		return nil, errors.New("Can not get routeTable")
-	}
-	if len(*routetables) != 0 {
-		for _, routetable := range *routetables {
-			routetableId := routetable.GetRouteTableId()
-			routetableIds = append(routetableIds, routetableId)
-		}
-	}
-	return routetableIds, nil
+	return readRouteTablesResponse.GetRouteTables(), nil
 }

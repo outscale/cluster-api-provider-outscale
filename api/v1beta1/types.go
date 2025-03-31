@@ -20,6 +20,14 @@ import (
 	"strings"
 )
 
+type OscRole string
+
+const (
+	RoleControlPlane OscRole = "controlplane"
+	RoleWorker       OscRole = "worker"
+	RolePublic       OscRole = "public"
+)
+
 type OscNode struct {
 	Vm          OscVm        `json:"vm,omitempty"`
 	Image       OscImage     `json:"image,omitempty"`
@@ -39,7 +47,7 @@ type OscNetwork struct {
 	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
 	// The Subnet configuration
 	// +optional
-	Subnets []*OscSubnet `json:"subnets,omitempty"`
+	Subnets []OscSubnet `json:"subnets,omitempty"`
 	// The Internet Service configuration
 	// +optional
 	InternetService OscInternetService `json:"internetService,omitempty"`
@@ -48,15 +56,15 @@ type OscNetwork struct {
 	NatService OscNatService `json:"natService,omitempty"`
 	// The Nat Services configuration
 	// +optional
-	NatServices []*OscNatService `json:"natServices,omitempty"`
+	NatServices []OscNatService `json:"natServices,omitempty"`
 	// The Route Table configuration
 	// +optional
-	RouteTables    []*OscRouteTable    `json:"routeTables,omitempty"`
-	SecurityGroups []*OscSecurityGroup `json:"securityGroups,omitempty"`
+	RouteTables    []OscRouteTable    `json:"routeTables,omitempty"`
+	SecurityGroups []OscSecurityGroup `json:"securityGroups,omitempty"`
 	// The Public Ip configuration
 	// +optional
 	PublicIps []*OscPublicIp `json:"publicIps,omitempty"`
-	// The name of the cluster
+	// The name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
 	// The image configuration
@@ -66,7 +74,6 @@ type OscNetwork struct {
 	// + optional
 	Bastion OscBastion `json:"bastion,omitempty"`
 	// The subregion name
-	// + optional
 	SubregionName string `json:"subregionName,omitempty"`
 	// Add SecurityGroup Rule after the cluster is created
 	// + optional
@@ -135,14 +142,16 @@ type OscNet struct {
 	// the network name
 	// +optional
 	Name string `json:"name,omitempty"`
-	// the net ip range with CIDR notation
+	// the ip range in CIDR notation of the Net
 	// +optional
-	IpRange     string `json:"ipRange,omitempty"`
+	IpRange string `json:"ipRange,omitempty"`
+	// the name of the cluster (unused)
+	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// The Net Id response
+	// The Id of the Net to reuise (if useExisting is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
-	// Use the already existing network defined by resourceId
+	// Reuse an existing network defined by resourceId ?
 	// +optional
 	UseExisting bool `json:"useExisting,omitempty"`
 }
@@ -156,46 +165,64 @@ var DefaultNet = OscNet{
 }
 
 type OscInternetService struct {
-	// The tag name associate with the Subnet
+	// The name of the Internet service
 	// +optional
 	Name string `json:"name,omitempty"`
-	// the name of the cluster
+	// the name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// the Internet Service response
+	// the Internet Service resource id (unused)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscSubnet struct {
-	// The tag name associate with the Subnet
+	// The name of the Subnet
 	// +optional
 	Name string `json:"name,omitempty"`
-	// Subnet Ip range with CIDR notation
+	// The role of the Subnet (controlplane, worker, public or any user-defined value)
+	// +optional
+	Role OscRole `json:"role,omitempty"`
+	// the Ip range in CIDR notation of the Subnet
 	// +optional
 	IpSubnetRange string `json:"ipSubnetRange,omitempty"`
 	// The subregion name of the Subnet
 	// +optional
 	SubregionName string `json:"subregionName,omitempty"`
-	// The Subnet Id response
+	// The id of the Subnet to reuse (if net.useExisting is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
+func (sn *OscSubnet) GetRole() OscRole {
+	if sn.Role != "" {
+		return sn.Role
+	}
+	switch {
+	case strings.Contains(sn.Name, "kcp"):
+		return RoleControlPlane
+	default:
+		return RoleWorker
+	}
+}
+
 type OscNatService struct {
-	// The tag name associate with the Nat Service
+	// The name of the Nat Service
 	// +optional
 	Name string `json:"name,omitempty"`
-	// The Public Ip tag name associated with a Public Ip
+	// The Public Ip name (unused)
 	// +optional
 	PublicIpName string `json:"publicipname,omitempty"`
-	// The subnet tag name associate with a Subnet
+	// The name of the Subnet to which the Nat Service will be attached
 	// +optional
 	SubnetName string `json:"subnetname,omitempty"`
-	// The name of the cluster
+	// The name of the Subregion to which the Nat Service will be attached, unless a subnet has been defined.
+	// +optional
+	SubregionName string `json:"subregionName,omitempty"`
+	// The name of the cluster (unused)
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
-	// The Nat Service Id response
+	// The resource id (unused)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 }
@@ -205,7 +232,9 @@ type OscRouteTable struct {
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The subnet tag name associate with a Subnet
-	Subnets []string `json:"subnets,omitempty"`
+	Subnets       []string `json:"subnets,omitempty"`
+	Role          OscRole  `json:"subnets,omitempty"`
+	SubregionName string   `json:"subregionName,omitempty"`
 	// The Route configuration
 	// +optional
 	Routes []OscRoute `json:"routes,omitempty"`
@@ -228,6 +257,8 @@ type OscSecurityGroup struct {
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 	Tag        string `json:"tag,omitempty"`
+
+	Role string `json:"string,omitempty"`
 }
 
 type OscPublicIp struct {
@@ -333,12 +364,19 @@ type OscClusterResources struct {
 	SecurityGroup   map[string]string `json:"securityGroup,omitempty"`
 	NatService      map[string]string `json:"natService,omitempty"`
 	Bastion         map[string]string `json:"bastion,omitempty"`
+	PublicIPs       map[string]string `json:"publicIps,omitempty"`
 }
 
 type Reconciler string
 
 const (
-	ReconcilerNet Reconciler = "net"
+	ReconcilerBastion         Reconciler = "bastion"
+	ReconcilerNet             Reconciler = "net"
+	ReconcilerSubnet          Reconciler = "subnet"
+	ReconcilerInternetService Reconciler = "internetService"
+	ReconcilerNatService      Reconciler = "natService"
+	ReconcilerRouteTable      Reconciler = "routeTable"
+	ReconcilerSecurityGroup   Reconciler = "securityGroup"
 )
 
 type OscReconcilerGeneration map[Reconciler]int64
@@ -402,23 +440,27 @@ type OscVm struct {
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	ResourceId         string                    `json:"resourceId,omitempty"`
-	Role               string                    `json:"role,omitempty"`
+	Role               OscRole                   `json:"role,omitempty"`
 	ClusterName        string                    `json:"clusterName,omitempty"`
 	Replica            int32                     `json:"replica,omitempty"`
 	Tags               map[string]string         `json:"tags,omitempty"`
 }
 
 type OscBastion struct {
-	Name               string                    `json:"name,omitempty"`
-	ImageId            string                    `json:"imageId,omitempty"`
-	ImageName          string                    `json:"imageName,omitempty"`
-	ImageAccountId     string                    `json:"imageAccountId,omitempty"`
-	KeypairName        string                    `json:"keypairName,omitempty"`
-	VmType             string                    `json:"vmType,omitempty"`
-	DeviceName         string                    `json:"deviceName,omitempty"`
-	SubnetName         string                    `json:"subnetName,omitempty"`
-	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
-	PublicIpName       string                    `json:"publicIpName,omitempty"`
+	Name           string      `json:"name,omitempty"`
+	ImageId        string      `json:"imageId,omitempty"`
+	ImageName      string      `json:"imageName,omitempty"`
+	ImageAccountId string      `json:"imageAccountId,omitempty"`
+	KeypairName    string      `json:"keypairName,omitempty"`
+	VmType         string      `json:"vmType,omitempty"`
+	DeviceName     string      `json:"deviceName,omitempty"`
+	SubnetName     string      `json:"subnetName,omitempty"`
+	RootDisk       OscRootDisk `json:"rootDisk,omitempty"`
+	// unused
+	PublicIpName string `json:"publicIpName,omitempty"`
+	// The ID of an existing public IP to use for this VM.
+	// +optional
+	PublicIpId         string                    `json:"PublicIpId,omitempty"`
 	SubregionName      string                    `json:"subregionName,omitempty"`
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
@@ -669,7 +711,7 @@ func (vm *OscVm) SetDefaultValue() {
 		securityGroupKwName = strings.ReplaceAll(DefaultSecurityGroupKwName, DefaultClusterName, vm.ClusterName)
 		securityGroupNodeName = strings.ReplaceAll(DefaultSecurityGroupNodeName, DefaultClusterName, vm.ClusterName)
 	}
-	if vm.Role == "controlplane" {
+	if vm.Role == RoleControlPlane {
 		if vm.Name == "" {
 			vm.Name = vmKcpName
 		}
@@ -1176,10 +1218,10 @@ func (network *OscNetwork) SetSubnetDefaultValue() {
 			Name:          subnetPublicName,
 			IpSubnetRange: DefaultIpSubnetPublicRange,
 		}
-		network.Subnets = []*OscSubnet{
-			&subnetKcp,
-			&subnetKw,
-			&subnetPublic,
+		network.Subnets = []OscSubnet{
+			subnetKcp,
+			subnetKw,
+			subnetPublic,
 		}
 	}
 }

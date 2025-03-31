@@ -46,6 +46,7 @@ import (
 // OscMachineReconciler reconciles a OscMachine object
 type OscMachineReconciler struct {
 	client.Client
+	Tracker          *ResourceTracker
 	Cloud            services.Servicer
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
@@ -232,7 +233,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
 	tagSvc := r.Cloud.Tag(ctx, *clusterScope)
 
-	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
+	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcileVm, err

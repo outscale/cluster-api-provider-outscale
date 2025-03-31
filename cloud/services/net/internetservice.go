@@ -36,6 +36,7 @@ type OscInternetServiceInterface interface {
 	LinkInternetService(ctx context.Context, internetServiceId string, netId string) error
 	UnlinkInternetService(ctx context.Context, internetServiceId string, netId string) error
 	GetInternetService(ctx context.Context, internetServiceId string) (*osc.InternetService, error)
+	GetInternetServiceForNet(ctx context.Context, netId string) (*osc.InternetService, error)
 }
 
 // CreateInternetService launch the internet service
@@ -203,6 +204,53 @@ func (s *Service) GetInternetService(ctx context.Context, internetServiceId stri
 	readInternetServiceRequest := osc.ReadInternetServicesRequest{
 		Filters: &osc.FiltersInternetService{
 			InternetServiceIds: &[]string{internetServiceId},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	var readInternetServicesResponse osc.ReadInternetServicesResponse
+	readInternetServiceCallBack := func() (bool, error) {
+		var httpRes *http.Response
+		var err error
+		readInternetServicesResponse, httpRes, err = oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
+		utils.LogAPICall(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
+		if err != nil {
+			if httpRes != nil {
+				return false, utils.ExtractOAPIError(err, httpRes)
+			}
+			requestStr := fmt.Sprintf("%v", readInternetServiceRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, err
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readInternetServiceCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	internetServices, ok := readInternetServicesResponse.GetInternetServicesOk()
+	if !ok {
+		return nil, errors.New("Can not read internetService")
+	}
+	if len(*internetServices) == 0 {
+		return nil, nil
+	} else {
+		internetService := *internetServices
+		return &internetService[0], nil
+	}
+}
+
+// GetInternetServiceForNet retrieve internet service object using internet service id
+func (s *Service) GetInternetServiceForNet(ctx context.Context, netId string) (*osc.InternetService, error) {
+	readInternetServiceRequest := osc.ReadInternetServicesRequest{
+		Filters: &osc.FiltersInternetService{
+			LinkNetIds: &[]string{netId},
 		},
 	}
 	oscApiClient := s.scope.GetApi()

@@ -36,7 +36,7 @@ func checkLoadBalancerSubnetOscAssociateResourceName(clusterScope *scope.Cluster
 	var resourceNameList []string
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerSubnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
-	subnetsSpec := clusterScope.GetSubnet()
+	subnetsSpec := clusterScope.GetSubnets()
 	for _, subnetSpec := range subnetsSpec {
 		subnetName := subnetSpec.Name + "-" + clusterScope.GetUID()
 		resourceNameList = append(resourceNameList, subnetName)
@@ -147,7 +147,7 @@ func checkLoadBalancerSecurityGroupOscAssociateResourceName(clusterScope *scope.
 }
 
 // reconcileLoadBalancer reconciles the loadBalancer of the cluster.
-func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
@@ -155,10 +155,14 @@ func reconcileLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
 	}
-	subnetName := loadBalancerSpec.SubnetName + "-" + clusterScope.GetUID()
-	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
+	// TODO: add a role to loadbalancer definition
+	subnetSpec, err := clusterScope.GetSubnet(loadBalancerSpec.SubnetName, infrastructurev1beta1.RolePublic, "")
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
+		return reconcile.Result{}, fmt.Errorf("reconcile loadbalancer: %w")
+	}
+	subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("reconcile loadbalancer: %w")
 	}
 	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
 	securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
