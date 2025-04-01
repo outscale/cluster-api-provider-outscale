@@ -100,7 +100,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 							IpSubnetRange: "10.0.0.32/28",
 						},
 					},
-					RouteTables: []*OscRouteTable{
+					RouteTables: []OscRouteTable{
 						{
 							Name: "test-webhook",
 							Routes: []OscRoute{
@@ -111,7 +111,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 							},
 						},
 					},
-					SecurityGroups: []*OscSecurityGroup{
+					SecurityGroups: []OscSecurityGroup{
 						{
 							Name:        "test-webhook",
 							Description: "test webhook",
@@ -146,7 +146,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 							IpSubnetRange: "10.0.0.32/28",
 						},
 					},
-					RouteTables: []*OscRouteTable{
+					RouteTables: []OscRouteTable{
 						{
 							Name: "test-webhook",
 							Routes: []OscRoute{
@@ -157,7 +157,7 @@ func TestOscClusterTemplate_ValidateUpdate(t *testing.T) {
 							},
 						},
 					},
-					SecurityGroups: []*OscSecurityGroup{
+					SecurityGroups: []OscSecurityGroup{
 						{
 							Name:        "test-webhook",
 							Description: "test webhook",

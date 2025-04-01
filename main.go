@@ -109,7 +109,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	tracker := &controllers.ResourceTracker{
+	tracker := &controllers.ClusterResourceTracker{
 		Cloud: cs,
 	}
 	if err = (&controllers.OscClusterReconciler{
@@ -124,9 +124,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	mtracker := &controllers.MachineResourceTracker{
+		Cloud: cs,
+	}
 	if err = (&controllers.OscMachineReconciler{
 		Client:           mgr.GetClient(),
-		Tracker:          tracker,
+		ClusterTracker:   tracker,
+		Tracker:          mtracker,
 		Cloud:            cs,
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
 		ReconcileTimeout: reconcileTimeout,

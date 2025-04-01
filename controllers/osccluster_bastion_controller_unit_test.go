@@ -274,48 +274,6 @@ func SetupWithBastionMock(t *testing.T, name string, clusterSpec infrastructurev
 	return clusterScope, ctx, mockOscVmInterface, mockOscPublicIpInterface, mockOscSecurityGroupInterface, mockOscImageInterface, mockOscTagInterface
 }
 
-// TestGetBastionResourceId has several tests to cover the code of the function getBastionResourceId
-func TestGetBastionResourceId(t *testing.T) {
-	bastionTestCases := []struct {
-		name                       string
-		clusterSpec                infrastructurev1beta1.OscClusterSpec
-		expBastionFound            bool
-		expGetBastionResourceIdErr error
-	}{
-		{
-			name:                       "get bastion",
-			clusterSpec:                defaultBastionInitialize,
-			expBastionFound:            true,
-			expGetBastionResourceIdErr: nil,
-		},
-		{
-			name:                       "can not get bastion",
-			clusterSpec:                defaultBastionInitialize,
-			expBastionFound:            false,
-			expGetBastionResourceIdErr: errors.New("test-bastion-uid does not exist"),
-		},
-	}
-	for _, btc := range bastionTestCases {
-		t.Run(btc.name, func(t *testing.T) {
-			clusterScope := Setup(t, btc.name, btc.clusterSpec)
-			bastionName := btc.clusterSpec.Network.Bastion.Name + "-uid"
-			vmId := "i-" + bastionName
-			bastionRef := clusterScope.GetBastionRef()
-			bastionRef.ResourceMap = make(map[string]string)
-			if btc.expBastionFound {
-				bastionRef.ResourceMap[bastionName] = vmId
-			}
-			bastionResourceId, err := getBastionResourceId(bastionName, clusterScope)
-			if btc.expGetBastionResourceIdErr != nil {
-				require.EqualError(t, err, btc.expGetBastionResourceIdErr.Error(), "GetBastionResourceId() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-			t.Logf("find bastionResourceId %s", bastionResourceId)
-		})
-	}
-}
-
 // TestCheckBastionSecurityGroupOscAssociateResourceName has several tests to cover the code of the function checkBastionSecurityGroupOscAssociateResourceName
 func TestCheckBastionSecurityGroupOscAssociateResourceName(t *testing.T) {
 	bastionTestCases := []struct {

@@ -86,17 +86,17 @@ func (mr *MockOscSubnetInterfaceMockRecorder) GetSubnet(ctx, subnetId any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnet", reflect.TypeOf((*MockOscSubnetInterface)(nil).GetSubnet), ctx, subnetId)
 }
 
-// GetSubnetIdsFromNetIds mocks base method.
-func (m *MockOscSubnetInterface) GetSubnetIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
+// GetSubnetFromNet mocks base method.
+func (m *MockOscSubnetInterface) GetSubnetFromNet(ctx context.Context, netId, ipRange string) (*osc.Subnet, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSubnetIdsFromNetIds", ctx, netId)
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "GetSubnetFromNet", ctx, netId, ipRange)
+	ret0, _ := ret[0].(*osc.Subnet)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSubnetIdsFromNetIds indicates an expected call of GetSubnetIdsFromNetIds.
-func (mr *MockOscSubnetInterfaceMockRecorder) GetSubnetIdsFromNetIds(ctx, netId any) *gomock.Call {
+// GetSubnetFromNet indicates an expected call of GetSubnetFromNet.
+func (mr *MockOscSubnetInterfaceMockRecorder) GetSubnetFromNet(ctx, netId, ipRange any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetIdsFromNetIds", reflect.TypeOf((*MockOscSubnetInterface)(nil).GetSubnetIdsFromNetIds), ctx, netId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubnetFromNet", reflect.TypeOf((*MockOscSubnetInterface)(nil).GetSubnetFromNet), ctx, netId, ipRange)
 }

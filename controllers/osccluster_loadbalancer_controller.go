@@ -155,7 +155,6 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
 	}
-	// TODO: add a role to loadbalancer definition
 	subnetSpec, err := clusterScope.GetSubnet(loadBalancerSpec.SubnetName, infrastructurev1beta1.RolePublic, "")
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile loadbalancer: %w")
@@ -164,8 +163,11 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile loadbalancer: %w")
 	}
-	securityGroupName := loadBalancerSpec.SecurityGroupName + "-" + clusterScope.GetUID()
-	securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
+	sgSpec, err := clusterScope.GetSecurityGroup(loadBalancerSpec.SecurityGroupName, infrastructurev1beta1.RolePublic)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("reconcile loadbalancer: %w")
+	}
+	securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get security group: %w", err)
 	}

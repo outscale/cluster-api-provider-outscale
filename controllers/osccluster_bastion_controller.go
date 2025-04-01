@@ -31,16 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// getBastionResourceId return vmId from the resourceMap is based on resourceName (tag name + cluster uid).
-func getBastionResourceId(resourceName string, clusterScope *scope.ClusterScope) (string, error) {
-	bastionRef := clusterScope.GetBastionRef()
-	if vmId, ok := bastionRef.ResourceMap[resourceName]; ok {
-		return vmId, nil
-	} else {
-		return "", fmt.Errorf("%s does not exist", resourceName)
-	}
-}
-
 // checkBastionSecurityGroupOscAssociateResourceName check that SecurityGroup tag name in both resource configuration are the same.
 func checkBastionSecurityGroupOscAssociateResourceName(clusterScope *scope.ClusterScope) error {
 	var resourceNameList []string
@@ -244,10 +234,12 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	var securityGroupIds []string
 	bastionSecurityGroups := clusterScope.GetBastionSecurityGroups()
 	for _, bastionSecurityGroup := range *bastionSecurityGroups {
-		log.V(4).Info("Get bastionSecurityGroup", "bastionSecurityGroup", bastionSecurityGroup)
-		securityGroupName := bastionSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
-		log.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
+		sgSpec, err := clusterScope.GetSecurityGroup(bastionSecurityGroup.Name, infrastructurev1beta1.RolePublic)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot find securityGroup for bastion: %w", err)
+		}
+		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
+		log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -282,7 +274,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 }
 
 // reconcileDeleteBastion reconcile the destruction of the machine bastion.
-func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, securityGroupSvc security.OscSecurityGroupInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	netSpec := clusterScope.GetNet()
 	if netSpec.UseExisting {
@@ -307,7 +299,7 @@ func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clust
 	}
 
 	log.V(2).Info("Deleting bastion", "vmId", vm.GetVmId())
-	err = vmSvc.DeleteVm(ctx, vm.GetVmId())
+	err = r.Cloud.VM(ctx, *clusterScope).DeleteVm(ctx, vm.GetVmId())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete bastion: %w", err)
 	}

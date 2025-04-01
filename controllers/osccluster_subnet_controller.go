@@ -23,7 +23,6 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -43,6 +42,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	svc := r.Cloud.Subnet(ctx, *clusterScope)
 	for _, subnetSpec := range clusterScope.GetSubnets() {
 		_, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
 		switch {
@@ -54,7 +54,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		}
 
 		log.V(2).Info("Creating subnet", "role", subnetSpec.GetRole(), "subregion", subnetSpec.SubregionName)
-		subnet, err := r.Cloud.Subnet(ctx, *clusterScope).CreateSubnet(ctx, &subnetSpec, netId, clusterScope.GetName(), clusterScope.GetSubnetName(subnetSpec))
+		subnet, err := svc.CreateSubnet(ctx, &subnetSpec, netId, clusterScope.GetName(), clusterScope.GetSubnetName(subnetSpec))
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
 		}
@@ -64,13 +64,14 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 }
 
 // reconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
-func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clusterScope *scope.ClusterScope, subnetSvc net.OscSubnetInterface) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	netSpec := clusterScope.GetNet()
 	if netSpec.UseExisting {
 		log.V(4).Info("Not deleting existing subnets")
 		return reconcile.Result{}, nil
 	}
+	svc := r.Cloud.Subnet(ctx, *clusterScope)
 	subnetsSpec := clusterScope.GetSubnets()
 	for _, subnetSpec := range subnetsSpec {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
@@ -82,7 +83,7 @@ func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clust
 		}
 		subnetId := subnet.GetSubnetId()
 		log.V(2).Info("Deleting subnet", "subnetId", subnetId)
-		err = subnetSvc.DeleteSubnet(ctx, subnetId)
+		err = svc.DeleteSubnet(ctx, subnetId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete subnet: %w", err)
 		}

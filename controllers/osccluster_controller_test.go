@@ -48,7 +48,7 @@ func runClusterTest(t *testing.T, tc testcase) {
 	}
 	rec := controllers.OscClusterReconciler{
 		Client: client,
-		Tracker: &controllers.ResourceTracker{
+		Tracker: &controllers.ClusterResourceTracker{
 			Cloud: cs,
 		},
 		Cloud: cs,

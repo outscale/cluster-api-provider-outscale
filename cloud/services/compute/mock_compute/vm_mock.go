@@ -72,19 +72,19 @@ func (mr *MockOscVmInterfaceMockRecorder) CreateVm(ctx, machineScope, spec, subn
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), ctx, machineScope, spec, subnetId, securityGroupIds, privateIps, vmName, tags, volumes)
 }
 
-// CreateVmUserData mocks base method.
-func (m *MockOscVmInterface) CreateVmUserData(ctx context.Context, userData string, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, imageId string) (*osc.Vm, error) {
+// CreateVmBastion mocks base method.
+func (m *MockOscVmInterface) CreateVmBastion(ctx context.Context, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, imageId string, tags map[string]string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVmUserData", ctx, userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
+	ret := m.ctrl.Call(m, "CreateVmBastion", ctx, spec, subnetId, securityGroupIds, privateIps, vmName, imageId, tags)
 	ret0, _ := ret[0].(*osc.Vm)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateVmUserData indicates an expected call of CreateVmUserData.
-func (mr *MockOscVmInterfaceMockRecorder) CreateVmUserData(ctx, userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId any) *gomock.Call {
+// CreateVmBastion indicates an expected call of CreateVmBastion.
+func (mr *MockOscVmInterfaceMockRecorder) CreateVmBastion(ctx, spec, subnetId, securityGroupIds, privateIps, vmName, imageId, tags any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmUserData", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVmUserData), ctx, userData, spec, subnetId, securityGroupIds, privateIps, vmName, imageId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmBastion", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVmBastion), ctx, spec, subnetId, securityGroupIds, privateIps, vmName, imageId, tags)
 }
 
 // DeleteVm mocks base method.
@@ -114,6 +114,21 @@ func (m *MockOscVmInterface) GetVm(ctx context.Context, vmId string) (*osc.Vm, e
 func (mr *MockOscVmInterfaceMockRecorder) GetVm(ctx, vmId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVm", reflect.TypeOf((*MockOscVmInterface)(nil).GetVm), ctx, vmId)
+}
+
+// GetVmFromClientToken mocks base method.
+func (m *MockOscVmInterface) GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVmFromClientToken", ctx, clientToken)
+	ret0, _ := ret[0].(*osc.Vm)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVmFromClientToken indicates an expected call of GetVmFromClientToken.
+func (mr *MockOscVmInterfaceMockRecorder) GetVmFromClientToken(ctx, clientToken any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmFromClientToken", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmFromClientToken), ctx, clientToken)
 }
 
 // GetVmListFromTag mocks base method.

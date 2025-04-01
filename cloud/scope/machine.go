@@ -119,14 +119,19 @@ func (m *MachineScope) GetApi() *osc.APIClient {
 	return m.OscClient.API
 }
 
-// GetVolume return the volume of the cluster
-func (m *MachineScope) GetVolume() []*infrastructurev1beta1.OscVolume {
+// GetVolumes return the volume of the cluster
+func (m *MachineScope) GetVolumes() []infrastructurev1beta1.OscVolume {
 	return m.OscMachine.Spec.Node.Volumes
 }
 
 // GetVm return the vm
 func (m *MachineScope) GetVm() *infrastructurev1beta1.OscVm {
 	return &m.OscMachine.Spec.Node.Vm
+}
+
+// GetVm return the vm
+func (m *MachineScope) GetVmClientToken() string {
+
 }
 
 // GetImage return the image
@@ -267,6 +272,27 @@ func (m *MachineScope) SetFailureReason(v capierrors.MachineStatusError) {
 // SetAddresses set node address
 func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
 	m.OscMachine.Status.Addresses = addrs
+}
+
+// GetResources returns the resource list from the OscCluster status.
+func (s *MachineScope) GetResources() *infrastructurev1beta1.OscMachineResources {
+	return &s.OscMachine.Status.Resources
+}
+
+// NeedReconciliation returns true if a reconciler needs to run.
+func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta1.Reconciler) bool {
+	if s.OscMachine.Status.ReconcilerGeneration == nil {
+		return true
+	}
+	return s.OscMachine.Status.ReconcilerGeneration[reconciler] < s.OscCluster.Generation
+}
+
+// SetReconciliationGeneration marks a reconciler as having finished its job for a specific cluster generation.
+func (s *MachineScope) SetReconciliationGeneration(reconciler infrastructurev1beta1.Reconciler) {
+	if s.OscMachine.Status.ReconcilerGeneration == nil {
+		s.OscMachine.Status.ReconcilerGeneration = map[infrastructurev1beta1.Reconciler]int64{}
+	}
+	s.OscMachine.Status.ReconcilerGeneration[reconciler] = s.OscCluster.Generation
 }
 
 // PatchObject keep the machine configuration and status

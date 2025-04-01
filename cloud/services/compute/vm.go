@@ -41,7 +41,7 @@ const (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error)
+	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string, volumes []infrastructurev1beta1.OscVolume) (*osc.Vm, error)
 	CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName string, imageId string, tags map[string]string) (*osc.Vm, error)
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
@@ -65,7 +65,7 @@ func ValidateIpAddrInCidr(ipAddr, cidr string) error {
 // CreateVm create machine vm
 func (s *Service) CreateVm(ctx context.Context,
 	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, subnetId string, securityGroupIds []string, privateIps []string, vmName string, tags map[string]string,
-	volumes []*infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
+	volumes []infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
 	imageId := spec.ImageId
 	keypairName := spec.KeypairName
 	vmType := spec.VmType

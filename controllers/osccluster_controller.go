@@ -43,7 +43,7 @@ import (
 // OscClusterReconciler reconciles a OscCluster object
 type OscClusterReconciler struct {
 	client.Client
-	Tracker          *ResourceTracker
+	Tracker          *ClusterResourceTracker
 	Cloud            services.Servicer
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
@@ -336,7 +336,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		vmSvc := r.Cloud.VM(ctx, *clusterScope)
-		reconcileDeleteBastion, err := reconcileDeleteBastion(ctx, clusterScope, vmSvc, publicIpSvc, securityGroupSvc)
+		reconcileDeleteBastion, err := r.reconcileDeleteBastion(ctx, clusterScope)
 		if err != nil {
 			return reconcileDeleteBastion, err
 		}
@@ -352,17 +352,16 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteNatService, err
 	}
 
-	reconcileDeletePublicIp, err := reconcileDeletePublicIp(ctx, clusterScope, publicIpSvc)
+	reconcileDeletePublicIp, err := r.reconcileDeletePublicIp(ctx, clusterScope)
 	if err != nil {
 		return reconcileDeletePublicIp, err
 	}
-	routeTableSvc := r.Cloud.RouteTable(ctx, *clusterScope)
-	reconcileDeleteRouteTable, err := r.reconcileDeleteRouteTable(ctx, clusterScope, routeTableSvc)
+	reconcileDeleteRouteTable, err := r.reconcileDeleteRouteTable(ctx, clusterScope)
 	if err != nil {
 		return reconcileDeleteRouteTable, err
 	}
 
-	reconcileDeleteSecurityGroup, err := r.reconcileDeleteSecurityGroup(ctx, clusterScope, securityGroupSvc)
+	reconcileDeleteSecurityGroup, err := r.reconcileDeleteSecurityGroup(ctx, clusterScope)
 	if err != nil {
 		return reconcileDeleteSecurityGroup, err
 	}
@@ -372,8 +371,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcileDeleteInternetService, err
 	}
 
-	subnetSvc := r.Cloud.Subnet(ctx, *clusterScope)
-	reconcileDeleteSubnet, err := r.reconcileDeleteSubnets(ctx, clusterScope, subnetSvc)
+	reconcileDeleteSubnet, err := r.reconcileDeleteSubnets(ctx, clusterScope)
 	if err != nil {
 		return reconcileDeleteSubnet, err
 	}

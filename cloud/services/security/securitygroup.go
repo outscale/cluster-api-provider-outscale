@@ -41,7 +41,8 @@ type OscSecurityGroupInterface interface {
 	DeleteSecurityGroup(ctx context.Context, securityGroupId string) error
 	GetSecurityGroup(ctx context.Context, securityGroupId string) (*osc.SecurityGroup, error)
 	SecurityGroupHasRule(ctx context.Context, securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (bool, error)
-	GetSecurityGroupIdsFromNetIds(ctx context.Context, netId string) ([]string, error)
+	GetSecurityGroupsFromNet(ctx context.Context, netId string) ([]osc.SecurityGroup, error)
+	GetSecurityGroupFromName(ctx context.Context, name string) (*osc.SecurityGroup, error)
 }
 
 // CreateSecurityGroup create the securitygroup associated with the net
@@ -328,6 +329,53 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 	}
 }
 
+// GetSecurityGroupFromName retrieve security group object from the security group id
+func (s *Service) GetSecurityGroupFromName(ctx context.Context, name string) (*osc.SecurityGroup, error) {
+	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
+		Filters: &osc.FiltersSecurityGroup{
+			SecurityGroupNames: &[]string{name},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	var readSecurityGroupsResponse osc.ReadSecurityGroupsResponse
+	readSecurityGroupsCallBack := func() (bool, error) {
+		var httpRes *http.Response
+		var err error
+		readSecurityGroupsResponse, httpRes, err = oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
+		utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+		if err != nil {
+			if httpRes != nil {
+				return false, utils.ExtractOAPIError(err, httpRes)
+			}
+			requestStr := fmt.Sprintf("%v", readSecurityGroupRequest)
+			if reconciler.KeepRetryWithError(
+				requestStr,
+				httpRes.StatusCode,
+				reconciler.ThrottlingErrors) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	}
+	backoff := reconciler.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readSecurityGroupsCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
+	if !ok {
+		return nil, errors.New("Can not get securityGroup")
+	}
+	if len(*securitygroups) == 0 {
+		return nil, nil
+	} else {
+		securitygroup := *securitygroups
+		return &securitygroup[0], nil
+	}
+}
+
 // SecurityGroupHasRule checks if a security group has a specific rule.
 func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId string, flow string, ipProtocols string, ipRanges string, securityGroupMemberId string, fromPortRanges int32, toPortRanges int32) (bool, error) {
 	var readSecurityGroupRuleRequest osc.ReadSecurityGroupsRequest
@@ -409,7 +457,7 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 }
 
 // GetSecurityGroupIdsFromNetIds return the security group id resource that exist from the net id
-func (s *Service) GetSecurityGroupIdsFromNetIds(ctx context.Context, netId string) ([]string, error) {
+func (s *Service) GetSecurityGroupsFromNet(ctx context.Context, netId string) ([]osc.SecurityGroup, error) {
 	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
 			NetIds: &[]string{netId},
@@ -443,16 +491,5 @@ func (s *Service) GetSecurityGroupIdsFromNetIds(ctx context.Context, netId strin
 	if waitErr != nil {
 		return nil, waitErr
 	}
-	var securityGroupIds []string
-	securityGroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
-	if !ok {
-		return nil, errors.New("Can not get securityGroup")
-	}
-	if len(*securityGroups) != 0 {
-		for _, securityGroup := range *securityGroups {
-			securityGroupId := securityGroup.GetSecurityGroupId()
-			securityGroupIds = append(securityGroupIds, securityGroupId)
-		}
-	}
-	return securityGroupIds, nil
+	return readSecurityGroupsResponse.GetSecurityGroups(), nil
 }

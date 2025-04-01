@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -12,28 +11,11 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
-const (
-	defaultResource = "default"
-)
-
-var (
-	ErrNoResourceFound    = errors.New("not found")
-	ErrMissingResource    = errors.New("missing resource")
-	ErrNoChangeToResource = errors.New("resource has not changed")
-)
-
-type ResourceTracker struct {
+type ClusterResourceTracker struct {
 	Cloud services.Servicer
 }
 
-func getResource(name string, m map[string]string) string {
-	if m == nil {
-		return ""
-	}
-	return m[name]
-}
-
-func (t *ResourceTracker) getNet(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.Net, error) {
+func (t *ClusterResourceTracker) getNet(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.Net, error) {
 	id, err := t.getNetId(ctx, clusterScope)
 	if err != nil {
 		return nil, err
@@ -50,7 +32,7 @@ func (t *ResourceTracker) getNet(ctx context.Context, clusterScope *scope.Cluste
 }
 
 // getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
-func (t *ResourceTracker) getNetId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) getNetId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
 	id := clusterScope.GetNet().ResourceId
 	if id != "" {
 		return id, nil
@@ -71,7 +53,8 @@ func (t *ResourceTracker) getNetId(ctx context.Context, clusterScope *scope.Clus
 		return tg.GetResourceId(), nil
 	}
 	// Search by name (retrocompatibility)
-	tg, err = t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NetResourceType, tag.NameKey, clusterScope.GetNetName())
+	nameValue := clusterScope.GetNet().Name + "-" + clusterScope.GetUID()
+	tg, err = t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NetResourceType, tag.NameKey, nameValue)
 	if err != nil {
 		return "", fmt.Errorf("get net: %w", err)
 	}
@@ -82,7 +65,7 @@ func (t *ResourceTracker) getNetId(ctx context.Context, clusterScope *scope.Clus
 	return "", fmt.Errorf("get net: %w", ErrNoResourceFound)
 }
 
-func (t *ResourceTracker) setNetId(clusterScope *scope.ClusterScope, id string) {
+func (t *ClusterResourceTracker) setNetId(clusterScope *scope.ClusterScope, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.Net == nil {
 		rsrc.Net = map[string]string{}
@@ -90,7 +73,7 @@ func (t *ResourceTracker) setNetId(clusterScope *scope.ClusterScope, id string) 
 	rsrc.Net[defaultResource] = id
 }
 
-func (t *ResourceTracker) _getInternetServiceOrId(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.InternetService, string, error) {
+func (t *ClusterResourceTracker) _getInternetServiceOrId(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.InternetService, string, error) {
 	rsrc := clusterScope.GetResources()
 	id := getResource(defaultResource, rsrc.InternetService)
 	if id != "" {
@@ -112,7 +95,7 @@ func (t *ResourceTracker) _getInternetServiceOrId(ctx context.Context, clusterSc
 	}
 }
 
-func (t *ResourceTracker) getInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.InternetService, error) {
+func (t *ClusterResourceTracker) getInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.InternetService, error) {
 	is, id, err := t._getInternetServiceOrId(ctx, clusterScope)
 	switch {
 	case err != nil:
@@ -132,12 +115,12 @@ func (t *ResourceTracker) getInternetService(ctx context.Context, clusterScope *
 }
 
 // getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
-func (t *ResourceTracker) getInternetServiceId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) getInternetServiceId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
 	_, id, err := t._getInternetServiceOrId(ctx, clusterScope)
 	return id, err
 }
 
-func (t *ResourceTracker) setInternetServiceId(clusterScope *scope.ClusterScope, id string) {
+func (t *ClusterResourceTracker) setInternetServiceId(clusterScope *scope.ClusterScope, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.InternetService == nil {
 		rsrc.InternetService = map[string]string{}
@@ -145,7 +128,7 @@ func (t *ResourceTracker) setInternetServiceId(clusterScope *scope.ClusterScope,
 	rsrc.InternetService[defaultResource] = id
 }
 
-func (t *ResourceTracker) _getSubnetOrId(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (*osc.Subnet, string, error) {
+func (t *ClusterResourceTracker) _getSubnetOrId(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (*osc.Subnet, string, error) {
 	id := subnet.ResourceId
 	if id != "" {
 		return nil, id, nil
@@ -172,7 +155,7 @@ func (t *ResourceTracker) _getSubnetOrId(ctx context.Context, subnet infrastruct
 	}
 }
 
-func (t *ResourceTracker) getSubnet(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (*osc.Subnet, error) {
+func (t *ClusterResourceTracker) getSubnet(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (*osc.Subnet, error) {
 	sn, id, err := t._getSubnetOrId(ctx, subnet, clusterScope)
 	switch {
 	case err != nil:
@@ -192,12 +175,12 @@ func (t *ResourceTracker) getSubnet(ctx context.Context, subnet infrastructurev1
 }
 
 // getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
-func (t *ResourceTracker) getSubnetId(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) getSubnetId(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (string, error) {
 	_, id, err := t._getSubnetOrId(ctx, subnet, clusterScope)
 	return id, err
 }
 
-func (t *ResourceTracker) setSubnetId(clusterScope *scope.ClusterScope, subnet infrastructurev1beta1.OscSubnet, id string) {
+func (t *ClusterResourceTracker) setSubnetId(clusterScope *scope.ClusterScope, subnet infrastructurev1beta1.OscSubnet, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.Subnet == nil {
 		rsrc.Subnet = map[string]string{}
@@ -205,7 +188,7 @@ func (t *ResourceTracker) setSubnetId(clusterScope *scope.ClusterScope, subnet i
 	rsrc.Subnet[subnet.IpSubnetRange] = id
 }
 
-func (t *ResourceTracker) _getNatServiceOrId(ctx context.Context, nat infrastructurev1beta1.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, string, error) {
+func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat infrastructurev1beta1.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, string, error) {
 	rsrc := clusterScope.GetResources()
 
 	clientToken := clusterScope.GetNatServiceClientToken(nat)
@@ -221,7 +204,8 @@ func (t *ResourceTracker) _getNatServiceOrId(ctx context.Context, nat infrastruc
 		t.setNatServiceId(clusterScope, nat, ns.GetNatServiceId())
 		return ns, ns.GetNatServiceId(), nil
 	}
-	tag, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NatResourceType, tag.NameKey, clientToken)
+	nameValue := nat.Name + "-" + clusterScope.GetUID()
+	tag, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NatResourceType, tag.NameKey, nameValue)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get nat service from tag: %w", err)
@@ -233,7 +217,7 @@ func (t *ResourceTracker) _getNatServiceOrId(ctx context.Context, nat infrastruc
 	}
 }
 
-func (t *ResourceTracker) getNatService(ctx context.Context, nat infrastructurev1beta1.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, error) {
+func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastructurev1beta1.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, error) {
 	ns, id, err := t._getNatServiceOrId(ctx, nat, clusterScope)
 	switch {
 	case err != nil:
@@ -252,7 +236,7 @@ func (t *ResourceTracker) getNatService(ctx context.Context, nat infrastructurev
 	}
 }
 
-func (t *ResourceTracker) getNatServiceId(ctx context.Context, nat infrastructurev1beta1.OscNatService, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) getNatServiceId(ctx context.Context, nat infrastructurev1beta1.OscNatService, clusterScope *scope.ClusterScope) (string, error) {
 	ns, id, err := t._getNatServiceOrId(ctx, nat, clusterScope)
 	switch {
 	case err != nil:
@@ -264,7 +248,7 @@ func (t *ResourceTracker) getNatServiceId(ctx context.Context, nat infrastructur
 	}
 }
 
-func (t *ResourceTracker) setNatServiceId(clusterScope *scope.ClusterScope, nat infrastructurev1beta1.OscNatService, id string) {
+func (t *ClusterResourceTracker) setNatServiceId(clusterScope *scope.ClusterScope, nat infrastructurev1beta1.OscNatService, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.NatService == nil {
 		rsrc.NatService = map[string]string{}
@@ -272,7 +256,7 @@ func (t *ResourceTracker) setNatServiceId(clusterScope *scope.ClusterScope, nat 
 	rsrc.NatService[clusterScope.GetNatServiceClientToken(nat)] = id
 }
 
-func (t *ResourceTracker) allocateIP(ctx context.Context, name string, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) allocateIP(ctx context.Context, name string, clusterScope *scope.ClusterScope) (string, error) {
 	rsrc := clusterScope.GetResources()
 	id := getResource(name, rsrc.PublicIPs)
 	if id != "" {
@@ -286,7 +270,7 @@ func (t *ResourceTracker) allocateIP(ctx context.Context, name string, clusterSc
 	return ip.GetPublicIpId(), nil
 }
 
-func (t *ResourceTracker) trackIP(clusterScope *scope.ClusterScope, name, id string) {
+func (t *ClusterResourceTracker) trackIP(clusterScope *scope.ClusterScope, name, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.PublicIPs == nil {
 		rsrc.PublicIPs = map[string]string{}
@@ -294,7 +278,7 @@ func (t *ResourceTracker) trackIP(clusterScope *scope.ClusterScope, name, id str
 	rsrc.PublicIPs[name] = id
 }
 
-func (t *ResourceTracker) untrackIP(clusterScope *scope.ClusterScope, name string) {
+func (t *ClusterResourceTracker) untrackIP(clusterScope *scope.ClusterScope, name string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.PublicIPs == nil {
 		return
@@ -302,12 +286,12 @@ func (t *ResourceTracker) untrackIP(clusterScope *scope.ClusterScope, name strin
 	delete(rsrc.PublicIPs, name)
 }
 
-func (t *ResourceTracker) getPublicIps(clusterScope *scope.ClusterScope) map[string]string {
+func (t *ClusterResourceTracker) getPublicIps(clusterScope *scope.ClusterScope) map[string]string {
 	rsrc := clusterScope.GetResources()
 	return rsrc.PublicIPs
 }
 
-func (t *ResourceTracker) getBastion(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.Vm, error) {
+func (t *ClusterResourceTracker) getBastion(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.Vm, error) {
 	vm, id, err := t._getBastionOrId(ctx, clusterScope)
 	switch {
 	case err != nil:
@@ -326,7 +310,7 @@ func (t *ResourceTracker) getBastion(ctx context.Context, clusterScope *scope.Cl
 	}
 }
 
-func (t *ResourceTracker) getBastionId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) getBastionId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
 	vm, id, err := t._getBastionOrId(ctx, clusterScope)
 	switch {
 	case err != nil:
@@ -339,7 +323,7 @@ func (t *ResourceTracker) getBastionId(ctx context.Context, clusterScope *scope.
 }
 
 // getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
-func (t *ResourceTracker) _getBastionOrId(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.Vm, string, error) {
+func (t *ClusterResourceTracker) _getBastionOrId(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.Vm, string, error) {
 	id := clusterScope.GetBastion().ResourceId
 	if id != "" {
 		return nil, id, nil
@@ -360,25 +344,26 @@ func (t *ResourceTracker) _getBastionOrId(ctx context.Context, clusterScope *sco
 		return vm, vm.GetVmId(), nil
 	}
 	// Search by name (retrocompatibility)
-	tg, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NetResourceType, tag.NameKey, clusterScope.GetNetName())
+	nameValue := clusterScope.GetBastion().Name + "-" + clusterScope.GetUID()
+	tg, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NetResourceType, tag.NameKey, nameValue)
 	if err != nil {
-		return nil, "", fmt.Errorf("get net: %w", err)
+		return nil, "", fmt.Errorf("get bastion: %w", err)
 	}
 	if tg.GetResourceId() != "" {
-		t.setNetId(clusterScope, tg.GetResourceId())
+		t.setBastionId(clusterScope, tg.GetResourceId())
 		return nil, tg.GetResourceId(), nil
 	}
-	return nil, "", fmt.Errorf("get net: %w", ErrNoResourceFound)
+	return nil, "", fmt.Errorf("get bastion: %w", ErrNoResourceFound)
 }
 
-func (t *ResourceTracker) setBastionId(clusterScope *scope.ClusterScope, id string) {
+func (t *ClusterResourceTracker) setBastionId(clusterScope *scope.ClusterScope, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.Bastion == nil {
 		rsrc.Bastion = map[string]string{}
 	}
 	rsrc.Bastion[defaultResource] = id
 }
-func (t *ResourceTracker) _getSecurityGroupOrId(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (*osc.SecurityGroup, string, error) {
+func (t *ClusterResourceTracker) _getSecurityGroupOrId(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (*osc.SecurityGroup, string, error) {
 	rsrc := clusterScope.GetResources()
 
 	name := clusterScope.GetSecurityGroupName(sg)
@@ -390,23 +375,15 @@ func (t *ResourceTracker) _getSecurityGroupOrId(ctx context.Context, sg infrastr
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get securityGroup from securityGroupName: %w", err)
-	case ns != nil:
-		t.setSecurityGroupId(clusterScope, sg, ns.GetSecurityGroupId())
-		return ns, ns.GetSecurityGroupId(), nil
-	}
-	tag, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.SecurityGroupResourceType, tag.NameKey, name)
-	switch {
-	case err != nil:
-		return nil, "", fmt.Errorf("get securityGroup from tag: %w", err)
 	case ns == nil:
 		return nil, "", fmt.Errorf("get securityGroup: %w", ErrNoResourceFound)
 	default:
-		t.setSecurityGroupId(clusterScope, sg, tag.GetResourceId())
-		return nil, tag.GetResourceId(), nil
+		t.setSecurityGroupId(clusterScope, sg, ns.GetSecurityGroupId())
+		return ns, ns.GetSecurityGroupId(), nil
 	}
 }
 
-func (t *ResourceTracker) getSecurityGroup(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (*osc.SecurityGroup, error) {
+func (t *ClusterResourceTracker) getSecurityGroup(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (*osc.SecurityGroup, error) {
 	ns, id, err := t._getSecurityGroupOrId(ctx, sg, clusterScope)
 	switch {
 	case err != nil:
@@ -425,7 +402,7 @@ func (t *ResourceTracker) getSecurityGroup(ctx context.Context, sg infrastructur
 	}
 }
 
-func (t *ResourceTracker) getSecurityGroupId(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (string, error) {
+func (t *ClusterResourceTracker) getSecurityGroupId(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (string, error) {
 	ns, id, err := t._getSecurityGroupOrId(ctx, sg, clusterScope)
 	switch {
 	case err != nil:
@@ -437,7 +414,7 @@ func (t *ResourceTracker) getSecurityGroupId(ctx context.Context, sg infrastruct
 	}
 }
 
-func (t *ResourceTracker) setSecurityGroupId(clusterScope *scope.ClusterScope, sg infrastructurev1beta1.OscSecurityGroup, id string) {
+func (t *ClusterResourceTracker) setSecurityGroupId(clusterScope *scope.ClusterScope, sg infrastructurev1beta1.OscSecurityGroup, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.SecurityGroup == nil {
 		rsrc.SecurityGroup = map[string]string{}

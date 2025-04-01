@@ -39,11 +39,10 @@ type OscPublicIpInterface interface {
 	LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error)
 	UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error
 	CheckPublicIpUnlink(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
-	ValidatePublicIpIds(ctx context.Context, publicIpIds []string) ([]string, error)
 }
 
 // CreatePublicIp retrieve a publicip associated with you account
-func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string) (*osc.PublicIp, error) {
+func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clusterUUID string) (*osc.PublicIp, error) {
 	publicIpRequest := osc.CreatePublicIpRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()

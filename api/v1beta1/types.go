@@ -26,14 +26,15 @@ const (
 	RoleControlPlane OscRole = "controlplane"
 	RoleWorker       OscRole = "worker"
 	RolePublic       OscRole = "public"
+	RoleNode         OscRole = "node"
 )
 
 type OscNode struct {
-	Vm          OscVm        `json:"vm,omitempty"`
-	Image       OscImage     `json:"image,omitempty"`
-	Volumes     []*OscVolume `json:"volumes,omitempty"`
-	KeyPair     OscKeypair   `json:"keypair,omitempty"`
-	ClusterName string       `json:"clusterName,omitempty"`
+	Vm          OscVm       `json:"vm,omitempty"`
+	Image       OscImage    `json:"image,omitempty"`
+	Volumes     []OscVolume `json:"volumes,omitempty"`
+	KeyPair     OscKeypair  `json:"keypair,omitempty"`
+	ClusterName string      `json:"clusterName,omitempty"`
 }
 
 type OscNetwork struct {
@@ -258,7 +259,23 @@ type OscSecurityGroup struct {
 	ResourceId string `json:"resourceId,omitempty"`
 	Tag        string `json:"tag,omitempty"`
 
-	Role string `json:"string,omitempty"`
+	Role OscRole `json:"string,omitempty"`
+}
+
+func (sg *OscSecurityGroup) GetRole() OscRole {
+	if sg.Role != "" {
+		return sg.Role
+	}
+	switch {
+	case strings.Contains(sg.Name, "kcp") || strings.Contains(sg.Name, "controlplane"):
+		return RoleControlPlane
+	case strings.Contains(sg.Name, "public"):
+		return RolePublic
+	case strings.Contains(sg.Name, "node") || sg.Tag == "OscK8sMainSG":
+		return RoleNode
+	default:
+		return RoleWorker
+	}
 }
 
 type OscPublicIp struct {
@@ -390,6 +407,10 @@ type OscNodeResource struct {
 	PublicIpIdRef   OscResourceReference `json:"publicIpIdRef,omitempty"`
 }
 
+type OscMachineResources struct {
+	Vm map[string]string `json:"vm,omitempty"`
+}
+
 type OscImage struct {
 	Name       string `json:"name,omitempty"`
 	AccountId  string `json:"accountId,omitempty"`
@@ -444,6 +465,13 @@ type OscVm struct {
 	ClusterName        string                    `json:"clusterName,omitempty"`
 	Replica            int32                     `json:"replica,omitempty"`
 	Tags               map[string]string         `json:"tags,omitempty"`
+}
+
+func (vm *OscVm) GetRole() OscRole {
+	if vm.Role != "" {
+		return vm.Role
+	}
+	return RoleWorker
 }
 
 type OscBastion struct {
@@ -914,20 +942,20 @@ func (network *OscNetwork) SetRouteTableDefaultValue() {
 			Routes: []OscRoute{routeKw},
 		}
 
-		network.RouteTables = append(network.RouteTables, &routeTableKw)
+		network.RouteTables = append(network.RouteTables, routeTableKw)
 		routeTableKw.Subnets = subnetKw
 		routeTableKcp := OscRouteTable{
 			Name:   routeTableKcpName,
 			Routes: []OscRoute{routeKcp},
 		}
-		network.RouteTables = append(network.RouteTables, &routeTableKcp)
+		network.RouteTables = append(network.RouteTables, routeTableKcp)
 		routeTableKcp.Subnets = subnetKcp
 
 		routeTablePublic := OscRouteTable{
 			Name:   routeTablePublicName,
 			Routes: []OscRoute{routePublic},
 		}
-		network.RouteTables = append(network.RouteTables, &routeTablePublic)
+		network.RouteTables = append(network.RouteTables, routeTablePublic)
 		routeTablePublic.Subnets = subnetPublic
 	}
 }
@@ -1021,7 +1049,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			Description:        DefaultDescriptionKw,
 			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKwBgp, securityGroupRuleApiKubeletKw, securityGroupRuleKwNodeIpKcp, securityGroupRuleApiKubeletKcp, securityGroupRuleKwNodeIpKw},
 		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKw)
+		network.SecurityGroups = append(network.SecurityGroups, securityGroupKw)
 
 		securityGroupRuleApiKw := OscSecurityGroupRule{
 			Name:          securityGroupRuleApiKwName,
@@ -1091,7 +1119,7 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			Description:        DefaultDescriptionKcp,
 			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleKcpBgp, securityGroupRuleApiKw, securityGroupRuleApiKcp, securityGroupRuleKcpNodeIpKw, securityGroupRuleEtcd, securityGroupRuleKubeletKcp, securityGroupRuleKcpNodeIpKcp},
 		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupKcp)
+		network.SecurityGroups = append(network.SecurityGroups, securityGroupKcp)
 
 		securityGroupRuleLb := OscSecurityGroupRule{
 			Name:          securityGroupRuleLbName,
@@ -1169,14 +1197,14 @@ func (network *OscNetwork) SetSecurityGroupDefaultValue() {
 			FromPortRange: DefaultFromPortRangeFlannelVxlan,
 			ToPortRange:   DefaultToPortRangeFlannelVxlan,
 		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupLb)
+		network.SecurityGroups = append(network.SecurityGroups, securityGroupLb)
 		securityGroupNode := OscSecurityGroup{
 			Name:               securityGroupNodeName,
 			Description:        DefaultDescriptionNode,
 			Tag:                "OscK8sMainSG",
 			SecurityGroupRules: []OscSecurityGroupRule{securityGroupRuleCalicoVxlan, securityGroupRuleCalicoTypha, securityGroupRuleCalicoWireguard, securityGroupRuleCalicoWireguardIpv6, securityGroupRuleFlannel, securityGroupRuleFlannelUdp, securityGroupRuleFlannelVxlan},
 		}
-		network.SecurityGroups = append(network.SecurityGroups, &securityGroupNode)
+		network.SecurityGroups = append(network.SecurityGroups, securityGroupNode)
 	}
 }
 

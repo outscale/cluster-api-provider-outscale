@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250324074633-ae8400ea8376
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250329153834-06ca07baa27f
   name: oscclustertemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -110,6 +110,10 @@ spec:
                           bastion:
                             description: The bastion configuration
                             properties:
+                              PublicIpId:
+                                description: The ID of an existing public IP to use
+                                  for this VM.
+                                type: string
                               clusterName:
                                 type: string
                               deviceName:
@@ -136,6 +140,7 @@ spec:
                                   type: object
                                 type: array
                               publicIpName:
+                                description: unused
                                 type: string
                               resourceId:
                                 type: string
@@ -165,7 +170,7 @@ spec:
                                 type: string
                             type: object
                           clusterName:
-                            description: The name of the cluster
+                            description: The name of the cluster (unused)
                             type: string
                           controlPlaneSubnets:
                             description: List of subnet to spread controlPlane nodes
@@ -290,6 +295,11 @@ spec:
                                 description: The name of the Subnet to which the Nat
                                   Service will be attached
                                 type: string
+                              subregionName:
+                                description: The name of the Subregion to which the
+                                  Nat Service will be attached, unless a subnet has
+                                  been defined.
+                                type: string
                             type: object
                           natServices:
                             description: The Nat Services configuration
@@ -310,6 +320,11 @@ spec:
                                 subnetname:
                                   description: The name of the Subnet to which the
                                     Nat Service will be attached
+                                  type: string
+                                subregionName:
+                                  description: The name of the Subregion to which
+                                    the Nat Service will be attached, unless a subnet
+                                    has been defined.
                                   type: string
                               type: object
                             type: array
@@ -388,11 +403,9 @@ spec:
                                     type: object
                                   type: array
                                 subnets:
-                                  description: The subnet tag name associate with
-                                    a Subnet
-                                  items:
-                                    type: string
-                                  type: array
+                                  type: string
+                                subregionName:
+                                  type: string
                               type: object
                             type: array
                           securityGroups:
@@ -441,6 +454,8 @@ spec:
                                         type: integer
                                     type: object
                                   type: array
+                                string:
+                                  type: string
                                 tag:
                                   type: string
                               type: object

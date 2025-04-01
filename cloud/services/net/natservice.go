@@ -36,7 +36,7 @@ type OscNatServiceInterface interface {
 	DeleteNatService(ctx context.Context, natServiceId string) error
 	GetNatService(ctx context.Context, natServiceId string) (*osc.NatService, error)
 	GetNatServiceFromClientToken(ctx context.Context, clientToken string) (*osc.NatService, error)
-	ListNatServices(tx context.Context, netId string) ([]*osc.NatService, error)
+	ListNatServices(tx context.Context, netId string) ([]osc.NatService, error)
 }
 
 // CreateNatService create the nat in the public subnet of the net

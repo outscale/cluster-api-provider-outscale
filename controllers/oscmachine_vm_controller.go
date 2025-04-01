@@ -30,7 +30,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -237,7 +236,7 @@ func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.Mach
 }
 
 // reconcileVm reconcile the vm of the machine
-func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	vmSpec := machineScope.GetVm()
 	vmRef := machineScope.GetVmRef()
@@ -247,7 +246,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile vm: %w")
 	}
-	subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+	subnetId, err := r.ClusterTracker.getSubnetId(ctx, subnetSpec, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile vm: %w")
 	}
@@ -298,52 +297,34 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	vmSecurityGroups := machineScope.GetVmSecurityGroups()
 	securityGroupIds := make([]string, 0, len(vmSecurityGroups))
 	for _, vmSecurityGroup := range vmSecurityGroups {
-		securityGroupName := vmSecurityGroup.Name + "-" + clusterScope.GetUID()
-		securityGroupId, err := getSecurityGroupResourceId(securityGroupName, clusterScope)
-		log.V(4).Info("Get securityGroupId", "securityGroupId", securityGroupId)
+		sgSpec, err := clusterScope.GetSecurityGroup(vmSecurityGroup.Name, vmSpec.GetRole())
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot find securityGroup: %w", err)
+		}
+		securityGroupId, err := r.ClusterTracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
+		log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
 
-	if len(vmRef.ResourceMap) == 0 {
-		vmRef.ResourceMap = make(map[string]string)
-	}
-
-	var vm *osc.Vm
+	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
 	switch {
-	case vmSpec.ResourceId != "":
-		vm, err = vmSvc.GetVm(ctx, vmSpec.ResourceId)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
+	case err == nil:
+	case !errors.Is(err, ErrNoResourceFound):
+		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
-		vms, err := vmSvc.GetVmListFromTag(ctx, "Name", vmName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot list VMs: %w", err)
-		}
-		if len(vms) > 0 {
-			vm = &vms[0]
-		}
-	}
-	if vm != nil {
-		vmSpec.ResourceId = vm.GetVmId()
-		vmRef.ResourceMap[vmName] = vmSpec.ResourceId
-		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
-	} else {
 		imageId := vmSpec.ImageId
 		keypairName := vmSpec.KeypairName
 		vmType := vmSpec.VmType
 		vmTags := vmSpec.Tags
+		volumes := machineScope.GetVolumes()
 		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
-		volumes := machineScope.GetVolume()
-
-		vm, err = vmSvc.CreateVm(ctx, machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags, volumes)
+		vm, err = r.Cloud.VM(ctx, *clusterScope).CreateVm(ctx, machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags, volumes)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
 		}
-
 		vmId := vm.GetVmId()
 		machineScope.SetVmState(infrastructurev1beta1.VmStatePending)
 		vmRef.ResourceMap[vmName] = vmId
@@ -378,45 +359,12 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
 	}
 
-	if vmSpec.LoadBalancerName != "" {
-		loadBalancerName := vmSpec.LoadBalancerName
-		vmIds := []string{vmId}
+	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane {
+		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		log.V(2).Info("Linking loadbalancer", "loadBalancerName", loadBalancerName)
-		err := loadBalancerSvc.LinkLoadBalancerBackendMachines(ctx, vmIds, loadBalancerName)
+		err := r.Cloud.LoadBalancer(ctx, *clusterScope).LinkLoadBalancerBackendMachines(ctx, []string{vmId}, loadBalancerName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot link vm %s with loadBalancerName %s: %w", vmId, loadBalancerName, err)
-		}
-		securityGroupsRef := clusterScope.GetSecurityGroupsRef()
-		loadBalancerSpec := clusterScope.GetLoadBalancer()
-		loadBalancerSpec.SetDefaultValue()
-		loadBalancerSecurityGroupName := loadBalancerSpec.SecurityGroupName
-		ipProtocol := strings.ToLower(loadBalancerSpec.Listener.BackendProtocol)
-		fromPortRange := loadBalancerSpec.Listener.BackendPort
-		toPortRange := loadBalancerSpec.Listener.BackendPort
-		loadBalancerSecurityGroupClusterScopeName := loadBalancerSecurityGroupName + "-" + clusterScope.GetUID()
-		lbSecurityGroupId := securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName]
-		hasOutboundRule, err := securityGroupSvc.SecurityGroupHasRule(ctx, lbSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get outbound securityGroupRule: %w", err)
-		}
-		// FIXME: those rules should probably be created by the OscCluster.
-		if !hasOutboundRule {
-			log.V(2).Info("Creating outbound securityGroup rule")
-			_, err = securityGroupSvc.CreateSecurityGroupRule(ctx, lbSecurityGroupId, "Outbound", ipProtocol, "", securityGroupIds[0], fromPortRange, toPortRange)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot create outbound securityGroupRule: %w", err)
-			}
-		}
-		hasInboundRule, err := securityGroupSvc.SecurityGroupHasRule(ctx, securityGroupIds[0], "Inbound", ipProtocol, "", lbSecurityGroupId, fromPortRange, toPortRange)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get inbound securityGroupRule: %w", err)
-		}
-		if !hasInboundRule {
-			log.V(2).Info("Creating inbound securityGroup rule")
-			_, err = securityGroupSvc.CreateSecurityGroupRule(ctx, securityGroupIds[0], "Inbound", ipProtocol, "", lbSecurityGroupId, fromPortRange, toPortRange)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot create inbound securityGroupRule: %w", err)
-			}
+			return reconcile.Result{}, fmt.Errorf("cannot link vm %s to loadBalancerName %s: %w", vmId, loadBalancerName, err)
 		}
 	}
 
