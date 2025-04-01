@@ -129,6 +129,10 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 	machine, err := util.GetOwnerMachine(ctx, r.Client, oscMachine.ObjectMeta)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("Owner Machine does not exist (anymore)")
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, err
 	}
 

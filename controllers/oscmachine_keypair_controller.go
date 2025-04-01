@@ -26,7 +26,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/scope"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -117,27 +116,31 @@ func reconcileKeypair(ctx context.Context, machineScope *scope.MachineScope, key
 
 // reconcileDeleteKeypair reconcile the destruction of the keypair of the machine
 func reconcileDeleteKeypair(ctx context.Context, machineScope *scope.MachineScope, keypairSvc security.OscKeyPairInterface) (reconcile.Result, error) {
-	oscmachine := machineScope.OscMachine
 	keypairSpec := machineScope.GetKeypair()
 	keypairName := keypairSpec.Name
+
+	if keypairName == "" {
+		machineScope.V(3).Info("Machine has no keypair")
+		return reconcile.Result{}, nil
+	}
+	deleteKeypair := machineScope.GetDeleteKeypair()
+	if !deleteKeypair {
+		machineScope.V(3).Info("Keeping keypair", "keypair", keypairName)
+		return reconcile.Result{}, nil
+	}
 
 	keypair, err := keypairSvc.GetKeyPair(keypairName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if keypair == nil {
-		controllerutil.RemoveFinalizer(oscmachine, "")
+		machineScope.V(3).Info("Keypair is already deleted", "keypair", keypairName)
 		return reconcile.Result{}, err
 	}
-	deleteKeypair := machineScope.GetDeleteKeypair()
-	if deleteKeypair {
-		machineScope.V(2).Info("Remove keypair")
-		err = keypairSvc.DeleteKeyPair(keypairName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("Can not delete keypair for OscCluster %s/%s", machineScope.GetNamespace(), machineScope.GetName())
-		}
-	} else {
-		machineScope.V(2).Info("Keep keypair")
+	machineScope.V(2).Info("Deleting keypair", "keypair", keypairName)
+	err = keypairSvc.DeleteKeyPair(keypairName)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot delete keypair: %w", err)
 	}
 
 	return reconcile.Result{}, nil
