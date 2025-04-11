@@ -28,9 +28,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+type ResourceType string
+
+const (
+	InternetServiceResourceType ResourceType = "internet-service"
+	NatResourceType             ResourceType = "natgateway"
+	VmResourceType              ResourceType = "instance"
+	RouteTableResourceType      ResourceType = "route-table"
+	SecurityGroupResourceType   ResourceType = "security-group"
+	NetResourceType             ResourceType = "vpc"
+	SubnetResourceType          ResourceType = "subnet"
+	PublicIPResourceType        ResourceType = "public-ip"
+)
+
+const (
+	NameKey = "Name"
+
+	ClusterKeyPrefix = "OscK8sClusterID/"
+	OwnedValue       = "owned"
+)
+
 //go:generate ../../bin/mockgen -destination mock_tag/tag_mock.go -package mock_tag -source ./tag.go
 type OscTagInterface interface {
-	ReadTag(ctx context.Context, tagKey string, tagValue string) (*osc.Tag, error)
+	ReadTag(ctx context.Context, rsrcType ResourceType, key, value string) (*osc.Tag, error)
+	ReadOwnedByTag(ctx context.Context, rsrcType ResourceType, cluster string) (*osc.Tag, error)
 }
 
 // AddTag add a tag to a resource
@@ -59,11 +80,12 @@ func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourc
 }
 
 // ReadTag read a tag of a resource
-func (s *Service) ReadTag(ctx context.Context, tagKey string, tagValue string) (*osc.Tag, error) {
+func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value string) (*osc.Tag, error) {
 	readTagsRequest := osc.ReadTagsRequest{
 		Filters: &osc.FiltersTag{
-			Keys:   &[]string{tagKey},
-			Values: &[]string{tagValue},
+			ResourceTypes: &[]string{string(rsrcType)},
+			Keys:          &[]string{key},
+			Values:        &[]string{value},
 		},
 	}
 	oscApiClient := s.scope.GetApi()
@@ -88,6 +110,10 @@ func (s *Service) ReadTag(ctx context.Context, tagKey string, tagValue string) (
 	}
 }
 
+func (s *Service) ReadOwnedByTag(ctx context.Context, rsrcType ResourceType, cluster string) (*osc.Tag, error) {
+	return s.ReadTag(ctx, rsrcType, ClusterKeyPrefix+cluster, OwnedValue)
+}
+
 // ValidateTagNameValue check that tag name value is a valid name
 func ValidateTagNameValue(tagValue string) (string, error) {
 	isValidateTagNameValue := regexp.MustCompile(`^[0-9A-Za-z\-]{0,255}$`).MatchString
@@ -96,4 +122,13 @@ func ValidateTagNameValue(tagValue string) (string, error) {
 	} else {
 		return tagValue, errors.New("Invalid Tag Name")
 	}
+}
+
+func GetTagValue(key string, tags []osc.ResourceTag) string {
+	for _, tg := range tags {
+		if key == tg.GetKey() {
+			return tg.GetValue()
+		}
+	}
+	return ""
 }

@@ -20,8 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/framework"
 )
 
@@ -41,11 +39,6 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 	scheme := runtime.NewScheme()
 	framework.TryAddDefaultSchemes(scheme)
 	err = infrastructurev1beta1.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = clusterv1.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = bootstrapv1.AddToScheme(scheme)
-	require.NoError(t, err)
 	require.NoError(t, err)
 	codecs := serializer.NewCodecFactory(scheme)
 	decode := codecs.UniversalDeserializer().Decode

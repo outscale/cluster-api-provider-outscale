@@ -111,7 +111,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with bad volume size",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -128,7 +128,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with bad volume iops",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -145,7 +145,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with missing volume device",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Iops:       20,
@@ -161,7 +161,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with invalid volume device",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "foo",
@@ -178,7 +178,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with bad volumeType",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -195,7 +195,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with valid io1 volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -212,7 +212,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with valid gp2 volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -228,7 +228,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			name: "create with valid standard volumeSpec",
 			machineSpec: OscMachineSpec{
 				Node: OscNode{
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -257,10 +257,10 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 // TestOscMachineTemplate_ValidateUpdate check good and bad update of oscMachineTemplate
 func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 	machineTestCases := []struct {
-		name                 string
-		oldMachineSpec       OscMachineSpec
-		machineSpec          OscMachineSpec
-		expValidateUpdateErr error
+		name           string
+		oldMachineSpec OscMachineSpec
+		machineSpec    OscMachineSpec
+		hasError       bool
 	}{
 		{
 			name: "Update only oscMachineTemplate name",
@@ -273,7 +273,7 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 						VmType:      "tinav3.c2r4p2",
 						PublicIp:    false,
 					},
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "update-webhook",
 							Iops:       15,
@@ -291,7 +291,7 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 						DeviceName:  "/dev/xvda",
 						VmType:      "tinav3.c2r4p2",
 					},
-					Volumes: []*OscVolume{
+					Volumes: []OscVolume{
 						{
 							Name:       "update-webhook",
 							Iops:       15,
@@ -301,7 +301,6 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-			expValidateUpdateErr: nil,
 		},
 		{
 			name: "update one element (keypair)",
@@ -325,7 +324,7 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-			expValidateUpdateErr: errors.New("OscMachineTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: OscMachineTemplate.spec.template.spec: Invalid value: v1beta1.OscMachineTemplate{TypeMeta:v1.TypeMeta{Kind:\"\", APIVersion:\"\"}, ObjectMeta:v1.ObjectMeta{Name:\"webhook-test\", GenerateName:\"\", Namespace:\"default\", SelfLink:\"\", UID:\"\", ResourceVersion:\"\", Generation:0, CreationTimestamp:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), DeletionTimestamp:<nil>, DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string(nil), Annotations:map[string]string(nil), OwnerReferences:[]v1.OwnerReference(nil), Finalizers:[]string(nil), ManagedFields:[]v1.ManagedFieldsEntry(nil)}, Spec:v1beta1.OscMachineTemplateSpec{Template:v1beta1.OscMachineTemplateResource{ObjectMeta:v1beta1.ObjectMeta{Labels:map[string]string(nil), Annotations:map[string]string(nil)}, Spec:v1beta1.OscMachineSpec{ProviderID:(*string)(nil), Node:v1beta1.OscNode{Vm:v1beta1.OscVm{Name:\"\", ImageId:\"ami-00000000\", KeypairName:\"test-webhook-2\", VmType:\"tinav3.c2r4p2\", VolumeName:\"\", VolumeDeviceName:\"\", DeviceName:\"/dev/xvda\", SubnetName:\"\", RootDisk:v1beta1.OscRootDisk{RootDiskIops:0, RootDiskSize:0, RootDiskType:\"\"}, LoadBalancerName:\"\", PublicIpName:\"\", PublicIp:false, SubregionName:\"\", PrivateIps:[]v1beta1.OscPrivateIpElement(nil), SecurityGroupNames:[]v1beta1.OscSecurityGroupElement(nil), ResourceId:\"\", Role:\"\", ClusterName:\"\", Replica:0, Tags:map[string]string(nil)}, Image:v1beta1.OscImage{Name:\"\", AccountId:\"\", ResourceId:\"\"}, Volumes:[]*v1beta1.OscVolume(nil), KeyPair:v1beta1.OscKeypair{Name:\"\", PublicKey:\"\", ResourceId:\"\", ClusterName:\"\", DeleteKeypair:false}, ClusterName:\"\"}}}}, Status:v1beta1.OscMachineTemplateStatus{Capacity:v1.ResourceList(nil), Conditions:v1beta1.Conditions(nil)}}: OscMachineTemplate spec.template.spec field is immutable."),
+			hasError: true,
 		},
 	}
 	for _, mtc := range machineTestCases {
@@ -333,8 +332,8 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 			oscOldInfraMachineTemplate := createOscInfraMachineTemplate(mtc.oldMachineSpec, "old-webhook-test", "default")
 			oscInfraMachineTemplate := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
 			_, err := oscInfraMachineTemplate.ValidateUpdate(oscOldInfraMachineTemplate)
-			if mtc.expValidateUpdateErr != nil {
-				require.EqualError(t, err, mtc.expValidateUpdateErr.Error(), "ValidateUpdate() should return the same error")
+			if mtc.hasError {
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}

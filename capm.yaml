@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250303100717-fe6de3528e9a
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250407052638-f3ae3e4c0f49
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -80,6 +80,10 @@ spec:
                   bastion:
                     description: The bastion configuration
                     properties:
+                      PublicIpId:
+                        description: The ID of an existing public IP to use for this
+                          VM.
+                        type: string
                       clusterName:
                         type: string
                       deviceName:
@@ -106,6 +110,7 @@ spec:
                           type: object
                         type: array
                       publicIpName:
+                        description: unused
                         type: string
                       resourceId:
                         type: string
@@ -135,7 +140,7 @@ spec:
                         type: string
                     type: object
                   clusterName:
-                    description: The name of the cluster
+                    description: The name of the cluster (unused)
                     type: string
                   controlPlaneSubnets:
                     description: List of subnet to spread controlPlane nodes
@@ -159,13 +164,13 @@ spec:
                     description: The Internet Service configuration
                     properties:
                       clusterName:
-                        description: the name of the cluster
+                        description: the name of the cluster (unused)
                         type: string
                       name:
-                        description: The tag name associate with the Subnet
+                        description: The name of the Internet service
                         type: string
                       resourceId:
-                        description: the Internet Service response
+                        description: the Internet Service resource id (unused)
                         type: string
                     type: object
                   loadBalancer:
@@ -239,20 +244,24 @@ spec:
                     description: The Nat Service configuration
                     properties:
                       clusterName:
-                        description: The name of the cluster
+                        description: The name of the cluster (unused)
                         type: string
                       name:
-                        description: The tag name associate with the Nat Service
+                        description: The name of the Nat Service
                         type: string
                       publicipname:
-                        description: The Public Ip tag name associated with a Public
-                          Ip
+                        description: The Public Ip name (unused)
                         type: string
                       resourceId:
-                        description: The Nat Service Id response
+                        description: The resource id (unused)
                         type: string
                       subnetname:
-                        description: The subnet tag name associate with a Subnet
+                        description: The name of the Subnet to which the Nat Service
+                          will be attached
+                        type: string
+                      subregionName:
+                        description: The name of the Subregion to which the Nat Service
+                          will be attached, unless a subnet has been defined.
                         type: string
                     type: object
                   natServices:
@@ -260,20 +269,24 @@ spec:
                     items:
                       properties:
                         clusterName:
-                          description: The name of the cluster
+                          description: The name of the cluster (unused)
                           type: string
                         name:
-                          description: The tag name associate with the Nat Service
+                          description: The name of the Nat Service
                           type: string
                         publicipname:
-                          description: The Public Ip tag name associated with a Public
-                            Ip
+                          description: The Public Ip name (unused)
                           type: string
                         resourceId:
-                          description: The Nat Service Id response
+                          description: The resource id (unused)
                           type: string
                         subnetname:
-                          description: The subnet tag name associate with a Subnet
+                          description: The name of the Subnet to which the Nat Service
+                            will be attached
+                          type: string
+                        subregionName:
+                          description: The name of the Subregion to which the Nat
+                            Service will be attached, unless a subnet has been defined.
                           type: string
                       type: object
                     type: array
@@ -281,17 +294,22 @@ spec:
                     description: The Net configuration
                     properties:
                       clusterName:
-                        description: the name of the cluster
+                        description: the name of the cluster (unused)
                         type: string
                       ipRange:
-                        description: the net ip range with CIDR notation
+                        description: the ip range in CIDR notation of the Net
                         type: string
                       name:
-                        description: the tag name associate with the Net
+                        description: the network name
                         type: string
                       resourceId:
-                        description: The Net Id response
+                        description: The Id of the Net to reuise (if useExisting is
+                          set)
                         type: string
+                      useExisting:
+                        description: Reuse an existing network defined by resourceId
+                          ?
+                        type: boolean
                     type: object
                   publicIps:
                     description: The Public Ip configuration
@@ -316,6 +334,8 @@ spec:
                           type: string
                         resourceId:
                           description: The Route Table Id response
+                          type: string
+                        role:
                           type: string
                         routes:
                           description: The Route configuration
@@ -346,6 +366,8 @@ spec:
                           items:
                             type: string
                           type: array
+                        subregionName:
+                          type: string
                       type: object
                     type: array
                   securityGroups:
@@ -355,13 +377,19 @@ spec:
                           description: The description of the security group
                           type: string
                         name:
-                          description: The tag name associate with the security group
+                          description: The name of the security group
                           type: string
                         resourceId:
-                          description: The Security Group Id response
+                          description: When reusing network, the id of an existing
+                            securityGroup to use.
                           type: string
+                        roles:
+                          description: The roles the securityGroup applies to.
+                          items:
+                            type: string
+                          type: array
                         securityGroupRules:
-                          description: The Security Group Rules configuration
+                          description: The list of rules for this securityGroup.
                           items:
                             properties:
                               flow:
@@ -378,7 +406,14 @@ spec:
                                 type: string
                               ipRange:
                                 description: The ip range of the security group rule
+                                  (deprecated)
                                 type: string
+                              ipRanges:
+                                description: The list of ip ranges of the security
+                                  group rule
+                                items:
+                                  type: string
+                                type: array
                               name:
                                 description: The tag name associate with the security
                                   group
@@ -401,14 +436,21 @@ spec:
                     items:
                       properties:
                         ipSubnetRange:
-                          description: Subnet Ip range with CIDR notation
+                          description: the Ip range in CIDR notation of the Subnet
                           type: string
                         name:
-                          description: The tag name associate with the Subnet
+                          description: The name of the Subnet
                           type: string
                         resourceId:
-                          description: The Subnet Id response
+                          description: The id of the Subnet to reuse (if net.useExisting
+                            is set)
                           type: string
+                        roles:
+                          description: The role of the Subnet (controlplane, worker,
+                            loadbalancer, bastion or nat)
+                          items:
+                            type: string
+                          type: array
                         subregionName:
                           description: The subregion name of the Subnet
                           type: string
@@ -608,6 +650,42 @@ spec:
                 type: object
               ready:
                 type: boolean
+              reconcilerGeneration:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              resources:
+                properties:
+                  bastion:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  internetService:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  natService:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  net:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  publicIps:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  securityGroup:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  subnet:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
               vmState:
                 type: string
             type: object
@@ -622,7 +700,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250303100717-fe6de3528e9a
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250407052638-f3ae3e4c0f49
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -742,6 +820,10 @@ spec:
                           bastion:
                             description: The bastion configuration
                             properties:
+                              PublicIpId:
+                                description: The ID of an existing public IP to use
+                                  for this VM.
+                                type: string
                               clusterName:
                                 type: string
                               deviceName:
@@ -768,6 +850,7 @@ spec:
                                   type: object
                                 type: array
                               publicIpName:
+                                description: unused
                                 type: string
                               resourceId:
                                 type: string
@@ -797,7 +880,7 @@ spec:
                                 type: string
                             type: object
                           clusterName:
-                            description: The name of the cluster
+                            description: The name of the cluster (unused)
                             type: string
                           controlPlaneSubnets:
                             description: List of subnet to spread controlPlane nodes
@@ -822,13 +905,13 @@ spec:
                             description: The Internet Service configuration
                             properties:
                               clusterName:
-                                description: the name of the cluster
+                                description: the name of the cluster (unused)
                                 type: string
                               name:
-                                description: The tag name associate with the Subnet
+                                description: The name of the Internet service
                                 type: string
                               resourceId:
-                                description: the Internet Service response
+                                description: the Internet Service resource id (unused)
                                 type: string
                             type: object
                           loadBalancer:
@@ -907,21 +990,25 @@ spec:
                             description: The Nat Service configuration
                             properties:
                               clusterName:
-                                description: The name of the cluster
+                                description: The name of the cluster (unused)
                                 type: string
                               name:
-                                description: The tag name associate with the Nat Service
+                                description: The name of the Nat Service
                                 type: string
                               publicipname:
-                                description: The Public Ip tag name associated with
-                                  a Public Ip
+                                description: The Public Ip name (unused)
                                 type: string
                               resourceId:
-                                description: The Nat Service Id response
+                                description: The resource id (unused)
                                 type: string
                               subnetname:
-                                description: The subnet tag name associate with a
-                                  Subnet
+                                description: The name of the Subnet to which the Nat
+                                  Service will be attached
+                                type: string
+                              subregionName:
+                                description: The name of the Subregion to which the
+                                  Nat Service will be attached, unless a subnet has
+                                  been defined.
                                 type: string
                             type: object
                           natServices:
@@ -929,22 +1016,25 @@ spec:
                             items:
                               properties:
                                 clusterName:
-                                  description: The name of the cluster
+                                  description: The name of the cluster (unused)
                                   type: string
                                 name:
-                                  description: The tag name associate with the Nat
-                                    Service
+                                  description: The name of the Nat Service
                                   type: string
                                 publicipname:
-                                  description: The Public Ip tag name associated with
-                                    a Public Ip
+                                  description: The Public Ip name (unused)
                                   type: string
                                 resourceId:
-                                  description: The Nat Service Id response
+                                  description: The resource id (unused)
                                   type: string
                                 subnetname:
-                                  description: The subnet tag name associate with
-                                    a Subnet
+                                  description: The name of the Subnet to which the
+                                    Nat Service will be attached
+                                  type: string
+                                subregionName:
+                                  description: The name of the Subregion to which
+                                    the Nat Service will be attached, unless a subnet
+                                    has been defined.
                                   type: string
                               type: object
                             type: array
@@ -952,17 +1042,23 @@ spec:
                             description: The Net configuration
                             properties:
                               clusterName:
-                                description: the name of the cluster
+                                description: the name of the cluster (unused)
                                 type: string
                               ipRange:
-                                description: the net ip range with CIDR notation
+                                description: the ip range in CIDR notation of the
+                                  Net
                                 type: string
                               name:
-                                description: the tag name associate with the Net
+                                description: the network name
                                 type: string
                               resourceId:
-                                description: The Net Id response
+                                description: The Id of the Net to reuise (if useExisting
+                                  is set)
                                 type: string
+                              useExisting:
+                                description: Reuse an existing network defined by
+                                  resourceId ?
+                                type: boolean
                             type: object
                           publicIps:
                             description: The Public Ip configuration
@@ -989,6 +1085,8 @@ spec:
                                   type: string
                                 resourceId:
                                   description: The Route Table Id response
+                                  type: string
+                                role:
                                   type: string
                                 routes:
                                   description: The Route configuration
@@ -1022,6 +1120,8 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                                subregionName:
+                                  type: string
                               type: object
                             type: array
                           securityGroups:
@@ -1031,14 +1131,20 @@ spec:
                                   description: The description of the security group
                                   type: string
                                 name:
-                                  description: The tag name associate with the security
-                                    group
+                                  description: The name of the security group
                                   type: string
                                 resourceId:
-                                  description: The Security Group Id response
+                                  description: When reusing network, the id of an
+                                    existing securityGroup to use.
                                   type: string
+                                roles:
+                                  description: The roles the securityGroup applies
+                                    to.
+                                  items:
+                                    type: string
+                                  type: array
                                 securityGroupRules:
-                                  description: The Security Group Rules configuration
+                                  description: The list of rules for this securityGroup.
                                   items:
                                     properties:
                                       flow:
@@ -1055,8 +1161,14 @@ spec:
                                         type: string
                                       ipRange:
                                         description: The ip range of the security
-                                          group rule
+                                          group rule (deprecated)
                                         type: string
+                                      ipRanges:
+                                        description: The list of ip ranges of the
+                                          security group rule
+                                        items:
+                                          type: string
+                                        type: array
                                       name:
                                         description: The tag name associate with the
                                           security group
@@ -1079,14 +1191,22 @@ spec:
                             items:
                               properties:
                                 ipSubnetRange:
-                                  description: Subnet Ip range with CIDR notation
+                                  description: the Ip range in CIDR notation of the
+                                    Subnet
                                   type: string
                                 name:
-                                  description: The tag name associate with the Subnet
+                                  description: The name of the Subnet
                                   type: string
                                 resourceId:
-                                  description: The Subnet Id response
+                                  description: The id of the Subnet to reuse (if net.useExisting
+                                    is set)
                                   type: string
+                                roles:
+                                  description: The role of the Subnet (controlplane,
+                                    worker, loadbalancer, bastion or nat)
+                                  items:
+                                    type: string
+                                  type: array
                                 subregionName:
                                   description: The subregion name of the Subnet
                                   type: string
@@ -1112,7 +1232,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250303100717-fe6de3528e9a
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250407052638-f3ae3e4c0f49
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1192,14 +1312,19 @@ spec:
                   keypair:
                     properties:
                       clusterName:
+                        description: Deprecated
                         type: string
                       deleteKeypair:
+                        description: Deprecated
                         type: boolean
                       name:
+                        description: Deprecated
                         type: string
                       publicKey:
+                        description: Deprecated
                         type: string
                       resourceId:
+                        description: Deprecated
                         type: string
                     type: object
                   vm:
@@ -1268,6 +1393,8 @@ spec:
                         type: string
                       volumeName:
                         type: string
+                    required:
+                    - keypairName
                     type: object
                   volumes:
                     items:
@@ -1285,11 +1412,13 @@ spec:
                           format: int32
                           type: integer
                         subregionName:
+                          description: Deprecated
                           type: string
                         volumeType:
                           type: string
                       required:
                       - device
+                      - size
                       type: object
                     type: array
                 type: object
@@ -1361,6 +1490,8 @@ spec:
                   - type
                   type: object
                 type: array
+              failureDomain:
+                type: string
               failureMessage:
                 type: string
               failureReason:
@@ -1426,6 +1557,26 @@ spec:
                 type: object
               ready:
                 type: boolean
+              reconcilerGeneration:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              resources:
+                properties:
+                  image:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  vm:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  volumes:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
               vmState:
                 type: string
             type: object
@@ -1439,7 +1590,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250303100717-fe6de3528e9a
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250407052638-f3ae3e4c0f49
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1546,14 +1697,19 @@ spec:
                           keypair:
                             properties:
                               clusterName:
+                                description: Deprecated
                                 type: string
                               deleteKeypair:
+                                description: Deprecated
                                 type: boolean
                               name:
+                                description: Deprecated
                                 type: string
                               publicKey:
+                                description: Deprecated
                                 type: string
                               resourceId:
+                                description: Deprecated
                                 type: string
                             type: object
                           vm:
@@ -1622,6 +1778,8 @@ spec:
                                 type: string
                               volumeName:
                                 type: string
+                            required:
+                            - keypairName
                             type: object
                           volumes:
                             items:
@@ -1639,11 +1797,13 @@ spec:
                                   format: int32
                                   type: integer
                                 subregionName:
+                                  description: Deprecated
                                   type: string
                                 volumeType:
                                   type: string
                               required:
                               - device
+                              - size
                               type: object
                             type: array
                         type: object

@@ -31,13 +31,16 @@ type OscMachineSpec struct {
 
 // OscMachineStatus defines the observed state of OscMachine
 type OscMachineStatus struct {
-	Ready          bool                       `json:"ready,omitempty"`
-	Addresses      []corev1.NodeAddress       `json:"addresses,omitempty"`
-	FailureReason  *errors.MachineStatusError `json:"failureReason,omitempty"`
-	VmState        *VmState                   `json:"vmState,omitempty"`
-	Node           OscNodeResource            `json:"node,omitempty"`
-	FailureMessage *string                    `json:"failureMessage,omitempty"`
-	Conditions     clusterv1.Conditions       `json:"conditions,omitempty"`
+	Ready                bool                       `json:"ready,omitempty"`
+	Addresses            []corev1.NodeAddress       `json:"addresses,omitempty"`
+	FailureDomain        *string                    `json:"failureDomain,omitempty"`
+	FailureReason        *errors.MachineStatusError `json:"failureReason,omitempty"`
+	FailureMessage       *string                    `json:"failureMessage,omitempty"`
+	VmState              *VmState                   `json:"vmState,omitempty"`
+	Node                 OscNodeResource            `json:"node,omitempty"`
+	Resources            OscMachineResources        `json:"resources,omitempty"`
+	ReconcilerGeneration OscReconcilerGeneration    `json:"reconcilerGeneration,omitempty"`
+	Conditions           clusterv1.Conditions       `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true

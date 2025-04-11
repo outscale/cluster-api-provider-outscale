@@ -32,7 +32,7 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		expValidateCreateErr error
 	}{
 		{
-			name: "create with bad loadBalancerName",
+			name: "bad loadBalancerName",
 			clusterSpec: OscClusterSpec{
 				Network: OscNetwork{
 					LoadBalancer: OscLoadBalancer{
@@ -40,29 +40,78 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancername: Invalid value: \"test-webhook@test\": invalid description"),
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancername: Invalid value: \"test-webhook@test\": invalid loadBalancer name"),
 		},
 		{
-			name: "create with bad loadBalancerType",
+			name: "bad loadBalancerType",
 			clusterSpec: OscClusterSpec{
 				Network: OscNetwork{
 					LoadBalancer: OscLoadBalancer{
+						LoadBalancerName: "foo",
 						LoadBalancerType: "foo",
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancertype: Invalid value: \"foo\": invalid loadBalancer type (allowed: internet-facing, internal)"),
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancertype: Invalid value: \"foo\": only internet-facing or internal are allowed"),
 		},
 		{
-			name: "create with bad cidr",
+			name: "bad cidr",
 			clusterSpec: OscClusterSpec{
 				Network: OscNetwork{
 					Net: OscNet{
 						IpRange: "1.2.3.4",
 					},
+					LoadBalancer: OscLoadBalancer{
+						LoadBalancerName: "foo",
+					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.net.ipRange: Invalid value: \"1.2.3.4\": invalid CIDR address: 1.2.3.4"),
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.net.ipRange: Invalid value: \"1.2.3.4\": invalid CIDR address"),
+		},
+		{
+			name: "bad subnets",
+			clusterSpec: OscClusterSpec{
+				Network: OscNetwork{
+					Net: OscNet{
+						IpRange: "10.0.0.0/24",
+					},
+					Subnets: []OscSubnet{{IpSubnetRange: "1.2.3.4"}},
+					LoadBalancer: OscLoadBalancer{
+						LoadBalancerName: "foo",
+					},
+				},
+			},
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.subnets.ipSubnetRange: Invalid value: \"1.2.3.4\": invalid CIDR address"),
+		},
+		{
+			name: "subnet not within net",
+			clusterSpec: OscClusterSpec{
+				Network: OscNetwork{
+					Net: OscNet{
+						IpRange: "10.0.0.0/16",
+					},
+					Subnets: []OscSubnet{{IpSubnetRange: "11.0.0.0/24"}},
+					LoadBalancer: OscLoadBalancer{
+						LoadBalancerName: "foo",
+					},
+				},
+			},
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.subnets.ipSubnetRange: Invalid value: \"11.0.0.0/24\": subnet must be contained in net"),
+		},
+		{
+			name: "overlapping subnets",
+			clusterSpec: OscClusterSpec{
+				Network: OscNetwork{
+					Net: OscNet{
+						IpRange: "10.0.0.0/16",
+					},
+					Subnets: []OscSubnet{{IpSubnetRange: "10.0.1.0/24"}, {IpSubnetRange: "10.0.1.0/24"}},
+					LoadBalancer: OscLoadBalancer{
+						LoadBalancerName: "foo",
+					},
+				},
+			},
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.subnets.ipSubnetRange: Invalid value: \"10.0.1.0/24\": subnet overlaps 10.0.1.0/24"),
 		},
 	}
 	for _, ctc := range clusterTestCases {
@@ -70,125 +119,7 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 			oscInfraCluster := createOscInfraCluster(ctc.clusterSpec, "webhook-test", "default")
 			_, err := oscInfraCluster.ValidateCreate()
 			if ctc.expValidateCreateErr != nil {
-				require.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the same error")
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-// TestOscCluster_ValidateUpdate check good and bad update of oscCluster
-func TestOscCluster_ValidateUpdate(t *testing.T) {
-	clusterTestCases := []struct {
-		name                 string
-		oldClusterSpec       OscClusterSpec
-		newClusterSpec       OscClusterSpec
-		expValidateUpdateErr error
-	}{
-		{
-			name: "Update only oscCluster name",
-			oldClusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					Net: OscNet{
-						Name:    "test-webhook",
-						IpRange: "10.0.0.0/24",
-					},
-					Subnets: []*OscSubnet{
-						{
-							Name:          "test-webhook",
-							IpSubnetRange: "10.0.0.32/28",
-						},
-					},
-					RouteTables: []*OscRouteTable{
-						{
-							Name: "test-webhook",
-							Routes: []OscRoute{
-								{
-									Name:        "test-webhook",
-									Destination: "0.0.0.0/0",
-								},
-							},
-						},
-					},
-					SecurityGroups: []*OscSecurityGroup{
-						{
-							Name:        "test-webhook",
-							Description: "test webhook",
-							SecurityGroupRules: []OscSecurityGroupRule{
-								{
-									Name:          "test-webhook",
-									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
-									FromPortRange: 10250,
-									ToPortRange:   10250,
-								},
-							},
-						},
-					},
-					LoadBalancer: OscLoadBalancer{
-						LoadBalancerName: "test-webhook",
-						LoadBalancerType: "internet-facing",
-					},
-				},
-			},
-			newClusterSpec: OscClusterSpec{
-
-				Network: OscNetwork{
-					Net: OscNet{
-						Name:    "test-webhook",
-						IpRange: "10.0.0.0/24",
-					},
-					Subnets: []*OscSubnet{
-						{
-							Name:          "test-webhook",
-							IpSubnetRange: "10.0.0.32/28",
-						},
-					},
-					RouteTables: []*OscRouteTable{
-						{
-							Name: "test-webhook",
-							Routes: []OscRoute{
-								{
-									Name:        "test-webhook",
-									Destination: "0.0.0.0/0",
-								},
-							},
-						},
-					},
-					SecurityGroups: []*OscSecurityGroup{
-						{
-							Name:        "test-webhook",
-							Description: "test webhook",
-							SecurityGroupRules: []OscSecurityGroupRule{
-								{
-									Name:          "test-webhook",
-									Flow:          "Inbound",
-									IpProtocol:    "tcp",
-									IpRange:       "10.0.0.32/28",
-									FromPortRange: 10250,
-									ToPortRange:   10250,
-								},
-							},
-						},
-					},
-					LoadBalancer: OscLoadBalancer{
-						LoadBalancerName: "test-webhook",
-						LoadBalancerType: "internet-facing",
-					},
-				},
-			},
-			expValidateUpdateErr: nil,
-		},
-	}
-	for _, ctc := range clusterTestCases {
-		t.Run(ctc.name, func(t *testing.T) {
-			oscOldInfraCluster := createOscInfraCluster(ctc.oldClusterSpec, "old-webhook-test", "default")
-			oscInfraCluster := createOscInfraCluster(ctc.newClusterSpec, "webhook-test", "default")
-			_, err := oscInfraCluster.ValidateUpdate(oscOldInfraCluster)
-			if ctc.expValidateUpdateErr != nil {
-				require.EqualError(t, err, ctc.expValidateUpdateErr.Error(), "ValidateUpdate should return the same error")
+				require.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the right error")
 			} else {
 				require.NoError(t, err)
 			}

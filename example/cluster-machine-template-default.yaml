@@ -28,19 +28,10 @@ metadata:
   namespace: default
 spec:
   network:
-    clusterName: capo-quickstart
     subregionName: eu-west-2a
     loadBalancer:
       loadbalancername: capo-k8s
-      clusterName: capo-quickstart
-    net:
-      clusterName: capo-quickstart
-    internetService:
-      clusterName: capo-quickstart
-    natService:
-      clusterName: capo-quickstart
     bastion:
-      clusterName: capo-quickstart
       enable: false
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -78,20 +69,13 @@ spec:
   template:
     spec:
       node:
-        clusterName: capo-quickstart
         image:
           name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
-        keypair:
-          name: cluster-api-test
-          deleteKeypair: true
         vm:
-          clusterName: capo-quickstart
           rootDisk:
             rootDiskSize: 30
-            rootDiskIops: 1500
             rootDiskType: "gp2"
           keypairName: cluster-api-test
-          subregionName: eu-west-2a
           vmType: "tinav6.c2r4p2"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -103,22 +87,14 @@ spec:
   template:
     spec:
       node:
-        clusterName: capo-quickstart
         image:
           name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
-        keypair:
-          name: cluster-api-test
-          deleteKeypair: true
         vm:
-          clusterName: capo-quickstart
           keypairName: cluster-api-test
-          subregionName: eu-west-2a
           rootDisk:
             rootDiskSize: 30
-            rootDiskIops: 1500
             rootDiskType: "gp2"
           role: controlplane
-          loadBalancerName: capo-k8s
           vmType: "tinav6.c4r8p1"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
