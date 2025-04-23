@@ -81,6 +81,9 @@ type OscNetwork struct {
 	// Add SecurityGroup Rule after the cluster is created (unused)
 	// + optional
 	ExtraSecurityGroupRule bool `json:"extraSecurityGroupRule,omitempty"`
+	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
+	// + optional
+	AllowFromIPRanges []string `json:"allowFromIPRanges,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -224,9 +227,14 @@ type OscRouteTable struct {
 	// +optional
 	Name string `json:"name,omitempty"`
 	// The subnet tag name associate with a Subnet
-	Subnets       []string `json:"subnets,omitempty"`
-	Role          OscRole  `json:"role,omitempty"`
-	SubregionName string   `json:"subregionName,omitempty"`
+	// +optional
+	Subnets []string `json:"subnets,omitempty"`
+	// The role for this route table
+	// +optional
+	Role OscRole `json:"role,omitempty"`
+	// The subregion for this route table
+	// +optional
+	SubregionName string `json:"subregionName,omitempty"`
 	// The Route configuration
 	// +optional
 	Routes []OscRoute `json:"routes,omitempty"`
@@ -524,20 +532,13 @@ type OscRootDisk struct {
 
 type VmState string
 
-var (
+const (
 	VmStatePending      = VmState("pending")
 	VmStateRunning      = VmState("running")
 	VmStateShuttingDown = VmState("shutting-down")
 	VmStateTerminated   = VmState("terminated")
 	VmStateStopping     = VmState("stopping")
 	VmStateStopped      = VmState("stopped")
-
-	DefaultClusterName string = "cluster-api"
-
-	DefaultKeypairName string = "cluster-api-keypair"
-
-	DefaultVmName          string = "cluster-api-vm"
-	DefaultVmSubregionName string = "eu-west-2a"
 
 	DefaultVmType       string = "tinav6.c4r8p1"
 	DefaultRootDiskType string = "io1"
@@ -549,12 +550,13 @@ var (
 	DefaultRootDiskBastionSize int32  = 15
 
 	DefaultLoadBalancerType     string = "internet-facing"
-	DefaultLoadBalancerPort     int32  = 6443
 	DefaultLoadBalancerProtocol string = "TCP"
 	DefaultCheckInterval        int32  = 10
 	DefaultHealthyThreshold     int32  = 3
 	DefaultUnhealthyThreshold   int32  = 3
 	DefaultTimeout              int32  = 10
+
+	APIPort int32 = 6443
 )
 
 // SetDefaultValue set the vm default values
@@ -594,13 +596,13 @@ func (lb *OscLoadBalancer) SetDefaultValue() {
 		lb.LoadBalancerType = DefaultLoadBalancerType
 	}
 	if lb.Listener.BackendPort == 0 {
-		lb.Listener.BackendPort = DefaultLoadBalancerPort
+		lb.Listener.BackendPort = APIPort
 	}
 	if lb.Listener.BackendProtocol == "" {
 		lb.Listener.BackendProtocol = DefaultLoadBalancerProtocol
 	}
 	if lb.Listener.LoadBalancerPort == 0 {
-		lb.Listener.LoadBalancerPort = DefaultLoadBalancerPort
+		lb.Listener.LoadBalancerPort = APIPort
 	}
 	if lb.Listener.LoadBalancerProtocol == "" {
 		lb.Listener.LoadBalancerProtocol = DefaultLoadBalancerProtocol
@@ -621,6 +623,6 @@ func (lb *OscLoadBalancer) SetDefaultValue() {
 		lb.HealthCheck.Protocol = DefaultLoadBalancerProtocol
 	}
 	if lb.HealthCheck.Port == 0 {
-		lb.HealthCheck.Port = DefaultLoadBalancerPort
+		lb.HealthCheck.Port = APIPort
 	}
 }

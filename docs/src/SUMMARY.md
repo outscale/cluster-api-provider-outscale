@@ -4,6 +4,7 @@
     - [Configuring a cluster](./topics/config-cluster.md)
     - [Reusing existing resources](./topics/config-cluster-reuse.md)
     - [Configuring nodes](./topics/config-nodes.md)
+    - [Securing cluster access](./topics/config-security.md)
     - [Omi](./topics/omi.md)
     - [Troubleshooting](./topics/troubleshooting.md)
     - [Cluster-Autoscaler](./topics/cluster-autoscaler.md)

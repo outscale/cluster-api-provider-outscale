@@ -118,6 +118,11 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	controllerutil.AddFinalizer(osccluster, OscClusterFinalizer)
 	clusterScope.EnsureExplicitUID()
 
+	errs := infrastructurev1beta1.ValidateOscClusterSpec(osccluster.Spec)
+	if len(errs) > 0 {
+		return reconcile.Result{}, errs.ToAggregate()
+	}
+
 	// Reconcile each element of the cluster
 	_, err := r.reconcileNet(ctx, clusterScope)
 	if err != nil {
@@ -140,13 +145,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
 
-	_, err = r.reconcileSecurityGroup(ctx, clusterScope)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconcile securityGroups: %w", err)
-	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
-
 	// Add public route table to mark public subnet as public & enable NAT creation
 	_, err = r.reconcileRouteTable(ctx, clusterScope, infrastructurev1beta1.RoleLoadBalancer)
 	if err != nil {
@@ -168,6 +166,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		return reconcile.Result{}, fmt.Errorf("reconcile routeTables: %w", err)
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
+
+	// Security groups need NAT services to allow NAT to connect to LB.
+	_, err = r.reconcileSecurityGroup(ctx, clusterScope)
+	if err != nil {
+		conditions.MarkFalse(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition, infrastructurev1beta1.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+		return reconcile.Result{}, fmt.Errorf("reconcile securityGroups: %w", err)
+	}
+	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
 	_, err = r.reconcileLoadBalancer(ctx, clusterScope)
 	if err != nil {

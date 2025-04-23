@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250407052638-f3ae3e4c0f49
+    controller-gen.kubebuilder.io/version: v0.17.3-0.20250416153108-23dd517d714e
   name: oscclusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -57,6 +57,12 @@ spec:
                 type: object
               network:
                 properties:
+                  allowFromIPRanges:
+                    description: The list of IP ranges (in CIDR notation) to restrict
+                      bastion/Kubernetes API access to.
+                    items:
+                      type: string
+                    type: array
                   bastion:
                     description: The bastion configuration
                     properties:
@@ -129,9 +135,10 @@ spec:
                     type: array
                   extraSecurityGroupRule:
                     description: Add SecurityGroup Rule after the cluster is created
+                      (unused)
                     type: boolean
                   image:
-                    description: The image configuration
+                    description: The image configuration (unused)
                     properties:
                       accountId:
                         type: string
@@ -157,9 +164,10 @@ spec:
                     description: The Load Balancer configuration
                     properties:
                       clusterName:
+                        description: unused
                         type: string
                       healthCheck:
-                        description: The healthCheck configuration  of the Load Balancer
+                        description: The healthCheck configuration of the Load Balancer
                         properties:
                           checkinterval:
                             description: the time in second between two pings
@@ -188,10 +196,10 @@ spec:
                             type: integer
                         type: object
                       listener:
-                        description: The Listener cofiguration of the loadBalancer
+                        description: The Listener configuration of the loadBalancer
                         properties:
                           backendport:
-                            description: The port on which the backend vm will listen
+                            description: The port on which the backend VMs will listen
                             format: int32
                             type: integer
                           backendprotocol:
@@ -210,14 +218,13 @@ spec:
                         description: The Load Balancer unique name
                         type: string
                       loadbalancertype:
-                        description: The Load Balancer Type internet-facing or internal
+                        description: The Load Balancer type (internet-facing or internal)
                         type: string
                       securitygroupname:
-                        description: The security group tag name associate with a
-                          security group
+                        description: The security group name for the load-balancer
                         type: string
                       subnetname:
-                        description: The subnet tag name associate with a Subnet
+                        description: The subnet name where to add the load balancer.
                         type: string
                     type: object
                   natService:
@@ -241,7 +248,7 @@ spec:
                         type: string
                       subregionName:
                         description: The name of the Subregion to which the Nat Service
-                          will be attached, unless a subnet has been defined.
+                          will be attached, unless a subnet has been defined (unused)
                         type: string
                     type: object
                   natServices:
@@ -266,7 +273,8 @@ spec:
                           type: string
                         subregionName:
                           description: The name of the Subregion to which the Nat
-                            Service will be attached, unless a subnet has been defined.
+                            Service will be attached, unless a subnet has been defined
+                            (unused)
                           type: string
                       type: object
                     type: array
@@ -316,6 +324,7 @@ spec:
                           description: The Route Table Id response
                           type: string
                         role:
+                          description: The role for this route table
                           type: string
                         routes:
                           description: The Route configuration
@@ -347,6 +356,7 @@ spec:
                             type: string
                           type: array
                         subregionName:
+                          description: The subregion for this route table
                           type: string
                       type: object
                     type: array
@@ -437,7 +447,7 @@ spec:
                       type: object
                     type: array
                   subregionName:
-                    description: The subregion name
+                    description: The default subregion name
                     type: string
                 type: object
             type: object

@@ -85,18 +85,12 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 		return reconcile.Result{}, nil
 	}
 
-	securityGroupsSpec := clusterScope.GetSecurityGroups()
-	log.V(5).Info(fmt.Sprintf("%+v", securityGroupsSpec))
-	errs := infrastructurev1beta1.ValidateSecurityGroups(securityGroupsSpec, netSpec)
-	if len(errs) > 0 {
-		return reconcile.Result{}, errs.ToAggregate()
-	}
-
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
+	securityGroupsSpec := clusterScope.GetSecurityGroups()
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroup, err := r.Tracker.getSecurityGroup(ctx, securityGroupSpec, clusterScope)
 		switch {
@@ -107,12 +101,25 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
 			}
-			log.V(3).Info("Created securityGroup", "securityGroupId", securityGroup.GetSecurityGroupId())
+			log.V(2).Info("Created securityGroup", "securityGroupId", securityGroup.GetSecurityGroupId())
 			r.Tracker.setSecurityGroupId(clusterScope, securityGroupSpec, securityGroup.GetSecurityGroupId())
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		}
 		securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
+		if securityGroupSpec.HasRole(infrastructurev1beta1.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
+			ips, err := r.listNATPublicIPs(ctx, clusterScope, true)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("reconcile securityGroup: %w", err)
+			}
+			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta1.OscSecurityGroupRule{
+				Flow:          "Inbound",
+				IpProtocol:    "tcp",
+				FromPortRange: infrastructurev1beta1.APIPort,
+				ToPortRange:   infrastructurev1beta1.APIPort,
+				IpRanges:      ips,
+			})
+		}
 		if len(securityGroupRulesSpec) <= len(securityGroup.GetInboundRules())+len(securityGroup.GetOutboundRules()) {
 			log.V(4).Info("Same number of rules, not checking securityGroup rules", "securityGroupId", securityGroup.GetSecurityGroupId())
 			continue

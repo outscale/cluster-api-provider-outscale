@@ -35,10 +35,6 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		log.V(4).Info("No need for subnet reconciliation")
 		return reconcile.Result{}, nil
 	}
-	errs := infrastructurev1beta1.ValidateSubnets(clusterScope.GetSubnets(), clusterScope.GetNet())
-	if len(errs) > 0 {
-		return reconcile.Result{}, errs.ToAggregate()
-	}
 	log.V(4).Info("Reconciling subnets")
 
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)

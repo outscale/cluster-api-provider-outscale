@@ -49,11 +49,6 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	log.V(4).Info("Reconciling loadBalancer")
 
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	errs := infrastructurev1beta1.ValidateLoadbalancer(loadBalancerSpec)
-	if len(errs) > 0 {
-		return reconcile.Result{}, errs.ToAggregate()
-	}
-
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	svc := r.Cloud.LoadBalancer(ctx, *clusterScope)
 	loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)

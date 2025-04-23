@@ -48,3 +48,5 @@ spec:
       roles:
       - controlplane
       - worker
+    loadBalancer:
+      loadbalancername: test-cluster-api-k8s

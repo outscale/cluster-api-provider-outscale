@@ -36,11 +36,6 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 	}
 	log.V(4).Info("Reconciling net")
 
-	netSpec := clusterScope.GetNet()
-	errs := infrastructurev1beta1.ValidateNet(netSpec)
-	if len(errs) > 0 {
-		return reconcile.Result{}, errs.ToAggregate()
-	}
 	net, err := r.Tracker.getNet(ctx, clusterScope)
 	switch {
 	case errors.Is(err, ErrNoResourceFound):
@@ -52,6 +47,7 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 		return reconcile.Result{}, nil
 	}
 	log.V(3).Info("Creating net")
+	netSpec := clusterScope.GetNet()
 	net, err = r.Cloud.Net(ctx, *clusterScope).CreateNet(ctx, netSpec, clusterScope.GetUID(), clusterScope.GetNetName())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
