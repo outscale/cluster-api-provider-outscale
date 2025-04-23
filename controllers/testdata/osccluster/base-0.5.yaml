@@ -19,4 +19,6 @@ spec:
   network:
     bastion:
       enable: false
+    loadBalancer:
+      loadbalancername: test-cluster-api-k8s
     subregionName: eu-west-2a

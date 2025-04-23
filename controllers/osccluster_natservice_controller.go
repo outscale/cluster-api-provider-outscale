@@ -43,11 +43,6 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 	log.V(4).Info("Reconciling natServices")
 
 	natServiceSpecs := clusterScope.GetNatServices()
-	errs := infrastructurev1beta1.ValidateNatServices(natServiceSpecs, clusterScope.GetSubnets(), clusterScope.GetNet())
-	if len(errs) > 0 {
-		return reconcile.Result{}, errs.ToAggregate()
-	}
-
 	for _, natServiceSpec := range natServiceSpecs {
 		natService, err := r.Tracker.getNatService(ctx, natServiceSpec, clusterScope)
 		switch {
@@ -84,6 +79,29 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNatService)
 	return reconcile.Result{}, nil
+}
+
+func (r *OscClusterReconciler) listNATPublicIPs(ctx context.Context, clusterScope *scope.ClusterScope, cidr bool) ([]string, error) {
+	netId, err := r.Tracker.getNetId(ctx, clusterScope)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find net: %w", err)
+	}
+	natSvc := r.Cloud.NatService(ctx, *clusterScope)
+	nats, err := natSvc.ListNatServices(ctx, netId)
+	if err != nil {
+		return nil, fmt.Errorf("list natServices: %w", err)
+	}
+	ips := make([]string, 0, len(nats))
+	for _, nat := range nats {
+		for _, ip := range nat.GetPublicIps() {
+			pip := ip.GetPublicIp()
+			if cidr {
+				pip += "/32"
+			}
+			ips = append(ips, pip)
+		}
+	}
+	return ips, nil
 }
 
 // reconcileDeleteNatService reconcile the destruction of the NatService of the cluster.

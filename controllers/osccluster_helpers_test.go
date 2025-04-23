@@ -35,6 +35,12 @@ func patchUseExistingNet() patchOSCClusterFunc {
 	}
 }
 
+func patchRestrictIP(ips ...string) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.AllowFromIPRanges = ips
+	}
+}
+
 func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.Generation++
@@ -180,7 +186,14 @@ func mockCreatePublicIp(name, clusterID, publicIpId, publicIp string) mockFunc {
 	}
 }
 
-//nolint:unused
+func mockPublicIpFound(ip string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.PublicIpMock.EXPECT().
+			GetPublicIp(gomock.Any(), gomock.Eq(ip)).
+			Return(&osc.PublicIp{}, nil)
+	}
+}
+
 func mockDeletePublicIp(ip string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
@@ -286,13 +299,11 @@ func mockDeleteRouteTable(routeTableId string) mockFunc {
 	}
 }
 
-func mockListNatServices(netId, natId string) mockFunc {
+func mockListNatServices(netId string, nats []osc.NatService) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NatServiceMock.EXPECT().
 			ListNatServices(gomock.Any(), gomock.Eq(netId)).
-			Return([]osc.NatService{{
-				NatServiceId: ptr.To(natId),
-			}}, nil)
+			Return(nats, nil)
 	}
 }
 

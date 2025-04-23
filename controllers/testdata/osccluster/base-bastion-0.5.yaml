@@ -25,4 +25,6 @@ spec:
         rootDiskSize: 15
         rootDiskType: gp2
       vmType: "tinav6.c1r1p2"
+    loadBalancer:
+      loadbalancername: test-cluster-api-k8s
     subregionName: eu-west-2a

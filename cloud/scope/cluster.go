@@ -334,6 +334,11 @@ func (s *ClusterScope) GetRouteTables() []infrastructurev1beta1.OscRouteTable {
 	return rtbls
 }
 
+// HasIPRestriction returns true if AllowFromIps is set.
+func (s *ClusterScope) HasIPRestriction() bool {
+	return len(s.OscCluster.Spec.Network.AllowFromIPRanges) > 0
+}
+
 // GetSecurityGroups returns the list of all security groups for the cluster.
 func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
 	if len(s.OscCluster.Spec.Network.SecurityGroups) > 0 {
@@ -352,12 +357,16 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		}
 		allSN = append(allSN, sn.IpSubnetRange)
 	}
+	allowedIn := s.OscCluster.Spec.Network.AllowFromIPRanges
+	if len(allowedIn) == 0 {
+		allowedIn = []string{"0.0.0.0/0"}
+	}
 	lb := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-lb",
 		Description: "LB securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer},
 		SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRange: "0.0.0.0/0"},
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allowedIn},
 			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allSNCP},
 		},
 	}
@@ -409,7 +418,7 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		Description: "Bastion securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleBastion},
 		SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRange: "0.0.0.0/0"},
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: allowedIn},
 			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRange: s.GetNet().IpRange},
 		},
 	}

@@ -44,6 +44,7 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	allErrs = append(allErrs, ValidateNatServices(spec.Network.NatServices, spec.Network.Subnets, spec.Network.Net)...)
 	allErrs = append(allErrs, ValidateSecurityGroups(spec.Network.SecurityGroups, spec.Network.Net)...)
 	allErrs = append(allErrs, ValidateLoadbalancer(spec.Network.LoadBalancer)...)
+	allErrs = append(allErrs, ValidateAllowFromIPs(spec.Network.AllowFromIPRanges)...)
 	return allErrs
 }
 
@@ -173,6 +174,16 @@ func ValidateLoadbalancer(spec OscLoadBalancer) field.ErrorList {
 		Optional(ValidateRange(field.NewPath("network", "loadBalancer", "healthCheck", "healthythreshold"), spec.HealthCheck.HealthyThreshold, minThreshold, maxThreshold)),
 		Optional(ValidateRange(field.NewPath("network", "loadBalancer", "healthCheck", "unhealthythreshold"), spec.HealthCheck.UnhealthyThreshold, minThreshold, maxThreshold)),
 	)
+	return erl
+}
+
+func ValidateAllowFromIPs(ips []string) field.ErrorList {
+	var erl field.ErrorList
+	for _, ip := range ips {
+		erl = AppendValidation(erl,
+			ValidateCidr(field.NewPath("allowFromIPRanges"), ip),
+		)
+	}
 	return erl
 }
 
