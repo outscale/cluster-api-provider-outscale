@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/benbjohnson/clock"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
@@ -38,7 +36,6 @@ type OscPublicIpInterface interface {
 	GetPublicIp(ctx context.Context, publicIpId string) (*osc.PublicIp, error)
 	LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error)
 	UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error
-	CheckPublicIpUnlink(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error
 }
 
 // CreatePublicIp retrieve a publicip associated with you account
@@ -298,29 +295,6 @@ func (s *Service) UnlinkPublicIp(ctx context.Context, linkPublicIpId string) err
 	waitErr := wait.ExponentialBackoff(backoff, unlinkPublicIpCallBack)
 	if waitErr != nil {
 		return waitErr
-	}
-	return nil
-}
-
-// CheckPublicIpUnlink check publicIp is unlinked
-func (s *Service) CheckPublicIpUnlink(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, publicIpId string) error {
-	clock_time := clock.New()
-	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	getPublicIpUnlink := false
-	for !getPublicIpUnlink {
-		publicIp, err := s.GetPublicIp(ctx, publicIpId)
-		if err != nil {
-			return err
-		}
-		_, ok := publicIp.GetLinkPublicIpIdOk()
-		if !ok {
-			break
-		}
-		time.Sleep(clockInsideLoop * time.Second)
-
-		if clock_time.Now().After(currentTimeout) {
-			return errors.New("PublicIp is still link")
-		}
 	}
 	return nil
 }

@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/benbjohnson/clock"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
@@ -439,28 +437,6 @@ func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructur
 	waitErr := wait.ExponentialBackoff(backoff, deleteLoadBalancerTagCallBack)
 	if waitErr != nil {
 		return waitErr
-	}
-	return nil
-}
-
-// CheckLoadBalancerDeregisterVm check vm is deregister as vm backend in loadBalancer
-func (s *Service) CheckLoadBalancerDeregisterVm(ctx context.Context, clockInsideLoop time.Duration, clockLoop time.Duration, spec *infrastructurev1beta1.OscLoadBalancer) error {
-	clock_time := clock.New()
-	currentTimeout := clock_time.Now().Add(time.Second * clockLoop)
-	getLoadBalancerDeregisterVm := false
-	for !getLoadBalancerDeregisterVm {
-		time.Sleep(clockInsideLoop * time.Second)
-		loadBalancer, err := s.GetLoadBalancer(ctx, spec.LoadBalancerName)
-		if err != nil {
-			return err
-		}
-		loadBalancerBackendVmIds := loadBalancer.GetBackendVmIds()
-		if len(loadBalancerBackendVmIds) == 0 {
-			break
-		}
-		if clock_time.Now().After(currentTimeout) {
-			return errors.New("vm is still register")
-		}
 	}
 	return nil
 }
