@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:experimental
 
+# Distroless debug is used to get a busybox shell
+ARG RUNTIME_IMAGE_TAG=debug-dca9008b864a381b5ce97196a4d8399ac3c2fa65
+
 # Copyright 2022 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # Build the manager binary
-FROM golang:1.23 as builder
+FROM golang:1.23 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -33,18 +36,18 @@ COPY controllers/ controllers/
 COPY cloud/ cloud/
 COPY util/ util/
 # Build
-ARG LDFLAGS
+ARG LDFLAGS="-s -w"
 ARG ARCH=amd64
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.local/share/golang \
-    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags "${LDFLAGS} -extldflags '-static'"  -o manager .
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags "${LDFLAGS}"  -o manager .
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM alpine:3.18
-ARG VERSION=${VERSION}
+FROM gcr.io/distroless/static-debian12:${RUNTIME_IMAGE_TAG}
+ARG VERSION=dev
 ENV VERSION=${VERSION}
 WORKDIR /
 COPY --from=builder /workspace/manager .
