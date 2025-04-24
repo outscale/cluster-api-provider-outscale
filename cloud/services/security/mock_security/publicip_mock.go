@@ -42,18 +42,18 @@ func (m *MockOscPublicIpInterface) EXPECT() *MockOscPublicIpInterfaceMockRecorde
 }
 
 // CreatePublicIp mocks base method.
-func (m *MockOscPublicIpInterface) CreatePublicIp(ctx context.Context, publicIpName, clusterUUID string) (*osc.PublicIp, error) {
+func (m *MockOscPublicIpInterface) CreatePublicIp(ctx context.Context, publicIpName, clusterID string) (*osc.PublicIp, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePublicIp", ctx, publicIpName, clusterUUID)
+	ret := m.ctrl.Call(m, "CreatePublicIp", ctx, publicIpName, clusterID)
 	ret0, _ := ret[0].(*osc.PublicIp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePublicIp indicates an expected call of CreatePublicIp.
-func (mr *MockOscPublicIpInterfaceMockRecorder) CreatePublicIp(ctx, publicIpName, clusterUUID any) *gomock.Call {
+func (mr *MockOscPublicIpInterfaceMockRecorder) CreatePublicIp(ctx, publicIpName, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CreatePublicIp), ctx, publicIpName, clusterUUID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CreatePublicIp), ctx, publicIpName, clusterID)
 }
 
 // DeletePublicIp mocks base method.
@@ -85,6 +85,21 @@ func (mr *MockOscPublicIpInterfaceMockRecorder) GetPublicIp(ctx, publicIpId any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).GetPublicIp), ctx, publicIpId)
 }
 
+// GetPublicIpByIp mocks base method.
+func (m *MockOscPublicIpInterface) GetPublicIpByIp(ctx context.Context, publicIp string) (*osc.PublicIp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublicIpByIp", ctx, publicIp)
+	ret0, _ := ret[0].(*osc.PublicIp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPublicIpByIp indicates an expected call of GetPublicIpByIp.
+func (mr *MockOscPublicIpInterfaceMockRecorder) GetPublicIpByIp(ctx, publicIp any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicIpByIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).GetPublicIpByIp), ctx, publicIp)
+}
+
 // LinkPublicIp mocks base method.
 func (m *MockOscPublicIpInterface) LinkPublicIp(ctx context.Context, publicIpId, vmId string) (string, error) {
 	m.ctrl.T.Helper()
@@ -98,6 +113,21 @@ func (m *MockOscPublicIpInterface) LinkPublicIp(ctx context.Context, publicIpId,
 func (mr *MockOscPublicIpInterfaceMockRecorder) LinkPublicIp(ctx, publicIpId, vmId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).LinkPublicIp), ctx, publicIpId, vmId)
+}
+
+// ListPublicIpsFromPool mocks base method.
+func (m *MockOscPublicIpInterface) ListPublicIpsFromPool(ctx context.Context, pool string) ([]osc.PublicIp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPublicIpsFromPool", ctx, pool)
+	ret0, _ := ret[0].([]osc.PublicIp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPublicIpsFromPool indicates an expected call of ListPublicIpsFromPool.
+func (mr *MockOscPublicIpInterfaceMockRecorder) ListPublicIpsFromPool(ctx, pool any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPublicIpsFromPool", reflect.TypeOf((*MockOscPublicIpInterface)(nil).ListPublicIpsFromPool), ctx, pool)
 }
 
 // UnlinkPublicIp mocks base method.

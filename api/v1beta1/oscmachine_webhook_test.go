@@ -38,7 +38,6 @@ func TestOscMachine_ValidateCreate(t *testing.T) {
 					Vm: OscVm{
 						ImageId:     "ami-01234567",
 						KeypairName: "test-webhook",
-						DeviceName:  "/dev/xvdb",
 						VmType:      "tinav4.c2r4p2",
 					},
 				},
@@ -235,7 +234,6 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 					Vm: OscVm{
 						KeypairName: "test-webhook",
 						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/xvda",
 						VmType:      "tinav4.c2r4p2",
 					},
 					Volumes: []OscVolume{
@@ -253,7 +251,6 @@ func TestOscMachine_ValidateUpdate(t *testing.T) {
 					Vm: OscVm{
 						KeypairName: "test-webhook",
 						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/xvda",
 						VmType:      "tinav4.c2r4p2",
 					},
 					Volumes: []OscVolume{

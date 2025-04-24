@@ -22,7 +22,9 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 	case err != nil:
 		return nil, err
 	case vm != nil:
-		return vm, nil
+		t.trackVm(machineScope, vm)
+		err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, vm.GetPublicIp(), clusterScope)
+		return vm, err
 	}
 	vm, err = t.Cloud.VM(ctx, *clusterScope).GetVm(ctx, id)
 	switch {
@@ -31,7 +33,9 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 	case vm == nil:
 		return nil, fmt.Errorf("get vm %s: %w", id, ErrMissingResource)
 	default:
-		return vm, nil
+		t.trackVm(machineScope, vm)
+		err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, vm.GetPublicIp(), clusterScope)
+		return vm, err
 	}
 }
 
@@ -53,7 +57,6 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 	case err != nil:
 		return nil, "", fmt.Errorf("get vm from client token: %w", err)
 	case vm != nil:
-		t.setVmId(machineScope, vm.GetVmId())
 		return vm, vm.GetVmId(), nil
 	}
 	// Search by name (retrocompatibility)
@@ -63,10 +66,14 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 		return nil, "", fmt.Errorf("get vm: %w", err)
 	}
 	if tg.GetResourceId() != "" {
-		t.setVmId(machineScope, tg.GetResourceId())
 		return nil, tg.GetResourceId(), nil
 	}
 	return nil, "", fmt.Errorf("get vm: %w", ErrNoResourceFound)
+}
+
+func (t *MachineResourceTracker) trackVm(machineScope *scope.MachineScope, vm *osc.Vm) {
+	t.setVmId(machineScope, vm.GetVmId())
+	t.setVolumeIds(machineScope, vm.GetBlockDeviceMappings())
 }
 
 func (t *MachineResourceTracker) setVmId(machineScope *scope.MachineScope, id string) {
@@ -120,4 +127,38 @@ func (t *MachineResourceTracker) setImageId(machineScope *scope.MachineScope, im
 		rsrc.Image = map[string]string{}
 	}
 	rsrc.Image[defaultResource] = imageId
+}
+
+func (t *MachineResourceTracker) IPAllocator(machineScope *scope.MachineScope) IPAllocatorInterface {
+	return &IPAllocator{
+		Cloud: t.Cloud,
+		getPublicIP: func(key string) (id string, found bool) {
+			rsrc := machineScope.GetResources()
+			if rsrc.PublicIPs == nil {
+				return "", false
+			}
+			ip := rsrc.PublicIPs[key]
+			return ip, ip != ""
+		},
+		setPublicIP: func(key, id string) {
+			rsrc := machineScope.GetResources()
+			if rsrc.PublicIPs == nil {
+				rsrc.PublicIPs = map[string]string{}
+			}
+			rsrc.PublicIPs[key] = id
+		},
+	}
+}
+
+func (t *MachineResourceTracker) getPublicIps(machineScope *scope.MachineScope) map[string]string {
+	rsrc := machineScope.GetResources()
+	return rsrc.PublicIPs
+}
+
+func (t *MachineResourceTracker) untrackIP(machineScope *scope.MachineScope, name string) {
+	rsrc := machineScope.GetResources()
+	if rsrc.PublicIPs == nil {
+		return
+	}
+	delete(rsrc.PublicIPs, name)
 }

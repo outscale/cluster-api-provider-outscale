@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -131,40 +132,6 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	vmSpec := machineScope.GetVm()
 
-	// TODO: rebuild public IP allocation.
-
-	// var publicIpId string
-	// var vmPublicIpName string
-	// if vmSpec.PublicIp {
-	// 	vmSpec.PublicIpName = vmSpec.Name + "-publicIp"
-	// 	vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-	// 	var ipFound bool
-	// 	publicIpIdRef := machineScope.GetPublicIpIdRef()
-	// 	publicIpId, ipFound = publicIpIdRef.ResourceMap[vmPublicIpName]
-	// 	if !ipFound {
-	// 		publicIp, err := publicIpSvc.CreatePublicIp(ctx, vmPublicIpName)
-	// 		if err != nil {
-	// 			return reconcile.Result{}, fmt.Errorf("cannot create publicIp for Vm : %w", err)
-	// 		}
-	// 		log.V(4).Info("Get publicIp for Vm", "publicip", publicIp)
-	// 		publicIpId = publicIp.GetPublicIpId()
-
-	// 		if len(publicIpIdRef.ResourceMap) == 0 {
-	// 			publicIpIdRef.ResourceMap = make(map[string]string)
-	// 		}
-	// 		publicIpIdRef.ResourceMap[vmPublicIpName] = publicIpId
-	// 	}
-	// }
-	// if vmSpec.PublicIpName != "" {
-	// 	vmPublicIpName = vmSpec.PublicIpName + "-" + clusterScope.GetUID()
-	// 	if publicIpId == "" {
-	// 		publicIpId, err = getPublicIpResourceId(vmPublicIpName, clusterScope)
-	// 		if err != nil {
-	// 			return reconcile.Result{}, err
-	// 		}
-	// 	}
-	// }
-
 	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
 	switch {
 	case err == nil:
@@ -215,9 +182,23 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			return reconcile.Result{}, err
 		}
 		vmName := machineScope.GetName()
+		vmTags := vmSpec.Tags
+
+		if vmSpec.PublicIp {
+			_, publicIp, err := r.Tracker.IPAllocator(machineScope).AllocateIP(ctx, defaultResource, vmName, vmSpec.PublicIpPool, clusterScope)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
+			}
+			// we need to clone the map to avoid changing the spec...
+			if vmTags == nil {
+				vmTags = map[string]string{}
+			} else {
+				vmTags = maps.Clone(vmTags)
+			}
+			vmTags[compute.AutoAttachExternapIPTag] = publicIp
+		}
 		keypairName := vmSpec.KeypairName
 		vmType := vmSpec.VmType
-		vmTags := vmSpec.Tags
 		volumes := machineScope.GetVolumes()
 		clientToken := machineScope.GetClientToken(clusterScope)
 		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
@@ -226,8 +207,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
 		}
 		vmId := vm.GetVmId()
-		r.Tracker.setVmId(machineScope, vmId)
-		r.Tracker.setVolumeIds(machineScope, vm.GetBlockDeviceMappings())
+		r.Tracker.trackVm(machineScope, vm)
 		machineScope.SetVmState(infrastructurev1beta1.VmStatePending)
 		machineScope.SetProviderID(vmSpec.SubregionName, vmId)
 		log.V(2).Info("VM created", "vmId", vmId)
@@ -238,16 +218,6 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	}
 
 	machineScope.SetReady()
-
-	// if vmSpec.PublicIpName != "" && linkPublicIpRef.ResourceMap[vmPublicIpName] == "" {
-	// 	log.V(2).Info("Linking public ip", "publicIpId", publicIpId)
-	// 	linkPublicIpId, err := publicIpSvc.LinkPublicIp(ctx, publicIpId, vmId)
-	// 	if err != nil {
-	// 		return reconcile.Result{}, fmt.Errorf("cannot link publicIp %s with %s: %w", publicIpId, vmId, err)
-	// 	}
-	// 	log.V(4).Info("Linked public ip", "linkPublicIpId", linkPublicIpId)
-	// 	linkPublicIpRef.ResourceMap[vmPublicIpName] = linkPublicIpId
-	// }
 
 	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane {
 		svc := r.Cloud.LoadBalancer(ctx, *clusterScope)

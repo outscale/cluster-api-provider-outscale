@@ -6,8 +6,10 @@ import (
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
+	"github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -17,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -217,6 +220,126 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 			},
 		},
+
+		// Public IPs
+		{
+			name:        "Creating a vm with a dynamic public IP",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUsePublicIP(),
+			},
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockCreatePublicIp("cluster-api-test-worker", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-worker", "1.2.3.4"),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+					compute.AutoAttachExternapIPTag: "1.2.3.4",
+				}),
+			},
+			hasError: true,
+			machineAsserts: []assertOSCMachineFunc{
+				assertHasMachineFinalizer(),
+				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+			},
+			next: &testcase{
+				mockFuncs: []mockFunc{
+					mockGetVm("i-foo", "running"),
+					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				},
+				machineAsserts: []assertOSCMachineFunc{
+					assertHasMachineFinalizer(),
+					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+						Image: map[string]string{
+							"default": "ami-foo",
+						},
+						Vm: map[string]string{
+							"default": "i-foo",
+						},
+						PublicIPs: map[string]string{
+							"default": "ipalloc-worker",
+						},
+						Volumes: map[string]string{
+							"/dev/sda1": "vol-foo",
+						},
+					}),
+				},
+			},
+		},
+		{
+			name:        "Creating a vm with a public IP from a pool",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUsePublicIP("pool-foo"),
+			},
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: ptr.To("ipalloc-foo"), PublicIp: ptr.To("1.2.3.4")}}),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+					compute.AutoAttachExternapIPTag: "1.2.3.4",
+				}),
+			},
+			hasError: true,
+			machineAsserts: []assertOSCMachineFunc{
+				assertHasMachineFinalizer(),
+				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+			},
+			next: &testcase{
+				mockFuncs: []mockFunc{
+					mockGetVm("i-foo", "running"),
+					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				},
+				machineAsserts: []assertOSCMachineFunc{
+					assertHasMachineFinalizer(),
+					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+						Image: map[string]string{
+							"default": "ami-foo",
+						},
+						Vm: map[string]string{
+							"default": "i-foo",
+						},
+						PublicIPs: map[string]string{
+							"default": "ipalloc-foo",
+						},
+						Volumes: map[string]string{
+							"/dev/sda1": "vol-foo",
+						},
+					}),
+				},
+			},
+		},
+		{
+			name:        "When the IP pool is empty, an error is returned",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUsePublicIP("pool-foo"),
+			},
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{}),
+			},
+			hasError: true,
+		},
+		{
+			name:        "When the IP pool is fully used, an error is returned",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUsePublicIP("pool-foo"),
+			},
+			mockFuncs: []mockFunc{
+				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{LinkPublicIpId: ptr.To("ipassoc-foo"), PublicIp: ptr.To("1.2.3.4")}}),
+			},
+			hasError: true,
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
@@ -229,13 +352,141 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 	tcs := []testcase{
 		{
 			name:        "worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker",
-			machinePatches: []patchOSCMachineFunc{patchMoveMachine()},
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.4",
+			machineBaseSpec: "ready-worker",
+			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
 				mockGetVm("i-046f4bd0", "running"),
 				mockVmReadCCMTag(true),
 			},
-			machineAsserts: []assertOSCMachineFunc{},
+			machineAsserts: []assertOSCMachineFunc{
+				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+					Vm: map[string]string{
+						"default": "i-046f4bd0",
+					},
+					Volumes: map[string]string{
+						"/dev/sda1": "vol-foo",
+					},
+				}),
+			},
+		},
+		{
+			name:        "0.5 worker has been moved by clusterctl move, status is updated",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			machineBaseSpec: "ready-worker",
+			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
+			mockFuncs: []mockFunc{
+				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
+					VmId:  ptr.To("i-worker"),
+					State: ptr.To("running"),
+				}),
+				mockVmReadCCMTag(true),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+					Vm: map[string]string{
+						"default": "i-worker",
+					},
+					Volumes: map[string]string{
+						"/dev/sda1": "vol-foo",
+					},
+				}),
+			},
+		},
+		{
+			name:        "0.5 worker has been moved by clusterctl move, status is updated",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			machineBaseSpec: "ready-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchMoveMachine(),
+				patchUsePublicIP(),
+			},
+			mockFuncs: []mockFunc{
+				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
+					VmId:     ptr.To("i-worker"),
+					PublicIp: ptr.To("1.2.3.4"),
+					State:    ptr.To("running"),
+				}),
+				mockGetPublicIpByIp("1.2.3.4", "ipalloc-worker"),
+				mockVmReadCCMTag(true),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+					Vm: map[string]string{
+						"default": "i-worker",
+					},
+					PublicIPs: map[string]string{
+						"default": "ipalloc-worker",
+					},
+					Volumes: map[string]string{
+						"/dev/sda1": "vol-foo",
+					},
+				}),
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			runMachineTest(t, tc)
+		})
+	}
+}
+
+func TestReconcileOSCMachine_Delete(t *testing.T) {
+	tcs := []testcase{
+		{
+			name:        "deleting a 0.4 machine",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.4",
+			machineBaseSpec: "ready-worker",
+			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", "running"),
+				mockDeleteVm("i-046f4bd0"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "deleting a 0.5 machine",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			machineBaseSpec: "ready-worker",
+			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", "running"),
+				mockDeleteVm("i-046f4bd0"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "deleting a 0.5 machine with a public ip",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			machineBaseSpec: "ready-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchDeleteMachine(),
+				patchUsePublicIP(),
+				patchPublicIPStatus("ipalloc-worker"),
+			},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", "running"),
+				mockDeleteVm("i-046f4bd0"),
+				mockPublicIpFound("ipalloc-worker"),
+				mockDeletePublicIp("ipalloc-worker"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "deleting a 0.5 machine with a public ip from a pool",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			machineBaseSpec: "ready-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchDeleteMachine(),
+				patchUsePublicIP("pool-foo"),
+				patchPublicIPStatus("ipalloc-worker"),
+			},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", "running"),
+				mockDeleteVm("i-046f4bd0"),
+			},
+			assertDeleted: true,
 		},
 	}
 	for _, tc := range tcs {

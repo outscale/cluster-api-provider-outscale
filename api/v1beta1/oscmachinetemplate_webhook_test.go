@@ -38,7 +38,6 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					Vm: OscVm{
 						ImageId:     "ami-01234567",
 						KeypairName: "test-webhook",
-						DeviceName:  "/dev/xvdb",
 						VmType:      "tinav3.c2r4p2",
 						Tags:        map[string]string{"key1": "value1"},
 					},
@@ -269,7 +268,6 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					Vm: OscVm{
 						KeypairName: "test-webhook",
 						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/xvda",
 						VmType:      "tinav3.c2r4p2",
 						PublicIp:    false,
 					},
@@ -288,7 +286,6 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					Vm: OscVm{
 						KeypairName: "test-webhook",
 						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/xvda",
 						VmType:      "tinav3.c2r4p2",
 					},
 					Volumes: []OscVolume{
@@ -309,7 +306,6 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					Vm: OscVm{
 						KeypairName: "test-webhook-1",
 						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/xvda",
 						VmType:      "tinav3.c2r4p2",
 					},
 				},
@@ -319,7 +315,6 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					Vm: OscVm{
 						KeypairName: "test-webhook-2",
 						ImageId:     "ami-00000000",
-						DeviceName:  "/dev/xvda",
 						VmType:      "tinav3.c2r4p2",
 					},
 				},

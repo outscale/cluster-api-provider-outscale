@@ -24,7 +24,7 @@ func patchDeleteCluster() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.DeletionTimestamp = ptr.To(metav1.Now())
 		if len(m.Finalizers) == 0 {
-			m.Finalizers = []string{"oscclusters.infrastructure.cluster.x-k8s.io"}
+			m.Finalizers = []string{controllers.OscClusterFinalizer}
 		}
 	}
 }
@@ -174,30 +174,6 @@ func mockDeleteInternetService(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.InternetServiceMock.EXPECT().
 			DeleteInternetService(gomock.Any(), gomock.Eq(id)).
-			Return(nil)
-	}
-}
-
-func mockCreatePublicIp(name, clusterID, publicIpId, publicIp string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.PublicIpMock.EXPECT().
-			CreatePublicIp(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterID)).
-			Return(&osc.PublicIp{PublicIpId: &publicIpId, PublicIp: &publicIp}, nil)
-	}
-}
-
-func mockPublicIpFound(ip string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.PublicIpMock.EXPECT().
-			GetPublicIp(gomock.Any(), gomock.Eq(ip)).
-			Return(&osc.PublicIp{}, nil)
-	}
-}
-
-func mockDeletePublicIp(ip string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.PublicIpMock.EXPECT().
-			DeletePublicIp(gomock.Any(), gomock.Eq(ip)).
 			Return(nil)
 	}
 }
@@ -410,11 +386,11 @@ func mockDeleteLoadBalancer(name string) mockFunc {
 	}
 }
 
-func mockReadOwnedByTagNoneFound(rsrcType tag.ResourceType, clusterID string) mockFunc {
+func mockReadOwnedByTag(rsrcType tag.ResourceType, clusterID string, tag *osc.Tag) mockFunc {
 	return func(s *MockCloudServices) {
 		s.TagMock.EXPECT().
 			ReadOwnedByTag(gomock.Any(), gomock.Eq(rsrcType), gomock.Eq(clusterID)).
-			Return(nil, nil).MinTimes(1)
+			Return(tag, nil).MinTimes(1)
 	}
 }
 
@@ -440,7 +416,7 @@ func mockCreateVmBastion(vmId, subnetId string, securityGroupIds, privateIps []s
 	}
 }
 
-func assertStatusResources(rsrcs infrastructurev1beta1.OscClusterResources) assertOSCClusterFunc {
+func assertStatusClusterResources(rsrcs infrastructurev1beta1.OscClusterResources) assertOSCClusterFunc {
 	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
 		assert.Equal(t, rsrcs, c.Status.Resources)
 	}

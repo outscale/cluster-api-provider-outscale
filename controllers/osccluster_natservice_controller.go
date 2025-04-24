@@ -54,7 +54,8 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 			continue
 		}
 
-		publicIpId, _, err := r.Tracker.allocateIP(ctx, clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope)
+		publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
+			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), "", clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 		}
@@ -128,14 +129,6 @@ func (r *OscClusterReconciler) reconcileDeleteNatService(ctx context.Context, cl
 	for _, nat := range nats {
 		if nat.GetState() == "deleted" {
 			continue
-		}
-		// Status may have been reset, and IP tracking lost, we need to rebuild it.
-		for _, ip := range nat.GetPublicIps() {
-			name := nat.GetClientToken()
-			if name == "" {
-				name = nat.GetNatServiceId()
-			}
-			r.Tracker.trackIP(clusterScope, name, ip.GetPublicIpId())
 		}
 		log.V(2).Info("Deleting natService", "natId", nat.GetNatServiceId())
 		err = natSvc.DeleteNatService(ctx, nat.GetNatServiceId())
