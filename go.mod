@@ -6,22 +6,22 @@ require (
 	github.com/benbjohnson/clock v1.3.0
 	github.com/onsi/ginkgo/v2 v2.19.1
 	github.com/onsi/gomega v1.34.0
-	github.com/outscale/osc-sdk-go/v2 v2.25.0
+	github.com/outscale/osc-sdk-go/v2 v2.26.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.0
 	k8s.io/api v0.30.9
 	k8s.io/apimachinery v0.30.9
 	k8s.io/client-go v0.30.9
-	k8s.io/klog/v2 v2.120.1
+	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.30.3
-	sigs.k8s.io/cluster-api v1.8.1
-	sigs.k8s.io/cluster-api/test v1.8.1
-	sigs.k8s.io/controller-runtime v0.18.5
+	sigs.k8s.io/cluster-api v1.8.12
+	sigs.k8s.io/cluster-api/test v1.8.12
+	sigs.k8s.io/controller-runtime v0.18.7
 )
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
@@ -29,10 +29,10 @@ require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/adrg/xdg v0.5.0 // indirect
-	github.com/alessio/shellescape v1.4.1 // indirect
+	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230321174746-8dcc6526cfb1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go v1.55.6 // indirect
+	github.com/aws/aws-sdk-go v1.55.7 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
@@ -105,7 +105,7 @@ require (
 	gotest.tools/v3 v3.5.1 // indirect
 	k8s.io/apiserver v0.30.9 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.30.0 // indirect
-	sigs.k8s.io/kind v0.23.0 // indirect
+	sigs.k8s.io/kind v0.24.0 // indirect
 )
 
 require (
@@ -136,8 +136,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.36.0
-	golang.org/x/oauth2 v0.26.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/oauth2 v0.29.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
@@ -189,5 +189,4 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.30.9
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.30.9
 	k8s.io/sample-controller => k8s.io/sample-controller v0.30.9
-	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.8.1
 )
