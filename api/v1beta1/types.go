@@ -422,9 +422,10 @@ type OscNodeResource struct {
 }
 
 type OscMachineResources struct {
-	Vm      map[string]string `json:"vm,omitempty"`
-	Image   map[string]string `json:"image,omitempty"`
-	Volumes map[string]string `json:"volumes,omitempty"`
+	Vm        map[string]string `json:"vm,omitempty"`
+	Image     map[string]string `json:"image,omitempty"`
+	Volumes   map[string]string `json:"volumes,omitempty"`
+	PublicIPs map[string]string `json:"publicIps,omitempty"`
 }
 
 type OscImage struct {
@@ -472,23 +473,31 @@ type OscVm struct {
 	ImageId string `json:"imageId,omitempty"`
 	// The keypair name
 	// +kubebuilder:validation:Required
-	KeypairName      string      `json:"keypairName"`
-	VmType           string      `json:"vmType,omitempty"`
-	VolumeName       string      `json:"volumeName,omitempty"`
-	VolumeDeviceName string      `json:"volumeDeviceName,omitempty"`
-	DeviceName       string      `json:"deviceName,omitempty"`
-	SubnetName       string      `json:"subnetName,omitempty"`
-	RootDisk         OscRootDisk `json:"rootDisk,omitempty"`
+	KeypairName string `json:"keypairName,omitempty"`
+	VmType      string `json:"vmType,omitempty"`
 	// unused
-	LoadBalancerName   string                    `json:"loadBalancerName,omitempty"`
-	PublicIpName       string                    `json:"publicIpName,omitempty"`
-	PublicIp           bool                      `json:"publicIp,omitempty"`
+	VolumeName string `json:"volumeName,omitempty"`
+	// unused
+	VolumeDeviceName string `json:"volumeDeviceName,omitempty"`
+	// unused
+	DeviceName string      `json:"deviceName,omitempty"`
+	SubnetName string      `json:"subnetName,omitempty"`
+	RootDisk   OscRootDisk `json:"rootDisk,omitempty"`
+	// unused
+	LoadBalancerName string `json:"loadBalancerName,omitempty"`
+	// unused
+	PublicIpName string `json:"publicIpName,omitempty"`
+	// If set, a public IP will be configured.
+	PublicIp bool `json:"publicIp,omitempty"`
+	// The name of the pool from which public IPs will be picked.
+	PublicIpPool       string                    `json:"publicIpPool,omitempty"`
 	SubregionName      string                    `json:"subregionName,omitempty"`
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	ResourceId         string                    `json:"resourceId,omitempty"`
 	// The node role (controlplane or worker, worker by default).
-	Role        OscRole           `json:"role,omitempty"`
+	Role OscRole `json:"role,omitempty"`
+	// unused
 	ClusterName string            `json:"clusterName,omitempty"`
 	Replica     int32             `json:"replica,omitempty"`
 	Tags        map[string]string `json:"tags,omitempty"`

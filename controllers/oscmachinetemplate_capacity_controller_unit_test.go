@@ -47,7 +47,6 @@ var (
 						Name:        "test-vm",
 						ImageId:     "ami-00000000",
 						Role:        "controlplane",
-						DeviceName:  "/dev/sda1",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
@@ -57,7 +56,6 @@ var (
 						SubregionName:    "eu-west-2a",
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
-						PublicIpName:     "test-publicip",
 						VmType:           "tinav3.c2r4p2",
 						Replica:          1,
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{

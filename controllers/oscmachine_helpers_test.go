@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -20,6 +21,13 @@ const (
 	defaultPrivateIp      = "10.0.3.144"
 	defaultRootVolumeId   = "vol-foo"
 )
+
+var defaultVolumes = []osc.BlockDeviceMappingCreated{{
+	DeviceName: ptr.To("/dev/sda1"),
+	Bsu: &osc.BsuCreated{
+		VolumeId: ptr.To(string(defaultRootVolumeId)),
+	},
+}}
 
 func patchVmExists(vmId string, state v1beta1.VmState, ready bool) patchOSCMachineFunc {
 	return func(m *v1beta1.OscMachine) {
@@ -36,6 +44,33 @@ func patchMoveMachine() patchOSCMachineFunc {
 	}
 }
 
+func patchUsePublicIP(pool ...string) patchOSCMachineFunc {
+	return func(m *v1beta1.OscMachine) {
+		m.Spec.Node.Vm.PublicIp = true
+		if len(pool) > 0 {
+			m.Spec.Node.Vm.PublicIpPool = pool[0]
+		}
+	}
+}
+
+func patchPublicIPStatus(publicIpId string) patchOSCMachineFunc {
+	return func(m *v1beta1.OscMachine) {
+		if m.Status.Resources.PublicIPs == nil {
+			m.Status.Resources.PublicIPs = map[string]string{}
+		}
+		m.Status.Resources.PublicIPs["default"] = publicIpId
+	}
+}
+
+func patchDeleteMachine() patchOSCMachineFunc {
+	return func(m *infrastructurev1beta1.OscMachine) {
+		m.DeletionTimestamp = ptr.To(metav1.Now())
+		if len(m.Finalizers) == 0 {
+			m.Finalizers = []string{controllers.OscMachineFinalizer}
+		}
+	}
+}
+
 func mockImageFoundByName(name, account, imageId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ImageMock.
@@ -45,7 +80,29 @@ func mockImageFoundByName(name, account, imageId string) mockFunc {
 	}
 }
 
+func mockGetVm(vmId, state string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.VMMock.
+			EXPECT().
+			GetVm(gomock.Any(), gomock.Eq(vmId)).
+			Return(&osc.Vm{
+				VmId:                &vmId,
+				PrivateDnsName:      ptr.To(defaultPrivateDnsName),
+				PrivateIp:           ptr.To(defaultPrivateIp),
+				State:               &state,
+				BlockDeviceMappings: &defaultVolumes,
+			}, nil)
+	}
+}
+
 func mockGetVmFromClientToken(token string, vm *osc.Vm) mockFunc {
+	if vm != nil {
+		vm.PrivateDnsName = ptr.To(defaultPrivateDnsName)
+		vm.PrivateIp = ptr.To(defaultPrivateIp)
+		if vm.BlockDeviceMappings == nil {
+			vm.BlockDeviceMappings = &defaultVolumes
+		}
+	}
 	return func(s *MockCloudServices) {
 		s.VMMock.
 			EXPECT().
@@ -54,31 +111,7 @@ func mockGetVmFromClientToken(token string, vm *osc.Vm) mockFunc {
 	}
 }
 
-// func mockNoVmFoundByName(name string) mockFunc {
-// 	return func(s *MockCloudServices) {
-// 		s.VMMock.
-// 			EXPECT().
-// 			GetVmListFromTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
-// 			Return(nil, nil)
-// 	}
-// }
-
-// func mockVmFoundByName(name, vmId string) mockFunc {
-// 	return func(s *MockCloudServices) {
-// 		s.VMMock.
-// 			EXPECT().
-// 			GetVmListFromTag(gomock.Any(), gomock.Eq("Name"), gomock.Eq(name)).
-// 			Return([]osc.Vm{{VmId: ptr.To(vmId)}}, nil)
-// 	}
-// }
-
 func mockCreateVmNoVolumes(vmId, imageId, subnetId string, securityGroupIds, privateIps []string, vmName, clientToken string, vmTags map[string]string) mockFunc {
-	created := []osc.BlockDeviceMappingCreated{{
-		DeviceName: ptr.To("/dev/sda1"),
-		Bsu: &osc.BsuCreated{
-			VolumeId: ptr.To(string(defaultRootVolumeId)),
-		},
-	}}
 	return func(s *MockCloudServices) {
 		s.VMMock.
 			EXPECT().
@@ -88,7 +121,7 @@ func mockCreateVmNoVolumes(vmId, imageId, subnetId string, securityGroupIds, pri
 				VmId:                ptr.To(vmId),
 				PrivateDnsName:      ptr.To(defaultPrivateDnsName),
 				PrivateIp:           ptr.To(defaultPrivateIp),
-				BlockDeviceMappings: &created,
+				BlockDeviceMappings: &defaultVolumes,
 				State:               ptr.To("pending"),
 			}, nil)
 	}
@@ -120,20 +153,6 @@ func mockCreateVmWithVolumes(vmId string, volumes []infrastructurev1beta1.OscVol
 				PrivateIp:           ptr.To(defaultPrivateIp),
 				BlockDeviceMappings: &created,
 				State:               ptr.To("pending"),
-			}, nil)
-	}
-}
-
-func mockGetVm(vmId, state string) mockFunc {
-	return func(s *MockCloudServices) {
-		s.VMMock.
-			EXPECT().
-			GetVm(gomock.Any(), gomock.Eq(vmId)).
-			Return(&osc.Vm{
-				VmId:           &vmId,
-				PrivateDnsName: ptr.To(defaultPrivateDnsName),
-				PrivateIp:      ptr.To(defaultPrivateIp),
-				State:          &state,
 			}, nil)
 	}
 }
@@ -182,6 +201,12 @@ func assertVmExists(vmId string, state v1beta1.VmState, ready bool) assertOSCMac
 func assertHasMachineFinalizer() assertOSCMachineFunc {
 	return func(t *testing.T, m *v1beta1.OscMachine) {
 		assert.True(t, controllerutil.ContainsFinalizer(m, controllers.OscMachineFinalizer))
+	}
+}
+
+func assertStatusMachineResources(rsrcs infrastructurev1beta1.OscMachineResources) assertOSCMachineFunc {
+	return func(t *testing.T, c *infrastructurev1beta1.OscMachine) {
+		assert.Equal(t, rsrcs, c.Status.Resources)
 	}
 }
 

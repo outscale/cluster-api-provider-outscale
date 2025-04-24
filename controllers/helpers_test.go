@@ -203,3 +203,51 @@ func mockGetSecurityGroupsFromNet(netId string, sgs []osc.SecurityGroup) mockFun
 			Return(sgs, nil)
 	}
 }
+
+func mockPublicIpFound(publicIpId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.PublicIpMock.EXPECT().
+			GetPublicIp(gomock.Any(), gomock.Eq(publicIpId)).
+			Return(&osc.PublicIp{PublicIpId: &publicIpId}, nil)
+	}
+}
+
+func mockGetPublicIpByIp(publicIp, publicIpId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.PublicIpMock.EXPECT().
+			GetPublicIpByIp(gomock.Any(), gomock.Eq(publicIp)).
+			Return(&osc.PublicIp{PublicIpId: &publicIpId, PublicIp: &publicIp}, nil)
+	}
+}
+
+func mockCreatePublicIp(name, clusterID, publicIpId, publicIp string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.PublicIpMock.EXPECT().
+			CreatePublicIp(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterID)).
+			Return(&osc.PublicIp{PublicIpId: &publicIpId, PublicIp: &publicIp}, nil)
+	}
+}
+
+func mockListPublicIpsFromPool(pool string, ips []osc.PublicIp) mockFunc {
+	return func(s *MockCloudServices) {
+		s.PublicIpMock.EXPECT().
+			ListPublicIpsFromPool(gomock.Any(), gomock.Eq(pool)).
+			Return(ips, nil)
+	}
+}
+
+func mockDeletePublicIp(ip string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.PublicIpMock.EXPECT().
+			DeletePublicIp(gomock.Any(), gomock.Eq(ip)).
+			Return(nil)
+	}
+}
+
+func mockDeleteVm(vmId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.VMMock.EXPECT().
+			DeleteVm(gomock.Any(), gomock.Eq(vmId)).
+			Return(nil)
+	}
+}

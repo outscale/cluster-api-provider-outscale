@@ -9,8 +9,9 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+const bastionIPResourceKey = "bastion"
 
 type ClusterResourceTracker struct {
 	Cloud services.Servicer
@@ -228,6 +229,10 @@ func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastr
 	case err != nil:
 		return nil, err
 	case ns != nil:
+		// update IP tracking, in case status was reset
+		if len(ns.GetPublicIps()) > 0 {
+			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.GetPublicIps()[0].GetPublicIpId())
+		}
 		return ns, nil
 	}
 	ns, err = t.Cloud.NatService(ctx, *clusterScope).GetNatService(ctx, id)
@@ -237,6 +242,10 @@ func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastr
 	case ns == nil:
 		return nil, fmt.Errorf("get nat service %s: %w", id, ErrMissingResource)
 	default:
+		// update IP tracking, in case status was reset
+		if len(ns.GetPublicIps()) > 0 {
+			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.GetPublicIps()[0].GetPublicIpId())
+		}
 		return ns, nil
 	}
 }
@@ -261,43 +270,6 @@ func (t *ClusterResourceTracker) setNatServiceId(clusterScope *scope.ClusterScop
 	rsrc.NatService[clusterScope.GetNatServiceClientToken(nat)] = id
 }
 
-func (t *ClusterResourceTracker) allocateIP(ctx context.Context, key, name string, clusterScope *scope.ClusterScope) (string, string, error) {
-	log := ctrl.LoggerFrom(ctx)
-	rsrc := clusterScope.GetResources()
-	id := getResource(key, rsrc.PublicIPs)
-	if id != "" {
-		ip, err := t.Cloud.PublicIp(ctx, *clusterScope).GetPublicIp(ctx, id)
-		if err != nil {
-			return "", "", fmt.Errorf("allocate ip: %w", err)
-		}
-		return id, ip.GetPublicIp(), nil
-	}
-	log.V(3).Info("Allocating publicIp")
-	ip, err := t.Cloud.PublicIp(ctx, *clusterScope).CreatePublicIp(ctx, name, clusterScope.GetUID())
-	if err != nil {
-		return "", "", fmt.Errorf("allocate ip: %w", err)
-	}
-	log.V(3).Info("Allocated publicIp", "publicIpId", ip.GetPublicIpId(), "publicIp", ip.GetPublicIp())
-	t.trackIP(clusterScope, key, ip.GetPublicIpId())
-	return ip.GetPublicIpId(), ip.GetPublicIp(), nil
-}
-
-func (t *ClusterResourceTracker) trackIP(clusterScope *scope.ClusterScope, key, id string) {
-	rsrc := clusterScope.GetResources()
-	if rsrc.PublicIPs == nil {
-		rsrc.PublicIPs = map[string]string{}
-	}
-	rsrc.PublicIPs[key] = id
-}
-
-func (t *ClusterResourceTracker) untrackIP(clusterScope *scope.ClusterScope, name string) {
-	rsrc := clusterScope.GetResources()
-	if rsrc.PublicIPs == nil {
-		return
-	}
-	delete(rsrc.PublicIPs, name)
-}
-
 func (t *ClusterResourceTracker) getPublicIps(clusterScope *scope.ClusterScope) map[string]string {
 	rsrc := clusterScope.GetResources()
 	return rsrc.PublicIPs
@@ -309,7 +281,8 @@ func (t *ClusterResourceTracker) getBastion(ctx context.Context, clusterScope *s
 	case err != nil:
 		return nil, err
 	case vm != nil:
-		return vm, nil
+		err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, vm.GetPublicIp(), clusterScope)
+		return vm, err
 	}
 	vm, err = t.Cloud.VM(ctx, *clusterScope).GetVm(ctx, id)
 	switch {
@@ -318,7 +291,8 @@ func (t *ClusterResourceTracker) getBastion(ctx context.Context, clusterScope *s
 	case vm == nil:
 		return nil, fmt.Errorf("get bastion %s: %w", id, ErrMissingResource)
 	default:
-		return vm, nil
+		err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, vm.GetPublicIp(), clusterScope)
+		return vm, err
 	}
 }
 
@@ -425,4 +399,41 @@ func (t *ClusterResourceTracker) setSecurityGroupId(clusterScope *scope.ClusterS
 		rsrc.SecurityGroup = map[string]string{}
 	}
 	rsrc.SecurityGroup[clusterScope.GetSecurityGroupName(sg)] = id
+}
+
+func (t *ClusterResourceTracker) IPAllocator(clusterScope *scope.ClusterScope) IPAllocatorInterface {
+	return &IPAllocator{
+		Cloud: t.Cloud,
+		getPublicIP: func(key string) (id string, found bool) {
+			rsrc := clusterScope.GetResources()
+			if rsrc.PublicIPs == nil {
+				return "", false
+			}
+			ip := rsrc.PublicIPs[key]
+			return ip, ip != ""
+		},
+		setPublicIP: func(key, id string) {
+			rsrc := clusterScope.GetResources()
+			if rsrc.PublicIPs == nil {
+				rsrc.PublicIPs = map[string]string{}
+			}
+			rsrc.PublicIPs[key] = id
+		},
+	}
+}
+
+func (t *ClusterResourceTracker) trackIP(clusterScope *scope.ClusterScope, key, id string) {
+	rsrc := clusterScope.GetResources()
+	if rsrc.PublicIPs == nil {
+		rsrc.PublicIPs = map[string]string{}
+	}
+	rsrc.PublicIPs[key] = id
+}
+
+func (t *ClusterResourceTracker) untrackIP(clusterScope *scope.ClusterScope, name string) {
+	rsrc := clusterScope.GetResources()
+	if rsrc.PublicIPs == nil {
+		return
+	}
+	delete(rsrc.PublicIPs, name)
 }

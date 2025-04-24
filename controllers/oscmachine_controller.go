@@ -174,7 +174,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 
 	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create vm %s: %w", vmName, err)
+		return reconcile.Result{}, fmt.Errorf("cannot reconcile vm %s: %w", vmName, err)
 	}
 
 	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
@@ -203,9 +203,13 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	log := ctrl.LoggerFrom(ctx)
 	log.V(3).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
-	reconcileDeleteVm, err := r.reconcileDeleteVm(ctx, clusterScope, machineScope)
+	_, err := r.reconcileDeleteVm(ctx, clusterScope, machineScope)
 	if err != nil {
-		return reconcileDeleteVm, err
+		return reconcile.Result{}, err
+	}
+	_, err = r.reconcileDeletePublicIp(ctx, clusterScope, machineScope)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 	controllerutil.RemoveFinalizer(oscmachine, OscMachineFinalizer)
 	return reconcile.Result{}, nil

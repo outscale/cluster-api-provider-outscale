@@ -61,7 +61,7 @@ In your oscmachinetemplate definition, add the list of volumes required:
 | `rootDiskSize` | `60` | false |  The root disk size
 | `rootDiskType` | `io1` | false |  The root disk type (`io1`, `gp2` or `standard`)
 | `rootDiskIops` | `1500` | false |  The root disk iops (only for the `io1` type)
-| `subregionName` | n/a | false | The subregionName where the node will be deployed (worker nodes only, if none set, will be deployed on the cluster default subregion)
+| `subregionName` | n/a | false | The subregionName where the node will be deployed (required for workers, unused for controlplanes)
 | `subnetName` | n/a | false | The name of the subnet where to deploy the VM
 | `securityGroupNames` | n/a | false | The name of the security groups to associate the VM with
 

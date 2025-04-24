@@ -27,17 +27,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const PublicIPPoolTag = "OscClusterIPPool"
+
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
 type OscPublicIpInterface interface {
-	CreatePublicIp(ctx context.Context, publicIpName, clusterUUID string) (*osc.PublicIp, error)
+	CreatePublicIp(ctx context.Context, publicIpName, clusterID string) (*osc.PublicIp, error)
 	DeletePublicIp(ctx context.Context, publicIpId string) error
 	GetPublicIp(ctx context.Context, publicIpId string) (*osc.PublicIp, error)
+	GetPublicIpByIp(ctx context.Context, publicIp string) (*osc.PublicIp, error)
+	ListPublicIpsFromPool(ctx context.Context, pool string) ([]osc.PublicIp, error)
 	LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error)
 	UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error
 }
 
 // CreatePublicIp retrieve a publicip associated with you account
-func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clusterUUID string) (*osc.PublicIp, error) {
+func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clusterID string) (*osc.PublicIp, error) {
 	publicIpRequest := osc.CreatePublicIpRequest{}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
@@ -51,10 +55,14 @@ func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clust
 		Key:   "Name",
 		Value: publicIpName,
 	}
+	clusterTag := osc.ResourceTag{
+		Key:   "OscK8sClusterID/" + clusterID,
+		Value: "owned",
+	}
 	resourceIds := []string{*publicIpResponse.PublicIp.PublicIpId}
 	publicIpTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{publicIpTag},
+		Tags:        []osc.ResourceTag{publicIpTag, clusterTag},
 	}
 
 	err = tag.AddTag(ctx, publicIpTagRequest, resourceIds, oscApiClient, oscAuthClient)
@@ -106,6 +114,50 @@ func (s *Service) GetPublicIp(ctx context.Context, publicIpId string) (*osc.Publ
 		publicIp := *publicIps
 		return &publicIp[0], nil
 	}
+}
+
+// GetPublicIpByIp get a public ip object using a public ip
+func (s *Service) GetPublicIpByIp(ctx context.Context, publicIp string) (*osc.PublicIp, error) {
+	readPublicIpRequest := osc.ReadPublicIpsRequest{
+		Filters: &osc.FiltersPublicIp{
+			PublicIps: &[]string{publicIp},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+	readPublicIpsResponse, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+	utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
+	}
+	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
+	if !ok {
+		return nil, errors.New("Cannot get publicIp")
+	}
+	if len(*publicIps) == 0 {
+		return nil, nil
+	} else {
+		publicIp := *publicIps
+		return &publicIp[0], nil
+	}
+}
+
+func (s *Service) ListPublicIpsFromPool(ctx context.Context, pool string) ([]osc.PublicIp, error) {
+	readPublicIpRequest := osc.ReadPublicIpsRequest{
+		Filters: &osc.FiltersPublicIp{
+			TagKeys:   &[]string{PublicIPPoolTag},
+			TagValues: &[]string{pool},
+		},
+	}
+	oscApiClient := s.scope.GetApi()
+	oscAuthClient := s.scope.GetAuth()
+
+	readPublicIpsResponse, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
+	utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
+	if err != nil {
+		return nil, utils.ExtractOAPIError(err, httpRes)
+	}
+	return readPublicIpsResponse.GetPublicIps(), nil
 }
 
 // ValidatePublicIpIds validate the list of id by checking each public ip resource and return only  public ip resource id that currently exist.

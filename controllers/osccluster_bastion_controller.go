@@ -149,10 +149,10 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 	subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("load subne: %w", err)
+		return reconcile.Result{}, fmt.Errorf("load subnet: %w", err)
 	}
 
-	_, publicIp, err := r.Tracker.allocateIP(ctx, "bastion", clusterScope.GetBastionName(), clusterScope)
+	_, publicIp, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx, bastionIPResourceKey, clusterScope.GetBastionName(), "", clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 	}
@@ -227,11 +227,11 @@ func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clust
 		return reconcile.Result{}, nil
 	}
 
-	log.V(2).Info("Deleting bastion", "vmId", vm.GetVmId())
+	log.V(3).Info("Deleting bastion")
 	err = r.Cloud.VM(ctx, *clusterScope).DeleteVm(ctx, vm.GetVmId())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete bastion: %w", err)
 	}
-	log.V(2).Info("Bastion deleted")
+	log.V(2).Info("Bastion deleted", "vmId", vm.GetVmId())
 	return reconcile.Result{}, nil
 }
