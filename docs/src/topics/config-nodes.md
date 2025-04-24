@@ -1,4 +1,4 @@
-# Adding nodes
+# Configuring nodes
 
 ## Adding control-plane nodes
 
@@ -8,13 +8,40 @@ When adding subnets with the `controlplane` role on multiple subregions, control
 
 ## Adding worker nodes
 
-A `MachineDeployment` resource, an `OscMachineTemplate` resource must be created per worker node pool.
+A `MachineDeployment` resource and an `OscMachineTemplate` resource must be created per worker node pool.
 
-In a multi-AZ deployment, a `MachineDeployment`/`OscMachineTemplate` pool must be created per AZ.
+In a multi-AZ deployment, a node pool (`MachineDeployment`/`OscMachineTemplate` pair) must be created per AZ.
+
+## Adding volumes to nodes
+
+By default, nodes use a single root volume (/dev/sda1). Additional volumes can be added to VM.
+
+> Volumes are created unformatted. You will need to format the newly created volumes during cloud-init.
+
+In your oscmachinetemplate definition, add the list of volumes required:
+
+```yaml
+[...]
+  node:
+    vm: [...]
+    volumes:
+    - name: data
+      device: /dev/sdb
+      iops: 500
+      size: 50
+      volumeType: io1
+    - name: logs
+      device: /dev/sdc
+      iops: 500
+      size: 10
+      volumeType: io1
+[...]
+```
+
 
 ## OscMachineTemplate configuration
 
-`OscMachineTemplate` resources define a `spec.template.spec.node` node definition, with 2 attributes: `image` and `vm`.
+`OscMachineTemplate` resources define a `spec.template.spec.node` node definition, with 3 attributes: `image`, `vm` and `volumes`.
 
 ### image
 
@@ -37,6 +64,18 @@ In a multi-AZ deployment, a `MachineDeployment`/`OscMachineTemplate` pool must b
 | `subregionName` | n/a | false | The subregionName where the node will be deployed (worker nodes only, if none set, will be deployed on the cluster default subregion)
 | `subnetName` | n/a | false | The name of the subnet where to deploy the VM
 | `securityGroupNames` | n/a | false | The name of the security groups to associate the VM with
+
+### volumes
+
+`volumes`is a list of additional volumes.
+
+| Name |  Required | Description
+| --- | --- | ---
+| `name` | false |  The volume name
+| `device` | true |  The volume device (`/dev/sdX`)
+| `size` | true |  The volume size
+| `volumeType` | true |  The volume type (`io1`, `gp2` or `standard`)
+| `iops` | false |  The volume iops (only for the `io1` type)
 
 ### Automatic mode
 

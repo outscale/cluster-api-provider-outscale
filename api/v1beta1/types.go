@@ -420,22 +420,30 @@ type OscMachineResources struct {
 }
 
 type OscImage struct {
-	Name       string `json:"name,omitempty"`
+	// The image name.
+	Name string `json:"name,omitempty"`
+	// The image account owner ID.
 	AccountId  string `json:"accountId,omitempty"`
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscVolume struct {
+	// The volume name.
 	Name string `json:"name,omitempty"`
+	// The volume device (/dev/sdX)
 	// +kubebuilder:validation:Required
 	Device string `json:"device"`
-	Iops   int32  `json:"iops,omitempty"`
+	// The volume iops (io1 volumes only)
+	Iops int32 `json:"iops,omitempty"`
+	// The volume size in gibibytes (GiB)
 	// +kubebuilder:validation:Required
-	Size int32 `json:"size,omitempty"`
-	// Deprecated
+	Size int32 `json:"size"`
+	// (unused)
 	SubregionName string `json:"subregionName,omitempty"`
-	VolumeType    string `json:"volumeType,omitempty"`
-	ResourceId    string `json:"resourceId,omitempty"`
+	// The volume type (io1, gp2 or standard)
+	VolumeType string `json:"volumeType,omitempty"`
+	// (unused)
+	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscKeypair struct {
@@ -454,14 +462,16 @@ type OscKeypair struct {
 type OscVm struct {
 	Name    string `json:"name,omitempty"`
 	ImageId string `json:"imageId,omitempty"`
+	// The keypair name
 	// +kubebuilder:validation:Required
-	KeypairName        string                    `json:"keypairName,omitempty"`
-	VmType             string                    `json:"vmType,omitempty"`
-	VolumeName         string                    `json:"volumeName,omitempty"`
-	VolumeDeviceName   string                    `json:"volumeDeviceName,omitempty"`
-	DeviceName         string                    `json:"deviceName,omitempty"`
-	SubnetName         string                    `json:"subnetName,omitempty"`
-	RootDisk           OscRootDisk               `json:"rootDisk,omitempty"`
+	KeypairName      string      `json:"keypairName"`
+	VmType           string      `json:"vmType,omitempty"`
+	VolumeName       string      `json:"volumeName,omitempty"`
+	VolumeDeviceName string      `json:"volumeDeviceName,omitempty"`
+	DeviceName       string      `json:"deviceName,omitempty"`
+	SubnetName       string      `json:"subnetName,omitempty"`
+	RootDisk         OscRootDisk `json:"rootDisk,omitempty"`
+	// unused
 	LoadBalancerName   string                    `json:"loadBalancerName,omitempty"`
 	PublicIpName       string                    `json:"publicIpName,omitempty"`
 	PublicIp           bool                      `json:"publicIp,omitempty"`
@@ -469,10 +479,11 @@ type OscVm struct {
 	PrivateIps         []OscPrivateIpElement     `json:"privateIps,omitempty"`
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	ResourceId         string                    `json:"resourceId,omitempty"`
-	Role               OscRole                   `json:"role,omitempty"`
-	ClusterName        string                    `json:"clusterName,omitempty"`
-	Replica            int32                     `json:"replica,omitempty"`
-	Tags               map[string]string         `json:"tags,omitempty"`
+	// The node role (controlplane or worker, worker by default).
+	Role        OscRole           `json:"role,omitempty"`
+	ClusterName string            `json:"clusterName,omitempty"`
+	Replica     int32             `json:"replica,omitempty"`
+	Tags        map[string]string `json:"tags,omitempty"`
 }
 
 func (vm *OscVm) GetRole() OscRole {
