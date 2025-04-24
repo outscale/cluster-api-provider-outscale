@@ -12,7 +12,6 @@ package mock_security
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 	gomock "go.uber.org/mock/gomock"
@@ -40,20 +39,6 @@ func NewMockOscPublicIpInterface(ctrl *gomock.Controller) *MockOscPublicIpInterf
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOscPublicIpInterface) EXPECT() *MockOscPublicIpInterfaceMockRecorder {
 	return m.recorder
-}
-
-// CheckPublicIpUnlink mocks base method.
-func (m *MockOscPublicIpInterface) CheckPublicIpUnlink(ctx context.Context, clockInsideLoop, clockLoop time.Duration, publicIpId string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckPublicIpUnlink", ctx, clockInsideLoop, clockLoop, publicIpId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckPublicIpUnlink indicates an expected call of CheckPublicIpUnlink.
-func (mr *MockOscPublicIpInterfaceMockRecorder) CheckPublicIpUnlink(ctx, clockInsideLoop, clockLoop, publicIpId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckPublicIpUnlink", reflect.TypeOf((*MockOscPublicIpInterface)(nil).CheckPublicIpUnlink), ctx, clockInsideLoop, clockLoop, publicIpId)
 }
 
 // CreatePublicIp mocks base method.
