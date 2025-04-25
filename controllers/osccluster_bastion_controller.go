@@ -120,8 +120,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 		log.V(4).Info("No need for bastion reconciliation")
 		return reconcile.Result{}, nil
 	}
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(3).Info("Reusing existing bastion")
 		return reconcile.Result{}, nil
 	}
@@ -210,8 +209,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 // reconcileDeleteBastion reconcile the destruction of the machine bastion.
 func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(4).Info("Not deleting existing bastion")
 		return reconcile.Result{}, nil
 	}

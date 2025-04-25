@@ -61,8 +61,7 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(4).Info("Not deleting existing net")
 		return reconcile.Result{}, nil
 	}

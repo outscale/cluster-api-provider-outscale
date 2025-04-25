@@ -34,8 +34,7 @@ func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clu
 		log.V(4).Info("No need for internetService reconciliation")
 		return reconcile.Result{}, nil
 	}
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(3).Info("Reusing existing internetService")
 		return reconcile.Result{}, nil
 	}
@@ -76,8 +75,7 @@ func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clu
 // reconcileDeleteInternetService reconcile the destruction of the InternetService of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteInternetService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(4).Info("Not deleting existing internet service")
 		return reconcile.Result{}, nil
 	}

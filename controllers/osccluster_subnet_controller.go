@@ -78,8 +78,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 // reconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(4).Info("Not deleting existing subnets")
 		return reconcile.Result{}, nil
 	}
