@@ -31,7 +31,13 @@ func patchDeleteCluster() patchOSCClusterFunc {
 
 func patchUseExistingNet() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
-		m.Spec.Network.Net.UseExisting = true
+		m.Spec.Network.UseExisting.Net = true
+	}
+}
+
+func patchUseExistingSecurityGroups() patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.UseExisting.SecurityGroups = true
 	}
 }
 

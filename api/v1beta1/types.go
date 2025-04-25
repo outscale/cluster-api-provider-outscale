@@ -40,6 +40,8 @@ type OscNode struct {
 }
 
 type OscNetwork struct {
+	// Reuse externally managed resources ?
+	UseExisting OscReuse `json:"useExisting,omitempty"`
 	// The Load Balancer configuration
 	// +optional
 	LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty"`
@@ -86,6 +88,13 @@ type OscNetwork struct {
 	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
 	// + optional
 	AllowFromIPRanges []string `json:"allowFromIPRanges,omitempty"`
+}
+
+type OscReuse struct {
+	// If set, net, subnets, internet service, nat services and route tables are externally managed
+	Net bool `json:"net,omitempty"`
+	// If set, security groups are externally managed.
+	SecurityGroups bool `json:"securityGroups,omitempty"`
 }
 
 type OscLoadBalancer struct {
@@ -160,9 +169,6 @@ type OscNet struct {
 	// The Id of the Net to reuise (if useExisting is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
-	// Reuse an existing network defined by resourceId ?
-	// +optional
-	UseExisting bool `json:"useExisting,omitempty"`
 }
 
 func (o *OscNet) IsZero() bool {

@@ -247,7 +247,7 @@ var ErrNoNatFound = errors.New("natService not found")
 // GetNatServices return the natServices of the cluster
 func (s *ClusterScope) GetNatServices() []infrastructurev1beta1.OscNatService {
 	switch {
-	case s.OscCluster.Spec.Network.Net.UseExisting:
+	case s.OscCluster.Spec.Network.UseExisting.Net:
 		return nil
 	case len(s.OscCluster.Spec.Network.NatServices) > 0:
 		return s.OscCluster.Spec.Network.NatServices

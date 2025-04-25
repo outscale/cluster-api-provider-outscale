@@ -39,23 +39,24 @@ const (
 // ValidateOscClusterSpec validates a OscClusterSpec.
 func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	var allErrs field.ErrorList
-	allErrs = append(allErrs, ValidateNet(spec.Network.Net)...)
-	allErrs = append(allErrs, ValidateSubnets(spec.Network.Subnets, spec.Network.Net)...)
-	allErrs = append(allErrs, ValidateNatServices(spec.Network.NatServices, spec.Network.Subnets, spec.Network.Net)...)
-	allErrs = append(allErrs, ValidateSecurityGroups(spec.Network.SecurityGroups, spec.Network.Net)...)
+	allErrs = append(allErrs, ValidateNet(spec.Network.Net, spec.Network.UseExisting)...)
+	allErrs = append(allErrs, ValidateSubnets(spec.Network.Subnets, spec.Network.Net, spec.Network.UseExisting)...)
+	allErrs = append(allErrs, ValidateNatServices(spec.Network.NatServices, spec.Network.Subnets, spec.Network.Net, spec.Network.UseExisting)...)
+	allErrs = append(allErrs, ValidateSecurityGroups(spec.Network.SecurityGroups, spec.Network.Net, spec.Network.UseExisting)...)
 	allErrs = append(allErrs, ValidateLoadbalancer(spec.Network.LoadBalancer)...)
 	allErrs = append(allErrs, ValidateAllowFromIPs(spec.Network.AllowFromIPRanges)...)
 	return allErrs
 }
 
-func ValidateNet(spec OscNet) field.ErrorList {
+func ValidateNet(spec OscNet, reuse OscReuse) field.ErrorList {
 	switch {
 	case spec == OscNet{}:
 		return nil
-	case spec.UseExisting:
+	case reuse.Net:
 		return MergeValidation(
 			ValidateRequired(field.NewPath("network", "net", "resourceId"), spec.ResourceId, "must be set when reusing a network"),
-			ValidateEmpty(field.NewPath("network", "net", "ipRange"), spec.IpRange, "must not be set when reusing a network"),
+			ValidateRequired(field.NewPath("network", "net", "ipRange"), spec.IpRange, "must be set when reusing a network"),
+			ValidateCidr(field.NewPath("network", "net", "ipRange"), spec.IpRange),
 		)
 	default:
 		return MergeValidation(
@@ -65,31 +66,27 @@ func ValidateNet(spec OscNet) field.ErrorList {
 	}
 }
 
-func ValidateSubnets(specs []OscSubnet, net OscNet) field.ErrorList {
+func ValidateSubnets(specs []OscSubnet, net OscNet, reuse OscReuse) field.ErrorList {
 	var erl field.ErrorList
 	for _, spec := range specs {
-		switch {
-		case net.UseExisting:
+		if reuse.Net {
 			erl = AppendValidation(erl,
 				ValidateRequired(field.NewPath("network", "subnets", "resourceId"), spec.ResourceId, "must be set when reusing a network"),
 				ValidateRequiredSlice(field.NewPath("network", "subnets", "roles"), spec.Roles, "must be set when reusing a network"),
-				ValidateEmpty(field.NewPath("network", "subnets", "ipSubnetRange"), spec.IpSubnetRange, "must not be set when reusing a network"),
-				ValidateEmpty(field.NewPath("network", "subnets", "subregionName"), spec.SubregionName, "must not be set when reusing a network"),
-			)
-		default:
-			erl = AppendValidation(erl,
-				ValidateRequired(field.NewPath("network", "subnets", "ipSubnetRange"), spec.IpSubnetRange, "must be set when not reusing a network"),
-				ValidateSubregion(field.NewPath("network", "subnets", "subregionName"), spec.SubregionName),
 			)
 		}
+		erl = AppendValidation(erl,
+			ValidateRequired(field.NewPath("network", "subnets", "ipSubnetRange"), spec.IpSubnetRange, "must be set when not reusing a network"),
+			ValidateSubregion(field.NewPath("network", "subnets", "subregionName"), spec.SubregionName),
+		)
 	}
 	erl = AppendValidation(erl, ValidateSubnetCidr(specs, net)...)
 	return erl
 }
 
-func ValidateNatServices(specs []OscNatService, subnets []OscSubnet, net OscNet) field.ErrorList {
+func ValidateNatServices(specs []OscNatService, subnets []OscSubnet, net OscNet, reuse OscReuse) field.ErrorList {
 	var erl field.ErrorList
-	if net.UseExisting {
+	if reuse.Net {
 		return AppendValidation(erl,
 			ValidateEmptySlice(field.NewPath("network", "natServices"), specs, "no nat services must be defined when reusing a network"),
 		)
@@ -102,11 +99,11 @@ func ValidateNatServices(specs []OscNatService, subnets []OscSubnet, net OscNet)
 	return erl
 }
 
-func ValidateSecurityGroups(specs []OscSecurityGroup, net OscNet) field.ErrorList {
+func ValidateSecurityGroups(specs []OscSecurityGroup, net OscNet, reuse OscReuse) field.ErrorList {
 	var erl field.ErrorList
 	for _, spec := range specs {
 		switch {
-		case net.UseExisting:
+		case reuse.SecurityGroups:
 			erl = AppendValidation(erl,
 				ValidateRequired(field.NewPath("network", "securityGroups", "resourceId"), spec.ResourceId, "must be set when reusing a network"),
 				ValidateRequiredSlice(field.NewPath("network", "securityGroups", "roles"), spec.Roles, "must be set when reusing a network"),

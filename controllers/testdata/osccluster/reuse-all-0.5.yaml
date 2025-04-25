@@ -1,0 +1,55 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscCluster
+metadata:
+  generation: 1
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+  name: test-cluster-api
+  namespace: cluster-api-test
+  ownerReferences:
+  - apiVersion: cluster.x-k8s.io/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: test-cluster-api
+    uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+  resourceVersion: "20214284"
+  uid: 4973cd7c-439b-4108-b61f-39805379aa0e
+spec:
+  network:
+    useExisting:
+      net: true
+      securityGroups: true
+    subregionName: eu-west-2a
+    net:
+      resourceId: vpc-foo
+      ipRange: 10.0.0.0/16
+    subnets:
+    - resourceId: subnet-public
+      ipSubnetRange: 10.0.2.0/24
+      roles:
+      - loadbalancer
+    - resourceId: subnet-kcp
+      ipSubnetRange: 10.0.4.0/24
+      roles:
+      - controlplane
+    - resourceId: subnet-kw
+      ipSubnetRange: 10.0.3.0/24
+      roles:
+      - worker
+    securityGroups:
+    - resourceId: sg-kcp
+      roles:
+      - controlplane
+    - resourceId: sg-kw
+      roles:
+      - worker
+    - resourceId: sg-lb
+      roles:
+      - loadbalancer
+    - resourceId: sg-node
+      roles:
+      - controlplane
+      - worker
+    loadBalancer:
+      loadbalancername: test-cluster-api-k8s

@@ -72,8 +72,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 		log.V(4).Info("No need for routeTable reconciliation")
 		return reconcile.Result{}, nil
 	}
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(3).Info("Using existing routeTables")
 		return reconcile.Result{}, nil
 	}
@@ -153,8 +152,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 // reconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	netSpec := clusterScope.GetNet()
-	if netSpec.UseExisting {
+	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(3).Info("Not deleting existing routeTables")
 		return reconcile.Result{}, nil
 	}

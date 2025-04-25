@@ -17,36 +17,24 @@ metadata:
   uid: 4973cd7c-439b-4108-b61f-39805379aa0e
 spec:
   network:
-    bastion:
-      enable: true
+    useExisting:
+      net: true
     subregionName: eu-west-2a
     net:
-      useExisting: true
       resourceId: vpc-foo
+      ipRange: 10.0.0.0/16
     subnets:
+    - resourceId: subnet-public
+      ipSubnetRange: 10.0.2.0/24
+      roles:
+      - loadbalancer
     - resourceId: subnet-kcp
+      ipSubnetRange: 10.0.4.0/24
       roles:
       - controlplane
     - resourceId: subnet-kw
+      ipSubnetRange: 10.0.3.0/24
       roles:
-      - worker
-    - resourceId: subnet-public
-      roles:
-      - loadbalancer
-      - nat
-    securityGroups:
-    - resourceId: sg-kcp
-      roles:
-      - controlplane
-    - resourceId: sg-kw
-      roles:
-      - worker
-    - resourceId: sg-lb
-      roles:
-      - loadbalancer
-    - resourceId: sg-node
-      roles:
-      - controlplane
       - worker
     loadBalancer:
       loadbalancername: test-cluster-api-k8s

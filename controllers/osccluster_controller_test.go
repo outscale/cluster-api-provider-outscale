@@ -603,7 +603,91 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 		},
 		{
 			name:            "reusing a network",
-			clusterSpec:     "reuse-0.5",
+			clusterSpec:     "reuse-net-0.5",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+
+				mockSubnetFound("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-public"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Worker securityGroup for test-cluster-api", "", "sg-kw"),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 30000, 32767),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Controlplane securityGroup for test-cluster-api", "", "sg-kcp"),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.3.0/24", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2380),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"LB securityGroup for test-cluster-api", "", "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Node securityGroup for test-cluster-api", "OscK8sMainSG", "sg-node"),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "icmp", "10.0.0.0/16", 8, 8),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51821),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			clusterAsserts: []assertOSCClusterFunc{
+				assertHasClusterFinalizer(),
+				assertStatusClusterResources(infrastructurev1beta1.OscClusterResources{
+					SecurityGroup: map[string]string{
+						"test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kcp",
+						"test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520":       "sg-kw",
+						"test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520":           "sg-lb",
+						"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
+					},
+				}),
+				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev"),
+			},
+		},
+		{
+			name:            "reusing a network, net is not created if missing",
+			clusterSpec:     "reuse-net-0.5",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockGetNet("vpc-foo", nil),
+			},
+			hasError: true,
+		},
+		{
+			name:            "reusing a network, subnet is not created if missing",
+			clusterSpec:     "reuse-net-0.5",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+				mockGetSubnet("subnet-public", nil),
+			},
+			hasError: true,
+		},
+		{
+			name:            "reusing net + security groups",
+			clusterSpec:     "reuse-all-0.5",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -622,25 +706,6 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				assertStatusClusterResources(infrastructurev1beta1.OscClusterResources{}),
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev"),
 			},
-		},
-		{
-			name:            "reusing a network, net is not created if missing",
-			clusterSpec:     "reuse-0.5",
-			clusterBaseSpec: "base",
-			mockFuncs: []mockFunc{
-				mockGetNet("vpc-foo", nil),
-			},
-			hasError: true,
-		},
-		{
-			name:            "reusing a network, subnet is not created if missing",
-			clusterSpec:     "reuse-0.5",
-			clusterBaseSpec: "base",
-			mockFuncs: []mockFunc{
-				mockNetFound("vpc-foo"),
-				mockGetSubnet("subnet-kcp", nil),
-			},
-			hasError: true,
 		},
 	}
 	for _, tc := range tcs {
@@ -1554,9 +1619,13 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:           "Deleting a cluster based on an existing network",
-			clusterSpec:    "ready-0.4",
-			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster(), patchUseExistingNet()},
+			name:        "Deleting a cluster based on an existing network & security groups",
+			clusterSpec: "ready-0.4",
+			clusterPatches: []patchOSCClusterFunc{
+				patchDeleteCluster(),
+				patchUseExistingNet(),
+				patchUseExistingSecurityGroups(),
+			},
 			mockFuncs: []mockFunc{
 				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
