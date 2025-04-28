@@ -161,8 +161,10 @@ spec:
                     description: The image configuration (unused)
                     properties:
                       accountId:
+                        description: The image account owner ID.
                         type: string
                       name:
+                        description: The image name.
                         type: string
                       resourceId:
                         type: string
@@ -381,8 +383,14 @@ spec:
                       type: object
                     type: array
                   securityGroups:
+                    description: The Security Groups configuration.
                     items:
                       properties:
+                        authoritative:
+                          description: Is the Security Group configuration authoritative
+                            (if yes, all rules not found in configuration will be
+                            deleted).
+                          type: boolean
                         description:
                           description: The description of the security group
                           type: string
@@ -911,8 +919,10 @@ spec:
                             description: The image configuration (unused)
                             properties:
                               accountId:
+                                description: The image account owner ID.
                                 type: string
                               name:
+                                description: The image name.
                                 type: string
                               resourceId:
                                 type: string
@@ -1143,8 +1153,14 @@ spec:
                               type: object
                             type: array
                           securityGroups:
+                            description: The Security Groups configuration.
                             items:
                               properties:
+                                authoritative:
+                                  description: Is the Security Group configuration
+                                    authoritative (if yes, all rules not found in
+                                    configuration will be deleted).
+                                  type: boolean
                                 description:
                                   description: The description of the security group
                                   type: string
@@ -1321,8 +1337,10 @@ spec:
                   image:
                     properties:
                       accountId:
+                        description: The image account owner ID.
                         type: string
                       name:
+                        description: The image name.
                         type: string
                       resourceId:
                         type: string
@@ -1348,14 +1366,18 @@ spec:
                   vm:
                     properties:
                       clusterName:
+                        description: unused
                         type: string
                       deviceName:
+                        description: unused
                         type: string
                       imageId:
                         type: string
                       keypairName:
+                        description: The keypair name
                         type: string
                       loadBalancerName:
+                        description: unused
                         type: string
                       name:
                         type: string
@@ -1369,8 +1391,14 @@ spec:
                           type: object
                         type: array
                       publicIp:
+                        description: If set, a public IP will be configured.
                         type: boolean
                       publicIpName:
+                        description: unused
+                        type: string
+                      publicIpPool:
+                        description: The name of the pool from which public IPs will
+                          be picked.
                         type: string
                       replica:
                         format: int32
@@ -1378,6 +1406,8 @@ spec:
                       resourceId:
                         type: string
                       role:
+                        description: The node role (controlplane or worker, worker
+                          by default).
                         type: string
                       rootDisk:
                         properties:
@@ -1408,8 +1438,10 @@ spec:
                       vmType:
                         type: string
                       volumeDeviceName:
+                        description: unused
                         type: string
                       volumeName:
+                        description: unused
                         type: string
                     required:
                     - keypairName
@@ -1418,21 +1450,27 @@ spec:
                     items:
                       properties:
                         device:
+                          description: The volume device (/dev/sdX)
                           type: string
                         iops:
+                          description: The volume iops (io1 volumes only)
                           format: int32
                           type: integer
                         name:
+                          description: The volume name.
                           type: string
                         resourceId:
+                          description: (unused)
                           type: string
                         size:
+                          description: The volume size in gibibytes (GiB)
                           format: int32
                           type: integer
                         subregionName:
-                          description: Deprecated
+                          description: (unused)
                           type: string
                         volumeType:
+                          description: The volume type (io1, gp2 or standard)
                           type: string
                       required:
                       - device
@@ -1586,6 +1624,10 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  publicIps:
+                    additionalProperties:
+                      type: string
+                    type: object
                   vm:
                     additionalProperties:
                       type: string
@@ -1706,8 +1748,10 @@ spec:
                           image:
                             properties:
                               accountId:
+                                description: The image account owner ID.
                                 type: string
                               name:
+                                description: The image name.
                                 type: string
                               resourceId:
                                 type: string
@@ -1733,14 +1777,18 @@ spec:
                           vm:
                             properties:
                               clusterName:
+                                description: unused
                                 type: string
                               deviceName:
+                                description: unused
                                 type: string
                               imageId:
                                 type: string
                               keypairName:
+                                description: The keypair name
                                 type: string
                               loadBalancerName:
+                                description: unused
                                 type: string
                               name:
                                 type: string
@@ -1754,8 +1802,14 @@ spec:
                                   type: object
                                 type: array
                               publicIp:
+                                description: If set, a public IP will be configured.
                                 type: boolean
                               publicIpName:
+                                description: unused
+                                type: string
+                              publicIpPool:
+                                description: The name of the pool from which public
+                                  IPs will be picked.
                                 type: string
                               replica:
                                 format: int32
@@ -1763,6 +1817,8 @@ spec:
                               resourceId:
                                 type: string
                               role:
+                                description: The node role (controlplane or worker,
+                                  worker by default).
                                 type: string
                               rootDisk:
                                 properties:
@@ -1793,8 +1849,10 @@ spec:
                               vmType:
                                 type: string
                               volumeDeviceName:
+                                description: unused
                                 type: string
                               volumeName:
+                                description: unused
                                 type: string
                             required:
                             - keypairName
@@ -1803,21 +1861,27 @@ spec:
                             items:
                               properties:
                                 device:
+                                  description: The volume device (/dev/sdX)
                                   type: string
                                 iops:
+                                  description: The volume iops (io1 volumes only)
                                   format: int32
                                   type: integer
                                 name:
+                                  description: The volume name.
                                   type: string
                                 resourceId:
+                                  description: (unused)
                                   type: string
                                 size:
+                                  description: The volume size in gibibytes (GiB)
                                   format: int32
                                   type: integer
                                 subregionName:
-                                  description: Deprecated
+                                  description: (unused)
                                   type: string
                                 volumeType:
+                                  description: The volume type (io1, gp2 or standard)
                                   type: string
                               required:
                               - device

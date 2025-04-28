@@ -141,8 +141,10 @@ spec:
                     description: The image configuration (unused)
                     properties:
                       accountId:
+                        description: The image account owner ID.
                         type: string
                       name:
+                        description: The image name.
                         type: string
                       resourceId:
                         type: string
@@ -361,8 +363,14 @@ spec:
                       type: object
                     type: array
                   securityGroups:
+                    description: The Security Groups configuration.
                     items:
                       properties:
+                        authoritative:
+                          description: Is the Security Group configuration authoritative
+                            (if yes, all rules not found in configuration will be
+                            deleted).
+                          type: boolean
                         description:
                           description: The description of the security group
                           type: string

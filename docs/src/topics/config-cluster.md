@@ -109,6 +109,9 @@ Other resources will match a security group either based on its name or its role
 Rules may be added without setting `extraSecurityGroupRule`.
 If a rule is removed from the spec, it won't be removed from the IaaS security group.
 
+Security groups may be authoritative or not. If not set, rules may be added but will never be deleted by CAPOSC.
+In authoritative mode, all rules not present in the spec will be deleted, including any default outbound rules.
+
 ### Automatic mode
 
 5 security groups may be created:
@@ -123,6 +126,7 @@ The default configuration is :
 ```yaml
 - name: {cluster_name}-lb
   description: LB securityGroup for {cluster_name}
+  authoritative: true
   roles:
   - loadbalancer
   rules:
@@ -140,6 +144,7 @@ The default configuration is :
     - {controlplane_subnet_ranges}
 - name: {cluster_name}-worker
   description: Worker securityGroup for {cluster_name}
+  authoritative: true
   roles:
   - worker
   rules:
@@ -159,6 +164,7 @@ The default configuration is :
     - {worker_subnet_ranges}
 - name: {cluster_name}-controlplane
   description: Controlplane securityGroup for {cluster_name}
+  authoritative: true
   roles:
   - controlplane
   rules:
@@ -189,6 +195,7 @@ The default configuration is :
     - {controlplane_subnet_ranges}
 - name: {cluster_name}-node
   description: Controlplane securityGroup for {cluster_name}
+  authoritative: true
   roles:
   - controlplane
   - worker
@@ -253,8 +260,15 @@ The default configuration is :
     toPortRange: 22
     ipRanges:
     - {bastion_subnet_ranges}
+  - flow: Outbound # default outbound rule
+    ipProtocol: "-1"
+    fromPortRange: -1
+    toPortRange: -1
+    ipRanges:
+    - "0.0.0.0/0"
 - name: {cluster_name}-bastion
   description: Bastion securityGroup for {cluster_name}
+  authoritative: true
   roles:
   - bastion
   rules:
@@ -280,6 +294,8 @@ The default configuration is :
 | --- | --- | ---
 | `name`| true | The name of the security group
 | `description` | false | The description of the security group
+| `authoritative` | false | Is the Security Group configuration authoritative ? (if yes, all rules not found in configuration will be deleted).
+| `roles` | false | The list of roles this security group applies to
 | `securityGroupRules` | false | The list of rules to apply
 
 Each rule is defined by:
