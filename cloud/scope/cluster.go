@@ -369,6 +369,7 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allowedIn},
 			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allSNCP},
 		},
+		Authoritative: true,
 	}
 	worker := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-worker",
@@ -378,6 +379,7 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: allSN}, // NodePort
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: allSN}, // Kubelet
 		},
+		Authoritative: true,
 	}
 	controlplane := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-controlplane",
@@ -389,6 +391,7 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: allSNCP},           // etcd
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: allSNCP},         // Kubelet
 		},
+		Authoritative: true,
 	}
 	node := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-node",
@@ -404,8 +407,10 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRange: s.GetNet().IpRange},   // Flannel VXLAN
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRange: s.GetNet().IpRange},   // Cillium health
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRange: s.GetNet().IpRange},   // Cillium hubble
+			{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRange: "0.0.0.0/0"},              // Default outbound rule
 		},
-		Tag: "OscK8sMainSG",
+		Tag:           "OscK8sMainSG",
+		Authoritative: true,
 	}
 	if !s.OscCluster.Spec.Network.Bastion.Enable {
 		return []infrastructurev1beta1.OscSecurityGroup{lb, worker, controlplane, node}
@@ -421,6 +426,7 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: allowedIn},
 			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRange: s.GetNet().IpRange},
 		},
+		Authoritative: true,
 	}
 	return []infrastructurev1beta1.OscSecurityGroup{lb, worker, controlplane, node, bastion}
 }

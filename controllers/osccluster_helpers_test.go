@@ -53,6 +53,12 @@ func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) p
 	}
 }
 
+func patchIncrementGeneration() patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Generation++
+	}
+}
+
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().

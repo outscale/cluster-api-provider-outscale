@@ -62,7 +62,9 @@ type OscNetwork struct {
 	NatServices []OscNatService `json:"natServices,omitempty"`
 	// The Route Table configuration
 	// +optional
-	RouteTables    []OscRouteTable    `json:"routeTables,omitempty"`
+	RouteTables []OscRouteTable `json:"routeTables,omitempty"`
+	// The Security Groups configuration.
+	// +optional
 	SecurityGroups []OscSecurityGroup `json:"securityGroups,omitempty"`
 	// The Public Ip configuration
 	// +optional
@@ -254,11 +256,15 @@ type OscSecurityGroup struct {
 	// +optional
 	SecurityGroupRules []OscSecurityGroupRule `json:"securityGroupRules,omitempty"`
 	// When reusing network, the id of an existing securityGroup to use.
+	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
 	Tag        string `json:"tag,omitempty"`
 
 	// The roles the securityGroup applies to.
 	Roles []OscRole `json:"roles,omitempty"`
+	// Is the Security Group configuration authoritative ? (if yes, all rules not found in configuration will be deleted).
+	// +optional
+	Authoritative bool `json:"authoritative,omitempty"`
 }
 
 func (sg *OscSecurityGroup) HasRole(role OscRole) bool {

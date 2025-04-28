@@ -30,42 +30,77 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// reconcileSecurityGroupRules reconciles a rule for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRuleSpec infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+// reconcileSecurityGroupAddRules reconciles rules for a securityGroup.
+func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	var rules []osc.SecurityGroupRule
-	switch strings.ToLower(securityGroupRuleSpec.Flow) {
-	case "inbound":
-		rules = sg.GetInboundRules()
-	case "outbound":
-		rules = sg.GetOutboundRules()
-	}
-	flow := securityGroupRuleSpec.Flow
-	protocol := securityGroupRuleSpec.IpProtocol
-	ipRanges := securityGroupRuleSpec.GetIpRanges()
-	fromPort := securityGroupRuleSpec.FromPortRange
-	toPort := securityGroupRuleSpec.ToPortRange
-	var existingRanges []string
-	for _, rule := range rules {
-		for _, ipRange := range securityGroupRuleSpec.GetIpRanges() {
-			if rule.GetFromPortRange() == fromPort && rule.GetToPortRange() == toPort && rule.GetIpProtocol() == protocol && slices.Contains(ipRanges, ipRange) {
-				existingRanges = append(existingRanges, ipRange)
+	for _, securityGroupRuleSpec := range securityGroupRulesSpec {
+		var rules []osc.SecurityGroupRule
+		switch strings.ToLower(securityGroupRuleSpec.Flow) {
+		case "inbound":
+			rules = sg.GetInboundRules()
+		case "outbound":
+			rules = sg.GetOutboundRules()
+		}
+		flow := securityGroupRuleSpec.Flow
+		protocol := securityGroupRuleSpec.IpProtocol
+		fromPort := securityGroupRuleSpec.FromPortRange
+		toPort := securityGroupRuleSpec.ToPortRange
+		var existingRanges []string
+		for _, rule := range rules {
+			if rule.GetFromPortRange() != fromPort || rule.GetToPortRange() != toPort || rule.GetIpProtocol() != protocol {
+				continue
+			}
+			existingRanges = append(existingRanges, rule.GetIpRanges()...)
+		}
+		ipRanges := securityGroupRuleSpec.GetIpRanges()
+		for _, ipRange := range ipRanges {
+			if slices.Contains(existingRanges, ipRange) {
+				continue
+			}
+			log.V(2).Info("Creating securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", protocol, "fromPort", fromPort, "toPort", toPort)
+			_, err := r.Cloud.SecurityGroup(ctx, *clusterScope).CreateSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, protocol, ipRange, "", fromPort, toPort)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot create securityGroupRule: %w", err)
 			}
 		}
 	}
-	if len(ipRanges) == len(existingRanges) {
-		return reconcile.Result{}, nil
+	return reconcile.Result{}, nil
+}
+
+// reconcileSecurityGroupDeleteRules deletes all rules not in spec for a securityGroup.
+func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+	var checkRules = func(flow string, rules []osc.SecurityGroupRule) error {
+		for _, rule := range rules {
+			var okRanges []string
+			for _, spec := range securityGroupRulesSpec {
+				if flow != spec.Flow || rule.GetFromPortRange() != spec.FromPortRange || rule.GetToPortRange() != spec.ToPortRange || rule.GetIpProtocol() != spec.IpProtocol {
+					continue
+				}
+				okRanges = append(okRanges, spec.GetIpRanges()...)
+			}
+			ipRanges := rule.GetIpRanges()
+			for _, ipRange := range ipRanges {
+				if slices.Contains(okRanges, ipRange) {
+					continue
+				}
+				log.V(2).Info("Deleting securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", rule.GetIpProtocol(), "fromPort", rule.GetFromPortRange(), "toPort", rule.GetToPortRange())
+				err := r.Cloud.SecurityGroup(ctx, *clusterScope).DeleteSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, rule.GetIpProtocol(), ipRange, "", rule.GetFromPortRange(), rule.GetToPortRange())
+				if err != nil {
+					return fmt.Errorf("cannot create securityGroupRule: %w", err)
+				}
+			}
+		}
+		return nil
 	}
-	for _, ipRange := range ipRanges {
-		if slices.Contains(existingRanges, ipRange) {
-			continue
-		}
-		log.V(2).Info("Creating securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", protocol, "fromPort", fromPort, "toPort", toPort)
-		_, err := r.Cloud.SecurityGroup(ctx, *clusterScope).CreateSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, protocol, ipRange, "", fromPort, toPort)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create securityGroupRule: %w", err)
-		}
+	err := checkRules("Inbound", sg.GetInboundRules())
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = checkRules("Outbound", sg.GetOutboundRules())
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
 }
@@ -120,16 +155,13 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 				IpRanges:      ips,
 			})
 		}
-		if len(securityGroupRulesSpec) <= len(securityGroup.GetInboundRules())+len(securityGroup.GetOutboundRules()) {
-			log.V(4).Info("Same number of rules, not checking securityGroup rules", "securityGroupId", securityGroup.GetSecurityGroupId())
-			continue
-		}
 		log.V(4).Info("Checking securityGroup rules", "securityGroupId", securityGroup.GetSecurityGroupId())
-		for _, securityGroupRuleSpec := range securityGroupRulesSpec {
-			_, err = r.reconcileSecurityGroupRules(ctx, clusterScope, securityGroupRuleSpec, securityGroup)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
+		_, err = r.reconcileSecurityGroupAddRules(ctx, clusterScope, securityGroupRulesSpec, securityGroup)
+		if err == nil && securityGroupSpec.Authoritative {
+			_, err = r.reconcileSecurityGroupDeleteRules(ctx, clusterScope, securityGroupRulesSpec, securityGroup)
+		}
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("check rules: %w", err)
 		}
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerSecurityGroup)
