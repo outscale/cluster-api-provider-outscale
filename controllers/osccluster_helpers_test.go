@@ -59,6 +59,13 @@ func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) p
 	}
 }
 
+func patchAdditionalSGRule(add infrastructurev1beta1.OscAdditionalSecurityRules) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Generation++
+		m.Spec.Network.AdditionalSecurityRules = append(m.Spec.Network.AdditionalSecurityRules, add)
+	}
+}
+
 func patchIncrementGeneration() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.Generation++

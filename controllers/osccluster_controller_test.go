@@ -647,6 +647,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
 				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
 				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "0.0.0.0/0", -1, -1),
 
 				mockGetLoadBalancer("test-cluster-api-k8s", nil),
 				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
@@ -998,7 +999,14 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "ready-0.5",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchAdditionalSGRule(infrastructurev1beta1.OscAdditionalSecurityRules{
+					Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker},
+					Rules: []infrastructurev1beta1.OscSecurityGroupRule{{
+						Flow:       "Inbound",
+						IpProtocol: "tcp", FromPortRange: 24, ToPortRange: 25,
+						IpRanges: []string{"1.2.3.4/32", "4.5.6.7/32"},
+					}},
+				}),
 			},
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("vpc-foo")}),
@@ -1011,12 +1019,12 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kw"),
 					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
 					},
 				}),
-				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "1.2.3.4/32", 24, 25),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "4.5.6.7/32", 24, 25),
 				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kcp"),
 					InboundRules: &[]osc.SecurityGroupRule{

@@ -339,6 +339,15 @@ func (s *ClusterScope) HasIPRestriction() bool {
 	return len(s.OscCluster.Spec.Network.AllowFromIPRanges) > 0
 }
 
+func (s *ClusterScope) getAdditionalRules(roles ...infrastructurev1beta1.OscRole) []infrastructurev1beta1.OscSecurityGroupRule {
+	for _, ar := range s.GetNetwork().AdditionalSecurityRules {
+		if slices.Equal(roles, ar.Roles) {
+			return ar.Rules
+		}
+	}
+	return nil
+}
+
 // GetSecurityGroups returns the list of all security groups for the cluster.
 func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
 	if len(s.OscCluster.Spec.Network.SecurityGroups) > 0 {
@@ -371,6 +380,8 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		},
 		Authoritative: true,
 	}
+	lb.SecurityGroupRules = append(lb.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleLoadBalancer)...)
+
 	worker := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-worker",
 		Description: "Worker securityGroup for " + s.GetName(),
@@ -381,6 +392,8 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		},
 		Authoritative: true,
 	}
+	worker.SecurityGroupRules = append(worker.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleWorker)...)
+
 	controlplane := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-controlplane",
 		Description: "Controlplane securityGroup for " + s.GetName(),
@@ -393,6 +406,8 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		},
 		Authoritative: true,
 	}
+	controlplane.SecurityGroupRules = append(controlplane.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleControlPlane)...)
+
 	node := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-node",
 		Description: "Node securityGroup for " + s.GetName(),
@@ -412,6 +427,8 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		Tag:           "OscK8sMainSG",
 		Authoritative: true,
 	}
+	node.SecurityGroupRules = append(node.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker)...)
+
 	if !s.OscCluster.Spec.Network.Bastion.Enable {
 		return []infrastructurev1beta1.OscSecurityGroup{lb, worker, controlplane, node}
 	}
@@ -428,6 +445,8 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		},
 		Authoritative: true,
 	}
+	bastion.SecurityGroupRules = append(bastion.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleBastion)...)
+
 	return []infrastructurev1beta1.OscSecurityGroup{lb, worker, controlplane, node, bastion}
 }
 
