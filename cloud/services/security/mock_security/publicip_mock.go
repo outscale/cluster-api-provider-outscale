@@ -100,21 +100,6 @@ func (mr *MockOscPublicIpInterfaceMockRecorder) GetPublicIpByIp(ctx, publicIp an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicIpByIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).GetPublicIpByIp), ctx, publicIp)
 }
 
-// LinkPublicIp mocks base method.
-func (m *MockOscPublicIpInterface) LinkPublicIp(ctx context.Context, publicIpId, vmId string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LinkPublicIp", ctx, publicIpId, vmId)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// LinkPublicIp indicates an expected call of LinkPublicIp.
-func (mr *MockOscPublicIpInterfaceMockRecorder) LinkPublicIp(ctx, publicIpId, vmId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).LinkPublicIp), ctx, publicIpId, vmId)
-}
-
 // ListPublicIpsFromPool mocks base method.
 func (m *MockOscPublicIpInterface) ListPublicIpsFromPool(ctx context.Context, pool string) ([]osc.PublicIp, error) {
 	m.ctrl.T.Helper()
@@ -128,18 +113,4 @@ func (m *MockOscPublicIpInterface) ListPublicIpsFromPool(ctx context.Context, po
 func (mr *MockOscPublicIpInterfaceMockRecorder) ListPublicIpsFromPool(ctx, pool any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPublicIpsFromPool", reflect.TypeOf((*MockOscPublicIpInterface)(nil).ListPublicIpsFromPool), ctx, pool)
-}
-
-// UnlinkPublicIp mocks base method.
-func (m *MockOscPublicIpInterface) UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnlinkPublicIp", ctx, linkPublicIpId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UnlinkPublicIp indicates an expected call of UnlinkPublicIp.
-func (mr *MockOscPublicIpInterfaceMockRecorder) UnlinkPublicIp(ctx, linkPublicIpId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkPublicIp", reflect.TypeOf((*MockOscPublicIpInterface)(nil).UnlinkPublicIp), ctx, linkPublicIpId)
 }
