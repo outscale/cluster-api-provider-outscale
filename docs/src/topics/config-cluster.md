@@ -284,6 +284,12 @@ The default configuration is :
     toPortRange: 22
     ipRanges:
     - {net_range}
+  - flow: Outbound # default outbound rule
+    ipProtocol: "-1"
+    fromPortRange: -1
+    toPortRange: -1
+    ipRanges:
+    - "0.0.0.0/0"
 ```
 
 > Note: the default configuration is never rewritten to the spec.
