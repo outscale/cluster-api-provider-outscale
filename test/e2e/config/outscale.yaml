@@ -58,14 +58,18 @@ providers:
         files:
           - sourcePath: "../../../metadata.yaml"
             targetName: "metadata.yaml"
+          # quickstart_test
           - sourcePath: "../data/infrastructure-outscale/cluster-template.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-topology.yaml"
           - sourcePath: "../data/infrastructure-outscale/clusterclass-cluster-class.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-multiaz.yaml"
+          # upgrade_test
           - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrades.yaml"
-          - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade-scale-in.yaml"
+          # node_test
           - sourcePath: "../data/infrastructure-outscale/cluster-template-node-drain.yaml"
-          - sourcePath: "../data/infrastructure-outscale/cluster-template-kcp-remediation.yaml"
-          - sourcePath: "../data/infrastructure-outscale/cluster-template-md-remediation.yaml"
+          # - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrade-scale-in.yaml"
+          # - sourcePath: "../data/infrastructure-outscale/cluster-template-kcp-remediation.yaml"
+          # - sourcePath: "../data/infrastructure-outscale/cluster-template-md-remediation.yaml"
 variables:
   # Outscale Provider Variable
   OUTSCALE_PROVIDER: outscale:v0.1.99

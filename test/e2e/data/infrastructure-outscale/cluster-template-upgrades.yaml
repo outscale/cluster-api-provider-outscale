@@ -24,7 +24,7 @@ metadata:
   name: "${CLUSTER_NAME}"
 spec:
   network:
-    subregionName: ${OSC_SUBREGION_NAME}
+    subregionName: ${OSC_REGION}a
     loadBalancer:
       loadbalancername: "upgrade-k8s-again"
     bastion:
@@ -68,7 +68,7 @@ spec:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           keypairName: "${OSC_KEYPAIR_NAME}"
           vmType: "${OSC_VM_TYPE}"
 ---
@@ -88,7 +88,7 @@ spec:
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
           keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -106,7 +106,7 @@ spec:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           role: controlplane
           vmType: "${OSC_VM_TYPE}"
 ---
@@ -128,7 +128,7 @@ spec:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           role: controlplane
           loadBalancerName: "upgrade-k8s-again"
           vmType: "${OSC_VM_TYPE}"

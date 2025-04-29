@@ -20,6 +20,7 @@ covers.html
 getstarted.*
 secret.*
 *.kubeconfig
+clusterctl-settings.json
 # Dependency directories (remove the comment below to include it)
 bin/
 hack/json-format/target/

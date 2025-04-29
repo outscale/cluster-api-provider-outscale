@@ -70,11 +70,12 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	}
 
 	vmSubregionName := vmSpec.SubregionName
-	err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
-	if err != nil {
-		return vmTagName, err
+	if vmSpec.SubregionName != "" {
+		err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
+		if err != nil {
+			return vmTagName, err
+		}
 	}
-
 	vmSubnetName := vmSpec.SubnetName
 	ipSubnetRange := clusterScope.GetIpSubnetRange(vmSubnetName)
 	vmPrivateIps := machineScope.GetVmPrivateIps()
@@ -207,10 +208,10 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
 		}
 		vmId := vm.GetVmId()
-		r.Tracker.trackVm(machineScope, vm)
-		machineScope.SetVmState(infrastructurev1beta1.VmStatePending)
-		machineScope.SetProviderID(vmSpec.SubregionName, vmId)
 		log.V(2).Info("VM created", "vmId", vmId)
+		r.Tracker.trackVm(machineScope, vm)
+		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
+		machineScope.SetProviderID(vm.Placement.GetSubregionName(), vmId)
 	}
 
 	if vm.GetState() != "running" {

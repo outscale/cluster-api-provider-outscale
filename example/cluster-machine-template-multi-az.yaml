@@ -33,34 +33,10 @@ spec:
   network:
     loadBalancer:
       loadbalancername: cluster-api-multi-az-lb
-    net:
-      ipRange: "10.0.0.0/16"
-    subnets:
-    - ipSubnetRange: "10.0.0.0/24"
-      subregionName: eu-west-2a
-      roles:
-      - worker
-    - ipSubnetRange: "10.0.1.0/24"
-      subregionName: eu-west-2b
-      roles:
-      - worker
-    - ipSubnetRange: "10.0.2.0/24"
-      subregionName: eu-west-2a
-      roles:
-      - controlplane
-    - ipSubnetRange: "10.0.3.0/24"
-      subregionName: eu-west-2b
-      roles:
-      - controlplane
-    - ipSubnetRange: "10.0.4.0/24"
-      subregionName: eu-west-2a
-      roles:
-      - loadbalancer
-      - nat
-    - ipSubnetRange: "10.0.5.0/24"
-      subregionName: eu-west-2b
-      roles:
-      - nat
+    subregions:
+    - eu-west-2a
+    - eu-west-2b
+    - eu-west-2c
     bastion:
       enable: false
 ---
@@ -83,8 +59,6 @@ spec:
             rootDiskType: gp2
           role: controlplane
           vmType: "tinav6.c4r8p1"
-          tags:
-              osc.fcu.repulse_server: vm-control-plane
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1

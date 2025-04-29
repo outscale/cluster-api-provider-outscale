@@ -146,7 +146,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
 
 	// Add public route table to mark public subnet as public & enable NAT creation
-	_, err = r.reconcileRouteTable(ctx, clusterScope, infrastructurev1beta1.RoleLoadBalancer)
+	_, err = r.reconcileRouteTable(ctx, clusterScope, infrastructurev1beta1.RoleNat)
 	if err != nil {
 		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
 		return reconcile.Result{}, fmt.Errorf("reconcile public routeTables: %w", err)
