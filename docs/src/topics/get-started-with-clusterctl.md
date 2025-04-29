@@ -9,9 +9,8 @@
     - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
     - You can use a container with [kind][kind]. 
     - You can use a rke cluster with [osc-rke][osc-rke].
-- Look at cluster-api note ([cluster-api][cluster-api])
 
-## Install clusterctl
+## Installing clusterctl
 
 On a Linux/amd64 platform:
 ```bash
@@ -19,16 +18,16 @@ curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.9.6/
 sudo install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
 ```
 
-> For other platforms, please refer to the [Cluster Api Quickstart][cluster-api].
+> For other platforms, please refer to the [Cluster API Quickstart][cluster-api].
 
-Check version which is already installed:
+Check which version is installed:
 ```bash
 clusterctl version
 
 clusterctl version: &version.Info{Major:"1", Minor:"8", GitVersion:"v1.8.1", GitCommit:"02769254e95db17afbd6ec4036aacbd294d9424c", GitTreeState:"clean", BuildDate:"2024-08-14T05:53:36Z", GoVersion:"go1.22.5", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-## Setup clusterctl
+## Configuring clusterctl
 
 You can enable [ClusterResourceSet][ClusterResourceSet] with 
 ```bash
@@ -58,12 +57,12 @@ kubectl create namespace cluster-api-provider-outscale-system
 kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY --from-literal=region=$OSC_REGION  -n cluster-api-provider-outscale-system
 ```
 
-Install Cluster Api controllers:
+Install Cluster API controllers:
 ```bash
-./bin/clusterctl init --infrastructure outscale
+clusterctl init --infrastructure outscale
 ```
 
-## Generate a default workload cluster configuration
+## Generating a default workload cluster configuration
 
 Create a keypair.
 
@@ -76,21 +75,19 @@ export OSC_SUBREGION_NAME=<osc-subregion>
 export OSC_VM_TYPE=<osc-vm-type>
 export OSC_IMAGE_NAME=<osc-image-name>
 
-./bin/clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
+clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
 
-> **WARNING**: Kubernetes version must match the kubernetes version which is included in image name in [omi][omi]
-
-You can adapt the generated yaml file to your needs.
+You can edit the generated YAML file to customize the configuration to your needs.
 
 Then apply:
 ```
 kubectl apply -f getstarted.yaml
 ```
 
-## CNI & CCM
+## Installing CNI & CCM
 
-In order for nodes to be ready, you must have a CNI and CCM.
+In order for nodes to be ready, a CNI and CCM must be installed.
 
 You can use [ClusterResourceSet][ClusterResourceSet] with label **clustername** + **crs-cni** and label **clustername** + **crs-ccm** where clustername is the name of your cluster.
 
@@ -104,8 +101,9 @@ To install CCM, you can use a [helm][helm] chart or a ClusterResourceSet.
 
 * [cloud-provider-outscale][cloud-provider-outscale]
 
-## Cluster Api status
-You can then get the status:
+## Checking status
+
+You can check the status of your new workload cluster:
 ```bash
 root@cidev-admin v1beta1]# kubectl get cluster-api  -A
 NAMESPACE   NAME                                                                       CLUSTER       AGE
@@ -141,19 +139,19 @@ default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-contr
 default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-md-0            95m
 
 ```
-## Connect to a workload cluster
+## Connecting to a workload cluster
 
 You can get a kubeconfig to connect to your workload cluster with
 [clusterctl get kubeconfig][kubeconfig].
 
-# Delete Cluster api
+## Deleting a cluster
 
-## Delete cluster
-
-To delete our cluster:
+To delete your cluster:
 ```bash
 kubectl delete -f getstarted.yaml
 ```
+
+## Deleting Cluster API
 
 To delete cluster-api:
 ```bash

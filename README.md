@@ -1,39 +1,34 @@
-# Kubernetes Cluster Api Provider Outscale
+# Kubernetes Cluster API Provider Outscale (CAPOSC)
 [![Project Incubating](https://docs.outscale.com/fr/userguide/_images/Project-Incubating-blue.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
 
 Kubernetes-native declarative infrastructure for Outscale
 
 ## What is the Cluster API Provider Outscale
 
-The Cluster API is used to create, manage and configure cluster using a declarative Kubernetes-style APIs.
+Cluster API is used to manage workload clusters through a declarative, Kubernetes-style API.
 
-The Cluster API allows you to deploy kubernetes across multiple cloud provider. The cluster api provider outscale allows you a outscale deployment of kubernetes.
+The Cluster API Provider Outscale allows you to deploy Cluster API clusters on the Outscale Cloud.
 
 ## Project Status
  
-The project is Work in Progress,  in an Alpha state.
+The project is a work in progress and currently in an alpha state.
 
-## Compatibility with Cluster API and Kubernetes Versions
+## Using CAPOSC
 
-The provider version has currently been tested with the following version of Cluster API (v1beta1)
-The provider version has currently been tested with the following version of kubernetes (v1.22.x)
+Please refer to [Getting started with clusterctl](./docs/src/topics/get-started-with-clusterctl.md)
 
-# Features
+## Developing CAPOSC
 
-- Cluster infrastructure Outscale controller (https://cluster-api.sigs.k8s.io/developer/providers/cluster-infrastructure.html#cluster-infrastructure-provider-specification)
+Please refer to [Development](./docs/src/developers/developement.md)
 
-# To start using Outscale Cluster Api
-Please look at [Deployment](./docs/src/topics/get-started-with-clusterctl.md)
+## Contributing to CAPOSC development
 
-# To start developing Outscale Cluster Api
-Please look at [Development](./docs/src/developers/developement.md)
+Please refer to [Contribution](CONTRIBUTING.md)
 
-# Contribution
-Please look at [Contribution](CONTRIBUTING.md)
-
-# License
+## License
 
 > Copyright Outscale SAS
 >
 > BSD-3-Clause
+
 This project is compliant with [REUSE](https://reuse.software/).
