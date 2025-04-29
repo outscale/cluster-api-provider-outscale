@@ -91,6 +91,9 @@ type OscNetwork struct {
 	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
 	// + optional
 	AllowFromIPRanges []string `json:"allowFromIPRanges,omitempty"`
+	// The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
+	// + optional
+	AllowToIPRanges []string `json:"allowToIPRanges,omitempty"`
 }
 
 type OscReuse struct {

@@ -41,9 +41,15 @@ func patchUseExistingSecurityGroups() patchOSCClusterFunc {
 	}
 }
 
-func patchRestrictIP(ips ...string) patchOSCClusterFunc {
+func patchRestrictFromIP(ips ...string) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.Spec.Network.AllowFromIPRanges = ips
+	}
+}
+
+func patchRestrictToIP(ips ...string) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.AllowToIPRanges = ips
 	}
 }
 

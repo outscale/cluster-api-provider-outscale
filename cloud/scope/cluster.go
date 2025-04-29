@@ -408,6 +408,14 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 	}
 	controlplane.SecurityGroupRules = append(controlplane.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleControlPlane)...)
 
+	allowedOut := s.OscCluster.Spec.Network.AllowToIPRanges
+	switch {
+	case len(allowedOut) == 0:
+		allowedOut = []string{"0.0.0.0/0"}
+	case allowedOut[0] == "":
+		allowedOut = nil
+	}
+
 	node := infrastructurev1beta1.OscSecurityGroup{
 		Name:        s.GetName() + "-node",
 		Description: "Node securityGroup for " + s.GetName(),
@@ -422,10 +430,15 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRange: s.GetNet().IpRange},   // Flannel VXLAN
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRange: s.GetNet().IpRange},   // Cillium health
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRange: s.GetNet().IpRange},   // Cillium hubble
-			{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRange: "0.0.0.0/0"},              // Default outbound rule
 		},
 		Tag:           "OscK8sMainSG",
 		Authoritative: true,
+	}
+	// Outbound traffic
+	if len(allowedOut) > 0 {
+		node.SecurityGroupRules = append(node.SecurityGroupRules,
+			infrastructurev1beta1.OscSecurityGroupRule{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: allowedOut},
+		)
 	}
 	node.SecurityGroupRules = append(node.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker)...)
 
@@ -444,6 +457,12 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRange: s.GetNet().IpRange},
 		},
 		Authoritative: true,
+	}
+	// Outbound traffic
+	if len(allowedOut) > 0 {
+		bastion.SecurityGroupRules = append(bastion.SecurityGroupRules,
+			infrastructurev1beta1.OscSecurityGroupRule{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: allowedOut},
+		)
 	}
 	bastion.SecurityGroupRules = append(bastion.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta1.RoleBastion)...)
 

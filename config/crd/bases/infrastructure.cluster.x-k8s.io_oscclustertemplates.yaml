@@ -107,9 +107,67 @@ spec:
                         type: object
                       network:
                         properties:
+                          additionalSecurityRules:
+                            description: Additional rules to add to the automatic
+                              security groups.
+                            items:
+                              properties:
+                                roles:
+                                  description: The roles of automatic securityGroup
+                                    to add rules to.
+                                  items:
+                                    type: string
+                                  type: array
+                                rules:
+                                  description: The rules to add.
+                                  items:
+                                    properties:
+                                      flow:
+                                        description: The flow of the security group
+                                          (inbound or outbound)
+                                        type: string
+                                      fromPortRange:
+                                        description: The beginning of the port range
+                                        format: int32
+                                        type: integer
+                                      ipProtocol:
+                                        description: The ip protocol name (tcp, udp,
+                                          icmp or -1)
+                                        type: string
+                                      ipRange:
+                                        description: The ip range of the security
+                                          group rule (deprecated)
+                                        type: string
+                                      ipRanges:
+                                        description: The list of ip ranges of the
+                                          security group rule
+                                        items:
+                                          type: string
+                                        type: array
+                                      name:
+                                        description: The tag name associate with the
+                                          security group
+                                        type: string
+                                      resourceId:
+                                        description: The security group rule id
+                                        type: string
+                                      toPortRange:
+                                        description: The end of the port range
+                                        format: int32
+                                        type: integer
+                                    type: object
+                                  type: array
+                              type: object
+                            type: array
                           allowFromIPRanges:
                             description: The list of IP ranges (in CIDR notation)
                               to restrict bastion/Kubernetes API access to.
+                            items:
+                              type: string
+                            type: array
+                          allowToIPRanges:
+                            description: The list of IP ranges (in CIDR notation)
+                              the nodes can talk to ("0.0.0.0/0" if not set).
                             items:
                               type: string
                             type: array
@@ -353,10 +411,6 @@ spec:
                                 description: The Id of the Net to reuise (if useExisting
                                   is set)
                                 type: string
-                              useExisting:
-                                description: Reuse an existing network defined by
-                                  resourceId ?
-                                type: boolean
                             type: object
                           publicIps:
                             description: The Public Ip configuration
@@ -430,7 +484,7 @@ spec:
                               properties:
                                 authoritative:
                                   description: Is the Security Group configuration
-                                    authoritative (if yes, all rules not found in
+                                    authoritative ? (if yes, all rules not found in
                                     configuration will be deleted).
                                   type: boolean
                                 description:
@@ -521,6 +575,18 @@ spec:
                           subregionName:
                             description: The default subregion name
                             type: string
+                          useExisting:
+                            description: Reuse externally managed resources ?
+                            properties:
+                              net:
+                                description: If set, net, subnets, internet service,
+                                  nat services and route tables are externally managed
+                                type: boolean
+                              securityGroups:
+                                description: If set, security groups are externally
+                                  managed.
+                                type: boolean
+                            type: object
                         type: object
                     type: object
                 required:
