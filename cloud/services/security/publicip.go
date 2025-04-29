@@ -19,12 +19,10 @@ package security
 import (
 	"context"
 	"errors"
-	"net/http"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const PublicIPPoolTag = "OscClusterIPPool"
@@ -36,8 +34,6 @@ type OscPublicIpInterface interface {
 	GetPublicIp(ctx context.Context, publicIpId string) (*osc.PublicIp, error)
 	GetPublicIpByIp(ctx context.Context, publicIp string) (*osc.PublicIp, error)
 	ListPublicIpsFromPool(ctx context.Context, pool string) ([]osc.PublicIp, error)
-	LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error)
-	UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error
 }
 
 // CreatePublicIp retrieve a publicip associated with you account
@@ -186,50 +182,4 @@ func (s *Service) ValidatePublicIpIds(ctx context.Context, publicIpIds []string)
 		}
 	}
 	return validPublicIpIds, nil
-}
-
-// LinkPublicIp link publicIp
-func (s *Service) LinkPublicIp(ctx context.Context, publicIpId string, vmId string) (string, error) {
-	linkPublicIpRequest := osc.LinkPublicIpRequest{
-		PublicIpId: &publicIpId,
-		VmId:       &vmId,
-	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	var linkPublicIpResponse osc.LinkPublicIpResponse
-	linkPublicIpCallBack := func() (bool, error) {
-		var httpRes *http.Response
-		var err error
-		linkPublicIpResponse, httpRes, err = oscApiClient.PublicIpApi.LinkPublicIp(oscAuthClient).LinkPublicIpRequest(linkPublicIpRequest).Execute()
-		utils.LogAPICall(ctx, "LinkPublicIp", linkPublicIpRequest, httpRes, err)
-		if err != nil {
-			if utils.RetryIf(httpRes) {
-				return false, nil
-			}
-			return false, utils.ExtractOAPIError(err, httpRes)
-		}
-		return true, err
-	}
-	backoff := utils.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, linkPublicIpCallBack)
-	if waitErr != nil {
-		return "", waitErr
-	}
-	linkPublicIpId, ok := linkPublicIpResponse.GetLinkPublicIpIdOk()
-	if !ok {
-		return "", errors.New("Can not get publicip")
-	}
-	return *linkPublicIpId, nil
-}
-
-// UnlinkPublicIp unlink publicIp
-func (s *Service) UnlinkPublicIp(ctx context.Context, linkPublicIpId string) error {
-	unlinkPublicIpRequest := osc.UnlinkPublicIpRequest{
-		LinkPublicIpId: &linkPublicIpId,
-	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.PublicIpApi.UnlinkPublicIp(oscAuthClient).UnlinkPublicIpRequest(unlinkPublicIpRequest).Execute()
-	utils.LogAPICall(ctx, "UnlinkPublicIp", unlinkPublicIpRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
 }
