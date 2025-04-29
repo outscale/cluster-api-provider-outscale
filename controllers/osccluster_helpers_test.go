@@ -78,6 +78,12 @@ func patchIncrementGeneration() patchOSCClusterFunc {
 	}
 }
 
+func patchSubregions(subregions ...string) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.Subregions = subregions
+	}
+}
+
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().

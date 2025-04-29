@@ -835,6 +835,11 @@ func (in *OscNetwork) DeepCopyInto(out *OscNetwork) {
 	}
 	out.Image = in.Image
 	in.Bastion.DeepCopyInto(&out.Bastion)
+	if in.Subregions != nil {
+		in, out := &in.Subregions, &out.Subregions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.AllowFromIPRanges != nil {
 		in, out := &in.AllowFromIPRanges, &out.AllowFromIPRanges
 		*out = make([]string, len(*in))

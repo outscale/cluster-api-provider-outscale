@@ -1,16 +1,20 @@
 # Configuring nodes
 
-## Adding control-plane nodes
+## Keypairs
 
-A `OscMachineTemplate` resource must be created for control plane nodes.
+Keypairs must be configured. CAPOSC does not create keypairs anymore.
 
-When adding subnets with the `controlplane` role on multiple subregions, control plane nodes will be automatically deployed on the specified subregions.
+## Adding controlplane nodes
+
+A `OscMachineTemplate` resource must be created for controlplane nodes.
+
+No need to define the node subregion, CAPI automaticaly assigns controlplane nodes to subregions (failure domains).
 
 ## Adding worker nodes
 
 A `MachineDeployment` resource and an `OscMachineTemplate` resource must be created per worker node pool.
 
-In a multi-AZ deployment, a node pool (`MachineDeployment`/`OscMachineTemplate` pair) must be created per AZ.
+The node subregion needs to be configured.
 
 ## Adding volumes to nodes
 
@@ -37,7 +41,6 @@ In your oscmachinetemplate definition, add the list of volumes required:
       volumeType: io1
 [...]
 ```
-
 
 ## OscMachineTemplate configuration
 

@@ -83,9 +83,11 @@ type OscNetwork struct {
 	// The bastion configuration
 	// + optional
 	Bastion OscBastion `json:"bastion,omitempty"`
-	// The default subregion name
+	// The default subregion name (deprecated, use subregions)
 	SubregionName string `json:"subregionName,omitempty"`
-	// Add SecurityGroup Rule after the cluster is created (unused)
+	// The list of subregions where to deploy this cluster
+	Subregions []string `json:"subregions,omitempty"`
+	// (unused)
 	// + optional
 	ExtraSecurityGroupRule bool `json:"extraSecurityGroupRule,omitempty"`
 	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.

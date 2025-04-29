@@ -24,7 +24,7 @@ metadata:
   name: "${CLUSTER_NAME}"
 spec:
   network:
-    subregionName: ${OSC_SUBREGION_NAME}
+    subregionName: ${OSC_REGION}a
     loadBalancer:
       loadbalancername: "upgrade-k8s-again"
     bastion:
@@ -72,7 +72,7 @@ spec:
             - name: ${CLUSTER_NAME}-privateip-kw
               privateIp: "10.0.0.138"
           keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -94,7 +94,7 @@ spec:
           privateIps:
             - name: ${CLUSTER_NAME}-privateip-kw-upgrade
               privateIp: "10.0.0.136"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -112,7 +112,7 @@ spec:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           privateIps:
             - name: ${CLUSTER_NAME}-privateip-kcp
               privateIp: "10.0.0.38"
@@ -137,7 +137,7 @@ spec:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
           privateIps:
             - name: ${CLUSTER_NAME}-privateip-kcp-upgrade
               privateIp: "10.0.0.36"

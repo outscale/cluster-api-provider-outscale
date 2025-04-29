@@ -140,7 +140,23 @@ func (s *ClusterScope) GetNetName() string {
 	return "Net for " + s.OscCluster.ObjectMeta.Name
 }
 
-// GetSubnet return the subnet of the cluster
+// GetDefaultSubregion returns the default subregion.
+func (s *ClusterScope) GetDefaultSubregion() string {
+	if len(s.GetNetwork().Subregions) > 0 {
+		return s.GetNetwork().Subregions[0]
+	}
+	return s.GetNetwork().SubregionName
+}
+
+// GetSubregions returns the subregions where to deploy the cluster.
+func (s *ClusterScope) GetSubregions() []string {
+	if len(s.GetNetwork().Subregions) > 0 {
+		return s.GetNetwork().Subregions
+	}
+	return []string{s.GetNetwork().SubregionName}
+}
+
+// GetSubnets returns the subnets of the cluster.
 func (s *ClusterScope) GetSubnets() []infrastructurev1beta1.OscSubnet {
 	if len(s.OscCluster.Spec.Network.Subnets) > 0 {
 		return s.OscCluster.Spec.Network.Subnets
@@ -149,8 +165,7 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta1.OscSubnet {
 	if err != nil {
 		return nil
 	}
-	// TODO: add a list in the config
-	fds := []string{s.OscCluster.Spec.Network.SubregionName}
+	fds := s.GetSubregions()
 	subnets := make([]infrastructurev1beta1.OscSubnet, 0, 3*len(fds))
 	net.IP[2]++
 	net.Mask[1], net.Mask[2] = 255, 255
@@ -174,7 +189,7 @@ var ErrNoSubnetFound = errors.New("subnet not found")
 
 func (s *ClusterScope) GetSubnet(name string, role infrastructurev1beta1.OscRole, subregion string) (infrastructurev1beta1.OscSubnet, error) {
 	if subregion == "" {
-		subregion = s.OscCluster.Spec.Network.SubregionName
+		subregion = s.GetDefaultSubregion()
 	}
 	for _, spec := range s.GetSubnets() {
 		switch {
@@ -196,20 +211,20 @@ func (s *ClusterScope) SubnetHasRole(spec infrastructurev1beta1.OscSubnet, role 
 		return role == infrastructurev1beta1.RoleControlPlane
 	}
 	if s.OscCluster.Spec.Network.LoadBalancer.SubnetName != "" && spec.Name == s.OscCluster.Spec.Network.LoadBalancer.SubnetName {
-		return role == infrastructurev1beta1.RoleLoadBalancer || role == infrastructurev1beta1.RoleBastion
+		return role == infrastructurev1beta1.RoleLoadBalancer || role == infrastructurev1beta1.RoleBastion || role == infrastructurev1beta1.RoleNat
 	}
 	return role == infrastructurev1beta1.RoleWorker
 }
 
 func (s *ClusterScope) SubnetIsPublic(spec infrastructurev1beta1.OscSubnet) bool {
-	return s.SubnetHasRole(spec, infrastructurev1beta1.RoleBastion) || s.SubnetHasRole(spec, infrastructurev1beta1.RoleLoadBalancer)
+	return s.SubnetHasRole(spec, infrastructurev1beta1.RoleBastion) || s.SubnetHasRole(spec, infrastructurev1beta1.RoleLoadBalancer) || s.SubnetHasRole(spec, infrastructurev1beta1.RoleNat)
 }
 
 func (s *ClusterScope) GetSubnetSubregion(spec infrastructurev1beta1.OscSubnet) string {
 	if spec.SubregionName != "" {
 		return spec.SubregionName
 	}
-	return s.OscCluster.Spec.Network.SubregionName
+	return s.GetDefaultSubregion()
 }
 
 func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta1.OscSubnet) string {
@@ -276,7 +291,7 @@ func (s *ClusterScope) GetNatService(name string, subregion string) (infrastruct
 	}
 	for _, spec := range nats {
 		if spec.SubregionName == "" {
-			spec.SubregionName = s.OscCluster.Spec.Network.SubregionName
+			spec.SubregionName = s.GetDefaultSubregion()
 		}
 		switch {
 		case name != "" && spec.Name == name:
@@ -293,7 +308,11 @@ func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta1.OscNatService
 	if nat.Name != "" {
 		return nat.Name
 	}
-	return "Nat service for " + s.OscCluster.ObjectMeta.Name
+	name := "Nat service for " + s.OscCluster.ObjectMeta.Name
+	if nat.SubregionName != "" {
+		name += "/" + nat.SubregionName
+	}
+	return name
 }
 
 // GetNatServiceClientToken return the client token for a nat service
@@ -318,8 +337,10 @@ func (s *ClusterScope) GetRouteTables() []infrastructurev1beta1.OscRouteTable {
 	for _, subnet := range subnets {
 		rtbl := infrastructurev1beta1.OscRouteTable{
 			Name:          s.GetSubnetName(subnet),
-			Subnets:       []string{subnet.Name},
 			SubregionName: s.GetSubnetSubregion(subnet),
+		}
+		if subnet.Name != "" {
+			rtbl.Subnets = []string{subnet.Name}
 		}
 		if len(subnet.Roles) > 0 {
 			rtbl.Role = subnet.Roles[0]

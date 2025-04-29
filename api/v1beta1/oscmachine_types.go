@@ -46,9 +46,8 @@ type OscMachineStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=oscmachines,scope=Namespaced,categories=cluster-api
-// +kubebuilder:printcolumn:name="VM",type=string,JSONPath=".spec.node.vm.resourceId"
 // +kubebuilder:printcolumn:name="VM Type",type=string,JSONPath=".spec.node.vm.vmType"
-// +kubebuilder:printcolumn:name="SubRegion",type=string,JSONPath=".spec.node.vm.subregionName"
+// +kubebuilder:printcolumn:name="ProviderID",type=string,JSONPath=".spec.providerID"
 // +kubebuilder:printcolumn:name="State",type=string,JSONPath=".status.vmState"
 
 // OscMachine is the Schema for the oscmachines API

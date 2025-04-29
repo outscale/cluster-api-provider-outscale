@@ -207,8 +207,7 @@ spec:
                       type: string
                     type: array
                   extraSecurityGroupRule:
-                    description: Add SecurityGroup Rule after the cluster is created
-                      (unused)
+                    description: (unused)
                     type: boolean
                   image:
                     description: The image configuration (unused)
@@ -524,8 +523,13 @@ spec:
                       type: object
                     type: array
                   subregionName:
-                    description: The default subregion name
+                    description: The default subregion name (deprecated, use subregions)
                     type: string
+                  subregions:
+                    description: The list of subregions where to deploy this cluster
+                    items:
+                      type: string
+                    type: array
                   useExisting:
                     description: Reuse externally managed resources ?
                     properties:
@@ -1030,8 +1034,7 @@ spec:
                               type: string
                             type: array
                           extraSecurityGroupRule:
-                            description: Add SecurityGroup Rule after the cluster
-                              is created (unused)
+                            description: (unused)
                             type: boolean
                           image:
                             description: The image configuration (unused)
@@ -1361,8 +1364,15 @@ spec:
                               type: object
                             type: array
                           subregionName:
-                            description: The default subregion name
+                            description: The default subregion name (deprecated, use
+                              subregions)
                             type: string
+                          subregions:
+                            description: The list of subregions where to deploy this
+                              cluster
+                            items:
+                              type: string
+                            type: array
                           useExisting:
                             description: Reuse externally managed resources ?
                             properties:
@@ -1419,14 +1429,11 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.node.vm.resourceId
-      name: VM
-      type: string
     - jsonPath: .spec.node.vm.vmType
       name: VM Type
       type: string
-    - jsonPath: .spec.node.vm.subregionName
-      name: SubRegion
+    - jsonPath: .spec.providerID
+      name: ProviderID
       type: string
     - jsonPath: .status.vmState
       name: State

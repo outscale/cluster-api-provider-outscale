@@ -25,6 +25,32 @@ metadata:
 spec:
   network:
     subregionName: ${OSC_REGION}a
+    subnets:
+    - ipSubnetRange: 10.0.2.0/24
+      roles:
+      - loadbalancer
+      - nat
+      subregionName: ${OSC_REGION}a
+    - ipSubnetRange: 10.0.3.0/24
+      roles:
+      - worker
+      subregionName: ${OSC_REGION}a
+    - ipSubnetRange: 10.0.4.0/24
+      roles:
+      - controlplane
+      subregionName: ${OSC_REGION}a
+    - ipSubnetRange: 10.0.5.0/24
+      roles:
+      - nat
+      subregionName: ${OSC_REGION}b
+    - ipSubnetRange: 10.0.6.0/24
+      roles:
+      - worker
+      subregionName: ${OSC_REGION}b
+    - ipSubnetRange: 10.0.7.0/24
+      roles:
+      - controlplane
+      subregionName: ${OSC_REGION}b
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
     bastion:
@@ -33,7 +59,7 @@ spec:
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: "${CLUSTER_NAME}-md-0"
+  name: "${CLUSTER_NAME}-md-a"
 spec:
   clusterName: "${CLUSTER_NAME}"
   replicas: ${WORKER_MACHINE_COUNT}
@@ -45,18 +71,18 @@ spec:
       version: "${KUBERNETES_VERSION}"
       bootstrap:
         configRef:
-          name: "${CLUSTER_NAME}-md-0"
+          name: "${CLUSTER_NAME}-md"
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
       infrastructureRef:
-        name: "${CLUSTER_NAME}-md-0"
+        name: "${CLUSTER_NAME}-md-a"
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
-  name: "${CLUSTER_NAME}-md-0"
+  name: "${CLUSTER_NAME}-md-a"
 spec:
   template:
     spec:
@@ -69,6 +95,47 @@ spec:
             rootDiskType: "${OSC_VOLUME_TYPE}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           subregionName: ${OSC_REGION}a
+          vmType: "${OSC_VM_TYPE}"
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "${CLUSTER_NAME}-md-b"
+spec:
+  clusterName: "${CLUSTER_NAME}"
+  replicas: ${WORKER_MACHINE_COUNT}
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "${CLUSTER_NAME}"
+      version: "${KUBERNETES_VERSION}"
+      bootstrap:
+        configRef:
+          name: "${CLUSTER_NAME}-md"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+      infrastructureRef:
+        name: "${CLUSTER_NAME}-md-b"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-b"
+spec:
+  template:
+    spec:
+      node:
+        vm:
+          imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS}
+            rootDiskType: "${OSC_VOLUME_TYPE}"
+          keypairName: "${OSC_KEYPAIR_NAME}"
+          subregionName: ${OSC_REGION}b
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -93,7 +160,7 @@ spec:
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
-  name: "${CLUSTER_NAME}-md-0"
+  name: "${CLUSTER_NAME}-md"
 spec:
   template:
     spec:
