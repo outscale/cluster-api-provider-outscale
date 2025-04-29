@@ -288,6 +288,27 @@ The default configuration is :
 
 > Note: the default configuration is never rewritten to the spec.
 
+### Adding rules in automatic mode
+
+If you want to have add rules to the default automatic config, you can add them to `additionalSecurityRules`.
+
+```yaml
+network:
+  additionalSecurityRules:
+    - roles:
+      - controlplane
+      - worker
+      rules:
+      - flow: Inbound
+        ipProtocol: tcp
+        fromPortRange: 4240
+        toPortRange: 4240
+        ipRanges:
+        - 10.0.3.0/24
+```
+
+For each `additionalSecurityRules` entry, a single security group is matched, having the sames roles in the same order, and rules will be added to it.
+
 ### Manual mode
 
 | Name | Required | Description
@@ -308,6 +329,8 @@ Each rule is defined by:
 | `ipRanges` | false |  The list of ip ranges of the security group rule
 | `fromPortRange` | true |  The beginning of the port range
 | `toPortRange` | true |  The end of the port range
+
+> Note: If you define your own security groups, `additionalSecurityRules` is ignored.
 
 ## Load balancer
 

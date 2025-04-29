@@ -68,6 +68,9 @@ type OscNetwork struct {
 	// The Security Groups configuration.
 	// +optional
 	SecurityGroups []OscSecurityGroup `json:"securityGroups,omitempty"`
+	// Additional rules to add to the automatic security groups.
+	// +optional
+	AdditionalSecurityRules []OscAdditionalSecurityRules `json:"additionalSecurityRules,omitempty"`
 	// The Public Ip configuration
 	// +optional
 	PublicIps []*OscPublicIp `json:"publicIps,omitempty"`
@@ -287,6 +290,15 @@ func (sg *OscSecurityGroup) HasRole(role OscRole) bool {
 		return role == RoleControlPlane || role == RoleWorker
 	}
 	return false
+}
+
+type OscAdditionalSecurityRules struct {
+	// The roles of automatic securityGroup to add rules to.
+	// +optional
+	Roles []OscRole `json:"roles,omitempty"`
+	// The rules to add.
+	// +optional
+	Rules []OscSecurityGroupRule `json:"rules,omitempty"`
 }
 
 type OscPublicIp struct {
