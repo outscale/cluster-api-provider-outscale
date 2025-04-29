@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta1_test
 
 import (
 	"errors"
 	"testing"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,14 +29,14 @@ import (
 func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 	machineTestCases := []struct {
 		name                 string
-		machineSpec          OscMachineSpec
+		machineSpec          infrastructurev1beta1.OscMachineSpec
 		expValidateCreateErr error
 	}{
 		{
 			name: "create Valid Vm Spec",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						ImageId:     "ami-01234567",
 						KeypairName: "test-webhook",
 						VmType:      "tinav3.c2r4p2",
@@ -47,9 +48,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with bad keypairName",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						KeypairName: "rke λ",
 					},
 				},
@@ -58,9 +59,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with bad vmType",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						VmType: "oscv4.c2r4p2",
 					},
 				},
@@ -69,10 +70,10 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create rootdisk with bad iops",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						RootDisk: OscRootDisk{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskIops: -15,
 						},
 					},
@@ -82,10 +83,10 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create rootdisk with bad size",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						RootDisk: OscRootDisk{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskSize: -15,
 						},
 					},
@@ -95,10 +96,10 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create rootdisk with bad volumeType",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
-						RootDisk: OscRootDisk{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskType: "gp3",
 						},
 					},
@@ -108,9 +109,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with bad volume size",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -125,9 +126,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with bad volume iops",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -142,9 +143,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with missing volume device",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Iops:       20,
@@ -158,9 +159,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with invalid volume device",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "foo",
@@ -175,9 +176,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with bad volumeType",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -192,9 +193,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with valid io1 volumeSpec",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -209,9 +210,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with valid gp2 volumeSpec",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -225,9 +226,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "create with valid standard volumeSpec",
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Volumes: []OscVolume{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
 							Device:     "/dev/sdb",
@@ -257,21 +258,21 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 	machineTestCases := []struct {
 		name           string
-		oldMachineSpec OscMachineSpec
-		machineSpec    OscMachineSpec
+		oldMachineSpec infrastructurev1beta1.OscMachineSpec
+		machineSpec    infrastructurev1beta1.OscMachineSpec
 		hasError       bool
 	}{
 		{
 			name: "Update only oscMachineTemplate name",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			oldMachineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						KeypairName: "test-webhook",
 						ImageId:     "ami-00000000",
 						VmType:      "tinav3.c2r4p2",
 						PublicIp:    false,
 					},
-					Volumes: []OscVolume{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "update-webhook",
 							Iops:       15,
@@ -281,14 +282,14 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 					},
 				},
 			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						KeypairName: "test-webhook",
 						ImageId:     "ami-00000000",
 						VmType:      "tinav3.c2r4p2",
 					},
-					Volumes: []OscVolume{
+					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "update-webhook",
 							Iops:       15,
@@ -301,18 +302,18 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 		},
 		{
 			name: "update one element (keypair)",
-			oldMachineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			oldMachineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						KeypairName: "test-webhook-1",
 						ImageId:     "ami-00000000",
 						VmType:      "tinav3.c2r4p2",
 					},
 				},
 			},
-			machineSpec: OscMachineSpec{
-				Node: OscNode{
-					Vm: OscVm{
+			machineSpec: infrastructurev1beta1.OscMachineSpec{
+				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
 						KeypairName: "test-webhook-2",
 						ImageId:     "ami-00000000",
 						VmType:      "tinav3.c2r4p2",
@@ -337,10 +338,10 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 }
 
 // createOscInfraMachineTemplate create oscInfraMachineTemplate
-func createOscInfraMachineTemplate(infraMachineSpec OscMachineSpec, name string, namespace string) *OscMachineTemplate {
-	oscInfraMachineTemplate := &OscMachineTemplate{
-		Spec: OscMachineTemplateSpec{
-			Template: OscMachineTemplateResource{
+func createOscInfraMachineTemplate(infraMachineSpec infrastructurev1beta1.OscMachineSpec, name string, namespace string) *infrastructurev1beta1.OscMachineTemplate {
+	oscInfraMachineTemplate := &infrastructurev1beta1.OscMachineTemplate{
+		Spec: infrastructurev1beta1.OscMachineTemplateSpec{
+			Template: infrastructurev1beta1.OscMachineTemplateResource{
 				Spec: infraMachineSpec,
 			},
 		},

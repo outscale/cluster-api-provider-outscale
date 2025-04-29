@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"reflect"
+	"maps"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -56,64 +56,57 @@ func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, 
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscMachine)
 
-	if !reflect.DeepEqual(m.Spec.Node.Vm.VmType, old.Spec.Node.Vm.VmType) {
+	if m.Spec.Node.Vm.VmType != old.Spec.Node.Vm.VmType {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "vmType"),
+			field.Invalid(field.NewPath("node", "vm", "vmType"),
 				m.Spec.Node.Vm.VmType, "field is immutable"),
 		)
 	}
 
-	if !reflect.DeepEqual(m.Spec.Node.Vm.KeypairName, old.Spec.Node.Vm.KeypairName) {
+	if m.Spec.Node.Vm.KeypairName != old.Spec.Node.Vm.KeypairName {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "keyPairName"),
+			field.Invalid(field.NewPath("node", "vm", "keyPairName"),
 				m.Spec.Node.Vm.KeypairName, "field is immutable"),
 		)
 	}
 
-	if !reflect.DeepEqual(m.Spec.Node.Vm.LoadBalancerName, old.Spec.Node.Vm.LoadBalancerName) {
+	if old.Spec.Node.Vm.SubregionName != "" && m.Spec.Node.Vm.SubregionName != old.Spec.Node.Vm.SubregionName {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "loadBalancerName"),
-				m.Spec.Node.Vm.LoadBalancerName, "field is immutable"),
-		)
-	}
-
-	if old.Spec.Node.Vm.SubregionName != "" && !reflect.DeepEqual(m.Spec.Node.Vm.SubregionName, old.Spec.Node.Vm.SubregionName) {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "subregionName"),
+			field.Invalid(field.NewPath("node", "vm", "subregionName"),
 				m.Spec.Node.Vm.SubregionName, "field is immutable"),
 		)
 	}
 
-	if len(old.Spec.Node.Vm.Tags) > 0 && !reflect.DeepEqual(m.Spec.Node.Vm.Tags, old.Spec.Node.Vm.Tags) {
+	if len(old.Spec.Node.Vm.Tags) > 0 && !maps.Equal(m.Spec.Node.Vm.Tags, old.Spec.Node.Vm.Tags) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "userData"),
-				m.Spec.Node.Vm.SubregionName, "field is immutable"),
+			field.Invalid(field.NewPath("node", "vm", "tags"),
+				m.Spec.Node.Vm.Tags, "field is immutable"),
 		)
 	}
 
-	if (old.Spec.Node.Vm.SubnetName != "") && !reflect.DeepEqual(m.Spec.Node.Vm.SubnetName, old.Spec.Node.Vm.SubnetName) {
+	if (old.Spec.Node.Vm.SubnetName != "") && m.Spec.Node.Vm.SubnetName != old.Spec.Node.Vm.SubnetName {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "subnetName"),
+			field.Invalid(field.NewPath("node", "vm", "subnetName"),
 				m.Spec.Node.Vm.SubnetName, "field is immutable"),
 		)
 	}
-	if !reflect.DeepEqual(m.Spec.Node.Vm.RootDisk.RootDiskSize, old.Spec.Node.Vm.RootDisk.RootDiskSize) {
+	if m.Spec.Node.Vm.RootDisk.RootDiskSize != old.Spec.Node.Vm.RootDisk.RootDiskSize {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "rootDiskSize"),
+			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskSize"),
 				m.Spec.Node.Vm.RootDisk.RootDiskSize, "field is immutable"),
 		)
 	}
 
-	if !reflect.DeepEqual(m.Spec.Node.Vm.RootDisk.RootDiskIops, old.Spec.Node.Vm.RootDisk.RootDiskIops) {
+	if m.Spec.Node.Vm.RootDisk.RootDiskIops != old.Spec.Node.Vm.RootDisk.RootDiskIops {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "rootDiskIops"),
+			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskIops"),
 				m.Spec.Node.Vm.RootDisk.RootDiskIops, "field is immutable"),
 		)
 	}
 
-	if !reflect.DeepEqual(m.Spec.Node.Vm.RootDisk.RootDiskType, old.Spec.Node.Vm.RootDisk.RootDiskType) {
+	if m.Spec.Node.Vm.RootDisk.RootDiskType != old.Spec.Node.Vm.RootDisk.RootDiskType {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "rootDiskTyp"),
+			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskType"),
 				m.Spec.Node.Vm.RootDisk.RootDiskType, "field is immutable"),
 		)
 	}

@@ -28,10 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-const (
-	OscClusterTemplateImmutableMsg = "OscClusterTemplate spec.template.spec field is immutable."
-)
-
 // log is for logging in this package.
 var oscClusterTemplateLog = logf.Log.WithName("oscclustertemplate-resource")
 
@@ -54,9 +50,7 @@ var _ webhook.Validator = &OscClusterTemplate{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *OscClusterTemplate) ValidateCreate() (admission.Warnings, error) {
-	oscClusterTemplateLog.Info("validate create", "name", r.Name)
 	if allErrs := ValidateOscClusterSpec(r.Spec.Template.Spec); len(allErrs) > 0 {
-		oscClusterTemplateLog.Info("validate error", "error", allErrs)
 		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemplate").GroupKind(), r.Name, allErrs)
 	}
 	return nil, nil
@@ -64,12 +58,11 @@ func (r *OscClusterTemplate) ValidateCreate() (admission.Warnings, error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
-	oscClusterTemplateLog.Info("validate update", "name", r.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscClusterTemplate)
 	if !reflect.DeepEqual(r.Spec.Template.Spec, old.Spec.Template.Spec) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("OscClusterTemplate", "spec", "template", "spec"), r, OscClusterTemplateImmutableMsg),
+			field.Invalid(field.NewPath("template", "spec"), r, "spec is immutable."),
 		)
 	}
 	if len(allErrs) == 0 {
@@ -80,6 +73,5 @@ func (r *OscClusterTemplate) ValidateUpdate(oldRaw runtime.Object) (admission.Wa
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *OscClusterTemplate) ValidateDelete() (admission.Warnings, error) {
-	oscClusterTemplateLog.Info("validate delete", "name", r.Name)
 	return nil, nil
 }

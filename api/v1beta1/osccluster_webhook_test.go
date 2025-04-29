@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta1_test
 
 import (
 	"errors"
 	"testing"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,14 +29,14 @@ import (
 func TestOscCluster_ValidateCreate(t *testing.T) {
 	clusterTestCases := []struct {
 		name                 string
-		clusterSpec          OscClusterSpec
+		clusterSpec          infrastructurev1beta1.OscClusterSpec
 		expValidateCreateErr error
 	}{
 		{
 			name: "bad loadBalancerName",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					LoadBalancer: OscLoadBalancer{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "test-webhook@test",
 					},
 				},
@@ -44,9 +45,9 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "bad loadBalancerType",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					LoadBalancer: OscLoadBalancer{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "foo",
 						LoadBalancerType: "foo",
 					},
@@ -56,12 +57,12 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "bad cidr",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					Net: OscNet{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
 						IpRange: "1.2.3.4",
 					},
-					LoadBalancer: OscLoadBalancer{
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "foo",
 					},
 				},
@@ -70,13 +71,13 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "bad subnets",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					Net: OscNet{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
 						IpRange: "10.0.0.0/24",
 					},
-					Subnets: []OscSubnet{{IpSubnetRange: "1.2.3.4"}},
-					LoadBalancer: OscLoadBalancer{
+					Subnets: []infrastructurev1beta1.OscSubnet{{IpSubnetRange: "1.2.3.4"}},
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "foo",
 					},
 				},
@@ -85,13 +86,13 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "subnet not within net",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					Net: OscNet{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []OscSubnet{{IpSubnetRange: "11.0.0.0/24"}},
-					LoadBalancer: OscLoadBalancer{
+					Subnets: []infrastructurev1beta1.OscSubnet{{IpSubnetRange: "11.0.0.0/24"}},
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "foo",
 					},
 				},
@@ -100,13 +101,13 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "overlapping subnets",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					Net: OscNet{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Net: infrastructurev1beta1.OscNet{
 						IpRange: "10.0.0.0/16",
 					},
-					Subnets: []OscSubnet{{IpSubnetRange: "10.0.1.0/24"}, {IpSubnetRange: "10.0.1.0/24"}},
-					LoadBalancer: OscLoadBalancer{
+					Subnets: []infrastructurev1beta1.OscSubnet{{IpSubnetRange: "10.0.1.0/24"}, {IpSubnetRange: "10.0.1.0/24"}},
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "foo",
 					},
 				},
@@ -128,8 +129,8 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 }
 
 // createOscInfraCluster create oscInfraCluster
-func createOscInfraCluster(infraClusterSpec OscClusterSpec, name string, namespace string) *OscCluster {
-	oscInfraCluster := &OscCluster{
+func createOscInfraCluster(infraClusterSpec infrastructurev1beta1.OscClusterSpec, name string, namespace string) *infrastructurev1beta1.OscCluster {
+	oscInfraCluster := &infrastructurev1beta1.OscCluster{
 		Spec: infraClusterSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

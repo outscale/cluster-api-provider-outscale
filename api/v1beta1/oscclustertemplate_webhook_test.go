@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta1_test
 
 import (
 	"errors"
 	"testing"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,14 +29,14 @@ import (
 func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 	clusterTestCases := []struct {
 		name                 string
-		clusterSpec          OscClusterSpec
+		clusterSpec          infrastructurev1beta1.OscClusterSpec
 		expValidateCreateErr error
 	}{
 		{
 			name: "create with bad loadBalancerName",
-			clusterSpec: OscClusterSpec{
-				Network: OscNetwork{
-					LoadBalancer: OscLoadBalancer{
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
 						LoadBalancerName: "test-webhook@test",
 					},
 				},
@@ -57,10 +58,10 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 }
 
 // createOscInfraClusterTemplate create oscInfraClusterTemplate
-func createOscInfraClusterTemplate(infraClusterSpec OscClusterSpec, name string, namespace string) *OscClusterTemplate {
-	oscInfraClusterTemplate := &OscClusterTemplate{
-		Spec: OscClusterTemplateSpec{
-			Template: OscClusterTemplateResource{
+func createOscInfraClusterTemplate(infraClusterSpec infrastructurev1beta1.OscClusterSpec, name string, namespace string) *infrastructurev1beta1.OscClusterTemplate {
+	oscInfraClusterTemplate := &infrastructurev1beta1.OscClusterTemplate{
+		Spec: infrastructurev1beta1.OscClusterTemplateSpec{
+			Template: infrastructurev1beta1.OscClusterTemplateResource{
 				Spec: infraClusterSpec,
 			},
 		},

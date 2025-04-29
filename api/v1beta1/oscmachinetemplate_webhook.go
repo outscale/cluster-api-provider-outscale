@@ -28,10 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-const (
-	OscMachineTemplateImmutableMsg = "OscMachineTemplate spec.template.spec field is immutable."
-)
-
 var oscMachineTemplateLog = logf.Log.WithName("oscmachinetemplate-resource")
 
 func (m *OscMachineTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -54,9 +50,7 @@ var _ webhook.Validator = &OscMachineTemplate{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (m *OscMachineTemplate) ValidateCreate() (admission.Warnings, error) {
-	oscMachineTemplateLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscMachineSpec(m.Spec.Template.Spec); len(allErrs) > 0 {
-		oscMachineTemplateLog.Info("validate error", "error", allErrs)
 		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 	}
 	return nil, nil
@@ -64,12 +58,11 @@ func (m *OscMachineTemplate) ValidateCreate() (admission.Warnings, error) {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
-	oscMachineTemplateLog.Info("validate update", "name", m.Name)
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscMachineTemplate)
 	if !reflect.DeepEqual(m.Spec.Template.Spec, old.Spec.Template.Spec) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("OscMachineTemplate", "spec", "template", "spec"), m, OscMachineTemplateImmutableMsg),
+			field.Invalid(field.NewPath("template", "spec"), m, "spec is immutable"),
 		)
 	}
 	if len(allErrs) == 0 {
@@ -80,6 +73,5 @@ func (m *OscMachineTemplate) ValidateUpdate(oldRaw runtime.Object) (admission.Wa
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (m *OscMachineTemplate) ValidateDelete() (admission.Warnings, error) {
-	oscMachineTemplateLog.Info("validate delete", "name", m.Name)
 	return nil, nil
 }

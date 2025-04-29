@@ -17,8 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"reflect"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -58,10 +56,16 @@ func (r *OscCluster) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, 
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscCluster)
 
-	if !reflect.DeepEqual(r.Spec.Network.LoadBalancer.LoadBalancerName, old.Spec.Network.LoadBalancer.LoadBalancerName) {
+	if r.Spec.Network.LoadBalancer.LoadBalancerName != old.Spec.Network.LoadBalancer.LoadBalancerName {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec", "loadBalancerName"),
+			field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancername"),
 				r.Spec.Network.LoadBalancer.LoadBalancerName, "field is immutable"),
+		)
+	}
+	if r.Spec.Network.LoadBalancer.LoadBalancerType != old.Spec.Network.LoadBalancer.LoadBalancerType {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancertype"),
+				r.Spec.Network.LoadBalancer.LoadBalancerType, "field is immutable"),
 		)
 	}
 	if len(allErrs) == 0 {
