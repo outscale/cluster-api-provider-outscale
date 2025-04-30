@@ -140,8 +140,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	k8s.io/apiextensions-apiserver v0.30.3
-	k8s.io/apiserver v0.30.9 // indirect
+	k8s.io/apiextensions-apiserver v0.30.12
+	k8s.io/apiserver v0.30.12 // indirect
 	k8s.io/cluster-bootstrap v0.30.3 // indirect
 	k8s.io/component-base v0.30.12 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
