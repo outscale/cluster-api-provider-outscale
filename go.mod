@@ -7,7 +7,7 @@ require (
 	github.com/onsi/gomega v1.34.0
 	github.com/outscale/osc-sdk-go/v2 v2.26.0
 	github.com/stretchr/testify v1.10.0
-	go.uber.org/mock v0.5.0
+	go.uber.org/mock v0.5.2
 	k8s.io/api v0.30.9
 	k8s.io/apimachinery v0.30.9
 	k8s.io/client-go v0.30.9
