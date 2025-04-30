@@ -4,7 +4,7 @@ go 1.23.7
 
 require (
 	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/onsi/gomega v1.36.3
+	github.com/onsi/gomega v1.37.0
 	github.com/outscale/osc-sdk-go/v2 v2.26.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.2
