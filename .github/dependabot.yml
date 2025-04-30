@@ -7,3 +7,6 @@ updates:
     target-branch: "main"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: k8s.io/*
+        update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
