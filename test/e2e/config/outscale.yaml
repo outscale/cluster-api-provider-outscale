@@ -63,6 +63,7 @@ providers:
           - sourcePath: "../data/infrastructure-outscale/cluster-template-topology.yaml"
           - sourcePath: "../data/infrastructure-outscale/clusterclass-cluster-class.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-multiaz.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-public.yaml"
           # upgrade_test
           - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrades.yaml"
           # node_test

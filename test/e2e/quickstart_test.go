@@ -62,4 +62,18 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 			}
 		})
 	})
+
+	Context("Running the quick-start public spec", func() {
+		capi_e2e.QuickStartSpec(ctx, func() capi_e2e.QuickStartSpecInput {
+			return capi_e2e.QuickStartSpecInput{
+				E2EConfig:              e2eConfig,
+				ClusterctlConfigPath:   clusterctlConfigPath,
+				InfrastructureProvider: &infraProvider,
+				BootstrapClusterProxy:  bootstrapClusterProxy,
+				ArtifactFolder:         artifactFolder,
+				SkipCleanup:            skipCleanup,
+				Flavor:                 ptr.To("public"),
+			}
+		})
+	})
 })
