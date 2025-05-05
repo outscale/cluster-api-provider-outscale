@@ -24,6 +24,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -203,6 +204,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	log.V(2).Info("Bastion created", "vmId", vm.GetVmId())
 	r.Tracker.setBastionId(clusterScope, vm.GetVmId())
 	clusterScope.SetVmState(infrastructurev1beta1.VmStatePending)
+	r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.VmCreatedReason, "Bastion created")
 	return reconcile.Result{}, errors.New("VM is not running yet")
 }
 

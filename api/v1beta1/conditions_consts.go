@@ -19,28 +19,31 @@ package v1beta1
 import clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 const (
+	NetCreatedReason              string                  = "NetCreated"
 	NetReadyCondition             clusterv1.ConditionType = "NetReady"
-	NetCreationStartedReason      string                  = "NetCreationStarted"
 	NetReconciliationFailedReason string                  = "NetReconciliationFailed"
 )
 
 const (
+	SubnetCreatedReason               string                  = "SubnetCreated"
 	SubnetsReadyCondition             clusterv1.ConditionType = "SubnetsReady"
 	SubnetsReconciliationFailedReason string                  = "SubnetsReconciliationFailed"
 )
 
 const (
+	InternetServicesCreatedReason  string                  = "InternetServiceCreated"
 	InternetServicesReadyCondition clusterv1.ConditionType = "InternetServiceReady"
 	InternetServicesFailedReason   string                  = "InternetServiceFailed"
 )
 
 const (
+	NatServicesCreatedReason              string                  = "NatServicesCreated"
 	NatServicesReadyCondition             clusterv1.ConditionType = "NatServicesReady"
-	NatServicesCreationStartedReason      string                  = "NatServicesCreationStarted"
 	NatServicesReconciliationFailedReason string                  = "NatServicesReconciliationFailed"
 )
 
 const (
+	RouteTableCreatedReason              string                  = "RouteTableCreated"
 	RouteTablesReadyCondition            clusterv1.ConditionType = "RouteTablesReady"
 	RouteTableReconciliationFailedReason string                  = "RouteTableReconciliationFailed"
 )
@@ -51,18 +54,20 @@ const (
 	VmTerminatedReason                    string                  = "VmTerminated"
 	VmStoppedReason                       string                  = "VmStopped"
 	VmNotReadyReason                      string                  = "VmNotReady"
-	VmProvisionStartedReason              string                  = "VmProvisionStarted"
+	VmCreatedReason                       string                  = "VmCreated"
 	VmProvisionFailedReason               string                  = "VmProvisionFailed"
 	WaitingForClusterInfrastructureReason string                  = "WaitingForClusterInfrastructure"
 	WaitingForBootstrapDataReason         string                  = "WaitingForBoostrapData"
 )
 
 const (
+	SecurityGroupCreatedReason              string                  = "SecurityGroupCreated"
 	SecurityGroupReadyCondition             clusterv1.ConditionType = "SecurityGroupsReady"
 	SecurityGroupReconciliationFailedReason string                  = "SecurityGroupReconciliationFailed"
 )
 
 const (
+	LoadBalancerCreatedReason  string                  = "LoadBalancerCreated"
 	LoadBalancerReadyCondition clusterv1.ConditionType = "LoadBalancerReady"
 	LoadBalancerFailedReason   string                  = "LoadBalancerFailed"
 )

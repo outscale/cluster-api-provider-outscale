@@ -25,6 +25,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -97,6 +98,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create loadBalancer: %w", err)
 		}
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.LoadBalancerCreatedReason, "Loadbalancer created")
 		log.V(2).Info("Configuring loadBalancer healthcheck", "loadBalancerName", loadBalancerName)
 		_, err = svc.ConfigureHealthCheck(ctx, &loadBalancerSpec)
 		log.V(4).Info("Get loadbalancer", "loadbalancer", loadbalancer)

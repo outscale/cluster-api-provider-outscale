@@ -212,6 +212,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		r.Tracker.trackVm(machineScope, vm)
 		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
 		machineScope.SetProviderID(vm.Placement.GetSubregionName(), vmId)
+		r.Recorder.Event(machineScope.OscMachine, corev1.EventTypeNormal, infrastructurev1beta1.VmCreatedReason, "VM created")
 	}
 
 	if vm.GetState() != "running" {

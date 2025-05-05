@@ -23,6 +23,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -76,6 +77,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		}
 		log.V(2).Info("Created natService", "natServiceId", natService.GetNatServiceId())
 		r.Tracker.setNatServiceId(clusterScope, natServiceSpec, natService.GetNatServiceId())
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NatServicesCreatedReason, "NAT created %s", natServiceSpec.SubregionName)
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNatService)
 	return reconcile.Result{}, nil
