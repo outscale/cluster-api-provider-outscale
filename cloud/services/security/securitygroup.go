@@ -51,9 +51,9 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	securityGroupResponse, httpRes, err := oscApiClient.SecurityGroupApi.CreateSecurityGroup(oscAuthClient).CreateSecurityGroupRequest(securityGroupRequest).Execute()
-	utils.LogAPICall(ctx, "CreateSecurityGroup", securityGroupRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateSecurityGroup", securityGroupRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	securityGroup, ok := securityGroupResponse.GetSecurityGroupOk()
 	if !ok {
@@ -122,11 +122,9 @@ func (s *Service) CreateSecurityGroupRule(ctx context.Context, securityGroupId s
 	oscAuthClient := s.scope.GetAuth()
 
 	securityGroupRuleResponse, httpRes, err := oscApiClient.SecurityGroupRuleApi.CreateSecurityGroupRule(oscAuthClient).CreateSecurityGroupRuleRequest(createSecurityGroupRuleRequest).Execute()
-	utils.LogAPICall(ctx, "CreateSecurityGroupRule", createSecurityGroupRuleRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateSecurityGroupRule", createSecurityGroupRuleRequest, httpRes, err)
 	if err != nil {
-		if httpRes == nil || httpRes.StatusCode != 409 {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		}
+		return nil, err
 	}
 	securityGroupRule, ok := securityGroupRuleResponse.GetSecurityGroupOk()
 	if !ok {
@@ -168,8 +166,8 @@ func (s *Service) DeleteSecurityGroupRule(ctx context.Context, securityGroupId s
 	oscAuthClient := s.scope.GetAuth()
 
 	_, httpRes, err := oscApiClient.SecurityGroupRuleApi.DeleteSecurityGroupRule(oscAuthClient).DeleteSecurityGroupRuleRequest(deleteSecurityGroupRuleRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteSecurityGroupRule", deleteSecurityGroupRuleRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteSecurityGroupRule", deleteSecurityGroupRuleRequest, httpRes, err)
+	return err
 }
 
 // DeleteSecurityGroup delete the securitygroup associated with the net
@@ -178,8 +176,8 @@ func (s *Service) DeleteSecurityGroup(ctx context.Context, securityGroupId strin
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.SecurityGroupApi.DeleteSecurityGroup(oscAuthClient).DeleteSecurityGroupRequest(deleteSecurityGroupRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteSecurityGroup", deleteSecurityGroupRequest, httpRes, err)
+	return err
 }
 
 // GetSecurityGroup retrieve security group object from the security group id
@@ -192,9 +190,9 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
-	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -218,9 +216,9 @@ func (s *Service) GetSecurityGroupFromName(ctx context.Context, name string) (*o
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
-	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -282,9 +280,9 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupRulesResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRuleRequest).Execute()
-	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRuleRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadSecurityGroups", readSecurityGroupRuleRequest, httpRes, err)
 	if err != nil {
-		return false, utils.ExtractOAPIError(err, httpRes)
+		return false, err
 	}
 	securityGroups, ok := readSecurityGroupRulesResponse.GetSecurityGroupsOk()
 	if !ok {
@@ -303,9 +301,9 @@ func (s *Service) GetSecurityGroupsFromNet(ctx context.Context, netId string) ([
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSecurityGroupsResponse, httpRes, err := oscApiClient.SecurityGroupApi.ReadSecurityGroups(oscAuthClient).ReadSecurityGroupsRequest(readSecurityGroupRequest).Execute()
-	utils.LogAPICall(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadSecurityGroups", readSecurityGroupRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	return readSecurityGroupsResponse.GetSecurityGroups(), nil
 }

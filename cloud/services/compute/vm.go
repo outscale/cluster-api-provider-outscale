@@ -116,9 +116,9 @@ func (s *Service) CreateVm(ctx context.Context,
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
-	utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateVms", vmOpt, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	vms, ok := vmResponse.GetVmsOk()
 	if !ok {
@@ -186,7 +186,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
-	utils.LogAPICall(ctx, "CreateVms", vmOpt, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateVms", vmOpt, httpRes, err)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
 		return nil, err
@@ -223,8 +223,8 @@ func (s *Service) DeleteVm(ctx context.Context, vmId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
+	return err
 }
 
 // GetVm retrieve vm from vmId
@@ -237,9 +237,9 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
-	utils.LogAPICall(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 
 	vms, ok := readVmsResponse.GetVmsOk()
@@ -264,9 +264,9 @@ func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
-	utils.LogAPICall(ctx, "ReadVms", readVmsRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadVms", readVmsRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 
 	vms, ok := readVmsResponse.GetVmsOk()

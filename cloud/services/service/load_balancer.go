@@ -82,12 +82,12 @@ func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructure
 		var httpRes *http.Response
 		var err error
 		updateLoadBalancerResponse, httpRes, err = oscApiClient.LoadBalancerApi.UpdateLoadBalancer(oscAuthClient).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()
-		utils.LogAPICall(ctx, "UpdateLoadBalancer", updateLoadBalancerRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "UpdateLoadBalancer", updateLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) || httpRes == nil {
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, err
 	}
@@ -115,13 +115,13 @@ func (s *Service) LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []s
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.LoadBalancerApi.LinkLoadBalancerBackendMachines(oscAuthClient).LinkLoadBalancerBackendMachinesRequest(linkLoadBalancerBackendMachinesRequest).Execute()
-		utils.LogAPICall(ctx, "LinkLoadBalancerBackendMachines", linkLoadBalancerBackendMachinesRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "LinkLoadBalancerBackendMachines", linkLoadBalancerBackendMachinesRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
 				klog.FromContext(ctx).V(4).Error(err, "retrying on error")
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, err
 	}
@@ -143,8 +143,8 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds [
 	oscAuthClient := s.scope.GetAuth()
 
 	_, httpRes, err := oscApiClient.LoadBalancerApi.UnlinkLoadBalancerBackendMachines(oscAuthClient).UnlinkLoadBalancerBackendMachinesRequest(unlinkLoadBalancerBackendMachinesRequest).Execute()
-	utils.LogAPICall(ctx, "UnlinkLoadBalancerBackendMachines", unlinkLoadBalancerBackendMachinesRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "UnlinkLoadBalancerBackendMachines", unlinkLoadBalancerBackendMachinesRequest, httpRes, err)
+	return err
 }
 
 // GetLoadBalancer retrieve loadBalancer object from spec
@@ -157,9 +157,9 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 	oscAuthClient := s.scope.GetAuth()
 
 	readLoadBalancersResponse, httpRes, err := oscApiClient.LoadBalancerApi.ReadLoadBalancers(oscAuthClient).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
-	utils.LogAPICall(ctx, "ReadLoadBalancers", readLoadBalancerRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadLoadBalancers", readLoadBalancerRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	var lb []osc.LoadBalancer
 	loadBalancers, ok := readLoadBalancersResponse.GetLoadBalancersOk()
@@ -182,9 +182,9 @@ func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 	}
 	readLoadBalancerTagsResponse, httpRes, err := oscApiClient.LoadBalancerApi.ReadLoadBalancerTags(oscAuthClient).ReadLoadBalancerTagsRequest(readLoadBalancerTagRequest).Execute()
-	utils.LogAPICall(ctx, "ReadLoadBalancerTags", readLoadBalancerTagRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadLoadBalancerTags", readLoadBalancerTagRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 
 	var tag []osc.LoadBalancerTag
@@ -211,12 +211,12 @@ func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructur
 	oscAuthClient := s.scope.GetAuth()
 	createLoadBalancerTagCallBack := func() (bool, error) {
 		_, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancerTags(oscAuthClient).CreateLoadBalancerTagsRequest(createLoadBalancerTagRequest).Execute()
-		utils.LogAPICall(ctx, "CreateLoadBalancerTags", createLoadBalancerTagRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "CreateLoadBalancerTags", createLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, err
 	}
@@ -254,9 +254,9 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 	oscAuthClient := s.scope.GetAuth()
 
 	loadBalancerResponse, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancer(oscAuthClient).CreateLoadBalancerRequest(loadBalancerRequest).Execute()
-	utils.LogAPICall(ctx, "CreateLoadBalancer", loadBalancerRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateLoadBalancer", loadBalancerRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	loadBalancer, ok := loadBalancerResponse.GetLoadBalancerOk()
 	if !ok {
@@ -273,8 +273,8 @@ func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.LoadBalancerApi.DeleteLoadBalancer(oscAuthClient).DeleteLoadBalancerRequest(deleteLoadBalancerRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteLoadBalancer", deleteLoadBalancerRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteLoadBalancer", deleteLoadBalancerRequest, httpRes, err)
+	return err
 }
 
 // DeleteLoadBalancerTag delete the loadbalancerTag
@@ -286,6 +286,6 @@ func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructur
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.LoadBalancerApi.DeleteLoadBalancerTags(oscAuthClient).DeleteLoadBalancerTagsRequest(deleteLoadBalancerTagRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteLoadBalancerTags", deleteLoadBalancerTagRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteLoadBalancerTags", deleteLoadBalancerTagRequest, httpRes, err)
+	return err
 }

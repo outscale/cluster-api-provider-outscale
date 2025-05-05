@@ -57,13 +57,13 @@ type OscTagInterface interface {
 func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) error {
 	addTagNameCallBack := func() (bool, error) {
 		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
-		utils.LogAPICall(ctx, "CreateTags", createTagRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "CreateTags", createTagRequest, httpRes, err)
 		if err != nil {
 			// we wish to retry on TCP errors, but not on 400 errors.
 			if utils.RetryIf(httpRes) || httpRes == nil {
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, nil
 	}
@@ -83,7 +83,7 @@ func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readTagsResponse, httpRes, err := oscApiClient.TagApi.ReadTags(oscAuthClient).ReadTagsRequest(readTagsRequest).Execute()
-	utils.LogAPICall(ctx, "ReadTags", readTagsRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadTags", readTagsRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {
 			fmt.Printf("Error with http result %s", httpRes.Status)

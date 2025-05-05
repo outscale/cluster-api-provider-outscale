@@ -46,9 +46,9 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, cl
 	oscAuthClient := s.scope.GetAuth()
 
 	natServiceResponse, httpRes, err := oscApiClient.NatServiceApi.CreateNatService(oscAuthClient).CreateNatServiceRequest(natServiceRequest).Execute()
-	utils.LogAPICall(ctx, "CreateNatService", natServiceRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateNatService", natServiceRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	resourceIds := []string{*natServiceResponse.NatService.NatServiceId}
 	natServiceTag := osc.ResourceTag{
@@ -81,8 +81,8 @@ func (s *Service) DeleteNatService(ctx context.Context, natServiceId string) err
 	oscAuthClient := s.scope.GetAuth()
 
 	_, httpRes, err := oscApiClient.NatServiceApi.DeleteNatService(oscAuthClient).DeleteNatServiceRequest(deleteNatServiceRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteNatService", deleteNatServiceRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteNatService", deleteNatServiceRequest, httpRes, err)
+	return err
 }
 
 // GetNatService retrieve nat service object using nat service id
@@ -95,9 +95,9 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
-	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	natServices, ok := readNatServicesResponse.GetNatServicesOk()
 	if !ok {
@@ -121,9 +121,9 @@ func (s *Service) GetNatServiceFromClientToken(ctx context.Context, clientToken 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
-	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	natServices, ok := readNatServicesResponse.GetNatServicesOk()
 	if !ok {
@@ -147,13 +147,9 @@ func (s *Service) ListNatServices(ctx context.Context, netId string) ([]osc.NatS
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readNatServicesResponse, httpRes, err := oscApiClient.NatServiceApi.ReadNatServices(oscAuthClient).ReadNatServicesRequest(readNatServicesRequest).Execute()
-	utils.LogAPICall(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	natServices, ok := readNatServicesResponse.GetNatServicesOk()
 	if !ok {
