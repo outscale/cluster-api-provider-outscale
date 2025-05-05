@@ -19,7 +19,6 @@ package net
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -46,11 +45,8 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscN
 	oscAuthClient := s.scope.GetAuth()
 	var netResponse osc.CreateNetResponse
 	netResponse, httpRes, err := oscApiClient.NetApi.CreateNet(oscAuthClient).CreateNetRequest(netRequest).Execute()
-	utils.LogAPICall(ctx, "CreateNet", netRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateNet", netRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		}
 		return nil, err
 	}
 	resourceIds := []string{*netResponse.Net.NetId}
@@ -87,12 +83,12 @@ func (s *Service) DeleteNet(ctx context.Context, netId string) error {
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
-		utils.LogAPICall(ctx, "DeleteNet", deleteNetRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "DeleteNet", deleteNetRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, err
 	}
@@ -114,14 +110,9 @@ func (s *Service) GetNet(ctx context.Context, netId string) (*osc.Net, error) {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readNetsResponse, httpRes, err := oscApiClient.NetApi.ReadNets(oscAuthClient).ReadNetsRequest(readNetsRequest).Execute()
-	utils.LogAPICall(ctx, "ReadNets", readNetsRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadNets", readNetsRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			fmt.Printf("Error with http result %s", httpRes.Status)
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	nets, ok := readNetsResponse.GetNetsOk()
 	if !ok {

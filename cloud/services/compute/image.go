@@ -38,9 +38,9 @@ func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, err
 	oscAuthClient := s.scope.GetAuth()
 
 	readImagesResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
-	utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadImages", readImageRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	if len(readImagesResponse.GetImages()) == 0 {
 		return nil, nil
@@ -63,9 +63,9 @@ func (s *Service) GetImageByName(ctx context.Context, imageName, accountId strin
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readImagesResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
-	utils.LogAPICall(ctx, "ReadImages", readImageRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadImages", readImageRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	if len(readImagesResponse.GetImages()) == 0 {
 		return nil, nil

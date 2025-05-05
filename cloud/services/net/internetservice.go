@@ -43,9 +43,9 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	internetServiceResponse, httpRes, err := oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
-	utils.LogAPICall(ctx, "CreateInternetService", internetServiceRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateInternetService", internetServiceRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	resourceIds := []string{*internetServiceResponse.InternetService.InternetServiceId}
 	internetServiceTag := osc.ResourceTag{
@@ -77,8 +77,8 @@ func (s *Service) DeleteInternetService(ctx context.Context, internetServiceId s
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteInternetService", deleteInternetServiceRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteInternetService", deleteInternetServiceRequest, httpRes, err)
+	return err
 }
 
 // LinkInternetService attaches an internet service to a net.
@@ -93,12 +93,12 @@ func (s *Service) LinkInternetService(ctx context.Context, internetServiceId str
 		var httpRes *http.Response
 		var err error
 		_, httpRes, err = oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
-		utils.LogAPICall(ctx, "LinkInternetService", linkInternetServiceRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "LinkInternetService", linkInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, err
 	}
@@ -119,8 +119,7 @@ func (s *Service) UnlinkInternetService(ctx context.Context, internetServiceId s
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
-	utils.LogAPICall(ctx, "UnlinkInternetService", unlinkInternetServiceRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	return utils.LogAndExtractError(ctx, "UnlinkInternetService", unlinkInternetServiceRequest, httpRes, err)
 }
 
 // GetInternetService retrieve internet service object using internet service id
@@ -133,9 +132,9 @@ func (s *Service) GetInternetService(ctx context.Context, internetServiceId stri
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readInternetServicesResponse, httpRes, err := oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
-	utils.LogAPICall(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	internetServices, ok := readInternetServicesResponse.GetInternetServicesOk()
 	if !ok {
@@ -159,9 +158,9 @@ func (s *Service) GetInternetServiceForNet(ctx context.Context, netId string) (*
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readInternetServicesResponse, httpRes, err := oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
-	utils.LogAPICall(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	internetServices, ok := readInternetServicesResponse.GetInternetServicesOk()
 	if !ok {

@@ -45,9 +45,9 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	subnetResponse, httpRes, err := oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
-	utils.LogAPICall(ctx, "CreateSubnet", subnetRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateSubnet", subnetRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 
 	resourceIds := []string{*subnetResponse.Subnet.SubnetId}
@@ -82,8 +82,8 @@ func (s *Service) DeleteSubnet(ctx context.Context, subnetId string) error {
 	oscAuthClient := s.scope.GetAuth()
 
 	_, httpRes, err := oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
+	return err
 }
 
 // GetSubnet retrieve Subnet object from subnet Id
@@ -96,7 +96,7 @@ func (s *Service) GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
-	utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 	if err != nil {
 		return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
 	}
@@ -123,9 +123,9 @@ func (s *Service) GetSubnetFromNet(ctx context.Context, netId, ipRange string) (
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
-	utils.LogAPICall(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	subnets, ok := readSubnetsResponse.GetSubnetsOk()
 	if !ok {

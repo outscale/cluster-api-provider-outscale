@@ -1,9 +1,8 @@
 package utils
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/outscale/osc-sdk-go/v2"
 )
@@ -25,19 +24,11 @@ func (err OAPIError) Error() string {
 	return str
 }
 
-func ExtractOAPIError(err error, httpRes *http.Response) error {
-	if err == nil {
-		return nil
+func extractOAPIError(err error, body []byte) error {
+	var oerr osc.ErrorResponse
+	jerr := json.Unmarshal(body, &oerr)
+	if jerr == nil && len(*oerr.Errors) > 0 {
+		return OAPIError{errors: *oerr.Errors}
 	}
-	var genericError osc.GenericOpenAPIError
-	if errors.As(err, &genericError) {
-		errorsResponse, ok := genericError.Model().(osc.ErrorResponse)
-		if ok && len(*errorsResponse.Errors) > 0 {
-			return OAPIError{errors: *errorsResponse.Errors}
-		}
-	}
-	if httpRes != nil {
-		return fmt.Errorf("http error %w", err)
-	}
-	return err
+	return fmt.Errorf("http error: %w", err) //nolint
 }

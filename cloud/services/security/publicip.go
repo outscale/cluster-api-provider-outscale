@@ -43,9 +43,9 @@ func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clust
 	oscAuthClient := s.scope.GetAuth()
 
 	publicIpResponse, httpRes, err := oscApiClient.PublicIpApi.CreatePublicIp(oscAuthClient).CreatePublicIpRequest(publicIpRequest).Execute()
-	utils.LogAPICall(ctx, "CreatePublicIp", publicIpRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreatePublicIp", publicIpRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	publicIpTag := osc.ResourceTag{
 		Key:   "Name",
@@ -80,8 +80,8 @@ func (s *Service) DeletePublicIp(ctx context.Context, publicIpId string) error {
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.PublicIpApi.DeletePublicIp(oscAuthClient).DeletePublicIpRequest(deletePublicIpRequest).Execute()
-	utils.LogAPICall(ctx, "DeletePublicIp", deletePublicIpRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeletePublicIp", deletePublicIpRequest, httpRes, err)
+	return err
 }
 
 // GetPublicIp get a public ip object using a public ip id
@@ -96,9 +96,9 @@ func (s *Service) GetPublicIp(ctx context.Context, publicIpId string) (*osc.Publ
 
 	var readPublicIpsResponse osc.ReadPublicIpsResponse
 	readPublicIpsResponse, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
-	utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
 	if !ok {
@@ -122,9 +122,9 @@ func (s *Service) GetPublicIpByIp(ctx context.Context, publicIp string) (*osc.Pu
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readPublicIpsResponse, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
-	utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
 	if !ok {
@@ -149,9 +149,9 @@ func (s *Service) ListPublicIpsFromPool(ctx context.Context, pool string) ([]osc
 	oscAuthClient := s.scope.GetAuth()
 
 	readPublicIpsResponse, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
-	utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	return readPublicIpsResponse.GetPublicIps(), nil
 }
@@ -166,9 +166,9 @@ func (s *Service) ValidatePublicIpIds(ctx context.Context, publicIpIds []string)
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readPublicIpsResponse, httpRes, err := oscApiClient.PublicIpApi.ReadPublicIps(oscAuthClient).ReadPublicIpsRequest(readPublicIpRequest).Execute()
-	utils.LogAPICall(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadPublicIps", readPublicIpRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	var validPublicIpIds []string
 	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()

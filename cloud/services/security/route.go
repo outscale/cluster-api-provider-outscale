@@ -49,9 +49,9 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterID 
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	routeTableResponse, httpRes, err := oscApiClient.RouteTableApi.CreateRouteTable(oscAuthClient).CreateRouteTableRequest(routeTableRequest).Execute()
-	utils.LogAPICall(ctx, "CreateRouteTable", routeTableRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateRouteTable", routeTableRequest, httpRes, err)
 	if err != nil {
-		return nil, utils.ExtractOAPIError(err, httpRes)
+		return nil, err
 	}
 	resourceIds := []string{*routeTableResponse.RouteTable.RouteTableId}
 	routeTableTag := osc.ResourceTag{
@@ -100,13 +100,9 @@ func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, ro
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	routeResponse, httpRes, err := oscApiClient.RouteApi.CreateRoute(oscAuthClient).CreateRouteRequest(routeRequest).Execute()
-	utils.LogAPICall(ctx, "CreateRoute", routeRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "CreateRoute", routeRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	route, ok := routeResponse.GetRouteTableOk()
 	if !ok {
@@ -121,8 +117,8 @@ func (s *Service) DeleteRouteTable(ctx context.Context, routeTableId string) err
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.RouteTableApi.DeleteRouteTable(oscAuthClient).DeleteRouteTableRequest(deleteRouteTableRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteRouteTable", deleteRouteTableRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteRouteTable", deleteRouteTableRequest, httpRes, err)
+	return err
 }
 
 // DeleteRoute delete the route associated with the routetable
@@ -134,8 +130,8 @@ func (s *Service) DeleteRoute(ctx context.Context, destinationIpRange string, ro
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	_, httpRes, err := oscApiClient.RouteApi.DeleteRoute(oscAuthClient).DeleteRouteRequest(deleteRouteRequest).Execute()
-	utils.LogAPICall(ctx, "DeleteRoute", deleteRouteRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "DeleteRoute", deleteRouteRequest, httpRes, err)
+	return err
 }
 
 // GetRouteTable retrieve routetable object from the route table id
@@ -148,13 +144,9 @@ func (s *Service) GetRouteTable(ctx context.Context, routeTableId []string) (*os
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readRouteTablesResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteTableRequest).Execute()
-	utils.LogAPICall(ctx, "ReadRouteTables", readRouteTableRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadRouteTables", readRouteTableRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	var routetable []osc.RouteTable
 	routetables, ok := readRouteTablesResponse.GetRouteTablesOk()
@@ -193,13 +185,9 @@ func (s *Service) GetRouteTableFromRoute(ctx context.Context, routeTableId strin
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readRouteResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteRequest).Execute()
-	utils.LogAPICall(ctx, "ReadRouteTables", readRouteRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadRouteTables", readRouteRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	routetables, ok := readRouteResponse.GetRouteTablesOk()
 	if !ok {
@@ -226,12 +214,12 @@ func (s *Service) LinkRouteTable(ctx context.Context, routeTableId string, subne
 		var httpRes *http.Response
 		var err error
 		linkRouteTableResponse, httpRes, err = oscApiClient.RouteTableApi.LinkRouteTable(oscAuthClient).LinkRouteTableRequest(linkRouteTableRequest).Execute()
-		utils.LogAPICall(ctx, "LinkRouteTable", linkRouteTableRequest, httpRes, err)
+		err = utils.LogAndExtractError(ctx, "LinkRouteTable", linkRouteTableRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
 				return false, nil
 			}
-			return false, utils.ExtractOAPIError(err, httpRes)
+			return false, err
 		}
 		return true, err
 	}
@@ -256,8 +244,8 @@ func (s *Service) UnlinkRouteTable(ctx context.Context, linkRouteTableId string)
 	oscAuthClient := s.scope.GetAuth()
 
 	_, httpRes, err := oscApiClient.RouteTableApi.UnlinkRouteTable(oscAuthClient).UnlinkRouteTableRequest(unlinkRouteTableRequest).Execute()
-	utils.LogAPICall(ctx, "UnlinkRouteTable", unlinkRouteTableRequest, httpRes, err)
-	return utils.ExtractOAPIError(err, httpRes)
+	err = utils.LogAndExtractError(ctx, "UnlinkRouteTable", unlinkRouteTableRequest, httpRes, err)
+	return err
 }
 
 // GetRouteTablesFromNet returns all non main route tables present in a net.
@@ -271,13 +259,9 @@ func (s *Service) GetRouteTablesFromNet(ctx context.Context, netId string) ([]os
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	readRouteTablesResponse, httpRes, err := oscApiClient.RouteTableApi.ReadRouteTables(oscAuthClient).ReadRouteTablesRequest(readRouteTablesRequest).Execute()
-	utils.LogAPICall(ctx, "ReadRouteTables", readRouteTablesRequest, httpRes, err)
+	err = utils.LogAndExtractError(ctx, "ReadRouteTables", readRouteTablesRequest, httpRes, err)
 	if err != nil {
-		if httpRes != nil {
-			return nil, utils.ExtractOAPIError(err, httpRes)
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 	return readRouteTablesResponse.GetRouteTables(), nil
 }
