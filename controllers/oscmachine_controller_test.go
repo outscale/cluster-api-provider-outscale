@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -48,7 +49,8 @@ func runMachineTest(t *testing.T, tc testcase) {
 	mockCtrl := gomock.NewController(t)
 	cs := newMockCloudServices(mockCtrl)
 	rec := controllers.OscMachineReconciler{
-		Client: client,
+		Client:   client,
+		Recorder: record.NewFakeRecorder(100),
 		Tracker: &controllers.MachineResourceTracker{
 			Cloud: cs,
 		},

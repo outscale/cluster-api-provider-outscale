@@ -23,6 +23,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -61,6 +62,7 @@ func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clu
 			return reconcile.Result{}, fmt.Errorf("cannot create internetService: %w", err)
 		}
 		log.V(2).Info("Created internet service", "internetServiceId", internetService.GetInternetServiceId())
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.InternetServicesCreatedReason, "Internet service created")
 	}
 	log.V(2).Info("Linking internet service to net", "internetServiceId", internetService.GetInternetServiceId(), "netId", netId)
 	err = r.Cloud.InternetService(ctx, *clusterScope).LinkInternetService(ctx, internetService.GetInternetServiceId(), netId)

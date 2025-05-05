@@ -24,6 +24,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v2"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -124,6 +125,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}
 				log.V(2).Info("Created routetable", "routetableId", rtbl.GetRouteTableId())
+				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
 				log.V(2).Info("Link routetable with subnet", "routeTableId", rtbl.GetRouteTableId(), "subnetId", subnetId)
