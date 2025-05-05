@@ -146,7 +146,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 		if securityGroupSpec.HasRole(infrastructurev1beta1.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
 			ips, err := r.listNATPublicIPs(ctx, clusterScope, true)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("reconcile securityGroup: %w", err)
+				return reconcile.Result{}, fmt.Errorf("cannot list NAT public IPs: %w", err)
 			}
 			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta1.OscSecurityGroupRule{
 				Flow:          "Inbound",
@@ -202,7 +202,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 			for _, member := range rule.GetSecurityGroupsMembers() {
 				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.GetSecurityGroupId(), "Inbound", rule.GetIpProtocol(), "", *member.SecurityGroupId, rule.GetFromPortRange(), rule.GetToPortRange())
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot delete securityGroupRule: %w", err)
+					return reconcile.Result{}, fmt.Errorf("cannot delete rule: %w", err)
 				}
 			}
 		}
@@ -211,7 +211,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 			for _, member := range rule.GetSecurityGroupsMembers() {
 				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.GetSecurityGroupId(), "Outbound", rule.GetIpProtocol(), "", *member.SecurityGroupId, rule.GetFromPortRange(), rule.GetToPortRange())
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot delete securityGroupRule: %w", err)
+					return reconcile.Result{}, fmt.Errorf("cannot delete rule: %w", err)
 				}
 			}
 		}
@@ -223,7 +223,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 		log.V(2).Info("Deleting securityGroup", "securityGroupId", securityGroup.GetSecurityGroupId())
 		err := securityGroupSvc.DeleteSecurityGroup(ctx, securityGroup.GetSecurityGroupId())
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot delete securityGroup: %w", err)
+			sgerr = fmt.Errorf("cannot delete %s: %w", securityGroup.GetSecurityGroupId(), err)
 		}
 	}
 	return reconcile.Result{}, sgerr
