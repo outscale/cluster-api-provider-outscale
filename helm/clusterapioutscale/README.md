@@ -14,26 +14,28 @@ Deploy Outscale Cluster API. Please look at deploy.md
 | deployment.annotations | object | `{"kubectl.kubernetes.io/default-container":"manager"}` | Annotations to set on pods |
 | deployment.backoffDuration | string | `"1"` | Initial duraction of backoff |
 | deployment.backoffFactor | string | `"1.5"` | Factor multiplied by Duration for each iteration |
-| deployment.backoffSteps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
+| deployment.backoffSteps | string | `"10"` | Remaining number of iterations in which the duration parameter may change |
 | deployment.enable | bool | `true` | Enable deployment |
 | deployment.image | string | `"registry.hub.docker.com/outscale/cluster-api-outscale-controllers"` | Outscale provider image |
 | deployment.imagePullPolicy | string | `"IfNotPresent"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
 | deployment.imagePullSecrets | list | `[]` | Specify image pull secrets |
-| deployment.imageTag | string | `"v0.1.0"` | Outscale provider image tag |
+| deployment.imageTag | string | `"v0.4.0"` | Outscale provider image tag |
 | deployment.labels | object | `nil` | Labels to set on pods |
+| deployment.logging.format | string | `"text"` | Logging format (text or json) |
 | deployment.proxyImage | string | `"gcr.io/kubebuilder/kube-rbac-proxy"` | Proxy image |
 | deployment.proxyImageTag | string | `"v0.8.0"` | Proxy image tag |
-| deployment.proxyResources | object | `{"cpu":{"limits":"200m","requests":"100m"},"memory":{"limits":"30Mi","requests":"20Mi"}}` | Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
-| deployment.proxyResources.cpu.limits | string | `"200m"` | Container proxy cpu limits |
+| deployment.proxyResources | object | `{"cpu":{"limits":"100m","requests":"100m"},"memory":{"limits":"64Mi","requests":"64Mi"}}` | Proxy container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
+| deployment.proxyResources.cpu.limits | string | `"100m"` | Container proxy cpu limits |
 | deployment.proxyResources.cpu.requests | string | `"100m"` | Container proxy cpu requests |
-| deployment.proxyResources.memory.limits | string | `"30Mi"` | Container proxy memory limits |
-| deployment.proxyResources.memory.requests | string | `"20Mi"` | Container proxy memory requests |
+| deployment.proxyResources.memory.limits | string | `"64Mi"` | Container proxy memory limits |
+| deployment.proxyResources.memory.requests | string | `"64Mi"` | Container proxy memory requests |
 | deployment.replicaCount | int | `1` | Number of replicas |
-| deployment.resources | object | `{"cpu":{"limits":"200m","requests":"100m"},"memory":{"limits":"30Mi","requests":"20Mi"}}` | Container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
-| deployment.resources.cpu.limits | string | `"200m"` | Container cpu limts |
+| deployment.resources | object | `{"cpu":{"limits":"100m","requests":"100m"},"memory":{"limits":"128Mi","requests":"128Mi"}}` | Container resource limit/requests (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) |
+| deployment.resources.cpu.limits | string | `"100m"` | Container cpu limts |
 | deployment.resources.cpu.requests | string | `"100m"` | Container cpu requests |
-| deployment.resources.memory.limits | string | `"30Mi"` | Container memory limits |
-| deployment.resources.memory.requests | string | `"20Mi"` | Container memory requests |
+| deployment.resources.memory.limits | string | `"128Mi"` | Container memory limits |
+| deployment.resources.memory.requests | string | `"128Mi"` | Container memory requests |
+| deployment.secretName | string | `"cluster-api-provider-outscale"` | Name of the secret to find access_key/secret_key/region used by the provider |
 | deployment.securityContext | object | `{"allowPrivilegeEscalation":false}` | Additional securityContext to add |
 | deployment.verbosity | int | `5` | Verbosity level of plugin |
 | deployment.watchFilter | string | `""` |  |

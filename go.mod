@@ -18,8 +18,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.18.7
 )
 
-require go.uber.org/automaxprocs v1.6.0 // indirect
-
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
@@ -106,7 +104,7 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
@@ -119,6 +117,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.22.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
+	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
@@ -145,7 +144,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.12
 	k8s.io/apiserver v0.30.12 // indirect
 	k8s.io/cluster-bootstrap v0.30.3 // indirect
-	k8s.io/component-base v0.30.12 // indirect
+	k8s.io/component-base v0.30.12
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.30.0 // indirect

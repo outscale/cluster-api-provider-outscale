@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -25,22 +24,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
+	"github.com/outscale/cluster-api-provider-outscale/controllers"
+	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/component-base/logs"
+	v1 "k8s.io/component-base/logs/api/v1"
+	_ "k8s.io/component-base/logs/json/register"
+	"k8s.io/klog/v2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
-	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
 )
@@ -65,19 +64,27 @@ func main() {
 	var probeAddr string
 	var watchFilterValue string
 	var syncPeriod time.Duration
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
+
+	fs := pflag.CommandLine
+	fs.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	fs.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	fs.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&watchFilterValue, "watch-filter", "", fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
-	flag.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
+	fs.StringVar(&watchFilterValue, "watch-filter", "", fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
+	fs.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
 
-	opts := zap.Options{}
-	opts.BindFlags(flag.CommandLine)
-	flag.Parse()
+	logOptions := logs.NewOptions()
+	v1.AddFlags(logOptions, fs)
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	pflag.Parse()
+
+	if err := v1.ValidateAndApply(logOptions, nil); err != nil {
+		setupLog.Error(err, "unable to validate and apply log options")
+		os.Exit(1)
+	}
+	ctrl.SetLogger(klog.Background())
+
 	leaseDuration := 60 * time.Second
 	renewDeadline := 30 * time.Second
 	retryPeriod := 10 * time.Second
