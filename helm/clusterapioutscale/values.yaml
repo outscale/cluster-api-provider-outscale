@@ -61,6 +61,10 @@ deployment:
       limits: 100m
   # -- Name of the secret to find access_key/secret_key/region used by the provider
   secretName: cluster-api-provider-outscale
+  logging:
+    # -- Logging format (text or json)
+    format: text
+
 crd:
   # -- enable crd
   enable: True

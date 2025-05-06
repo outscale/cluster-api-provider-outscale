@@ -63,7 +63,7 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 func TestHelmTemplate(t *testing.T) {
 	t.Run("The chart contains the right objects", func(t *testing.T) {
 		specs := getHelmSpecs(t)
-		require.Len(t, specs, 17)
+		assert.Len(t, specs, 18)
 		objs := map[string]int{}
 		for _, obj := range specs {
 			objs[reflect.TypeOf(obj).String()]++
@@ -72,7 +72,7 @@ func TestHelmTemplate(t *testing.T) {
 			"*v1.ServiceAccount":                 1,
 			"*v1.ConfigMap":                      1,
 			"*v1.ClusterRole":                    3,
-			"*v1.CustomResourceDefinition":       3,
+			"*v1.CustomResourceDefinition":       4,
 			"*v1.ClusterRoleBinding":             2,
 			"*v1.Role":                           1,
 			"*v1.RoleBinding":                    1,
@@ -109,12 +109,13 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}, dep.Spec.Template.ObjectMeta)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 2)
 		manager := dep.Spec.Template.Spec.Containers[1]
-		assert.Equal(t, "registry.hub.docker.com/outscale/cluster-api-outscale-controllers:v0.1.0", manager.Image)
+		assert.Equal(t, "registry.hub.docker.com/outscale/cluster-api-outscale-controllers:v0.4.0", manager.Image)
 		assert.Equal(t, []string{
 			"--health-probe-bind-address=:8081",
 			"--metrics-bind-address=127.0.0.1:8080",
 			"--leader-elect",
-			"--zap-log-level=5",
+			"-v5",
+			"--logging-format=text",
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "OSC_ACCESS_KEY", ValueFrom: &corev1.EnvVarSource{
@@ -122,8 +123,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "cluster-api-provider-outscale",
 					},
-					Key:      "access_key",
-					Optional: ptr.To(true),
+					Key: "access_key",
 				},
 			}},
 			{Name: "OSC_SECRET_KEY", ValueFrom: &corev1.EnvVarSource{
@@ -131,8 +131,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "cluster-api-provider-outscale",
 					},
-					Key:      "secret_key",
-					Optional: ptr.To(true),
+					Key: "secret_key",
 				},
 			}},
 			{Name: "OSC_REGION", ValueFrom: &corev1.EnvVarSource{
@@ -140,13 +139,12 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "cluster-api-provider-outscale",
 					},
-					Key:      "region",
-					Optional: ptr.To(true),
+					Key: "region",
 				},
 			}},
 			{Name: "BACKOFF_DURATION", Value: "1"},
 			{Name: "BACKOFF_FACTOR", Value: "1.5"},
-			{Name: "BACKOFF_STEPS", Value: "20"},
+			{Name: "BACKOFF_STEPS", Value: "10"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
