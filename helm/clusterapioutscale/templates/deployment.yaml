@@ -32,26 +32,6 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v={{ .verbosity }}
-        image: {{ .proxyImage }}:{{ .proxyImageTag }}
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-      {{- if .proxyResources }}
-        resources:
-          requests:
-            memory: {{ .proxyResources.memory.requests | default "128Mi" | quote }}
-            cpu: {{ .proxyResources.cpu.requests | default "500m" | quote }}
-          limits:
-            memory: {{ .proxyResources.memory.limits | default "64Mi" | quote }}
-            cpu: {{ .proxyResources.cpu.limits | default "10m" | quote }}
-      {{- end }}
-      - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
