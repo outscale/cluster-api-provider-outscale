@@ -57,7 +57,6 @@ var (
 						SubnetName:       "test-subnet",
 						LoadBalancerName: "test-loadbalancer",
 						VmType:           "tinav3.c2r4p2",
-						Replica:          1,
 						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
