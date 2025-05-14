@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [ main ]
     paths:
+      - ".github/workflows/unit-func-e2e-test.yaml"
       - "**.go"
       - "**.yaml"
       - "!capm.yaml"
@@ -61,39 +62,40 @@ jobs:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
-    - name: 👷 Configure OKS
-      id: oks
-      run: |
-        .github/scripts/start_oks.sh
-      env:
-        OKS_CLI_DOWNLOAD_USER: ${{ secrets.OKS_CLI_DOWNLOAD_USER }}
-        OKS_CLI_DOWNLOAD_PASSWORD: ${{ secrets.OKS_CLI_DOWNLOAD_PASSWORD }}
-        OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}
-        OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY_OKS }}
-        CLUSTER_NAME: ${{ runner.name }}
-        WORKER_VMTYPE: ${{ vars.WORKER_VMTYPE }}
-        PUBLIC_IP: ${{ steps.ip.outputs.ip }}
-        HARBOR_ADMIN_PASSWORD: ${{ secrets.HARBOR_ADMIN_PASSWORD }}
+    - name: 👷 Deploy management cluster
+      id: management
+      uses: ./github_actions/deploy_cluster
+      with:
+        RUNNER_NAME: ${{ runner.name }}
+        OKS_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}
+        OKS_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY_OKS }}
+        OKS_REGION: ${{ vars.OKS_REGION }}
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_REGION: ${{ env.OSC_REGION }}
+        CLUSTER_NAME: "caposc"
+        IMAGE_NAME: ${{ vars[env.IMG_MANAGEMENT_NAME] }}
+        CERT_MANAGER: "true"
     - name: ⬇️ Install Go
       uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
     - name: 📦 Build and push Docker image 
       run: |
-        docker login ${{ steps.oks.outputs.harbor_host }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
+        docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
         sudo apt-get update
         sudo apt install -y docker-buildx-plugin 
         make docker-buildx
         make docker-push
         docker image prune -a -f
       env:
-        IMG: ${{ steps.oks.outputs.harbor_host }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
+        IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: 🔐 Create CAPOSC ns and credentials
       run: make credential
       shell: bash
       env:
-        KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
     - name: 🧪 Launch e2e tests
@@ -101,11 +103,11 @@ jobs:
       shell: bash
       id: e2etest
       env:
-        KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
         CCM_OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         CCM_OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         CCM_OSC_REGION: $${{ env.OSC_REGION }}
-        IMG: ${{ steps.oks.outputs.harbor_host }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
+        IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         IMG_UPGRADE_FROM: ${{ vars[env.IMG_UPGRADE_FROM_NAME] }}
         IMG_UPGRADE_TO: ${{ vars[env.IMG_UPGRADE_TO_NAME] }}
     - name: 📝 Get CAPOSC state/logs
@@ -117,24 +119,12 @@ jobs:
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
     - name: 📝 Get cluster api logs
       run: make logs-capi
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
-        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
-    - name: 🧹 Remove CAPI + CAPOSC
-      if: always()
-      run: |
-        ns=`kubectl get ns|grep quick-start|awk '{print $1}'`
-        if [ -n "$ns" ]; then
-          kubectl delete ns $ns --timeout 5m
-        fi
-        kubectl delete ns capi-kubeadm-bootstrap-system capi-kubeadm-control-plane-system capi-system
-        kubectl delete ns cluster-api-provider-outscale-system
-      env:
-        KUBECONFIG: ${{ steps.oks.outputs.kubeconfig }}
-      
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system      

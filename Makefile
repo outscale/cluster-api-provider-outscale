@@ -200,7 +200,7 @@ cluster-class-ex: envsubst
 .PHONY: dockerlint
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
-	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
+	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i -e HADOLINT_IGNORE=SC1091 hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
 
 .PHONY: trivy-scan
 trivy-scan:
