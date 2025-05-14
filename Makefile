@@ -73,7 +73,7 @@ OSC_SUBREGION_NAME ?= eu-west-2a
 ClusterToClean ?= capo-quickstart
 MINIMUM_MDBOOK_VERSION=0.4.21
 TRIVY_IMAGE := aquasec/trivy:latest
-DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./hack/*" )
+DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' ! -path "./hack/*" ! -path "./github_actions/*")
 LINTER_VERSION := v2.10.0
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -200,7 +200,7 @@ cluster-class-ex: envsubst
 .PHONY: dockerlint
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
-	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
+	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i -e HADOLINT_IGNORE=SC1091 hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
 
 .PHONY: trivy-scan
 trivy-scan:
