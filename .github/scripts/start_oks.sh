@@ -139,19 +139,7 @@ reclaimPolicy: Delete
 volumeBindingMode: Immediate
 EOF
 
-harbor_host=`kubectl get ingress harbor-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
-if [ -z "$harbor_host" ]; then
-    helm upgrade --install harbor harbor/harbor --set "expose.type=ingress" --set "expose.ingress.className=nginx" \
-        --set "expose.tls.enabled=false" \
-        --set "harborAdminPassword=$HARBOR_ADMIN_PASSWORD"
-    ret=$?
-    if [ $ret -ne 0 ]; then
-        exit $ret
-    fi
-    kubectl wait ingress harbor-ingress --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' --timeout=240s
-    harbor_host=`kubectl get ingress harbor-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
-fi
-
+harbor_host=`kubectl get service --namespace ingress-nginx ingress-nginx-controller -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"`
 if [ -z "$harbor_host" ]; then
     exit 2
 fi
