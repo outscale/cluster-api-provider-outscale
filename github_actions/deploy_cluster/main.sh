@@ -16,6 +16,7 @@ cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$
 # OKS
 /.venv/bin/oks-cli profile add --profile-name "default" --access-key $OKS_ACCESS_KEY --secret-key $OKS_SECRET_KEY --region $OKS_REGION
 /.venv/bin/oks-cli project login --project-name github-runner
+/.venv/bin/oks-cli cluster list
 kubeconfig=`/.venv/bin/oks-cli cluster kubeconfig --cluster-name $cluster_name --print-path`
 export KUBECONFIG=$kubeconfig
 
