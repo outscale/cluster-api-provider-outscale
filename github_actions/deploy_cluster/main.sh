@@ -57,6 +57,6 @@ kubectl --kubeconfig=$kubeconfig \
   apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
 
 # wait for all pods to be ready
-kubectl --kubeconfig=$kubeconfig wait --timeout=900s --for=condition=Ready po --all -A 
+# kubectl --kubeconfig=$kubeconfig wait --timeout=900s --for=condition=Ready po --all -A 
 
 kubectl --kubeconfig=$kubeconfig get po -A
