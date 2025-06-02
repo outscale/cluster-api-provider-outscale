@@ -12,7 +12,7 @@ require (
 	k8s.io/apimachinery v0.30.13
 	k8s.io/client-go v0.30.13
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.30.12
+	k8s.io/kubectl v0.30.13
 	sigs.k8s.io/cluster-api v1.8.12
 	sigs.k8s.io/cluster-api/test v1.8.12
 	sigs.k8s.io/controller-runtime v0.18.7
