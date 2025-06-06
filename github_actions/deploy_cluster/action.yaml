@@ -1,0 +1,58 @@
+name: Deploy a CAPI cluster
+inputs:
+  RUNNER_NAME:
+    description: 'Name of the runner'
+    required: true
+  OKS_CLUSTER_NAME:
+    description: 'Name of the management OKKS cluster'
+    required: true
+  OKS_ACCESS_KEY:
+    description: 'OKS access key'
+    required: true
+  OKS_SECRET_KEY:
+    description: 'OKS secret key'
+    required: true
+  OKS_REGION:
+    description: 'OKS region'
+    required: true
+  OSC_ACCESS_KEY:
+    description: 'cluster access key (CSI/CCM)'
+    required: true
+  OSC_SECRET_KEY:
+    description: 'cluster secret key (CSI/CCM)'
+    required: true
+  OSC_REGION:
+    description: 'cluster region'
+    required: true
+  CLUSTER_NAME:
+    description: 'cluster name'
+    required: true
+  IMAGE_NAME:
+    description: 'image name'
+    required: true
+  OSC_VM_TYPE:
+    description: 'VM type'
+    default: "tinav6.c4r8p2"
+  CCM:
+    description: 'deploy ccm'
+    default: "true"
+  CERT_MANAGER:
+    description: 'deploy cert-manager'
+    default: "false"
+outputs:
+  KUBECONFIG:
+    description: 'Kubeconfig path'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.RUNNER_NAME }}
+    - "${{ inputs.OKS_ACCESS_KEY }}%${{ inputs.OKS_SECRET_KEY }}%${{ inputs.OKS_REGION }}"
+    - "${{ inputs.OSC_ACCESS_KEY }}%${{ inputs.OSC_SECRET_KEY }}%${{ inputs.OSC_REGION }}"
+    - ${{ inputs.CLUSTER_NAME }}
+    - ${{ inputs.IMAGE_NAME }}
+    - ${{ inputs.OSC_VM_TYPE }}
+    - ${{ inputs.CCM }}
+    - ${{ inputs.CERT_MANAGER }}
+  entrypoint: '/main.sh'
+  post-entrypoint: '/cleanup.sh'
