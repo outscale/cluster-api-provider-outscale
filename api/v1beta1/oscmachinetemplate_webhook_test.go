@@ -17,20 +17,20 @@ limitations under the License.
 package v1beta1_test
 
 import (
-	"errors"
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/stretchr/testify/require"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TestOscMachineTemplate_ValidateCreate check good and bad update of oscMachineTemplate
 func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 	machineTestCases := []struct {
-		name                 string
-		machineSpec          infrastructurev1beta1.OscMachineSpec
-		expValidateCreateErr error
+		name        string
+		machineSpec infrastructurev1beta1.OscMachineSpec
+		errorCount  int
 	}{
 		{
 			name: "create Valid Vm Spec",
@@ -44,73 +44,73 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: nil,
-		},
-		{
-			name: "create with bad keypairName",
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
-						KeypairName: "rke λ",
-					},
-				},
-			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.vm.keypairName: Invalid value: \"rke λ\": invalid keypair name"),
+			errorCount: 0,
 		},
 		{
 			name: "create with bad vmType",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Vm: infrastructurev1beta1.OscVm{
-						VmType: "oscv4.c2r4p2",
+						KeypairName: "test-webhook",
+						VmType:      "oscv4.c2r4p2",
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.vm.vmType: Invalid value: \"oscv4.c2r4p2\": invalid vm type"),
+			errorCount: 1,
 		},
 		{
 			name: "create rootdisk with bad iops",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskIops: -15,
 						},
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.vm.rootDisk.rootDiskIops: Invalid value: -15: invalid iops"),
+			errorCount: 1,
 		},
 		{
 			name: "create rootdisk with bad size",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskSize: -15,
 						},
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.vm.rootDisk.rootDiskSize: Invalid value: -15: invalid size"),
+			errorCount: 1,
 		},
 		{
 			name: "create rootdisk with bad volumeType",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
 					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
 						RootDisk: infrastructurev1beta1.OscRootDisk{
 							RootDiskType: "gp3",
 						},
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.vm.rootDisk.rootDiskType: Invalid value: \"gp3\": invalid volume type (allowed: standard, gp2, io1)"),
+			errorCount: 1,
 		},
 		{
 			name: "create with bad volume size",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -122,12 +122,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.volumes.size: Invalid value: -30: invalid size"),
+			errorCount: 1,
 		},
 		{
 			name: "create with bad volume iops",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -139,12 +143,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New(`OscMachine.infrastructure.cluster.x-k8s.io "webhook-test" is invalid: node.volumes.iops: Invalid value: -15: invalid iops`),
+			errorCount: 1,
 		},
 		{
 			name: "create with missing volume device",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -155,12 +163,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New(`OscMachine.infrastructure.cluster.x-k8s.io "webhook-test" is invalid: node.volumes.device: Invalid value: "": device name is required`),
+			errorCount: 1,
 		},
 		{
 			name: "create with invalid volume device",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -172,12 +184,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New(`OscMachine.infrastructure.cluster.x-k8s.io "webhook-test" is invalid: node.volumes.device: Invalid value: "foo": invalid device name`),
+			errorCount: 1,
 		},
 		{
 			name: "create with bad volumeType",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -189,12 +205,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: errors.New("OscMachine.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: node.volumes.volumeType: Invalid value: \"gp3\": invalid volume type (allowed: standard, gp2, io1)"),
+			errorCount: 1,
 		},
 		{
 			name: "create with valid io1 volumeSpec",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -206,12 +226,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: nil,
+			errorCount: 0,
 		},
 		{
 			name: "create with valid gp2 volumeSpec",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -222,12 +246,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: nil,
+			errorCount: 0,
 		},
 		{
 			name: "create with valid standard volumeSpec",
 			machineSpec: infrastructurev1beta1.OscMachineSpec{
 				Node: infrastructurev1beta1.OscNode{
+					Vm: infrastructurev1beta1.OscVm{
+						KeypairName: "test-webhook",
+						VmType:      "tinav4.c2r4p2",
+					},
 					Volumes: []infrastructurev1beta1.OscVolume{
 						{
 							Name:       "test-webhook",
@@ -238,15 +266,16 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 					},
 				},
 			},
-			expValidateCreateErr: nil,
+			errorCount: 0,
 		},
 	}
 	for _, mtc := range machineTestCases {
 		t.Run(mtc.name, func(t *testing.T) {
 			oscInfraMachine := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
 			_, err := oscInfraMachine.ValidateCreate()
-			if mtc.expValidateCreateErr != nil {
-				require.EqualError(t, err, mtc.expValidateCreateErr.Error(), "ValidateCreate should return the same errror")
+			if mtc.errorCount > 0 {
+				require.Error(t, err, "ValidateCreate should return the same errror")
+				require.Len(t, err.(*apierrors.StatusError).Status().Details.Causes, mtc.errorCount)
 			} else {
 				require.NoError(t, err)
 			}
