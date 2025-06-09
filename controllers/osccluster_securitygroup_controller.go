@@ -74,6 +74,12 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 	log := ctrl.LoggerFrom(ctx)
 	var checkRules = func(flow string, rules []osc.SecurityGroupRule) error {
 		for _, rule := range rules {
+			// Skipping rule created by CCM. There is no way to be sure this comes from the CCM,
+			// but the CCM creates rules with an associated SG, and the config from the CRD only uses ipRanges.
+			if len(rule.GetSecurityGroupsMembers()) > 0 {
+				log.V(5).Info("Skipping rule associated with another SG")
+				continue
+			}
 			var okRanges []string
 			for _, spec := range securityGroupRulesSpec {
 				if flow != spec.Flow || rule.GetFromPortRange() != spec.FromPortRange || rule.GetToPortRange() != spec.ToPortRange || rule.GetIpProtocol() != spec.IpProtocol {
