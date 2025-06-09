@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -216,7 +217,8 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	}
 
 	if vm.GetState() != "running" {
-		return reconcile.Result{}, fmt.Errorf("VM %s is not yet running", vm.GetVmId())
+		log.V(4).Info(fmt.Sprintf("VM %s is not yet running", vm.GetVmId()))
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
 	machineScope.SetReady()

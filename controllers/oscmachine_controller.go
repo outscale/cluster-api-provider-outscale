@@ -190,12 +190,17 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	}
 
 	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope)
-	if err != nil {
+	switch {
+	case err != nil:
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcileVm, err
+		return reconcile.Result{}, err
+	case !reconcileVm.IsZero():
+		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "VM is not running yet")
+		return reconcileVm, nil
+	default:
+		conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
+		return reconcile.Result{}, nil
 	}
-	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VmReadyCondition)
-	return reconcile.Result{}, nil
 }
 
 // reconcileDelete reconcile the deletion of the machine
