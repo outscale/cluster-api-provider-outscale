@@ -74,7 +74,7 @@ func runMachineTest(t *testing.T, tc testcase) {
 			assert.Zero(t, res)
 		} else {
 			require.NoError(t, err)
-			assert.Equal(t, tc.requeue, res.RequeueAfter > 0 || res.Requeue)
+			assert.Equal(t, step.requeue, res.RequeueAfter > 0 || res.Requeue)
 		}
 		var out v1beta1.OscMachine
 		err = client.Get(context.TODO(), nsn, &out)
@@ -103,7 +103,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 			},
-			hasError: true,
+			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStatePending, false),
@@ -115,7 +115,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockFuncs: []mockFunc{
 					mockGetVm("i-foo", "pending"),
 				},
-				hasError:       true,
+				requeue:        true,
 				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", v1beta1.VmStatePending, false)},
 				next: &testcase{
 					name:        "worker has been created, and vm is now running",
@@ -135,7 +135,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// Control plane node
 		{
-			name:        "Creating a controlplane with base parameters, vm is running & security groups are ok",
+			name:        "Creating a controlplane with base parameters, vm is running & LB is ok",
 			clusterSpec: "ready-0.4", machineSpec: "base-controlplane",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
@@ -147,7 +147,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				assertHasMachineFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStatePending, false),
 			},
-			hasError: true,
+			requeue: true,
 			next: &testcase{
 				mockFuncs: []mockFunc{
 					mockGetVm("i-foo", "running"),
@@ -162,7 +162,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 		},
 		{
-			name:        "Creating a controlplane with base parameters, vm is running & security groups are not ok",
+			name:        "Creating a controlplane with base parameters, vm is running & LB is not found",
 			clusterSpec: "ready-0.4", machineSpec: "base-controlplane",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
@@ -170,7 +170,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 			},
-			hasError: true,
+			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStatePending, false),
@@ -178,14 +178,9 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			next: &testcase{
 				mockFuncs: []mockFunc{
 					mockGetVm("i-foo", "running"),
-					mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-					mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
-					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+					mockGetLoadBalancer("test-cluster-api-k8s", nil),
 				},
-				machineAsserts: []assertOSCMachineFunc{
-					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
-				},
+				hasError: true,
 			},
 		},
 
@@ -205,7 +200,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					Device:     "/dev/sdb",
 				}}, "vol-bar"),
 			},
-			hasError: true,
+			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStatePending, false),
@@ -239,7 +234,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					compute.AutoAttachExternapIPTag: "1.2.3.4",
 				}),
 			},
-			hasError: true,
+			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStatePending, false),
@@ -284,7 +279,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					compute.AutoAttachExternapIPTag: "1.2.3.4",
 				}),
 			},
-			hasError: true,
+			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
 				assertVmExists("i-foo", v1beta1.VmStatePending, false),
