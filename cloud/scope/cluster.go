@@ -408,8 +408,9 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		Description: "Worker securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker},
 		SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: allSN}, // NodePort
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: allSN}, // Kubelet
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: allSNCP},    // HTTPS
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: allSNCP}, // Applicative ports (services, ...)
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: allSN},  // Kubelet
 		},
 		Authoritative: true,
 	}
@@ -421,7 +422,6 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		Roles:       []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane},
 		SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRange: s.GetNet().IpRange}, // API
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: allSN},           // NodePort
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: allSNCP},           // etcd
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: allSNCP},         // Kubelet
 		},
@@ -451,6 +451,8 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRange: s.GetNet().IpRange},   // Flannel VXLAN
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRange: s.GetNet().IpRange},   // Cillium health
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRange: s.GetNet().IpRange},   // Cillium hubble
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRange: s.GetNet().IpRange}, // NodePort
+			{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRange: s.GetNet().IpRange},       // internal trafic
 		},
 		Tag:           "OscK8sMainSG",
 		Authoritative: true,
