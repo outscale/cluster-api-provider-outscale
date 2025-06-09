@@ -29,11 +29,11 @@ func TestValidateSubregion(t *testing.T) {
 		{subregion: "ap-northeast-1b", valid: true},
 	}
 	for _, tc := range tcs {
-		err := v1beta1.ValidateSubregionName(tc.subregion)
+		ferr := v1beta1.ValidateSubregion(nil, tc.subregion)
 		if tc.valid {
-			require.NoError(t, err)
+			require.Nil(t, ferr, tc.subregion)
 		} else {
-			require.Error(t, err)
+			require.NotNil(t, ferr, tc.subregion)
 		}
 	}
 }
@@ -62,11 +62,11 @@ func TestValidateVmType(t *testing.T) {
 		{vmType: "tinav7.c1r1p4", valid: false},
 	}
 	for _, tc := range tcs {
-		err := v1beta1.ValidateVmType(tc.vmType)
+		ferr := v1beta1.ValidateVmType(nil, tc.vmType)
 		if tc.valid {
-			require.NoError(t, err)
+			require.Nil(t, ferr, tc.vmType)
 		} else {
-			require.Error(t, err)
+			require.NotNil(t, ferr, tc.vmType)
 		}
 	}
 }

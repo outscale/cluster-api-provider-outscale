@@ -167,26 +167,10 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		log.V(3).Info("Bootstrap data secret reference is not yet available")
 		return ctrl.Result{}, nil
 	}
-	volumeName, err := checkVolumeFormatParameters(machineScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("invalid volume %s: %w", volumeName, err)
-	}
 
-	vmName, err := checkVmFormatParameters(machineScope, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot reconcile vm %s: %w", vmName, err)
-	}
-
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		duplicateResourceVolumeErr := checkVolumeOscDuplicateName(machineScope)
-		if duplicateResourceVolumeErr != nil {
-			return reconcile.Result{}, duplicateResourceVolumeErr
-		}
-	}
-
-	duplicateResourceVmPrivateIpErr := checkVmPrivateIpOscDuplicateName(machineScope)
-	if duplicateResourceVmPrivateIpErr != nil {
-		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
+	errs := infrastructurev1beta1.ValidateOscMachineSpec(oscmachine.Spec)
+	if len(errs) > 0 {
+		return reconcile.Result{}, errs.ToAggregate()
 	}
 
 	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope)

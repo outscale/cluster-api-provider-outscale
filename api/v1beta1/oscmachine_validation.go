@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -27,96 +28,34 @@ import (
 const (
 	minIops = 0
 	maxIops = 13000
-	minSize = 0
-	maxSize = 14901
+	minSize = 1
+	maxSize = 14900
 )
 
 // ValidateOscMachineSpec validates a OscMachineSpec.
 func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	var allErrs field.ErrorList
-	if spec.Node.Vm.KeypairName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.KeypairName, field.NewPath("node", "vm", "keypairName"), ValidateKeypairName); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Node.KeyPair.Name != "" && spec.Node.Vm.KeypairName != spec.Node.KeyPair.Name {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("node", "keypair", "name"), spec.Node.Vm.KeypairName, "keypairs must be the same in vm and keypair sections"))
-	}
-	if spec.Node.Vm.VmType != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.VmType, field.NewPath("node", "vm", "vmType"), ValidateVmType); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Node.Vm.SubregionName != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.SubregionName, field.NewPath("node", "vm", "subregionName"), ValidateSubregionName); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if len(spec.Node.Volumes) != 0 {
-		volumesSpec := spec.Node.Volumes
-		for _, volSpec := range volumesSpec {
-			if err := ValidateDeviceName(volSpec.Device); err != nil {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("node", "volumes", "device"), volSpec.Device, err.Error()))
-			}
+	allErrs = AppendValidation(allErrs, ValidateRequired(field.NewPath("node", "vm", "keypairName"), spec.Node.Vm.KeypairName, "keypairName is required"))
+	allErrs = AppendValidation(allErrs, ValidateVmType(field.NewPath("node", "vm", "vmType"), spec.Node.Vm.VmType))
+	allErrs = AppendValidation(allErrs, ValidateSubregion(field.NewPath("node", "vm", "subregionName"), spec.Node.Vm.SubregionName))
 
-			if volSpec.Iops != 0 {
-				if errs := ValidateAndReturnErrorList(volSpec.Iops, field.NewPath("node", "volumes", "iops"), ValidateIops); len(errs) > 0 {
-					allErrs = append(allErrs, errs...)
-				}
-			}
-
-			if volSpec.Size != 0 {
-				if errs := ValidateAndReturnErrorList(volSpec.Size, field.NewPath("node", "volumes", "size"), ValidateSize); len(errs) > 0 {
-					allErrs = append(allErrs, errs...)
-				}
-			}
-
-			if volSpec.VolumeType != "" {
-				if errs := ValidateAndReturnErrorList(volSpec.VolumeType, field.NewPath("node", "volumes", "volumeType"), ValidateVolumeType); len(errs) > 0 {
-					allErrs = append(allErrs, errs...)
-				}
-			}
-			if volSpec.Iops != 0 && volSpec.Size != 0 && volSpec.VolumeType == "io1" {
-				ratioIopsSize := volSpec.Iops / volSpec.Size
-				if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("node", "volumes", "size"), ValidateRatioSizeIops); len(errs) > 0 {
-					allErrs = append(allErrs, errs...)
-				}
-			}
-		}
+	for _, spec := range spec.Node.Volumes {
+		allErrs = AppendValidation(allErrs, ValidateVolume(field.NewPath("node", "vm", "subregionName"), spec)...)
 	}
-	if spec.Node.Vm.RootDisk.RootDiskIops != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskIops, field.NewPath("node", "vm", "rootDisk", "rootDiskIops"), ValidateIops); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Node.Vm.RootDisk.RootDiskSize != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskSize, field.NewPath("node", "vm", "rootDisk", "rootDiskSize"), ValidateSize); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Node.Vm.RootDisk.RootDiskType != "" {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskType, field.NewPath("node", "vm", "rootDisk", "rootDiskType"), ValidateVolumeType); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
-	if spec.Node.Vm.RootDisk.RootDiskIops != 0 && spec.Node.Vm.RootDisk.RootDiskSize != 0 && spec.Node.Vm.RootDisk.RootDiskType == "io1" {
-		ratioIopsSize := spec.Node.Vm.RootDisk.RootDiskIops / spec.Node.Vm.RootDisk.RootDiskSize
-		if errs := ValidateAndReturnErrorList(ratioIopsSize, field.NewPath("node", "vm", "rootDisk", "rootDiskSize"), ValidateRatioSizeIops); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
-	}
+	allErrs = AppendValidation(allErrs, ValidateIops(field.NewPath("node", "vm", "rootDisk", "rootDiskIops"), spec.Node.Vm.RootDisk.RootDiskIops, spec.Node.Vm.RootDisk.RootDiskSize))
+	allErrs = AppendValidation(allErrs, ValidateSize(field.NewPath("node", "vm", "rootDisk", "rootDiskSize"), spec.Node.Vm.RootDisk.RootDiskSize))
+	allErrs = AppendValidation(allErrs, ValidateVolumeType(field.NewPath("node", "vm", "rootDisk", "rootDiskType"), spec.Node.Vm.RootDisk.RootDiskType))
 	return allErrs
 }
 
-var isValidateKeypairName = regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
-
-// ValidateKeypairName checks that KeypairName is a valid name of keypair
-func ValidateKeypairName(keypairName string) error {
-	if isValidateKeypairName(keypairName) {
-		return nil
-	} else {
-		return errors.New("invalid keypair name")
-	}
+func ValidateVolume(path *field.Path, spec OscVolume) field.ErrorList {
+	var allErrs field.ErrorList
+	return AppendValidation(allErrs,
+		ValidateDeviceName(path.Child("device"), spec.Device),
+		ValidateIops(path.Child("iops"), spec.Iops, spec.Size),
+		ValidateSize(path.Child("size"), spec.Size),
+		ValidateVolumeType(path.Child("volumeType"), spec.VolumeType),
+	)
 }
 
 // ValidateImageId checks that imageId is a valid imageId
@@ -126,15 +65,6 @@ func ValidateImageId(imageId string) error {
 		return nil
 	default:
 		return errors.New("invalid image id")
-	}
-}
-
-// ValidateRatioSizeIops checks that Ratio iops size should not exceed 300
-func ValidateRatioSizeIops(ratioIopsSize int32) error {
-	if ratioIopsSize < 300 {
-		return nil
-	} else {
-		return errors.New("iops/size should be lower than 300")
 	}
 }
 
@@ -150,75 +80,65 @@ func ValidateImageName(imageName string) error {
 }
 
 // ValidateIops checks that iops is valid
-func ValidateIops(iops int32) error {
-	if iops < maxIops && iops > minIops {
+func ValidateIops(path *field.Path, iops, size int32) *field.Error {
+	switch {
+	case iops == 0:
 		return nil
-	} else {
-		return errors.New("invalid iops")
+	case iops > maxIops || iops < minIops:
+		return field.Invalid(path, iops, fmt.Sprintf("iops must be between %d and %d", minIops, maxIops))
+	case iops/size > 300:
+		return field.Invalid(path, iops, "iops/size should be lower than 300")
+	default:
+		return nil
 	}
 }
 
 // ValidateSize checks that size is valid
-func ValidateSize(size int32) error {
-	if size < maxSize && size > minSize {
+func ValidateSize(path *field.Path, size int32) *field.Error {
+	switch {
+	case size == 0:
 		return nil
-	} else {
-		return errors.New("invalid size")
+	case size > maxSize || size < minSize:
+		return field.Invalid(path, size, fmt.Sprintf("size must be between %d and %d", minSize, maxSize))
+	default:
+		return nil
 	}
 }
 
 // ValidateVolumeType checks that volumeType is a valid volumeType
-func ValidateVolumeType(volumeType string) error {
+func ValidateVolumeType(path *field.Path, volumeType string) *field.Error {
 	switch volumeType {
-	case "standard", "gp2", "io1":
+	case "", "standard", "gp2", "io1":
 		return nil
 	default:
-		return errors.New("invalid volume type (allowed: standard, gp2, io1)")
-	}
-}
-
-// ValidateSubregionName checks that subregionName is a valid az format
-func ValidateSubregionName(subregionName string) error {
-	switch {
-	case isValidSubregion(subregionName):
-		return nil
-	default:
-		return errors.New("invalid subregion name")
+		return field.Invalid(path, volumeType, "invalid volume type (allowed: standard, gp2, io1)")
 	}
 }
 
 var isValidateDeviceName = regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
 
 // ValidateDeviceName checks that DeviceName  is a valid DeviceName
-func ValidateDeviceName(deviceName string) error {
+func ValidateDeviceName(path *field.Path, deviceName string) *field.Error {
 	switch {
 	case deviceName == "":
-		return errors.New("device name is required")
+		return field.Required(path, "device name is required")
 	case isValidateDeviceName(deviceName):
 		return nil
 	default:
-		return errors.New("invalid device name")
+		return field.Invalid(path, deviceName, "device must use the /dev/(s|xv)d[a-z] format")
 	}
 }
 
 var isValidateVmType = regexp.MustCompile(`^tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]$`).MatchString
 
 // ValidateVmType checks that vmType is a valid vmType
-func ValidateVmType(vmType string) error {
+func ValidateVmType(path *field.Path, vmType string) *field.Error {
 	switch {
+	case vmType == "":
+		return field.Required(path, "vmType is required")
 	case isValidateVmType(vmType):
 		return nil
 	default:
-		return errors.New("invalid vm type")
+		return field.Invalid(path, vmType, "vmType must use the tinavX.cXrXpX format")
 	}
-}
-
-func ValidateAndReturnErrorList[T any](value T, fieldPath *field.Path, validateFunc func(T) error) field.ErrorList {
-	allErrs := field.ErrorList{}
-	err := validateFunc(value)
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(fieldPath, value, err.Error()))
-		return allErrs
-	}
-	return allErrs
 }

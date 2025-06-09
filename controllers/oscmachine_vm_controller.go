@@ -27,101 +27,10 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-// checkVmFormatParameters check Volume parameters format
-func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (string, error) {
-	vmSpec := machineScope.GetVm()
-	vmSpec.SetDefaultValue()
-	vmName := vmSpec.Name + "-" + machineScope.GetUID()
-	vmTagName, err := tag.ValidateTagNameValue(vmName)
-	if err != nil {
-		return vmTagName, err
-	}
-	imageSpec := machineScope.GetImage()
-	imageName := imageSpec.Name
-
-	if imageName != "" {
-		err = infrastructurev1beta1.ValidateImageName(imageName)
-		if err != nil {
-			return vmTagName, err
-		}
-	} else {
-		err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
-		if err != nil {
-			return vmTagName, err
-		}
-	}
-
-	vmKeypairName := vmSpec.KeypairName
-	err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
-	if err != nil {
-		return vmTagName, err
-	}
-
-	vmType := vmSpec.VmType
-	err = infrastructurev1beta1.ValidateVmType(vmType)
-	if err != nil {
-		return vmTagName, err
-	}
-
-	vmSubregionName := vmSpec.SubregionName
-	if vmSpec.SubregionName != "" {
-		err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
-		if err != nil {
-			return vmTagName, err
-		}
-	}
-	vmSubnetName := vmSpec.SubnetName
-	ipSubnetRange := clusterScope.GetIpSubnetRange(vmSubnetName)
-	vmPrivateIps := machineScope.GetVmPrivateIps()
-	for _, vmPrivateIp := range vmPrivateIps {
-		privateIp := vmPrivateIp.PrivateIp
-		err := compute.ValidateIpAddrInCidr(privateIp, ipSubnetRange)
-		if err != nil {
-			return vmTagName, err
-		}
-	}
-
-	if vmSpec.RootDisk.RootDiskIops != 0 {
-		rootDiskIops := vmSpec.RootDisk.RootDiskIops
-		err := infrastructurev1beta1.ValidateIops(rootDiskIops)
-		if err != nil {
-			return vmTagName, err
-		}
-	}
-	rootDiskSize := vmSpec.RootDisk.RootDiskSize
-	err = infrastructurev1beta1.ValidateSize(rootDiskSize)
-	if err != nil {
-		return vmTagName, err
-	}
-
-	rootDiskType := vmSpec.RootDisk.RootDiskType
-	err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
-	if err != nil {
-		return vmTagName, err
-	}
-
-	if vmSpec.RootDisk.RootDiskType == "io1" && vmSpec.RootDisk.RootDiskIops != 0 && vmSpec.RootDisk.RootDiskSize != 0 {
-		ratioRootDiskSizeIops := vmSpec.RootDisk.RootDiskIops / vmSpec.RootDisk.RootDiskSize
-		err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
-		if err != nil {
-			return vmTagName, err
-		}
-	}
-	return "", nil
-}
-
-// checkVmPrivateIpOscDuplicateName check that there are not the same name for vm resource
-func checkVmPrivateIpOscDuplicateName(machineScope *scope.MachineScope) error {
-	return utils.CheckDuplicates(machineScope.GetVmPrivateIps(), func(ip infrastructurev1beta1.OscPrivateIpElement) string {
-		return ip.Name
-	})
-}
 
 // reconcileVm reconcile the vm of the machine
 func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
