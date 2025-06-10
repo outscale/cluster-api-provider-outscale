@@ -175,12 +175,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
-	_, err = r.reconcileLoadBalancer(ctx, clusterScope)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconcile loadBalancer: %w", err)
+	if clusterScope.OscCluster.Spec.Network.LoadBalancer.Enable {
+		_, err = r.reconcileLoadBalancer(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile loadBalancer: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 
 	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
 		_, err := r.reconcileBastion(ctx, clusterScope)
@@ -224,9 +226,12 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 			return reconcile.Result{}, fmt.Errorf("reconcile delete bastion: %w", err)
 		}
 	}
-	_, err = r.reconcileDeleteLoadBalancer(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("reconcile delete loadBalancer: %w", err)
+
+	if clusterScope.OscCluster.Spec.Network.LoadBalancer.Enable {
+		_, err = r.reconcileDeleteLoadBalancer(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete loadBalancer: %w", err)
+		}
 	}
 
 	_, err = r.reconcileDeleteNatService(ctx, clusterScope)
