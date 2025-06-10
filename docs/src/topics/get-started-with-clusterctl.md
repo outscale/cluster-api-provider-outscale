@@ -3,12 +3,9 @@
 
 ## Prerequisites
 
-- Install [kubectl][kubectl]
-- Outscale account with [an Access Key and a Secret Key][Outscale Access Key and Secret Key]
-- A management Kubernetes cluster:
-    - You can use a Vm with [kubeadm][kubeadm] or [Minikube][Minikube]. 
-    - You can use a container with [kind][kind]. 
-    - You can use a rke cluster with [osc-rke][osc-rke].
+- [kubectl][kubectl] installed on your computer,
+- an Outscale account with [an Access Key and a Secret Key][Outscale Access Key and Secret Key],
+- a management Kubernetes cluster, for example an [OKS][OKS] cluster.
 
 ## Installing clusterctl
 
@@ -168,13 +165,8 @@ clusterctl delete --all
 [helm]: https://helm.sh/docs/intro/install/
 [ClusterResourceSet]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-resource-set.html
 [ClusterClass]: https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/
-[kind]: https://github.com/kubernetes-sigs/kind#installation-and-usage
-[kubeadm]: https://kubernetes.io/fr/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+[OKS]: https://docs.outscale.com/en/userguide/About-OKS.html
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
-[osc-rke]: https://github.com/outscale-dev/osc-k8s-rke-cluster
-[Minikube]: https://kubernetes.io/docs/tasks/tools/install-minikube/
-[openlens]: https://github.com/MuhammedKalkan/OpenLens
-[lens]: https://github.com/lensapp/lens
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
 [cluster-api-config]: https://cluster-api.sigs.k8s.io/clusterctl/configuration.html 
 [omi]: ./omi.md

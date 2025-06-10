@@ -24,16 +24,22 @@ metadata:
   name: "${CLUSTER_NAME}"
 spec:
   network:
-    subregionName: ${OSC_SUBREGION_NAME}
+    subregions:
+    - ${OSC_REGION}a
+    - ${OSC_REGION}b
+    - ${OSC_REGION}c
+    subregionName: ${OSC_REGION}a
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
+    allowFromIPRanges:
+    - ${OSC_ALLOW_FROM}
     bastion:
       enable: false
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: "${CLUSTER_NAME}-md-0"
+  name: "${CLUSTER_NAME}-md-a"
 spec:
   clusterName: "${CLUSTER_NAME}"
   replicas: ${WORKER_MACHINE_COUNT}
@@ -45,18 +51,18 @@ spec:
       version: "${KUBERNETES_VERSION}"
       bootstrap:
         configRef:
-          name: "${CLUSTER_NAME}-md-0"
+          name: "${CLUSTER_NAME}-md"
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
       infrastructureRef:
-        name: "${CLUSTER_NAME}-md-0"
+        name: "${CLUSTER_NAME}-md-a"
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
-  name: "${CLUSTER_NAME}-md-0"
+  name: "${CLUSTER_NAME}-md-a"
 spec:
   template:
     spec:
@@ -69,7 +75,91 @@ spec:
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
           keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_SUBREGION_NAME}
+          subregionName: ${OSC_REGION}a
+          vmType: "${OSC_VM_TYPE}"
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "${CLUSTER_NAME}-md-b"
+spec:
+  clusterName: "${CLUSTER_NAME}"
+  replicas: ${WORKER_MACHINE_COUNT}
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "${CLUSTER_NAME}"
+      version: "${KUBERNETES_VERSION}"
+      bootstrap:
+        configRef:
+          name: "${CLUSTER_NAME}-md"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+      infrastructureRef:
+        name: "${CLUSTER_NAME}-md-b"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-b"
+spec:
+  template:
+    spec:
+      node:
+        image:
+          name: "${OSC_IMAGE_NAME}"
+        vm:
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS}
+            rootDiskType: "${OSC_VOLUME_TYPE}"
+          keypairName: "${OSC_KEYPAIR_NAME}"
+          subregionName: ${OSC_REGION}b
+          vmType: "${OSC_VM_TYPE}"
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "${CLUSTER_NAME}-md-c"
+spec:
+  clusterName: "${CLUSTER_NAME}"
+  replicas: ${WORKER_MACHINE_COUNT}
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "${CLUSTER_NAME}"
+      version: "${KUBERNETES_VERSION}"
+      bootstrap:
+        configRef:
+          name: "${CLUSTER_NAME}-md"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+      infrastructureRef:
+        name: "${CLUSTER_NAME}-md-c"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: OscMachineTemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-c"
+spec:
+  template:
+    spec:
+      node:
+        image:
+          name: "${OSC_IMAGE_NAME}"
+        vm:
+          rootDisk:
+            rootDiskSize: ${OSC_VOLUME_SIZE}
+            rootDiskIops: ${OSC_IOPS}
+            rootDiskType: "${OSC_VOLUME_TYPE}"
+          keypairName: "${OSC_KEYPAIR_NAME}"
+          subregionName: ${OSC_REGION}c
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -94,7 +184,7 @@ spec:
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
-  name: "${CLUSTER_NAME}-md-0"
+  name: "${CLUSTER_NAME}-md"
 spec:
   template:
     spec:
