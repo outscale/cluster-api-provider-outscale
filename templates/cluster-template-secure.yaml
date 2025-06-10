@@ -27,6 +27,8 @@ spec:
     subregionName: ${OSC_SUBREGION_NAME}
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
+    allowFromIPRanges:
+    - ${OSC_ALLOW_FROM}
     bastion:
       enable: false
 ---
