@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3-0.20250416153108-23dd517d714e
+    controller-gen.kubebuilder.io/version: v0.18.1-0.20250610061224-4cb7e87f3b45
   name: oscclustertemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -109,7 +109,7 @@ spec:
                         properties:
                           additionalSecurityRules:
                             description: Additional rules to add to the automatic
-                              security groups.
+                              security groups
                             items:
                               properties:
                                 roles:
@@ -136,7 +136,7 @@ spec:
                                         type: string
                                       ipRange:
                                         description: The ip range of the security
-                                          group rule (deprecated)
+                                          group rule (deprecated, use ipRanges)
                                         type: string
                                       ipRanges:
                                         description: The list of ip ranges of the
@@ -179,8 +179,10 @@ spec:
                                   for this VM.
                                 type: string
                               clusterName:
+                                description: unused
                                 type: string
                               deviceName:
+                                description: unused
                                 type: string
                               enable:
                                 type: boolean
@@ -207,19 +209,28 @@ spec:
                                 description: unused
                                 type: string
                               resourceId:
+                                description: the vm id (deprecated, not set anymore)
                                 type: string
                               rootDisk:
                                 properties:
                                   rootDiskIops:
+                                    description: The root disk iops (io1 volumes only)
+                                      (1500 by default)
                                     format: int32
                                     type: integer
                                   rootDiskSize:
+                                    description: The volume size in gibibytes (GiB)
+                                      (60 by default)
                                     format: int32
                                     type: integer
                                   rootDiskType:
+                                    description: The volume type (io1, gp2 or standard)
+                                      (io1 by default)
                                     type: string
                                 type: object
                               securityGroupNames:
+                                description: The list of security groups (deprecated
+                                  use bastion role in security groups)
                                 items:
                                   properties:
                                     name:
@@ -227,10 +238,14 @@ spec:
                                   type: object
                                 type: array
                               subnetName:
+                                description: The subnet of the vm (deprecated use
+                                  bastion role in subnets)
                                 type: string
                               subregionName:
+                                description: unused
                                 type: string
                               vmType:
+                                description: The type of VM (tinav6.c1r1p2 by default)
                                 type: string
                             type: object
                           clusterName:
@@ -238,6 +253,7 @@ spec:
                             type: string
                           controlPlaneSubnets:
                             description: List of subnet to spread controlPlane nodes
+                              (deprecated, add controlplane role to subnets)
                             items:
                               type: string
                             type: array
@@ -254,6 +270,7 @@ spec:
                                 description: The image name.
                                 type: string
                               resourceId:
+                                description: unused
                                 type: string
                             type: object
                           internetService:
@@ -335,10 +352,13 @@ spec:
                                 type: string
                               securitygroupname:
                                 description: The security group name for the load-balancer
+                                  (deprecated, add loadbalancer role to a security
+                                  group)
                                 type: string
                               subnetname:
                                 description: The subnet name where to add the load
-                                  balancer.
+                                  balancer (deprecated, add loadbalancer role to a
+                                  subnet)
                                 type: string
                             type: object
                           natService:
@@ -358,7 +378,8 @@ spec:
                                 type: string
                               subnetname:
                                 description: The name of the Subnet to which the Nat
-                                  Service will be attached
+                                  Service will be attached (deprecated, add nat role
+                                  to subnets)
                                 type: string
                               subregionName:
                                 description: The name of the Subregion to which the
@@ -384,7 +405,8 @@ spec:
                                   type: string
                                 subnetname:
                                   description: The name of the Subnet to which the
-                                    Nat Service will be attached
+                                    Nat Service will be attached (deprecated, add
+                                    nat role to subnets)
                                   type: string
                                 subregionName:
                                   description: The name of the Subregion to which
@@ -407,22 +429,23 @@ spec:
                                 description: the network name
                                 type: string
                               resourceId:
-                                description: The Id of the Net to reuise (if useExisting
+                                description: The Id of the Net to reuse (if useExisting.net
                                   is set)
                                 type: string
                             type: object
                           publicIps:
-                            description: The Public Ip configuration
+                            description: The Public Ip configuration (unused)
                             items:
                               properties:
                                 clusterName:
+                                  description: unused
                                   type: string
                                 name:
                                   description: The tag name associate with the Public
-                                    Ip
+                                    Ip (unused)
                                   type: string
                                 resourceId:
-                                  description: The Public Ip Id response
+                                  description: The Public Ip Id response (unused)
                                   type: string
                               type: object
                             type: array
@@ -435,7 +458,7 @@ spec:
                                     Table
                                   type: string
                                 resourceId:
-                                  description: The Route Table Id response
+                                  description: The resource id (unused)
                                   type: string
                                 role:
                                   description: The role for this route table
@@ -468,7 +491,7 @@ spec:
                                   type: array
                                 subnets:
                                   description: The subnet tag name associate with
-                                    a Subnet
+                                    a Subnet (deprecated, use roles)
                                   items:
                                     type: string
                                   type: array
@@ -493,8 +516,8 @@ spec:
                                   description: The name of the security group
                                   type: string
                                 resourceId:
-                                  description: When reusing network, the id of an
-                                    existing securityGroup to use.
+                                  description: When useExisting.securityGroup is set,
+                                    the id of an existing securityGroup to use.
                                   type: string
                                 roles:
                                   description: The roles the securityGroup applies
@@ -520,7 +543,7 @@ spec:
                                         type: string
                                       ipRange:
                                         description: The ip range of the security
-                                          group rule (deprecated)
+                                          group rule (deprecated, use ipRanges)
                                         type: string
                                       ipRanges:
                                         description: The list of ip ranges of the
@@ -546,7 +569,7 @@ spec:
                               type: object
                             type: array
                           subnets:
-                            description: The Subnet configuration
+                            description: The Subnets configuration
                             items:
                               properties:
                                 ipSubnetRange:
@@ -557,7 +580,7 @@ spec:
                                   description: The name of the Subnet
                                   type: string
                                 resourceId:
-                                  description: The id of the Subnet to reuse (if net.useExisting
+                                  description: The id of the Subnet to reuse (if useExisting.net
                                     is set)
                                   type: string
                                 roles:

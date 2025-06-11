@@ -36,7 +36,8 @@ type OscClusterSpec struct {
 
 // OscClusterStatus defines the observed state of OscCluster
 type OscClusterStatus struct {
-	Ready                bool                     `json:"ready,omitempty"`
+	Ready bool `json:"ready,omitempty"`
+	// deprecated, replaced by resources
 	Network              OscNetworkResource       `json:"network,omitempty"`
 	Resources            OscClusterResources      `json:"resources,omitempty"`
 	ReconcilerGeneration OscReconcilerGeneration  `json:"reconcilerGeneration,omitempty"`
