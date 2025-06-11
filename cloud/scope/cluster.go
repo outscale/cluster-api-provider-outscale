@@ -442,15 +442,22 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 		Description: "Node securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker},
 		SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRange: s.GetNet().IpRange},        // ICMP
+
+			// Calico - see https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements#network-requirements
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRange: s.GetNet().IpRange},     // BGP
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRange: s.GetNet().IpRange},   // Calico VXLAN
+			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRange: s.GetNet().IpRange},   // VXLAN/flannel
 			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRange: s.GetNet().IpRange},   // Typha
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRange: s.GetNet().IpRange}, // Wiregard
 			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRange: s.GetNet().IpRange},   // Flannel
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRange: s.GetNet().IpRange},   // Flannel VXLAN
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRange: s.GetNet().IpRange},   // Cillium health
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRange: s.GetNet().IpRange},   // Cillium hubble
+			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRange: s.GetNet().IpRange}, // Wiregard
+			{Flow: "Inbound", IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRange: s.GetNet().IpRange},         // IP-in-IP
+
+			// Cillium - see https://docs.cilium.io/en/stable/operations/system_requirements/#firewall-rules
+			{Flow: "Inbound", IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRange: s.GetNet().IpRange},        // ICMP
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRange: s.GetNet().IpRange},   // Health
+			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRange: s.GetNet().IpRange},   // Hubble
+			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRange: s.GetNet().IpRange},   // VXLAN
+			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRange: s.GetNet().IpRange}, // Wiregard
+
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRange: s.GetNet().IpRange}, // NodePort
 			{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRange: s.GetNet().IpRange},       // internal trafic
 		},

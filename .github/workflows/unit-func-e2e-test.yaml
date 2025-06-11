@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - ".github/workflows/unit-func-e2e-test.yaml"
+      - "github_actions/deploy_cluster/**"
       - "**.go"
       - "**.yaml"
       - "!capm.yaml"
