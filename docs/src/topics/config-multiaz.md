@@ -43,4 +43,21 @@ export OSC_IMAGE_NAME=<osc-image-name>
 clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version> --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> --flavor=multiaz > getstarted.yaml
 ```
 
-> Note: The template adds <worker-machine-count> nodes per subregion.
+or, with additional filtering:
+
+```bash
+export OSC_IOPS=<osc-iops>
+export OSC_VOLUME_SIZE=<osc-volume-size>
+export OSC_VOLUME_TYPE=<osc-volume-type>
+export OSC_KEYPAIR_NAME=<osc-keypairname>
+export OSC_REGION=<osc-region>
+export OSC_VM_TYPE=<osc-vm-type>
+export OSC_IMAGE_NAME=<osc-image-name>
+export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API or 0.0.0.0/0 for no restriction>
+
+clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version> --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> --flavor=multiaz-secure > getstarted.yaml
+```
+
+You may edit the yaml file to add additional IP ranges.
+
+> Note: The template adds `<worker-machine-count>` nodes per subregion.
