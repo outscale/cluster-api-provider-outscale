@@ -126,6 +126,7 @@ type OscLoadBalancer struct {
 	HealthCheck OscLoadBalancerHealthCheck `json:"healthCheck,omitempty"`
 	// unused
 	ClusterName string `json:"clusterName,omitempty"`
+	Enable      bool   `json:"enable,omitempty"`
 }
 
 type OscLoadBalancerListener struct {
