@@ -19,6 +19,9 @@ package utils
 import (
 	"fmt"
 	"strings"
+
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/osc-sdk-go/v2"
 )
 
 func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
@@ -33,4 +36,15 @@ func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 	}
 	_, _ = fmt.Fprintln(b, "-----END OUTSCALE SECTION-----")
 	return b.String()
+}
+
+func RoleTags(roles []infrastructurev1beta1.OscRole) []osc.ResourceTag {
+	rs := make([]osc.ResourceTag, 0, len(roles))
+	for i := range roles {
+		rs = append(rs, osc.ResourceTag{
+			Key:   "OscK8sRole/" + string(roles[i]),
+			Value: "true",
+		})
+	}
+	return rs
 }

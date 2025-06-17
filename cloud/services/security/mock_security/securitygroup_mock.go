@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,18 +43,18 @@ func (m *MockOscSecurityGroupInterface) EXPECT() *MockOscSecurityGroupInterfaceM
 }
 
 // CreateSecurityGroup mocks base method.
-func (m *MockOscSecurityGroupInterface) CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string) (*osc.SecurityGroup, error) {
+func (m *MockOscSecurityGroupInterface) CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string, roles []v1beta1.OscRole) (*osc.SecurityGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSecurityGroup", ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag)
+	ret := m.ctrl.Call(m, "CreateSecurityGroup", ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag, roles)
 	ret0, _ := ret[0].(*osc.SecurityGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSecurityGroup indicates an expected call of CreateSecurityGroup.
-func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroup(ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag any) *gomock.Call {
+func (mr *MockOscSecurityGroupInterfaceMockRecorder) CreateSecurityGroup(ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag, roles any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSecurityGroup", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).CreateSecurityGroup), ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSecurityGroup", reflect.TypeOf((*MockOscSecurityGroupInterface)(nil).CreateSecurityGroup), ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag, roles)
 }
 
 // CreateSecurityGroupRule mocks base method.

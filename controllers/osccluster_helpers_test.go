@@ -226,10 +226,10 @@ func mockGetSecurityGroup(sgId string, sg *osc.SecurityGroup) mockFunc {
 	}
 }
 
-func mockCreateSecurityGroup(netId, clusterId, name, description, tag, sgId string) mockFunc {
+func mockCreateSecurityGroup(netId, clusterId, name, description, tag string, roles []infrastructurev1beta1.OscRole, sgId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.SecurityGroupMock.EXPECT().
-			CreateSecurityGroup(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterId), gomock.Eq(name), gomock.Eq(description), gomock.Eq(tag)).
+			CreateSecurityGroup(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterId), gomock.Eq(name), gomock.Eq(description), gomock.Eq(tag), gomock.Eq(roles)).
 			Return(&osc.SecurityGroup{SecurityGroupId: &sgId}, nil)
 	}
 }

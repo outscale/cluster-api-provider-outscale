@@ -61,7 +61,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 	}
 	subnetTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{subnetTag, clusterTag},
+		Tags:        append(utils.RoleTags(spec.Roles), subnetTag, clusterTag),
 	}
 	err = tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
