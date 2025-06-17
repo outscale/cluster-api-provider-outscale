@@ -138,7 +138,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 		case errors.Is(err, ErrNoResourceFound):
 			log.V(3).Info("Creating securityGroup", "securityGroupName", securityGroupSpec.Name)
 			name := clusterScope.GetSecurityGroupName(securityGroupSpec)
-			securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterScope.GetUID(), name, securityGroupSpec.Description, securityGroupSpec.Tag)
+			securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterScope.GetUID(), name, securityGroupSpec.Description, securityGroupSpec.Tag, securityGroupSpec.Roles)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
 			}

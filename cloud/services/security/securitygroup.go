@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -31,7 +32,7 @@ var ErrResourceConflict = errors.New("conflict with existing resource")
 //go:generate ../../../bin/mockgen -destination mock_security/securitygroup_mock.go -package mock_security -source ./securitygroup.go
 
 type OscSecurityGroupInterface interface {
-	CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string) (*osc.SecurityGroup, error)
+	CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string, roles []infrastructurev1beta1.OscRole) (*osc.SecurityGroup, error)
 	CreateSecurityGroupRule(ctx context.Context, securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId string, fromPortRange int32, toPortRange int32) (*osc.SecurityGroup, error)
 	DeleteSecurityGroupRule(ctx context.Context, securityGroupId, flow, ipProtocol, ipRange, securityGroupMemberId string, fromPortRange int32, toPortRange int32) error
 	DeleteSecurityGroup(ctx context.Context, securityGroupId string) error
@@ -42,7 +43,7 @@ type OscSecurityGroupInterface interface {
 }
 
 // CreateSecurityGroup create the securitygroup associated with the net
-func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, clusterID string, securityGroupName string, securityGroupDescription string, securityGroupTag string) (*osc.SecurityGroup, error) {
+func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, clusterID string, securityGroupName string, securityGroupDescription string, securityGroupTag string, roles []infrastructurev1beta1.OscRole) (*osc.SecurityGroup, error) {
 	securityGroupRequest := osc.CreateSecurityGroupRequest{
 		SecurityGroupName: securityGroupName,
 		Description:       securityGroupDescription,
@@ -66,7 +67,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 	}
 	clusterSecurityGroupRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{clusterTag},
+		Tags:        append(utils.RoleTags(roles), clusterTag),
 	}
 	err = tag.AddTag(ctx, clusterSecurityGroupRequest, resourceIds, oscApiClient, oscAuthClient)
 	if err != nil {
