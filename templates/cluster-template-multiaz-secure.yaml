@@ -33,6 +33,7 @@ spec:
       loadbalancername: "${CLUSTER_NAME}-k8s"
     allowFromIPRanges:
     - ${OSC_ALLOW_FROM}
+    - ${OSC_ALLOW_FROM_CAPI}
     bastion:
       enable: false
 ---
