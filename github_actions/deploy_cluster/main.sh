@@ -32,7 +32,11 @@ export OSC_IOPS=1000
 export OSC_VOLUME_SIZE=30
 export OSC_VOLUME_TYPE=gp2
 export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
-clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=1 -n $OSC_CLUSTER_NAME -i outscale > clusterapi.yaml
+ip=`curl https://api.ipify.org`
+export OSC_ALLOW_FROM="$ip/32"
+mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl https://api.ipify.org`
+export OSC_ALLOW_FROM_CAPI="$mip/32"
+clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=1 -n $OSC_CLUSTER_NAME -i outscale --flavor secure > clusterapi.yaml
 
 kubectl delete ns $OSC_CLUSTER_NAME --ignore-not-found --force
 kubectl create ns $OSC_CLUSTER_NAME
