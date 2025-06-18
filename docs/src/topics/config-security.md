@@ -20,6 +20,8 @@ spec:
 
 > Note: the NAT used by the nodes for their outbound trafic are dynamically added to the allowed sources in the loadbalancer security group.
 
+> Note: the management cluster needs to have access to the workload cluster API, do not forget to add the public IPs of the NAT services used by the management cluster.
+
 ## Restricting outbound traffic
 
 By default, outbound trafic from bastion and nodes is not restricted.
@@ -100,7 +102,8 @@ export OSC_KEYPAIR_NAME=<osc-keypairname>
 export OSC_REGION=<osc-region>
 export OSC_VM_TYPE=<osc-vm-type>
 export OSC_IMAGE_NAME=<osc-image-name>
-export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API or 0.0.0.0/0 for no restriction>
+export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API - e.g. 203.0.113.0/24>
+export OSC_ALLOW_FROM_CAPI=<IP range of the NAT used by the management cluster - e.g. 203.0.113.0/24>
 
 clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version> --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> --flavor=secure > getstarted.yaml
 ```
@@ -115,7 +118,8 @@ export OSC_KEYPAIR_NAME=<osc-keypairname>
 export OSC_REGION=<osc-region>
 export OSC_VM_TYPE=<osc-vm-type>
 export OSC_IMAGE_NAME=<osc-image-name>
-export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API or 0.0.0.0/0 for no restriction>
+export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API - e.g. 203.0.113.0/24>
+export OSC_ALLOW_FROM_CAPI=<IP range of the NAT used by the management cluster - e.g. 203.0.113.0/24>
 
 clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version> --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> --flavor=multiaz-secure > getstarted.yaml
 ```
