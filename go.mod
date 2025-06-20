@@ -8,8 +8,8 @@ require (
 	github.com/outscale/osc-sdk-go/v2 v2.27.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.2
-	k8s.io/api v0.30.13
-	k8s.io/apimachinery v0.30.13
+	k8s.io/api v0.30.14
+	k8s.io/apimachinery v0.30.14
 	k8s.io/client-go v0.30.13
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.30.13
