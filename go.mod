@@ -144,7 +144,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.13
 	k8s.io/apiserver v0.30.13 // indirect
 	k8s.io/cluster-bootstrap v0.30.3 // indirect
-	k8s.io/component-base v0.30.13
+	k8s.io/component-base v0.30.14
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.30.0 // indirect
