@@ -15,4 +15,5 @@ cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$
 kubeconfig=`/.venv/bin/oks-cli cluster kubeconfig --cluster-name $cluster_name --print-path`
 export KUBECONFIG=$kubeconfig
 
-kubectl delete ns $OSC_CLUSTER_NAME
+# do not wait if stuck, frieza will purge everything
+kubectl delete ns $OSC_CLUSTER_NAME --timeout 2m || /bin/true
