@@ -24,9 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.63
+          version: v2.1
           args: --timeout=300s
           only-new-issues: true
       - name: check with ShellCheck
