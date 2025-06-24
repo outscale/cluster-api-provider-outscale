@@ -1,0 +1,76 @@
+name: Bug Report
+description: Report a bug encountered while using Cluster API or cluster-api-provider-outscale
+title: "[Bug]: "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What Happened?
+      description: Describe the issue you encountered with a clear and concise explanation.
+      placeholder: |
+        Example: When running `clusterctl init`, the process fails with a timeout when reaching out to the infrastructure provider.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: What steps can we follow to reproduce the issue?
+      placeholder: |
+        1. Open a terminal
+        2. Run: `clusterctl init --infrastructure outscale`
+        3. Wait for component deployment
+        4. Observe failure in log output
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+      placeholder: |
+        Example: Cluster API components should be deployed successfully and appear in the `capi-system` namespace.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Output (Logs)
+      description: Include any relevant `cluster-api` or `cluster-api-provider-outscale` logs.
+      placeholder: |
+        Paste log excerpts that help illustrate the error or unexpected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Please fill out the environment in which this issue occurred.
+      value: |
+        - Kubernetes version (`kubectl version`): 
+        - OS (`/etc/os-release`): 
+        - Kernel (`uname -a`): 
+        - cluster-api-provider-outscale version: 
+        - cluster-api version: 
+        - Install tools: 
+        - Kubernetes distribution: 
+        - Distribution version: 
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, logs, screenshots, or configuration details that might help.
+      placeholder: Miscellaneous information that could help us investigate the issue.
+    validations:
+      required: false
