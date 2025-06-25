@@ -5,9 +5,10 @@ OKS_AKSK=$2
 OSC_AKSK=$3
 export OSC_CLUSTER_NAME=$4
 export OSC_IMAGE_NAME=$5
-export OSC_VM_TYPE=$6
-CCM=$7
-CERT_MANAGER=$8
+export OSC_IMAGE_ACCOUNT_ID=$6
+export OSC_VM_TYPE=$7
+CCM=$8
+CERT_MANAGER=$9
 
 OKS_ACCESS_KEY=`echo $OKS_AKSK|cut -d% -f 1`
 OKS_SECRET_KEY=`echo $OKS_AKSK|cut -d% -f 2`

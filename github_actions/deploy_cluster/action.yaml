@@ -30,6 +30,9 @@ inputs:
   IMAGE_NAME:
     description: 'image name'
     required: true
+  IMAGE_ACCOUNT_ID:
+    description: 'image account id'
+    default: ""
   OSC_VM_TYPE:
     description: 'VM type'
     default: "tinav6.c4r8p2"
@@ -51,6 +54,7 @@ runs:
     - "${{ inputs.OSC_ACCESS_KEY }}%${{ inputs.OSC_SECRET_KEY }}%${{ inputs.OSC_REGION }}"
     - ${{ inputs.CLUSTER_NAME }}
     - ${{ inputs.IMAGE_NAME }}
+    - ${{ inputs.IMAGE_ACCOUNT_ID }}
     - ${{ inputs.OSC_VM_TYPE }}
     - ${{ inputs.CCM }}
     - ${{ inputs.CERT_MANAGER }}
