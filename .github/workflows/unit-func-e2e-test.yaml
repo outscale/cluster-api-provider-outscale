@@ -76,6 +76,7 @@ jobs:
         OSC_REGION: ${{ env.OSC_REGION }}
         CLUSTER_NAME: "caposc"
         IMAGE_NAME: ${{ vars[env.IMG_MANAGEMENT_NAME] }}
+        IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
         CERT_MANAGER: "true"
     - name: ⬇️ Install Go
       uses: actions/setup-go@v5

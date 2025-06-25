@@ -70,6 +70,7 @@ spec:
       node:
         image:
           name: "${OSC_IMAGE_NAME}"
+          accountId: "${OSC_IMAGE_ACCOUNT_ID}"
         vm:
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
@@ -112,6 +113,7 @@ spec:
       node:
         image:
           name: "${OSC_IMAGE_NAME}"
+          accountId: "${OSC_IMAGE_ACCOUNT_ID}"
         vm:
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}

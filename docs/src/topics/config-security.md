@@ -101,7 +101,8 @@ export OSC_VOLUME_TYPE=<osc-volume-type>
 export OSC_KEYPAIR_NAME=<osc-keypairname>
 export OSC_REGION=<osc-region>
 export OSC_VM_TYPE=<osc-vm-type>
-export OSC_IMAGE_NAME=<osc-image-name>
+export OSC_IMAGE_NAME=<image name>
+export OSC_IMAGE_ACCOUNT_ID=<account owning the image>
 export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API - e.g. 203.0.113.0/24>
 export OSC_ALLOW_FROM_CAPI=<IP range of the NAT used by the management cluster - e.g. 203.0.113.0/24>
 
@@ -117,7 +118,8 @@ export OSC_VOLUME_TYPE=<osc-volume-type>
 export OSC_KEYPAIR_NAME=<osc-keypairname>
 export OSC_REGION=<osc-region>
 export OSC_VM_TYPE=<osc-vm-type>
-export OSC_IMAGE_NAME=<osc-image-name>
+export OSC_IMAGE_NAME=<image name>
+export OSC_IMAGE_ACCOUNT_ID=<account owning the image>
 export OSC_ALLOW_FROM=<IP range allowed to access the Kubernetes API - e.g. 203.0.113.0/24>
 export OSC_ALLOW_FROM_CAPI=<IP range of the NAT used by the management cluster - e.g. 203.0.113.0/24>
 
