@@ -18,6 +18,13 @@ export OSC_ACCESS_KEY=`echo $OSC_AKSK|cut -d% -f 1`
 export OSC_SECRET_KEY=`echo $OSC_AKSK|cut -d% -f 2`
 export OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
 
+if [ -z "$OSC_IMAGE_ACCOUNT_ID" ]; then
+  export OSC_IMAGE_ACCOUNT_ID=`curl -X POST https://api.$OSC_REGION.outscale.com/api/v1/ReadAccounts \
+    --user $OSC_ACCESS_KEY:$OSC_SECRET_KEY --aws-sigv4 'osc' \
+    --header 'Content-Type: application/json' \
+    --data '{}'|jq -r '.Accounts[0].AccountId'`
+fi
+
 cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$//'|cut -c1-40|sed -r 's/[^a-z0-9-]+/-/g'`
 # OKS
 /.venv/bin/oks-cli profile add --profile-name "default" --access-key $OKS_ACCESS_KEY --secret-key $OKS_SECRET_KEY --region $OKS_REGION
