@@ -75,7 +75,7 @@ jobs:
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
         CLUSTER_NAME: "caposc"
-        IMAGE_NAME: ${{ vars[env.IMG_MANAGEMENT_NAME] }}
+        IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
         IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
         CERT_MANAGER: "true"
     - name: ⬇️ Install Go
@@ -101,7 +101,13 @@ jobs:
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
     - name: 🧪 Launch e2e tests
-      run: make e2etest
+      run: |
+        from=`echo ${{ vars.IMG_UPGRADE_FROM }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
+        to=`echo ${{ vars.IMG_UPGRADE_TO }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
+        export KUBERNETES_VERSION=$from
+        export KUBERNETES_VERSION_UPGRADE_FROM=$from
+        export KUBERNETES_VERSION_UPGRADE_TO=$to
+        make e2etest
       shell: bash
       id: e2etest
       env:
@@ -110,8 +116,9 @@ jobs:
         CCM_OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         CCM_OSC_REGION: $${{ env.OSC_REGION }}
         IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
-        IMG_UPGRADE_FROM: ${{ vars[env.IMG_UPGRADE_FROM_NAME] }}
-        IMG_UPGRADE_TO: ${{ vars[env.IMG_UPGRADE_TO_NAME] }}
+        IMG_UPGRADE_FROM: ${{ vars.IMG_UPGRADE_FROM }}
+        IMG_UPGRADE_TO: ${{ vars.IMG_UPGRADE_TO }}
+        IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
     - name: 📝 Get CAPOSC state/logs
       run: |
         echo "**** pod state"

@@ -61,9 +61,10 @@ spec:
   template:
     spec:
       node:
+        image:
+          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+          accountId: "${IMAGE_ACCOUNT_ID}"
         vm:
-          name: "${CLUSTER_NAME}"
-          imageId: "${KUBERNETES_IMAGE_UPGRADE_TO}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
@@ -83,9 +84,10 @@ spec:
   template:
     spec:
       node:
+        image:
+          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+          accountId: "${IMAGE_ACCOUNT_ID}"
         vm:
-          name: "${CLUSTER_NAME}-vm-kw-upgrade"
-          imageId: "${KUBERNETES_IMAGE_UPGRADE_TO}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
@@ -105,8 +107,10 @@ spec:
   template:
     spec:
       node:
+        image:
+          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          accountId: "${IMAGE_ACCOUNT_ID}"
         vm:
-          imageId: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
@@ -127,11 +131,10 @@ spec:
   template:
     spec:
       node:
-        clusterName: "${CLUSTER_NAME}"
+        image:
+          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+          accountId: "${IMAGE_ACCOUNT_ID}"
         vm:
-          clusterName: "${CLUSTER_NAME}"
-          name: "${CLUSTER_NAME}-vm-kcp-upgrade"
-          imageId: "${KUBERNETES_IMAGE_UPGRADE_TO}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
