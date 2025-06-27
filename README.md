@@ -115,4 +115,5 @@ Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) guide to learn how to propo
 © 2025 Outscale SAS
 
 This project complies with the [REUSE Specification](https://reuse.software/).
+
 See [LICENSES/](./LICENSES) directory for full license information.
