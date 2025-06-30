@@ -42,6 +42,8 @@ inputs:
   CERT_MANAGER:
     description: 'deploy cert-manager'
     default: "false"
+  KUSTOMIZE_PATH:
+    description: 'path of kustomization config'
 outputs:
   KUBECONFIG:
     description: 'Kubeconfig path'
@@ -53,10 +55,10 @@ runs:
     - "${{ inputs.OKS_ACCESS_KEY }}%${{ inputs.OKS_SECRET_KEY }}%${{ inputs.OKS_REGION }}"
     - "${{ inputs.OSC_ACCESS_KEY }}%${{ inputs.OSC_SECRET_KEY }}%${{ inputs.OSC_REGION }}"
     - ${{ inputs.CLUSTER_NAME }}
-    - ${{ inputs.IMAGE_NAME }}
-    - ${{ inputs.IMAGE_ACCOUNT_ID }}
+    - "${{ inputs.IMAGE_NAME }}%${{ inputs.IMAGE_ACCOUNT_ID }}"
     - ${{ inputs.OSC_VM_TYPE }}
     - ${{ inputs.CCM }}
     - ${{ inputs.CERT_MANAGER }}
+    - ${{ inputs.KUSTOMIZE_PATH }}
   entrypoint: '/main.sh'
   post-entrypoint: '/cleanup.sh'

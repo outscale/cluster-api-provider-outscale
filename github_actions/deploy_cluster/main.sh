@@ -4,11 +4,11 @@ RUNNER_NAME=$1
 OKS_AKSK=$2
 OSC_AKSK=$3
 export OSC_CLUSTER_NAME=$4
-export OSC_IMAGE_NAME=$5
-export OSC_IMAGE_ACCOUNT_ID=$6
-export OSC_VM_TYPE=$7
-CCM=$8
-CERT_MANAGER=$9
+OSC_IMAGE_NAME_ACCOUNT_ID=$5
+export OSC_VM_TYPE=$6
+CCM=$7
+CERT_MANAGER=$8
+KUSTOMIZE_PATH=$9
 
 OKS_ACCESS_KEY=`echo $OKS_AKSK|cut -d% -f 1`
 OKS_SECRET_KEY=`echo $OKS_AKSK|cut -d% -f 2`
@@ -17,6 +17,9 @@ OKS_REGION=`echo $OKS_AKSK|cut -d% -f 3`
 export OSC_ACCESS_KEY=`echo $OSC_AKSK|cut -d% -f 1`
 export OSC_SECRET_KEY=`echo $OSC_AKSK|cut -d% -f 2`
 export OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
+
+export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
+export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
 
 if [ -z "$OSC_IMAGE_ACCOUNT_ID" ]; then
   export OSC_IMAGE_ACCOUNT_ID=`curl -X POST https://api.$OSC_REGION.outscale.com/api/v1/ReadAccounts \
@@ -48,7 +51,13 @@ clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_V
 
 kubectl delete ns $OSC_CLUSTER_NAME --ignore-not-found --force
 kubectl create ns $OSC_CLUSTER_NAME
-kubectl apply -f clusterapi.yaml
+
+if [ -n "$KUSTOMIZE_PATH" ]; then
+  mv clusterapi.yaml $GITHUB_WORKSPACE/$KUSTOMIZE_PATH
+  kubectl apply -k $GITHUB_WORKSPACE/$KUSTOMIZE_PATH
+else
+  kubectl apply -f clusterapi.yaml
+fi
 
 # This can be removed once v1.0.0-alpha.3 is released and it is deployed on the CI.
 # kubectl patch osccluster $OSC_CLUSTER_NAME -n $OSC_CLUSTER_NAME --type='merge' -p \
