@@ -12,3 +12,11 @@ updates:
         update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
       - dependency-name: sigs.k8s.io/*
         update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
+    groups:
+      k8s:
+        applies-to: version-updates
+        patterns:
+          - "k8s.io/*"
+          - "sigs.k8s.io/*"
+        update-types:
+          - "patch"
