@@ -15,7 +15,7 @@
 * 🛠 Developer Guide: [Development](./docs/src/developers/developement.md)
 * 🤝 Contribution Guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
 * 🌐 Cluster API website: [https://cluster-api.sigs.k8s.io](https://cluster-api.sigs.k8s.io)
-* 💬 Join us on [Discord](https://discord.gg/YOUR_INVITE_CODE)
+* 💬 Join us on [Discord](https://discord.gg/HUVtY5gT6s)
 
 ---
 
