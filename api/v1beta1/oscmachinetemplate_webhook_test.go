@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1_test
 
 import (
+	"context"
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -269,10 +270,11 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 			errorCount: 0,
 		},
 	}
+	h := infrastructurev1beta1.OscMachineTemplateWebhook{}
 	for _, mtc := range machineTestCases {
 		t.Run(mtc.name, func(t *testing.T) {
-			oscInfraMachine := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
-			_, err := oscInfraMachine.ValidateCreate()
+			oscInfraMachineTemplate := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
+			_, err := h.ValidateCreate(context.TODO(), oscInfraMachineTemplate)
 			if mtc.errorCount > 0 {
 				require.Error(t, err, "ValidateCreate should return the same errror")
 				require.Len(t, err.(*apierrors.StatusError).Status().Details.Causes, mtc.errorCount)
@@ -352,11 +354,12 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 			hasError: true,
 		},
 	}
+	h := infrastructurev1beta1.OscMachineTemplateWebhook{}
 	for _, mtc := range machineTestCases {
 		t.Run(mtc.name, func(t *testing.T) {
 			oscOldInfraMachineTemplate := createOscInfraMachineTemplate(mtc.oldMachineSpec, "old-webhook-test", "default")
 			oscInfraMachineTemplate := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
-			_, err := oscInfraMachineTemplate.ValidateUpdate(oscOldInfraMachineTemplate)
+			_, err := h.ValidateUpdate(context.TODO(), oscInfraMachineTemplate, oscOldInfraMachineTemplate)
 			if mtc.hasError {
 				require.Error(t, err)
 			} else {

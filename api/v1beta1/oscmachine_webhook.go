@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
+	"fmt"
 	"maps"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,97 +29,113 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+// SetupWebhookWithManager sets up the controller with the Manager.
 func (r *OscMachine) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
+	h := OscMachineWebhook{}
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).WithValidator(h).WithDefaulter(h).
+		Complete()
 }
+
+// OscMachineWebhook is the validation/mutation webhook.
+type OscMachineWebhook struct{}
 
 //+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta1,name=moscmachine.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &OscMachine{}
+var _ webhook.CustomDefaulter = OscMachineWebhook{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (m *OscMachine) Default() {
+// Default implements webhook.CustomDefaulter.
+func (OscMachineWebhook) Default(_ context.Context, _ runtime.Object) error {
+	return nil
 }
 
 //+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta1,name=voscmachine.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &OscMachine{}
+var _ webhook.CustomValidator = OscMachineWebhook{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachine) ValidateCreate() (admission.Warnings, error) {
-	if allErrs := ValidateOscMachineSpec(m.Spec); len(allErrs) > 0 {
-		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
+// ValidateCreate implements webhook.CustomValidator.
+func (OscMachineWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	r, ok := obj.(*OscMachine)
+	if !ok {
+		return nil, fmt.Errorf("expected an OscMachine object but got %T", r)
+	}
+	if allErrs := ValidateOscMachineSpec(r.Spec); len(allErrs) > 0 {
+		return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), r.Name, allErrs)
 	}
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachine) ValidateUpdate(oldRaw runtime.Object) (admission.Warnings, error) {
+// ValidateUpdate implements webhook.CustomValidator.
+func (OscMachineWebhook) ValidateUpdate(_ context.Context, obj runtime.Object, oldRaw runtime.Object) (admission.Warnings, error) {
+	r, ok := obj.(*OscMachine)
+	if !ok {
+		return nil, fmt.Errorf("expected an OscMachine object but got %T", r)
+	}
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscMachine)
 
-	if m.Spec.Node.Vm.VmType != old.Spec.Node.Vm.VmType {
+	if r.Spec.Node.Vm.VmType != old.Spec.Node.Vm.VmType {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "vmType"),
-				m.Spec.Node.Vm.VmType, "field is immutable"),
+				r.Spec.Node.Vm.VmType, "field is immutable"),
 		)
 	}
 
-	if m.Spec.Node.Vm.KeypairName != old.Spec.Node.Vm.KeypairName {
+	if r.Spec.Node.Vm.KeypairName != old.Spec.Node.Vm.KeypairName {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "keyPairName"),
-				m.Spec.Node.Vm.KeypairName, "field is immutable"),
+				r.Spec.Node.Vm.KeypairName, "field is immutable"),
 		)
 	}
 
-	if old.Spec.Node.Vm.SubregionName != "" && m.Spec.Node.Vm.SubregionName != old.Spec.Node.Vm.SubregionName {
+	if old.Spec.Node.Vm.SubregionName != "" && r.Spec.Node.Vm.SubregionName != old.Spec.Node.Vm.SubregionName {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "subregionName"),
-				m.Spec.Node.Vm.SubregionName, "field is immutable"),
+				r.Spec.Node.Vm.SubregionName, "field is immutable"),
 		)
 	}
 
-	if len(old.Spec.Node.Vm.Tags) > 0 && !maps.Equal(m.Spec.Node.Vm.Tags, old.Spec.Node.Vm.Tags) {
+	if len(old.Spec.Node.Vm.Tags) > 0 && !maps.Equal(r.Spec.Node.Vm.Tags, old.Spec.Node.Vm.Tags) {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "tags"),
-				m.Spec.Node.Vm.Tags, "field is immutable"),
+				r.Spec.Node.Vm.Tags, "field is immutable"),
 		)
 	}
 
-	if (old.Spec.Node.Vm.SubnetName != "") && m.Spec.Node.Vm.SubnetName != old.Spec.Node.Vm.SubnetName {
+	if (old.Spec.Node.Vm.SubnetName != "") && r.Spec.Node.Vm.SubnetName != old.Spec.Node.Vm.SubnetName {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "subnetName"),
-				m.Spec.Node.Vm.SubnetName, "field is immutable"),
+				r.Spec.Node.Vm.SubnetName, "field is immutable"),
 		)
 	}
-	if m.Spec.Node.Vm.RootDisk.RootDiskSize != old.Spec.Node.Vm.RootDisk.RootDiskSize {
+	if r.Spec.Node.Vm.RootDisk.RootDiskSize != old.Spec.Node.Vm.RootDisk.RootDiskSize {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskSize"),
-				m.Spec.Node.Vm.RootDisk.RootDiskSize, "field is immutable"),
+				r.Spec.Node.Vm.RootDisk.RootDiskSize, "field is immutable"),
 		)
 	}
 
-	if m.Spec.Node.Vm.RootDisk.RootDiskIops != old.Spec.Node.Vm.RootDisk.RootDiskIops {
+	if r.Spec.Node.Vm.RootDisk.RootDiskIops != old.Spec.Node.Vm.RootDisk.RootDiskIops {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskIops"),
-				m.Spec.Node.Vm.RootDisk.RootDiskIops, "field is immutable"),
+				r.Spec.Node.Vm.RootDisk.RootDiskIops, "field is immutable"),
 		)
 	}
 
-	if m.Spec.Node.Vm.RootDisk.RootDiskType != old.Spec.Node.Vm.RootDisk.RootDiskType {
+	if r.Spec.Node.Vm.RootDisk.RootDiskType != old.Spec.Node.Vm.RootDisk.RootDiskType {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskType"),
-				m.Spec.Node.Vm.RootDisk.RootDiskType, "field is immutable"),
+				r.Spec.Node.Vm.RootDisk.RootDiskType, "field is immutable"),
 		)
 	}
 
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), r.Name, allErrs)
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (m *OscMachine) ValidateDelete() (admission.Warnings, error) {
+// ValidateDelete implements webhook.CustomValidator.
+func (OscMachineWebhook) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
