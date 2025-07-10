@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -44,10 +45,11 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 			expValidateCreateErr: errors.New("OscClusterTemplate.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer.loadbalancername: Invalid value: \"test-webhook@test\": invalid loadBalancer name"),
 		},
 	}
+	h := infrastructurev1beta1.OscClusterTemplateWebhook{}
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
 			oscInfraClusterTemplate := createOscInfraClusterTemplate(ctc.clusterSpec, "webhook-test", "default")
-			_, err := oscInfraClusterTemplate.ValidateCreate()
+			_, err := h.ValidateCreate(context.TODO(), oscInfraClusterTemplate)
 			if ctc.expValidateCreateErr != nil {
 				require.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the same error")
 			} else {
