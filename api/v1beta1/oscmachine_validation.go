@@ -57,6 +57,10 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	if len(spec.Node.Volumes) != 0 {
 		volumesSpec := spec.Node.Volumes
 		for _, volumeSpec := range volumesSpec {
+			if err := ValidateDeviceName(volumeSpec.Device); err != nil {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("node", "volumes", "device"), volumeSpec.Device, err.Error()))
+			}
+
 			if volumeSpec.Iops != 0 {
 				if errs := ValidateAndReturnErrorList(volumeSpec.Iops, field.NewPath("iops"), ValidateIops); len(errs) > 0 {
 					allErrs = append(allErrs, errs...)
@@ -80,11 +84,6 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 					allErrs = append(allErrs, errs...)
 				}
 			}
-			if volumeSpec.SubregionName != "" {
-				if errs := ValidateAndReturnErrorList(volumeSpec.SubregionName, field.NewPath("subregionName"), ValidateSubregionName); len(errs) > 0 {
-					allErrs = append(allErrs, errs...)
-				}
-			}
 		}
 	}
 	if spec.Node.Vm.RootDisk.RootDiskIops != 0 {
@@ -93,7 +92,7 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 		}
 	}
 	if spec.Node.Vm.RootDisk.RootDiskSize != 0 {
-		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskSize, field.NewPath("size"), ValidateSize); len(errs) > 0 {
+		if errs := ValidateAndReturnErrorList(spec.Node.Vm.RootDisk.RootDiskSize, field.NewPath("node", "volumes", "size"), ValidateSize); len(errs) > 0 {
 			allErrs = append(allErrs, errs...)
 		}
 	}
@@ -112,101 +111,104 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 }
 
 // ValidateKeypairName check that KeypairName is a valid name of keypair
-func ValidateKeypairName(keypairName string) (string, error) {
+func ValidateKeypairName(keypairName string) error {
 	isValidateKeypairName := regexp.MustCompile("^[\x20-\x7E]{0,255}$").MatchString
 	if isValidateKeypairName(keypairName) {
-		return keypairName, nil
+		return nil
 	} else {
-		return keypairName, errors.New("Invalid KeypairName")
+		return errors.New("Invalid KeypairName")
 	}
 }
 
 // ValidateImageId check that imageId is a valid imageId
-func ValidateImageId(imageId string) (string, error) {
+func ValidateImageId(imageId string) error {
 	switch {
 	case strings.HasPrefix(imageId, "ami"):
-		return imageId, nil
+		return nil
 	default:
-		return imageId, errors.New("Invalid imageId")
+		return errors.New("Invalid imageId")
 	}
 }
 
 // ValidateRatioSizeIops check that Ratio iops size should not exceed 300
-func ValidateRatioSizeIops(ratioIopsSize int32) (int32, error) {
+func ValidateRatioSizeIops(ratioIopsSize int32) error {
 	if ratioIopsSize < 300 {
-		return ratioIopsSize, nil
+		return nil
 	} else {
-		return ratioIopsSize, errors.New("Invalid ratio Iops size that exceed 300")
+		return errors.New("Invalid ratio Iops size that exceed 300")
 	}
 
 }
 
 // ValidateIamegName check that Image name is a valide name
-func ValidateImageName(imageName string) (string, error) {
+func ValidateImageName(imageName string) error {
 	isValidateName := regexp.MustCompile(`^[0-9A-Za-z\-_\s\.\(\)\\]{0,255}$`).MatchString
 	if isValidateName(imageName) {
-		return imageName, nil
+		return nil
 	} else {
-		return imageName, errors.New("Invalid Image Name")
+		return errors.New("Invalid Image Name")
 	}
 }
 
 // ValidateIops check that iops is valid
-func ValidateIops(iops int32) (int32, error) {
+func ValidateIops(iops int32) error {
 	if iops < maxIops && iops > minIops {
-		return iops, nil
+		return nil
 	} else {
-		return iops, errors.New("Invalid iops")
+		return errors.New("invalid iops")
 	}
 }
 
 // ValidateSize check that size is valid
-func ValidateSize(size int32) (int32, error) {
+func ValidateSize(size int32) error {
 	if size < maxSize && size > minSize {
-		return size, nil
+		return nil
 	} else {
-		return size, errors.New("Invalid size")
+		return errors.New("invalid size")
 	}
 }
 
 // ValidateVolumeType check that volumeType is a valid volumeType
-func ValidateVolumeType(volumeType string) (string, error) {
+func ValidateVolumeType(volumeType string) error {
 	switch volumeType {
 	case "standard", "gp2", "io1":
-		return volumeType, nil
+		return nil
 	default:
-		return volumeType, errors.New("Invalid volumeType")
+		return errors.New("Invalid volumeType")
 	}
 }
 
 // ValidateSubregionName check that subregionName is a valid az format
-func ValidateSubregionName(subregionName string) (string, error) {
+func ValidateSubregionName(subregionName string) error {
 	switch {
 	case strings.HasSuffix(subregionName, "1a") || strings.HasSuffix(subregionName, "1b") || strings.HasSuffix(subregionName, "1c") || strings.HasSuffix(subregionName, "2a") || strings.HasSuffix(subregionName, "2b") || strings.HasSuffix(subregionName, "2c"):
-		return subregionName, nil
+		return nil
 	default:
-		return subregionName, errors.New("Invalid subregionName")
+		return errors.New("Invalid subregionName")
 	}
 }
 
+var isValidateDeviceName = regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
+
 // ValidateDeviceName check that DeviceName  is a valid DeviceName
-func ValidateDeviceName(deviceName string) (string, error) {
-	isValidateDeviceName := regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
+func ValidateDeviceName(deviceName string) error {
 	switch {
+	case deviceName == "":
+		return errors.New("device name is required")
 	case isValidateDeviceName(deviceName):
-		return deviceName, nil
+		return nil
 	default:
-		return deviceName, errors.New("Invalid deviceName")
+		return errors.New("invalid device name")
 	}
 }
 
 // ValidateVmType check that vmType is a valid vmType
-func ValidateVmType(vmType string) (string, error) {
+func ValidateVmType(vmType string) error {
 	isValidateVmType := regexp.MustCompile(`^tinav[3-6].c[0-9]+r[0-9]+p[1-3]$`).MatchString
 	switch {
 	case isValidateVmType(vmType):
-		return vmType, nil
+		return nil
 	default:
-		return vmType, errors.New("Invalid vmType")
+		return errors.New("Invalid vmType")
 	}
 }

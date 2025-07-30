@@ -17,9 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
+	"reflect"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"reflect"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,6 +57,7 @@ func (m *OscMachineTemplate) ValidateCreate() error {
 	oscMachineTemplateLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscMachineSpec(m.Spec.Template.Spec); len(allErrs) > 0 {
 		oscMachineTemplateLog.Info("validate error", "error", allErrs)
+		oscMachineTemplateLog.Info("validate error", "volumes", m.Spec.Template.Spec.Node.Volumes)
 		return apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 	}
 	return nil

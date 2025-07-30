@@ -101,20 +101,20 @@ func ValidatePort(port int32) (int32, error) {
 }
 
 // ValidateLoadBalancerType check that the  loadBalancerType is a valid
-func ValidateLoadBalancerType(loadBalancerType string) (string, error) {
+func ValidateLoadBalancerType(loadBalancerType string) error {
 	if loadBalancerType == "internet-facing" || loadBalancerType == "internal" {
-		return loadBalancerType, nil
+		return nil
 	} else {
-		return loadBalancerType, errors.New("Invalid LoadBalancerType")
+		return errors.New("Invalid LoadBalancerType")
 	}
 }
 
 // ValidateInterval check that the interval is a valide time of second
-func ValidateInterval(interval int32) (int32, error) {
+func ValidateInterval(interval int32) error {
 	if interval > minInterval && interval < maxInterval {
-		return interval, nil
+		return nil
 	} else {
-		return interval, errors.New("Invalid Interval")
+		return errors.New("Invalid Interval")
 	}
 }
 
@@ -149,18 +149,18 @@ func ValidateTimeout(timeout int32) (int32, error) {
 }
 
 // ValidateLoadBalancerName check that the loadBalancerName is a valide name of load balancer
-func ValidateLoadBalancerName(loadBalancerName string) (string, error) {
+func ValidateLoadBalancerName(loadBalancerName string) error {
 	isValidateLoadBalancerName := regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
 	if isValidateLoadBalancerName(loadBalancerName) {
-		return loadBalancerName, nil
+		return nil
 	} else {
-		return loadBalancerName, errors.New("Invalid Description")
+		return errors.New("Invalid Description")
 	}
 }
 
-func ValidateAndReturnErrorList[T any](value T, fieldPath *field.Path, validateFunc func(T) (T, error)) field.ErrorList {
+func ValidateAndReturnErrorList[T any](value T, fieldPath *field.Path, validateFunc func(T) error) field.ErrorList {
 	allErrs := field.ErrorList{}
-	_, err := validateFunc(value)
+	err := validateFunc(value)
 	if err != nil {
 		allErrs = append(allErrs, field.Invalid(fieldPath, value, err.Error()))
 		return allErrs

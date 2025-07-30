@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.2
+    controller-gen.kubebuilder.io/version: v0.16.2-0.20240815091918-bfb3b75757cc
   name: oscmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -136,8 +136,6 @@ spec:
                                       type: string
                                     privateIp:
                                       type: string
-                                  required:
-                                  - privateIp
                                   type: object
                                 type: array
                               publicIp:
@@ -187,6 +185,8 @@ spec:
                           volumes:
                             items:
                               properties:
+                                device:
+                                  type: string
                                 iops:
                                   format: int32
                                   type: integer
@@ -201,6 +201,8 @@ spec:
                                   type: string
                                 volumeType:
                                   type: string
+                              required:
+                              - device
                               type: object
                             type: array
                         type: object

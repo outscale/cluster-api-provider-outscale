@@ -64,7 +64,7 @@ func checkSubnetFormatParameters(clusterScope *scope.ClusterScope) (string, erro
 		}
 		subnetSubregionName := subnetSpec.SubregionName
 		clusterScope.V(2).Info("Check subnet subregion parameters")
-		_, err = infrastructurev1beta1.ValidateSubregionName(subnetSubregionName)
+		err = infrastructurev1beta1.ValidateSubregionName(subnetSubregionName)
 		if err != nil {
 			return subnetTagName, err
 		}

@@ -215,12 +215,9 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		machineScope.V(2).Info("Bootstrap data secret reference is not yet availablle")
 		return ctrl.Result{}, nil
 	}
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.V(2).Info("Find volumes")
-		volumeName, err := checkVolumeFormatParameters(machineScope)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("%w Can not create volume %s for OscMachine %s/%s", err, volumeName, machineScope.GetNamespace(), machineScope.GetName())
-		}
+	volumeName, err := checkVolumeFormatParameters(machineScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot create volume %s: %w", volumeName, err)
 	}
 
 	UseFailureDomain(clusterScope, machineScope)
@@ -246,13 +243,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	duplicateResourceVmPrivateIpErr := checkVmPrivateIpOscDuplicateName(machineScope)
 	if duplicateResourceVmPrivateIpErr != nil {
 		return reconcile.Result{}, duplicateResourceVmPrivateIpErr
-	}
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.V(2).Info("Find volumes")
-		checkOscAssociateVmVolumeErr := checkVmVolumeOscAssociateResourceName(machineScope)
-		if checkOscAssociateVmVolumeErr != nil {
-			return reconcile.Result{}, checkOscAssociateVmVolumeErr
-		}
 	}
 
 	checkKeypairSameNameErr := checkKeypairSameName(machineScope)
@@ -285,13 +275,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 			return reconcile.Result{}, checkOscAssociateVmLoadBalancerErr
 		}
 	}
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-
-		checkVmVolumeSubregionNameErr := checkVmVolumeSubregionName(machineScope)
-		if checkVmVolumeSubregionNameErr != nil {
-			return reconcile.Result{}, checkVmVolumeSubregionNameErr
-		}
-	}
 
 	imageSvc := r.getImageSvc(ctx, *clusterScope)
 	reconcileImage, err := reconcileImage(ctx, machineScope, imageSvc)
@@ -300,17 +283,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcileImage, err
 	}
 
-	volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
-	tagSvc := r.getTagSvc(ctx, *clusterScope)
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.V(2).Info("Find Volumes")
-		reconcileVolume, err := reconcileVolume(ctx, machineScope, volumeSvc, tagSvc)
-		if err != nil {
-			machineScope.Error(err, "failed to reconcile volume")
-			conditions.MarkFalse(oscmachine, infrastructurev1beta1.VolumeReadyCondition, infrastructurev1beta1.VolumeReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-			return reconcileVolume, err
-		}
-	}
 	conditions.MarkTrue(oscmachine, infrastructurev1beta1.VolumeReadyCondition)
 
 	keypairSvc := r.getKeyPairSvc(ctx, *clusterScope)
@@ -324,9 +296,10 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)
 	securityGroupSvc := r.getSecurityGroupSvc(ctx, *clusterScope)
+	tagSvc := r.getTagSvc(ctx, *clusterScope)
 
 	machineScope.V(4).Info("Reconciling Vm")
-	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, volumeSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
+	reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, vmSvc, publicIpSvc, loadBalancerSvc, securityGroupSvc, tagSvc)
 	if err != nil {
 		machineScope.Error(err, "failed to reconcile vm")
 		conditions.MarkFalse(oscmachine, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
@@ -365,14 +338,7 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	machineScope.V(2).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
-	if len(machineScope.OscMachine.Spec.Node.Volumes) > 0 {
-		machineScope.V(2).Info("Find volumes")
-		volumeSvc := r.getVolumeSvc(ctx, *clusterScope)
-		reconcileDeleteVolume, err := reconcileDeleteVolume(ctx, machineScope, volumeSvc)
-		if err != nil {
-			return reconcileDeleteVolume, err
-		}
-	}
+
 	publicIpSvc := r.getPublicIpSvc(ctx, *clusterScope)
 	vmSvc := r.getVmSvc(ctx, *clusterScope)
 	loadBalancerSvc := r.getLoadBalancerSvc(ctx, *clusterScope)

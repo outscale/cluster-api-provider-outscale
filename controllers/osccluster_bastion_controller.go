@@ -121,37 +121,37 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	imageName := bastionSpec.ImageName
 	clusterScope.V(2).Info("Check Bastion parameters")
 	if imageName != "" {
-		_, err := infrastructurev1beta1.ValidateImageName(imageName)
+		err := infrastructurev1beta1.ValidateImageName(imageName)
 		if err != nil {
 			return bastionTagName, err
 		}
 	} else {
-		_, err := infrastructurev1beta1.ValidateImageId(bastionSpec.ImageId)
+		err := infrastructurev1beta1.ValidateImageId(bastionSpec.ImageId)
 		if err != nil {
 			return bastionTagName, err
 		}
 	}
 
 	bastionKeypairName := bastionSpec.KeypairName
-	_, err = infrastructurev1beta1.ValidateKeypairName(bastionKeypairName)
+	err = infrastructurev1beta1.ValidateKeypairName(bastionKeypairName)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	vmType := bastionSpec.VmType
-	_, err = infrastructurev1beta1.ValidateVmType(vmType)
+	err = infrastructurev1beta1.ValidateVmType(vmType)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	bastionDeviceName := bastionSpec.DeviceName
-	_, err = infrastructurev1beta1.ValidateDeviceName(bastionDeviceName)
+	err = infrastructurev1beta1.ValidateDeviceName(bastionDeviceName)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	bastionSubregionName := bastionSpec.SubregionName
-	_, err = infrastructurev1beta1.ValidateSubregionName(bastionSubregionName)
+	err = infrastructurev1beta1.ValidateSubregionName(bastionSubregionName)
 	if err != nil {
 		return bastionTagName, err
 	}
@@ -177,7 +177,7 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 	if bastionSpec.RootDisk.RootDiskIops != 0 {
 		rootDiskIops := bastionSpec.RootDisk.RootDiskIops
 		clusterScope.V(4).Info("Check rootDiskIops", "rootDiskIops", rootDiskIops)
-		_, err := infrastructurev1beta1.ValidateIops(rootDiskIops)
+		err := infrastructurev1beta1.ValidateIops(rootDiskIops)
 		if err != nil {
 			return bastionTagName, err
 		}
@@ -185,14 +185,14 @@ func checkBastionFormatParameters(clusterScope *scope.ClusterScope) (string, err
 
 	rootDiskSize := bastionSpec.RootDisk.RootDiskSize
 	clusterScope.V(4).Info("Check rootDiskSize", "rootDiskSize", rootDiskSize)
-	_, err = infrastructurev1beta1.ValidateSize(rootDiskSize)
+	err = infrastructurev1beta1.ValidateSize(rootDiskSize)
 	if err != nil {
 		return bastionTagName, err
 	}
 
 	rootDiskType := bastionSpec.RootDisk.RootDiskType
 	clusterScope.V(4).Info("Check rootDiskType", "rootDiskType", rootDiskType)
-	_, err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
+	err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
 	if err != nil {
 		return bastionTagName, err
 	}

@@ -53,6 +53,7 @@ func (m *OscMachine) ValidateCreate() error {
 	oscMachineLog.Info("validate create", "name", m.Name)
 	if allErrs := ValidateOscMachineSpec(m.Spec); len(allErrs) > 0 {
 		oscMachineLog.Info("validate error", "error", allErrs)
+		oscMachineLog.Info("validate error", "volumes", m.Spec.Node.Volumes)
 		return apierrors.NewInvalid(GroupVersion.WithKind("OscMachine").GroupKind(), m.Name, allErrs)
 	}
 	return nil

@@ -56,13 +56,13 @@ func checkLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string
 	loadBalancerSpec.SetDefaultValue()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 	clusterScope.V(2).Info("Check LoadBalancer name parameters")
-	_, err := infrastructurev1beta1.ValidateLoadBalancerName(loadBalancerName)
+	err := infrastructurev1beta1.ValidateLoadBalancerName(loadBalancerName)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer name: %w", loadBalancerName, err)
 	}
 
 	loadBalancerType := loadBalancerSpec.LoadBalancerType
-	_, err = infrastructurev1beta1.ValidateLoadBalancerType(loadBalancerType)
+	err = infrastructurev1beta1.ValidateLoadBalancerType(loadBalancerType)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%s is an invalid loadBalancer type: %w", loadBalancerType, err)
 	}
@@ -92,7 +92,7 @@ func checkLoadBalancerFormatParameters(clusterScope *scope.ClusterScope) (string
 	}
 
 	loadBalancerCheckInterval := loadBalancerSpec.HealthCheck.CheckInterval
-	_, err = infrastructurev1beta1.ValidateInterval(loadBalancerCheckInterval)
+	err = infrastructurev1beta1.ValidateInterval(loadBalancerCheckInterval)
 	if err != nil {
 		return loadBalancerName, fmt.Errorf("%d is an %w for loadBalancer", loadBalancerCheckInterval, err)
 	}
@@ -266,7 +266,7 @@ func reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.Cluste
 	}
 
 	loadBalancerTagKey := osc.ResourceLoadBalancerTag{
-		Key: &nameTag.Key,
+		Key: nameTag.Key,
 	}
 	err = loadBalancerSvc.DeleteLoadBalancerTag(loadBalancerSpec, loadBalancerTagKey)
 	if err != nil {

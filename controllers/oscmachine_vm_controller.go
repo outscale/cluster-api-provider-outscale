@@ -27,7 +27,6 @@ import (
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/compute"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/security"
 	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/service"
-	"github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/services/storage"
 	tag "github.com/outscale-dev/cluster-api-provider-outscale.git/cloud/tag"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -45,26 +44,6 @@ func getVmResourceId(resourceName string, machineScope *scope.MachineScope) (str
 		return vmId, nil
 	} else {
 		return "", fmt.Errorf("%s does not exist", resourceName)
-	}
-}
-
-// checkVmVolumeOscAssociateResourceName check that Volume dependancies tag name in both resource configuration are the same.
-func checkVmVolumeOscAssociateResourceName(machineScope *scope.MachineScope) error {
-	var resourceNameList []string
-	vmSpec := machineScope.GetVm()
-	vmSpec.SetDefaultValue()
-	vmVolumeName := vmSpec.VolumeName + "-" + machineScope.GetUID()
-	volumesSpec := machineScope.GetVolume()
-	for _, volumeSpec := range volumesSpec {
-		volumeName := volumeSpec.Name + "-" + machineScope.GetUID()
-		resourceNameList = append(resourceNameList, volumeName)
-	}
-	machineScope.V(2).Info("Check match volume with vm")
-	checkOscAssociate := Contains(resourceNameList, vmVolumeName)
-	if checkOscAssociate {
-		return nil
-	} else {
-		return fmt.Errorf("%s volume does not exist in vm", vmVolumeName)
 	}
 }
 
@@ -87,21 +66,6 @@ func checkVmLoadBalancerOscAssociateResourceName(machineScope *scope.MachineScop
 		return fmt.Errorf("%s loadBalancer does not exist in vm", vmLoadBalancerName)
 	}
 
-}
-
-func checkVmVolumeSubregionName(machineScope *scope.MachineScope) error {
-	vmSpec := machineScope.GetVm()
-	vmSpec.SetDefaultValue()
-	vmVolumeName := vmSpec.VolumeName
-	volumeSubregionName := machineScope.GetVolumeSubregionName(vmVolumeName)
-	vmSubregionName := vmSpec.SubregionName
-	vmName := vmSpec.Name
-	machineScope.V(2).Info("Check have the same subregionName for vm and for volume")
-	if vmSubregionName != volumeSubregionName {
-		return fmt.Errorf("volume %s and vm %s are not in the same subregion %s", vmVolumeName, vmName, vmSubregionName)
-	} else {
-		return nil
-	}
 }
 
 // checkVmSecurityGroupOscAssociateResourceName check that SecurityGroup dependancies tag name in both resource configuration are the same.
@@ -187,44 +151,44 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	imageName := imageSpec.Name
 
 	if imageName != "" {
-		_, err = infrastructurev1beta1.ValidateImageName(imageName)
+		err = infrastructurev1beta1.ValidateImageName(imageName)
 		if err != nil {
 			return vmTagName, err
 		}
 	} else {
-		_, err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
+		err = infrastructurev1beta1.ValidateImageId(vmSpec.ImageId)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 
 	vmKeypairName := vmSpec.KeypairName
-	_, err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
+	err = infrastructurev1beta1.ValidateKeypairName(vmKeypairName)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmType := vmSpec.VmType
-	_, err = infrastructurev1beta1.ValidateVmType(vmType)
+	err = infrastructurev1beta1.ValidateVmType(vmType)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	vmDeviceName := vmSpec.DeviceName
-	_, err = infrastructurev1beta1.ValidateDeviceName(vmDeviceName)
+	err = infrastructurev1beta1.ValidateDeviceName(vmDeviceName)
 	if err != nil {
 		return vmTagName, err
 	}
 	if vmSpec.VolumeDeviceName != "" {
 		vmVolumeDeviceName := vmSpec.VolumeDeviceName
-		_, err = infrastructurev1beta1.ValidateDeviceName(vmVolumeDeviceName)
+		err = infrastructurev1beta1.ValidateDeviceName(vmVolumeDeviceName)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 
 	vmSubregionName := vmSpec.SubregionName
-	_, err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
+	err = infrastructurev1beta1.ValidateSubregionName(vmSubregionName)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -255,21 +219,21 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if vmSpec.RootDisk.RootDiskIops != 0 {
 		rootDiskIops := vmSpec.RootDisk.RootDiskIops
 		machineScope.V(4).Info("Check rootDiskIops", "rootDiskIops", rootDiskIops)
-		_, err := infrastructurev1beta1.ValidateIops(rootDiskIops)
+		err := infrastructurev1beta1.ValidateIops(rootDiskIops)
 		if err != nil {
 			return vmTagName, err
 		}
 	}
 	rootDiskSize := vmSpec.RootDisk.RootDiskSize
 	machineScope.V(4).Info("Check rootDiskSize", "rootDiskSize", rootDiskSize)
-	_, err = infrastructurev1beta1.ValidateSize(rootDiskSize)
+	err = infrastructurev1beta1.ValidateSize(rootDiskSize)
 	if err != nil {
 		return vmTagName, err
 	}
 
 	rootDiskType := vmSpec.RootDisk.RootDiskType
 	machineScope.V(4).Info("Check rootDiskType", "rootDiskTyp", rootDiskType)
-	_, err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
+	err = infrastructurev1beta1.ValidateVolumeType(rootDiskType)
 	if err != nil {
 		return vmTagName, err
 	}
@@ -277,7 +241,7 @@ func checkVmFormatParameters(machineScope *scope.MachineScope, clusterScope *sco
 	if vmSpec.RootDisk.RootDiskType == "io1" && vmSpec.RootDisk.RootDiskIops != 0 && vmSpec.RootDisk.RootDiskSize != 0 {
 		ratioRootDiskSizeIops := vmSpec.RootDisk.RootDiskIops / vmSpec.RootDisk.RootDiskSize
 		machineScope.V(4).Info("Check ratio rootdisk size iops", "ratioRootDiskSizeIops", ratioRootDiskSizeIops)
-		_, err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
+		err = infrastructurev1beta1.ValidateRatioSizeIops(ratioRootDiskSizeIops)
 		if err != nil {
 			return vmTagName, err
 		}
@@ -318,20 +282,10 @@ func UseFailureDomain(clusterScope *scope.ClusterScope, machineScope *scope.Mach
 }
 
 // reconcileVm reconcile the vm of the machine
-func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, volumeSvc storage.OscVolumeInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
+func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, vmSvc compute.OscVmInterface, publicIpSvc security.OscPublicIpInterface, loadBalancerSvc service.OscLoadBalancerInterface, securityGroupSvc security.OscSecurityGroupInterface, tagSvc tag.OscTagInterface) (reconcile.Result, error) {
 	vmSpec := machineScope.GetVm()
 	vmRef := machineScope.GetVmRef()
 	vmName := vmSpec.Name + "-" + machineScope.GetUID()
-
-	var volumeId string
-	var err error
-	if vmSpec.VolumeName != "" {
-		volumeName := vmSpec.VolumeName + "-" + machineScope.GetUID()
-		volumeId, err = getVolumeResourceId(volumeName, machineScope)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
 
 	subnetName := vmSpec.SubnetName + "-" + clusterScope.GetUID()
 	subnetId, err := getSubnetResourceId(subnetName, clusterScope)
@@ -399,10 +353,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
 
-	var vmVolumeDeviceName string
-	if vmSpec.VolumeDeviceName != "" {
-		vmVolumeDeviceName = vmSpec.VolumeDeviceName
-	}
 	var vm *osc.Vm
 	var vmId string
 	if len(vmRef.ResourceMap) == 0 {
@@ -448,8 +398,9 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			vmTags[eipAutoAttachTagName] = publicIpObj.GetPublicIp()
 		}
 		machineScope.V(4).Info("Info tags", "tags", vmTags)
+		volumes := machineScope.GetVolume()
 
-		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags)
+		vm, err := vmSvc.CreateVm(machineScope, vmSpec, subnetId, securityGroupIds, privateIps, vmName, vmTags, volumes)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("%w Can not create vm for OscMachine %s/%s", err, machineScope.GetNamespace(), machineScope.GetName())
 		}
@@ -498,23 +449,6 @@ func reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineS
 			if vmId == "" { // We should not get in this situation but we sometimes do (To be investigated)
 				vmId = vmRef.ResourceMap[vmName]
 				vmSpec.ResourceId = vmId
-			}
-			if vmSpec.VolumeName != "" {
-				err = volumeSvc.CheckVolumeState(20, 240, "available", volumeId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s available for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
-				}
-				machineScope.V(4).Info("Volume is available", "volumeId", volumeId)
-				err = volumeSvc.LinkVolume(volumeId, vmId, vmVolumeDeviceName)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not link volume %s with vm %s for OscMachine %s/%s", err, volumeId, vmId, machineScope.GetNamespace(), machineScope.GetName())
-				}
-				machineScope.V(4).Info("Volume is linked", "volumeId", volumeId)
-				err = volumeSvc.CheckVolumeState(20, 240, "in-use", volumeId)
-				machineScope.V(4).Info("Volume is in-use", "volumeId", volumeId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("%w Can not get volume %s in use for OscMachine %s/%s", err, volumeId, machineScope.GetNamespace(), machineScope.GetName())
-				}
 			}
 
 			if vmSpec.LoadBalancerName != "" {

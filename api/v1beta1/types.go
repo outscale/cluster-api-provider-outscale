@@ -341,9 +341,12 @@ type OscImage struct {
 }
 
 type OscVolume struct {
-	Name          string `json:"name,omitempty"`
-	Iops          int32  `json:"iops,omitempty"`
-	Size          int32  `json:"size,omitempty"`
+	Name string `json:"name,omitempty"`
+	//+kubebuilder:validation:Required
+	Device string `json:"device"`
+	Iops   int32  `json:"iops,omitempty"`
+	Size   int32  `json:"size,omitempty"`
+	//+kubebuilder:deprecatedversion
 	SubregionName string `json:"subregionName,omitempty"`
 	VolumeType    string `json:"volumeType,omitempty"`
 	ResourceId    string `json:"resourceId,omitempty"`
@@ -424,7 +427,6 @@ var (
 
 	DefaultVmKeypairName string = "cluster-api"
 	DefaultVmType        string = "tinav3.c4r8p1"
-	DefaultVmDeviceName  string = "/dev/sda1"
 
 	DefaultVmBastionImageId       string = "ami-bb490c7e"
 	DefaultVmBastionKeypairName   string = "cluster-api"
@@ -638,42 +640,6 @@ func (net *OscNet) SetDefaultValue() {
 	}
 }
 
-// SetVolumeDefaultValue set the Volume default values from volume configuration
-func (node *OscNode) SetVolumeDefaultValue() {
-	if len(node.Volumes) == 0 {
-		var volume OscVolume
-		var volumeKcpName string = DefaultVolumeKcpName
-		var volumeKwName string = DefaultVolumeKwName
-		var volumeKcpSubregionName string = DefaultVolumeKcpSubregionName
-		var volumeKwSubregionName string = DefaultVolumeKwSubregionName
-		if node.ClusterName != "" {
-			volumeKcpName = strings.Replace(DefaultVolumeKcpName, DefaultClusterName, node.ClusterName, -1)
-			volumeKwName = strings.Replace(DefaultVolumeKwName, DefaultClusterName, node.ClusterName, -1)
-			volumeKcpSubregionName = strings.Replace(DefaultVolumeKcpSubregionName, DefaultClusterName, node.ClusterName, -1)
-			volumeKwSubregionName = strings.Replace(DefaultVolumeKwSubregionName, DefaultClusterName, node.ClusterName, -1)
-
-		}
-		if node.Vm.Role == "controlplane" {
-			volume = OscVolume{
-				Name:          volumeKcpName,
-				Iops:          DefaultVolumeKcpIops,
-				Size:          DefaultVolumeKcpSize,
-				SubregionName: volumeKcpSubregionName,
-				VolumeType:    DefaultVolumeKcpType,
-			}
-		} else {
-			volume = OscVolume{
-				Name:          volumeKwName,
-				Iops:          DefaultVolumeKwIops,
-				Size:          DefaultVolumeKwSize,
-				SubregionName: volumeKwSubregionName,
-				VolumeType:    DefaultVolumeKwType,
-			}
-		}
-		node.Volumes = append(node.Volumes, &volume)
-	}
-}
-
 // SetKeyPairDefaultValue set the KeyPair default values
 func (node *OscNode) SetKeyPairDefaultValue() {
 	if len(node.KeyPair.PublicKey) == 0 {
@@ -797,9 +763,6 @@ func (vm *OscVm) SetDefaultValue() {
 	if vm.KeypairName == "" {
 		vm.KeypairName = DefaultVmKeypairName
 	}
-	if vm.DeviceName == "" {
-		vm.DeviceName = DefaultVmDeviceName
-	}
 	if vm.SubregionName == "" {
 		vm.SubregionName = DefaultVmSubregionName
 	}
@@ -843,9 +806,6 @@ func (bastion *OscBastion) SetDefaultValue() {
 		}
 		if bastion.KeypairName == "" {
 			bastion.KeypairName = DefaultVmBastionKeypairName
-		}
-		if bastion.DeviceName == "" {
-			bastion.DeviceName = DefaultVmDeviceName
 		}
 		if bastion.SubregionName == "" {
 			bastion.SubregionName = DefaultVmBastionSubregionName

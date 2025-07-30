@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -513,98 +512,6 @@ func TestGetVmResourceId(t *testing.T) {
 				assert.Nil(t, vtc.expGetVmResourceIdErr)
 			}
 			t.Logf("find netResourceId %s", vmResourceId)
-		})
-	}
-}
-
-// TestCheckVmVolumeOscAssociateResourceName has several tests to cover the code of the function checkVmVolumeOscAssociateResourceName
-func TestCheckVmVolumeOscAssociateResourceName(t *testing.T) {
-	vmTestCases := []struct {
-		name                                        string
-		clusterSpec                                 infrastructurev1beta1.OscClusterSpec
-		machineSpec                                 infrastructurev1beta1.OscMachineSpec
-		expCheckVmVolumeOscAssociateResourceNameErr error
-	}{
-		{
-			name:        "check volume associate with vm",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: defaultVmVolumeInitialize,
-			expCheckVmVolumeOscAssociateResourceNameErr: nil,
-		},
-		{
-			name:        "check work without vm spec (with default values)",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
-						VolumeName: "test-volume",
-					},
-				},
-			},
-			expCheckVmVolumeOscAssociateResourceNameErr: fmt.Errorf("test-volume-uid volume does not exist in vm"),
-		},
-		{
-			name:        "check Bad name volume",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:        "test-vm",
-						ImageId:     "ami-00000000",
-						Role:        "controlplane",
-						VolumeName:  "test-volume@test",
-						DeviceName:  "/dev/sda1",
-						KeypairName: "rke",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-							{
-								Name:      "test-privateip-second",
-								PrivateIp: "10.0.0.18",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmVolumeOscAssociateResourceNameErr: fmt.Errorf("test-volume@test-uid volume does not exist in vm"),
-		},
-	}
-	for _, vtc := range vmTestCases {
-		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			err := checkVmVolumeOscAssociateResourceName(machineScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmVolumeOscAssociateResourceNameErr, err, "checkVmVolumeOscAssociateResourceName() should return the same eror")
-			} else {
-				assert.Nil(t, vtc.expCheckVmVolumeOscAssociateResourceNameErr)
-			}
 		})
 	}
 }
@@ -1807,124 +1714,6 @@ func TestCheckVmPrivateIpsOscDuplicateName(t *testing.T) {
 	}
 }
 
-// TestCheckVmVolumeSubregionName has several tests to cover the code of the function checkVmVolumeSubregionName
-func TestCheckVmVolumeSubregionName(t *testing.T) {
-	vmTestCases := []struct {
-		name                             string
-		clusterSpec                      infrastructurev1beta1.OscClusterSpec
-		machineSpec                      infrastructurev1beta1.OscMachineSpec
-		expCheckVmVolumeSubregionNameErr error
-	}{
-		{
-			name:        "get the same volume and vm subregion name",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:       "test-vm",
-						ImageId:    "ami-00000000",
-						Role:       "controlplane",
-						VolumeName: "test-volume",
-						DeviceName: "/dev/sda1",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmVolumeSubregionNameErr: nil,
-		},
-		{
-			name:        "can not get the same volume and vm subregion name",
-			clusterSpec: defaultVmClusterInitialize,
-			machineSpec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []*infrastructurev1beta1.OscVolume{
-						{
-							Name:          "test-volume",
-							Iops:          1000,
-							Size:          50,
-							VolumeType:    "io1",
-							SubregionName: "eu-west-2a",
-						},
-					},
-					Vm: infrastructurev1beta1.OscVm{
-						Name:       "test-vm",
-						ImageId:    "ami-00000000",
-						Role:       "controlplane",
-						VolumeName: "test-volume",
-						DeviceName: "/dev/sda1",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
-
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2b",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						PublicIpName:     "test-publicip",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
-							{
-								Name:      "test-privateip-first",
-								PrivateIp: "10.0.0.17",
-							},
-						},
-					},
-				},
-			},
-			expCheckVmVolumeSubregionNameErr: fmt.Errorf("volume test-volume and vm test-vm are not in the same subregion eu-west-2b"),
-		},
-	}
-	for _, vtc := range vmTestCases {
-		t.Run(vtc.name, func(t *testing.T) {
-			_, machineScope := SetupMachine(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
-			err := checkVmVolumeSubregionName(machineScope)
-			if err != nil {
-				assert.Equal(t, vtc.expCheckVmVolumeSubregionNameErr, err, "checkVmVolumeSubregionName() should return the same error")
-			} else {
-				assert.Nil(t, vtc.expCheckVmVolumeSubregionNameErr)
-			}
-		})
-	}
-}
-
 func TestUseFailureDomain(t *testing.T) {
 	vmTestCases := []struct {
 		name                string
@@ -2231,7 +2020,7 @@ func TestReconcileVm(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmTags := vtc.machineSpec.Node.Vm.Tags
@@ -2244,8 +2033,6 @@ func TestReconcileVm(t *testing.T) {
 			volumeRef := machineScope.GetVolumeRef()
 			volumeRef.ResourceMap = make(map[string]string)
 			volumeRef.ResourceMap[volumeName] = volumeId
-			volumeStateAvailable := "available"
-			volumeStateUse := "in-use"
 
 			subnetName := vtc.machineSpec.Node.Vm.SubnetName + "-uid"
 			subnetId := "subnet-" + subnetName
@@ -2284,10 +2071,7 @@ func TestReconcileVm(t *testing.T) {
 				securityGroupIds = append(securityGroupIds, securityGroupId)
 			}
 
-			deviceName := vtc.machineSpec.Node.Vm.DeviceName
 			vmSpec := vtc.machineSpec.Node.Vm
-			var clockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 240
 			loadBalancerName := vtc.machineSpec.Node.Vm.LoadBalancerName
 			loadBalancerSpec := clusterScope.GetLoadBalancer()
 			loadBalancerSpec.SetDefaultValue()
@@ -2395,25 +2179,8 @@ func TestReconcileVm(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(vm, vtc.expCreateVmErr)
-			}
-
-			if vtc.machineSpec.Node.Vm.VolumeName != "" {
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateAvailableErr)
-				mockOscVolumeInterface.
-					EXPECT().
-					LinkVolume(gomock.Eq(volumeId), gomock.Eq(vmId), gomock.Eq(deviceName)).
-					Return(vtc.expLinkVolumeErr)
-
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateUseErr)
-
 			}
 
 			vmIds := []string{vmId}
@@ -2480,7 +2247,7 @@ func TestReconcileVm(t *testing.T) {
 
 				}
 			}
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				require.NotNilf(t, vtc.expReconcileVmErr, "unexpected error %s", err.Error())
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
@@ -2513,7 +2280,7 @@ func TestReconcileVmCreate(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 
@@ -2598,16 +2365,16 @@ func TestReconcileVmCreate(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2696,7 +2463,6 @@ func TestReconcileVmLink(t *testing.T) {
 			volumeRef := machineScope.GetVolumeRef()
 			volumeRef.ResourceMap = make(map[string]string)
 			volumeRef.ResourceMap[volumeName] = volumeId
-			volumeStateAvailable := "available"
 
 			subnetName := vtc.machineSpec.Node.Vm.SubnetName + "-uid"
 			subnetId := "subnet-" + subnetName
@@ -2788,27 +2554,18 @@ func TestReconcileVmLink(t *testing.T) {
 
 			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
-			var clockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 240
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
-			if vtc.expCheckVolumeStateAvailableFound {
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateAvailableErr)
-
-			}
 			if vtc.expLinkVolumeFound {
 				mockOscVolumeInterface.
 					EXPECT().
@@ -2816,7 +2573,7 @@ func TestReconcileVmLink(t *testing.T) {
 					Return(vtc.expLinkVolumeErr)
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -2912,7 +2669,7 @@ func TestReconcileVmPubicIp(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 
@@ -2921,8 +2678,6 @@ func TestReconcileVmPubicIp(t *testing.T) {
 			volumeRef := machineScope.GetVolumeRef()
 			volumeRef.ResourceMap = make(map[string]string)
 			volumeRef.ResourceMap[volumeName] = volumeId
-			volumeStateAvailable := "available"
-			volumeStateUse := "in-use"
 
 			subnetName := vtc.machineSpec.Node.Vm.SubnetName + "-uid"
 			subnetId := "subnet-" + subnetName
@@ -2956,8 +2711,6 @@ func TestReconcileVmPubicIp(t *testing.T) {
 			}
 
 			vmSpec := vtc.machineSpec.Node.Vm
-			var clockInsideLoop time.Duration = 20
-			var clockLoop time.Duration = 240
 
 			var vmTags = vtc.machineSpec.Node.Vm.Tags
 			if vmTags == nil {
@@ -3005,35 +2758,15 @@ func TestReconcileVmPubicIp(t *testing.T) {
 					ReadTag(gomock.Eq("Name"), gomock.Eq(vmName)).
 					Return(nil, vtc.expReadTagErr)
 			}
-			volumeDeviceName := vtc.machineSpec.Node.Vm.VolumeDeviceName
 
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(vm, vtc.expCreateVmErr)
 			}
 
-			if vtc.machineSpec.Node.Vm.VolumeName != "" {
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateAvailable), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateAvailableErr)
-
-				mockOscVolumeInterface.
-					EXPECT().
-					LinkVolume(gomock.Eq(volumeId), gomock.Eq(vmId), gomock.Eq(volumeDeviceName)).
-					Return(vtc.expLinkVolumeErr)
-
-			}
-			if vtc.expCheckVolumeStateUseFound {
-				mockOscVolumeInterface.
-					EXPECT().
-					CheckVolumeState(gomock.Eq(clockInsideLoop), gomock.Eq(clockLoop), gomock.Eq(volumeStateUse), gomock.Eq(volumeId)).
-					Return(vtc.expCheckVolumeStateUseErr)
-			}
-
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -3082,7 +2815,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 
@@ -3165,12 +2898,12 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 			if vtc.expCreateVmFound {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(&vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(vm, vtc.expCreateVmErr)
 			} else {
 				mockOscVmInterface.
 					EXPECT().
-					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags)).
+					CreateVm(gomock.Eq(machineScope), gomock.Eq(vmSpec), gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(vmTags), gomock.Any()).
 					Return(nil, vtc.expCreateVmErr)
 			}
 
@@ -3180,7 +2913,7 @@ func TestReconcileVmSecurityGroup(t *testing.T) {
 				LinkLoadBalancerBackendMachines(gomock.Eq(vmIds), gomock.Eq(loadBalancerName)).
 				Return(vtc.expLinkLoadBalancerBackendMachineErr)
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -3320,7 +3053,7 @@ func TestReconcileVmGet(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			vmState := "running"
@@ -3423,7 +3156,7 @@ func TestReconcileVmGet(t *testing.T) {
 					AddCcmTag(gomock.Eq(clusterName), gomock.Eq(privateDnsName), gomock.Eq(vmId)).
 					Return(vtc.expAddCcmTagErr)
 			}
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
@@ -3530,7 +3263,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 	}
 	for _, vtc := range vmTestCases {
 		t.Run(vtc.name, func(t *testing.T) {
-			clusterScope, machineScope, ctx, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
+			clusterScope, machineScope, ctx, mockOscVmInterface, _, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface := SetupWithVmMock(t, vtc.name, vtc.clusterSpec, vtc.machineSpec)
 			vmName := vtc.machineSpec.Node.Vm.Name + "-uid"
 			vmId := "i-" + vmName
 			volumeName := vtc.machineSpec.Node.Vm.VolumeName + "-uid"
@@ -3601,7 +3334,7 @@ func TestReconcileVmResourceId(t *testing.T) {
 				securityGroupsRef.ResourceMap[loadBalancerSecurityGroupClusterScopeName] = loadBalancerSecurityGroupId
 			}
 
-			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscVolumeInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
+			reconcileVm, err := reconcileVm(ctx, clusterScope, machineScope, mockOscVmInterface, mockOscPublicIpInterface, mockOscLoadBalancerInterface, mockOscSecurityGroupInterface, mockOscTagInterface)
 			if err != nil {
 				assert.Equal(t, vtc.expReconcileVmErr.Error(), err.Error(), "reconcileVm() should return the same error")
 			} else {
