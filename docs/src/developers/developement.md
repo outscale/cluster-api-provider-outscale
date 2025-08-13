@@ -147,12 +147,10 @@ IMG=my-registry/controller:my-tag make undeploy
 
 # Delete Cluster Api
 
-Please look at [cluster-api][cluster-api] section about deployment of cert-manager and cluster-api
-
-Or you can use this to undeploy cluster-api with cert-manager:
+You can use this to undeploy cluster-api with cert-manager:
 
 ```
-make deploy-clusterapi
+make undeploy-clusterapi 
 ```
 
 <!-- References -->
