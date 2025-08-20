@@ -24,11 +24,13 @@ import (
 type OscRole string
 
 const (
-	RoleControlPlane OscRole = "controlplane"
-	RoleWorker       OscRole = "worker"
-	RoleLoadBalancer OscRole = "loadbalancer"
-	RoleBastion      OscRole = "bastion"
-	RoleNat          OscRole = "nat"
+	RoleControlPlane    OscRole = "controlplane"
+	RoleWorker          OscRole = "worker"
+	RoleLoadBalancer    OscRole = "loadbalancer"
+	RoleBastion         OscRole = "bastion"
+	RoleNat             OscRole = "nat"
+	RoleService         OscRole = "service"
+	RoleInternalService OscRole = "service.internal"
 )
 
 type OscNode struct {
