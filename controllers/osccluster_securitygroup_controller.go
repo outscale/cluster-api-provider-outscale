@@ -45,8 +45,8 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 		}
 		flow := securityGroupRuleSpec.Flow
 		protocol := securityGroupRuleSpec.IpProtocol
-		fromPort := securityGroupRuleSpec.FromPortRange
-		toPort := securityGroupRuleSpec.ToPortRange
+		fromPort := securityGroupRuleSpec.GetFromPortRange()
+		toPort := securityGroupRuleSpec.GetToPortRange()
 		var existingRanges []string
 		for _, rule := range rules {
 			if rule.GetFromPortRange() != fromPort || rule.GetToPortRange() != toPort || rule.GetIpProtocol() != protocol {
@@ -82,7 +82,9 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 			}
 			var okRanges []string
 			for _, spec := range securityGroupRulesSpec {
-				if flow != spec.Flow || rule.GetFromPortRange() != spec.FromPortRange || rule.GetToPortRange() != spec.ToPortRange || rule.GetIpProtocol() != spec.IpProtocol {
+				if flow != spec.Flow ||
+					rule.GetFromPortRange() != spec.GetFromPortRange() || rule.GetToPortRange() != spec.GetToPortRange() ||
+					rule.GetIpProtocol() != spec.IpProtocol {
 					continue
 				}
 				okRanges = append(okRanges, spec.GetIpRanges()...)

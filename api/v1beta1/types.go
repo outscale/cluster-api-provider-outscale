@@ -382,6 +382,20 @@ func (sgr *OscSecurityGroupRule) GetIpRanges() []string {
 	return nil
 }
 
+func (sgr *OscSecurityGroupRule) GetFromPortRange() int32 {
+	if sgr.IpProtocol == "-1" {
+		return -1
+	}
+	return sgr.FromPortRange
+}
+
+func (sgr *OscSecurityGroupRule) GetToPortRange() int32 {
+	if sgr.IpProtocol == "-1" {
+		return -1
+	}
+	return sgr.ToPortRange
+}
+
 // Map between resourceId and resourceName (tag Name with cluster UID)
 type OscResourceReference struct {
 	ResourceMap map[string]string `json:"resourceMap,omitempty"`
