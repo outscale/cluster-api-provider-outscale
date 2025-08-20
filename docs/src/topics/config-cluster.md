@@ -12,11 +12,13 @@ An osccluster resource defines:
 * a load-balancer for the kubernetes API.
 
 Roles define the role(s) a network resource may have:
-* `loadbalancer`,
-* `nat`,
-* `bastion`,
-* `controlplane`,
-* `worker`.
+* `loadbalancer` (kube API load-balancer),
+* `nat` (NAT services),
+* `bastion` (Bastion),
+* `controlplane` (control plane nodes),
+* `worker` (worker nodes),
+* `service` (public service load-balancers),
+* `service.internal` (internal service load-balancers).
 
 Resources may be either automatically or manually created.
 
@@ -44,6 +46,16 @@ When using roles:
 * there must be a single subnet having the loadbalancer and bastion roles,
 * there must be one subnet with the controlplane or worker role per subregion where the corresponding nodes will be deployed,
 * there must be one subnet with the nat role per subregion in the cluster.
+
+### Service load-balancers
+
+When a service of type `LoadBalancer` is created, the CCM will configure a new LBU.
+
+If the service is configured as internal, the CCM will fetch a subnet having the `service.internal` role.
+Otherwise, a subnet having the `service` role is used.
+If no subnet is found, the CCM fetches the subnet with the `loadbalancer` role.
+
+If the lo
 
 ### Automatic mode
 

@@ -40,11 +40,21 @@ func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 
 func RoleTags(roles []infrastructurev1beta1.OscRole) []osc.ResourceTag {
 	rs := make([]osc.ResourceTag, 0, len(roles))
-	for i := range roles {
+	for _, role := range roles {
 		rs = append(rs, osc.ResourceTag{
-			Key:   "OscK8sRole/" + string(roles[i]),
-			Value: "true",
+			Key: "OscK8sRole/" + string(role),
 		})
+		// CCM 0.4 compatibility.
+		switch role {
+		case infrastructurev1beta1.RoleService:
+			rs = append(rs, osc.ResourceTag{
+				Key: "kubernetes.io/role/elb",
+			})
+		case infrastructurev1beta1.RoleInternalService:
+			rs = append(rs, osc.ResourceTag{
+				Key: "kubernetes.io/role/internal-elb",
+			})
+		}
 	}
 	return rs
 }
