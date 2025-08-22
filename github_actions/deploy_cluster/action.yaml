@@ -36,6 +36,9 @@ inputs:
   OSC_VM_TYPE:
     description: 'VM type'
     default: "tinav6.c4r8p2"
+  WORKER_COUNT:
+    description: 'number of worker nodes'
+    default: "1"
   CCM:
     description: 'deploy ccm'
     default: "true"
@@ -56,7 +59,7 @@ runs:
     - "${{ inputs.OSC_ACCESS_KEY }}%${{ inputs.OSC_SECRET_KEY }}%${{ inputs.OSC_REGION }}"
     - ${{ inputs.CLUSTER_NAME }}
     - "${{ inputs.IMAGE_NAME }}%${{ inputs.IMAGE_ACCOUNT_ID }}"
-    - ${{ inputs.OSC_VM_TYPE }}
+    - "${{ inputs.OSC_VM_TYPE }}%${{ inputs.WORKER_COUNT }}"
     - ${{ inputs.CCM }}
     - ${{ inputs.CERT_MANAGER }}
     - ${{ inputs.KUSTOMIZE_PATH }}

@@ -5,7 +5,12 @@ OKS_AKSK=$2
 OSC_AKSK=$3
 export OSC_CLUSTER_NAME=$4
 OSC_IMAGE_NAME_ACCOUNT_ID=$5
-export OSC_VM_TYPE=$6
+OSC_VM_TYPE_COUNT=$6
+export OSC_VM_TYPE=`echo $OSC_VM_TYPE_COUNT%|cut -d% -f 1`
+WORKER_COUNT=`echo $OSC_VM_TYPE_COUNT%|cut -d% -f 2`
+if [ -z "$WORKER_COUNT" ]; then
+  WORKER_COUNT=1
+fi
 CCM=$7
 CERT_MANAGER=$8
 KUSTOMIZE_PATH=$9
@@ -47,7 +52,7 @@ ip=`curl https://api.ipify.org`
 export OSC_ALLOW_FROM="$ip/32"
 mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl https://api.ipify.org`
 export OSC_ALLOW_FROM_CAPI="$mip/32"
-clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=1 -n $OSC_CLUSTER_NAME -i outscale --flavor secure > clusterapi.yaml
+clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure > clusterapi.yaml
 
 kubectl delete ns $OSC_CLUSTER_NAME --ignore-not-found --force
 kubectl create ns $OSC_CLUSTER_NAME
@@ -87,8 +92,8 @@ kubectl \
 
 echo "waiting for nodes"
 for i in {1..50}; do
-  cnt=`kubectl get nodes | tee /dev/stderr | wc -l`
-  if [[ $cnt -ge 3 ]]; then
+  cnt=`kubectl get nodes --no-headers | tee /dev/stderr | wc -l`
+  if [[ $cnt -ge 2 ]]; then
     break
   fi
   sleep 30
