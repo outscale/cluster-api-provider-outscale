@@ -77,8 +77,8 @@ func dumpSpecResourcesAndCleanup(ctx context.Context, specName string, clusterPr
 	if !skipCleanup {
 		Byf("Deleting cluster %s/%s", cluster.Namespace, cluster.Name)
 		framework.DeleteAllClustersAndWait(ctx, framework.DeleteAllClustersAndWaitInput{
-			Client:    clusterProxy.GetClient(),
-			Namespace: namespace.Name,
+			ClusterProxy: clusterProxy,
+			Namespace:    namespace.Name,
 		}, intervalsGetter(specName, "wait-delete-cluster")...)
 
 		Byf("Deleting namespace used for hosting the %q test spec", specName)

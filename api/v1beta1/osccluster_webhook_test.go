@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -115,10 +116,11 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.subnets.ipSubnetRange: Invalid value: \"10.0.1.0/24\": subnet overlaps 10.0.1.0/24"),
 		},
 	}
+	h := infrastructurev1beta1.OscClusterWebhook{}
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
 			oscInfraCluster := createOscInfraCluster(ctc.clusterSpec, "webhook-test", "default")
-			_, err := oscInfraCluster.ValidateCreate()
+			_, err := h.ValidateCreate(context.TODO(), oscInfraCluster)
 			if ctc.expValidateCreateErr != nil {
 				require.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the right error")
 			} else {

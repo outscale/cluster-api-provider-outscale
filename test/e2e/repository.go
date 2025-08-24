@@ -104,7 +104,7 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 		},
 	}
 	for key := range input.E2EConfig.Variables {
-		clusterctlConfigFile.Values[key] = input.E2EConfig.GetVariable(key)
+		clusterctlConfigFile.Values[key] = input.E2EConfig.Variables[key]
 	}
 	clusterctlConfigFile.write()
 

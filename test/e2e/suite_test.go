@@ -43,7 +43,7 @@ const (
 	CCMPath      = "CCM"
 	CCMResources = "CCM_RESOURCES"
 
-	OutscaleProvicer = "OUTSCALE_PROVIDER"
+	OutscaleProvider = "OUTSCALE_PROVIDER"
 )
 
 // Test suite flags.
@@ -204,7 +204,7 @@ func initScheme() *runtime.Scheme {
 func loadE2EConfig(ctx context.Context, configPath string) *clusterctl.E2EConfig {
 	config := clusterctl.LoadE2EConfig(ctx, clusterctl.LoadE2EConfigInput{ConfigPath: configPath})
 	Expect(config).ToNot(BeNil(), "Failed to load E2E config from %s", configPath)
-	infraProvider = config.GetVariable(OutscaleProvicer)
+	infraProvider = config.Variables[OutscaleProvider]
 	return config
 }
 
@@ -216,12 +216,12 @@ func createClusterctlLocalRepository(ctx context.Context, config *clusterctl.E2E
 	}
 
 	Expect(config.Variables).To(HaveKey(capi_e2e.CNIPath), "Missing %s variable in the config", capi_e2e.CNIPath)
-	cniPath := config.GetVariable(capi_e2e.CNIPath)
+	cniPath := config.Variables[capi_e2e.CNIPath]
 	Expect(cniPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", capi_e2e.CNIPath)
 	createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(cniPath, capi_e2e.CNIResources)
 
 	Expect(config.Variables).To(HaveKey("CCM"), "Missing %s variable in the config", CCMPath)
-	ccmPath := config.GetVariable("CCM")
+	ccmPath := config.Variables["CCM"]
 	Expect(ccmPath).To(BeAnExistingFile(), "the %s variable should resolve to an existing file", CCMPath)
 	createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(ccmPath, CCMResources)
 
