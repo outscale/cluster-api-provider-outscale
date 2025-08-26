@@ -92,6 +92,14 @@ Apply with:
 kubectl apply -f cluster.yaml
 ```
 
+Nodes are deployed using a Kubernetes OMI image. An open-source image builder has been developped by the Kubernetes community.
+
+To simplify the use of cluster-api, images are published on Outscale Open-source accounts.
+
+As the images are produced by an open-source builder, there is no guarantee that clusters created with these images will be fully functional, and no official support is provided by Outscale on those images.
+
+The list of published images may be found either in [Cockpit](https://cockpit.outscale.com/#/dashboards/iaas/compute/images) or on the [builder automation repository releases page](https://github.com/outscale/kube-image-workflows/releases).
+
 ---
 
 ## 🛠 Development
