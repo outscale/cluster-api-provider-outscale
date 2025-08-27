@@ -84,6 +84,12 @@ func patchSubregions(subregions ...string) patchOSCClusterFunc {
 	}
 }
 
+func patchNATIPFromPool(name string) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.NatPublicIpPool = name
+	}
+}
+
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().

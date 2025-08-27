@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.1-0.20250610061224-4cb7e87f3b45
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: oscclustertemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -269,6 +269,9 @@ spec:
                               name:
                                 description: The image name.
                                 type: string
+                              outscaleOpenSource:
+                                description: Use an "Outscale Opensource" image
+                                type: boolean
                               resourceId:
                                 description: unused
                                 type: string
@@ -361,6 +364,10 @@ spec:
                                   subnet)
                                 type: string
                             type: object
+                          natPublicIpPool:
+                            description: The IP Pool storing the Nat Services public
+                              IPs
+                            type: string
                           natService:
                             description: The Nat Service configuration
                             properties:

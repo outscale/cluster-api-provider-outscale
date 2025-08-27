@@ -8,6 +8,7 @@ import (
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/osc-sdk-go/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -17,14 +18,19 @@ var ErrEmptyPool = errors.New("no available IP in pool")
 type IPAllocatorInterface interface {
 	AllocateIP(ctx context.Context, key, name, pool string, clusterScope *scope.ClusterScope) (id, ip string, err error)
 	RetrackIP(ctx context.Context, key, publicIp string, clusterScope *scope.ClusterScope) error
+	DeallocateIP(ctx context.Context, key string, clusterScope *scope.ClusterScope) error
 }
 
+// IPAllocator allocates public IPs.
 type IPAllocator struct {
-	Cloud       services.Servicer
+	Cloud services.Servicer
+	// getter to fetch a public ip from the clusterScope/machineScope state
 	getPublicIP func(key string) (id string, found bool)
+	// setter to set a public ip to the clusterScope/machineScope state
 	setPublicIP func(key, id string)
 }
 
+// AllocateIP alloctes an IP from a pool or creates a new IP.
 func (a *IPAllocator) AllocateIP(ctx context.Context, key, name, pool string, clusterScope *scope.ClusterScope) (id, ip string, err error) {
 	log := ctrl.LoggerFrom(ctx)
 	if id, ok := a.getPublicIP(key); ok {
@@ -93,7 +99,7 @@ func (a *IPAllocator) allocateFromPool(ctx context.Context, pool string, cluster
 	return nil, ErrEmptyPool
 }
 
-// RetrackIP retracks
+// RetrackIP retracks an IP that has been lost in a state reset.
 func (a *IPAllocator) RetrackIP(ctx context.Context, key, publicIp string, clusterScope *scope.ClusterScope) error {
 	if publicIp == "" {
 		return nil
@@ -107,6 +113,33 @@ func (a *IPAllocator) RetrackIP(ctx context.Context, key, publicIp string, clust
 	}
 	if ip != nil {
 		a.setPublicIP(key, ip.GetPublicIpId())
+	}
+	return nil
+}
+
+// DeallocateIP dealloctes an IP that has been created or does nothing if the IP is from a pool.
+func (a *IPAllocator) DeallocateIP(ctx context.Context, key string, clusterScope *scope.ClusterScope) error {
+	log := ctrl.LoggerFrom(ctx)
+	if id, ok := a.getPublicIP(key); ok {
+		pip, err := a.Cloud.PublicIp(ctx, *clusterScope).GetPublicIp(ctx, id)
+		switch {
+		case err != nil:
+			return fmt.Errorf("deallocate ip: %w", err)
+		case pip == nil:
+			return nil
+		case pip.LinkPublicIpId != nil:
+			return errors.New("decallocate ip: IP is still linked")
+		}
+
+		if security.PoolName(pip) != "" {
+			log.V(3).Info("Not deleting public IP from pool", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+			return nil
+		}
+		log.V(2).Info("Deleting public IP", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+		err = a.Cloud.PublicIp(ctx, *clusterScope).DeletePublicIp(ctx, id)
+		if err != nil {
+			return fmt.Errorf("decallocate ip: %w", err)
+		}
 	}
 	return nil
 }

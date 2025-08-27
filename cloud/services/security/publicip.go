@@ -25,7 +25,7 @@ import (
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
-const PublicIPPoolTag = "OscClusterIPPool"
+const PublicIPPoolTag = "OscK8sIPPool"
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
 type OscPublicIpInterface interface {
@@ -182,4 +182,14 @@ func (s *Service) ValidatePublicIpIds(ctx context.Context, publicIpIds []string)
 		}
 	}
 	return validPublicIpIds, nil
+}
+
+// PoolName returns the pool name from a public IP or "" if none.
+func PoolName(ip *osc.PublicIp) string {
+	for _, t := range ip.GetTags() {
+		if t.Key == PublicIPPoolTag {
+			return t.GetValue()
+		}
+	}
+	return ""
 }

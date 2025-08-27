@@ -4,6 +4,11 @@ You may reuse some resources.
 
 CAPOSC expects that the resources are properly configured and will not check them. CAPOSC will not reconcile those resources and will not delete them when the cluster is deleted.
 
+The following can be reused :
+* a net,
+* security groups,
+* public IPs.
+
 ## Reused a net
 
 When configuring a cluster with a reused net, CAPOSC expects the following to exist:
@@ -80,4 +85,25 @@ securityGroups:
   roles:
   - worker
   - controlplane
+```
+
+## Reusing public IPs
+
+You may use predefined public IPs for:
+* NAT services (outbound trafic),
+* worker nodes (inbound trafic).
+
+IPs must belong to a pool, and will configure the cluster or the machine template to fetch IPs from pools.
+To add a public IP to a pool, you will need to set a `OscK8sIPPool` tag with the name of the pool as a value.
+
+Configuring NAT services (OscCluster):
+```yaml
+network:
+  natPublicIpPool: <name of pool>
+```
+
+Configuring worker nodes (OscMachineTemplate):
+```yaml
+vm:
+  publicIpPool: <name of pool>
 ```

@@ -61,19 +61,22 @@ Outscale Open-Source images are published on the `eu-west-2`, `us-east-2` and `c
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
 | `role` | `worker` | false |  The role of the vm (`controlplane` or `worker`)
+| `replica` | n/a | yes | The number of replicas for this node pool
 | `vmType` | `tinav6.c4r8p1` | false |  The type of VM to use
-| `imageId` | n/a | false |  The omi ID (unless image.name is used)
+| `imageId` | n/a | false |  The omi ID (unless `image.name` is used)
 | `keypairName` | n/a | true |  The keypair name used to access vm
 | `rootDiskSize` | `60` | false |  The root disk size
 | `rootDiskType` | `io1` | false |  The root disk type (`io1`, `gp2` or `standard`)
 | `rootDiskIops` | `1500` | false |  The root disk iops (only for the `io1` type)
 | `subregionName` | n/a | false | The subregionName where the node will be deployed (required for workers, unused for controlplanes)
-| `subnetName` | n/a | false | The name of the subnet where to deploy the VM
-| `securityGroupNames` | n/a | false | The name of the security groups to associate the VM with
+| `subnetName` | n/a | false | The name of the subnet where to deploy the VM (not required if you have defined roles for your subnets)
+| `securityGroupNames` | n/a | false | The name of the security groups to associate the VM with (not required if you have defined roles for your security groups)
+| `publicIp` | false | false | Set to true if you want the node to have a public IP
+| `publicIpPool` | n/a | false | Name of a public IP pool if you want the node to use a predefined public IP. See [Reusing public IPs](config-cluster-reuse.md) for more information.
 
 ### volumes
 
-`volumes`is a list of additional volumes.
+`volumes` is a list of additional volumes.
 
 | Name |  Required | Description
 | --- | --- | ---

@@ -67,6 +67,9 @@ type OscNetwork struct {
 	// The Nat Services configuration
 	// +optional
 	NatServices []OscNatService `json:"natServices,omitempty"`
+	// The IP Pool storing the Nat Services public IPs
+	// +optional
+	NatPublicIpPool string `json:"natPublicIpPool,omitempty"`
 	// The Route Table configuration
 	// +optional
 	RouteTables []OscRouteTable `json:"routeTables,omitempty"`
