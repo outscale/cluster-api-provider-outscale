@@ -71,11 +71,26 @@ func patchDeleteMachine() patchOSCMachineFunc {
 	}
 }
 
+func patchUseOpenSourceOMI() patchOSCMachineFunc {
+	return func(m *infrastructurev1beta1.OscMachine) {
+		m.Spec.Node.Image.OutscaleOpenSource = true
+	}
+}
+
 func mockImageFoundByName(name, account, imageId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ImageMock.
 			EXPECT().
 			GetImageByName(gomock.Any(), gomock.Eq(name), gomock.Eq(account)).
+			Return(&osc.Image{ImageId: ptr.To(imageId)}, nil)
+	}
+}
+
+func mockOpenSourceImageFound(name, region, imageId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.ImageMock.
+			EXPECT().
+			GetImageByName(gomock.Any(), gomock.Eq(name), gomock.Eq(controllers.OutscaleOpenSourceAccounts[region])).
 			Return(&osc.Image{ImageId: ptr.To(imageId)}, nil)
 	}
 }

@@ -1,4 +1,24 @@
-# Securing cluster access
+# Securing a cluster
+
+## Image source
+
+If you use image names (e.g. `ubuntu-X-kubernetes-Y-YYYY-MM-DD`), be aware that any user can publish those images and that therefore you cannot be sure that you use a non malevolent image.
+
+You should either specify the account id owning the account:
+```yaml
+node:
+  image:
+    name: ubuntu-X-kubernetes-Y-YYYY-MM-DD
+    accountId: XXX
+```
+
+or, if you use an Outscale Open-Source image, specify it:
+```yaml
+node:
+  image:
+    name: ubuntu-X-kubernetes-Y-YYYY-MM-DD
+    outscaleOpenSource: true
+```
 
 ## Restricting access to a cluster
 
@@ -125,3 +145,6 @@ export OSC_ALLOW_FROM_CAPI=<IP range of the NAT used by the management cluster -
 
 clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version> --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> --flavor=multiaz-secure > getstarted.yaml
 ```
+
+<!-- References -->
+[Kubernetes Image Building Workflows]: https://github.com/outscale/kube-image-workflows

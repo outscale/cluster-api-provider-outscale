@@ -47,7 +47,11 @@ func runMachineTest(t *testing.T, tc testcase) {
 	client := fake.NewClientBuilder().WithScheme(fakeScheme).
 		WithStatusSubresource(om).WithObjects(c, oc, m, om).Build()
 	mockCtrl := gomock.NewController(t)
-	cs := newMockCloudServices(mockCtrl)
+	region := tc.region
+	if region == "" {
+		region = "eu-west-2"
+	}
+	cs := newMockCloudServices(mockCtrl, region)
 	rec := controllers.OscMachineReconciler{
 		Client:   client,
 		Recorder: record.NewFakeRecorder(100),
@@ -131,6 +135,51 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name:        "Using an opensource image (eu-west-2)",
+			region:      "eu-west-2",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUseOpenSourceOMI(),
+			},
+			mockFuncs: []mockFunc{
+				mockOpenSourceImageFound("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "eu-west-2", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+			},
+			requeue: true,
+		},
+		{
+			name:        "Using an opensource image (us-east-2)",
+			region:      "us-east-2",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUseOpenSourceOMI(),
+			},
+			mockFuncs: []mockFunc{
+				mockOpenSourceImageFound("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "us-east-2", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+			},
+			requeue: true,
+		},
+		{
+			name:        "Using an opensource image (cloudgouv-eu-west-1)",
+			region:      "cloudgouv-eu-west-1",
+			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchUseOpenSourceOMI(),
+			},
+			mockFuncs: []mockFunc{
+				mockOpenSourceImageFound("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "cloudgouv-eu-west-1", "ami-foo"),
+				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+			},
+			requeue: true,
 		},
 
 		// Control plane node

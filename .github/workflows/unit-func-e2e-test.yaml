@@ -118,7 +118,6 @@ jobs:
         IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         IMG_UPGRADE_FROM: ${{ vars.IMG_UPGRADE_FROM }}
         IMG_UPGRADE_TO: ${{ vars.IMG_UPGRADE_TO }}
-        IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
     - name: 📝 Get CAPOSC state/logs
       run: |
         echo "**** pod state"

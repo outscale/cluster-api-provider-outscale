@@ -24,9 +24,12 @@ metadata:
   name: "${CLUSTER_NAME}"
 spec:
   network:
-    subregionName: ${OSC_REGION}a
+    subregionName: ${OSC_SUBREGION_NAME}
     loadBalancer:
-      loadbalancername: "upgrade-k8s-again"
+      loadbalancername: "${CLUSTER_NAME}-k8s"
+    allowFromIPRanges:
+    - ${OSC_ALLOW_FROM}
+    - ${OSC_ALLOW_FROM_CAPI}
     bastion:
       enable: false
 ---
@@ -62,28 +65,7 @@ spec:
     spec:
       node:
         image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_REGION}a
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          vmType: "${OSC_VM_TYPE}"
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscMachineTemplate
-metadata:
-  name: "worker-k8s-upgrade-and-conformance"
-spec:
-  template:
-    spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+          name: "${OSC_IMAGE_NAME}"
           outscaleOpenSource: true
         vm:
           rootDisk:
@@ -91,7 +73,7 @@ spec:
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
           keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_REGION}a
+          subregionName: ${OSC_SUBREGION_NAME}
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -103,7 +85,7 @@ spec:
     spec:
       node:
         image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          name: "${OSC_IMAGE_NAME}"
           outscaleOpenSource: true
         vm:
           keypairName: "${OSC_KEYPAIR_NAME}"
@@ -111,30 +93,7 @@ spec:
             rootDiskSize: ${OSC_VOLUME_SIZE}
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_REGION}a
           role: controlplane
-          vmType: "${OSC_VM_TYPE}"
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscMachineTemplate
-metadata:
-  name: "cp-k8s-upgrade-and-conformance"
-spec:
-  template:
-    spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
-          outscaleOpenSource: true
-        vm:
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_REGION}a
-          role: controlplane
-          loadBalancerName: "upgrade-k8s-again"
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
@@ -145,15 +104,15 @@ spec:
   template:
     spec:
       files:
-        - content: |
-            #!/bin/sh
+      - content: |
+          #!/bin/sh
 
-            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-            chmod +x /tmp/runc.amd64
-            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-          owner: root:root
-          path: /tmp/set_runc.sh
-          permissions: "0744"
+          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+          chmod +x /tmp/runc.amd64
+          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+        owner: root:root
+        path: /tmp/set_runc.sh
+        permissions: "0744"
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
@@ -161,7 +120,7 @@ spec:
             cloud-provider: external
             provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
       preKubeadmCommands:
-        - sh /tmp/set_runc.sh
+      - sh /tmp/set_runc.sh
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -175,6 +134,9 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        timeoutForControlPlane: 20m0s
     initConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
@@ -182,58 +144,20 @@ spec:
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
     files:
-      - content: |
-          #!/bin/sh
+    - content: |
+        #!/bin/sh
 
-          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-          chmod +x /tmp/runc.amd64
-          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-        owner: root:root
-        path: /tmp/set_runc.sh
-        permissions: "0744"
+        curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
+        chmod +x /tmp/runc.amd64
+        cp -f /tmp/runc.amd64 /usr/local/sbin/runc
+      owner: root:root
+      path: /tmp/set_runc.sh
+      permissions: "0744"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
     preKubeadmCommands:
-      - sh /tmp/set_runc.sh
+    - sh /tmp/set_runc.sh
   version: "${KUBERNETES_VERSION}"
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: "${CLUSTER_NAME}-crs-ccm"
-data: ${CCM_RESOURCES}
----
-apiVersion: addons.cluster.x-k8s.io/v1beta1
-kind: ClusterResourceSet
-metadata:
-  name: "${CLUSTER_NAME}-crs-ccm"
-spec:
-  strategy: ApplyOnce
-  clusterSelector:
-    matchLabels:
-      ccm: "${CLUSTER_NAME}-crs-ccm"
-  resources:
-    - name: "${CLUSTER_NAME}-crs-ccm"
-      kind: ConfigMap
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: "${CLUSTER_NAME}-crs-cni"
-data: ${CNI_RESOURCES}
----
-apiVersion: addons.cluster.x-k8s.io/v1beta1
-kind: ClusterResourceSet
-metadata:
-  name: "${CLUSTER_NAME}-crs-cni"
-spec:
-  strategy: ApplyOnce
-  clusterSelector:
-    matchLabels:
-      cni: "${CLUSTER_NAME}-crs-cni"
-  resources:
-    - name: "${CLUSTER_NAME}-crs-cni"
-      kind: ConfigMap

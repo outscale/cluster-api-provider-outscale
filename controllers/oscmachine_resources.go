@@ -12,6 +12,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// OutscaleOpenSourceAccounts lists the accounts used to publish open source image accounts.
+var OutscaleOpenSourceAccounts = map[string]string{
+	"eu-west-2":           "671899555720",
+	"us-east-2":           "852047997530",
+	"cloudgouv-eu-west-1": "545146734248",
+}
+
 type MachineResourceTracker struct {
 	Cloud services.Servicer
 }
@@ -104,10 +111,16 @@ func (t *MachineResourceTracker) getImageId(ctx context.Context, machineScope *s
 	var err error
 	imageSpec := machineScope.GetImage()
 	if imageSpec.Name != "" {
-		if imageSpec.AccountId == "" {
+		var accountId string
+		switch {
+		case imageSpec.OutscaleOpenSource:
+			accountId = OutscaleOpenSourceAccounts[t.Cloud.OscClient().Region]
+		case imageSpec.AccountId == "":
 			ctrl.LoggerFrom(ctx).V(2).Info("[security] It is recommended to set the image account to control the origin of the image.")
+		default:
+			accountId = imageSpec.AccountId
 		}
-		image, err = t.Cloud.Image(ctx, *clusterScope).GetImageByName(ctx, imageSpec.Name, imageSpec.AccountId)
+		image, err = t.Cloud.Image(ctx, *clusterScope).GetImageByName(ctx, imageSpec.Name, accountId)
 	} else {
 		image, err = t.Cloud.Image(ctx, *clusterScope).GetImage(ctx, machineScope.GetImageId())
 	}
