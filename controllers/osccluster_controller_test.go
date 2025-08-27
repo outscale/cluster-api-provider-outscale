@@ -44,7 +44,11 @@ func runClusterTest(t *testing.T, tc testcase) {
 	client := fake.NewClientBuilder().WithScheme(fakeScheme).
 		WithStatusSubresource(oc).WithObjects(c, oc).Build()
 	mockCtrl := gomock.NewController(t)
-	cs := newMockCloudServices(mockCtrl)
+	region := tc.region
+	if region == "" {
+		region = "eu-west-2"
+	}
+	cs := newMockCloudServices(mockCtrl, region)
 	rec := controllers.OscClusterReconciler{
 		Client:   client,
 		Recorder: record.NewFakeRecorder(100),

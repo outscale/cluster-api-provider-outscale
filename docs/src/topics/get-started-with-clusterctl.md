@@ -63,6 +63,10 @@ clusterctl init --infrastructure outscale
 
 Create a keypair.
 
+Pick an image. You can start with an [Outscale Open Source image][OutscaleOpenSourceImage].
+
+Generate a cluster configuration.
+
 ```bash
 export OSC_IOPS=<osc-iops>
 export OSC_VOLUME_SIZE=<osc-volume-size>
@@ -72,7 +76,7 @@ export OSC_SUBREGION_NAME=<osc-subregion>
 export OSC_VM_TYPE=<osc-vm-type>
 export OSC_IMAGE_NAME=<osc-image-name>
 
-clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count>   --worker-machine-count=<worker-machine-count> > getstarted.yaml
+clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
 
 You can edit the generated YAML file to customize the configuration to your needs.
@@ -169,5 +173,5 @@ clusterctl delete --all
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
 [cluster-api-config]: https://cluster-api.sigs.k8s.io/clusterctl/configuration.html 
-[omi]: ./omi.md
 [golang]: https://medium.com/@sherlock297/install-and-set-the-environment-variable-path-for-go-in-kali-linux-446d0f16a338
+[OutscaleOpenSourceImage]: https://github.com/outscale/kube-image-workflows/releases

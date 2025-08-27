@@ -28,6 +28,8 @@ import (
 type OscClient struct {
 	Auth context.Context
 	API  *osc.APIClient
+
+	Region string
 }
 
 // newOscClient return OscLient using secret credentials
@@ -44,6 +46,7 @@ func NewOscClient() (*OscClient, error) {
 	if version == "" {
 		version = "DEV"
 	}
+	region := os.Getenv("OSC_REGION")
 	config := osc.NewConfiguration()
 	// config.Debug = true
 	config.UserAgent = "cluster-api-provider-outscale/" + version
@@ -52,11 +55,12 @@ func NewOscClient() (*OscClient, error) {
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})
 	auth = context.WithValue(auth, osc.ContextServerIndex, 0)
-	auth = context.WithValue(auth, osc.ContextServerVariables, map[string]string{"region": os.Getenv("OSC_REGION")})
+	auth = context.WithValue(auth, osc.ContextServerVariables, map[string]string{"region": region})
 
 	oscClient := &OscClient{
-		API:  osc.NewAPIClient(config),
-		Auth: auth,
+		API:    osc.NewAPIClient(config),
+		Auth:   auth,
+		Region: region,
 	}
 	return oscClient, nil
 }

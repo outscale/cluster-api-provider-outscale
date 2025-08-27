@@ -63,7 +63,7 @@ spec:
       node:
         image:
           name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          accountId: "${IMAGE_ACCOUNT_ID}"
+          outscaleOpenSource: true
         vm:
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
@@ -83,7 +83,7 @@ spec:
       node:
         image:
           name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          accountId: "${IMAGE_ACCOUNT_ID}"
+          outscaleOpenSource: true
         vm:
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}

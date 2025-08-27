@@ -486,6 +486,8 @@ type OscImage struct {
 	Name string `json:"name,omitempty"`
 	// The image account owner ID.
 	AccountId string `json:"accountId,omitempty"`
+	// Use an "Outscale Opensource" image
+	OutscaleOpenSource bool `json:"outscaleOpenSource,omitempty"`
 	// unused
 	ResourceId string `json:"resourceId,omitempty"`
 }

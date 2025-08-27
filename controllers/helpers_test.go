@@ -40,6 +40,7 @@ func decode(t *testing.T, file string, into runtime.Object) {
 }
 
 type MockCloudServices struct {
+	Cloud             *cloud.OscClient
 	NetMock           *mock_net.MockOscNetInterface
 	SubnetMock        *mock_net.MockOscSubnetInterface
 	SecurityGroupMock *mock_security.MockOscSecurityGroupInterface
@@ -56,8 +57,9 @@ type MockCloudServices struct {
 	TagMock *mock_tag.MockOscTagInterface
 }
 
-func newMockCloudServices(mockCtrl *gomock.Controller) *MockCloudServices {
+func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloudServices {
 	return &MockCloudServices{
+		Cloud:             &cloud.OscClient{Region: region},
 		NetMock:           mock_net.NewMockOscNetInterface(mockCtrl),
 		SubnetMock:        mock_net.NewMockOscSubnetInterface(mockCtrl),
 		SecurityGroupMock: mock_security.NewMockOscSecurityGroupInterface(mockCtrl),
@@ -76,7 +78,7 @@ func newMockCloudServices(mockCtrl *gomock.Controller) *MockCloudServices {
 }
 
 func (s *MockCloudServices) OscClient() *cloud.OscClient {
-	return nil
+	return s.Cloud
 }
 
 func (s *MockCloudServices) Net(ctx context.Context, scope scope.ClusterScope) net.OscNetInterface {
@@ -133,6 +135,7 @@ type assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
 
 type testcase struct {
 	name                             string
+	region                           string
 	clusterSpec, machineSpec         string
 	clusterBaseSpec, machineBaseSpec string
 	clusterPatches                   []patchOSCClusterFunc

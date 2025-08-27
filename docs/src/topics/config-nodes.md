@@ -52,6 +52,9 @@ In your oscmachinetemplate definition, add the list of volumes required:
 | --- | --- | ---
 | `name` | false | The image name you will use
 | `accountId` | false | The ID of the account owning the image
+| `outscaleOpenSource` | false | Set to true if you use an Outscale Open Source image.
+
+Outscale Open-Source images are published on the `eu-west-2`, `us-east-2` and `cloudgouv-eu-west-1` regions with the same name. Please refer to the [Kubernetes Image Building Workflows repository][Kubernetes Image Building Workflows] for more information on those images.
 
 ### vm
 
