@@ -418,7 +418,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 		},
 		{
 			name:        "0.5 worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
@@ -441,7 +441,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 		},
 		{
 			name:        "0.5 worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchMoveMachine(),
@@ -493,7 +493,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 		},
 		{
 			name:        "deleting a 0.5 machine",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
 			mockFuncs: []mockFunc{
@@ -504,7 +504,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 		},
 		{
 			name:        "deleting a 0.5 machine with a public ip",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchDeleteMachine(),
@@ -521,7 +521,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 		},
 		{
 			name:        "deleting a 0.5 machine with a public ip from a pool",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.5",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchDeleteMachine(),

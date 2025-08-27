@@ -55,7 +55,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		}
 
 		publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
-			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), "", clusterScope)
+			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope.GetNetwork().NatPublicIpPool, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 		}

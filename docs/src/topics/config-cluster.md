@@ -76,6 +76,10 @@ An internet service is automatically created. No need for manual configuration.
 
 ## NAT service
 
+By default, NAT services use dynamically generated public IPs.
+
+You can set `network.natPublicIpPool` with the name of a public IP pool to use predefined public IPs. See [Reusing public IPs](config-cluster-reuse.md) for more information.
+
 ### Automatic mode
 
 One NAT service is created for each subnet having the `nat` role.
