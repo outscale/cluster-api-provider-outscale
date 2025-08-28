@@ -55,8 +55,6 @@ If the service is configured as internal, the CCM will fetch a subnet having the
 Otherwise, a subnet having the `service` role is used.
 If no subnet is found, the CCM fetches the subnet with the `loadbalancer` role.
 
-If the lo
-
 ### Automatic mode
 
 CAPOSC automatically creates /24 subnets within the net IP range:
@@ -100,7 +98,7 @@ One route table is created per subnet, with a default route to the internet serv
 ### Manual mode
 
 | Name | Required | Description
-| --- | --- | --- | ---
+| --- | --- | ---
 | `name`| false | The name of the Route Table
 | `subnetName` |  true | The subnet name
 | `route` | true | The list of routes to add
@@ -359,7 +357,7 @@ A load balancer named `loadBalancer.loadbalancername` is created.
 ### Manual mode
 
 | Name |  Required | Description
-| --- | --- | --- | ---
+| --- | --- | ---
 | `loadbalancername`| true | The Load Balancer  unique name 
 | `listener` | false | The Listener Spec
 | `healthcheck` | false | The healthcheck Spec
