@@ -117,7 +117,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				clusterSpec: "ready-0.4", machineSpec: "base-worker",
 				machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", v1beta1.VmStatePending, false)},
 				mockFuncs: []mockFunc{
-					mockGetVm("i-foo", "pending"),
+					mockGetVm("i-foo", "pending", false),
 				},
 				requeue:        true,
 				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", v1beta1.VmStatePending, false)},
@@ -126,8 +126,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					clusterSpec: "ready-0.4", machineSpec: "base-worker",
 					machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", v1beta1.VmStatePending, false)},
 					mockFuncs: []mockFunc{
-						mockGetVm("i-foo", "running"),
-						mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+						mockGetVm("i-foo", "running", false),
+						mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 					},
 					machineAsserts: []assertOSCMachineFunc{
 						assertVmExists("i-foo", v1beta1.VmStateRunning, true),
@@ -199,10 +199,10 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockGetVm("i-foo", "running"),
+					mockGetVm("i-foo", "running", false),
 					mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 					mockLinkLoadBalancer("i-foo", "test-cluster-api-k8s"),
-					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+					mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
@@ -226,7 +226,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockGetVm("i-foo", "running"),
+					mockGetVm("i-foo", "running", false),
 					mockGetLoadBalancer("test-cluster-api-k8s", nil),
 				},
 				hasError: true,
@@ -256,8 +256,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockGetVm("i-foo", "running"),
-					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+					mockGetVm("i-foo", "running", false),
+					mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
@@ -290,8 +290,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockGetVm("i-foo", "running"),
-					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+					mockGetVm("i-foo", "running", false),
+					mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
@@ -335,8 +335,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
-					mockGetVm("i-foo", "running"),
-					mockVmReadCCMTag(false), mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+					mockGetVm("i-foo", "running", false),
+					mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
@@ -402,8 +402,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running"),
-				mockVmReadCCMTag(true),
+				mockGetVm("i-046f4bd0", "running", true),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
@@ -425,8 +424,11 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
 					VmId:  ptr.To("i-worker"),
 					State: ptr.To("running"),
+					Tags: &[]osc.ResourceTag{
+						{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
+						{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
+					},
 				}),
-				mockVmReadCCMTag(true),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
@@ -452,9 +454,12 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 					VmId:     ptr.To("i-worker"),
 					PublicIp: ptr.To("1.2.3.4"),
 					State:    ptr.To("running"),
+					Tags: &[]osc.ResourceTag{
+						{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
+						{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
+					},
 				}),
 				mockGetPublicIpByIp("1.2.3.4", "ipalloc-worker"),
-				mockVmReadCCMTag(true),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
@@ -486,7 +491,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
 			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running"),
+				mockGetVm("i-046f4bd0", "running", true),
 				mockDeleteVm("i-046f4bd0"),
 			},
 			assertDeleted: true,
@@ -497,7 +502,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
 			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running"),
+				mockGetVm("i-046f4bd0", "running", true),
 				mockDeleteVm("i-046f4bd0"),
 			},
 			assertDeleted: true,
@@ -512,7 +517,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 				patchPublicIPStatus("ipalloc-worker"),
 			},
 			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running"),
+				mockGetVm("i-046f4bd0", "running", true),
 				mockDeleteVm("i-046f4bd0"),
 				mockPublicIpFound("ipalloc-worker"),
 				mockDeletePublicIp("ipalloc-worker"),
@@ -529,7 +534,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 				patchPublicIPStatus("ipalloc-worker"),
 			},
 			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running"),
+				mockGetVm("i-046f4bd0", "running", true),
 				mockDeleteVm("i-046f4bd0"),
 			},
 			assertDeleted: true,

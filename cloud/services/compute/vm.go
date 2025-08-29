@@ -21,7 +21,8 @@ import (
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
-	"net"
+	"slices"
+	"strings"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -33,6 +34,9 @@ import (
 
 const (
 	AutoAttachExternapIPTag = "osc.fcu.eip.auto-attach"
+
+	TagKeyNodeName        = "OscK8sNodeName"
+	TagKeyClusterIDPrefix = "OscK8sClusterID/"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
@@ -42,18 +46,7 @@ type OscVmInterface interface {
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
 	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
-	AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error
-}
-
-// ValidateIpAddrInCidr check that ipaddr is in cidr
-func ValidateIpAddrInCidr(ipAddr, cidr string) error {
-	_, ipnet, _ := net.ParseCIDR(cidr)
-	ip := net.ParseIP(ipAddr)
-	if ipnet.Contains(ip) {
-		return nil
-	} else {
-		return errors.New("ip is not in subnet")
-	}
+	AddCCMTags(ctx context.Context, clusterName string, hostname string, vmId string) error
 }
 
 // CreateVm creates a VM.
@@ -281,17 +274,26 @@ func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) 
 	}
 }
 
-// AddCcmTag add ccm tag
-func (s *Service) AddCcmTag(ctx context.Context, clusterName string, hostname string, vmId string) error {
+// HasCCMTags checks if a Vm has both CCM tags.
+func HasCCMTags(vm *osc.Vm) bool {
+	return slices.ContainsFunc(vm.GetTags(), func(t osc.ResourceTag) bool {
+		return t.Key == TagKeyNodeName
+	}) && slices.ContainsFunc(vm.GetTags(), func(t osc.ResourceTag) bool {
+		return strings.HasPrefix(t.Key, TagKeyClusterIDPrefix)
+	})
+}
+
+// AddCCMTags add ccm tag
+func (s *Service) AddCCMTags(ctx context.Context, clusterName string, hostname string, vmId string) error {
 	resourceIds := []string{vmId}
 	oscApiClient := s.scope.GetApi()
 	oscAuthClient := s.scope.GetAuth()
 	nodeTag := osc.ResourceTag{
-		Key:   "OscK8sNodeName",
+		Key:   TagKeyNodeName,
 		Value: hostname,
 	}
 	clusterTag := osc.ResourceTag{
-		Key:   "OscK8sClusterID/" + clusterName,
+		Key:   TagKeyClusterIDPrefix + clusterName,
 		Value: "owned",
 	}
 	nodeTagRequest := osc.CreateTagsRequest{

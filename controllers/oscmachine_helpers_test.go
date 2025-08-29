@@ -5,7 +5,7 @@ import (
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
@@ -95,18 +95,25 @@ func mockOpenSourceImageFound(name, region, imageId string) mockFunc {
 	}
 }
 
-func mockGetVm(vmId, state string) mockFunc {
+func mockGetVm(vmId, state string, ccmtags bool) mockFunc {
+	vm := &osc.Vm{
+		VmId:                &vmId,
+		PrivateDnsName:      ptr.To(defaultPrivateDnsName),
+		PrivateIp:           ptr.To(defaultPrivateIp),
+		State:               &state,
+		BlockDeviceMappings: &defaultVolumes,
+	}
+	if ccmtags {
+		vm.Tags = &[]osc.ResourceTag{
+			{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
+			{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
+		}
+	}
 	return func(s *MockCloudServices) {
 		s.VMMock.
 			EXPECT().
 			GetVm(gomock.Any(), gomock.Eq(vmId)).
-			Return(&osc.Vm{
-				VmId:                &vmId,
-				PrivateDnsName:      ptr.To(defaultPrivateDnsName),
-				PrivateIp:           ptr.To(defaultPrivateIp),
-				State:               &state,
-				BlockDeviceMappings: &defaultVolumes,
-			}, nil)
+			Return(vm, nil)
 	}
 }
 
@@ -180,25 +187,10 @@ func mockLinkLoadBalancer(vmId, lb string) mockFunc {
 	}
 }
 
-func mockVmReadCCMTag(found bool) mockFunc {
-	if found {
-		return func(s *MockCloudServices) {
-			s.TagMock.EXPECT().
-				ReadTag(gomock.Any(), gomock.Eq(tag.VmResourceType), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
-				Return(&osc.Tag{}, nil)
-		}
-	}
-	return func(s *MockCloudServices) {
-		s.TagMock.EXPECT().
-			ReadTag(gomock.Any(), gomock.Eq(tag.VmResourceType), gomock.Eq("OscK8sNodeName"), gomock.Eq(defaultPrivateDnsName)).
-			Return(nil, nil)
-	}
-}
-
 func mockVmSetCCMTag(vmId, clusterID string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.VMMock.EXPECT().
-			AddCcmTag(gomock.Any(), gomock.Eq(clusterID), gomock.Eq(defaultPrivateDnsName), gomock.Eq(vmId)).
+			AddCCMTags(gomock.Any(), gomock.Eq(clusterID), gomock.Eq(defaultPrivateDnsName), gomock.Eq(vmId)).
 			Return(nil)
 	}
 }

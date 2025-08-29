@@ -27,7 +27,6 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
-	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -179,13 +178,9 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		machineScope.SetFailureDomain(vm.Placement.GetSubregionName())
 	}
 
-	tag, err := r.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.VmResourceType, "OscK8sNodeName", *privateDnsName)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot get tag: %w", err)
-	}
-	if tag == nil {
+	if !compute.HasCCMTags(vm) {
 		log.V(2).Info("Adding CCM tags")
-		err = r.Cloud.VM(ctx, *clusterScope).AddCcmTag(ctx, clusterScope.GetUID(), *privateDnsName, vm.GetVmId())
+		err = r.Cloud.VM(ctx, *clusterScope).AddCCMTags(ctx, clusterScope.GetUID(), *privateDnsName, vm.GetVmId())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot add ccm tag: %w", err)
 		}
