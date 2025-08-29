@@ -42,7 +42,7 @@ kubeconfig=`/.venv/bin/oks-cli cluster kubeconfig --cluster-name $cluster_name -
 export KUBECONFIG=$kubeconfig
 
 # clusterctl
-export OSC_SUBREGION_NAME=${OSC_REGION}b
+export OSC_SUBREGION_NAME=${OSC_REGION}a
 export OSC_KEYPAIR_NAME=cluster-api
 export OSC_IOPS=1000
 export OSC_VOLUME_SIZE=30
