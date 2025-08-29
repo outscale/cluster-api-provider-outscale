@@ -5,7 +5,7 @@ go 1.23.7
 require (
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.36.3
-	github.com/outscale/osc-sdk-go/v2 v2.27.0
+	github.com/outscale/osc-sdk-go/v2 v2.29.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.2
 	k8s.io/api v0.32.8
@@ -32,7 +32,7 @@ require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go v1.55.7 // indirect
+	github.com/aws/aws-sdk-go v1.55.8 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
