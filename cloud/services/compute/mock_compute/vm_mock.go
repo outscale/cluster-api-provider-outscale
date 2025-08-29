@@ -43,18 +43,18 @@ func (m *MockOscVmInterface) EXPECT() *MockOscVmInterfaceMockRecorder {
 	return m.recorder
 }
 
-// AddCcmTag mocks base method.
-func (m *MockOscVmInterface) AddCcmTag(ctx context.Context, clusterName, hostname, vmId string) error {
+// AddCCMTags mocks base method.
+func (m *MockOscVmInterface) AddCCMTags(ctx context.Context, clusterName, hostname, vmId string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCcmTag", ctx, clusterName, hostname, vmId)
+	ret := m.ctrl.Call(m, "AddCCMTags", ctx, clusterName, hostname, vmId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddCcmTag indicates an expected call of AddCcmTag.
-func (mr *MockOscVmInterfaceMockRecorder) AddCcmTag(ctx, clusterName, hostname, vmId any) *gomock.Call {
+// AddCCMTags indicates an expected call of AddCCMTags.
+func (mr *MockOscVmInterfaceMockRecorder) AddCCMTags(ctx, clusterName, hostname, vmId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCcmTag", reflect.TypeOf((*MockOscVmInterface)(nil).AddCcmTag), ctx, clusterName, hostname, vmId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCCMTags", reflect.TypeOf((*MockOscVmInterface)(nil).AddCCMTags), ctx, clusterName, hostname, vmId)
 }
 
 // CreateVm mocks base method.
