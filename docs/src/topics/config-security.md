@@ -2,7 +2,7 @@
 
 ## Image source
 
-If you use image names (e.g. `ubuntu-X-kubernetes-Y-YYYY-MM-DD`), be aware that any user can publish those images and that therefore you cannot be sure that you use a non malevolent image.
+If you use image names (e.g. `ubuntu-X-kubernetes-Y-YYYY-MM-DD`), be aware that any user can publish public images, so you cannot be certain you are using a non-malicious image.
 
 You should either specify the account id owning the account:
 ```yaml
@@ -22,7 +22,7 @@ node:
 
 ## Restricting access to a cluster
 
-By default, the bastion and Kubernetes API load-balancer security groups accept trafic from the internet (source range: `0.0.0.0/0`). You might want to restrict access to known IP ranges by setting `allowFromIPRanges`.
+By default, the bastion and Kubernetes API load-balancer security groups accept traffic from anywhere (source range: `0.0.0.0/0`). To improve security, restrict access to known IP ranges by setting `allowFromIPRanges`.
 
 ```yaml
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -62,7 +62,7 @@ spec:
     - 203.0.113.0/24
 ```
 
-This replaces the defaul outbound rule in the node security group and the bastion security group (if configured) by:
+This replaces the default outbound rule in the node security group and the bastion security group (if configured) by:
 
 ```yaml
   - flow: Outbound
