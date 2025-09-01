@@ -11,6 +11,8 @@ The following can be reused :
 
 ## Reused a net
 
+> Requires CAPOSC v1.0.0 or later
+
 When configuring a cluster with a reused net, CAPOSC expects the following to exist:
 * an optional bastion,
 * a net and its subnets,
@@ -63,6 +65,8 @@ subnets:
 
 ## Reusing security groups
 
+> Requires CAPOSC v1.0.0 or later
+
 Resource IDs and the associated roles will need to be specified fot the following security groups roles:
 * loadbalancer,
 * worker,
@@ -88,6 +92,8 @@ securityGroups:
 ```
 
 ## Reusing public IPs
+
+> Requires CAPOSC v1.1.0 or later
 
 You may use predefined public IPs for:
 * NAT services (outbound trafic),

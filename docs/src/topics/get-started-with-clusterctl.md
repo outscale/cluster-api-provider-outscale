@@ -96,7 +96,6 @@ To install CNI you can use a [helm][helm] chart or a ClusterResourceSet.
 
 * [calico][calico]
 * [cillium][cillium]
-* [canal][canal]
 
 To install CCM, you can use a [helm][helm] chart or a ClusterResourceSet.
 
@@ -160,7 +159,6 @@ clusterctl delete --all
 ```
 
 <!-- References -->
-[canal]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/flannel/flannel
 [cillium]: https://docs.cilium.io/en/stable/installation/k8s-toc/
 [calico]: https://projectcalico.docs.tigera.io/getting-started/kubernetes/helm
 [kubeconfig]: https://cluster-api.sigs.k8s.io/clusterctl/commands/get-kubeconfig.html
@@ -172,6 +170,4 @@ clusterctl delete --all
 [OKS]: https://docs.outscale.com/en/userguide/About-OKS.html
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
-[cluster-api-config]: https://cluster-api.sigs.k8s.io/clusterctl/configuration.html 
-[golang]: https://medium.com/@sherlock297/install-and-set-the-environment-variable-path-for-go-in-kali-linux-446d0f16a338
 [OutscaleOpenSourceImage]: https://github.com/outscale/kube-image-workflows/releases
