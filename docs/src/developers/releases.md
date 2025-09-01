@@ -33,15 +33,15 @@ Create a new branch for each major/minor release.
 ```bash
 export RELEASE_VERSION=1.2.3
 git checkout release-${RELEASE_VERSION}
-git fetch upstream
-git rebase upstream/release-${RELEASE_VERSION}
+git fetch origin
+git rebase origin/release-${RELEASE_VERSION}
 ```
 
 For patch releases, use the minor release branch.
 
 Push the release branch:
 ```bash
-git push upstream release-${RELEASE_VERSION}
+git push origin release-${RELEASE_VERSION}
 ```
 
 ## Create a release tag
