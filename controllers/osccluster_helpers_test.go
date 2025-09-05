@@ -53,6 +53,13 @@ func patchRestrictToIP(ips ...string) patchOSCClusterFunc {
 	}
 }
 
+func patchManualSGs(sgs []infrastructurev1beta1.OscSecurityGroup) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Generation++
+		m.Spec.Network.SecurityGroups = sgs
+	}
+}
+
 func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.Generation++
