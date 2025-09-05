@@ -372,8 +372,40 @@ func (s *ClusterScope) getAdditionalRules(roles ...infrastructurev1beta1.OscRole
 // GetSecurityGroups returns the list of all security groups for the cluster.
 func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
 	if len(s.OscCluster.Spec.Network.SecurityGroups) > 0 {
-		return s.OscCluster.Spec.Network.SecurityGroups
+		return s.getManualSecurityGroups()
 	}
+	return s.getAutomaticSecurityGroups()
+}
+
+func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
+	sgs := s.OscCluster.Spec.Network.SecurityGroups
+	allowedIn := s.OscCluster.Spec.Network.AllowFromIPRanges
+	if len(allowedIn) > 0 {
+		for i := range sgs {
+			if slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleLoadBalancer) ||
+				slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleBastion) {
+				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
+					infrastructurev1beta1.OscSecurityGroupRule{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allowedIn},
+				)
+			}
+		}
+	}
+	allowedOut := s.OscCluster.Spec.Network.AllowToIPRanges
+	if len(allowedOut) > 0 {
+		for i := range sgs {
+			if (slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleWorker) &&
+				slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleControlPlane)) ||
+				slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleBastion) {
+				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
+					infrastructurev1beta1.OscSecurityGroupRule{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: allowedOut},
+				)
+			}
+		}
+	}
+	return sgs
+}
+
+func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
 	var allSN, allSNCP, allSNBastion []string
 	for _, sn := range s.GetSubnets() {
 		if s.SubnetHasRole(sn, infrastructurev1beta1.RoleBastion) {

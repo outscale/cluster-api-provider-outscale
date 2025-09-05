@@ -551,14 +551,14 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockListNatServices("vpc-foo", []osc.NatService{{
 					PublicIps: &[]osc.PublicIpLight{{
-						PublicIp: ptr.To("5.6.7.8"),
+						PublicIp: ptr.To("6.7.8.9"),
 					}},
 				}}),
 				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
 					"LB securityGroup for test-cluster-api", "", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer}, "sg-lb"),
 				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "1.2.3.4/32", 6443, 6443),
 				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "2.3.4.5/32", 6443, 6443),
-				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "5.6.7.8/32", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "6.7.8.9/32", 6443, 6443),
 				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
 
 				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -600,7 +600,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
 				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "6.7.8.9"),
 				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
@@ -622,8 +622,130 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 
 				mockGetVmFromClientToken("bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "1.2.3.4"),
-				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "1.2.3.4"}),
+				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "7.8.9.10"),
+				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "7.8.9.10"}),
+			},
+			hasError: true,
+		},
+		{
+			name:            "creating a v1.0 config with manual SGs, a bastion and IP restriction",
+			clusterSpec:     "base-bastion-1.0",
+			clusterBaseSpec: "base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchRestrictFromIP("1.2.3.4/32", "2.3.4.5/32"),
+				patchRestrictToIP("3.4.5.6/32", "5.6.7.8/32"),
+				patchManualSGs([]infrastructurev1beta1.OscSecurityGroup{
+					{
+						Name:  "test-cluster-api-bastion",
+						Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleBastion},
+					}, {
+						Name:  "test-cluster-api-lb",
+						Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer},
+					}, {
+						Name:  "test-cluster-api-worker",
+						Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker},
+					}, {
+						Name:  "test-cluster-api-controlplane",
+						Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane},
+					}, {
+						Name:  "test-cluster-api-node",
+						Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker},
+						Tag:   "OscK8sMainSG",
+					},
+				}),
+			},
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateNet(infrastructurev1beta1.OscNet{
+					IpRange: "10.0.0.0/16",
+				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "Net for test-cluster-api", "vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta1.OscSubnet{
+					IpSubnetRange: "10.0.4.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "subnet-kcp"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta1.OscSubnet{
+					IpSubnetRange: "10.0.3.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "subnet-kw"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta1.OscSubnet{
+					IpSubnetRange: "10.0.2.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion, infrastructurev1beta1.RoleNat},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "subnet-public"),
+				mockGetInternetServiceForNet("vpc-foo", nil),
+				mockCreateInternetService("Internet Service for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
+				mockLinkInternetService("igw-foo", "vpc-foo"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"", "", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}, "sg-kw"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"", "", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}, "sg-kcp"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockListNatServices("vpc-foo", []osc.NatService{{
+					PublicIps: &[]osc.PublicIpLight{{
+						PublicIp: ptr.To("6.7.8.9"),
+					}},
+				}}),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"", "", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer}, "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "1.2.3.4/32", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "2.3.4.5/32", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "6.7.8.9/32", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"", "OscK8sMainSG", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker}, "sg-node"),
+
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "3.4.5.6/32", -1, -1),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "5.6.7.8/32", -1, -1),
+
+				mockGetSecurityGroupFromName("test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"", "", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleBastion}, "sg-bastion"),
+				mockCreateSecurityGroupRule("sg-bastion", "Inbound", "tcp", "1.2.3.4/32", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-bastion", "Inbound", "tcp", "2.3.4.5/32", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-bastion", "Outbound", "-1", "3.4.5.6/32", -1, -1),
+				mockCreateSecurityGroupRule("sg-bastion", "Outbound", "-1", "5.6.7.8/32", -1, -1),
+
+				mockGetRouteTablesFromNet("vpc-foo", nil),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "rtb-public"),
+				mockLinkRouteTable("rtb-public", "subnet-public"),
+				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
+
+				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "6.7.8.9"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
+						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+					},
+				}),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
+				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "rtb-kw"),
+				mockLinkRouteTable("rtb-kw", "subnet-kw"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+
+				mockGetVmFromClientToken("bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "7.8.9.10"),
+				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "7.8.9.10"}),
 			},
 			hasError: true,
 		},

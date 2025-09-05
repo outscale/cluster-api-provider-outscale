@@ -79,6 +79,14 @@ export OSC_IMAGE_NAME=<osc-image-name>
 clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
 
+> The Kubernetes version must be the same version as the image you picked. If `OSC_IMAGE_NAME` is `ubuntu-2204-kubernetes-v1.31.12-2025-08-27`, `<kubernetes-version>` is `v1.31.12`.
+
+On Linux, you may compute the Kubernetes version based on the image name using:
+
+```bash
+KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
+```
+
 You can edit the generated YAML file to customize the configuration to your needs.
 
 Then apply:
