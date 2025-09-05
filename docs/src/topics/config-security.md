@@ -38,6 +38,8 @@ spec:
     - 203.0.113.0/24
 ```
 
+> Note: `allowFromIPRanges` adds an Inbound rule to the load-balancer and bastion security groups in both automatic and manual security group configuration.
+
 > Note: the NAT used by the nodes for their outbound trafic are dynamically added to the allowed sources in the loadbalancer security group.
 
 > Note: the management cluster needs to have access to the workload cluster API, do not forget to add the public IPs of the NAT services used by the management cluster.
@@ -73,7 +75,9 @@ This replaces the default outbound rule in the node security group and the basti
     - {allowedToRanges}
 ```
 
-If you need finer control, you can disable the Outbound rule by setting an empty entry and add your own outbound rules to `additionalSecurityRules`:
+> Note: in manual mode, the rule is added. No rule is removed/replaced.
+
+If you need finer control in automatic mode, you can disable the Outbound rule by setting an empty entry and add your own outbound rules to `additionalSecurityRules`:
 
 ```yaml
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -99,7 +103,7 @@ spec:
         - 203.0.113.0/24
 ```
 
-> Note: Internal traffic within the cluster VPC is always allowed by an additional outbound rule.
+> Note: In automatic mode, internal traffic within the cluster VPC is always allowed by an additional outbound rule:
 
 ```yaml
   - flow: Outbound
