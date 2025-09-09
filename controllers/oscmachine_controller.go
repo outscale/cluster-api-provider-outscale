@@ -46,7 +46,7 @@ const OscMachineFinalizer = "oscmachine.infrastructure.cluster.x-k8s.io"
 
 // OscMachineReconciler reconciles a OscMachine object
 type OscMachineReconciler struct {
-	client.Client
+	Client           client.Client
 	Tracker          *MachineResourceTracker
 	ClusterTracker   *ClusterResourceTracker
 	Cloud            services.Servicer
@@ -78,7 +78,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	log := ctrl.LoggerFrom(ctx)
 
 	oscMachine := &infrastructurev1beta1.OscMachine{}
-	if err := r.Get(ctx, req.NamespacedName, oscMachine); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, oscMachine); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -107,7 +107,7 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		Name:      cluster.Spec.InfrastructureRef.Name,
 	}
 
-	if err := r.Get(ctx, oscClusterNamespacedName, oscCluster); err != nil {
+	if err := r.Client.Get(ctx, oscClusterNamespacedName, oscCluster); err != nil {
 		log.Info("OscCluster is not available yet")
 		return reconcile.Result{}, nil
 	}
@@ -116,18 +116,22 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return reconcile.Result{}, nil
 	}
 
+	t, err := getTenant(ctx, r.Client, r.Cloud, oscCluster)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to fetch tenant: %w", err)
+	}
+
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     r.Client,
-		OscClient:  r.Cloud.OscClient(),
 		Cluster:    cluster,
 		OscCluster: oscCluster,
+		Tenant:     t,
 	})
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	machineScope, err := scope.NewMachineScope(scope.MachineScopeParams{
 		Client:     r.Client,
-		OscClient:  r.Cloud.OscClient(),
 		Cluster:    cluster,
 		Machine:    machine,
 		OscCluster: oscCluster,
@@ -264,7 +268,7 @@ func (r *OscMachineReconciler) OscClusterToOscMachines(ctx context.Context) hand
 
 		labels := map[string]string{"cluster.x-k8s.io/cluster-name": cluster.Name}
 		machineList := &clusterv1.MachineList{}
-		if err := r.List(ctx, machineList, client.InNamespace(c.Namespace), client.MatchingLabels(labels)); err != nil {
+		if err := r.Client.List(ctx, machineList, client.InNamespace(c.Namespace), client.MatchingLabels(labels)); err != nil {
 			log.V(1).Error(err, "failed to list Machines, skipping mapping.")
 			return nil
 		}

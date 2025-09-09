@@ -8,24 +8,25 @@ import (
 	"testing"
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/loadbalancer"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/loadbalancer/mock_loadbalancer"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net/mock_net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security/mock_security"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/service/mock_service"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag/mock_tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func decode(t *testing.T, file string, into runtime.Object) {
@@ -39,8 +40,19 @@ func decode(t *testing.T, file string, into runtime.Object) {
 	require.NoError(t, err)
 }
 
+type MockTenant struct {
+	region string
+	tenant.Tenant
+}
+
+func (t MockTenant) Region() string {
+	return t.region
+}
+
 type MockCloudServices struct {
-	Cloud             *cloud.OscClient
+	defaultTenant MockTenant
+	tenant        tenant.Tenant
+
 	NetMock           *mock_net.MockOscNetInterface
 	SubnetMock        *mock_net.MockOscSubnetInterface
 	SecurityGroupMock *mock_security.MockOscSecurityGroupInterface
@@ -49,7 +61,7 @@ type MockCloudServices struct {
 	RouteTableMock      *mock_security.MockOscRouteTableInterface
 	NatServiceMock      *mock_net.MockOscNatServiceInterface
 	PublicIpMock        *mock_security.MockOscPublicIpInterface
-	LoadBalancerMock    *mock_service.MockOscLoadBalancerInterface
+	LoadBalancerMock    *mock_loadbalancer.MockOscLoadBalancerInterface
 
 	VMMock    *mock_compute.MockOscVmInterface
 	ImageMock *mock_compute.MockOscImageInterface
@@ -59,7 +71,8 @@ type MockCloudServices struct {
 
 func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloudServices {
 	return &MockCloudServices{
-		Cloud:             &cloud.OscClient{Region: region},
+		defaultTenant: MockTenant{region: region},
+
 		NetMock:           mock_net.NewMockOscNetInterface(mockCtrl),
 		SubnetMock:        mock_net.NewMockOscSubnetInterface(mockCtrl),
 		SecurityGroupMock: mock_security.NewMockOscSecurityGroupInterface(mockCtrl),
@@ -68,7 +81,7 @@ func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloud
 		RouteTableMock:      mock_security.NewMockOscRouteTableInterface(mockCtrl),
 		NatServiceMock:      mock_net.NewMockOscNatServiceInterface(mockCtrl),
 		PublicIpMock:        mock_security.NewMockOscPublicIpInterface(mockCtrl),
-		LoadBalancerMock:    mock_service.NewMockOscLoadBalancerInterface(mockCtrl),
+		LoadBalancerMock:    mock_loadbalancer.NewMockOscLoadBalancerInterface(mockCtrl),
 
 		VMMock:    mock_compute.NewMockOscVmInterface(mockCtrl),
 		ImageMock: mock_compute.NewMockOscImageInterface(mockCtrl),
@@ -77,51 +90,62 @@ func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloud
 	}
 }
 
-func (s *MockCloudServices) OscClient() *cloud.OscClient {
-	return s.Cloud
+func (s *MockCloudServices) DefaultTenant() (tenant.Tenant, error) {
+	return s.defaultTenant, nil
 }
 
-func (s *MockCloudServices) Net(ctx context.Context, scope scope.ClusterScope) net.OscNetInterface {
+func (s *MockCloudServices) Net(t tenant.Tenant) net.OscNetInterface {
+	s.tenant = t
 	return s.NetMock
 }
 
-func (s *MockCloudServices) Subnet(ctx context.Context, scope scope.ClusterScope) net.OscSubnetInterface {
+func (s *MockCloudServices) Subnet(t tenant.Tenant) net.OscSubnetInterface {
+	s.tenant = t
 	return s.SubnetMock
 }
 
-func (s *MockCloudServices) SecurityGroup(ctx context.Context, scope scope.ClusterScope) security.OscSecurityGroupInterface {
+func (s *MockCloudServices) SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface {
+	s.tenant = t
 	return s.SecurityGroupMock
 }
 
-func (s *MockCloudServices) InternetService(ctx context.Context, scope scope.ClusterScope) net.OscInternetServiceInterface {
+func (s *MockCloudServices) InternetService(t tenant.Tenant) net.OscInternetServiceInterface {
+	s.tenant = t
 	return s.InternetServiceMock
 }
 
-func (s *MockCloudServices) RouteTable(ctx context.Context, scope scope.ClusterScope) security.OscRouteTableInterface {
+func (s *MockCloudServices) RouteTable(t tenant.Tenant) security.OscRouteTableInterface {
+	s.tenant = t
 	return s.RouteTableMock
 }
 
-func (s *MockCloudServices) NatService(ctx context.Context, scope scope.ClusterScope) net.OscNatServiceInterface {
+func (s *MockCloudServices) NatService(t tenant.Tenant) net.OscNatServiceInterface {
+	s.tenant = t
 	return s.NatServiceMock
 }
 
-func (s *MockCloudServices) PublicIp(ctx context.Context, scope scope.ClusterScope) security.OscPublicIpInterface {
+func (s *MockCloudServices) PublicIp(t tenant.Tenant) security.OscPublicIpInterface {
+	s.tenant = t
 	return s.PublicIpMock
 }
 
-func (s *MockCloudServices) LoadBalancer(ctx context.Context, scope scope.ClusterScope) service.OscLoadBalancerInterface {
+func (s *MockCloudServices) LoadBalancer(t tenant.Tenant) loadbalancer.OscLoadBalancerInterface {
+	s.tenant = t
 	return s.LoadBalancerMock
 }
 
-func (s *MockCloudServices) VM(ctx context.Context, scope scope.ClusterScope) compute.OscVmInterface {
+func (s *MockCloudServices) VM(t tenant.Tenant) compute.OscVmInterface {
+	s.tenant = t
 	return s.VMMock
 }
 
-func (s *MockCloudServices) Image(ctx context.Context, scope scope.ClusterScope) compute.OscImageInterface {
+func (s *MockCloudServices) Image(t tenant.Tenant) compute.OscImageInterface {
+	s.tenant = t
 	return s.ImageMock
 }
 
-func (s *MockCloudServices) Tag(ctx context.Context, scope scope.ClusterScope) tag.OscTagInterface {
+func (s *MockCloudServices) Tag(t tenant.Tenant) tag.OscTagInterface {
+	s.tenant = t
 	return s.TagMock
 }
 
@@ -132,6 +156,7 @@ type mockFunc func(s *MockCloudServices)
 
 type assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
 type assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
+type assertTenantFunc func(t *testing.T, tnt tenant.Tenant)
 
 type testcase struct {
 	name                             string
@@ -141,11 +166,13 @@ type testcase struct {
 	clusterPatches                   []patchOSCClusterFunc
 	machinePatches                   []patchOSCMachineFunc
 	mockFuncs                        []mockFunc
+	kubeObjects                      []client.Object
 	hasError                         bool
 	requeue                          bool
 	assertDeleted                    bool
 	clusterAsserts                   []assertOSCClusterFunc
 	machineAsserts                   []assertOSCMachineFunc
+	tenantAsserts                    []assertTenantFunc
 
 	next *testcase
 }
@@ -252,5 +279,20 @@ func mockDeleteVm(vmId string) mockFunc {
 		s.VMMock.EXPECT().
 			DeleteVm(gomock.Any(), gomock.Eq(vmId)).
 			Return(nil)
+	}
+}
+
+func assertTenant(ak, sk, region string) assertTenantFunc {
+	return func(t *testing.T, found tenant.Tenant) {
+		assert.Equal(t, region, found.Region())
+		awsv4 := found.ContextWithAuth(context.TODO()).Value(osc.ContextAWSv4).(osc.AWSv4)
+		assert.Equal(t, ak, awsv4.AccessKey)
+		assert.Equal(t, sk, awsv4.SecretKey)
+	}
+}
+
+func assertDefaultTenant() assertTenantFunc {
+	return func(t *testing.T, found tenant.Tenant) {
+		assert.IsType(t, MockTenant{}, found)
 	}
 }

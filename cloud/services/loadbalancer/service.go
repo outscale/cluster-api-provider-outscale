@@ -14,24 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package net
+package loadbalancer
 
 import (
-	"context"
-
-	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 )
 
 // Service is a collection of interfaces
 type Service struct {
-	scope *scope.ClusterScope
-	ctx   context.Context
+	tenant tenant.Tenant
 }
 
 // NewService return a service which is based on outscale api client
-func NewService(ctx context.Context, scope *scope.ClusterScope) *Service {
+func NewService(t tenant.Tenant) *Service {
 	return &Service{
-		scope: scope,
-		ctx:   ctx,
+		tenant: t,
 	}
 }

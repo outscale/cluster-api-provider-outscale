@@ -41,10 +41,9 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscN
 	netRequest := osc.CreateNetRequest{
 		IpRange: spec.IpRange,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	var netResponse osc.CreateNetResponse
-	netResponse, httpRes, err := oscApiClient.NetApi.CreateNet(oscAuthClient).CreateNetRequest(netRequest).Execute()
+	netResponse, httpRes, err := s.tenant.Client().NetApi.CreateNet(s.tenant.ContextWithAuth(ctx)).CreateNetRequest(netRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "CreateNet", netRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -63,7 +62,7 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscN
 		Tags:        []osc.ResourceTag{netTag, clusterTag},
 	}
 
-	err = tag.AddTag(ctx, netTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, netTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +76,11 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscN
 // DeleteNet delete the net
 func (s *Service) DeleteNet(ctx context.Context, netId string) error {
 	deleteNetRequest := osc.DeleteNetRequest{NetId: netId}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	deleteNetCallBack := func() (bool, error) {
 		var httpRes *http.Response
 		var err error
-		_, httpRes, err = oscApiClient.NetApi.DeleteNet(oscAuthClient).DeleteNetRequest(deleteNetRequest).Execute()
+		_, httpRes, err = s.tenant.Client().NetApi.DeleteNet(s.tenant.ContextWithAuth(ctx)).DeleteNetRequest(deleteNetRequest).Execute()
 		err = utils.LogAndExtractError(ctx, "DeleteNet", deleteNetRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
@@ -107,9 +105,8 @@ func (s *Service) GetNet(ctx context.Context, netId string) (*osc.Net, error) {
 			NetIds: &[]string{netId},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readNetsResponse, httpRes, err := oscApiClient.NetApi.ReadNets(oscAuthClient).ReadNetsRequest(readNetsRequest).Execute()
+
+	readNetsResponse, httpRes, err := s.tenant.Client().NetApi.ReadNets(s.tenant.ContextWithAuth(ctx)).ReadNetsRequest(readNetsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadNets", readNetsRequest, httpRes, err)
 	if err != nil {
 		return nil, err

@@ -40,9 +40,8 @@ type OscInternetServiceInterface interface {
 // CreateInternetService launch the internet service
 func (s *Service) CreateInternetService(ctx context.Context, internetServiceName, clusterID string) (*osc.InternetService, error) {
 	internetServiceRequest := osc.CreateInternetServiceRequest{}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	internetServiceResponse, httpRes, err := oscApiClient.InternetServiceApi.CreateInternetService(oscAuthClient).CreateInternetServiceRequest(internetServiceRequest).Execute()
+
+	internetServiceResponse, httpRes, err := s.tenant.Client().InternetServiceApi.CreateInternetService(s.tenant.ContextWithAuth(ctx)).CreateInternetServiceRequest(internetServiceRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "CreateInternetService", internetServiceRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -60,7 +59,7 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{internetServiceTag, clusterTag},
 	}
-	err = tag.AddTag(ctx, internetServiceTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, internetServiceTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -74,9 +73,8 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 // DeleteInternetService deletes an internet service.
 func (s *Service) DeleteInternetService(ctx context.Context, internetServiceId string) error {
 	deleteInternetServiceRequest := osc.DeleteInternetServiceRequest{InternetServiceId: internetServiceId}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.InternetServiceApi.DeleteInternetService(oscAuthClient).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
+
+	_, httpRes, err := s.tenant.Client().InternetServiceApi.DeleteInternetService(s.tenant.ContextWithAuth(ctx)).DeleteInternetServiceRequest(deleteInternetServiceRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "DeleteInternetService", deleteInternetServiceRequest, httpRes, err)
 	return err
 }
@@ -87,12 +85,11 @@ func (s *Service) LinkInternetService(ctx context.Context, internetServiceId str
 		InternetServiceId: internetServiceId,
 		NetId:             netId,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	linkInternetServiceCallBack := func() (bool, error) {
 		var httpRes *http.Response
 		var err error
-		_, httpRes, err = oscApiClient.InternetServiceApi.LinkInternetService(oscAuthClient).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
+		_, httpRes, err = s.tenant.Client().InternetServiceApi.LinkInternetService(s.tenant.ContextWithAuth(ctx)).LinkInternetServiceRequest(linkInternetServiceRequest).Execute()
 		err = utils.LogAndExtractError(ctx, "LinkInternetService", linkInternetServiceRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
@@ -116,9 +113,8 @@ func (s *Service) UnlinkInternetService(ctx context.Context, internetServiceId s
 		InternetServiceId: internetServiceId,
 		NetId:             netId,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.InternetServiceApi.UnlinkInternetService(oscAuthClient).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
+
+	_, httpRes, err := s.tenant.Client().InternetServiceApi.UnlinkInternetService(s.tenant.ContextWithAuth(ctx)).UnlinkInternetServiceRequest(unlinkInternetServiceRequest).Execute()
 	return utils.LogAndExtractError(ctx, "UnlinkInternetService", unlinkInternetServiceRequest, httpRes, err)
 }
 
@@ -129,9 +125,8 @@ func (s *Service) GetInternetService(ctx context.Context, internetServiceId stri
 			InternetServiceIds: &[]string{internetServiceId},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readInternetServicesResponse, httpRes, err := oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
+
+	readInternetServicesResponse, httpRes, err := s.tenant.Client().InternetServiceApi.ReadInternetServices(s.tenant.ContextWithAuth(ctx)).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -155,9 +150,8 @@ func (s *Service) GetInternetServiceForNet(ctx context.Context, netId string) (*
 			LinkNetIds: &[]string{netId},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readInternetServicesResponse, httpRes, err := oscApiClient.InternetServiceApi.ReadInternetServices(oscAuthClient).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
+
+	readInternetServicesResponse, httpRes, err := s.tenant.Client().InternetServiceApi.ReadInternetServices(s.tenant.ContextWithAuth(ctx)).ReadInternetServicesRequest(readInternetServiceRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadInternetServices", readInternetServiceRequest, httpRes, err)
 	if err != nil {
 		return nil, err

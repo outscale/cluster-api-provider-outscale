@@ -70,7 +70,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		}
 
 		log.V(3).Info("Creating natService")
-		natService, err = r.Cloud.NatService(ctx, *clusterScope).CreateNatService(ctx, publicIpId, subnetId,
+		natService, err = r.Cloud.NatService(clusterScope.Tenant).CreateNatService(ctx, publicIpId, subnetId,
 			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope.GetUID())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
@@ -88,7 +88,7 @@ func (r *OscClusterReconciler) listNATPublicIPs(ctx context.Context, clusterScop
 	if err != nil {
 		return nil, fmt.Errorf("cannot find net: %w", err)
 	}
-	natSvc := r.Cloud.NatService(ctx, *clusterScope)
+	natSvc := r.Cloud.NatService(clusterScope.Tenant)
 	nats, err := natSvc.ListNatServices(ctx, netId)
 	if err != nil {
 		return nil, fmt.Errorf("list natServices: %w", err)
@@ -121,7 +121,7 @@ func (r *OscClusterReconciler) reconcileDeleteNatService(ctx context.Context, cl
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 	}
-	natSvc := r.Cloud.NatService(ctx, *clusterScope)
+	natSvc := r.Cloud.NatService(clusterScope.Tenant)
 	nats, err := natSvc.ListNatServices(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("list natServices: %w", err)

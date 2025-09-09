@@ -30,6 +30,7 @@ func OscReplaceName(name string) string {
 
 // OscClusterSpec defines the desired state of OscCluster
 type OscClusterSpec struct {
+	Credentials          OscCredentials        `json:"credentials,omitempty"`
 	Network              OscNetwork            `json:"network,omitempty"`
 	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
 }

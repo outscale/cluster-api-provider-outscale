@@ -57,7 +57,7 @@ func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clu
 	}
 	if internetService == nil {
 		log.V(3).Info("Creating internet service")
-		internetService, err = r.Cloud.InternetService(ctx, *clusterScope).CreateInternetService(ctx, clusterScope.GetInternetServiceName(), clusterScope.GetUID())
+		internetService, err = r.Cloud.InternetService(clusterScope.Tenant).CreateInternetService(ctx, clusterScope.GetInternetServiceName(), clusterScope.GetUID())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create internetService: %w", err)
 		}
@@ -65,7 +65,7 @@ func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clu
 		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.InternetServicesCreatedReason, "Internet service created")
 	}
 	log.V(2).Info("Linking internet service to net", "internetServiceId", internetService.GetInternetServiceId(), "netId", netId)
-	err = r.Cloud.InternetService(ctx, *clusterScope).LinkInternetService(ctx, internetService.GetInternetServiceId(), netId)
+	err = r.Cloud.InternetService(clusterScope.Tenant).LinkInternetService(ctx, internetService.GetInternetServiceId(), netId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot link internetService: %w", err)
 	}
@@ -93,13 +93,13 @@ func (r *OscClusterReconciler) reconcileDeleteInternetService(ctx context.Contex
 	internetServiceId := internetService.GetInternetServiceId()
 	if internetService.NetId != nil {
 		log.V(2).Info("Unlinking internetservice", "internetServiceId", internetServiceId)
-		err = r.Cloud.InternetService(ctx, *clusterScope).UnlinkInternetService(ctx, internetServiceId, *internetService.NetId)
+		err = r.Cloud.InternetService(clusterScope.Tenant).UnlinkInternetService(ctx, internetServiceId, *internetService.NetId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot unlink internetService: %w", err)
 		}
 	}
 	log.V(2).Info("Deleting internetservice", "internetServiceId", internetServiceId)
-	err = r.Cloud.InternetService(ctx, *clusterScope).DeleteInternetService(ctx, internetServiceId)
+	err = r.Cloud.InternetService(clusterScope.Tenant).DeleteInternetService(ctx, internetServiceId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete internetService: %w", err)
 	}
