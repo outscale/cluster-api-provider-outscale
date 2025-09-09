@@ -22,7 +22,7 @@ func (t *ClusterResourceTracker) getNet(ctx context.Context, clusterScope *scope
 	if err != nil {
 		return nil, err
 	}
-	n, err := t.Cloud.Net(ctx, *clusterScope).GetNet(ctx, id)
+	n, err := t.Cloud.Net(clusterScope.Tenant).GetNet(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -46,7 +46,7 @@ func (t *ClusterResourceTracker) getNetId(ctx context.Context, clusterScope *sco
 		return id, nil
 	}
 	// Search by OscK8sClusterID/(uid): owned tag
-	tg, err := t.Cloud.Tag(ctx, *clusterScope).ReadOwnedByTag(ctx, tag.NetResourceType, clusterScope.GetUID())
+	tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadOwnedByTag(ctx, tag.NetResourceType, clusterScope.GetUID())
 	if err != nil {
 		return "", fmt.Errorf("get net: %w", err)
 	}
@@ -57,7 +57,7 @@ func (t *ClusterResourceTracker) getNetId(ctx context.Context, clusterScope *sco
 	// Search by name (retrocompatibility)
 	if clusterScope.GetNet().Name != "" {
 		nameValue := clusterScope.GetNet().Name + "-" + clusterScope.GetUID()
-		tg, err = t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NetResourceType, tag.NameKey, nameValue)
+		tg, err = t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.NetResourceType, tag.NameKey, nameValue)
 		if err != nil {
 			return "", fmt.Errorf("get net: %w", err)
 		}
@@ -87,7 +87,7 @@ func (t *ClusterResourceTracker) _getInternetServiceOrId(ctx context.Context, cl
 	if err != nil {
 		return nil, "", fmt.Errorf("get net for internet service: %w", err)
 	}
-	is, err := t.Cloud.InternetService(ctx, *clusterScope).GetInternetServiceForNet(ctx, netId)
+	is, err := t.Cloud.InternetService(clusterScope.Tenant).GetInternetServiceForNet(ctx, netId)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get internet service for net: %w", err)
@@ -107,7 +107,7 @@ func (t *ClusterResourceTracker) getInternetService(ctx context.Context, cluster
 	case is != nil:
 		return is, nil
 	}
-	is, err = t.Cloud.InternetService(ctx, *clusterScope).GetInternetService(ctx, id)
+	is, err = t.Cloud.InternetService(clusterScope.Tenant).GetInternetService(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -147,7 +147,7 @@ func (t *ClusterResourceTracker) _getSubnetOrId(ctx context.Context, subnet infr
 	if err != nil {
 		return nil, "", fmt.Errorf("get net for subnet: %w", err)
 	}
-	sn, err := t.Cloud.Subnet(ctx, *clusterScope).GetSubnetFromNet(ctx, netId, subnet.IpSubnetRange)
+	sn, err := t.Cloud.Subnet(clusterScope.Tenant).GetSubnetFromNet(ctx, netId, subnet.IpSubnetRange)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get subnet from net: %w", err)
@@ -167,7 +167,7 @@ func (t *ClusterResourceTracker) getSubnet(ctx context.Context, subnet infrastru
 	case sn != nil:
 		return sn, nil
 	}
-	sn, err = t.Cloud.Subnet(ctx, *clusterScope).GetSubnet(ctx, id)
+	sn, err = t.Cloud.Subnet(clusterScope.Tenant).GetSubnet(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -200,7 +200,7 @@ func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat inf
 	if id != "" {
 		return nil, id, nil
 	}
-	ns, err := t.Cloud.NatService(ctx, *clusterScope).GetNatServiceFromClientToken(ctx, clientToken)
+	ns, err := t.Cloud.NatService(clusterScope.Tenant).GetNatServiceFromClientToken(ctx, clientToken)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get nat service from client token: %w", err)
@@ -210,7 +210,7 @@ func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat inf
 	}
 	if nat.Name != "" {
 		nameValue := nat.Name + "-" + clusterScope.GetUID()
-		tag, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.NatResourceType, tag.NameKey, nameValue)
+		tag, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.NatResourceType, tag.NameKey, nameValue)
 		switch {
 		case err != nil:
 			return nil, "", fmt.Errorf("get nat service from tag: %w", err)
@@ -235,7 +235,7 @@ func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastr
 		}
 		return ns, nil
 	}
-	ns, err = t.Cloud.NatService(ctx, *clusterScope).GetNatService(ctx, id)
+	ns, err = t.Cloud.NatService(clusterScope.Tenant).GetNatService(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -284,7 +284,7 @@ func (t *ClusterResourceTracker) getBastion(ctx context.Context, clusterScope *s
 		err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, vm.GetPublicIp(), clusterScope)
 		return vm, err
 	}
-	vm, err = t.Cloud.VM(ctx, *clusterScope).GetVm(ctx, id)
+	vm, err = t.Cloud.VM(clusterScope.Tenant).GetVm(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -309,7 +309,7 @@ func (t *ClusterResourceTracker) _getBastionOrId(ctx context.Context, clusterSco
 		return nil, id, nil
 	}
 	clientToken := clusterScope.GetBastionClientToken()
-	vm, err := t.Cloud.VM(ctx, *clusterScope).GetVmFromClientToken(ctx, clientToken)
+	vm, err := t.Cloud.VM(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get bastion from client token: %w", err)
@@ -320,7 +320,7 @@ func (t *ClusterResourceTracker) _getBastionOrId(ctx context.Context, clusterSco
 	// Search by name (retrocompatibility)
 	if clusterScope.GetBastion().Name != "" {
 		nameValue := clusterScope.GetBastionName() + "-" + clusterScope.GetUID()
-		tg, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.VmResourceType, tag.NameKey, nameValue)
+		tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.VmResourceType, tag.NameKey, nameValue)
 		if err != nil {
 			return nil, "", fmt.Errorf("get bastion: %w", err)
 		}
@@ -350,7 +350,7 @@ func (t *ClusterResourceTracker) _getSecurityGroupOrId(ctx context.Context, sg i
 	if id != "" {
 		return nil, id, nil
 	}
-	ns, err := t.Cloud.SecurityGroup(ctx, *clusterScope).GetSecurityGroupFromName(ctx, name)
+	ns, err := t.Cloud.SecurityGroup(clusterScope.Tenant).GetSecurityGroupFromName(ctx, name)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get securityGroup from securityGroupName: %w", err)
@@ -370,7 +370,7 @@ func (t *ClusterResourceTracker) getSecurityGroup(ctx context.Context, sg infras
 	case ns != nil:
 		return ns, nil
 	}
-	ns, err = t.Cloud.SecurityGroup(ctx, *clusterScope).GetSecurityGroup(ctx, id)
+	ns, err = t.Cloud.SecurityGroup(clusterScope.Tenant).GetSecurityGroup(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err

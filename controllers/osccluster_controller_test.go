@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +24,7 @@ import (
 	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -37,6 +40,7 @@ func runClusterTest(t *testing.T, tc testcase) {
 		fn(oc)
 	}
 	fakeScheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(fakeScheme)
 	_ = clientgoscheme.AddToScheme(fakeScheme)
 	_ = clusterv1.AddToScheme(fakeScheme)
 	_ = apiextensionsv1.AddToScheme(fakeScheme)
@@ -66,6 +70,10 @@ func runClusterTest(t *testing.T, tc testcase) {
 		for _, fn := range step.mockFuncs {
 			fn(cs)
 		}
+		for _, obj := range step.kubeObjects {
+			err := client.Create(context.TODO(), obj)
+			require.NoError(t, err)
+		}
 		res, err := rec.Reconcile(context.TODO(), controllerruntime.Request{NamespacedName: nsn})
 		if step.hasError {
 			require.Error(t, err)
@@ -84,6 +92,9 @@ func runClusterTest(t *testing.T, tc testcase) {
 			for _, fn := range step.clusterAsserts {
 				fn(t, &out)
 			}
+		}
+		for _, fn := range step.tenantAsserts {
+			fn(t, cs.tenant)
 		}
 		step = step.next
 	}
@@ -1261,6 +1272,140 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			},
 			next: &testcase{
 				name: "A second run has all references in cache",
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			runClusterTest(t, tc)
+		})
+	}
+}
+
+func TestReconcileOSCCluster_Multitenant(t *testing.T) {
+	d := t.TempDir()
+	filepath := d + "tenant.json"
+	err := os.WriteFile(filepath, []byte(`{
+  "default": {
+    "access_key": "ak_default",
+    "secret_key": "sk_default",
+    "region": "region_default"
+  },
+  "alt": {
+    "access_key": "ak_alt",
+    "secret_key": "sk_alt",
+    "region": "region_alt"
+  }
+}`), 0640)
+	require.NoError(t, err)
+	tcs := []testcase{
+		{
+			name:            "using the default credentials",
+			clusterSpec:     "reuse-all-1.0",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+
+				mockSubnetFound("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-public"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			tenantAsserts: []assertTenantFunc{
+				assertDefaultTenant(),
+			},
+		},
+		{
+			name:            "using the credentials from a secret",
+			clusterSpec:     "reuse-all-1.0",
+			clusterBaseSpec: "base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchUseCredentials(infrastructurev1beta1.OscCredentials{
+					FromSecret: "secret-tenant",
+				}),
+			},
+			kubeObjects: []client.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-tenant",
+						Namespace: "cluster-api-test",
+					},
+					Data: map[string][]byte{
+						"access_key": []byte("ak_secret"),
+						"secret_key": []byte("sk_secret"),
+						"region":     []byte("region_secret"),
+					},
+				},
+			},
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+
+				mockSubnetFound("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-public"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			tenantAsserts: []assertTenantFunc{
+				assertTenant("ak_secret", "sk_secret", "region_secret"),
+			},
+		},
+		{
+			name:            "using the credentials from a file (default profile)",
+			clusterSpec:     "reuse-all-1.0",
+			clusterBaseSpec: "base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchUseCredentials(infrastructurev1beta1.OscCredentials{
+					FromFile: filepath,
+				}),
+			},
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+
+				mockSubnetFound("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-public"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			tenantAsserts: []assertTenantFunc{
+				assertTenant("ak_default", "sk_default", "region_default"),
+			},
+		},
+		{
+			name:            "using the credentials from a file (alt profile)",
+			clusterSpec:     "reuse-all-1.0",
+			clusterBaseSpec: "base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchUseCredentials(infrastructurev1beta1.OscCredentials{
+					FromFile: filepath,
+					Profile:  "alt",
+				}),
+			},
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+
+				mockSubnetFound("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-public"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			tenantAsserts: []assertTenantFunc{
+				assertTenant("ak_alt", "sk_alt", "region_alt"),
 			},
 		},
 	}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package loadbalancer
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-//go:generate ../../../bin/mockgen -destination mock_service/loadbalancer_mock.go -package mock_service -source ./load_balancer.go
+//go:generate ../../../bin/mockgen -destination mock_loadbalancer/loadbalancer_mock.go -package mock_loadbalancer -source ./load_balancer.go
 type OscLoadBalancerInterface interface {
 	ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
 	GetLoadBalancer(ctx context.Context, loadBalancerName string) (*osc.LoadBalancer, error)
@@ -74,14 +74,12 @@ func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructure
 		LoadBalancerName: spec.LoadBalancerName,
 		HealthCheck:      &healthCheck,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
 
 	var updateLoadBalancerResponse osc.UpdateLoadBalancerResponse
 	updateLoadBalancerCallBack := func() (bool, error) {
 		var httpRes *http.Response
 		var err error
-		updateLoadBalancerResponse, httpRes, err = oscApiClient.LoadBalancerApi.UpdateLoadBalancer(oscAuthClient).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()
+		updateLoadBalancerResponse, httpRes, err = s.tenant.Client().LoadBalancerApi.UpdateLoadBalancer(s.tenant.ContextWithAuth(ctx)).UpdateLoadBalancerRequest(updateLoadBalancerRequest).Execute()
 		err = utils.LogAndExtractError(ctx, "UpdateLoadBalancer", updateLoadBalancerRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) || httpRes == nil {
@@ -109,12 +107,11 @@ func (s *Service) LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []s
 		BackendVmIds:     &vmIds,
 		LoadBalancerName: loadBalancerName,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	linkLoadBalancerBackendMachinesCallBack := func() (bool, error) {
 		var httpRes *http.Response
 		var err error
-		_, httpRes, err = oscApiClient.LoadBalancerApi.LinkLoadBalancerBackendMachines(oscAuthClient).LinkLoadBalancerBackendMachinesRequest(linkLoadBalancerBackendMachinesRequest).Execute()
+		_, httpRes, err = s.tenant.Client().LoadBalancerApi.LinkLoadBalancerBackendMachines(s.tenant.ContextWithAuth(ctx)).LinkLoadBalancerBackendMachinesRequest(linkLoadBalancerBackendMachinesRequest).Execute()
 		err = utils.LogAndExtractError(ctx, "LinkLoadBalancerBackendMachines", linkLoadBalancerBackendMachinesRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
@@ -139,10 +136,8 @@ func (s *Service) UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds [
 		BackendVmIds:     &vmIds,
 		LoadBalancerName: loadBalancerName,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
 
-	_, httpRes, err := oscApiClient.LoadBalancerApi.UnlinkLoadBalancerBackendMachines(oscAuthClient).UnlinkLoadBalancerBackendMachinesRequest(unlinkLoadBalancerBackendMachinesRequest).Execute()
+	_, httpRes, err := s.tenant.Client().LoadBalancerApi.UnlinkLoadBalancerBackendMachines(s.tenant.ContextWithAuth(ctx)).UnlinkLoadBalancerBackendMachinesRequest(unlinkLoadBalancerBackendMachinesRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "UnlinkLoadBalancerBackendMachines", unlinkLoadBalancerBackendMachinesRequest, httpRes, err)
 	return err
 }
@@ -153,10 +148,8 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 		LoadBalancerNames: &[]string{loadBalancerName},
 	}
 	readLoadBalancerRequest := osc.ReadLoadBalancersRequest{Filters: &filterLoadBalancer}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
 
-	readLoadBalancersResponse, httpRes, err := oscApiClient.LoadBalancerApi.ReadLoadBalancers(oscAuthClient).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
+	readLoadBalancersResponse, httpRes, err := s.tenant.Client().LoadBalancerApi.ReadLoadBalancers(s.tenant.ContextWithAuth(ctx)).ReadLoadBalancersRequest(readLoadBalancerRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadLoadBalancers", readLoadBalancerRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -176,12 +169,11 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 
 // GetLoadBalancerTag retrieve loadBalancer object from spec
 func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	readLoadBalancerTagRequest := osc.ReadLoadBalancerTagsRequest{
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 	}
-	readLoadBalancerTagsResponse, httpRes, err := oscApiClient.LoadBalancerApi.ReadLoadBalancerTags(oscAuthClient).ReadLoadBalancerTagsRequest(readLoadBalancerTagRequest).Execute()
+	readLoadBalancerTagsResponse, httpRes, err := s.tenant.Client().LoadBalancerApi.ReadLoadBalancerTags(s.tenant.ContextWithAuth(ctx)).ReadLoadBalancerTagsRequest(readLoadBalancerTagRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadLoadBalancerTags", readLoadBalancerTagRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -207,10 +199,9 @@ func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructur
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 		Tags:              []osc.ResourceTag{*loadBalancerTag},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	createLoadBalancerTagCallBack := func() (bool, error) {
-		_, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancerTags(oscAuthClient).CreateLoadBalancerTagsRequest(createLoadBalancerTagRequest).Execute()
+		_, httpRes, err := s.tenant.Client().LoadBalancerApi.CreateLoadBalancerTags(s.tenant.ContextWithAuth(ctx)).CreateLoadBalancerTagsRequest(createLoadBalancerTagRequest).Execute()
 		err = utils.LogAndExtractError(ctx, "CreateLoadBalancerTags", createLoadBalancerTagRequest, httpRes, err)
 		if err != nil {
 			if utils.RetryIf(httpRes) {
@@ -250,10 +241,8 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 		SecurityGroups:   &[]string{securityGroupId},
 		Subnets:          &[]string{subnetId},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
 
-	loadBalancerResponse, httpRes, err := oscApiClient.LoadBalancerApi.CreateLoadBalancer(oscAuthClient).CreateLoadBalancerRequest(loadBalancerRequest).Execute()
+	loadBalancerResponse, httpRes, err := s.tenant.Client().LoadBalancerApi.CreateLoadBalancer(s.tenant.ContextWithAuth(ctx)).CreateLoadBalancerRequest(loadBalancerRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "CreateLoadBalancer", loadBalancerRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -270,9 +259,8 @@ func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1
 	deleteLoadBalancerRequest := osc.DeleteLoadBalancerRequest{
 		LoadBalancerName: spec.LoadBalancerName,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.LoadBalancerApi.DeleteLoadBalancer(oscAuthClient).DeleteLoadBalancerRequest(deleteLoadBalancerRequest).Execute()
+
+	_, httpRes, err := s.tenant.Client().LoadBalancerApi.DeleteLoadBalancer(s.tenant.ContextWithAuth(ctx)).DeleteLoadBalancerRequest(deleteLoadBalancerRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "DeleteLoadBalancer", deleteLoadBalancerRequest, httpRes, err)
 	return err
 }
@@ -283,9 +271,8 @@ func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructur
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 		Tags:              []osc.ResourceLoadBalancerTag{loadBalancerTag},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.LoadBalancerApi.DeleteLoadBalancerTags(oscAuthClient).DeleteLoadBalancerTagsRequest(deleteLoadBalancerTagRequest).Execute()
+
+	_, httpRes, err := s.tenant.Client().LoadBalancerApi.DeleteLoadBalancerTags(s.tenant.ContextWithAuth(ctx)).DeleteLoadBalancerTagsRequest(deleteLoadBalancerTagRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "DeleteLoadBalancerTags", deleteLoadBalancerTagRequest, httpRes, err)
 	return err
 }

@@ -25,8 +25,7 @@ import (
 	"strings"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -37,10 +36,10 @@ const clusterUIDLabel = "outscale.com/clusterUID"
 
 // ClusterScopeParams is a collection of input parameters to create a new scope
 type ClusterScopeParams struct {
-	OscClient  *cloud.OscClient
 	Client     client.Client
 	Cluster    *clusterv1.Cluster
 	OscCluster *infrastructurev1beta1.OscCluster
+	Tenant     tenant.Tenant
 }
 
 // NewClusterScope create new clusterScope from parameters which is called at each reconciliation iteration
@@ -62,8 +61,8 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 		Client:      params.Client,
 		Cluster:     params.Cluster,
 		OscCluster:  params.OscCluster,
-		OscClient:   params.OscClient,
 		patchHelper: helper,
+		Tenant:      params.Tenant,
 	}, nil
 }
 
@@ -71,9 +70,9 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 type ClusterScope struct {
 	Client      client.Client
 	patchHelper *patch.Helper
-	OscClient   *cloud.OscClient
 	Cluster     *clusterv1.Cluster
 	OscCluster  *infrastructurev1beta1.OscCluster
+	Tenant      tenant.Tenant
 }
 
 // Close closes the scope of the cluster configuration and status
@@ -110,13 +109,8 @@ func (s *ClusterScope) EnsureExplicitUID() {
 }
 
 // GetAuth return outscale api context
-func (s *ClusterScope) GetAuth() context.Context {
-	return s.OscClient.Auth
-}
-
-// GetApi return outscale api credential
-func (s *ClusterScope) GetApi() *osc.APIClient {
-	return s.OscClient.API
+func (s *ClusterScope) GetRegion() string {
+	return s.Tenant.Region()
 }
 
 // GetNetwork return the network of the cluster

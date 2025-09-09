@@ -97,6 +97,12 @@ func patchNATIPFromPool(name string) patchOSCClusterFunc {
 	}
 }
 
+func patchUseCredentials(c infrastructurev1beta1.OscCredentials) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Credentials = c
+	}
+}
+
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().

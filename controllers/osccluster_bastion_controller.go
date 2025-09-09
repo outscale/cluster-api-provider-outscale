@@ -181,7 +181,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 	imageId := bastionSpec.ImageId
 	if imageId == "" && bastionSpec.ImageName != "" {
-		image, err := r.Cloud.Image(ctx, *clusterScope).GetImageByName(ctx, bastionSpec.ImageName, bastionSpec.ImageAccountId)
+		image, err := r.Cloud.Image(clusterScope.Tenant).GetImageByName(ctx, bastionSpec.ImageName, bastionSpec.ImageAccountId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot find image %s: %w", bastionSpec.ImageName, err)
 		}
@@ -197,7 +197,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 	bastionName := clusterScope.GetBastionName()
 	clientToken := clusterScope.GetBastionClientToken()
-	vm, err = r.Tracker.Cloud.VM(ctx, *clusterScope).CreateVmBastion(ctx, &bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, clientToken, imageId, tags)
+	vm, err = r.Cloud.VM(clusterScope.Tenant).CreateVmBastion(ctx, &bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, clientToken, imageId, tags)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create bastion: %w", err)
 	}
@@ -228,7 +228,7 @@ func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clust
 	}
 
 	log.V(3).Info("Deleting bastion")
-	err = r.Cloud.VM(ctx, *clusterScope).DeleteVm(ctx, vm.GetVmId())
+	err = r.Cloud.VM(clusterScope.Tenant).DeleteVm(ctx, vm.GetVmId())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete bastion: %w", err)
 	}

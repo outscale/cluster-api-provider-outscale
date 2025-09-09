@@ -43,6 +43,18 @@ type OscNode struct {
 	ClusterName string `json:"clusterName,omitempty"`
 }
 
+type OscCredentials struct {
+	// Load credentials from this secret instead of the env.
+	// +optional
+	FromSecret string `json:"fromSecret,omitempty"`
+	// Load credentials from this file instead of the env.
+	// +optional
+	FromFile string `json:"fromFile,omitempty"`
+	// Name of profile stored in file (unused using fromSecret, "default" by default).
+	// +optional
+	Profile string `json:"profile,omitempty"`
+}
+
 type OscNetwork struct {
 	// Reuse externally managed resources ?
 	UseExisting OscReuse `json:"useExisting,omitempty"`

@@ -80,9 +80,8 @@ func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value
 			Values:        &[]string{value},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readTagsResponse, httpRes, err := oscApiClient.TagApi.ReadTags(oscAuthClient).ReadTagsRequest(readTagsRequest).Execute()
+
+	readTagsResponse, httpRes, err := s.tenant.Client().TagApi.ReadTags(s.tenant.ContextWithAuth(ctx)).ReadTagsRequest(readTagsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadTags", readTagsRequest, httpRes, err)
 	if err != nil {
 		if httpRes != nil {

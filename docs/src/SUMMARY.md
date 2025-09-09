@@ -2,6 +2,7 @@
 - [Topics](./topics/topics.md)
     - [Getting Started](./topics/get-started-with-clusterctl.md)
     - [Configuring a cluster](./topics/config-cluster.md)
+    - [Credentials and multitenancy](./topics/config-credentials.md)
     - [Reusing existing resources](./topics/config-cluster-reuse.md)
     - [Configuring nodes](./topics/config-nodes.md)
     - [Multi AZ clusters](./topics/config-multiaz.md)

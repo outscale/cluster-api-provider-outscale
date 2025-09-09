@@ -17,19 +17,15 @@ limitations under the License.
 package compute
 
 import (
-	"context"
-
-	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 )
 
 type Service struct {
-	scope *scope.ClusterScope
-	ctx   context.Context
+	tenant tenant.Tenant
 }
 
-func NewService(ctx context.Context, scope *scope.ClusterScope) *Service {
+func NewService(t tenant.Tenant) *Service {
 	return &Service{
-		scope: scope,
-		ctx:   ctx,
+		tenant: t,
 	}
 }
