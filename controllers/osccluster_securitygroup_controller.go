@@ -60,7 +60,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 				continue
 			}
 			log.V(2).Info("Creating securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", protocol, "fromPort", fromPort, "toPort", toPort)
-			_, err := r.Cloud.SecurityGroup(ctx, *clusterScope).CreateSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, protocol, ipRange, "", fromPort, toPort)
+			_, err := r.Cloud.SecurityGroup(clusterScope.Tenant).CreateSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, protocol, ipRange, "", fromPort, toPort)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create securityGroupRule: %w", err)
 			}
@@ -95,7 +95,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 					continue
 				}
 				log.V(2).Info("Deleting securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", rule.GetIpProtocol(), "fromPort", rule.GetFromPortRange(), "toPort", rule.GetToPortRange())
-				err := r.Cloud.SecurityGroup(ctx, *clusterScope).DeleteSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, rule.GetIpProtocol(), ipRange, "", rule.GetFromPortRange(), rule.GetToPortRange())
+				err := r.Cloud.SecurityGroup(clusterScope.Tenant).DeleteSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, rule.GetIpProtocol(), ipRange, "", rule.GetFromPortRange(), rule.GetToPortRange())
 				if err != nil {
 					return fmt.Errorf("cannot create securityGroupRule: %w", err)
 				}
@@ -132,7 +132,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
+	securityGroupSvc := r.Cloud.SecurityGroup(clusterScope.Tenant)
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroup, err := r.Tracker.getSecurityGroup(ctx, securityGroupSpec, clusterScope)
@@ -195,7 +195,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
 	}
 
-	securityGroupSvc := r.Cloud.SecurityGroup(ctx, *clusterScope)
+	securityGroupSvc := r.Cloud.SecurityGroup(clusterScope.Tenant)
 	securityGroups, err := securityGroupSvc.GetSecurityGroupsFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("list securityGroups: %w", err)

@@ -42,9 +42,8 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 		NetId:         netId,
 		SubregionName: &spec.SubregionName,
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	subnetResponse, httpRes, err := oscApiClient.SubnetApi.CreateSubnet(oscAuthClient).CreateSubnetRequest(subnetRequest).Execute()
+
+	subnetResponse, httpRes, err := s.tenant.Client().SubnetApi.CreateSubnet(s.tenant.ContextWithAuth(ctx)).CreateSubnetRequest(subnetRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "CreateSubnet", subnetRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -63,7 +62,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 		ResourceIds: resourceIds,
 		Tags:        append(utils.RoleTags(spec.Roles), subnetTag, clusterTag),
 	}
-	err = tag.AddTag(ctx, subnetTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, subnetTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +77,8 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 // DeleteSubnet delete the subnet
 func (s *Service) DeleteSubnet(ctx context.Context, subnetId string) error {
 	deleteSubnetRequest := osc.DeleteSubnetRequest{SubnetId: subnetId}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
 
-	_, httpRes, err := oscApiClient.SubnetApi.DeleteSubnet(oscAuthClient).DeleteSubnetRequest(deleteSubnetRequest).Execute()
+	_, httpRes, err := s.tenant.Client().SubnetApi.DeleteSubnet(s.tenant.ContextWithAuth(ctx)).DeleteSubnetRequest(deleteSubnetRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "DeleteSubnet", deleteSubnetRequest, httpRes, err)
 	return err
 }
@@ -93,9 +90,8 @@ func (s *Service) GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, 
 			SubnetIds: &[]string{subnetId},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+
+	readSubnetsResponse, httpRes, err := s.tenant.Client().SubnetApi.ReadSubnets(s.tenant.ContextWithAuth(ctx)).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 	if err != nil {
 		return nil, fmt.Errorf("error %w httpres %s", err, httpRes.Status)
@@ -120,9 +116,8 @@ func (s *Service) GetSubnetFromNet(ctx context.Context, netId, ipRange string) (
 			IpRanges: &[]string{ipRange},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readSubnetsResponse, httpRes, err := oscApiClient.SubnetApi.ReadSubnets(oscAuthClient).ReadSubnetsRequest(readSubnetsRequest).Execute()
+
+	readSubnetsResponse, httpRes, err := s.tenant.Client().SubnetApi.ReadSubnets(s.tenant.ContextWithAuth(ctx)).ReadSubnetsRequest(readSubnetsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadSubnets", readSubnetsRequest, httpRes, err)
 	if err != nil {
 		return nil, err

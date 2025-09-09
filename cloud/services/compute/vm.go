@@ -106,9 +106,7 @@ func (s *Service) CreateVm(ctx context.Context,
 		vmOpt.SetPrivateIps(privateIps)
 	}
 
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
+	vmResponse, httpRes, err := s.tenant.Client().VmApi.CreateVms(s.tenant.ContextWithAuth(ctx)).CreateVmsRequest(vmOpt).Execute()
 	err = utils.LogAndExtractError(ctx, "CreateVms", vmOpt, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -127,7 +125,7 @@ func (s *Service) CreateVm(ctx context.Context,
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, vmTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +174,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 		vmOpt.SetPrivateIps(privateIps)
 	}
 
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	vmResponse, httpRes, err := oscApiClient.VmApi.CreateVms(oscAuthClient).CreateVmsRequest(vmOpt).Execute()
+	vmResponse, httpRes, err := s.tenant.Client().VmApi.CreateVms(s.tenant.ContextWithAuth(ctx)).CreateVmsRequest(vmOpt).Execute()
 	err = utils.LogAndExtractError(ctx, "CreateVms", vmOpt, httpRes, err)
 	if err != nil {
 		fmt.Printf("Error with http result %s", httpRes.Status)
@@ -198,7 +194,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err = tag.AddTag(ctx, vmTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	err = tag.AddTag(ctx, vmTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -213,9 +209,8 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 // DeleteVm delete machine vm
 func (s *Service) DeleteVm(ctx context.Context, vmId string) error {
 	deleteVmsRequest := osc.DeleteVmsRequest{VmIds: []string{vmId}}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	_, httpRes, err := oscApiClient.VmApi.DeleteVms(oscAuthClient).DeleteVmsRequest(deleteVmsRequest).Execute()
+
+	_, httpRes, err := s.tenant.Client().VmApi.DeleteVms(s.tenant.ContextWithAuth(ctx)).DeleteVmsRequest(deleteVmsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
 	return err
 }
@@ -227,9 +222,8 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 			VmIds: &[]string{vmId},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+
+	readVmsResponse, httpRes, err := s.tenant.Client().VmApi.ReadVms(s.tenant.ContextWithAuth(ctx)).ReadVmsRequest(readVmsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -254,9 +248,8 @@ func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) 
 			ClientTokens: &[]string{clientToken},
 		},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readVmsResponse, httpRes, err := oscApiClient.VmApi.ReadVms(oscAuthClient).ReadVmsRequest(readVmsRequest).Execute()
+
+	readVmsResponse, httpRes, err := s.tenant.Client().VmApi.ReadVms(s.tenant.ContextWithAuth(ctx)).ReadVmsRequest(readVmsRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadVms", readVmsRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -286,8 +279,7 @@ func HasCCMTags(vm *osc.Vm) bool {
 // AddCCMTags add ccm tag
 func (s *Service) AddCCMTags(ctx context.Context, clusterName string, hostname string, vmId string) error {
 	resourceIds := []string{vmId}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
+
 	nodeTag := osc.ResourceTag{
 		Key:   TagKeyNodeName,
 		Value: hostname,
@@ -300,5 +292,5 @@ func (s *Service) AddCCMTags(ctx context.Context, clusterName string, hostname s
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{nodeTag, clusterTag},
 	}
-	return tag.AddTag(ctx, nodeTagRequest, resourceIds, oscApiClient, oscAuthClient)
+	return tag.AddTag(ctx, nodeTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
 }

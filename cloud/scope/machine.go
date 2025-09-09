@@ -22,8 +22,6 @@ import (
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud"
-	osc "github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -37,7 +35,6 @@ import (
 
 // MachineScopeParams is a collection of input parameters to create a new scope
 type MachineScopeParams struct {
-	OscClient  *cloud.OscClient
 	Client     client.Client
 	Cluster    *clusterv1.Cluster
 	Machine    *clusterv1.Machine
@@ -69,7 +66,6 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 	}
 	return &MachineScope{
 		client:      params.Client,
-		OscClient:   params.OscClient,
 		Cluster:     params.Cluster,
 		Machine:     params.Machine,
 		OscCluster:  params.OscCluster,
@@ -80,7 +76,6 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 
 // MachineScope is the basic context of the actuator that will be used
 type MachineScope struct {
-	OscClient   *cloud.OscClient
 	client      client.Client
 	patchHelper *patch.Helper
 	Cluster     *clusterv1.Cluster
@@ -114,16 +109,6 @@ func (m *MachineScope) GetNamespace() string {
 // GetUID return the uid of the machine
 func (m *MachineScope) GetUID() string {
 	return string(m.Machine.UID)
-}
-
-// GetAuth return outscale api context
-func (m *MachineScope) GetAuth() context.Context {
-	return m.OscClient.Auth
-}
-
-// GetApi return outscale api credential
-func (m *MachineScope) GetApi() *osc.APIClient {
-	return m.OscClient.API
 }
 
 // GetVolumes return the volume of the cluster

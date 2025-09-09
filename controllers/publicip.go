@@ -34,7 +34,7 @@ type IPAllocator struct {
 func (a *IPAllocator) AllocateIP(ctx context.Context, key, name, pool string, clusterScope *scope.ClusterScope) (id, ip string, err error) {
 	log := ctrl.LoggerFrom(ctx)
 	if id, ok := a.getPublicIP(key); ok {
-		pip, err := a.Cloud.PublicIp(ctx, *clusterScope).GetPublicIp(ctx, id)
+		pip, err := a.Cloud.PublicIp(clusterScope.Tenant).GetPublicIp(ctx, id)
 		switch {
 		case err != nil:
 			return "", "", fmt.Errorf("allocate ip: %w", err)
@@ -65,7 +65,7 @@ func (a *IPAllocator) AllocateIP(ctx context.Context, key, name, pool string, cl
 func (a *IPAllocator) allocate(ctx context.Context, name string, clusterScope *scope.ClusterScope) (*osc.PublicIp, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.V(3).Info("Allocating publicIp")
-	pip, err := a.Cloud.PublicIp(ctx, *clusterScope).CreatePublicIp(ctx, name, clusterScope.GetUID())
+	pip, err := a.Cloud.PublicIp(clusterScope.Tenant).CreatePublicIp(ctx, name, clusterScope.GetUID())
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (a *IPAllocator) allocate(ctx context.Context, name string, clusterScope *s
 func (a *IPAllocator) allocateFromPool(ctx context.Context, pool string, clusterScope *scope.ClusterScope) (*osc.PublicIp, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.V(4).Info("Fetching publicIps from pool", "pool", pool)
-	pips, err := a.Cloud.PublicIp(ctx, *clusterScope).ListPublicIpsFromPool(ctx, pool)
+	pips, err := a.Cloud.PublicIp(clusterScope.Tenant).ListPublicIpsFromPool(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("from pool: %w", err)
 	}
@@ -107,7 +107,7 @@ func (a *IPAllocator) RetrackIP(ctx context.Context, key, publicIp string, clust
 	if ipid, found := a.getPublicIP(key); found && ipid != "" {
 		return nil
 	}
-	ip, err := a.Cloud.PublicIp(ctx, *clusterScope).GetPublicIpByIp(ctx, publicIp)
+	ip, err := a.Cloud.PublicIp(clusterScope.Tenant).GetPublicIpByIp(ctx, publicIp)
 	if err != nil {
 		return fmt.Errorf("retrack ip: %w", err)
 	}
@@ -121,7 +121,7 @@ func (a *IPAllocator) RetrackIP(ctx context.Context, key, publicIp string, clust
 func (a *IPAllocator) DeallocateIP(ctx context.Context, key string, clusterScope *scope.ClusterScope) error {
 	log := ctrl.LoggerFrom(ctx)
 	if id, ok := a.getPublicIP(key); ok {
-		pip, err := a.Cloud.PublicIp(ctx, *clusterScope).GetPublicIp(ctx, id)
+		pip, err := a.Cloud.PublicIp(clusterScope.Tenant).GetPublicIp(ctx, id)
 		switch {
 		case err != nil:
 			return fmt.Errorf("deallocate ip: %w", err)
@@ -136,7 +136,7 @@ func (a *IPAllocator) DeallocateIP(ctx context.Context, key string, clusterScope
 			return nil
 		}
 		log.V(2).Info("Deleting public IP", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
-		err = a.Cloud.PublicIp(ctx, *clusterScope).DeletePublicIp(ctx, id)
+		err = a.Cloud.PublicIp(clusterScope.Tenant).DeletePublicIp(ctx, id)
 		if err != nil {
 			return fmt.Errorf("decallocate ip: %w", err)
 		}

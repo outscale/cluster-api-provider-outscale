@@ -34,10 +34,8 @@ func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, err
 	readImageRequest := osc.ReadImagesRequest{
 		Filters: &osc.FiltersImage{ImageIds: &[]string{imageId}},
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
 
-	readImagesResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+	readImagesResponse, httpRes, err := s.tenant.Client().ImageApi.ReadImages(s.tenant.ContextWithAuth(ctx)).ReadImagesRequest(readImageRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadImages", readImageRequest, httpRes, err)
 	if err != nil {
 		return nil, err
@@ -60,9 +58,8 @@ func (s *Service) GetImageByName(ctx context.Context, imageName, accountId strin
 	if accountId != "" {
 		readImageRequest.Filters.AccountIds = &[]string{accountId}
 	}
-	oscApiClient := s.scope.GetApi()
-	oscAuthClient := s.scope.GetAuth()
-	readImagesResponse, httpRes, err := oscApiClient.ImageApi.ReadImages(oscAuthClient).ReadImagesRequest(readImageRequest).Execute()
+
+	readImagesResponse, httpRes, err := s.tenant.Client().ImageApi.ReadImages(s.tenant.ContextWithAuth(ctx)).ReadImagesRequest(readImageRequest).Execute()
 	err = utils.LogAndExtractError(ctx, "ReadImages", readImageRequest, httpRes, err)
 	if err != nil {
 		return nil, err

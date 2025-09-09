@@ -112,7 +112,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		volumes := machineScope.GetVolumes()
 		clientToken := machineScope.GetClientToken(clusterScope)
 		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
-		vm, err = r.Cloud.VM(ctx, *clusterScope).CreateVm(ctx, machineScope, &vmSpec, imageId, subnetId, securityGroupIds, privateIps, vmName, clientToken, vmTags, volumes)
+		vm, err = r.Cloud.VM(clusterScope.Tenant).CreateVm(ctx, machineScope, &vmSpec, imageId, subnetId, securityGroupIds, privateIps, vmName, clientToken, vmTags, volumes)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
 		}
@@ -132,7 +132,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	machineScope.SetReady()
 
 	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane {
-		svc := r.Cloud.LoadBalancer(ctx, *clusterScope)
+		svc := r.Cloud.LoadBalancer(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
@@ -180,7 +180,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	if !compute.HasCCMTags(vm) {
 		log.V(2).Info("Adding CCM tags")
-		err = r.Cloud.VM(ctx, *clusterScope).AddCCMTags(ctx, clusterScope.GetUID(), *privateDnsName, vm.GetVmId())
+		err = r.Cloud.VM(clusterScope.Tenant).AddCCMTags(ctx, clusterScope.GetUID(), *privateDnsName, vm.GetVmId())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot add ccm tag: %w", err)
 		}
@@ -207,7 +207,7 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 
 	vmSpec := machineScope.GetVm()
 	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane {
-		svc := r.Cloud.LoadBalancer(ctx, *clusterScope)
+		svc := r.Cloud.LoadBalancer(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
@@ -223,7 +223,7 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 	}
 
 	log.V(2).Info("Deleting VM", "vmId", vm.GetVmId())
-	err = r.Cloud.VM(ctx, *clusterScope).DeleteVm(ctx, vm.GetVmId())
+	err = r.Cloud.VM(clusterScope.Tenant).DeleteVm(ctx, vm.GetVmId())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete vm: %w", err)
 	}
