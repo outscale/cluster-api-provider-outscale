@@ -44,7 +44,7 @@ const OscClusterFinalizer = "oscclusters.infrastructure.cluster.x-k8s.io"
 
 // OscClusterReconciler reconciles a OscCluster object
 type OscClusterReconciler struct {
-	client.Client
+	Client           client.Client
 	Tracker          *ClusterResourceTracker
 	Cloud            services.Servicer
 	Recorder         record.EventRecorder
@@ -67,7 +67,7 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	oscCluster := &infrastructurev1beta1.OscCluster{}
 
-	if err := r.Get(ctx, req.NamespacedName, oscCluster); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, oscCluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(3).Info("Cluster was not found")
 			return ctrl.Result{}, nil
@@ -89,12 +89,16 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
+	t, err := getTenant(ctx, r.Client, r.Cloud, oscCluster)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to fetch tenant: %w", err)
+	}
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:     r.Client,
-		OscClient:  r.Cloud.OscClient(),
 		Cluster:    cluster,
 		OscCluster: oscCluster,
+		Tenant:     t,
 	})
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create scope: %w", err)

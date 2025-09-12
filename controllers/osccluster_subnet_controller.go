@@ -42,7 +42,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.Subnet(ctx, *clusterScope)
+	svc := r.Cloud.Subnet(clusterScope.Tenant)
 	for _, subnetSpec := range clusterScope.GetSubnets() {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
 		switch {
@@ -84,7 +84,7 @@ func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clust
 		log.V(4).Info("Not deleting existing subnets")
 		return reconcile.Result{}, nil
 	}
-	svc := r.Cloud.Subnet(ctx, *clusterScope)
+	svc := r.Cloud.Subnet(clusterScope.Tenant)
 	subnetsSpec := clusterScope.GetSubnets()
 	for _, subnetSpec := range subnetsSpec {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)

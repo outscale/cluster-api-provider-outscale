@@ -57,7 +57,7 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 		}
 	}
 	log.V(2).Info("Creating route", "destination", destinationIpRange, "resourceId", resourceId)
-	_, err = r.Cloud.RouteTable(ctx, *clusterScope).CreateRoute(ctx, destinationIpRange, routeTable.GetRouteTableId(), resourceId, routeSpec.TargetType)
+	_, err = r.Cloud.RouteTable(clusterScope.Tenant).CreateRoute(ctx, destinationIpRange, routeTable.GetRouteTableId(), resourceId, routeSpec.TargetType)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create route: %w", err)
 	}
@@ -83,7 +83,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.RouteTable(ctx, *clusterScope)
+	svc := r.Cloud.RouteTable(clusterScope.Tenant)
 	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -167,7 +167,7 @@ func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, cl
 	case err != nil:
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.RouteTable(ctx, *clusterScope)
+	svc := r.Cloud.RouteTable(clusterScope.Tenant)
 	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err

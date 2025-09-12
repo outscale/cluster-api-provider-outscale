@@ -32,7 +32,7 @@ func (r *OscMachineReconciler) reconcileDeletePublicIp(ctx context.Context, clus
 		log.V(4).Info("Not deleting publicip from pool")
 		return reconcile.Result{}, nil
 	}
-	svc := r.Cloud.PublicIp(ctx, *clusterScope)
+	svc := r.Cloud.PublicIp(clusterScope.Tenant)
 	for k, id := range r.Tracker.getPublicIps(machineScope) {
 		ip, err := svc.GetPublicIp(ctx, id)
 		if err != nil {

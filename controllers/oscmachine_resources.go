@@ -33,7 +33,7 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 		err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, vm.GetPublicIp(), clusterScope)
 		return vm, err
 	}
-	vm, err = t.Cloud.VM(ctx, *clusterScope).GetVm(ctx, id)
+	vm, err = t.Cloud.VM(clusterScope.Tenant).GetVm(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -59,7 +59,7 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 		return nil, id, nil
 	}
 	clientToken := machineScope.GetClientToken(clusterScope)
-	vm, err := t.Cloud.VM(ctx, *clusterScope).GetVmFromClientToken(ctx, clientToken)
+	vm, err := t.Cloud.VM(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get vm from client token: %w", err)
@@ -68,7 +68,7 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 	}
 	// Search by name (retrocompatibility)
 	name := machineScope.GetName() + "-" + clusterScope.GetUID()
-	tg, err := t.Cloud.Tag(ctx, *clusterScope).ReadTag(ctx, tag.VmResourceType, tag.NameKey, name)
+	tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.VmResourceType, tag.NameKey, name)
 	if err != nil {
 		return nil, "", fmt.Errorf("get vm: %w", err)
 	}
@@ -114,15 +114,15 @@ func (t *MachineResourceTracker) getImageId(ctx context.Context, machineScope *s
 		var accountId string
 		switch {
 		case imageSpec.OutscaleOpenSource:
-			accountId = OutscaleOpenSourceAccounts[t.Cloud.OscClient().Region]
+			accountId = OutscaleOpenSourceAccounts[clusterScope.GetRegion()]
 		case imageSpec.AccountId == "":
 			ctrl.LoggerFrom(ctx).V(2).Info("[security] It is recommended to set the image account to control the origin of the image.")
 		default:
 			accountId = imageSpec.AccountId
 		}
-		image, err = t.Cloud.Image(ctx, *clusterScope).GetImageByName(ctx, imageSpec.Name, accountId)
+		image, err = t.Cloud.Image(clusterScope.Tenant).GetImageByName(ctx, imageSpec.Name, accountId)
 	} else {
-		image, err = t.Cloud.Image(ctx, *clusterScope).GetImage(ctx, machineScope.GetImageId())
+		image, err = t.Cloud.Image(clusterScope.Tenant).GetImage(ctx, machineScope.GetImageId())
 	}
 	if err != nil {
 		return "", fmt.Errorf("cannot get image: %w", err)

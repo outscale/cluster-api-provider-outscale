@@ -49,7 +49,7 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 	}
 	log.V(3).Info("Creating net")
 	netSpec := clusterScope.GetNet()
-	net, err = r.Cloud.Net(ctx, *clusterScope).CreateNet(ctx, netSpec, clusterScope.GetUID(), clusterScope.GetNetName())
+	net, err = r.Cloud.Net(clusterScope.Tenant).CreateNet(ctx, netSpec, clusterScope.GetUID(), clusterScope.GetNetName())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create net: %w", err)
 	}
@@ -76,7 +76,7 @@ func (r *OscClusterReconciler) reconcileDeleteNet(ctx context.Context, clusterSc
 		return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 	}
 	log.V(2).Info("Deleting net", "netId", net.GetNetId())
-	err = r.Cloud.Net(ctx, *clusterScope).DeleteNet(ctx, net.GetNetId())
+	err = r.Cloud.Net(clusterScope.Tenant).DeleteNet(ctx, net.GetNetId())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete net: %w", err)
 	}
