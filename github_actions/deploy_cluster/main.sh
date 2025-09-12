@@ -48,9 +48,9 @@ export OSC_IOPS=1000
 export OSC_VOLUME_SIZE=30
 export OSC_VOLUME_TYPE=gp2
 export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
-ip=`curl https://api.ipify.org`
+ip=`curl -s -S https://api.ipify.org`
 export OSC_ALLOW_FROM="$ip/32"
-mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl https://api.ipify.org`
+mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S https://api.ipify.org`
 export OSC_ALLOW_FROM_CAPI="$mip/32"
 clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
 #clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale > clusterapi.yaml
@@ -101,11 +101,9 @@ for i in {1..50}; do
 done
 
 if [ "$CCM" = "true" ]; then
-  echo "installing CCM"
-  kubectl create secret generic osc-secret --from-literal=key_id=$OSC_ACCESS_KEY --from-literal=access_key=$OSC_SECRET_KEY --from-literal=aws_default_region=$OSC_REGION \
-    --from-literal=aws_availability_zones=MY_AWS_AVAILABILITY_ZONES --from-literal=osc_account_id=MY_OSC_ACCOUNT_ID --from-literal=osc_account_iam=MY_OSC_ACCOUNT_IAM --from-literal=osc_user_id=MY_OSC_USER_ID --from-literal=osc_arn=MY_OSC_ARN \
-    -n kube-system
-  helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret
+  echo "installing CCM v1"
+  kubectl create secret generic osc-secret --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY -n kube-system
+  helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret --set oscSecretFormat=v1 --set image.tag=v1.0.0-alpha.2
   echo "waiting for nodes"
   kubectl wait --for=condition=Ready nodes --all --timeout=900s
   kubectl get nodes -o wide
