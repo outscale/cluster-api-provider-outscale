@@ -1,45 +1,33 @@
 # 📦 Pull Request Template
 
-<!-- If this is your first PR, welcome! Please make sure you read the [contributing guidelines](../CONTRIBUTING.md). -->
+## Description
 
-
-## ✨ Description
-
-Please include a concise summary of the changes and their context.  
-If this is a feature, explain the motivation.  
-If it's a bug fix, describe what was broken and how it's fixed.
+Please include a summary of the changes and the related context. If this is a feature, explain the motivation. If it's a bug fix, describe what was broken.
 
 Fixes: #<issue-number> _(if applicable)_
 
----
+## Type of Change
 
-## 🏷️ Type of Change
-
-<!-- Add X in the box below -->
+Please check the relevant option(s):
 
 - [ ] 🐛 Bug fix
 - [ ] ✨ New feature
 - [ ] 🧹 Code cleanup or refactor
 - [ ] 📝 Documentation update
-- [ ] 🔧 Build or CI change
+- [ ] 🔧 Build or CI-related change
 - [ ] 🔒 Security fix
-- [ ] 📦 Dependency update
-- [ ] 💥 API change
-- [ ] 🧊 Deprecation
-- [ ] 🕳️ Regression fix
-- [ ] Other: <!-- specify -->
+- [ ] Other (specify):
 
----
+## How Has This Been Tested?
 
-## 🧪 How Has This Been Tested?
+Please describe the test strategy:
 
 - [ ] Manual testing
 - [ ] Unit tests
 - [ ] Integration tests
 - [ ] Not tested yet
 
-<details>
-<summary>Commands used (if applicable)</summary>
+Commands used (if applicable):
 
 ```bash
 # Example
@@ -47,29 +35,14 @@ my-cli-tool build --verbose
 my-cli-tool test
 ````
 
-</details>
-
----
-
-## ✅ Checklist
+## Checklist
 
 * [ ] I have followed the [Contributing Guidelines](CONTRIBUTING.md)
 * [ ] I have added tests or explained why they are not needed
 * [ ] I have updated relevant documentation (README, examples, etc.)
-* [ ] I have followed the [Conventional Commits](https://www.conventionalcommits.org/) specification
+* [ ] My changes follow the [Conventional Commits](https://www.conventionalcommits.org/) specification
 * [ ] My commits include appropriate [Gitmoji](https://gitmoji.dev/)
-* [ ] My commits are squashed
 
----
+## Additional Context
 
-## 📎 Additional Context
-
-Add screenshots, diagrams, or any other information useful for the reviewer.
-
----
-
-## 🙏 Reviewer Notes
-
-<!-- Optional guidance for the reviewer, e.g., focus area, known tradeoffs -->
-
-*Please confirm that if this PR changes any image versions or dependencies, then that's the sole change this PR makes.*
+Add any additional context or screenshots if necessary.
