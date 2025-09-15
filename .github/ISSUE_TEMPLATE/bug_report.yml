@@ -1,17 +1,20 @@
 name: Bug Report
-description: Report a bug encountered while using Cluster API or cluster-api-provider-outscale
-title: "[Bug]: "
-labels: ["bug"]
+description: Report a reproducible bug or regression
+labels: [bug]
 assignees: []
 
 body:
-  - type: textarea
-    id: what-happened
+  - type: markdown
     attributes:
-      label: What Happened?
-      description: Describe the issue you encountered with a clear and concise explanation.
-      placeholder: |
-        Example: When running `clusterctl init`, the process fails with a timeout when reaching out to the infrastructure provider.
+      value: |
+        Thanks for taking the time to report this bug! Please fill in as much detail as possible.
+
+  - type: input
+    id: title
+    attributes:
+      label: Bug Summary
+      description: A short summary of the bug
+      placeholder: e.g., Crash on startup
     validations:
       required: true
 
@@ -19,12 +22,12 @@ body:
     id: steps
     attributes:
       label: Steps to Reproduce
-      description: What steps can we follow to reproduce the issue?
+      description: Describe the steps needed to reproduce the issue
       placeholder: |
         1. Open a terminal
-        2. Run: `clusterctl init --infrastructure outscale`
-        3. Wait for component deployment
-        4. Observe failure in log output
+        2. Run: `my-cli-tool init --config config.yaml`
+        3. Run: `my-cli-tool deploy`
+        4. Observe the error in the output
     validations:
       required: true
 
@@ -32,45 +35,27 @@ body:
     id: expected
     attributes:
       label: Expected Behavior
-      description: What did you expect to happen instead?
-      placeholder: |
-        Example: Cluster API components should be deployed successfully and appear in the `capi-system` namespace.
+      description: What did you expect to happen?
     validations:
       required: true
 
   - type: textarea
-    id: logs
+    id: actual
     attributes:
-      label: Relevant Output (Logs)
-      description: Include any relevant `cluster-api` or `cluster-api-provider-outscale` logs.
-      placeholder: |
-        Paste log excerpts that help illustrate the error or unexpected behavior.
+      label: Actual Behavior
+      description: What actually happened?
     validations:
       required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Project Version
+      description: What version are you using?
+      placeholder: e.g., v1.2.3
 
   - type: textarea
     id: environment
     attributes:
-      label: Environment Details
-      description: Please fill out the environment in which this issue occurred.
-      value: |
-        - Kubernetes version (`kubectl version`): 
-        - OS (`/etc/os-release`): 
-        - Kernel (`uname -a`): 
-        - cluster-api-provider-outscale version: 
-        - cluster-api version: 
-        - Install tools: 
-        - Kubernetes distribution: 
-        - Distribution version: 
-      render: markdown
-    validations:
-      required: true
-
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: Additional Context
-      description: Add any other context, logs, screenshots, or configuration details that might help.
-      placeholder: Miscellaneous information that could help us investigate the issue.
-    validations:
-      required: false
+      label: Environment Info
+      description: Include OS, language/runtime, configuration, etc.
