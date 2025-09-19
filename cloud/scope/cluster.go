@@ -378,19 +378,29 @@ func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta1.OscSecurityGr
 }
 
 func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta1.OscSecurityGroup {
-	sgs := s.OscCluster.Spec.Network.SecurityGroups
 	allowedIn := s.OscCluster.Spec.Network.AllowFromIPRanges
+	allowedOut := s.OscCluster.Spec.Network.AllowToIPRanges
+	if len(allowedIn) == 0 && len(allowedOut) == 0 {
+		return s.OscCluster.Spec.Network.SecurityGroups
+	}
+	sgs := slices.Clone(s.OscCluster.Spec.Network.SecurityGroups)
+	for i := range sgs {
+		sgs[i].SecurityGroupRules = slices.Clone(sgs[i].SecurityGroupRules)
+	}
 	if len(allowedIn) > 0 {
 		for i := range sgs {
-			if slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleLoadBalancer) ||
-				slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleBastion) {
+			if slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleLoadBalancer) {
 				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
 					infrastructurev1beta1.OscSecurityGroupRule{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allowedIn},
 				)
 			}
+			if slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleBastion) {
+				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
+					infrastructurev1beta1.OscSecurityGroupRule{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: allowedIn},
+				)
+			}
 		}
 	}
-	allowedOut := s.OscCluster.Spec.Network.AllowToIPRanges
 	if len(allowedOut) > 0 {
 		for i := range sgs {
 			if (slices.Contains(sgs[i].Roles, infrastructurev1beta1.RoleWorker) &&
