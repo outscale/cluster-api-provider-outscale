@@ -711,8 +711,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockGetSecurityGroupFromName("test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520",
 					"", "", []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleBastion}, "sg-bastion"),
-				mockCreateSecurityGroupRule("sg-bastion", "Inbound", "tcp", "1.2.3.4/32", 6443, 6443),
-				mockCreateSecurityGroupRule("sg-bastion", "Inbound", "tcp", "2.3.4.5/32", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-bastion", "Inbound", "tcp", "1.2.3.4/32", 22, 22),
+				mockCreateSecurityGroupRule("sg-bastion", "Inbound", "tcp", "2.3.4.5/32", 22, 22),
 				mockCreateSecurityGroupRule("sg-bastion", "Outbound", "-1", "3.4.5.6/32", -1, -1),
 				mockCreateSecurityGroupRule("sg-bastion", "Outbound", "-1", "5.6.7.8/32", -1, -1),
 

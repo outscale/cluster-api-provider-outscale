@@ -170,3 +170,50 @@ func TestClusterScope_GetSecurityGroupsFor(t *testing.T) {
 		}
 	}
 }
+
+func TestClusterScope_GetSecurityGroups(t *testing.T) {
+	clusterScope := &scope.ClusterScope{
+		OscCluster: &infrastructurev1beta1.OscCluster{
+			Spec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					SubregionName: "eu-west2a",
+					SecurityGroups: []infrastructurev1beta1.OscSecurityGroup{{
+						Roles:              []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleBastion},
+						SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					}, {
+						Roles:              []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer},
+						SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					}, {
+						Roles:              []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker},
+						SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					}},
+					AllowFromIPRanges: []string{"1.2.3.0/24"},
+					AllowToIPRanges:   []string{"2.3.4.0/24"},
+				},
+			},
+		},
+	}
+	sgs := clusterScope.GetSecurityGroups()
+	for _, sg := range clusterScope.OscCluster.Spec.Network.SecurityGroups {
+		assert.Len(t, sg.SecurityGroupRules, 1, "The source spec must not be changed")
+	}
+	for _, sg := range sgs {
+		switch sg.Roles[0] {
+		case infrastructurev1beta1.RoleBastion:
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+				Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: []string{"1.2.3.0/24"},
+			})
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+				Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"2.3.4.0/24"},
+			})
+		case infrastructurev1beta1.RoleLoadBalancer:
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+				Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"1.2.3.0/24"},
+			})
+		case infrastructurev1beta1.RoleControlPlane:
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+				Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"2.3.4.0/24"},
+			})
+		}
+	}
+}
