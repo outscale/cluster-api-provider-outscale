@@ -1,6 +1,6 @@
 # Cluster API Provider Outscale (CAPOSC)
 
-[![Project Incubating](https://docs.outscale.com/fr/userguide/_images/Project-Incubating-blue.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
+[![Project Graduated](https://docs.outscale.com/en/userguide/_images/Project-Graduated-green.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
 [![](https://dcbadge.limes.pink/api/server/HUVtY5gT6s?style=flat&theme=default-inverted)](https://discord.gg/HUVtY5gT6s)
 
 <p align="center">
@@ -40,16 +40,9 @@ With CAPOSC, you can provision and manage Kubernetes clusters on OUTSCALE like a
 
 ---
 
-## 🚧 Project Status
-
-This project is currently in **alpha**.
-Features and APIs are subject to change. Use with caution in production environments.
-
----
-
 ## ✅ Requirements
 
-* [Kubernetes 1.26+](https://kubernetes.io/)
+* [Kubernetes 1.29+](https://kubernetes.io/)
 * [clusterctl CLI](https://cluster-api.sigs.k8s.io/reference/clusterctl.html)
 * An OUTSCALE account with API credentials
 * Internet access for cluster provisioning
@@ -57,15 +50,6 @@ Features and APIs are subject to change. Use with caution in production environm
 ---
 
 ## ⚙️ Installation
-
-Install `clusterctl` and initialize the management cluster with CAPOSC components.
-
-Refer to the getting started guide:
-
-```bash
-kubectl create namespace capa-outscale-system
-clusterctl init --infrastructure outscale
-```
 
 📘 See full instructions: [Getting Started with clusterctl](./docs/src/topics/get-started-with-clusterctl.md)
 
