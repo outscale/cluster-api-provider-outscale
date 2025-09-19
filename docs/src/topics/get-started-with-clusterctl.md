@@ -11,7 +11,7 @@
 
 On a Linux/amd64 platform:
 ```bash
-curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.9.6/clusterctl-linux-amd64 -o clusterctl
+curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.10.6/clusterctl-linux-amd64 -o clusterctl
 sudo install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
 ```
 
@@ -21,27 +21,14 @@ Check which version is installed:
 ```bash
 clusterctl version
 
-clusterctl version: &version.Info{Major:"1", Minor:"8", GitVersion:"v1.8.1", GitCommit:"02769254e95db17afbd6ec4036aacbd294d9424c", GitTreeState:"clean", BuildDate:"2024-08-14T05:53:36Z", GoVersion:"go1.22.5", Compiler:"gc", Platform:"linux/amd64"}
+clusterctl version: &version.Info{Major:"1", Minor:"10", GitVersion:"v1.10.6", GitCommit:"c37851897736ecd5bfcf29791b9ccfef1220e503", GitTreeState:"clean", BuildDate:"2025-09-02T16:04:06Z", GoVersion:"go1.23.12", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
 ## Configuring clusterctl
 
-You can enable [ClusterResourceSet][ClusterResourceSet] with 
-```bash
-export EXP_CLUSTER_RESOURCE_SET=true
-```
-
-You can enable [ClusterClass][ClusterClass] with
+You can enable [ClusterClass][ClusterClass] with:
 ```bash
 export CLUSTER_TOPOLOGY=true
-```
-
-Please create `$HOME/.cluster-api/clusterctl.yaml`:
-```yaml
-providers:
-- name: outscale
-  type: InfrastructureProvider
-  url: https://github.com/outscale/cluster-api-provider-outscale/releases/latest/infrastructure-components.yaml
 ```
 
 Install credentials for your workload cluster Outscale account:
@@ -113,40 +100,14 @@ To install CCM, you can use a [helm][helm] chart or a ClusterResourceSet.
 
 You can check the status of your new workload cluster:
 ```bash
-root@cidev-admin v1beta1]# kubectl get cluster-api  -A
-NAMESPACE   NAME                                                                       CLUSTER       AGE
-default     kubeadmconfig.bootstrap.cluster.x-k8s.io/cluster-api-control-plane-lzj65   cluster-api   95m
-default     kubeadmconfig.bootstrap.cluster.x-k8s.io/cluster-api-md-0-zgx4w            cluster-api   95m
-
-NAMESPACE   NAME                                                                AGE
-default     kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io/cluster-api-md-0   95m
-
-NAMESPACE   NAME                                                      CLUSTER       REPLICAS   READY   AVAILABLE   AGE   VERSION
-default     machineset.cluster.x-k8s.io/cluster-api-md-0-7568fb659d   cluster-api   1                              95m   v1.22.11
-
-NAMESPACE   NAME                                                  CLUSTER       REPLICAS   READY   UPDATED   UNAVAILABLE   PHASE       AGE   VERSION
-default     machinedeployment.cluster.x-k8s.io/cluster-api-md-0   cluster-api   1                  1         1             ScalingUp   95m   v1.22.11
-
-NAMESPACE   NAME                                                         CLUSTER       NODENAME                                  PROVIDERID         PHASE      AGE   VERSION
-default     machine.cluster.x-k8s.io/cluster-api-control-plane-4q2s8     cluster-api   ip-10-0-0-45.eu-west-2.compute.internal   aws:///eu-west-2a/i-3b629324    Running    95m   v1.22.11
-default     machine.cluster.x-k8s.io/cluster-api-md-0-7568fb659d-hnkfw   cluster-api   ip-10-0-0-144.eu-west-2.compute.internal   aws:///eu-west-2a/i-add154be   Running    95m   v1.22.11
-
-NAMESPACE   NAME                                   PHASE         AGE   VERSION
-default     cluster.cluster.x-k8s.io/cluster-api   Provisioned   95m   
-
-NAMESPACE                           NAME                                                         AGE   TYPE                   PROVIDER      VERSION
-capi-kubeadm-bootstrap-system       provider.clusterctl.cluster.x-k8s.io/bootstrap-kubeadm       46h   BootstrapProvider      kubeadm       v1.2.1
-capi-kubeadm-control-plane-system   provider.clusterctl.cluster.x-k8s.io/control-plane-kubeadm   46h   ControlPlaneProvider   kubeadm       v1.2.1
-capi-system                         provider.clusterctl.cluster.x-k8s.io/cluster-api             46h   CoreProvider           cluster-api   v1.2.1
-
-NAMESPACE   NAME                                                                          CLUSTER       INITIALIZED   API SERVER AVAILABLE   REPLICAS   READY   UPDATED   UNAVAILABLE   AGE   VERSION
-default     kubeadmcontrolplane.controlplane.cluster.x-k8s.io/cluster-api-control-plane   cluster-api                                        1                  1         1             95m   v1.22.11
-
-NAMESPACE   NAME                                                                           AGE
-default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-control-plane   95m
-default     oscmachinetemplate.infrastructure.cluster.x-k8s.io/cluster-api-md-0            95m
-
+kubectl get cluster-api --namespace <namespace of cluster>
 ```
+
+Or, using clusterctl:
+```bash
+clusterctl describe cluster <name of cluster> --namespace <namespace of cluster>
+```
+
 ## Connecting to a workload cluster
 
 You can get a kubeconfig to connect to your workload cluster with
@@ -159,11 +120,19 @@ To delete your cluster:
 kubectl delete -f getstarted.yaml
 ```
 
+## Upgrading the Outscale provider
+
+To upgrade the Outscale provider to a new version:
+```bash
+clusterctl upgrade apply -i outscale:v1.1.1
+```
+
 ## Deleting Cluster API
 
-To delete cluster-api:
+To remove all cluster-api components from your cluster:
 ```bash
 clusterctl delete --all
+kubectl delete namespace cluster-api-provider-outscale-system
 ```
 
 <!-- References -->

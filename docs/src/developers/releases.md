@@ -11,7 +11,7 @@ CCM_OSC_REGION=eu-west-2 KUBECONFIG=~/.kube/config IMG={repository host}/outscal
 
 ## Versioning
 Please use this semantic version:
-- Pre-release: `v0.1.1-alpha1`
+- Pre-release: `v0.1.1-alpha.1`
 - Major release: `v1.0.0`
 - Minor release: `v0.1.0`
 - Patch release: `v0.1.1`
