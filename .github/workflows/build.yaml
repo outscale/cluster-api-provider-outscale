@@ -22,20 +22,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: golangci-lint
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v5
+      - name: 🔎 golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.1
+          version: v2.5
           args: --timeout=300s
           only-new-issues: true
-      - name: check with ShellCheck
+      - name: 🔎 Reuse check
+        run: make lint-reuse
+        shell: bash
+      - name: 🔎 check with ShellCheck
         run: make install-shellcheck
         shell: bash
-      - name: Install yamllint
+      - name: ⬇️ Install yamllint
         run: pip install yamllint
-      - name: check with yamlint
+      - name: 🔎 check with yamlint
         run: yamllint -c .github/linters/yaml-lint.yaml . --format github
-      - name: Run make build
+      - name: 🔎 Run make build
         run: make build
         shell: bash

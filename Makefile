@@ -202,6 +202,10 @@ dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
 	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i -e HADOLINT_IGNORE=SC1091 hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
 
+.PHONY: lint-reuse
+lint-reuse:
+	docker run --rm --volume $(PWD):/data fsfe/reuse:5.1 lint
+
 .PHONY: trivy-scan
 trivy-scan:
 	docker pull $(TRIVY_IMAGE)
