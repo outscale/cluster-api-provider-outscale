@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Outscale SAS <opensource@outscale.com>
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+version = 1
+
+[[annotations]]
+path = ["*", ".github/**", "**/mock_*/*.go", "example/**", "controllers/testdata/**", "test/e2e/data/infrastructure-outscale/**", "templates/**", "helm/**", "github_actions/**"]
+SPDX-FileCopyrightText = "2025 Outscale SAS <opensource@outscale.com>"
+SPDX-License-Identifier = "BSD-3-Clause"
+
+[[annotations]]
+path = ["**.md", "docs/**"]
+SPDX-FileCopyrightText = "2025 Outscale SAS <opensource@outscale.com>"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["config/**", "hack/**", "test/e2e/**", "api/**"]
+SPDX-FileCopyrightText = "2025 The Kubernetes Authors"
+SPDX-License-Identifier = "Apache-2.0"
