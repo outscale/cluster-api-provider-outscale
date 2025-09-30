@@ -108,6 +108,12 @@ func patchUseCredentials(c infrastructurev1beta1.OscCredentials) patchOSCCluster
 	}
 }
 
+func patchUseNetPeering(n infrastructurev1beta1.OscNetPeering) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.NetPeering = n
+	}
+}
+
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
@@ -467,6 +473,37 @@ func mockCreateVmBastion(vmId, subnetId string, securityGroupIds, privateIps []s
 				PrivateIp:           ptr.To(defaultPrivateIp),
 				BlockDeviceMappings: &created,
 				State:               ptr.To("pending"),
+			}, nil)
+	}
+}
+
+func mockCreateNetPeering(netID, mgmtNetID, mgmtAccountID, clusterID string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetPeeringMock.EXPECT().CreateNetPeering(gomock.Any(), gomock.Eq(netID), gomock.Eq(mgmtNetID), gomock.Eq(mgmtAccountID), gomock.Eq(clusterID)).
+			Return(&osc.NetPeering{
+				NetPeeringId: ptr.To("np-foo"),
+				State: &osc.NetPeeringState{
+					Name: ptr.To("pending-acceptance"),
+				},
+			}, nil)
+	}
+}
+
+func mockAcceptNetPeering() mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetPeeringMock.EXPECT().AcceptNetPeering(gomock.Any(), gomock.Eq("np-foo")).
+			Return(nil)
+	}
+}
+
+func mockGetNetPeering(state string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetPeeringMock.EXPECT().GetNetPeering(gomock.Any(), gomock.Eq("np-foo")).
+			Return(&osc.NetPeering{
+				NetPeeringId: ptr.To("np-foo"),
+				State: &osc.NetPeeringState{
+					Name: &state,
+				},
 			}, nil)
 	}
 }

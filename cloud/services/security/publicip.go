@@ -55,7 +55,7 @@ func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clust
 	}
 	publicIp, ok := publicIpResponse.GetPublicIpOk()
 	if !ok {
-		return nil, errors.New("Can not create publicIp")
+		return nil, errors.New("cannot create publicIp")
 	}
 	return publicIp, nil
 }
@@ -87,7 +87,7 @@ func (s *Service) GetPublicIp(ctx context.Context, publicIpId string) (*osc.Publ
 	}
 	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
 	if !ok {
-		return nil, errors.New("Can not get publicIp")
+		return nil, errors.New("cannot get publicIp")
 	}
 	if len(*publicIps) == 0 {
 		return nil, nil
@@ -154,7 +154,7 @@ func (s *Service) ValidatePublicIpIds(ctx context.Context, publicIpIds []string)
 	var validPublicIpIds []string
 	publicIps, ok := readPublicIpsResponse.GetPublicIpsOk()
 	if !ok {
-		return nil, errors.New("Can not get publicIp")
+		return nil, errors.New("cannot get publicIp")
 	}
 	if len(*publicIps) != 0 {
 		for _, publicIp := range *publicIps {

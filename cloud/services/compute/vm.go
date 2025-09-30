@@ -102,7 +102,7 @@ func (s *Service) CreateVm(ctx context.Context,
 	}
 	vms, ok := vmResponse.GetVmsOk()
 	if !ok {
-		return nil, errors.New("Can not get vm")
+		return nil, errors.New("cannot get vm")
 	}
 	vmID := *(*vmResponse.Vms)[0].VmId
 	resourceIds := []string{vmID}
@@ -171,7 +171,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 	}
 	vms, ok := vmResponse.GetVmsOk()
 	if !ok {
-		return nil, errors.New("Can not get vm")
+		return nil, errors.New("cannot get vm")
 	}
 	vmID := *(*vmResponse.Vms)[0].VmId
 	resourceIds := []string{vmID}
@@ -220,7 +220,7 @@ func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
 
 	vms, ok := readVmsResponse.GetVmsOk()
 	if !ok {
-		return nil, errors.New("Can not get vm")
+		return nil, errors.New("cannot get vm")
 	}
 	if len(*vms) == 0 {
 		return nil, nil
@@ -246,7 +246,7 @@ func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) 
 
 	vms, ok := readVmsResponse.GetVmsOk()
 	if !ok {
-		return nil, errors.New("Can not get vm")
+		return nil, errors.New("cannot get vm")
 	}
 	if len(*vms) == 0 {
 		return nil, nil

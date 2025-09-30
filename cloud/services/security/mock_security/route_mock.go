@@ -100,7 +100,7 @@ func (mr *MockOscRouteTableInterfaceMockRecorder) DeleteRouteTable(ctx, routeTab
 }
 
 // GetRouteTable mocks base method.
-func (m *MockOscRouteTableInterface) GetRouteTable(ctx context.Context, routeTableId []string) (*osc.RouteTable, error) {
+func (m *MockOscRouteTableInterface) GetRouteTable(ctx context.Context, routeTableId string) (*osc.RouteTable, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRouteTable", ctx, routeTableId)
 	ret0, _ := ret[0].(*osc.RouteTable)

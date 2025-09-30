@@ -47,7 +47,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 	}
 	securityGroup, ok := securityGroupResponse.GetSecurityGroupOk()
 	if !ok {
-		return nil, errors.New("Can not create securitygroup")
+		return nil, errors.New("cannot create securitygroup")
 	}
 	resourceIds := []string{*securityGroupResponse.SecurityGroup.SecurityGroupId}
 	clusterTag := osc.ResourceTag{
@@ -180,7 +180,7 @@ func (s *Service) GetSecurityGroup(ctx context.Context, securityGroupId string) 
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
-		return nil, errors.New("Can not get securityGroup")
+		return nil, errors.New("cannot get securityGroup")
 	}
 	if len(*securitygroups) == 0 {
 		return nil, nil
@@ -205,7 +205,7 @@ func (s *Service) GetSecurityGroupFromName(ctx context.Context, name string) (*o
 	}
 	securitygroups, ok := readSecurityGroupsResponse.GetSecurityGroupsOk()
 	if !ok {
-		return nil, errors.New("Can not get securityGroup")
+		return nil, errors.New("cannot get securityGroup")
 	}
 	if len(*securitygroups) == 0 {
 		return nil, nil
@@ -223,8 +223,8 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 		toPortRanges = -1
 	}
 
-	switch {
-	case flow == "Inbound":
+	switch flow {
+	case "Inbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
 			Filters: &osc.FiltersSecurityGroup{
 				SecurityGroupIds:          &[]string{securityGroupId},
@@ -234,7 +234,7 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 			},
 		}
 
-	case flow == "Outbound":
+	case "Outbound":
 		readSecurityGroupRuleRequest = osc.ReadSecurityGroupsRequest{
 			Filters: &osc.FiltersSecurityGroup{
 				SecurityGroupIds:           &[]string{securityGroupId},
@@ -267,12 +267,12 @@ func (s *Service) SecurityGroupHasRule(ctx context.Context, securityGroupId stri
 	}
 	securityGroups, ok := readSecurityGroupRulesResponse.GetSecurityGroupsOk()
 	if !ok {
-		return false, errors.New("Can not get securityGroup")
+		return false, errors.New("cannot get securityGroup")
 	}
 	return len(*securityGroups) > 0, nil
 }
 
-// GetSecurityGroupIdsFromNetIds return the security group id resource that exist from the net id
+// GetSecurityGroupsFromNet return the security group id resource that exist from the net id
 func (s *Service) GetSecurityGroupsFromNet(ctx context.Context, netId string) ([]osc.SecurityGroup, error) {
 	readSecurityGroupRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{

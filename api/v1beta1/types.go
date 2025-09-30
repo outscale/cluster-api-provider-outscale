@@ -53,6 +53,9 @@ type OscNetwork struct {
 	// The Net configuration
 	// +optional
 	Net OscNet `json:"net,omitempty"`
+	// The NetPeering configuration, required if the load balancer is internal, and management and workload clusters are on separate VPCs.
+	// +optional
+	NetPeering OscNetPeering `json:"netPeering,omitempty"`
 	// List of subnet to spread controlPlane nodes (deprecated, add controlplane role to subnets)
 	// +optional
 	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
@@ -193,6 +196,24 @@ func (o *OscNet) IsZero() bool {
 
 var DefaultNet = OscNet{
 	IpRange: "10.0.0.0/16",
+}
+
+type OscNetPeering struct {
+	// Create a NetPeering between the management and workload VPCs.
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+	// The credentials of the management cluster account. Required if management and workload cluster are not in the same account.
+	// +optional
+	ManagementCredentials OscCredentials `json:"managementCredentials,omitempty"`
+	// The management cluster account ID (optional, fetched from the metadata server if not set).
+	// +optional
+	ManagementAccountID string `json:"managementAccountId,omitempty"`
+	// The management cluster net ID (optional, fetched from the metadata server if not set).
+	// +optional
+	ManagementNetID string `json:"managementNetId,omitempty"`
+	// By default, all subnets of managementNetId are routed to the netPeering. If set, only the specified subnet will be routed.
+	// +optional
+	ManagementSubnetID string `json:"managementSubnetId,omitempty"`
 }
 
 type OscInternetService struct {
@@ -438,6 +459,7 @@ type OscNetworkResource struct {
 
 type OscClusterResources struct {
 	Net             map[string]string `json:"net,omitempty"`
+	NetPeering      map[string]string `json:"netPeering,omitempty"`
 	Subnet          map[string]string `json:"subnet,omitempty"`
 	InternetService map[string]string `json:"internetService,omitempty"`
 	SecurityGroup   map[string]string `json:"securityGroup,omitempty"`
@@ -449,14 +471,16 @@ type OscClusterResources struct {
 type Reconciler string
 
 const (
-	ReconcilerBastion         Reconciler = "bastion"
-	ReconcilerNet             Reconciler = "net"
-	ReconcilerSubnet          Reconciler = "subnet"
-	ReconcilerInternetService Reconciler = "internetService"
-	ReconcilerNatService      Reconciler = "natService"
-	ReconcilerRouteTable      Reconciler = "routeTable"
-	ReconcilerSecurityGroup   Reconciler = "securityGroup"
-	ReconcilerLoadbalancer    Reconciler = "loadbalancer"
+	ReconcilerBastion          Reconciler = "bastion"
+	ReconcilerNet              Reconciler = "net"
+	ReconcilerNetPeering       Reconciler = "netPeering"
+	ReconcilerNetPeeringRoutes Reconciler = "netPeering/routes"
+	ReconcilerSubnet           Reconciler = "subnet"
+	ReconcilerInternetService  Reconciler = "internetService"
+	ReconcilerNatService       Reconciler = "natService"
+	ReconcilerRouteTable       Reconciler = "routeTable"
+	ReconcilerSecurityGroup    Reconciler = "securityGroup"
+	ReconcilerLoadbalancer     Reconciler = "loadbalancer"
 
 	ReconcilerVm Reconciler = "vm"
 )

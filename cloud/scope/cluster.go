@@ -121,7 +121,7 @@ func (s *ClusterScope) GetNetName() string {
 	if s.OscCluster.Spec.Network.Net.Name != "" {
 		return s.OscCluster.Spec.Network.Net.Name
 	}
-	return "Net for " + s.OscCluster.ObjectMeta.Name
+	return "Net for " + s.OscCluster.Name
 }
 
 // GetDefaultSubregion returns the default subregion.
@@ -218,13 +218,13 @@ func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta1.OscSubnet) strin
 	fd := s.GetSubnetSubregion(spec)
 	switch {
 	case s.SubnetIsPublic(spec):
-		return "Public subnet for " + s.OscCluster.ObjectMeta.Name + "/" + fd
+		return "Public subnet for " + s.OscCluster.Name + "/" + fd
 	case s.SubnetHasRole(spec, infrastructurev1beta1.RoleControlPlane):
-		return "Controlplane subnet for " + s.OscCluster.ObjectMeta.Name + "/" + fd
+		return "Controlplane subnet for " + s.OscCluster.Name + "/" + fd
 	case s.SubnetHasRole(spec, infrastructurev1beta1.RoleWorker):
-		return "Worker subnet for " + s.OscCluster.ObjectMeta.Name + "/" + fd
+		return "Worker subnet for " + s.OscCluster.Name + "/" + fd
 	default:
-		return "Subnet for " + s.OscCluster.ObjectMeta.Name + "/" + fd
+		return "Subnet for " + s.OscCluster.Name + "/" + fd
 	}
 }
 
@@ -238,7 +238,7 @@ func (s *ClusterScope) GetInternetServiceName() string {
 	if s.OscCluster.Spec.Network.InternetService.Name != "" {
 		return s.OscCluster.Spec.Network.InternetService.Name
 	}
-	return "Internet Service for " + s.OscCluster.ObjectMeta.Name
+	return "Internet Service for " + s.OscCluster.Name
 }
 
 var ErrNoNatFound = errors.New("natService not found")
@@ -292,7 +292,7 @@ func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta1.OscNatService
 	if nat.Name != "" {
 		return nat.Name
 	}
-	name := "Nat service for " + s.OscCluster.ObjectMeta.Name
+	name := "Nat service for " + s.OscCluster.Name
 	if nat.SubregionName != "" {
 		name += "/" + nat.SubregionName
 	}

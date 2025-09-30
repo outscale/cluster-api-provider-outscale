@@ -18,7 +18,10 @@ require (
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
-require go.yaml.in/yaml/v3 v3.0.4 // indirect
+require (
+	github.com/aws/aws-sdk-go-v2 v1.39.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+)
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect

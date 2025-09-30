@@ -21,6 +21,7 @@ type Servicer interface {
 	DefaultTenant() (tenant.Tenant, error)
 
 	Net(t tenant.Tenant) net.OscNetInterface
+	NetPeering(t tenant.Tenant) net.OscNetPeeringInterface
 	Subnet(t tenant.Tenant) net.OscSubnetInterface
 	SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface
 
@@ -56,57 +57,62 @@ func (s *Services) DefaultTenant() (tenant.Tenant, error) {
 	return s.defaultTenant, err
 }
 
-// getNetSvc retrieve netSvc
+// Net returns the Net service
 func (s *Services) Net(t tenant.Tenant) net.OscNetInterface {
 	return net.NewService(t)
 }
 
-// getSubnetSvc retrieve subnetSvc
+// NetPeering returns the NetPeering service
+func (s *Services) NetPeering(t tenant.Tenant) net.OscNetPeeringInterface {
+	return net.NewService(t)
+}
+
+// Subnet returns the Subnet interface
 func (s *Services) Subnet(t tenant.Tenant) net.OscSubnetInterface {
 	return net.NewService(t)
 }
 
-// getInternetServiceSvc retrieve internetServiceSvc
+// getInternetServiceSvc returns internetServiceSvc
 func (s *Services) InternetService(t tenant.Tenant) net.OscInternetServiceInterface {
 	return net.NewService(t)
 }
 
-// getRouteTableSvc retrieve routeTableSvc
+// getRouteTableSvc returns routeTableSvc
 func (s *Services) RouteTable(t tenant.Tenant) security.OscRouteTableInterface {
 	return security.NewService(t)
 }
 
-// getSecurityGroupSvc retrieve securityGroupSvc
+// getSecurityGroupSvc returns securityGroupSvc
 func (s *Services) SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface {
 	return security.NewService(t)
 }
 
-// getNatServiceSvc retrieve natServiceSvc
+// getNatServiceSvc returns natServiceSvc
 func (s *Services) NatService(t tenant.Tenant) net.OscNatServiceInterface {
 	return net.NewService(t)
 }
 
-// getVmSvc retrieve vmSvc
+// getVmSvc returns vmSvc
 func (s *Services) VM(t tenant.Tenant) compute.OscVmInterface {
 	return compute.NewService(t)
 }
 
-// getImageSvc retrieve imageSvc
+// getImageSvc returns imageSvc
 func (s *Services) Image(t tenant.Tenant) compute.OscImageInterface {
 	return compute.NewService(t)
 }
 
-// getPublicIpSvc retrieve publicIpSvc
+// getPublicIpSvc returns publicIpSvc
 func (s *Services) PublicIp(t tenant.Tenant) security.OscPublicIpInterface {
 	return security.NewService(t)
 }
 
-// getLoadBalancerSvc retrieve loadBalancerSvc
+// getLoadBalancerSvc returns loadBalancerSvc
 func (s *Services) LoadBalancer(t tenant.Tenant) loadbalancer.OscLoadBalancerInterface {
 	return loadbalancer.NewService(t)
 }
 
-// getTagSvc retrieve tagSvc
+// getTagSvc returns tagSvc
 func (s *Services) Tag(t tenant.Tenant) tag.OscTagInterface {
 	return tag.NewService(t)
 }

@@ -22,6 +22,20 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.WorkersMachineTemplateUpgradeTo))
 	})
 
+	Context("Running the quick-start airgap spec", func() {
+		capi_e2e.QuickStartSpec(ctx, func() capi_e2e.QuickStartSpecInput {
+			return capi_e2e.QuickStartSpecInput{
+				E2EConfig:              e2eConfig,
+				ClusterctlConfigPath:   clusterctlConfigPath,
+				InfrastructureProvider: &infraProvider,
+				BootstrapClusterProxy:  bootstrapClusterProxy,
+				ArtifactFolder:         artifactFolder,
+				SkipCleanup:            skipCleanup,
+				Flavor:                 ptr.To("airgap"),
+			}
+		})
+	})
+
 	Context("Running the quick-start spec", func() {
 		capi_e2e.QuickStartSpec(ctx, func() capi_e2e.QuickStartSpecInput {
 			return capi_e2e.QuickStartSpecInput{

@@ -9,6 +9,7 @@ package security
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
@@ -24,7 +25,7 @@ type OscRouteTableInterface interface {
 	CreateRoute(ctx context.Context, destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
 	DeleteRouteTable(ctx context.Context, routeTableId string) error
 	DeleteRoute(ctx context.Context, destinationIpRange string, routeTableId string) error
-	GetRouteTable(ctx context.Context, routeTableId []string) (*osc.RouteTable, error)
+	GetRouteTable(ctx context.Context, routeTableId string) (*osc.RouteTable, error)
 	GetRouteTableFromRoute(ctx context.Context, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error)
 	LinkRouteTable(ctx context.Context, routeTableId string, subnetId string) (string, error)
 	UnlinkRouteTable(ctx context.Context, linkRouteTableId string) error
@@ -62,29 +63,35 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterID 
 
 	routeTable, ok := routeTableResponse.GetRouteTableOk()
 	if !ok {
-		return nil, errors.New("Can not create route table")
+		return nil, errors.New("cannot create route table")
 	}
 	return routeTable, nil
 }
 
 // CreateRoute create the route associated with the routetable and the net
-func (s *Service) CreateRoute(ctx context.Context, destinationIpRange string, routeTableId string, resourceId string, resourceType string) (*osc.RouteTable, error) {
+func (s *Service) CreateRoute(ctx context.Context, destinationIpRange, routeTableId, resourceId string, resourceType string) (*osc.RouteTable, error) {
 	var routeRequest osc.CreateRouteRequest
-	switch {
-	case resourceType == "gateway":
+	switch resourceType {
+	case "gateway":
 		routeRequest = osc.CreateRouteRequest{
 			DestinationIpRange: destinationIpRange,
 			RouteTableId:       routeTableId,
 			GatewayId:          &resourceId,
 		}
-	case resourceType == "nat":
+	case "nat":
 		routeRequest = osc.CreateRouteRequest{
 			DestinationIpRange: destinationIpRange,
 			RouteTableId:       routeTableId,
 			NatServiceId:       &resourceId,
 		}
+	case "netPeering":
+		routeRequest = osc.CreateRouteRequest{
+			DestinationIpRange: destinationIpRange,
+			RouteTableId:       routeTableId,
+			NetPeeringId:       &resourceId,
+		}
 	default:
-		return nil, errors.New("Invalid Type")
+		return nil, fmt.Errorf("invalid type %q", resourceType)
 	}
 
 	routeResponse, httpRes, err := s.tenant.Client().RouteApi.CreateRoute(s.tenant.ContextWithAuth(ctx)).CreateRouteRequest(routeRequest).Execute()
@@ -121,10 +128,10 @@ func (s *Service) DeleteRoute(ctx context.Context, destinationIpRange string, ro
 }
 
 // GetRouteTable retrieve routetable object from the route table id
-func (s *Service) GetRouteTable(ctx context.Context, routeTableId []string) (*osc.RouteTable, error) {
+func (s *Service) GetRouteTable(ctx context.Context, routeTableId string) (*osc.RouteTable, error) {
 	readRouteTableRequest := osc.ReadRouteTablesRequest{
 		Filters: &osc.FiltersRouteTable{
-			RouteTableIds: &routeTableId,
+			RouteTableIds: &[]string{routeTableId},
 		},
 	}
 
@@ -136,7 +143,7 @@ func (s *Service) GetRouteTable(ctx context.Context, routeTableId []string) (*os
 	var routetable []osc.RouteTable
 	routetables, ok := readRouteTablesResponse.GetRouteTablesOk()
 	if !ok {
-		return nil, errors.New("Can not get routeTable")
+		return nil, errors.New("cannot get routeTable")
 	}
 	if len(*routetables) == 0 {
 		return nil, nil
@@ -175,7 +182,7 @@ func (s *Service) GetRouteTableFromRoute(ctx context.Context, routeTableId strin
 	}
 	routetables, ok := readRouteResponse.GetRouteTablesOk()
 	if !ok {
-		return nil, errors.New("Can not get routeTable")
+		return nil, errors.New("cannot get routeTable")
 	}
 	if len(*routetables) == 0 {
 		return nil, nil
@@ -213,7 +220,7 @@ func (s *Service) LinkRouteTable(ctx context.Context, routeTableId string, subne
 	}
 	routeTable, ok := linkRouteTableResponse.GetLinkRouteTableIdOk()
 	if !ok {
-		return "", errors.New("Can not link routetable")
+		return "", errors.New("cannot link routetable")
 	}
 	return *routeTable, nil
 }

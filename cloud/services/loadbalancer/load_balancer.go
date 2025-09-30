@@ -30,18 +30,6 @@ type OscLoadBalancerInterface interface {
 	DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
 }
 
-// ValidateProtocol check that the protocol string is a valid protocol
-func ValidateProtocol(protocol string) (string, error) {
-	switch {
-	case protocol == "HTTP" || protocol == "TCP":
-		return protocol, nil
-	case protocol == "SSL" || protocol == "HTTPS":
-		return protocol, errors.New("Ssl certificat is required")
-	default:
-		return protocol, errors.New("Invalid protocol")
-	}
-}
-
 // ConfigureHealthCheck update loadBalancer to configure healthCheck
 // Keep backoff: secondary call to CreateLoadBalancer
 func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
@@ -85,7 +73,7 @@ func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructure
 	}
 	loadBalancer, ok := updateLoadBalancerResponse.GetLoadBalancerOk()
 	if !ok {
-		return nil, errors.New("Can not update loadbalancer")
+		return nil, errors.New("cannot update loadbalancer")
 	}
 	return loadBalancer, nil
 }
@@ -146,7 +134,7 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 	var lb []osc.LoadBalancer
 	loadBalancers, ok := readLoadBalancersResponse.GetLoadBalancersOk()
 	if !ok {
-		return nil, errors.New("Can not get loadbalancer")
+		return nil, errors.New("cannot get loadbalancer")
 	}
 	if len(*loadBalancers) == 0 {
 		return nil, nil
@@ -158,7 +146,6 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 
 // GetLoadBalancerTag retrieve loadBalancer object from spec
 func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancerTag, error) {
-
 	readLoadBalancerTagRequest := osc.ReadLoadBalancerTagsRequest{
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 	}
@@ -171,7 +158,7 @@ func (s *Service) GetLoadBalancerTag(ctx context.Context, spec *infrastructurev1
 	var tag []osc.LoadBalancerTag
 	tags, ok := readLoadBalancerTagsResponse.GetTagsOk()
 	if !ok {
-		return nil, errors.New("Can not get tags")
+		return nil, errors.New("cannot get tags")
 	}
 	if len(*tags) == 0 {
 		return nil, nil
@@ -238,7 +225,7 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 	}
 	loadBalancer, ok := loadBalancerResponse.GetLoadBalancerOk()
 	if !ok {
-		return nil, errors.New("Can not create loadbalancer")
+		return nil, errors.New("cannot create loadbalancer")
 	}
 	return loadBalancer, nil
 }
