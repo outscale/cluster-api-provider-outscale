@@ -36,7 +36,8 @@ COPY controllers/ controllers/
 COPY cloud/ cloud/
 COPY util/ util/
 # Build
-ARG LDFLAGS="-s -w"
+ARG VERSION=dev
+ARG LDFLAGS="-s -w  -X 'github.com/outscale/cluster-api-provider-outscale/cloud/utils.version=${VERSION}'"
 ARG ARCH=amd64
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
@@ -47,8 +48,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static-debian12:${RUNTIME_IMAGE_TAG}
-ARG VERSION=dev
-ENV VERSION=${VERSION}
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532

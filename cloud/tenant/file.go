@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -52,6 +53,7 @@ func (t *fileTenant) Client() *osc.APIClient {
 	if err != nil {
 		panic(err) // should never occur, as TenantFromFile has checked that Configuration() does not return an error
 	}
+	cfg.UserAgent = "cluster-api-provider-outscale/" + utils.GetVersion()
 	return osc.NewAPIClient(cfg)
 }
 

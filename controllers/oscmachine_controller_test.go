@@ -9,7 +9,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
@@ -85,7 +84,7 @@ func runMachineTest(t *testing.T, tc testcase) {
 			require.NoError(t, err)
 			assert.Equal(t, step.requeue, res.RequeueAfter > 0 || res.Requeue)
 		}
-		var out v1beta1.OscMachine
+		var out infrastructurev1beta1.OscMachine
 		err = client.Get(context.TODO(), nsn, &out)
 		switch {
 		case step.assertDeleted:
@@ -115,27 +114,27 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
 			},
 			next: &testcase{
 				name:        "worker has been created, but vm is still pending",
 				clusterSpec: "ready-0.4", machineSpec: "base-worker",
-				machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", v1beta1.VmStatePending, false)},
+				machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", infrastructurev1beta1.VmStatePending, false)},
 				mockFuncs: []mockFunc{
 					mockGetVm("i-foo", "pending", false),
 				},
 				requeue:        true,
-				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", v1beta1.VmStatePending, false)},
+				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false)},
 				next: &testcase{
 					name:        "worker has been created, and vm is now running",
 					clusterSpec: "ready-0.4", machineSpec: "base-worker",
-					machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", v1beta1.VmStatePending, false)},
+					machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", infrastructurev1beta1.VmStatePending, false)},
 					mockFuncs: []mockFunc{
 						mockGetVm("i-foo", "running", false),
 						mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 					},
 					machineAsserts: []assertOSCMachineFunc{
-						assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+						assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
 						assertVolumesAreConfigured(),
 					},
 				},
@@ -199,7 +198,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
 			},
 			requeue: true,
 			next: &testcase{
@@ -211,7 +210,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
 				},
 			},
 		},
@@ -227,7 +226,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -257,7 +256,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -266,7 +265,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
 					assertVolumesAreConfigured("/dev/sdb", "vol-bar"),
 				},
 			},
@@ -291,7 +290,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -300,7 +299,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
 					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",
@@ -336,7 +335,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", v1beta1.VmStatePending, false),
+				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -345,7 +344,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", v1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
 					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",

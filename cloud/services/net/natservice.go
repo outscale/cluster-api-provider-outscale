@@ -85,7 +85,7 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 	}
 	natServices, ok := readNatServicesResponse.GetNatServicesOk()
 	if !ok {
-		return nil, errors.New("Can not get natService")
+		return nil, errors.New("cannot get natService")
 	}
 	if len(*natServices) == 0 {
 		return nil, nil
@@ -110,7 +110,7 @@ func (s *Service) GetNatServiceFromClientToken(ctx context.Context, clientToken 
 	}
 	natServices, ok := readNatServicesResponse.GetNatServicesOk()
 	if !ok {
-		return nil, errors.New("Can not get natService")
+		return nil, errors.New("cannot get natService")
 	}
 	if len(*natServices) == 0 {
 		return nil, nil
@@ -135,7 +135,7 @@ func (s *Service) ListNatServices(ctx context.Context, netId string) ([]osc.NatS
 	}
 	natServices, ok := readNatServicesResponse.GetNatServicesOk()
 	if !ok {
-		return nil, errors.New("Can not get natService")
+		return nil, errors.New("cannot get natService")
 	}
 	return *natServices, nil
 }

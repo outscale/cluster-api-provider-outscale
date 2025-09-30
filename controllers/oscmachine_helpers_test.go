@@ -8,7 +8,6 @@ package controllers_test
 import (
 	"testing"
 
-	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
@@ -34,8 +33,8 @@ var defaultVolumes = []osc.BlockDeviceMappingCreated{{
 	},
 }}
 
-func patchVmExists(vmId string, state v1beta1.VmState, ready bool) patchOSCMachineFunc {
-	return func(m *v1beta1.OscMachine) {
+func patchVmExists(vmId string, state infrastructurev1beta1.VmState, ready bool) patchOSCMachineFunc {
+	return func(m *infrastructurev1beta1.OscMachine) {
 		m.Status.Resources.Vm = map[string]string{"default": vmId}
 		m.Status.VmState = &state
 		m.Status.Ready = ready
@@ -43,14 +42,14 @@ func patchVmExists(vmId string, state v1beta1.VmState, ready bool) patchOSCMachi
 }
 
 func patchMoveMachine() patchOSCMachineFunc {
-	return func(m *v1beta1.OscMachine) {
+	return func(m *infrastructurev1beta1.OscMachine) {
 		m.UID = "foo"
-		m.Status = v1beta1.OscMachineStatus{}
+		m.Status = infrastructurev1beta1.OscMachineStatus{}
 	}
 }
 
 func patchUsePublicIP(pool ...string) patchOSCMachineFunc {
-	return func(m *v1beta1.OscMachine) {
+	return func(m *infrastructurev1beta1.OscMachine) {
 		m.Spec.Node.Vm.PublicIp = true
 		if len(pool) > 0 {
 			m.Spec.Node.Vm.PublicIpPool = pool[0]
@@ -59,7 +58,7 @@ func patchUsePublicIP(pool ...string) patchOSCMachineFunc {
 }
 
 func patchPublicIPStatus(publicIpId string) patchOSCMachineFunc {
-	return func(m *v1beta1.OscMachine) {
+	return func(m *infrastructurev1beta1.OscMachine) {
 		if m.Status.Resources.PublicIPs == nil {
 			m.Status.Resources.PublicIPs = map[string]string{}
 		}
@@ -200,8 +199,8 @@ func mockVmSetCCMTag(vmId, clusterID string) mockFunc {
 	}
 }
 
-func assertVmExists(vmId string, state v1beta1.VmState, ready bool) assertOSCMachineFunc {
-	return func(t *testing.T, m *v1beta1.OscMachine) {
+func assertVmExists(vmId string, state infrastructurev1beta1.VmState, ready bool) assertOSCMachineFunc {
+	return func(t *testing.T, m *infrastructurev1beta1.OscMachine) {
 		require.NotNil(t, m.Status.Resources.Vm)
 		assert.Equal(t, vmId, m.Status.Resources.Vm["default"])
 		require.NotNil(t, m.Status.VmState)
@@ -211,7 +210,7 @@ func assertVmExists(vmId string, state v1beta1.VmState, ready bool) assertOSCMac
 }
 
 func assertHasMachineFinalizer() assertOSCMachineFunc {
-	return func(t *testing.T, m *v1beta1.OscMachine) {
+	return func(t *testing.T, m *infrastructurev1beta1.OscMachine) {
 		assert.True(t, controllerutil.ContainsFinalizer(m, controllers.OscMachineFinalizer))
 	}
 }
@@ -223,7 +222,7 @@ func assertStatusMachineResources(rsrcs infrastructurev1beta1.OscMachineResource
 }
 
 func assertVolumesAreConfigured(deviceAndVolume ...string) assertOSCMachineFunc {
-	return func(t *testing.T, m *v1beta1.OscMachine) {
+	return func(t *testing.T, m *infrastructurev1beta1.OscMachine) {
 		expect := map[string]string{
 			"/dev/sda1": defaultRootVolumeId,
 		}

@@ -35,5 +35,5 @@ func extractOAPIError(err error, body []byte) error {
 	if jerr == nil && len(*oerr.Errors) > 0 {
 		return OAPIError{errors: *oerr.Errors}
 	}
-	return fmt.Errorf("http error: %w", err) //nolint
+	return fmt.Errorf("http error: %w", err)
 }

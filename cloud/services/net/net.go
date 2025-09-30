@@ -57,7 +57,7 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscN
 	}
 	net, ok := netResponse.GetNetOk()
 	if !ok {
-		return nil, errors.New("Can not create net")
+		return nil, errors.New("cannot create net")
 	}
 	return net, nil
 }
@@ -102,7 +102,7 @@ func (s *Service) GetNet(ctx context.Context, netId string) (*osc.Net, error) {
 	}
 	nets, ok := readNetsResponse.GetNetsOk()
 	if !ok {
-		return nil, errors.New("Can not get net")
+		return nil, errors.New("cannot get net")
 	}
 	if len(*nets) == 0 {
 		return nil, nil

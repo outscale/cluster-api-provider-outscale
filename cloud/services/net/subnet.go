@@ -58,7 +58,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.O
 
 	subnet, ok := subnetResponse.GetSubnetOk()
 	if !ok {
-		return nil, errors.New("Can not create subnet")
+		return nil, errors.New("cannot create subnet")
 	}
 	return subnet, nil
 }

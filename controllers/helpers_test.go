@@ -59,6 +59,7 @@ type MockCloudServices struct {
 	tenant        tenant.Tenant
 
 	NetMock           *mock_net.MockOscNetInterface
+	NetPeeringMock    *mock_net.MockOscNetPeeringInterface
 	SubnetMock        *mock_net.MockOscSubnetInterface
 	SecurityGroupMock *mock_security.MockOscSecurityGroupInterface
 
@@ -79,6 +80,7 @@ func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloud
 		defaultTenant: MockTenant{region: region},
 
 		NetMock:           mock_net.NewMockOscNetInterface(mockCtrl),
+		NetPeeringMock:    mock_net.NewMockOscNetPeeringInterface(mockCtrl),
 		SubnetMock:        mock_net.NewMockOscSubnetInterface(mockCtrl),
 		SecurityGroupMock: mock_security.NewMockOscSecurityGroupInterface(mockCtrl),
 
@@ -102,6 +104,11 @@ func (s *MockCloudServices) DefaultTenant() (tenant.Tenant, error) {
 func (s *MockCloudServices) Net(t tenant.Tenant) net.OscNetInterface {
 	s.tenant = t
 	return s.NetMock
+}
+
+func (s *MockCloudServices) NetPeering(t tenant.Tenant) net.OscNetPeeringInterface {
+	s.tenant = t
+	return s.NetPeeringMock
 }
 
 func (s *MockCloudServices) Subnet(t tenant.Tenant) net.OscSubnetInterface {

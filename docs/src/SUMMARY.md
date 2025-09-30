@@ -7,6 +7,7 @@
     - [Configuring nodes](./topics/config-nodes.md)
     - [Multi AZ clusters](./topics/config-multiaz.md)
     - [Securing cluster access](./topics/config-security.md)
+    - [Air-gapped clusters](./topics/config-airgap.md)
     - [Omi](./topics/omi.md)
     - [Troubleshooting](./topics/troubleshooting.md)
     - [Cluster-Autoscaler](./topics/cluster-autoscaler.md)

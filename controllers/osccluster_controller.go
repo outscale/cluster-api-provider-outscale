@@ -36,6 +36,7 @@ type OscClusterReconciler struct {
 	Client           client.Client
 	Tracker          *ClusterResourceTracker
 	Cloud            services.Servicer
+	Metadata         services.Metadata
 	Recorder         record.EventRecorder
 	ReconcileTimeout time.Duration
 	WatchFilterValue string
@@ -160,6 +161,20 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.RouteTablesReadyCondition)
 
+	if clusterScope.GetNetwork().NetPeering.Enable {
+		_, err = r.reconcileNetPeering(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.NetPeeringReadyCondition, infrastructurev1beta1.NetPeeringReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile netPeering: %w", err)
+		}
+		_, err = r.reconcileNetPeeringRoutes(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.NetPeeringReadyCondition, infrastructurev1beta1.NetPeeringReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile netPeering: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.NetPeeringReadyCondition)
+	}
+
 	// Security groups need NAT services to allow NAT to connect to LB.
 	_, err = r.reconcileSecurityGroup(ctx, clusterScope)
 	if err != nil {
@@ -175,7 +190,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 
-	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
+	if clusterScope.GetNetwork().Bastion.Enable {
 		_, err := r.reconcileBastion(ctx, clusterScope)
 		if err != nil {
 			conditions.MarkFalse(osccluster, infrastructurev1beta1.VmReadyCondition, infrastructurev1beta1.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
@@ -211,7 +226,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcile.Result{RequeueAfter: time.Minute}, nil
 	}
 
-	if clusterScope.OscCluster.Spec.Network.Bastion.Enable {
+	if clusterScope.GetNetwork().Bastion.Enable {
 		_, err := r.reconcileDeleteBastion(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete bastion: %w", err)
@@ -230,6 +245,16 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	_, err = r.reconcileDeletePublicIp(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile delete publicIPs: %w", err)
+	}
+	if clusterScope.GetNetwork().NetPeering.Enable {
+		_, err = r.reconcileDeleteNetPeeringRoutes(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete netPeering routes: %w", err)
+		}
+		_, err = r.reconcileDeleteNetPeering(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete netPeering: %w", err)
+		}
 	}
 	_, err = r.reconcileDeleteRouteTable(ctx, clusterScope)
 	if err != nil {

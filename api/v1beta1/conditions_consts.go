@@ -15,6 +15,12 @@ const (
 )
 
 const (
+	NetPeeringCreatedReason              string                  = "NetPeeringCreated"
+	NetPeeringReadyCondition             clusterv1.ConditionType = "NetPeeringReady"
+	NetPeeringReconciliationFailedReason string                  = "NetPeeringReconciliationFailed"
+)
+
+const (
 	SubnetCreatedReason               string                  = "SubnetCreated"
 	SubnetsReadyCondition             clusterv1.ConditionType = "SubnetsReady"
 	SubnetsReconciliationFailedReason string                  = "SubnetsReconciliationFailed"

@@ -54,7 +54,7 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 	}
 	internetService, ok := internetServiceResponse.GetInternetServiceOk()
 	if !ok {
-		return nil, errors.New("Can not create internetService")
+		return nil, errors.New("cannot create internetService")
 	}
 	return internetService, nil
 }

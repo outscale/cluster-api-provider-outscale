@@ -20,13 +20,14 @@ import (
 type ResourceType string
 
 const (
+	NetResourceType             ResourceType = "vpc"
+	NetPeeringResourceType      ResourceType = "vpc-peering-connection"
+	SubnetResourceType          ResourceType = "subnet"
 	InternetServiceResourceType ResourceType = "internet-service"
 	NatResourceType             ResourceType = "natgateway"
 	VmResourceType              ResourceType = "instance"
 	RouteTableResourceType      ResourceType = "route-table"
 	SecurityGroupResourceType   ResourceType = "security-group"
-	NetResourceType             ResourceType = "vpc"
-	SubnetResourceType          ResourceType = "subnet"
 	PublicIPResourceType        ResourceType = "public-ip"
 )
 
@@ -81,7 +82,7 @@ func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value
 	}
 	tags, ok := readTagsResponse.GetTagsOk()
 	if !ok {
-		return nil, errors.New("Can not get tag")
+		return nil, errors.New("cannot get tag")
 	}
 	if len(*tags) == 0 {
 		return nil, nil

@@ -82,6 +82,49 @@ func (t *ClusterResourceTracker) setNetId(clusterScope *scope.ClusterScope, id s
 	rsrc.Net[defaultResource] = id
 }
 
+func (t *ClusterResourceTracker) getNetPeering(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.NetPeering, error) {
+	id, err := t.getNetPeeringId(ctx, clusterScope)
+	if err != nil {
+		return nil, err
+	}
+	n, err := t.Cloud.NetPeering(clusterScope.Tenant).GetNetPeering(ctx, id)
+	switch {
+	case err != nil:
+		return nil, err
+	case n == nil:
+		return nil, fmt.Errorf("get net peering %s: %w", id, ErrMissingResource)
+	default:
+		return n, nil
+	}
+}
+
+// getNetPeeringId returns the id for the netpeering, a wrapped ErrNoResourceFound error otherwise.
+func (t *ClusterResourceTracker) getNetPeeringId(ctx context.Context, clusterScope *scope.ClusterScope) (string, error) {
+	rsrc := clusterScope.GetResources()
+	id := getResource(defaultResource, rsrc.NetPeering)
+	if id != "" {
+		return id, nil
+	}
+	// Search by OscK8sClusterID/(uid): owned tag
+	tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadOwnedByTag(ctx, tag.NetPeeringResourceType, clusterScope.GetUID())
+	if err != nil {
+		return "", fmt.Errorf("get net peering: %w", err)
+	}
+	if tg.GetResourceId() != "" {
+		t.setNetPeeringId(clusterScope, tg.GetResourceId())
+		return tg.GetResourceId(), nil
+	}
+	return "", fmt.Errorf("get net peering: %w", ErrNoResourceFound)
+}
+
+func (t *ClusterResourceTracker) setNetPeeringId(clusterScope *scope.ClusterScope, id string) {
+	rsrc := clusterScope.GetResources()
+	if rsrc.NetPeering == nil {
+		rsrc.NetPeering = map[string]string{}
+	}
+	rsrc.NetPeering[defaultResource] = id
+}
+
 func (t *ClusterResourceTracker) _getInternetServiceOrId(ctx context.Context, clusterScope *scope.ClusterScope) (*osc.InternetService, string, error) {
 	rsrc := clusterScope.GetResources()
 	id := getResource(defaultResource, rsrc.InternetService)

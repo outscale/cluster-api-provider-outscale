@@ -11,11 +11,9 @@ import (
 	"os"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,6 +27,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
@@ -54,6 +54,7 @@ func main() {
 	var probeAddr string
 	var watchFilterValue string
 	var syncPeriod time.Duration
+	var skipMetadata bool
 
 	fs := pflag.CommandLine
 	fs.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -63,6 +64,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	fs.StringVar(&watchFilterValue, "watch-filter", "", fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
 	fs.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
+	fs.BoolVar(&skipMetadata, "skip-metadata", false, "Skip metadata call")
 
 	logOptions := logs.NewOptions()
 	v1.AddFlags(logOptions, fs)
@@ -73,7 +75,8 @@ func main() {
 		setupLog.Error(err, "unable to validate and apply log options")
 		os.Exit(1)
 	}
-	ctrl.SetLogger(klog.Background())
+	logger := klog.Background().WithValues("version", utils.GetVersion())
+	ctrl.SetLogger(logger)
 
 	leaseDuration := 60 * time.Second
 	renewDeadline := 30 * time.Second
@@ -95,7 +98,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		logger.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
@@ -103,8 +106,15 @@ func main() {
 
 	cs, err := services.NewServices()
 	if err != nil {
-		setupLog.Error(err, "unable to initialize cloud services")
+		logger.Error(err, "unable to initialize cloud services")
 		os.Exit(1)
+	}
+	var meta services.Metadata
+	if !skipMetadata {
+		meta, err = services.FetchMetadata()
+		if err != nil {
+			logger.Error(err, "unable to fetch metadata")
+		}
 	}
 
 	tracker := &controllers.ClusterResourceTracker{
@@ -114,11 +124,12 @@ func main() {
 		Client:           mgr.GetClient(),
 		Tracker:          tracker,
 		Cloud:            cs,
+		Metadata:         meta,
 		Recorder:         mgr.GetEventRecorderFor("osccluster-controller"),
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,
 	}).SetupWithManager(ctx, mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OscCluster")
+		logger.Error(err, "unable to create controller", "controller", "OscCluster")
 		os.Exit(1)
 	}
 
@@ -134,7 +145,7 @@ func main() {
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,
 	}).SetupWithManager(ctx, mgr, controller.Options{}); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OscMachine")
+		logger.Error(err, "unable to create controller", "controller", "OscMachine")
 		os.Exit(1)
 	}
 
@@ -144,48 +155,40 @@ func main() {
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,
 	}).SetupWithManager(ctx, mgr, controller.Options{}); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OscMachineTemplate")
+		logger.Error(err, "unable to create controller", "controller", "OscMachineTemplate")
 		os.Exit(1)
 	}
 
-	setUpWebhookWithManager(mgr)
 	if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
+		logger.Error(err, "unable to create webhook", "webhook", "OscMachine")
 		os.Exit(1)
 	}
 	if err = (&infrastructurev1beta1.OscMachineTemplate{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate")
+		logger.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate")
 		os.Exit(1)
 	}
 	if err = (&infrastructurev1beta1.OscClusterTemplate{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate")
+		logger.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate")
 		os.Exit(1)
 	}
 	if err = (&infrastructurev1beta1.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "OscCluster")
+		logger.Error(err, "unable to create webhook", "webhook", "OscCluster")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		logger.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", mgr.GetWebhookServer().StartedChecker()); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		logger.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	logger.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
-		os.Exit(1)
-	}
-}
-
-func setUpWebhookWithManager(mgr ctrl.Manager) {
-	if err := (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
+		logger.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
