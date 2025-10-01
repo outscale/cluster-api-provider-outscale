@@ -121,24 +121,12 @@ metadata:
 spec:
   template:
     spec:
-      files:
-        - content: |
-            #!/bin/sh
-
-            curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-            chmod +x /tmp/runc.amd64
-            cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-          owner: root:root
-          path: /tmp/set_runc.sh
-          permissions: "0744"
       joinConfiguration:
         nodeRegistration:
           kubeletExtraArgs:
             cloud-provider: external
             provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
           name: '{{ ds.meta_data.local_hostname }}'
-      preKubeadmCommands:
-        - sh /tmp/set_runc.sh
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane
@@ -147,16 +135,6 @@ metadata:
   namespace: default
 spec:
   kubeadmConfigSpec:
-    files:
-      - content: |
-          #!/bin/sh
-
-          curl https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64 -Lo /tmp/runc.amd64
-          chmod +x /tmp/runc.amd64
-          cp -f /tmp/runc.amd64 /usr/local/sbin/runc
-        owner: root:root
-        path: /tmp/set_runc.sh
-        permissions: "0744"
     initConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
@@ -168,8 +146,6 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-    preKubeadmCommands:
-      - sh /tmp/set_runc.sh
   machineTemplate:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
