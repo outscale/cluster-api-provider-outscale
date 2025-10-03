@@ -537,6 +537,8 @@ type OscVolume struct {
 	VolumeType string `json:"volumeType,omitempty"`
 	// (unused)
 	ResourceId string `json:"resourceId,omitempty"`
+	// The id of a snapshot to use as a volume source.
+	FromSnapshot string `json:"fromSnapshot,omitempty"`
 }
 
 type OscKeypair struct {

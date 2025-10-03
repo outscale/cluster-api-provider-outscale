@@ -25,3 +25,8 @@ spec:
       iops: 500
       size: 15
       volumeType: io1
+    - name: images
+      device: /dev/sdc
+      size: 15
+      volumeType: gp2
+      fromSnapshot: snap-foo
