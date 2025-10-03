@@ -77,6 +77,9 @@ func (s *Service) CreateVm(ctx context.Context,
 		if vol.VolumeType == "io1" {
 			bsuVol.Bsu.Iops = &vol.Iops
 		}
+		if vol.FromSnapshot != "" {
+			bsuVol.Bsu.SnapshotId = &vol.FromSnapshot
+		}
 		volMappings = append(volMappings, bsuVol)
 	}
 

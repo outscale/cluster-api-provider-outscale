@@ -239,7 +239,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// Volumes
 		{
-			name:        "Creating a vm with an additional volume",
+			name:        "Creating a vm with additional volumes",
 			clusterSpec: "ready-0.4", machineSpec: "base-worker-volumes",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
@@ -251,7 +251,13 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					VolumeType: "io1",
 					Iops:       500,
 					Device:     "/dev/sdb",
-				}}, "vol-bar"),
+				}, {
+					Name:         "images",
+					Size:         15,
+					VolumeType:   "gp2",
+					Device:       "/dev/sdc",
+					FromSnapshot: "snap-foo",
+				}}, "vol-bar", "vol-baz"),
 			},
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
@@ -266,7 +272,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
 					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
-					assertVolumesAreConfigured("/dev/sdb", "vol-bar"),
+					assertVolumesAreConfigured("/dev/sdb", "vol-bar", "/dev/sdc", "vol-baz"),
 				},
 			},
 		},

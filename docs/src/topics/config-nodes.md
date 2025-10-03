@@ -20,9 +20,7 @@ The node subregion needs to be configured.
 
 By default, nodes use a single root volume (/dev/sda1). Additional volumes can be added to VM.
 
-> Volumes are created unformatted. You will need to format the newly created volumes during cloud-init.
-
-In your `OscMachineTemplate` spec, add the list of volumes required:
+In your `OscMachineTemplate` spec, add the list of required volumes:
 
 ```yaml
 [...]
@@ -41,6 +39,17 @@ In your `OscMachineTemplate` spec, add the list of volumes required:
       volumeType: io1
 [...]
 ```
+
+A snapshot can be used as a volume source:
+```yaml
+    - name: images
+      device: /dev/sdd
+      size: 5
+      volumeType: gp2
+      fromSnapshot: snap-xxx
+```
+
+> Volumes not created from a snapshot are unformatted. You will need to format newly created volumes during cloud-init.
 
 ## OscMachineTemplate configuration
 

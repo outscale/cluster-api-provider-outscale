@@ -1791,6 +1791,9 @@ spec:
                         device:
                           description: The volume device (/dev/sdX)
                           type: string
+                        fromSnapshot:
+                          description: The id of a snapshot to use as a volume source.
+                          type: string
                         iops:
                           description: The volume iops (io1 volumes only)
                           format: int32
@@ -2224,6 +2227,10 @@ spec:
                               properties:
                                 device:
                                   description: The volume device (/dev/sdX)
+                                  type: string
+                                fromSnapshot:
+                                  description: The id of a snapshot to use as a volume
+                                    source.
                                   type: string
                                 iops:
                                   description: The volume iops (io1 volumes only)
