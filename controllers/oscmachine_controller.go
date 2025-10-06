@@ -204,6 +204,7 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		return fmt.Errorf("failed to create mapper for Cluster to OscMachines: %w", err)
 	}
 	err = ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(mgr.GetScheme(), ctrl.LoggerFrom(ctx), r.WatchFilterValue)).
 		For(&infrastructurev1beta1.OscMachine{}).
 		Watches(

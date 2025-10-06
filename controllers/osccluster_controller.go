@@ -25,6 +25,7 @@ import (
 	predicates "sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -285,8 +286,9 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *OscClusterReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *OscClusterReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&infrastructurev1beta1.OscCluster{}).
 		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(mgr.GetScheme(), ctrl.LoggerFrom(ctx), r.WatchFilterValue)).
 		Complete(r)

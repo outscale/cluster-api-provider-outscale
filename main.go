@@ -15,6 +15,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
+	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -35,9 +36,8 @@ import (
 )
 
 var (
-	scheme           = runtime.NewScheme()
-	setupLog         = ctrl.Log.WithName("setup")
-	reconcileTimeout time.Duration
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
@@ -55,16 +55,36 @@ func main() {
 	var watchFilterValue string
 	var syncPeriod time.Duration
 	var skipMetadata bool
+	var leaseDuration time.Duration
+	var renewDeadline time.Duration
+	var retryPeriod time.Duration
+	var clusterConcurrency int
+	var machineConcurrency int
+	var reconcileTimeout time.Duration
 
 	fs := pflag.CommandLine
-	fs.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	fs.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	fs.BoolVar(&enableLeaderElection, "leader-elect", true,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	fs.StringVar(&watchFilterValue, "watch-filter", "", fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
-	fs.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The minimum interval at which watched cluster-api objects are reconciled (e.g. 15m)")
+	fs.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to")
+	fs.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to")
+
+	fs.BoolVar(&enableLeaderElection, "leader-elect", true, "Enable leader election for controller manager")
+	fs.DurationVar(&leaseDuration, "leader-elect-lease-duration", 15*time.Second,
+		"Interval at which non-leader candidates will wait to force acquire leadership")
+	fs.DurationVar(&renewDeadline, "leader-elect-renew-deadline", 10*time.Second,
+		"Duration that the leading controller manager will retry refreshing leadership before giving up")
+	fs.DurationVar(&retryPeriod, "leader-elect-retry-period", 2*time.Second,
+		"Duration the LeaderElector clients should wait between tries of actions")
+
+	fs.StringVar(&watchFilterValue, "watch-filter", "",
+		fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
+	fs.DurationVar(&syncPeriod, "sync-period", 5*time.Minute,
+		"The minimum interval at which watched cluster-api objects are reconciled")
 	fs.BoolVar(&skipMetadata, "skip-metadata", false, "Skip metadata call")
+	fs.DurationVar(&reconcileTimeout, "reconcile-timeout", reconciler.DefaultLoopTimeout,
+		"The maximum duration a reconcile loop can run")
+	fs.IntVar(&clusterConcurrency, "osccluster-concurrency", 2,
+		"Number of OscCluster reconciles to process simultaneously")
+	fs.IntVar(&machineConcurrency, "oscmachine-concurrency", 2,
+		"Number of OscMachine reconciles to process simultaneously")
 
 	logOptions := logs.NewOptions()
 	v1.AddFlags(logOptions, fs)
@@ -78,9 +98,6 @@ func main() {
 	logger := klog.Background().WithValues("version", utils.GetVersion())
 	ctrl.SetLogger(logger)
 
-	leaseDuration := 60 * time.Second
-	renewDeadline := 30 * time.Second
-	retryPeriod := 10 * time.Second
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: server.Options{
@@ -128,7 +145,7 @@ func main() {
 		Recorder:         mgr.GetEventRecorderFor("osccluster-controller"),
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,
-	}).SetupWithManager(ctx, mgr); err != nil {
+	}).SetupWithManager(ctx, mgr, controller.Options{MaxConcurrentReconciles: clusterConcurrency}); err != nil {
 		logger.Error(err, "unable to create controller", "controller", "OscCluster")
 		os.Exit(1)
 	}
@@ -144,7 +161,7 @@ func main() {
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
 		ReconcileTimeout: reconcileTimeout,
 		WatchFilterValue: watchFilterValue,
-	}).SetupWithManager(ctx, mgr, controller.Options{}); err != nil {
+	}).SetupWithManager(ctx, mgr, controller.Options{MaxConcurrentReconciles: machineConcurrency}); err != nil {
 		logger.Error(err, "unable to create controller", "controller", "OscMachine")
 		os.Exit(1)
 	}
