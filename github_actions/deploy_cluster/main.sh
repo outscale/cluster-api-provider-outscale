@@ -103,7 +103,7 @@ done
 if [ "$CCM" = "true" ]; then
   echo "installing CCM v1"
   kubectl create secret generic osc-secret --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY -n kube-system
-  helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret --set oscSecretFormat=v1 --set image.tag=v1.0.0-alpha.2
+  helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret
   echo "waiting for nodes"
   kubectl wait --for=condition=Ready nodes --all --timeout=900s
   kubectl get nodes -o wide
