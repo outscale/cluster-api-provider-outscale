@@ -41,6 +41,8 @@ cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$
 /.venv/bin/oks-cli cluster list
 kubeconfig=`/.venv/bin/oks-cli cluster kubeconfig --cluster-name $cluster_name --print-path`
 export KUBECONFIG=$kubeconfig
+cp $KUBECONFIG oks.kubeconfig
+echo "MANAGEMENT_KUBECONFIG=oks.kubeconfig" >> $GITHUB_OUTPUT
 
 # clusterctl
 export OSC_SUBREGION_NAME=${OSC_REGION}a
@@ -109,7 +111,7 @@ if [ "$CCM" = "true" ]; then
   kubectl wait --for=condition=Ready nodes --all --timeout=900s
   kubectl get nodes -o wide
   echo "restarting pods"
-  kubectl get pods --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
+  kubectl get po -A -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
   echo "waiting for pods"
   kubectl wait --for=condition=Ready po --all -A --timeout=900s
   kubectl get po -A

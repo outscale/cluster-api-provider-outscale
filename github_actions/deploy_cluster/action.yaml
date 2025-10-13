@@ -50,6 +50,8 @@ inputs:
 outputs:
   KUBECONFIG:
     description: 'Kubeconfig path'
+  MANAGEMENT_KUBECONFIG:
+    description: 'Kubeconfig path for management cluster'
 runs:
   using: 'docker'
   image: 'Dockerfile'
