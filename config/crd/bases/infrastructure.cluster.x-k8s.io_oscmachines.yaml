@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20250924093817-1d67470bef32
+    controller-gen.kubebuilder.io/version: v0.19.1-0.20251023132335-bf7d6b742e6a
   name: oscmachines.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -191,7 +191,7 @@ spec:
                     items:
                       properties:
                         device:
-                          description: The volume device (/dev/sdX)
+                          description: The volume device (/dev/xvdX)
                           type: string
                         fromSnapshot:
                           description: The id of a snapshot to use as a volume source.
@@ -218,7 +218,6 @@ spec:
                           type: string
                       required:
                       - device
-                      - size
                       type: object
                     type: array
                 type: object

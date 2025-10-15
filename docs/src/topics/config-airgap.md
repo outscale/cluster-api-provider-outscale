@@ -65,9 +65,9 @@ network:
 
 TBD
 
-## Pre-loaded images
+## Preloaded images
 
-TBD
+See [Preloading images](preload.md).
 
 ## Outscale API access
 

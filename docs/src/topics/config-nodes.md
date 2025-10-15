@@ -28,28 +28,40 @@ In your `OscMachineTemplate` spec, add the list of required volumes:
     vm: [...]
     volumes:
     - name: data
-      device: /dev/sdb
+      device: /dev/xvdb
       iops: 500
       size: 50
       volumeType: io1
     - name: logs
-      device: /dev/sdc
+      device: /dev/xvdc
       iops: 500
       size: 10
       volumeType: io1
 [...]
 ```
 
+> New volumes are unformatted. You will need to partition, format and mount them during cloud-init.
+
 A snapshot can be used as a volume source:
 ```yaml
     - name: images
-      device: /dev/sdd
-      size: 5
-      volumeType: gp2
+      device: /dev/xvdd
       fromSnapshot: snap-xxx
 ```
 
-> Volumes not created from a snapshot are unformatted. You will need to format newly created volumes during cloud-init.
+> By default, the size of the snapshot is used for the new volume.
+
+You will need to mount snapshot-based volumes during cloud-init. In `KubeadmConfigTemplate`/`KubeadmControlPlane` resources:
+```yaml
+  spec:
+    joinConfiguration:
+      [...]
+    mounts:
+      - - xvdd
+        - /mnt/example
+        - ext4
+        - auto,exec,ro
+```
 
 ## OscMachineTemplate configuration
 
@@ -88,13 +100,14 @@ Outscale Open-Source images are published on the `eu-west-2`, `us-east-2` and `c
 
 `volumes` is a list of additional volumes.
 
-| Name |  Required | Description
-| --- | --- | ---
-| `name` | false |  The volume name
-| `device` | true |  The volume device (`/dev/sdX`)
-| `size` | true |  The volume size
-| `volumeType` | true |  The volume type (`io1`, `gp2` or `standard`)
-| `iops` | false |  The volume iops (only for the `io1` type)
+| Name | Default | Required | Description
+| --- | --- | --- | ---
+| `name` | n/a | false |  The volume name
+| `device` | n/a | true |  The volume device (`/dev/xvdX`)
+| `size` | n/a | false |  The volume size (required unless the source is a snapshot; if not set, the snapshot size is used)
+| `volumeType` | `standard` | false |  The volume type (`io1`, `gp2` or `standard`)
+| `iops` | n/a | false |  The volume iops (only for the `io1` type)
+| `fromSnapshot` | n/a | false |  The ID of the source snapshot
 
 ### Subnet & security group selection
 

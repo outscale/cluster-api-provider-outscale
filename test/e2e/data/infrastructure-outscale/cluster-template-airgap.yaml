@@ -75,6 +75,9 @@ spec:
           keypairName: "${OSC_KEYPAIR_NAME}"
           subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
+        volumes:
+        - device: /dev/xvdb
+          fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -96,6 +99,9 @@ spec:
           keypairName: "${OSC_KEYPAIR_NAME}"
           role: controlplane
           vmType: "${OSC_VM_TYPE}"
+        volumes:
+        - device: /dev/xvdb
+          fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
@@ -104,12 +110,20 @@ metadata:
 spec:
   template:
     spec:
+      verbosity: 5
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
           kubeletExtraArgs:
             cloud-provider: external
             provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+      mounts:
+        - - xvdb
+          - /preload
+          - ext4
+          - auto,exec,ro
+      preKubeadmCommands:
+        - /preload/restore.sh
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -123,18 +137,25 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
+    verbosity: 5
     initConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
-    files:
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+    mounts:
+      - - xvdb
+        - /preload
+        - ext4
+        - "auto,exec,ro,nodev"
+    preKubeadmCommands:
+      - /preload/restore.sh
   version: "${KUBERNETES_VERSION}"
 ---
 apiVersion: v1

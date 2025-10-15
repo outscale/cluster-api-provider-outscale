@@ -76,7 +76,7 @@ func ValidateIops(path *field.Path, iops, size int32) *field.Error {
 		return nil
 	case iops > maxIops || iops < minIops:
 		return field.Invalid(path, iops, fmt.Sprintf("iops must be between %d and %d", minIops, maxIops))
-	case iops/size > 300:
+	case size > 0 && iops/size > 300:
 		return field.Invalid(path, iops, "iops/size should be lower than 300")
 	default:
 		return nil

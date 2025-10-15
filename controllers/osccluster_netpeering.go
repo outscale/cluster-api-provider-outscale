@@ -74,7 +74,7 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 			return reconcile.Result{}, fmt.Errorf("cannot get mgmt credentials: %w", err)
 		}
 		mgmtSvc := r.Cloud.NetPeering(mgmt)
-		log.V(2).Info("Accepting netPeering")
+		log.V(2).Info("Accepting netPeering", "netPeeringId", np.GetNetPeeringId())
 		err = mgmtSvc.AcceptNetPeering(ctx, np.GetNetPeeringId())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot accept netPeering: %w", err)
@@ -109,7 +109,7 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeering(ctx context.Context, cl
 		if np.State.GetName() != "pending-acceptance" && np.State.GetName() != "active" {
 			continue
 		}
-		log.V(2).Info("Deleting netPeering", "subnetId", np.GetNetPeeringId())
+		log.V(2).Info("Deleting netPeering", "netPeeringId", np.GetNetPeeringId())
 		err = svc.DeleteNetPeering(ctx, np.GetNetPeeringId())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete netPeering: %w", err)
