@@ -22,7 +22,6 @@
 ## 📄 Table of Contents
 
 * [Overview](#-overview)
-* [Project Status](#-project-status)
 * [Requirements](#-requirements)
 * [Installation](#-installation)
 * [Usage](#-usage)
@@ -49,7 +48,7 @@ With CAPOSC, you can provision and manage Kubernetes clusters on OUTSCALE like a
 
 ---
 
-## ⚙️ Installation
+## ⚙ Installation
 
 📘 See full instructions: [Getting Started with clusterctl](./docs/src/topics/get-started-with-clusterctl.md)
 
