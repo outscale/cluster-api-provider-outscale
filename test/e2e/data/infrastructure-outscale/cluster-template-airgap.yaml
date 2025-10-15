@@ -75,6 +75,10 @@ spec:
           keypairName: "${OSC_KEYPAIR_NAME}"
           subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
+        volumes:
+        - device: /dev/sda
+          size: 4
+          fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -96,6 +100,10 @@ spec:
           keypairName: "${OSC_KEYPAIR_NAME}"
           role: controlplane
           vmType: "${OSC_VM_TYPE}"
+        volumes:
+        - device: /dev/sda
+          size: 4
+          fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
@@ -104,12 +112,22 @@ metadata:
 spec:
   template:
     spec:
+      verbosity: 10
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
           kubeletExtraArgs:
             cloud-provider: external
             provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+      mounts:
+        - - /dev/sda
+          - /preload
+          - ext4
+          - auto,exec,ro
+      preKubeadmCommands:
+        - mount
+        - ls -al /preload
+        - /preload/restore.sh
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -123,18 +141,28 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
+    verbosity: 10
     initConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: '{{ ds.meta_data.local_hostname }}'
-    files:
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+    mounts:
+      - - /dev/sda
+        - /preload
+        - ext4
+        - auto,exec,ro
+    preKubeadmCommands:
+      - lsblk
+      - mount
+      - ls -al /preload
+      - /preload/restore.sh
   version: "${KUBERNETES_VERSION}"
 ---
 apiVersion: v1
