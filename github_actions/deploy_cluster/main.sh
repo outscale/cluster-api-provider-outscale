@@ -27,7 +27,8 @@ export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
 export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
 
 if [ -z "$OSC_IMAGE_ACCOUNT_ID" ]; then
-  export OSC_IMAGE_ACCOUNT_ID=`curl -X POST https://api.$OSC_REGION.outscale.com/api/v1/ReadAccounts \
+  export OSC_IMAGE_ACCOUNT_ID=`curl --retry 5 --retry-all-errors \
+    -X POST https://api.$OSC_REGION.outscale.com/api/v1/ReadAccounts \
     --user $OSC_ACCESS_KEY:$OSC_SECRET_KEY --aws-sigv4 'osc' \
     --header 'Content-Type: application/json' \
     --data '{}'|jq -r '.Accounts[0].AccountId'`
@@ -48,9 +49,9 @@ export OSC_IOPS=1000
 export OSC_VOLUME_SIZE=30
 export OSC_VOLUME_TYPE=gp2
 export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
-ip=`curl -s -S https://api.ipify.org`
+ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM="$ip/32"
-mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S https://api.ipify.org`
+mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM_CAPI="$mip/32"
 clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
 #clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale > clusterapi.yaml
