@@ -8,7 +8,7 @@
     - [Multi AZ clusters](./topics/config-multiaz.md)
     - [Securing cluster access](./topics/config-security.md)
     - [Air-gapped clusters](./topics/config-airgap.md)
-    - [Omi](./topics/omi.md)
+    - [Preloading images](./topics/preload.md)
     - [Troubleshooting](./topics/troubleshooting.md)
     - [Cluster-Autoscaler](./topics/cluster-autoscaler.md)
     - [How to upgrade](./topics/upgrade-cluster.md)

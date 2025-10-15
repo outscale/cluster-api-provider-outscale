@@ -5,14 +5,8 @@ metadata:
   name: osc-secret
   namespace: kube-system
 stringData:
-  key_id: ${CCM_OSC_ACCESS_KEY}
-  access_key: ${CCM_OSC_SECRET_KEY}
-  aws_default_region: ${CCM_OSC_REGION}
-  aws_availability_zones: AWS_AVAILABILITY_ZONES
-  osc_account_id: OSC_ACCOUNT_ID
-  osc_account_iam: OSC_ACCOUNT_IAM
-  osc_user_id: OSC_USER_ID
-  osc_arn: OSC_ARN
+  access_key: ${CCM_OSC_ACCESS_KEY}
+  secret_key: ${CCM_OSC_SECRET_KEY}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -155,7 +149,7 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.2.7
+          image: outscale/cloud-provider-osc:v1.0.1
           imagePullPolicy: IfNotPresent
           command:
             - /bin/osc-cloud-controller-manager
@@ -163,65 +157,17 @@ spec:
             - --cloud-provider=osc
             - -v=5
           env:
-            - name: OSC_ACCOUNT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: osc_account_id
-                  optional: false
-            - name: OSC_ACCOUNT_IAM
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: osc_account_iam
-                  optional: false
-            - name: OSC_USER_ID
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: osc_user_id
-                  optional: false
-            - name: OSC_ARN
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: osc_arn
-                  optional: false
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: key_id
-                  optional: false
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: access_key
-                  optional: false
-            - name: AWS_DEFAULT_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: aws_default_region
-                  optional: false
-            - name: AWS_AVAILABILITY_ZONES
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: aws_availability_zones
-                  optional: false
             - name: OSC_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: "osc-secret"
-                  key: access_key
+                  key: secret_key
                   optional: false
             - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: "osc-secret"
-                  key: key_id
+                  key: access_key
                   optional: false
       hostNetwork: true
       tolerations:

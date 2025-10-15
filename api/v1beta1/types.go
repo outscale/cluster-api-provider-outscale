@@ -523,14 +523,13 @@ type OscImage struct {
 type OscVolume struct {
 	// The volume name.
 	Name string `json:"name,omitempty"`
-	// The volume device (/dev/sdX)
+	// The volume device (/dev/xvdX)
 	// +kubebuilder:validation:Required
 	Device string `json:"device"`
 	// The volume iops (io1 volumes only)
 	Iops int32 `json:"iops,omitempty"`
 	// The volume size in gibibytes (GiB)
-	// +kubebuilder:validation:Required
-	Size int32 `json:"size"`
+	Size int32 `json:"size,omitempty"`
 	// (unused)
 	SubregionName string `json:"subregionName,omitempty"`
 	// The volume type (io1, gp2 or standard)

@@ -26,6 +26,9 @@ export OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
 export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
 export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
 
+# F***g DNS
+echo "options use-vc single-request attempts:5" >> /etc/resolv.conf
+
 cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$//'|cut -c1-40|sed -r 's/[^a-z0-9-]+/-/g'`
 # OKS
 /.venv/bin/oks-cli profile add --profile-name "default" --access-key $OKS_ACCESS_KEY --secret-key $OKS_SECRET_KEY --region $OKS_REGION

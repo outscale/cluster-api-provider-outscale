@@ -69,10 +69,12 @@ func (s *Service) CreateVm(ctx context.Context,
 	for _, vol := range volumes {
 		bsuVol := osc.BlockDeviceMappingVmCreation{
 			Bsu: &osc.BsuToCreate{
-				VolumeSize: &vol.Size,
 				VolumeType: &vol.VolumeType,
 			},
 			DeviceName: &vol.Device,
+		}
+		if vol.Size > 0 {
+			bsuVol.Bsu.VolumeSize = &vol.Size
 		}
 		if vol.VolumeType == "io1" {
 			bsuVol.Bsu.Iops = &vol.Iops

@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/ptr"
-
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 )
 

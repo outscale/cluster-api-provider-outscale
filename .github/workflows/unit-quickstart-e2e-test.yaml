@@ -38,6 +38,10 @@ jobs:
     runs-on: [self-hosted, linux]
     needs: [unit]
     steps:
+    - name: 🩹 Safe config for 💩 DNS
+      run: |
+        sed 's/options /options use-vc single-request attempts:5 /' < /etc/resolv.conf > /etc/resolv.conf.new
+        cat /etc/resolv.conf.new > /etc/resolv.conf
     - name: ⬇️ Checkout repository
       uses: actions/checkout@v4
     - name: ⬇️ Install kubectl
@@ -52,7 +56,8 @@ jobs:
         kustomize-version: v4.5.7
     - name: 🔎 Check IP
       id: ip
-      run: echo "ip=`curl -s https://api.ipify.org`" | tee $GITHUB_OUTPUT
+      run: |
+        echo "ip=`curl -s https://api.ipify.org`" | tee $GITHUB_OUTPUT
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: 🧹 Frieza
@@ -87,10 +92,18 @@ jobs:
         sudo apt install -y docker-buildx-plugin 
         make docker-buildx
         make docker-push
-        docker image prune -a -f
       env:
         IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
+    - name: 🔎 Preloader snapshot
+      id: preloader
+      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@main
+      with:
+        KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_REGION: ${{ env.OSC_REGION }}
+        CSI: true
     - name: 🔐 Create CAPOSC ns and credentials
       run: make credential
       shell: bash
@@ -112,10 +125,11 @@ jobs:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
         CCM_OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         CCM_OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        CCM_OSC_REGION: $${{ env.OSC_REGION }}
+        CCM_OSC_REGION: ${{ env.OSC_REGION }}
         IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         IMG_UPGRADE_FROM: ${{ vars.IMG_UPGRADE_FROM }}
         IMG_UPGRADE_TO: ${{ vars.IMG_UPGRADE_TO }}
+        PRELOAD_SNAPSHOT_ID: ${{ steps.preloader.outputs.SNAPSHOT_ID }}
     - name: 📝 Get CAPOSC state/logs
       run: |
         echo "**** pod state"
