@@ -76,7 +76,7 @@ spec:
           subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
         volumes:
-        - device: /dev/sda
+        - device: /dev/sdb
           size: 4
           fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
@@ -101,7 +101,7 @@ spec:
           role: controlplane
           vmType: "${OSC_VM_TYPE}"
         volumes:
-        - device: /dev/sda
+        - device: /dev/sdb
           size: 4
           fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
