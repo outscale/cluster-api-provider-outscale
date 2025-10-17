@@ -26,6 +26,9 @@ export OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
 export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
 export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
 
+# F***g DNS
+echo "options use-vc single-request attempts:5" >> /etc/resolv.conf
+
 if [ -z "$OSC_IMAGE_ACCOUNT_ID" ]; then
   export OSC_IMAGE_ACCOUNT_ID=`curl --retry 5 --retry-all-errors \
     -X POST https://api.$OSC_REGION.outscale.com/api/v1/ReadAccounts \
