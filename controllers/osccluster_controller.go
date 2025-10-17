@@ -247,15 +247,17 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile delete publicIPs: %w", err)
 	}
+	// Only delete NP routes if enabled, as the NP id is needed
 	if clusterScope.GetNetwork().NetPeering.Enable {
 		_, err = r.reconcileDeleteNetPeeringRoutes(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete netPeering routes: %w", err)
 		}
-		_, err = r.reconcileDeleteNetPeering(ctx, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("reconcile delete netPeering: %w", err)
-		}
+	}
+	// Try to delete all netpeering on the net, including those configured by the user outside caposc
+	_, err = r.reconcileDeleteNetPeering(ctx, clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("reconcile delete netPeering: %w", err)
 	}
 	_, err = r.reconcileDeleteRouteTable(ctx, clusterScope)
 	if err != nil {
