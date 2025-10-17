@@ -160,6 +160,7 @@ spec:
         - auto,exec,ro
     preKubeadmCommands:
       - lsblk
+      - ls -al /dev/xvd*
       - mount
       - ls -al /preload
       - /preload/restore.sh
