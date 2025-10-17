@@ -76,7 +76,7 @@ spec:
           subregionName: ${OSC_REGION}a
           vmType: "${OSC_VM_TYPE}"
         volumes:
-        - device: /dev/sdb
+        - device: /dev/xvdb
           size: 4
           fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
@@ -101,7 +101,7 @@ spec:
           role: controlplane
           vmType: "${OSC_VM_TYPE}"
         volumes:
-        - device: /dev/sdb
+        - device: /dev/xvdb
           size: 4
           fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
@@ -120,7 +120,7 @@ spec:
             cloud-provider: external
             provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
       mounts:
-        - - /dev/sda
+        - - /dev/xvdb
           - /preload
           - ext4
           - auto,exec,ro
@@ -154,7 +154,7 @@ spec:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
     mounts:
-      - - /dev/sda
+      - - /dev/xvdb
         - /preload
         - ext4
         - auto,exec,ro
