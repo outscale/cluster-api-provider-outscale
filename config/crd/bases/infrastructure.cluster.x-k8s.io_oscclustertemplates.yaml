@@ -313,6 +313,8 @@ spec:
                               clusterName:
                                 description: unused
                                 type: string
+                              enable:
+                                type: boolean
                               healthCheck:
                                 description: The healthCheck configuration of the
                                   Load Balancer
