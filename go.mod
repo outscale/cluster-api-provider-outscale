@@ -3,7 +3,7 @@ module github.com/outscale/cluster-api-provider-outscale
 go 1.23.7
 
 require (
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.27.1
 	github.com/onsi/gomega v1.38.2
 	github.com/outscale/osc-sdk-go/v2 v2.29.0
 	github.com/stretchr/testify v1.10.0
@@ -18,10 +18,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
-require (
-	github.com/aws/aws-sdk-go-v2 v1.39.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
-)
+require go.yaml.in/yaml/v3 v3.0.4 // indirect
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
@@ -37,7 +34,7 @@ require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go v1.55.8 // indirect
+	github.com/aws/aws-sdk-go v1.55.8
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
