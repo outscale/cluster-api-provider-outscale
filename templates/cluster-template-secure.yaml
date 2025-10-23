@@ -27,6 +27,7 @@ spec:
     subregionName: ${OSC_SUBREGION_NAME}
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
+    natPublicIpPool: ${OSC_NAT_IP_POOL:=""}
     allowFromIPRanges:
     - ${OSC_ALLOW_FROM}
     - ${OSC_ALLOW_FROM_CAPI}
@@ -66,15 +67,16 @@ spec:
       node:
         image:
           name: "${OSC_IMAGE_NAME}"
-          accountId: "${OSC_IMAGE_ACCOUNT_ID}"
+          accountId: ${OSC_IMAGE_ACCOUNT_ID:=""}
+          outscaleOpenSource: ${OSC_IMAGE_OPENSOURCE:=false}
         vm:
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
+            rootDiskIops: ${OSC_IOPS:=0}
+            rootDiskType: ${OSC_VOLUME_TYPE:=gp2}
           keypairName: "${OSC_KEYPAIR_NAME}"
           subregionName: ${OSC_SUBREGION_NAME}
-          vmType: "${OSC_VM_TYPE}"
+          vmType: ${OSC_VM_TYPE}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -86,15 +88,16 @@ spec:
       node:
         image:
           name: "${OSC_IMAGE_NAME}"
-          accountId: "${OSC_IMAGE_ACCOUNT_ID}"
+          accountId: ${OSC_IMAGE_ACCOUNT_ID:=""}
+          outscaleOpenSource: ${OSC_IMAGE_OPENSOURCE:=false}
         vm:
           keypairName: "${OSC_KEYPAIR_NAME}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
+            rootDiskIops: ${OSC_IOPS:=0}
+            rootDiskType: ${OSC_VOLUME_TYPE:=gp2}
           role: controlplane
-          vmType: "${OSC_VM_TYPE}"
+          vmType: ${OSC_VM_TYPE}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate

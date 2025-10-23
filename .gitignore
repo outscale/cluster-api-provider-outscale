@@ -23,6 +23,3 @@ secret.*
 clusterctl-settings.json
 # Dependency directories (remove the comment below to include it)
 bin/
-hack/json-format/target/
-hack/json-format/Cargo.lock
-hack/json-format/**/*.rs.bk

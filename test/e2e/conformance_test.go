@@ -13,8 +13,8 @@ import (
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 )
 
-var _ = Describe("[conformance] Test kubernetes conformance", func() {
-	Context("Run the k8s conformance", func() {
+var _ = Describe("[conformance][all] Test kubernetes conformance", func() {
+	Context("Run the k8s conformance on a standard cluster", func() {
 		capi_e2e.K8SConformanceSpec(context.TODO(), func() capi_e2e.K8SConformanceSpecInput {
 			return capi_e2e.K8SConformanceSpecInput{
 				E2EConfig:              e2eConfig,
