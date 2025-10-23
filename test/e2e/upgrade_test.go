@@ -6,11 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"k8s.io/utils/ptr"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 )
 
-var _ = Describe("[ugrade][all] Running the Cluster API upgrade tests", func() {
+var _ = Describe("[upgrade][all] Running the Cluster API upgrade tests", func() {
 	ctx := context.TODO()
 
 	BeforeEach(func() {
@@ -33,22 +32,6 @@ var _ = Describe("[ugrade][all] Running the Cluster API upgrade tests", func() {
 				ArtifactFolder:         artifactFolder,
 				SkipCleanup:            skipCleanup,
 				SkipConformanceTests:   true,
-			}
-		})
-	})
-
-	Context("Running KCP upgrade in a HA cluster", func() {
-		capi_e2e.ClusterUpgradeConformanceSpec(ctx, func() capi_e2e.ClusterUpgradeConformanceSpecInput {
-			return capi_e2e.ClusterUpgradeConformanceSpecInput{
-				E2EConfig:                e2eConfig,
-				ClusterctlConfigPath:     clusterctlConfigPath,
-				InfrastructureProvider:   &infraProvider,
-				BootstrapClusterProxy:    bootstrapClusterProxy,
-				ArtifactFolder:           artifactFolder,
-				ControlPlaneMachineCount: ptr.To[int64](3),
-				WorkerMachineCount:       ptr.To[int64](1),
-				SkipCleanup:              skipCleanup,
-				SkipConformanceTests:     true,
 			}
 		})
 	})

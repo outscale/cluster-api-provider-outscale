@@ -14,7 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint
+	. "github.com/onsi/gomega"    //nolint
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/yaml"
@@ -102,7 +103,7 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 }
 
 func (i *CreateRepositoryInput) RegisterClusterResourceSetConfigMapTransformation(manifestPath, envSubstVar string) {
-	Byf("Reading the ClusterResourceSet manifest %s", manifestPath)
+	By("Reading the ClusterResourceSet manifest " + manifestPath)
 	manifestData, err := os.ReadFile(manifestPath) //nolint:gosec
 	Expect(err).ToNot(HaveOccurred(), "Failed to read the ClusterResourceSet manifest file")
 	Expect(manifestData).ToNot(BeEmpty(), "ClusterResourceSet manifest file should not be empty")

@@ -1,0 +1,136 @@
+name: Unit & quickstart E2E tests
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/unit-func-e2e-test.yaml"
+      - "github_actions/deploy_cluster/**"
+      - "**.go"
+      - "**.yaml"
+      - "!capm.yaml"
+      - "!osc-secret.yaml"
+      - "!example/**.yaml"
+      - "!testclean/**"
+      - "!helm/**"
+      - "Makefile"
+      - "hack/*.sh"
+      - "!docs/src/**"
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@v4
+    - name: ⬇️ Install Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+    - name: 🧪 unit tests
+      run: |
+        make unit-test
+        cat covers.txt
+      shell: bash  
+  e2e-quickstart:
+    runs-on: [self-hosted, linux]
+    needs: [unit]
+    steps:
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@v4
+    - name: ⬇️ Install kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: v1.32.9
+    - name: ⬇️ Install helm
+      uses: azure/setup-helm@v4
+    - name: ⬇️ Install kustomize
+      uses: imranismail/setup-kustomize@v1
+      with:
+        kustomize-version: v4.5.7
+    - name: 🔎 Check IP
+      id: ip
+      run: echo "ip=`curl -s https://api.ipify.org`" | tee $GITHUB_OUTPUT
+    - name: 🔐 Set ak/sk name based on runner region
+      run: .github/scripts/runneraksk.sh
+    - name: 🧹 Frieza
+      uses: outscale/frieza-github-actions/frieza-clean@master
+      with:
+        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        region: ${{ env.OSC_REGION }}
+    - name: 👷 Deploy management cluster
+      id: management
+      uses: ./github_actions/deploy_cluster
+      with:
+        RUNNER_NAME: ${{ runner.name }}
+        OKS_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}
+        OKS_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY_OKS }}
+        OKS_REGION: ${{ vars.OKS_REGION }}
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_REGION: ${{ env.OSC_REGION }}
+        CLUSTER_NAME: "caposc"
+        IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
+        IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
+        CERT_MANAGER: "true"
+    - name: ⬇️ Install Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+    - name: 📦 Build and push Docker image 
+      run: |
+        docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
+        sudo apt-get update
+        sudo apt install -y docker-buildx-plugin 
+        make docker-buildx
+        make docker-push
+        docker image prune -a -f
+      env:
+        IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
+        DOCKER_BUILDKIT: 1
+    - name: 🔐 Create CAPOSC ns and credentials
+      run: make credential
+      shell: bash
+      env:
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+    - name: 🧪 Launch quickstart e2e tests
+      run: |
+        from=`echo ${{ vars.IMG_UPGRADE_FROM }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
+        to=`echo ${{ vars.IMG_UPGRADE_TO }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
+        export KUBERNETES_VERSION=$from
+        export KUBERNETES_VERSION_UPGRADE_FROM=$from
+        export KUBERNETES_VERSION_UPGRADE_TO=$to
+        make e2etest
+      shell: bash
+      id: e2etest
+      env:
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        CCM_OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        CCM_OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        CCM_OSC_REGION: $${{ env.OSC_REGION }}
+        IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
+        IMG_UPGRADE_FROM: ${{ vars.IMG_UPGRADE_FROM }}
+        IMG_UPGRADE_TO: ${{ vars.IMG_UPGRADE_TO }}
+    - name: 📝 Get CAPOSC state/logs
+      run: |
+        echo "**** pod state"
+        kubectl describe po -n cluster-api-provider-outscale-system
+        echo "**** pod logs"
+        make logs-capo
+      if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
+      shell: bash
+      env:
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        CAPO_NAMESPACE: cluster-api-provider-outscale-system
+    - name: 📝 Get cluster api logs
+      run: make logs-capi
+      if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
+      shell: bash
+      env:
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system      

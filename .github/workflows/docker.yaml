@@ -11,28 +11,9 @@ on:
       - "!helm/**"
       - "Makefile"
       - "!docs/src/**"
-      - "!hack/json-format/*.sh"
-      - "!hack/json-format/src/*.rs"
-      - "!hack/json-format/Makefile"
-      - "!hack/json-format/Cargo.*"
-      - "!hack/json-format/tests/*.rs"        
-  push:
-    branches:
-      - 'main'
-    paths:
-      - "**.go"
-      - "**.yaml"
-      - "!capm.yaml"
-      - "!osc-secret.yaml"
-      - "!example/**.yaml"
-      - "!helm/**"
-      - "Makefile"
-      - "!docs/src/**" 
-      - "!hack/json-format/*.sh"
-      - "!hack/json-format/src/*.rs"
-      - "!hack/json-format/Makefile"
-      - "!hack/json-format/Cargo.*"
-      - "!hack/json-format/tests/*.rs"
+
+permissions:
+  contents: read
 
 jobs:
   docker:

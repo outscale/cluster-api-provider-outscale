@@ -26,14 +26,6 @@ export OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
 export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
 export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
 
-if [ -z "$OSC_IMAGE_ACCOUNT_ID" ]; then
-  export OSC_IMAGE_ACCOUNT_ID=`curl --retry 5 --retry-all-errors \
-    -X POST https://api.$OSC_REGION.outscale.com/api/v1/ReadAccounts \
-    --user $OSC_ACCESS_KEY:$OSC_SECRET_KEY --aws-sigv4 'osc' \
-    --header 'Content-Type: application/json' \
-    --data '{}'|jq -r '.Accounts[0].AccountId'`
-fi
-
 cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$//'|cut -c1-40|sed -r 's/[^a-z0-9-]+/-/g'`
 # OKS
 /.venv/bin/oks-cli profile add --profile-name "default" --access-key $OKS_ACCESS_KEY --secret-key $OKS_SECRET_KEY --region $OKS_REGION
@@ -53,8 +45,10 @@ ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM="$ip/32"
 mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM_CAPI="$mip/32"
-clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
-#clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale > clusterapi.yaml
+export OSC_NAT_IP_POOL=caposc
+export OSC_IMAGE_OPENSOURCE=true
+clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME --from https://github.com/outscale/cluster-api-provider-outscale/blob/ci-cleanup/templates/cluster-template-secure.yaml > clusterapi.yaml
+# clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
 
 kubectl delete ns $OSC_CLUSTER_NAME --ignore-not-found --force
 kubectl create ns $OSC_CLUSTER_NAME

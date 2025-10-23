@@ -66,8 +66,8 @@ spec:
         vm:
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
+            rootDiskIops: ${OSC_IOPS:=}
+            rootDiskType: "${OSC_VOLUME_TYPE:=gp2}"
           keypairName: "${OSC_KEYPAIR_NAME}"
           subregionName: ${OSC_SUBREGION_NAME}
           vmType: "${OSC_VM_TYPE}"
@@ -86,8 +86,8 @@ spec:
           keypairName: "${OSC_KEYPAIR_NAME}"
           rootDisk:
             rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
+            rootDiskIops: ${OSC_IOPS:=}
+            rootDiskType: "${OSC_VOLUME_TYPE:=gp2}"
           role: controlplane
           vmType: "${OSC_VM_TYPE}"
 ---

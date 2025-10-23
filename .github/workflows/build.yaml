@@ -1,4 +1,5 @@
-name: build
+name: Check build & lint
+
 on: 
   pull_request:
     branches: [main]
@@ -13,11 +14,10 @@ on:
       - "!helm/**"
       - "Makefile"
       - "!docs/src/**"
-      - "!hack/json-format/*.sh"
-      - "!hack/json-format/src/*.rs"
-      - "!hack/json-format/Makefile"
-      - "!hack/json-format/Cargo.*"
-      - "!hack/json-format/tests/*.rs"
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
