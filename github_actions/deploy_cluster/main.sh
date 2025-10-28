@@ -49,7 +49,7 @@ mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -
 export OSC_ALLOW_FROM_CAPI="$mip/32"
 export OSC_NAT_IP_POOL=caposc
 export OSC_IMAGE_OPENSOURCE=true
-clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME --from https://github.com/outscale/cluster-api-provider-outscale/blob/ci-cleanup/templates/cluster-template-secure.yaml > clusterapi.yaml
+clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME --from https://github.com/outscale/cluster-api-provider-outscale/blob/main/templates/cluster-template-secure.yaml > clusterapi.yaml
 # clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
 
 kubectl delete ns $OSC_CLUSTER_NAME --ignore-not-found --force
