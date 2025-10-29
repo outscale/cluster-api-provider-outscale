@@ -49,19 +49,21 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	var watchFilterValue string
-	var syncPeriod time.Duration
-	var skipMetadata bool
-	var leaseDuration time.Duration
-	var renewDeadline time.Duration
-	var retryPeriod time.Duration
-	var clusterConcurrency int
-	var machineConcurrency int
-	var reconcileTimeout time.Duration
-
+	var (
+		metricsAddr          string
+		enableLeaderElection bool
+		probeAddr            string
+		watchNamespace       string
+		watchFilterValue     string
+		syncPeriod           time.Duration
+		skipMetadata         bool
+		leaseDuration        time.Duration
+		renewDeadline        time.Duration
+		retryPeriod          time.Duration
+		clusterConcurrency   int
+		machineConcurrency   int
+		reconcileTimeout     time.Duration
+	)
 	fs := pflag.CommandLine
 	fs.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to")
 	fs.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to")
@@ -74,6 +76,8 @@ func main() {
 	fs.DurationVar(&retryPeriod, "leader-elect-retry-period", 2*time.Second,
 		"Duration the LeaderElector clients should wait between tries of actions")
 
+	fs.StringVar(&watchNamespace, "namespace", "",
+		"Namespace that the controller watches for cluster-api objects. If unspecified, the controller watches all namespaces.")
 	fs.StringVar(&watchFilterValue, "watch-filter", "",
 		fmt.Sprintf("Label value that the controller watches to reconcile cluster-api objects. Label key is always %s. If unspecified, the controller watches for all cluster-api objects.", clusterv1.WatchLabel))
 	fs.DurationVar(&syncPeriod, "sync-period", 5*time.Minute,
@@ -98,6 +102,13 @@ func main() {
 	logger := klog.Background().WithValues("version", utils.GetVersion())
 	ctrl.SetLogger(logger)
 
+	var watchNamespaces map[string]cache.Config
+	if watchNamespace != "" {
+		logger.Info("Watching namespace", "namespace", watchNamespace)
+		watchNamespaces = map[string]cache.Config{
+			watchNamespace: {},
+		}
+	}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: server.Options{
@@ -111,7 +122,8 @@ func main() {
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
 		Cache: cache.Options{
-			SyncPeriod: &syncPeriod,
+			DefaultNamespaces: watchNamespaces,
+			SyncPeriod:        &syncPeriod,
 		},
 	})
 	if err != nil {
