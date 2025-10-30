@@ -2583,6 +2583,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
 				mockDeleteInternetService("igw-c3c49899"),
 
+				mockListNetAccessPoints("vpc-24ba90ce", nil),
+
 				mockSubnetFound("subnet-c1a282b0"),
 				mockDeleteSubnet("subnet-c1a282b0"),
 				mockSubnetFound("subnet-1555ea91"),
@@ -2647,6 +2649,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
 				mockDeleteInternetService("igw-c3c49899"),
 
+				mockListNetAccessPoints("vpc-24ba90ce", nil),
+
 				mockSubnetFound("subnet-c1a282b0"),
 				mockDeleteSubnet("subnet-c1a282b0"),
 				mockSubnetFound("subnet-1555ea91"),
@@ -2704,6 +2708,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
 				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
 				mockDeleteInternetService("igw-c3c49899"),
+
+				mockListNetAccessPoints("vpc-24ba90ce", nil),
 
 				mockSubnetFound("subnet-c1a282b0"),
 				mockDeleteSubnet("subnet-c1a282b0"),

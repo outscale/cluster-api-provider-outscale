@@ -21,6 +21,12 @@ const (
 )
 
 const (
+	NetAccessPointCreatedReason               string                  = "NetAccessPointCreated"
+	NetAccessPointsReadyCondition             clusterv1.ConditionType = "NetAccessPointsReady"
+	NetAccessPointsReconciliationFailedReason string                  = "NetAccessPointsReconciliationFailed"
+)
+
+const (
 	SubnetCreatedReason               string                  = "SubnetCreated"
 	SubnetsReadyCondition             clusterv1.ConditionType = "SubnetsReady"
 	SubnetsReconciliationFailedReason string                  = "SubnetsReconciliationFailed"

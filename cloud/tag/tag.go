@@ -24,6 +24,7 @@ const (
 	NetPeeringResourceType      ResourceType = "vpc-peering-connection"
 	SubnetResourceType          ResourceType = "subnet"
 	InternetServiceResourceType ResourceType = "internet-service"
+	NetAccessPointResourceType ResourceType = "internet-service"
 	NatResourceType             ResourceType = "natgateway"
 	VmResourceType              ResourceType = "instance"
 	RouteTableResourceType      ResourceType = "route-table"

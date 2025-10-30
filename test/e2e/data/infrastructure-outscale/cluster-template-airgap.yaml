@@ -25,6 +25,8 @@ metadata:
 spec:
   network:
     subregionName: ${OSC_REGION}a
+    disable:
+    - internet
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
       loadbalancertype: "internal"
@@ -32,6 +34,8 @@ spec:
       ipRange: 10.1.0.0/16
     netPeering:
       enable: true
+    netAccessPoints:
+    - api
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -45,7 +49,7 @@ spec:
   template:
     spec:
       clusterName: "${CLUSTER_NAME}"
-      version: "${KUBERNETES_VERSION}"
+      version: "${KUBERNETES_VERSION_UPGRADE_TO}"
       bootstrap:
         configRef:
           name: "${CLUSTER_NAME}-md-0"
@@ -65,7 +69,7 @@ spec:
     spec:
       node:
         image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
           outscaleOpenSource: true
         vm:
           rootDisk:
@@ -88,7 +92,7 @@ spec:
     spec:
       node:
         image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
           outscaleOpenSource: true
         vm:
           rootDisk:
@@ -110,7 +114,6 @@ metadata:
 spec:
   template:
     spec:
-      verbosity: 5
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
@@ -137,7 +140,9 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
-    verbosity: 5
+    clusterConfiguration:
+      apiServer:
+        timeoutForControlPlane: 20m0s
     initConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
@@ -156,7 +161,7 @@ spec:
         - "auto,exec,ro,nodev"
     preKubeadmCommands:
       - /preload/restore.sh
-  version: "${KUBERNETES_VERSION}"
+  version: "${KUBERNETES_VERSION_UPGRADE_TO}"
 ---
 apiVersion: v1
 kind: ConfigMap

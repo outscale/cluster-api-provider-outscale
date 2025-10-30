@@ -7,7 +7,7 @@ An air-gapped cluster will need:
 * a net peering between the management VPC and the workload VPC, allowing access to the load-balancer and nodes,
 * a disabled Internet Service and disabled NAT Services,
 * preloaded images on the workload nodes,
-* access to the Outscale API on the workload nodes.
+* access to the Outscale API on the nodes.
 
 ## Internal load-balancer
 
@@ -61,9 +61,13 @@ network:
         managementSubnetId: "subnet-xxx"
 ```
 
-## Disabling Internet Service a NAT Services
+## Disabling Internet Service and NAT Services
 
-TBD
+```yaml
+network:
+    disable:
+    - internet
+```
 
 ## Preloaded images
 
@@ -71,4 +75,23 @@ See [Preloading images](preload.md).
 
 ## Outscale API access
 
-TBD
+You need to add Net Access Point to all the Outscale services you use.
+
+API and LBU access are required for the CCM and CSI to work.
+
+The list of services you might meed:
+* `api`: API access
+* `directlink`: [Direct link](https://docs.outscale.com/en/userguide/About-DirectLink.html)
+* `eim`: [Identity Management](https://docs.outscale.com/en/userguide/About-EIM.html)
+* `kms`
+* `lbu`: AWS LBU gateway
+*  `oos`: [Object Storage](https://docs.outscale.com/en/userguide/About-OOS.html)
+
+```yaml
+network:
+    netAccessPoints:
+    - api
+    - lbu
+```
+
+> The cluster needs to be able to call the Outscale services. CAPOSC is currently unable to configure SecurityGroupRules to services, you will need to have a Outbound rule allowing access to 0.0.0.0/0.

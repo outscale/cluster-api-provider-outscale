@@ -386,6 +386,14 @@ func mockGetLoadBalancer(name string, lb *osc.LoadBalancer) mockFunc {
 	}
 }
 
+func mockListNetAccessPoints(netId string, naps []osc.NetAccessPoint) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetAccessPointMock.EXPECT().
+			ListNetAccessPoints(gomock.Any(), gomock.Eq(netId)).
+			Return(naps, nil)
+	}
+}
+
 func mockLoadBalancerFound(name, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
