@@ -108,12 +108,6 @@ func patchUseCredentials(c infrastructurev1beta1.OscCredentials) patchOSCCluster
 	}
 }
 
-func patchUseNetPeering(n infrastructurev1beta1.OscNetPeering) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
-		m.Spec.Network.NetPeering = n
-	}
-}
-
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
@@ -386,6 +380,14 @@ func mockGetLoadBalancer(name string, lb *osc.LoadBalancer) mockFunc {
 	}
 }
 
+func mockListNetAccessPoints(netId string, naps []osc.NetAccessPoint) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetAccessPointMock.EXPECT().
+			ListNetAccessPoints(gomock.Any(), gomock.Eq(netId)).
+			Return(naps, nil)
+	}
+}
+
 func mockLoadBalancerFound(name, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.LoadBalancerMock.EXPECT().
@@ -505,6 +507,20 @@ func mockGetNetPeering(state string) mockFunc {
 					Name: &state,
 				},
 			}, nil)
+	}
+}
+
+func mockCreateNetAccessPoint(netID, service, clusterID string, routeTables []string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetAccessPointMock.EXPECT().CreateNetAccessPoint(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service), gomock.Eq(routeTables), gomock.Eq(clusterID)).
+			Return(&osc.NetAccessPoint{}, nil)
+	}
+}
+
+func mockGetNetAccessPoint(netID, service string, nap *osc.NetAccessPoint) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetAccessPointMock.EXPECT().GetNetAccessPointFor(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service)).
+			Return(nap, nil)
 	}
 }
 
