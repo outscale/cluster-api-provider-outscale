@@ -170,6 +170,13 @@ func (in *OscClusterResources) DeepCopyInto(out *OscClusterResources) {
 			(*out)[key] = val
 		}
 	}
+	if in.NetAccessPoint != nil {
+		in, out := &in.NetAccessPoint, &out.NetAccessPoint
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.SecurityGroup != nil {
 		in, out := &in.SecurityGroup, &out.SecurityGroup
 		*out = make(map[string]string, len(*in))
@@ -879,9 +886,19 @@ func (in *OscNetPeering) DeepCopy() *OscNetPeering {
 func (in *OscNetwork) DeepCopyInto(out *OscNetwork) {
 	*out = *in
 	out.UseExisting = in.UseExisting
+	if in.Disable != nil {
+		in, out := &in.Disable, &out.Disable
+		*out = make([]OscDisable, len(*in))
+		copy(*out, *in)
+	}
 	out.LoadBalancer = in.LoadBalancer
 	out.Net = in.Net
 	out.NetPeering = in.NetPeering
+	if in.NetAccessPoints != nil {
+		in, out := &in.NetAccessPoints, &out.NetAccessPoints
+		*out = make([]OscNetAccessPointService, len(*in))
+		copy(*out, *in)
+	}
 	if in.ControlPlaneSubnets != nil {
 		in, out := &in.ControlPlaneSubnets, &out.ControlPlaneSubnets
 		*out = make([]string, len(*in))

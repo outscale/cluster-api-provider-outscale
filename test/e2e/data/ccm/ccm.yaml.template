@@ -157,17 +157,17 @@ spec:
             - --cloud-provider=osc
             - -v=5
           env:
-            - name: OSC_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "osc-secret"
-                  key: secret_key
-                  optional: false
             - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: "osc-secret"
                   key: access_key
+                  optional: false
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "osc-secret"
+                  key: secret_key
                   optional: false
       hostNetwork: true
       tolerations:

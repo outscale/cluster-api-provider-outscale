@@ -58,10 +58,11 @@ type MockCloudServices struct {
 	defaultTenant MockTenant
 	tenant        tenant.Tenant
 
-	NetMock           *mock_net.MockOscNetInterface
-	NetPeeringMock    *mock_net.MockOscNetPeeringInterface
-	SubnetMock        *mock_net.MockOscSubnetInterface
-	SecurityGroupMock *mock_security.MockOscSecurityGroupInterface
+	NetMock            *mock_net.MockOscNetInterface
+	NetPeeringMock     *mock_net.MockOscNetPeeringInterface
+	NetAccessPointMock *mock_net.MockOscNetAccessPointInterface
+	SubnetMock         *mock_net.MockOscSubnetInterface
+	SecurityGroupMock  *mock_security.MockOscSecurityGroupInterface
 
 	InternetServiceMock *mock_net.MockOscInternetServiceInterface
 	RouteTableMock      *mock_security.MockOscRouteTableInterface
@@ -79,10 +80,11 @@ func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloud
 	return &MockCloudServices{
 		defaultTenant: MockTenant{region: region},
 
-		NetMock:           mock_net.NewMockOscNetInterface(mockCtrl),
-		NetPeeringMock:    mock_net.NewMockOscNetPeeringInterface(mockCtrl),
-		SubnetMock:        mock_net.NewMockOscSubnetInterface(mockCtrl),
-		SecurityGroupMock: mock_security.NewMockOscSecurityGroupInterface(mockCtrl),
+		NetMock:            mock_net.NewMockOscNetInterface(mockCtrl),
+		NetPeeringMock:     mock_net.NewMockOscNetPeeringInterface(mockCtrl),
+		NetAccessPointMock: mock_net.NewMockOscNetAccessPointInterface(mockCtrl),
+		SubnetMock:         mock_net.NewMockOscSubnetInterface(mockCtrl),
+		SecurityGroupMock:  mock_security.NewMockOscSecurityGroupInterface(mockCtrl),
 
 		InternetServiceMock: mock_net.NewMockOscInternetServiceInterface(mockCtrl),
 		RouteTableMock:      mock_security.NewMockOscRouteTableInterface(mockCtrl),
@@ -109,6 +111,11 @@ func (s *MockCloudServices) Net(t tenant.Tenant) net.OscNetInterface {
 func (s *MockCloudServices) NetPeering(t tenant.Tenant) net.OscNetPeeringInterface {
 	s.tenant = t
 	return s.NetPeeringMock
+}
+
+func (s *MockCloudServices) NetAccessPoint(t tenant.Tenant) net.OscNetAccessPointInterface {
+	s.tenant = t
+	return s.NetAccessPointMock
 }
 
 func (s *MockCloudServices) Subnet(t tenant.Tenant) net.OscSubnetInterface {

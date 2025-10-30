@@ -46,7 +46,11 @@ type OscCredentials struct {
 
 type OscNetwork struct {
 	// Reuse externally managed resources ?
+	// +optional
 	UseExisting OscReuse `json:"useExisting,omitempty"`
+	// List of disabled features (internet = no internet service, no nat services)
+	// +optional
+	Disable []OscDisable `json:"disable,omitempty"`
 	// The Load Balancer configuration
 	// +optional
 	LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty"`
@@ -56,6 +60,9 @@ type OscNetwork struct {
 	// The NetPeering configuration, required if the load balancer is internal, and management and workload clusters are on separate VPCs.
 	// +optional
 	NetPeering OscNetPeering `json:"netPeering,omitempty"`
+	// The NetAccessPoints configuration, required if internet is disabled.
+	// +optional
+	NetAccessPoints []OscNetAccessPointService `json:"netAccessPoints,omitempty"`
 	// List of subnet to spread controlPlane nodes (deprecated, add controlplane role to subnets)
 	// +optional
 	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
@@ -115,6 +122,13 @@ type OscReuse struct {
 	// If set, security groups are externally managed.
 	SecurityGroups bool `json:"securityGroups,omitempty"`
 }
+
+// +kubebuilder:validation:Enum:=internet
+type OscDisable string
+
+const (
+	DisableInternet OscDisable = "internet"
+)
 
 type OscLoadBalancer struct {
 	// The Load Balancer unique name
@@ -215,6 +229,18 @@ type OscNetPeering struct {
 	// +optional
 	ManagementSubnetID string `json:"managementSubnetId,omitempty"`
 }
+
+// +kubebuilder:validation:Enum:=api;directlink;eim;kms;lbu;oos
+type OscNetAccessPointService string
+
+const (
+	ServiceAPI        OscNetAccessPointService = "api"
+	ServiceDirectLink OscNetAccessPointService = "directlink"
+	ServiceEIM        OscNetAccessPointService = "eim"
+	ServiceKMS        OscNetAccessPointService = "kms"
+	ServiceLBU        OscNetAccessPointService = "lbu"
+	ServiceOOS        OscNetAccessPointService = "oos"
+)
 
 type OscInternetService struct {
 	// The name of the Internet service
@@ -462,6 +488,7 @@ type OscClusterResources struct {
 	NetPeering      map[string]string `json:"netPeering,omitempty"`
 	Subnet          map[string]string `json:"subnet,omitempty"`
 	InternetService map[string]string `json:"internetService,omitempty"`
+	NetAccessPoint  map[string]string `json:"netAccessPoint,omitempty"`
 	SecurityGroup   map[string]string `json:"securityGroup,omitempty"`
 	NatService      map[string]string `json:"natService,omitempty"`
 	Bastion         map[string]string `json:"bastion,omitempty"`
@@ -477,6 +504,7 @@ const (
 	ReconcilerNetPeeringRoutes Reconciler = "netPeering/routes"
 	ReconcilerSubnet           Reconciler = "subnet"
 	ReconcilerInternetService  Reconciler = "internetService"
+	ReconcilerNetAccessPoint   Reconciler = "netAccessPoint"
 	ReconcilerNatService       Reconciler = "natService"
 	ReconcilerRouteTable       Reconciler = "routeTable"
 	ReconcilerSecurityGroup    Reconciler = "securityGroup"
@@ -673,7 +701,7 @@ const (
 	DefaultLoadBalancerType     string = "internet-facing"
 	DefaultLoadBalancerProtocol string = "TCP"
 	DefaultCheckInterval        int32  = 10
-	DefaultHealthyThreshold     int32  = 3
+	DefaultHealthyThreshold     int32  = 2
 	DefaultUnhealthyThreshold   int32  = 3
 	DefaultTimeout              int32  = 10
 

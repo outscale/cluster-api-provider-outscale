@@ -29,6 +29,10 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		log.V(3).Info("Reusing existing natServices")
 		return reconcile.Result{}, nil
 	}
+	if clusterScope.IsInternetDisabled() {
+		log.V(3).Info("No nat services, internet is disabled")
+		return reconcile.Result{}, nil
+	}
 	log.V(4).Info("Reconciling natServices")
 
 	natServiceSpecs := clusterScope.GetNatServices()

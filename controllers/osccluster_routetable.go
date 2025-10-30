@@ -30,12 +30,13 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 	}
 	var resourceId string
 	var err error
-	if routeSpec.TargetType == "gateway" {
+	switch routeSpec.TargetType {
+	case "gateway":
 		resourceId, err = r.Tracker.getInternetServiceId(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
-	} else {
+	case "nat":
 		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.SubregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
@@ -44,6 +45,9 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
+	default:
+		log.V(3).Info("Route has no target !", "destinationIpRange", destinationIpRange)
+		return reconcile.Result{}, nil
 	}
 	log.V(2).Info("Creating route", "destination", destinationIpRange, "resourceId", resourceId)
 	_, err = r.Cloud.RouteTable(clusterScope.Tenant).CreateRoute(ctx, destinationIpRange, routeTable.GetRouteTableId(), resourceId, routeSpec.TargetType)
@@ -117,10 +121,10 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
-				log.V(2).Info("Link routetable with subnet", "routeTableId", rtbl.GetRouteTableId(), "subnetId", subnetId)
+				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.GetRouteTableId(), "subnetId", subnetId)
 				_, err := svc.LinkRouteTable(ctx, rtbl.GetRouteTableId(), subnetId)
 				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot link routetable with net: %w", err)
+					return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
 				}
 			}
 		}

@@ -228,9 +228,9 @@ func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta1.OscSubnet) strin
 	}
 }
 
-// GetInternetService return the internetService of the cluster
-func (s *ClusterScope) GetInternetService() infrastructurev1beta1.OscInternetService {
-	return s.OscCluster.Spec.Network.InternetService
+// IsInternetDisabled checks if internet is disabled.
+func (s *ClusterScope) IsInternetDisabled() bool {
+	return slices.Contains(s.GetNetwork().Disable, infrastructurev1beta1.DisableInternet)
 }
 
 // GetInternetServiceName return the name of the net
@@ -245,6 +245,9 @@ var ErrNoNatFound = errors.New("natService not found")
 
 // GetNatServices return the natServices of the cluster
 func (s *ClusterScope) GetNatServices() []infrastructurev1beta1.OscNatService {
+	if s.IsInternetDisabled() {
+		return nil
+	}
 	switch {
 	case s.OscCluster.Spec.Network.UseExisting.Net:
 		return nil
@@ -329,9 +332,11 @@ func (s *ClusterScope) GetRouteTables() []infrastructurev1beta1.OscRouteTable {
 		if len(subnet.Roles) > 0 {
 			rtbl.Role = subnet.Roles[0]
 		}
-		if s.SubnetIsPublic(subnet) {
+		switch {
+		case s.IsInternetDisabled():
+		case s.SubnetIsPublic(subnet):
 			rtbl.Routes = []infrastructurev1beta1.OscRoute{{Destination: "0.0.0.0/0", TargetType: "gateway"}}
-		} else {
+		default:
 			rtbl.Routes = []infrastructurev1beta1.OscRoute{{Destination: "0.0.0.0/0", TargetType: "nat"}}
 		}
 		rtbls = append(rtbls, rtbl)
