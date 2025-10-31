@@ -176,6 +176,15 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		conditions.MarkTrue(osccluster, infrastructurev1beta1.NetPeeringReadyCondition)
 	}
 
+	if len(clusterScope.GetNetwork().NetAccessPoints) > 0 {
+		_, err = r.reconcileNetAccessPoints(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.NetAccessPointsReadyCondition, infrastructurev1beta1.NetAccessPointsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile netAccessPoints: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.NetAccessPointsReadyCondition)
+	}
+
 	// Security groups need NAT services to allow NAT to connect to LB.
 	_, err = r.reconcileSecurityGroup(ctx, clusterScope)
 	if err != nil {
@@ -247,6 +256,12 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile delete publicIPs: %w", err)
 	}
+
+	_, err = r.reconcileDeleteNetAccessPoints(ctx, clusterScope)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("reconcile delete netAccessPoints: %w", err)
+	}
+
 	if clusterScope.GetNetwork().NetPeering.Enable {
 		_, err = r.reconcileDeleteNetPeeringRoutes(ctx, clusterScope)
 		if err != nil {

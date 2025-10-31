@@ -28,6 +28,11 @@ func (r *OscClusterReconciler) reconcileInternetService(ctx context.Context, clu
 		log.V(3).Info("Reusing existing internetService")
 		return reconcile.Result{}, nil
 	}
+	if clusterScope.IsInternetDisabled() {
+		log.V(3).Info("No internet service, internet is disabled")
+		return reconcile.Result{}, nil
+	}
+
 	log.V(4).Info("Reconciling internetService")
 
 	internetService, err := r.Tracker.getInternetService(ctx, clusterScope)
@@ -68,6 +73,10 @@ func (r *OscClusterReconciler) reconcileDeleteInternetService(ctx context.Contex
 	log := ctrl.LoggerFrom(ctx)
 	if clusterScope.GetNetwork().UseExisting.Net {
 		log.V(4).Info("Not deleting existing internet service")
+		return reconcile.Result{}, nil
+	}
+	if clusterScope.IsInternetDisabled() {
+		log.V(3).Info("No internet service, internet is disabled")
 		return reconcile.Result{}, nil
 	}
 	internetService, err := r.Tracker.getInternetService(ctx, clusterScope)

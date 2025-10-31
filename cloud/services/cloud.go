@@ -22,6 +22,7 @@ type Servicer interface {
 
 	Net(t tenant.Tenant) net.OscNetInterface
 	NetPeering(t tenant.Tenant) net.OscNetPeeringInterface
+	NetAccessPoint(t tenant.Tenant) net.OscNetAccessPointInterface
 	Subnet(t tenant.Tenant) net.OscSubnetInterface
 	SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface
 
@@ -64,6 +65,11 @@ func (s *Services) Net(t tenant.Tenant) net.OscNetInterface {
 
 // NetPeering returns the NetPeering service
 func (s *Services) NetPeering(t tenant.Tenant) net.OscNetPeeringInterface {
+	return net.NewService(t)
+}
+
+// NetAccessPoint returns the NetAccessPoint service
+func (s *Services) NetAccessPoint(t tenant.Tenant) net.OscNetAccessPointInterface {
 	return net.NewService(t)
 }
 

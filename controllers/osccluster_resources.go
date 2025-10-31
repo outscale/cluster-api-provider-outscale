@@ -180,6 +180,55 @@ func (t *ClusterResourceTracker) setInternetServiceId(clusterScope *scope.Cluste
 	rsrc.InternetService[defaultResource] = id
 }
 
+func (t *ClusterResourceTracker) _getNetAccessPointOrId(ctx context.Context, service infrastructurev1beta1.OscNetAccessPointService, clusterScope *scope.ClusterScope) (*osc.NetAccessPoint, string, error) {
+	rsrc := clusterScope.GetResources()
+	id := getResource(string(service), rsrc.NetAccessPoint)
+	if id != "" {
+		return nil, id, nil
+	}
+	netId, err := t.getNetId(ctx, clusterScope)
+	if err != nil {
+		return nil, "", fmt.Errorf("get net for net access point: %w", err)
+	}
+	nap, err := t.Cloud.NetAccessPoint(clusterScope.Tenant).GetNetAccessPointFor(ctx, netId, clusterScope.Tenant.Region(), string(service))
+	switch {
+	case err != nil:
+		return nil, "", fmt.Errorf("get net access point for net: %w", err)
+	case nap == nil:
+		return nil, "", fmt.Errorf("get net access point: %w", ErrNoResourceFound)
+	default:
+		t.setNetAccessPointId(clusterScope, service, nap.GetNetAccessPointId())
+		return nap, nap.GetNetAccessPointId(), nil
+	}
+}
+
+func (t *ClusterResourceTracker) getNetAccessPoint(ctx context.Context, service infrastructurev1beta1.OscNetAccessPointService, clusterScope *scope.ClusterScope) (*osc.NetAccessPoint, error) {
+	nap, id, err := t._getNetAccessPointOrId(ctx, service, clusterScope)
+	switch {
+	case err != nil:
+		return nil, err
+	case nap != nil:
+		return nap, nil
+	}
+	nap, err = t.Cloud.NetAccessPoint(clusterScope.Tenant).GetNetAccessPoint(ctx, id)
+	switch {
+	case err != nil:
+		return nil, err
+	case nap == nil:
+		return nil, fmt.Errorf("get net access point %s: %w", id, ErrMissingResource)
+	default:
+		return nap, nil
+	}
+}
+
+func (t *ClusterResourceTracker) setNetAccessPointId(clusterScope *scope.ClusterScope, service infrastructurev1beta1.OscNetAccessPointService, id string) {
+	rsrc := clusterScope.GetResources()
+	if rsrc.NetAccessPoint == nil {
+		rsrc.NetAccessPoint = map[string]string{}
+	}
+	rsrc.NetAccessPoint[string(service)] = id
+}
+
 func (t *ClusterResourceTracker) _getSubnetOrId(ctx context.Context, subnet infrastructurev1beta1.OscSubnet, clusterScope *scope.ClusterScope) (*osc.Subnet, string, error) {
 	id := subnet.ResourceId
 	if id != "" {
