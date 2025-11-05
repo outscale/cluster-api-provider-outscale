@@ -8,20 +8,17 @@ require (
 	github.com/outscale/osc-sdk-go/v2 v2.29.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.6.0
-	k8s.io/api v0.32.8
-	k8s.io/apimachinery v0.32.8
-	k8s.io/client-go v0.32.8
+	k8s.io/api v0.32.9
+	k8s.io/apimachinery v0.32.9
+	k8s.io/client-go v0.32.9
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.32.8
-	sigs.k8s.io/cluster-api v1.10.6
-	sigs.k8s.io/cluster-api/test v1.10.6
+	k8s.io/kubectl v0.32.9
+	sigs.k8s.io/cluster-api v1.10.8
+	sigs.k8s.io/cluster-api/test v1.10.8
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
-require (
-	github.com/aws/aws-sdk-go-v2 v1.39.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
-)
+require go.yaml.in/yaml/v3 v3.0.4 // indirect
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
@@ -37,7 +34,7 @@ require (
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go v1.55.8 // indirect
+	github.com/aws/aws-sdk-go v1.55.8
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -147,10 +144,10 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	k8s.io/apiextensions-apiserver v0.32.8
-	k8s.io/apiserver v0.32.8 // indirect
+	k8s.io/apiextensions-apiserver v0.32.9
+	k8s.io/apiserver v0.32.9 // indirect
 	k8s.io/cluster-bootstrap v0.32.3 // indirect
-	k8s.io/component-base v0.32.8
+	k8s.io/component-base v0.32.9
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0 // indirect
