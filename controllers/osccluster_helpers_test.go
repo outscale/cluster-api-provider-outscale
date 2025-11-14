@@ -16,6 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -105,6 +106,16 @@ func patchNATIPFromPool(name string) patchOSCClusterFunc {
 func patchUseCredentials(c infrastructurev1beta1.OscCredentials) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.Spec.Credentials = c
+	}
+}
+
+func patchDisableLB() patchOSCClusterFunc {
+	return func(m *infrastructurev1beta1.OscCluster) {
+		m.Spec.Network.Disable = append(m.Spec.Network.Disable, infrastructurev1beta1.DisableLB)
+		m.Spec.ControlPlaneEndpoint = v1beta1.APIEndpoint{
+			Host: "api.example.com",
+			Port: 443,
+		}
 	}
 }
 
@@ -530,9 +541,10 @@ func assertStatusClusterResources(rsrcs infrastructurev1beta1.OscClusterResource
 	}
 }
 
-func assertControlPlaneEndpoint(endpoint string) assertOSCClusterFunc {
+func assertControlPlaneEndpoint(endpoint string, port int32) assertOSCClusterFunc {
 	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
 		assert.Equal(t, endpoint, c.Spec.ControlPlaneEndpoint.Host)
+		assert.Equal(t, port, c.Spec.ControlPlaneEndpoint.Port)
 	}
 }
 

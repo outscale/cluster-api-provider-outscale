@@ -123,11 +123,12 @@ type OscReuse struct {
 	SecurityGroups bool `json:"securityGroups,omitempty"`
 }
 
-// +kubebuilder:validation:Enum:=internet
+// +kubebuilder:validation:Enum:=internet;loadbalancer
 type OscDisable string
 
 const (
 	DisableInternet OscDisable = "internet"
+	DisableLB       OscDisable = "loadbalancer"
 )
 
 type OscLoadBalancer struct {
