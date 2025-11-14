@@ -3,23 +3,17 @@ name: docker-prune
 on:
   schedule:
   - cron: "0 6 * * Sun"
+
 jobs:
   clean-image:
-    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+            REGION: ["us-east-2", "eu-west-2"]
+    runs-on: [self-hosted, linux, "${{ matrix.REGION }}"]
     steps:
-    - name: ⬇️ Checkout cluster-api-outscale
-      uses: actions/checkout@v5
-      with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
     - name: 🧹 Prune docker cache
       run: |
-        docker buider prune
-        docker image prune
+        docker builder prune -f
+        docker image prune -f
       shell: bash
-      env:
-         OSC_ACCESS_KEY: ${{secrets.OSC_OPENSOURCE_ACCESS_KEY}}
-         OSC_SECRET_KEY: ${{secrets.OSC_OPENSOURCE_SECRET_KEY}}   
-         OSC_REGION: ${{secrets.OSC_OPENSOURCE_REGION}}
-         OWNER: ${{secrets.OWNER}}
-         DAYS: ${{secrets.DAYS}}
+
