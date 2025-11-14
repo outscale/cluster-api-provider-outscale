@@ -356,7 +356,7 @@ Each rule is defined by:
 
 ### Automatic mode
 
-A load balancer named `loadBalancer.loadbalancername` is created.
+A load balancer named `loadBalancer.loadbalancername` is created and manages access to the Kubernetes API.
 
 ### Manual mode
 
@@ -379,6 +379,26 @@ The health check has the following attributes:
 | `healthythreshold` | `3` | false | The consecutive number of successful checks for a backend vm to be considered healthy
 | `unhealthythreshold` | `3` | false | The consecutive number of failed checks for a backend vm to be considered unhealthy
 | `timeout` | `10` | false | The timeout after which a check is considered unhealthy
+
+### Disabling
+
+The load balancer can be disabled by setting:
+
+```yaml
+spec:
+  network:
+    disable:
+    - loadbalancer
+```
+
+The control plane endpoint will then need to be configured manually:
+
+```yaml
+spec:
+  controlPlaneEndpoint:
+    host: api.example.com
+    port: 6443
+```
 
 ## Bastion
 
