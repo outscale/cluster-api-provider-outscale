@@ -17,6 +17,7 @@ on:
       - "!testclean/**"
       - "!helm/**"
       - "Makefile"
+      - "Dockerfile"
       - "hack/*.sh"
       - "!docs/src/**"
 jobs:
