@@ -7,13 +7,14 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - ".github/workflows/unit-func-e2e-test.yaml"
+      - ".github/workflows/unit-quickstart-e2e-test.yaml"
       - "github_actions/deploy_cluster/**"
       - "**.go"
       - "**.yaml"
       - "!capm.yaml"
       - "!osc-secret.yaml"
       - "!example/**.yaml"
+      - "!.github/**.yaml"
       - "!testclean/**"
       - "!helm/**"
       - "Makefile"

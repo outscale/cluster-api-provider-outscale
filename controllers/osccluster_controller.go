@@ -133,26 +133,28 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SubnetsReadyCondition)
 
-	_, err = r.reconcileInternetService(ctx, clusterScope)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconcile internetService: %w", err)
-	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
+	if !clusterScope.IsInternetDisabled() {
+		_, err = r.reconcileInternetService(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.InternetServicesReadyCondition, infrastructurev1beta1.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile internetService: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.InternetServicesReadyCondition)
 
-	// Add public route table to mark public subnet as public & enable NAT creation
-	_, err = r.reconcileRouteTable(ctx, clusterScope, infrastructurev1beta1.RoleNat)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconcile public routeTables: %w", err)
-	}
+		// Add public route table to mark public subnet as public & enable NAT creation
+		_, err = r.reconcileRouteTable(ctx, clusterScope, infrastructurev1beta1.RoleNat)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.RouteTablesReadyCondition, infrastructurev1beta1.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile public routeTables: %w", err)
+		}
 
-	_, err = r.reconcileNatService(ctx, clusterScope)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.NatServicesReadyCondition, infrastructurev1beta1.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconcile natServices: %w", err)
+		_, err = r.reconcileNatService(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.NatServicesReadyCondition, infrastructurev1beta1.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile natServices: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.NatServicesReadyCondition)
 
 	// Add all other route tables, whose destinations are the NAT services previously created.
 	_, err = r.reconcileRouteTable(ctx, clusterScope)
@@ -193,12 +195,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta1.SecurityGroupReadyCondition)
 
-	_, err = r.reconcileLoadBalancer(ctx, clusterScope)
-	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconcile loadBalancer: %w", err)
+	if !clusterScope.IsLBDisabled() {
+		_, err = r.reconcileLoadBalancer(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition, infrastructurev1beta1.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile loadBalancer: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 	}
-	conditions.MarkTrue(osccluster, infrastructurev1beta1.LoadBalancerReadyCondition)
 
 	if clusterScope.GetNetwork().Bastion.Enable {
 		_, err := r.reconcileBastion(ctx, clusterScope)
@@ -242,19 +246,23 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 			return reconcile.Result{}, fmt.Errorf("reconcile delete bastion: %w", err)
 		}
 	}
-	_, err = r.reconcileDeleteLoadBalancer(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("reconcile delete loadBalancer: %w", err)
+
+	if !clusterScope.IsLBDisabled() {
+		_, err = r.reconcileDeleteLoadBalancer(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete loadBalancer: %w", err)
+		}
 	}
 
-	_, err = r.reconcileDeleteNatService(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("reconcile delete natServices: %w", err)
-	}
-
-	_, err = r.reconcileDeletePublicIp(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("reconcile delete publicIPs: %w", err)
+	if !clusterScope.IsInternetDisabled() {
+		_, err = r.reconcileDeleteNatService(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete natServices: %w", err)
+		}
+		_, err = r.reconcileDeletePublicIp(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete publicIPs: %w", err)
+		}
 	}
 
 	_, err = r.reconcileDeleteNetAccessPoints(ctx, clusterScope)
@@ -281,12 +289,12 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile delete securityGroups: %w", err)
 	}
-
-	_, err = r.reconcileDeleteInternetService(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("reconcile delete internetServices: %w", err)
+	if !clusterScope.IsInternetDisabled() {
+		_, err = r.reconcileDeleteInternetService(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile delete internetServices: %w", err)
+		}
 	}
-
 	_, err = r.reconcileDeleteSubnets(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile delete subnets: %w", err)

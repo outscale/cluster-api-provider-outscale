@@ -233,6 +233,11 @@ func (s *ClusterScope) IsInternetDisabled() bool {
 	return slices.Contains(s.GetNetwork().Disable, infrastructurev1beta1.DisableInternet)
 }
 
+// IsLBDisabled checks if loadbalancer is disabled.
+func (s *ClusterScope) IsLBDisabled() bool {
+	return slices.Contains(s.GetNetwork().Disable, infrastructurev1beta1.DisableLB)
+}
+
 // GetInternetServiceName return the name of the net
 func (s *ClusterScope) GetInternetServiceName() string {
 	if s.OscCluster.Spec.Network.InternetService.Name != "" {
