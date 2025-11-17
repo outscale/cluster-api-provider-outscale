@@ -22,3 +22,10 @@ updates:
           - "sigs.k8s.io/*"
         update-types:
           - "patch"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "⬆️ ci: "
+    labels: [ dependencies, skip-changelog ]

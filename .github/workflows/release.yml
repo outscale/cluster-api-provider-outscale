@@ -4,11 +4,15 @@ on:
   push:
     tags:
       - "v*"
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install kustomize
       run: make kustomize
     - name: Install envsubst
@@ -27,7 +31,6 @@ jobs:
       run: |
         make docker-build
         make docker-push
-        docker image prune -a -f
       env:
         IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
@@ -38,10 +41,6 @@ jobs:
       env:
         IMG_RELEASE: registry.hub.docker.com/${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
         RELEASE_TAG: ${{ env.RELEASE_TAG }}
-    - name: gh login
-      run: make gh-login
-      env:
-        SECRET_GITHUB_TOKEN: ${{ secrets.SECRET_GITHUB_TOKEN }}
     - name: get previous tag
       run: |
         sudo apt-get update -y
