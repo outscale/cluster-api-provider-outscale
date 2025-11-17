@@ -28,7 +28,7 @@ jobs:
     - name: ⬇️ Checkout repository
       uses: actions/checkout@v4
     - name: ⬇️ Install Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: 'go.mod'
     - name: 🧪 unit tests
@@ -84,7 +84,7 @@ jobs:
         IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
         CERT_MANAGER: "true"
     - name: ⬇️ Install Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: 'go.mod'
     - name: 📦 Build and push Docker image 

@@ -19,7 +19,7 @@ jobs:
           repository: 'outscale-dev/cluster-api-provider-outscale'
           path: "cluster-api-provider-outscale"
           ref: main       
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
       - name: install mdbook
