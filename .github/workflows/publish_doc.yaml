@@ -14,7 +14,7 @@ jobs:
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip -o awscliv2.zip
           sudo ./aws/install -u 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: 'outscale-dev/cluster-api-provider-outscale'
           path: "cluster-api-provider-outscale"
