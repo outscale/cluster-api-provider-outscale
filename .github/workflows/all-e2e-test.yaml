@@ -19,7 +19,7 @@ jobs:
         sed 's/options /options use-vc single-request attempts:5 /' < /etc/resolv.conf > /etc/resolv.conf.new
         cat /etc/resolv.conf.new > /etc/resolv.conf
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
     - name: ⬇️ Install kubectl
       uses: azure/setup-kubectl@v4
       with:
