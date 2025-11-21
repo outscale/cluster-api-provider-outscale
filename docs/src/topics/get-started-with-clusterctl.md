@@ -7,11 +7,28 @@
 - an Outscale account with [an Access Key and a Secret Key][Outscale Access Key and Secret Key],
 - a management Kubernetes cluster, for example an [OKS][OKS] cluster.
 
+## Compatibility matrix
+
+The Core CAPI (Cluster API) provider determines which Kubernetes versions are supported, as described in the [Cluster API documentation][version support].
+
+CAPI v1.10 is the recommended version. It supports the following:
+* Kubernetes v1.29 - v1.33 for management clusters,
+* Kubernetes v1.27 - v1.33 for workload clusters.
+
+The CAPOSC (Cluster Api Provider for OutSCale) infrastructure driver is based on the following Cluster API schema versions:
+
+| CAPOSC version | Schema version |
+| -------------- | -------------- |
+| CAPOSC v0.x    | v1beta1        |
+| CAPOSC v1.x    | v1beta1        |
+
+CAPI v1.10 uses v1beta1 schemas internally. CAPI v1.11 switches to v1beta2 schemas but remains compatible with v1beta1. Therefore, using CAPI v1.11 is expected to work.
+
 ## Installing clusterctl
 
 On a Linux/amd64 platform:
 ```bash
-curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.10.6/clusterctl-linux-amd64 -o clusterctl
+curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.10.8/clusterctl-linux-amd64 -o clusterctl
 sudo install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
 ```
 
@@ -66,7 +83,7 @@ export OSC_IMAGE_NAME=<osc-image-name>
 clusterctl generate cluster <cluster-name> --kubernetes-version <kubernetes-version>   --control-plane-machine-count=<control-plane-machine-count> --worker-machine-count=<worker-machine-count> > getstarted.yaml
 ```
 
-> The Kubernetes version must be the same version as the image you picked. If `OSC_IMAGE_NAME` is `ubuntu-2204-kubernetes-v1.31.12-2025-08-27`, `<kubernetes-version>` is `v1.31.12`.
+> The Kubernetes version must be the same version as the image you picked. If `OSC_IMAGE_NAME` is `ubuntu-2204-kubernetes-v1.31.12-2025-08-27`, `<kubernetes-version>` must be `v1.31.12`.
 
 On Linux, you may compute the Kubernetes version based on the image name using:
 
@@ -95,6 +112,8 @@ To install CNI you can use a [helm][helm] chart or a ClusterResourceSet.
 To install CCM, you can use a [helm][helm] chart or a ClusterResourceSet.
 
 * [cloud-provider-outscale][cloud-provider-outscale]
+
+> Each major Kubernetes release requires a specific CCM version. You must install the CCM version that matches your Kubernetes release.
 
 ## Checking status
 
@@ -129,7 +148,7 @@ clusterctl upgrade apply -i outscale:v1.1.1
 
 ## Deleting Cluster API
 
-To remove all cluster-api components from your cluster:
+To remove all Cluster API components from your cluster:
 ```bash
 clusterctl delete --all
 kubectl delete namespace cluster-api-provider-outscale-system
@@ -148,3 +167,4 @@ kubectl delete namespace cluster-api-provider-outscale-system
 [Outscale Access Key and Secret Key]: https://wiki.outscale.net/display/EN/Creating+an+Access+Key
 [cluster-api]: https://cluster-api.sigs.k8s.io/user/quick-start.html
 [OutscaleOpenSourceImage]: https://github.com/outscale/kube-image-workflows/releases
+[version support]: https://cluster-api.sigs.k8s.io/reference/versions#supported-versions-matrix-by-provider-or-component
