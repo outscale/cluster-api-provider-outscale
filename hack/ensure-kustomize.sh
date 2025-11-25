@@ -47,7 +47,7 @@ EOF
 	else
 		cat <<EOF
 Detected kustomize version: ${kustomize_version}.
-Kustomize ${MINIMUM_KUSTOMIZE_VERSION} is already install.
+Kustomize ${MINIMUM_KUSTOMIZE_VERSION} is already installed.
 EOF
 	fi
 }
