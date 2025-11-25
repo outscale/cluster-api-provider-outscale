@@ -16,5 +16,4 @@ kubeconfig=`/.venv/bin/oks-cli cluster kubeconfig --cluster-name $cluster_name -
 export KUBECONFIG=$kubeconfig
 
 # do not wait if stuck, frieza will purge everything
-# as freeza cannot delete netpeerings, be careful
-kubectl delete ns $OSC_CLUSTER_NAME --timeout 10m || /bin/true
+kubectl delete ns $OSC_CLUSTER_NAME --timeout 3m || /bin/true
