@@ -65,6 +65,18 @@ func TestValidateVmType(t *testing.T) {
 		{vmType: "tinav7.c1r2p1", valid: true},
 		{vmType: "tinav7.c1r2p3", valid: true},
 		{vmType: "tinav7.c1r1p4", valid: false},
+
+		{vmType: "inference7-l40.small", valid: false},
+		{vmType: "inference7-l40.medium", valid: true},
+		{vmType: "inference7-l40.large", valid: true},
+
+		{vmType: "inference7-h100.small", valid: false},
+		{vmType: "inference7-h100.medium", valid: false},
+		{vmType: "inference7-h100.large", valid: true},
+		
+		{vmType: "inference7-h200.4xsmallA", valid: false},
+		{vmType: "inference7-h200.4xmediumA", valid: false},
+		{vmType: "inference7-h200.4xlargeA", valid: true},
 	}
 	for _, tc := range tcs {
 		ferr := v1beta1.ValidateVmType(nil, tc.vmType)
