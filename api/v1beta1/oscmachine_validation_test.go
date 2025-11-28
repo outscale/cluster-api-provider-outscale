@@ -69,13 +69,21 @@ func TestValidateVmType(t *testing.T) {
 		{vmType: "inference7-l40.small", valid: false},
 		{vmType: "inference7-l40.medium", valid: true},
 		{vmType: "inference7-l40.large", valid: true},
+		{vmType: "inference7-l40.xlarge", valid: false},
 
 		{vmType: "inference7-h100.small", valid: false},
-		{vmType: "inference7-h100.medium", valid: false},
+		{vmType: "inference7-h100.medium", valid: true},
 		{vmType: "inference7-h100.large", valid: true},
-		
-		{vmType: "inference7-h200.4xsmallA", valid: false},
-		{vmType: "inference7-h200.4xmediumA", valid: false},
+		{vmType: "inference7-h100.xlarge", valid: true},
+		{vmType: "inference7-h100.2xlarge", valid: true},
+
+		{vmType: "inference7-h200.small", valid: false},
+		{vmType: "inference7-h200.medium", valid: false},
+		{vmType: "inference7-h200.large", valid: false},
+		{vmType: "inference7-h200.2xsmall", valid: true},
+		{vmType: "inference7-h200.2xmedium", valid: true},
+		{vmType: "inference7-h200.2xlarge", valid: true},
+		{vmType: "inference7-h200.4xlarge", valid: true},
 		{vmType: "inference7-h200.4xlargeA", valid: true},
 	}
 	for _, tc := range tcs {
