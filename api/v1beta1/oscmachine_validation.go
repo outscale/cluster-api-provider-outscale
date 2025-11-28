@@ -120,7 +120,7 @@ func ValidateDeviceName(path *field.Path, deviceName string) *field.Error {
 }
 
 var isValidTinaVmType = regexp.MustCompile(`^tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]$`).MatchString
-var isValidInferenceVmType = regexp.MustCompile(`^inference7-(?:l40\.(?:medium|large)|h100\.large|h200\.4xlargeA)$`).MatchString
+var isValidInferenceVmType = regexp.MustCompile(`^inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA))$`).MatchString
 
 // ValidateVmType checks that vmType is a valid vmType
 func ValidateVmType(path *field.Path, vmType string) *field.Error {
@@ -132,6 +132,6 @@ func ValidateVmType(path *field.Path, vmType string) *field.Error {
 	case isValidInferenceVmType(vmType):
 		return nil
 	default:
-		return field.Invalid(path, vmType, "vmType must use either the tinavX.cXrXpX or inferenceX.gpuX.sizeX format")
+		return field.Invalid(path, vmType, "vmType must use either the tinavX.cXrXpX or inferenceX-{gpu}.{size} format")
 	}
 }
