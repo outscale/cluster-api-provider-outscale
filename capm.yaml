@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251030134004-a51cd00d7bc6
+    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -248,6 +248,7 @@ spec:
                     items:
                       enum:
                       - internet
+                      - loadbalancer
                       type: string
                     type: array
                   extraSecurityGroupRule:
@@ -904,7 +905,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251030134004-a51cd00d7bc6
+    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1195,6 +1196,7 @@ spec:
                             items:
                               enum:
                               - internet
+                              - loadbalancer
                               type: string
                             type: array
                           extraSecurityGroupRule:
@@ -1634,7 +1636,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251030134004-a51cd00d7bc6
+    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -2039,7 +2041,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251030134004-a51cd00d7bc6
+    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
