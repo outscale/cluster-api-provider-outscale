@@ -27,22 +27,9 @@ releaseSeries:
     contract: v1beta1
 ```
 
-## Create a release branch
-Create a new branch for each major/minor release.
+## Changelog
 
-```bash
-export RELEASE_VERSION=1.2.3
-git checkout release-${RELEASE_VERSION}
-git fetch origin
-git rebase origin/release-${RELEASE_VERSION}
-```
-
-For patch releases, use the minor release branch.
-
-Push the release branch:
-```bash
-git push origin release-${RELEASE_VERSION}
-```
+Add version to CHANGELOG.md
 
 ## Create a release tag
 Create & push tag:
