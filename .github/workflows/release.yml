@@ -17,11 +17,6 @@ jobs:
       run: make kustomize
     - name: Install envsubst
       run: make envsubst
-    - name: Set release_tag
-      run: |
-        echo 'RELEASE_TAG<<EOF' >> $GITHUB_ENV
-        echo "${GITHUB_REF:10}" >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
     - name: Docker login
       run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
       env:
@@ -32,40 +27,34 @@ jobs:
         make docker-build
         make docker-push
       env:
-        IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-        VERSION: ${{ env.RELEASE_TAG }}
+        IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
+        RELEASE_TAG: ${{ github.ref_name }}
+        VERSION: ${{ github.ref_name }}
         DOCKER_BUILDKIT: 1
     - name: generate artefacts
       run: make release
       env:
-        IMG_RELEASE: registry.hub.docker.com/${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-    - name: get previous tag
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y  original-awk
-        LATEST_RELEASE_TAG=`gh release list -L 1 | awk '{print $1}'`
-        if [ -z "$LATEST_RELEASE_TAG" ]; then
-                PREVIOUS_RELEASE_TAG="None"
-        else
-                PREVIOUS_RELEASE_TAG=${LATEST_RELEASE_TAG}
-        fi
-        echo 'PREVIOUS_RELEASE_TAG<<EOF' >> $GITHUB_ENV
-        echo "${PREVIOUS_RELEASE_TAG}" >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - name: generate changelog
-      run: make release-changelog
-      env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-        PREVIOUS_RELEASE_TAG: ${{ env.PREVIOUS_RELEASE_TAG }}
-        GH_ORG_NAME: ${{ github.repository_owner }}
-        GH_REPO_NAME: "cluster-api-provider-outscale" 
-    - name: create release
-      run: make create-gh-release
-      env:
-        IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ env.RELEASE_TAG }}
-        RELEASE_TAG: ${{ env.RELEASE_TAG }}
-        PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
-        GH_REPO: ${{ github.repository }} 
+        IMG_RELEASE: registry.hub.docker.com/${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
+        RELEASE_TAG: ${{ github.ref_name }}
+    - name: Get changelog for release
+      id: changelog
+      uses: mindsers/changelog-reader-action@v2
+      with:
+        path: "CHANGELOG.md"
+        version: ${{ github.ref_name }}
+    # - name: create release
+    #   run: make create-gh-release
+    #   env:
+    #     IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
+    #     RELEASE_TAG: ${{ github.ref_name }}
+    #     PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
+    #     GH_REPO: ${{ github.repository }} 
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: true
+        prerelease: false
+        body: ${{ steps.changelog.outputs.changes }}
+        files: out/*.yaml
