@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.2.0-beta.1] - 2025-12-17
+
+No changes since v1.2.0-beta.1
+
 ## [v1.2.0-beta.1] - 2025-12-03
 ### ✨ Added
 * ✨ feat: add multitenancy by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/632
