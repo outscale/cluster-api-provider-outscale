@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.2.0-beta.1] - 2025-12-17
+## [v1.2.0-rc.1] - 2025-12-17
 
 No changes since v1.2.0-beta.1
 
