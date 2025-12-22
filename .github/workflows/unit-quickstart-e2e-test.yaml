@@ -10,6 +10,7 @@ on:
       - ".github/workflows/unit-quickstart-e2e-test.yaml"
       - "github_actions/deploy_cluster/**"
       - "**.go"
+      - "go.*"
       - "**.yaml"
       - "!capm.yaml"
       - "!osc-secret.yaml"
