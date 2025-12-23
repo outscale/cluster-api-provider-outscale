@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.2.0] - 2025-12-24
+
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module github.com/spf13/pflag to v1.0.10 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/706
+
 ## [v1.2.0-rc.1] - 2025-12-17
 
 No changes since v1.2.0-beta.1
