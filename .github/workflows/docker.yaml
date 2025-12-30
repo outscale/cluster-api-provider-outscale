@@ -69,6 +69,6 @@ jobs:
       # Upload Trivy SARIF report if errors
       - name: Upload Scan if Errors
         if: ${{ always() && github.event_name != 'pull_request' }}
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4
         with:
           sarif_file: './.trivyscan/report.sarif'
