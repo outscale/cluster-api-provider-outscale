@@ -38,7 +38,7 @@ jobs:
         RELEASE_TAG: ${{ github.ref_name }}
     - name: Get changelog for release
       id: changelog
-      uses: mindsers/changelog-reader-action@v2
+      uses: mindsers/changelog-reader-action@32aa5b4c155d76c94e4ec883a223c947b2f02656 # v2
       with:
         path: "CHANGELOG.md"
         version: ${{ github.ref_name }}
@@ -50,7 +50,7 @@ jobs:
     #     PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
     #     GH_REPO: ${{ github.repository }} 
     - name: Create Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
       with:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
