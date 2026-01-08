@@ -165,6 +165,9 @@ metadata:
 spec:
   template:
     spec:
+      clusterConfiguration:
+        apiServer:
+          timeoutForControlPlane: 20m0s
       joinConfiguration:
         nodeRegistration:
           name: "{{ ds.meta_data.local_hostname }}"
@@ -182,11 +185,7 @@ spec:
       kubeadmConfigSpec:
         clusterConfiguration:
           apiServer:
-            extraArgs:
-              cloud-provider: external
-          controllerManager:
-            extraArgs:
-              cloud-provider: external
+            timeoutForControlPlane: 20m0s
         initConfiguration:
           nodeRegistration:
             name: '{{ ds.meta_data.local_hostname }}'

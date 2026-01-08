@@ -222,3 +222,61 @@ func TestClusterScope_GetSecurityGroups(t *testing.T) {
 		}
 	}
 }
+
+func TestNeedReconciliation(t *testing.T) {
+	newScope := func(r []infrastructurev1beta1.OscReconciliationRule) scope.ClusterScope {
+		return scope.ClusterScope{
+			OscCluster: &infrastructurev1beta1.OscCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Spec: infrastructurev1beta1.OscClusterSpec{
+					Network: infrastructurev1beta1.OscNetwork{
+						ReconciliationRules: r,
+					},
+				},
+				Status: infrastructurev1beta1.OscClusterStatus{
+					ReconcilerGeneration: infrastructurev1beta1.OscReconcilerGeneration{
+						infrastructurev1beta1.ReconcilerInternetService: 1,
+						infrastructurev1beta1.ReconcilerNatService:      0,
+					},
+				},
+			},
+		}
+	}
+	t.Run("the right rule is selected", func(t *testing.T) {
+		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.OnChange},
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerAll}, Mode: infrastructurev1beta1.Always},
+		})
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerBastion))
+		assert.False(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
+	})
+	t.Run("onChange works", func(t *testing.T) {
+		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.OnChange},
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerNatService}, Mode: infrastructurev1beta1.OnChange},
+		})
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService))
+		assert.False(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
+
+	})
+	t.Run("always works", func(t *testing.T) {
+		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.Always},
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerNatService}, Mode: infrastructurev1beta1.Always},
+		})
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService))
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
+
+	})
+	t.Run("random works", func(t *testing.T) {
+		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.Random, ReconciliationChance: 10},
+		})
+		for i := 0; i <= 99; i++ {
+			scope.Rand = func() int { return i }
+			assert.Equal(t, i < 10, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService), i)
+		}
+	})
+}

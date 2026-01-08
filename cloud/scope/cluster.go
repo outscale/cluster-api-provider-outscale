@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"slices"
 	"strings"
@@ -718,12 +719,46 @@ func (s *ClusterScope) GetResources() *infrastructurev1beta1.OscClusterResources
 	return &s.OscCluster.Status.Resources
 }
 
+func (s *ClusterScope) getReconcilationRule(reconciler infrastructurev1beta1.Reconciler) infrastructurev1beta1.OscReconciliationRule {
+	for _, r := range s.GetNetwork().ReconciliationRules {
+		if slices.Contains(r.AppliesTo, infrastructurev1beta1.ReconcilerAll) || slices.Contains(r.AppliesTo, reconciler) {
+			return r
+		}
+	}
+	switch reconciler {
+	case infrastructurev1beta1.ReconcilerSecurityGroup:
+		return infrastructurev1beta1.OscReconciliationRule{
+			Mode:                 infrastructurev1beta1.Random,
+			ReconciliationChance: 10,
+		}
+	default:
+		return infrastructurev1beta1.OscReconciliationRule{
+			Mode: infrastructurev1beta1.OnChange,
+		}
+	}
+}
+
+var Rand = func() int {
+	return rand.IntN(100)
+}
+
 // NeedReconciliation returns true if a reconciler needs to run.
 func (s *ClusterScope) NeedReconciliation(reconciler infrastructurev1beta1.Reconciler) bool {
 	if s.OscCluster.Status.ReconcilerGeneration == nil {
 		return true
 	}
-	return s.OscCluster.Status.ReconcilerGeneration[reconciler] < s.OscCluster.Generation
+	if s.OscCluster.Status.ReconcilerGeneration[reconciler] < s.OscCluster.Generation {
+		return true
+	}
+	r := s.getReconcilationRule(reconciler)
+	switch r.Mode {
+	case infrastructurev1beta1.Always:
+		return true
+	case infrastructurev1beta1.Random:
+		return Rand() < r.ReconciliationChance
+	default:
+		return false
+	}
 }
 
 // SetReconciliationGeneration marks a reconciler as having finished its job for a specific cluster generation.

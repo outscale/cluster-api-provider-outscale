@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -492,6 +492,48 @@ spec:
                           type: string
                       type: object
                     type: array
+                  reconciliationRules:
+                    description: 'Reconciliation rules (default: {securityGroup, random,
+                      10%}, {*, onChange}). Only the first matching rule applies.'
+                    items:
+                      properties:
+                        appliesTo:
+                          description: The list of items this rule applies to (bastion,
+                            net, netPeering, netPeering/routes, subnet, internetService,
+                            netAccessPoint, natService, routeTable, securityGroup,
+                            loadbalancer, vm or * for all)
+                          items:
+                            enum:
+                            - bastion
+                            - net
+                            - netPeering
+                            - netPeering/routes
+                            - subnet
+                            - internetService
+                            - netAccessPoint
+                            - natService
+                            - routeTable
+                            - securityGroup
+                            - loadbalancer
+                            - vm
+                            - '*'
+                            type: string
+                          type: array
+                        mode:
+                          description: 'The mode of reconciliation: onChange (only
+                            when the spec change, default), always, random (onChange
+                            + randomPercent% chance)'
+                          enum:
+                          - onChange
+                          - always
+                          - random
+                          type: string
+                        reconciliationChance:
+                          description: The chance (in percent, 1-100) of a reconcilation
+                            happening when no change have been detected (when mode=random)
+                          type: integer
+                      type: object
+                    type: array
                   routeTables:
                     description: The Route Table configuration
                     items:
@@ -905,7 +947,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1452,6 +1494,51 @@ spec:
                                   type: string
                               type: object
                             type: array
+                          reconciliationRules:
+                            description: 'Reconciliation rules (default: {securityGroup,
+                              random, 10%}, {*, onChange}). Only the first matching
+                              rule applies.'
+                            items:
+                              properties:
+                                appliesTo:
+                                  description: The list of items this rule applies
+                                    to (bastion, net, netPeering, netPeering/routes,
+                                    subnet, internetService, netAccessPoint, natService,
+                                    routeTable, securityGroup, loadbalancer, vm or
+                                    * for all)
+                                  items:
+                                    enum:
+                                    - bastion
+                                    - net
+                                    - netPeering
+                                    - netPeering/routes
+                                    - subnet
+                                    - internetService
+                                    - netAccessPoint
+                                    - natService
+                                    - routeTable
+                                    - securityGroup
+                                    - loadbalancer
+                                    - vm
+                                    - '*'
+                                    type: string
+                                  type: array
+                                mode:
+                                  description: 'The mode of reconciliation: onChange
+                                    (only when the spec change, default), always,
+                                    random (onChange + randomPercent% chance)'
+                                  enum:
+                                  - onChange
+                                  - always
+                                  - random
+                                  type: string
+                                reconciliationChance:
+                                  description: The chance (in percent, 1-100) of a
+                                    reconcilation happening when no change have been
+                                    detected (when mode=random)
+                                  type: integer
+                              type: object
+                            type: array
                           routeTables:
                             description: The Route Table configuration
                             items:
@@ -1636,7 +1723,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1735,6 +1822,45 @@ spec:
                       resourceId:
                         description: Deprecated
                         type: string
+                    type: object
+                  reconciliationRule:
+                    description: 'Reconciliation rules (default: {*, onChange})'
+                    properties:
+                      appliesTo:
+                        description: The list of items this rule applies to (bastion,
+                          net, netPeering, netPeering/routes, subnet, internetService,
+                          netAccessPoint, natService, routeTable, securityGroup, loadbalancer,
+                          vm or * for all)
+                        items:
+                          enum:
+                          - bastion
+                          - net
+                          - netPeering
+                          - netPeering/routes
+                          - subnet
+                          - internetService
+                          - netAccessPoint
+                          - natService
+                          - routeTable
+                          - securityGroup
+                          - loadbalancer
+                          - vm
+                          - '*'
+                          type: string
+                        type: array
+                      mode:
+                        description: 'The mode of reconciliation: onChange (only when
+                          the spec change, default), always, random (onChange + randomPercent%
+                          chance)'
+                        enum:
+                        - onChange
+                        - always
+                        - random
+                        type: string
+                      reconciliationChance:
+                        description: The chance (in percent, 1-100) of a reconcilation
+                          happening when no change have been detected (when mode=random)
+                        type: integer
                     type: object
                   vm:
                     properties:
@@ -2041,7 +2167,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.1-0.20251201161424-407aed4d2d94
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -2170,6 +2296,46 @@ spec:
                               resourceId:
                                 description: Deprecated
                                 type: string
+                            type: object
+                          reconciliationRule:
+                            description: 'Reconciliation rules (default: {*, onChange})'
+                            properties:
+                              appliesTo:
+                                description: The list of items this rule applies to
+                                  (bastion, net, netPeering, netPeering/routes, subnet,
+                                  internetService, netAccessPoint, natService, routeTable,
+                                  securityGroup, loadbalancer, vm or * for all)
+                                items:
+                                  enum:
+                                  - bastion
+                                  - net
+                                  - netPeering
+                                  - netPeering/routes
+                                  - subnet
+                                  - internetService
+                                  - netAccessPoint
+                                  - natService
+                                  - routeTable
+                                  - securityGroup
+                                  - loadbalancer
+                                  - vm
+                                  - '*'
+                                  type: string
+                                type: array
+                              mode:
+                                description: 'The mode of reconciliation: onChange
+                                  (only when the spec change, default), always, random
+                                  (onChange + randomPercent% chance)'
+                                enum:
+                                - onChange
+                                - always
+                                - random
+                                type: string
+                              reconciliationChance:
+                                description: The chance (in percent, 1-100) of a reconcilation
+                                  happening when no change have been detected (when
+                                  mode=random)
+                                type: integer
                             type: object
                           vm:
                             properties:

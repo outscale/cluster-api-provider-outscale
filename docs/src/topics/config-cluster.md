@@ -24,6 +24,30 @@ Resources may be either automatically or manually created.
 
 > Note: parameters that are not listed below are unused/deprecated.
 
+## Reconciliation rules
+
+A list of reconciliation rules can be configured, the first one that matches applies.
+
+### Automatic mode
+
+The default rules are:
+```yaml
+reconciliationRules:
+- appliesTo: [securityGroup]
+  mode: random
+  reconciliationChance: 10
+- appliesTo: ['*']
+  mode: onChange
+```
+
+### Manual mode
+
+| Name |  Required | Description
+| --- | --- | ---
+| `appliesTo`| yes | The list of reconcilers the rule applies to: `bastion`, `net`, `netPeering`, `netPeering/routes`, `subnet`, `internetService`, `netAccessPoint`, `natService`, `routeTable`, `securityGroup`, `loadbalancer` or `*` (all reconcilers)
+| `mode` | yes | `always` (always reconcile), `onChange` (reconcile only if the resource has changed) or `random` (onChange + a certain chance of reconciliation otherwise)
+| `reconciliationChance` | no | The chance of reconciliation in random mode (a percentage from 0 to 100)
+
 ## Net
 
 ### Automatic mode
@@ -34,8 +58,8 @@ A net with IP range 10.0.0.0/16 will be created.
 
 | Name |  Required | Description
 | --- | --- | ---
-| `name`| false | the name of the Net
-| `ipRange` | true | the Ip range in CIDR notation
+| `name`| no | the name of the Net
+| `ipRange` | yes | the Ip range in CIDR notation
 
 ## Subnet
 
@@ -66,9 +90,9 @@ CAPOSC automatically creates /24 subnets within the net IP range:
 
 | Name | Required | Description
 | --- | --- | ---
-| `name`| false | The name of the Subnet (required in roles are not used)
-| `ipSubnetRange` | true | Subnet IP range in CIDR notation
-| `roles` | false | The list of roles for this subnet (required if name is not used)
+| `name`| no | The name of the Subnet (required in roles are not used)
+| `ipSubnetRange` | yes | Subnet IP range in CIDR notation
+| `roles` | no | The list of roles for this subnet (required if name is not used)
 
 ## Internet service
 
@@ -90,8 +114,8 @@ A public IP is automatically provisioned, no need to list it.
 
 | Name | Required | Description
 | --- | --- | ---
-| `name`| false | The name of the Nat Service
-| `subnetName`| false | The name of the Subnet to which the NAT service will be attached
+| `name`| no | The name of the Nat Service
+| `subnetName`| no | The name of the Subnet to which the NAT service will be attached
 
 ## Routing tables
 
@@ -103,17 +127,17 @@ One route table is created per subnet, with a default route to the internet serv
 
 | Name | Required | Description
 | --- | --- | ---
-| `name`| false | The name of the Route Table
-| `subnetName` |  true | The subnet name
-| `route` | true | The list of routes to add
+| `name`| no | The name of the Route Table
+| `subnetName` | yes | The subnet name
+| `route` | yes | The list of routes to add
 
 Each route is defined by the following attributes:
 
 | Name | Required | Description
 | --- | --- | ---
-| `targetName` | true |  The name of target resource (Internet Service or NAT Service)
-| `targetType` | true |  The target resource type which can be Internet Service (`gateway`) or NAT Service (`nat` or `nat-service`)
-| `destination` | true |  the destination IP range in CIDR notation
+| `targetName` | yes |  The name of target resource (Internet Service or NAT Service)
+| `targetType` | yes |  The target resource type which can be Internet Service (`gateway`) or NAT Service (`nat` or `nat-service`)
+| `destination` | yes |  the destination IP range in CIDR notation
 
 ## Security Groups
 
@@ -333,22 +357,22 @@ For each `additionalSecurityRules` entry, a single security group is matched, ha
 
 | Name | Required | Description
 | --- | --- | ---
-| `name`| true | The name of the security group
-| `description` | false | The description of the security group
-| `authoritative` | false | Is the Security Group configuration authoritative ? (if yes, all rules not found in configuration will be deleted).
-| `roles` | false | The list of roles this security group applies to
-| `securityGroupRules` | false | The list of rules to apply
+| `name`| yes | The name of the security group
+| `description` | no | The description of the security group
+| `authoritative` | no | Is the Security Group configuration authoritative ? (if yes, all rules not found in configuration will be deleted).
+| `roles` | no | The list of roles this security group applies to
+| `securityGroupRules` | no | The list of rules to apply
 
 Each rule is defined by:
 
 | Name |  Required | Description
 | --- | --- | ---
-| `flow` | true | The flow of the security group (`Inbound` or `Outbound`)
-| `ipProtocol` | true|  The protocol (`tcp`, `udp`, `icmp` or `-1`)
-| `ipRange` | false |  The ip range of the security group rule (deprecated, use `ipRanges`)
-| `ipRanges` | false |  The list of ip ranges of the security group rule
-| `fromPortRange` | true |  The beginning of the port range
-| `toPortRange` | true |  The end of the port range
+| `flow` | yes | The flow of the security group (`Inbound` or `Outbound`)
+| `ipProtocol` | yes | The protocol (`tcp`, `udp`, `icmp` or `-1`)
+| `ipRange` | no | The ip range of the security group rule (deprecated, use `ipRanges`)
+| `ipRanges` | no | The list of ip ranges of the security group rule
+| `fromPortRange` | yes | The beginning of the port range
+| `toPortRange` | yes | The end of the port range
 
 > Note: If you define your own security groups, `additionalSecurityRules` is ignored.
 
@@ -362,23 +386,23 @@ A load balancer named `loadBalancer.loadbalancername` is created and manages acc
 
 | Name |  Required | Description
 | --- | --- | ---
-| `loadbalancername`| true | The Load Balancer  unique name 
-| `listener` | false | The Listener Spec
-| `healthcheck` | false | The healthcheck Spec
+| `loadbalancername`| yes | The Load Balancer  unique name 
+| `listener` | no | The Listener Spec
+| `healthcheck` | no | The healthcheck Spec
 
 
 The listener has the following attributes:
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
-| `loadbalancerport` | `6443` | false | The frontend port
+| `loadbalancerport` | `6443` | no | The frontend port
 
 The health check has the following attributes:
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
-| `checkinterval`| `10` | false | The interval in seconds between two checks
-| `healthythreshold` | `3` | false | The consecutive number of successful checks for a backend vm to be considered healthy
-| `unhealthythreshold` | `3` | false | The consecutive number of failed checks for a backend vm to be considered unhealthy
-| `timeout` | `10` | false | The timeout after which a check is considered unhealthy
+| `checkinterval`| `10` | no | The interval in seconds between two checks
+| `healthythreshold` | `3` | no | The consecutive number of successful checks for a backend vm to be considered healthy
+| `unhealthythreshold` | `3` | no | The consecutive number of failed checks for a backend vm to be considered unhealthy
+| `timeout` | `10` | no | The timeout after which a check is considered unhealthy
 
 ### Disabling
 
@@ -410,12 +434,12 @@ By default, no bastion is created.
 
 | Name |  Default | Required | Description
 | --- | --- | --- | ---
-| `enable`| `false` | false | Enable to have bastion
-| `name` | n/a | true | The name of the bastion
-| `imageId` | n/a | false |  the omi ID (imageId or imageName must be present)
-| `imageName` | n/a | false |  the omi name (not recommended, use imageId)
-| `keypairName` | n/a | true |  The keypair name used to access bastion
-| `rootDiskSize` | `15` | false |  The Root Disk Size
-| `rootDiskIops` | n/a | false |  The Root Disk Iops (only for io1)
-| `rootDiskType` | `gp2` | false |  The Root Disk Type (io1, gp2, standard)
-| `vmType` | `tinav6.c1r1p2` | false |  The vmType use for the bastion
+| `enable`| `false` | no | Enable to have bastion
+| `name` | n/a | yes | The name of the bastion
+| `imageId` | n/a | no |  the omi ID (imageId or imageName must be present)
+| `imageName` | n/a | no |  the omi name (not recommended, use imageId)
+| `keypairName` | n/a | yes |  The keypair name used to access bastion
+| `rootDiskSize` | `15` | no |  The Root Disk Size
+| `rootDiskIops` | n/a | no |  The Root Disk Iops (only for io1)
+| `rootDiskType` | `gp2` | no |  The Root Disk Type (io1, gp2, standard)
+| `vmType` | `tinav6.c1r1p2` | no |  The vmType use for the bastion
