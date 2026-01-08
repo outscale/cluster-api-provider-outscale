@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -105,6 +106,9 @@ func runClusterTest(t *testing.T, tc testcase) {
 }
 
 func TestReconcileOSCCluster_Create(t *testing.T) {
+	// disable random reconciliation of security groups
+	scope.Rand = func() int { return 100 }
+
 	tcs := []testcase{
 		{
 			name:        "creating a cluster with a v0.4 manual config",
@@ -1414,6 +1418,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 }
 
 func TestReconcileOSCCluster_Multitenant(t *testing.T) {
+	// disable random reconciliation of security groups
+	scope.Rand = func() int { return 100 }
+
 	d := t.TempDir()
 	filepath := d + "tenant.json"
 	err := os.WriteFile(filepath, []byte(`{
@@ -1548,6 +1555,9 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
 }
 
 func TestReconcileOSCCluster_Airgap(t *testing.T) {
+	// disable random reconciliation of security groups
+	scope.Rand = func() int { return 100 }
+
 	d := t.TempDir()
 	filepath := d + "tenant.json"
 	err := os.WriteFile(filepath, []byte(`{
@@ -1777,6 +1787,9 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 }
 
 func TestReconcileOSCCluster_Update(t *testing.T) {
+	// disable random reconciliation of security groups
+	scope.Rand = func() int { return 100 }
+
 	tcs := []testcase{
 		{
 			name:            "reconciliation on a reconciled cluster does nothing",

@@ -261,7 +261,21 @@ func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta1.Recon
 	if s.OscMachine.Status.ReconcilerGeneration == nil {
 		return true
 	}
-	return s.OscMachine.Status.ReconcilerGeneration[reconciler] < s.OscMachine.Generation
+	if s.OscMachine.Status.ReconcilerGeneration[reconciler] < s.OscMachine.Generation {
+		return true
+	}
+	r := s.OscMachine.Spec.Node.ReconciliationRule
+	if r == nil {
+		return false
+	}
+	switch r.Mode {
+	case infrastructurev1beta1.Always:
+		return true
+	case infrastructurev1beta1.Random:
+		return Rand() < r.ReconciliationChance
+	default:
+		return false
+	}
 }
 
 // SetReconciliationGeneration marks a reconciler as having finished its job for a specific cluster generation.

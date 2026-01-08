@@ -30,6 +30,9 @@ type OscNode struct {
 	KeyPair OscKeypair `json:"keypair,omitempty"`
 	// unused
 	ClusterName string `json:"clusterName,omitempty"`
+	// Reconciliation rules (default: {*, onChange})
+	// +optional
+	ReconciliationRule *OscReconciliationRule `json:"reconciliationRule,omitempty"`
 }
 
 type OscCredentials struct {
@@ -114,6 +117,9 @@ type OscNetwork struct {
 	// The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 	// + optional
 	AllowToIPRanges []string `json:"allowToIPRanges,omitempty"`
+	// Reconciliation rules (default: {securityGroup, random, 10%}, {*, onChange}). Only the first matching rule applies.
+	// + optional
+	ReconciliationRules []OscReconciliationRule `json:"reconciliationRules,omitempty"`
 }
 
 type OscReuse struct {
@@ -496,6 +502,7 @@ type OscClusterResources struct {
 	PublicIPs       map[string]string `json:"publicIps,omitempty"`
 }
 
+// +kubebuilder:validation:Enum:=bastion;net;netPeering;netPeering/routes;subnet;internetService;netAccessPoint;natService;routeTable;securityGroup;loadbalancer;vm;*
 type Reconciler string
 
 const (
@@ -512,9 +519,30 @@ const (
 	ReconcilerLoadbalancer     Reconciler = "loadbalancer"
 
 	ReconcilerVm Reconciler = "vm"
+
+	ReconcilerAll Reconciler = "*"
 )
 
 type OscReconcilerGeneration map[Reconciler]int64
+
+// +kubebuilder:validation:Enum:=onChange;always;random
+type ReconciliationMode string
+
+const (
+	OnChange ReconciliationMode = "onChange"
+	Always   ReconciliationMode = "always"
+	Random   ReconciliationMode = "random"
+)
+
+type OscReconciliationRule struct {
+	// The list of items this rule applies to (bastion, net, netPeering, netPeering/routes, subnet, internetService, netAccessPoint, natService, routeTable, securityGroup, loadbalancer, vm or * for all)
+	AppliesTo []Reconciler `json:"appliesTo,omitempty"`
+	// The mode of reconciliation: onChange (only when the spec change, default), always, random (onChange + randomPercent% chance)
+	Mode ReconciliationMode `json:"mode,omitempty"`
+	// The chance (in percent, 1-100) of a reconcilation happening when no change have been detected (when mode=random)
+	// +optional
+	ReconciliationChance int `json:"reconciliationChance,omitempty"`
+}
 
 type OscNodeResource struct {
 	// Volume references (not set anymore)
