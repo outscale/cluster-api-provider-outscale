@@ -3,7 +3,7 @@ module github.com/outscale/cluster-api-provider-outscale
 go 1.24.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.38.3
 	github.com/outscale/osc-sdk-go/v2 v2.31.0
 	github.com/stretchr/testify v1.11.1
