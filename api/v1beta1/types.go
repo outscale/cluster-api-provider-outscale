@@ -655,6 +655,9 @@ type OscVm struct {
 	// Tags to add to the VM.
 	// +optional
 	Tags map[string]string `json:"tags,omitempty"`
+	// VM placement constraints.
+	// +optional
+	Placement OscPlacement `json:"placement,omitempty"`
 }
 
 func (vm *OscVm) GetRole() OscRole {
@@ -662,6 +665,28 @@ func (vm *OscVm) GetRole() OscRole {
 		return vm.Role
 	}
 	return RoleWorker
+}
+
+type OscPlacement struct {
+	// Try to put VMs with the same repulseServer value on different physical servers. For workers, set by default to the MachineDeployment name unless RepulseCluster is set.
+	// Define to an empty string if you want to disable.
+	// +optional
+	RepulseServer *string `json:"repulseServer,omitempty"`
+	// Try to put VMs with the same attractServer value on the same physical server.
+	// +optional
+	AttractServer string `json:"attractServer,omitempty"`
+	// serverStrict makes repulseServer/attractServer mandatory. CreateVm will fail if VM placement is not possible.
+	// +optional
+	ServerStrict bool `json:"serverStrict,omitempty"`
+	// Try to put VMs with the same repulseCluster value on different clusters. Not set by default.
+	// +optional
+	RepulseCluster string `json:"repulseCluster,omitempty"`
+	// Try to put VMs with the same attractCluster value on the same cluster.
+	// +optional
+	AttractCluster string `json:"attractCluster,omitempty"`
+	// clusterStrict makes repulseCluster/attractCluster mandatory. CreateVm will fail if VM placement is not possible.
+	// +optional
+	ClusterStrict bool `json:"clusterStrict,omitempty"`
 }
 
 type OscBastion struct {

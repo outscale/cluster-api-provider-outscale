@@ -5,6 +5,7 @@ metadata:
     cluster.x-k8s.io/cluster-name: test-cluster-api
     cluster.x-k8s.io/deployment-name: test-cluster-api-md-0
     cluster.x-k8s.io/set-name: cluster-api-test-controlplane
+    cluster.x-k8s.io/control-plane: ""
     machine-template-hash: 3550316311-6p8qk
   name: cluster-api-test-controlplane
   namespace: cluster-api-test

@@ -58,7 +58,7 @@ status:
   - lastTransitionTime: "2025-02-17T09:48:06Z"
     status: "True"
     type: VmReady
-  references:
+  resources:
     net:
       default: "vpc-foo"
     subnet:

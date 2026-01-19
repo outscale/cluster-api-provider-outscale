@@ -82,20 +82,45 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		}
 		vmName := machineScope.GetName()
 		vmTags := vmSpec.Tags
+		if vmTags == nil {
+			vmTags = map[string]string{}
+		} else {
+			// we need to clone the map to avoid changing the spec...
+			vmTags = maps.Clone(vmTags)
+		}
 
 		if vmSpec.PublicIp {
 			_, publicIp, err := r.Tracker.IPAllocator(machineScope).AllocateIP(ctx, defaultResource, vmName, vmSpec.PublicIpPool, clusterScope)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 			}
-			// we need to clone the map to avoid changing the spec...
-			if vmTags == nil {
-				vmTags = map[string]string{}
-			} else {
-				vmTags = maps.Clone(vmTags)
-			}
-			vmTags[compute.AutoAttachExternapIPTag] = publicIp
+			vmTags[compute.AutoAttachExternalIPTag] = publicIp
 		}
+
+		repulse := machineScope.GetPlacement()
+		switch {
+		case repulse.RepulseCluster != "" && repulse.ClusterStrict:
+			vmTags[compute.RepulseClusterStrictTag] = repulse.RepulseCluster
+		case repulse.RepulseCluster != "" && !repulse.ClusterStrict:
+			vmTags[compute.RepulseClusterTag] = repulse.RepulseCluster
+
+		case repulse.AttractCluster != "" && repulse.ClusterStrict:
+			vmTags[compute.AttractClusterStrictTag] = repulse.AttractCluster
+		case repulse.AttractCluster != "" && !repulse.ClusterStrict:
+			vmTags[compute.AttractClusterTag] = repulse.AttractCluster
+		}
+		switch {
+		case repulse.RepulseServer != nil && *repulse.RepulseServer != "" && repulse.ServerStrict:
+			vmTags[compute.RepulseServerStrictTag] = *repulse.RepulseServer
+		case repulse.RepulseServer != nil && *repulse.RepulseServer != "" && !repulse.ServerStrict:
+			vmTags[compute.RepulseServerTag] = *repulse.RepulseServer
+
+		case repulse.AttractServer != "" && repulse.ServerStrict:
+			vmTags[compute.AttractServerStrictTag] = repulse.AttractServer
+		case repulse.AttractServer != "" && !repulse.ServerStrict:
+			vmTags[compute.AttractServerTag] = repulse.AttractServer
+		}
+
 		keypairName := vmSpec.KeypairName
 		vmType := vmSpec.VmType
 		volumes := machineScope.GetVolumes()

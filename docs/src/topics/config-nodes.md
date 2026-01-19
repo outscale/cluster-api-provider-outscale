@@ -126,6 +126,34 @@ reconciliationRule:
   mode: onChange
 ```
 
+## `placement`
+
+VM placement constraints can be configured.
+
+| Name | Default | Required | Description
+| --- | --- | --- | ---
+| `repulseCluster` | n/a | no | Tries to ensure that VMs having the same value are located in different clusters
+| `attractCluster` | n/a | no | Tries to ensure that VMs having the same value are located in the same cluster
+| `clusterStrict` | false | no | Makes the cluster requirement mandatory
+| `repulseServer` | see below | no | Tries to ensure that VMs having the same value run on different physical servers
+| `attractServer` | n/a | no | Tries to ensure that VMs having the same value run on the same physical server
+| `serverStrict` | false | no | Makes the server requirement mandatory
+
+> for workers, `repulseServer` is set to the MachineDeployment name by default, and can be disabled by setting an empty string.
+
+When constraints cannot be enforced by the VM scheduler:
+* VMs might end up on the same server/cluster if `serverStrict`/`clusterStrict` is false,
+* VM will not be scheduled and an error will be returned if `serverStrict`/`clusterStrict` is true.
+
+A high level of resiliency can be achieved by setting:
+
+```yaml
+placement:
+  repulseCluster: <cluster name>
+  repluseServer: <cluster name>
+  serverStrict: true
+```
+
 ### Subnet & security group selection
 
 If not set, CAPOSC will use the subnet having the right role in the specified subregion.

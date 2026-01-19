@@ -194,6 +194,17 @@ func mockDeleteSubnet(id string) mockFunc {
 func mockInternetServiceFound(netId, id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.InternetServiceMock.EXPECT().
+			GetInternetService(gomock.Any(), gomock.Eq(id)).
+			Return(&osc.InternetService{
+				InternetServiceId: ptr.To(id),
+				NetId:             ptr.To(netId),
+			}, nil)
+	}
+}
+
+func mockInternetServiceForNetFound(netId, id string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.InternetServiceMock.EXPECT().
 			GetInternetServiceForNet(gomock.Any(), gomock.Eq(netId)).
 			Return(&osc.InternetService{
 				InternetServiceId: ptr.To(id),

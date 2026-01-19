@@ -10,8 +10,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -79,7 +82,7 @@ func (m *MachineScope) Close(ctx context.Context) error {
 	return m.patchHelper.Patch(ctx, m.OscMachine)
 }
 
-// GetName return the name of the machine
+// GetName returns the name of the machine
 func (m *MachineScope) GetName() string {
 	return m.OscMachine.Name
 }
@@ -91,49 +94,68 @@ func (m *MachineScope) GetClientToken(clusterScope *ClusterScope) string {
 	return ct
 }
 
-// GetNamespace return the namespace of the machine
+// GetNamespace returns the namespace of the machine
 func (m *MachineScope) GetNamespace() string {
 	return m.OscMachine.Namespace
 }
 
-// GetUID return the uid of the machine
+// GetUID returns the uid of the machine
 func (m *MachineScope) GetUID() string {
 	return string(m.Machine.UID)
 }
 
-// GetVolumes return the volume of the cluster
+// GetVolumes returns the volume of the cluster
 func (m *MachineScope) GetVolumes() []infrastructurev1beta1.OscVolume {
 	return m.OscMachine.Spec.Node.Volumes
 }
 
-// GetVm return the vm
+// GetVm returns the vm
 func (m *MachineScope) GetVm() infrastructurev1beta1.OscVm {
 	return m.OscMachine.Spec.Node.Vm
 }
 
-// GetImage return the image
+// GetImage returns the image
 func (m *MachineScope) GetImage() *infrastructurev1beta1.OscImage {
 	return &m.OscMachine.Spec.Node.Image
 }
 
-// SetImageId set ImageId
+// SetImageId sets ImageId
 func (m *MachineScope) SetImageId(imageId string) {
 	m.OscMachine.Spec.Node.Vm.ImageId = imageId
 }
 
-// GetImageId return ImageId
+// GetImageId returns ImageId
 func (m *MachineScope) GetImageId() string {
 	return m.GetVm().ImageId
 }
 
-// GetVmPrivateIps return the vm privateIps
+// GetVmPrivateIps returns the VM privateIps
 func (m *MachineScope) GetVmPrivateIps() []infrastructurev1beta1.OscPrivateIpElement {
 	return m.GetVm().PrivateIps
 }
 
-// GetVmSecurityGroups return the vm securityGroups
+// GetVmSecurityGroups returns the VM securityGroups
 func (m *MachineScope) GetVmSecurityGroups() []infrastructurev1beta1.OscSecurityGroupElement {
 	return m.GetVm().SecurityGroupNames
+}
+
+// GetPlacement returns the VM placement constraints.
+func (m *MachineScope) GetPlacement() infrastructurev1beta1.OscPlacement {
+	repulse := m.GetVm().Placement
+	if m.IsControlPlane() || repulse.RepulseCluster != "" || repulse.RepulseServer != nil || repulse.AttractCluster != "" || repulse.AttractServer != "" {
+		return repulse
+	}
+
+	hasRepulse := slices.ContainsFunc(lo.Keys(m.GetVm().Tags), func(k string) bool {
+		return strings.HasPrefix(k, "osc.fcu.repulse") || strings.HasPrefix(k, "osc.fcu.attract")
+	})
+	if !hasRepulse {
+		return infrastructurev1beta1.OscPlacement{
+			RepulseServer: ptr.To(m.Machine.Labels[clusterv1.MachineDeploymentNameLabel]),
+		}
+	}
+
+	return repulse
 }
 
 // GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
