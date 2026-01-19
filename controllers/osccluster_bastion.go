@@ -183,7 +183,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 
 	log.V(3).Info("Creating bastion", "vmType", bastionSpec.VmType)
 	tags := map[string]string{
-		compute.AutoAttachExternapIPTag: publicIp,
+		compute.AutoAttachExternalIPTag: publicIp,
 	}
 	bastionName := clusterScope.GetBastionName()
 	clientToken := clusterScope.GetBastionClientToken()

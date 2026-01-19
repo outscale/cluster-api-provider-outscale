@@ -1809,7 +1809,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockSubnetFound("subnet-c1a282b0"),
 				mockSubnetFound("subnet-1555ea91"),
 				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
 					InboundRules: &[]osc.SecurityGroupRule{
@@ -1899,7 +1899,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockSubnetFound("subnet-c1a282b0"),
 				mockSubnetFound("subnet-1555ea91"),
 				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
 					InboundRules: &[]osc.SecurityGroupRule{
@@ -1989,7 +1989,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockSubnetFound("subnet-c1a282b0"),
 				mockSubnetFound("subnet-1555ea91"),
 				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
 					InboundRules: &[]osc.SecurityGroupRule{
@@ -2082,14 +2082,14 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				}),
 			},
 			mockFuncs: []mockFunc{
-				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("vpc-foo")}),
 				mockNetFound("vpc-foo"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kcp")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kw")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-public")}),
+				mockSubnetFound("subnet-public"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-kcp"),
 				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockNatServiceFound("nat-foo"),
 
-				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kw"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
@@ -2099,7 +2099,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				}),
 				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "1.2.3.4/32", 24, 25),
 				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "4.5.6.7/32", 24, 25),
-				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kcp"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
@@ -2107,7 +2107,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-lb"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
@@ -2116,7 +2116,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-node"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
@@ -2151,10 +2151,6 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
 						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
 					},
-				}),
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.NatService{
-					NatServiceId: ptr.To("nat-foo"),
-					PublicIps:    &[]osc.PublicIpLight{{PublicIpId: ptr.To("ipalloc-nat")}},
 				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -2182,14 +2178,14 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				patchIncrementGeneration(),
 			},
 			mockFuncs: []mockFunc{
-				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("vpc-foo")}),
 				mockNetFound("vpc-foo"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kcp")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kw")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-public")}),
+				mockSubnetFound("subnet-public"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-kcp"),
 				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockNatServiceFound("nat-foo"),
 
-				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kw"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
@@ -2200,7 +2196,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 					},
 				}),
 				mockDeleteSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", "", 33, 33),
-				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kcp"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
@@ -2208,7 +2204,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-lb"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
@@ -2217,7 +2213,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-node"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
@@ -2253,10 +2249,6 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
 					},
 				}),
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.NatService{
-					NatServiceId: ptr.To("nat-foo"),
-					PublicIps:    &[]osc.PublicIpLight{{PublicIpId: ptr.To("ipalloc-nat")}},
-				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
 						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
@@ -2283,14 +2275,14 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				patchIncrementGeneration(),
 			},
 			mockFuncs: []mockFunc{
-				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("vpc-foo")}),
 				mockNetFound("vpc-foo"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kcp")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kw")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-public")}),
+				mockSubnetFound("subnet-public"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-kcp"),
 				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockNatServiceFound("nat-foo"),
 
-				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kw"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
@@ -2299,7 +2291,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kcp"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
@@ -2307,7 +2299,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-lb"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
@@ -2316,7 +2308,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
 					},
 				}),
-				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-node"),
 					InboundRules: &[]osc.SecurityGroupRule{
 						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
@@ -2353,10 +2345,6 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
 					},
 				}),
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.NatService{
-					NatServiceId: ptr.To("nat-foo"),
-					PublicIps:    &[]osc.PublicIpLight{{PublicIpId: ptr.To("ipalloc-nat")}},
-				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
 						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
@@ -2384,7 +2372,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockSubnetFound("subnet-c1a282b0"),
 				mockSubnetFound("subnet-1555ea91"),
 				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
 					InboundRules: &[]osc.SecurityGroupRule{
@@ -2484,7 +2472,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kcp")}),
 				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kw")}),
 				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-public")}),
-				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockInternetServiceForNetFound("vpc-foo", "igw-foo"),
 
 				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
 					SecurityGroupId: ptr.To("sg-kw"),
@@ -2673,7 +2661,7 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteSecurityGroup("sg-a093d014", nil),
 				mockDeleteSecurityGroup("sg-750ae810", nil),
 
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
 				mockDeleteInternetService("igw-c3c49899"),
 
@@ -2739,7 +2727,7 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteSecurityGroup("sg-a093d014", nil),
 				mockDeleteSecurityGroup("sg-750ae810", nil),
 
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
 				mockDeleteInternetService("igw-c3c49899"),
 
@@ -2799,7 +2787,7 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteSecurityGroupRule("sg-a093d014", "Outbound", "tcp", "", "sg-bar", int32(35), int32(36)),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
 
-				mockInternetServiceFound("vpc-24ba90ce", "igw-c3c49899"),
+				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
 				mockDeleteInternetService("igw-c3c49899"),
 

@@ -81,6 +81,18 @@ func patchUseOpenSourceOMI() patchOSCMachineFunc {
 	}
 }
 
+func patchRepulse(rep infrastructurev1beta1.OscPlacement) patchOSCMachineFunc {
+	return func(m *infrastructurev1beta1.OscMachine) {
+		m.Spec.Node.Vm.Placement = rep
+	}
+}
+
+func patchTags(tags map[string]string) patchOSCMachineFunc {
+	return func(m *infrastructurev1beta1.OscMachine) {
+		m.Spec.Node.Vm.Tags = tags
+	}
+}
+
 func mockImageFoundByName(name, account, imageId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ImageMock.

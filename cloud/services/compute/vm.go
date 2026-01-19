@@ -22,7 +22,17 @@ import (
 )
 
 const (
-	AutoAttachExternapIPTag = "osc.fcu.eip.auto-attach"
+	AutoAttachExternalIPTag = "osc.fcu.eip.auto-attach"
+
+	RepulseServerTag        = "osc.fcu.repulse_server"
+	RepulseClusterTag       = "osc.fcu.repulse_cluster"
+	RepulseServerStrictTag  = "osc.fcu.repulse_server_strict"
+	RepulseClusterStrictTag = "osc.fcu.repulse_cluster_strict"
+
+	AttractServerTag        = "osc.fcu.attract_server"
+	AttractClusterTag       = "osc.fcu.attract_cluster"
+	AttractServerStrictTag  = "osc.fcu.attract_server_strict"
+	AttractClusterStrictTag = "osc.fcu.attract_cluster_strict"
 
 	TagKeyNodeName        = "OscK8sNodeName"
 	TagKeyClusterIDPrefix = "OscK8sClusterID/"
