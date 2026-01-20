@@ -21,6 +21,7 @@ func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 	_, _ = fmt.Fprintln(b, "-----BEGIN OUTSCALE SECTION-----")
 	_, _ = fmt.Fprintln(b, "filter_private_section=true")
 	for key, value := range tags {
+		key = strings.TrimPrefix(key, "tags.")
 		_, _ = fmt.Fprintf(b, "tags.%s=%s\n", key, value)
 	}
 	_, _ = fmt.Fprintln(b, "-----END OUTSCALE SECTION-----")
