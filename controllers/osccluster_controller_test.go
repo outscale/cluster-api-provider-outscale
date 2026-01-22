@@ -35,12 +35,6 @@ import (
 
 func runClusterTest(t *testing.T, tc testcase) {
 	c, oc := loadClusterSpecs(t, tc.clusterSpec, tc.clusterBaseSpec)
-	oc.Labels = map[string]string{clusterv1.ClusterNameLabel: oc.Name}
-	oc.OwnerReferences = []metav1.OwnerReference{{
-		APIVersion: "cluster.x-k8s.io/v1beta1",
-		Kind:       "Cluster",
-		Name:       c.Name,
-	}}
 	for _, fn := range tc.clusterPatches {
 		fn(oc)
 	}
@@ -2817,6 +2811,14 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
 			},
 			assertDeleted: true,
+		},
+		{
+			name:            "trying to delete a cluster without owner",
+			clusterSpec:     "ready-1.0",
+			clusterBaseSpec: "-",
+			clusterPatches: []patchOSCClusterFunc{
+				patchDeleteCluster(),
+			},
 		},
 	}
 	for _, tc := range tcs {

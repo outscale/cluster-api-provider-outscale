@@ -58,25 +58,30 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	oscCluster := &infrastructurev1beta1.OscCluster{}
 
-	if err := r.Client.Get(ctx, req.NamespacedName, oscCluster); err != nil {
-		if apierrors.IsNotFound(err) {
-			log.V(3).Info("Cluster was not found")
-			return ctrl.Result{}, nil
-		}
+	err := r.Client.Get(ctx, req.NamespacedName, oscCluster)
+	switch {
+	case apierrors.IsNotFound(err):
+		log.V(3).Info("OscCluster was not found; aborting")
+		return ctrl.Result{}, nil
+	case err != nil:
 		return ctrl.Result{}, err
 	}
+
 	cluster, err := util.GetOwnerCluster(ctx, r.Client, oscCluster.ObjectMeta)
-	if err != nil {
+	switch {
+	case apierrors.IsNotFound(err):
+		log.V(3).Info("Cluster has been deleted; aborting")
+		return reconcile.Result{}, nil
+	case err != nil:
 		return reconcile.Result{}, err
-	}
-	if cluster == nil {
-		log.V(3).Info("Cluster Controller has not yet set OwnerRef")
+	case cluster == nil:
+		log.V(3).Info("Cluster Controller has not yet set OwnerRef; aborting")
 		return reconcile.Result{}, nil
 	}
 
 	// Return early if the object or Cluster is paused.
 	if annotations.IsPaused(cluster, oscCluster) {
-		log.V(3).Info("oscCluster or linked Cluster is marked as paused. Won't reconcile")
+		log.V(3).Info("OscCluster or linked Cluster is marked as paused. Won't reconcile")
 		return ctrl.Result{}, nil
 	}
 

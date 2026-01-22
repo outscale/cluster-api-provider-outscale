@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -204,25 +205,49 @@ func trimVersion(spec string) string {
 
 func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *v1beta1.OscCluster) {
 	var cluster clusterv1.Cluster
-	if base != "" {
-		decode(t, "cluster/"+base+".yaml", &cluster)
-	} else {
+	var cname string
+	switch base {
+	case "-":
+		cname = "doesnotexist"
+	case "":
 		decode(t, "cluster/"+trimVersion(spec)+".yaml", &cluster)
+		cname = cluster.Name
+	default:
+		decode(t, "cluster/"+base+".yaml", &cluster)
+		cname = cluster.Name
 	}
 	var osccluster v1beta1.OscCluster
 	decode(t, "osccluster/"+spec+".yaml", &osccluster)
+	osccluster.Labels = map[string]string{clusterv1.ClusterNameLabel: osccluster.Name}
+	osccluster.OwnerReferences = []metav1.OwnerReference{{
+		APIVersion: "cluster.x-k8s.io/v1beta1",
+		Kind:       "Cluster",
+		Name:       cname,
+	}}
 	return &cluster, &osccluster
 }
 
-func loadMachineSpecs(t *testing.T, spec, base string) (*clusterv1.Machine, *v1beta1.OscMachine) {
+func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.Machine, *v1beta1.OscMachine) {
 	var machine clusterv1.Machine
-	if base != "" {
-		decode(t, "machine/"+base+".yaml", &machine)
-	} else {
+	var mname string
+	switch base {
+	case "-":
+		mname = "doesnotexist"
+	case "":
 		decode(t, "machine/"+trimVersion(spec)+".yaml", &machine)
+		mname = machine.Name
+	default:
+		decode(t, "machine/"+base+".yaml", &machine)
+		mname = machine.Name
 	}
 	var oscmachine v1beta1.OscMachine
 	decode(t, "oscmachine/"+spec+".yaml", &oscmachine)
+	oscmachine.Labels = map[string]string{clusterv1.ClusterNameLabel: clusterName}
+	oscmachine.OwnerReferences = []metav1.OwnerReference{{
+		APIVersion: "cluster.x-k8s.io/v1beta1",
+		Kind:       "Machine",
+		Name:       mname,
+	}}
 	return &machine, &oscmachine
 }
 

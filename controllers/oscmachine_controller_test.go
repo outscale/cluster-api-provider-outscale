@@ -19,7 +19,6 @@ import (
 	"go.uber.org/mock/gomock"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -32,13 +31,7 @@ import (
 
 func runMachineTest(t *testing.T, tc testcase) {
 	c, oc := loadClusterSpecs(t, tc.clusterSpec, tc.clusterBaseSpec)
-	m, om := loadMachineSpecs(t, tc.machineSpec, tc.machineBaseSpec)
-	om.Labels = map[string]string{clusterv1.ClusterNameLabel: oc.Name}
-	om.OwnerReferences = []metav1.OwnerReference{{
-		APIVersion: "cluster.x-k8s.io/v1beta1",
-		Kind:       "Machine",
-		Name:       m.Name,
-	}}
+	m, om := loadMachineSpecs(t, tc.machineSpec, tc.machineBaseSpec, oc.Name)
 	for _, fn := range tc.machinePatches {
 		fn(om)
 	}
@@ -551,7 +544,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			},
 		},
 		{
-			name:        "0.5 worker has been moved by clusterctl move, status is updated",
+			name:        "1.0 worker has been moved by clusterctl move, status is updated",
 			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
@@ -577,7 +570,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			},
 		},
 		{
-			name:        "0.5 worker has been moved by clusterctl move, status is updated",
+			name:        "1.0 worker has been moved by clusterctl move, status is updated",
 			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
@@ -632,7 +625,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "deleting a 0.5 machine",
+			name:        "deleting a 1.0 machine",
 			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
@@ -643,7 +636,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "deleting a 0.5 machine with a public ip",
+			name:        "deleting a 1.0 machine with a public ip",
 			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
@@ -660,7 +653,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "deleting a 0.5 machine with a public ip from a pool",
+			name:        "deleting a 1.0 machine with a public ip from a pool",
 			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
@@ -673,6 +666,14 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 				mockDeleteVm("i-046f4bd0"),
 			},
 			assertDeleted: true,
+		},
+		{
+			name:        "trying to delete a machine without owner",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			machineBaseSpec: "-",
+			machinePatches: []patchOSCMachineFunc{
+				patchDeleteMachine(),
+			},
 		},
 	}
 	for _, tc := range tcs {
