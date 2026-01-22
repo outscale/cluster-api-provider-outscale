@@ -74,18 +74,24 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return reconcile.Result{}, err
 	}
 	machine, err := util.GetOwnerMachine(ctx, r.Client, oscMachine.ObjectMeta)
-	if err != nil {
+	switch {
+	case apierrors.IsNotFound(err):
+		log.V(3).Info("Machine has been deleted; aborting")
+		return reconcile.Result{}, nil
+	case err != nil:
 		return reconcile.Result{}, err
-	}
-
-	if machine == nil {
-		log.Info("Machine Controller has not yet set OwnRef")
+	case machine == nil:
+		log.V(3).Info("Machine Controller has not yet set OwnRef; aborting")
 		return reconcile.Result{}, nil
 	}
 
 	cluster, err := util.GetClusterFromMetadata(ctx, r.Client, machine.ObjectMeta)
-	if err != nil {
-		log.Info("Machine is missing cluster label or cluster does not exist")
+	switch {
+	case apierrors.IsNotFound(err):
+		log.V(3).Info("Cluster has been deleted; aborting")
+		return reconcile.Result{}, nil
+	case err != nil:
+		log.V(3).Error(err, "Unable to find Cluster from Machine; aborting")
 		return reconcile.Result{}, nil
 	}
 
@@ -97,11 +103,11 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	if err := r.Client.Get(ctx, oscClusterNamespacedName, oscCluster); err != nil {
-		log.Info("OscCluster is not available yet")
+		log.V(3).Info("OscCluster is not available yet")
 		return reconcile.Result{}, nil
 	}
 	if annotations.IsPaused(cluster, oscCluster) {
-		log.Info("OscMachine or linked Cluster is marked as paused. Won't reconcile")
+		log.V(3).Info("OscMachine or linked Cluster is marked as paused. Won't reconcile")
 		return reconcile.Result{}, nil
 	}
 
