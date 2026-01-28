@@ -1,4 +1,5 @@
 name: Deploy a CAPI cluster
+description: This action bootstraps a Kube cluster using Cluster API.
 inputs:
   RUNNER_NAME:
     description: 'Name of the runner'
