@@ -1,5 +1,25 @@
 # Changelog
 
+## [v1.3.0-rc.1] - 2026-01-28
+
+### ✨ Added
+* ✨ feat: add reconciliation rules by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/718
+* ✨ feat(OscMachine): handle tag keys having already the tags prefix by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/731
+* ✨ feat(OscMachine): add repulseServer/repulseCluster by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/729
+### 🐛 Fixed
+* 🐛 fix(OscCluster/OscMachine): abort reconciliation if owner Cluster/Machine has been deleted by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/732
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module sigs.k8s.io/cluster-api to v1.10.9 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/709
+* ⬆️ deps(dockerfile): update golang docker tag to v1.25.5 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/702
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.27.3 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/708
+* ⬆️ deps(gomod): update module github.com/onsi/gomega to v1.38.3 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/705
+* ⬆️ deps(gomod): update module sigs.k8s.io/cluster-api/test to v1.10.9 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/710
+* ⬆️ deps(dockerfile): update golang:1.25.5 docker digest to 31c1e53 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/716
+* ⬆️ deps(dockerfile): update golang:1.25.5 docker digest to 0f406d3 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/717
+* ⬆️ deps(dockerfile): update python:3-bookworm docker digest to 96b5670 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/727
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.27.5 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/719
+* ⬆️ deps(dockerfile): update golang docker tag to v1.25.6 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/728
+
 ## [v1.2.0] - 2025-12-24
 
 ### 📦 Dependency updates
