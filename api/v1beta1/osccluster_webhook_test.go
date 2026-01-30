@@ -23,6 +23,30 @@ func TestOscCluster_ValidateCreate(t *testing.T) {
 		expValidateCreateErr error
 	}{
 		{
+			name: "disabled and empty loadBalancer",
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Disable: []infrastructurev1beta1.OscDisable{
+						infrastructurev1beta1.DisableLB,
+					},
+				},
+			},
+		},
+		{
+			name: "disabled and non empty loadBalancer",
+			clusterSpec: infrastructurev1beta1.OscClusterSpec{
+				Network: infrastructurev1beta1.OscNetwork{
+					Disable: []infrastructurev1beta1.OscDisable{
+						infrastructurev1beta1.DisableLB,
+					},
+					LoadBalancer: infrastructurev1beta1.OscLoadBalancer{
+						LoadBalancerName: "test-webhook@test",
+					},
+				},
+			},
+			expValidateCreateErr: errors.New("OscCluster.infrastructure.cluster.x-k8s.io \"webhook-test\" is invalid: network.loadBalancer: Forbidden: loadBalancer must be empty when disabled"),
+		},
+		{
 			name: "bad loadBalancerName",
 			clusterSpec: infrastructurev1beta1.OscClusterSpec{
 				Network: infrastructurev1beta1.OscNetwork{

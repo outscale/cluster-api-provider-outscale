@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/netip"
 	"regexp"
+	"slices"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -29,11 +30,14 @@ const (
 // ValidateOscClusterSpec validates a OscClusterSpec.
 func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 	var allErrs field.ErrorList
+
+	lbDisabled := slices.Contains(spec.Network.Disable, DisableLB)
+
+	allErrs = append(allErrs, ValidateLoadbalancer(spec.Network.LoadBalancer, lbDisabled)...)
 	allErrs = append(allErrs, ValidateNet(spec.Network.Net, spec.Network.UseExisting)...)
 	allErrs = append(allErrs, ValidateSubnets(spec.Network.Subnets, spec.Network.Net, spec.Network.UseExisting)...)
 	allErrs = append(allErrs, ValidateNatServices(spec.Network.NatServices, spec.Network.Subnets, spec.Network.Net, spec.Network.UseExisting)...)
 	allErrs = append(allErrs, ValidateSecurityGroups(spec.Network.SecurityGroups, spec.Network.Net, spec.Network.UseExisting)...)
-	allErrs = append(allErrs, ValidateLoadbalancer(spec.Network.LoadBalancer)...)
 	allErrs = append(allErrs, ValidateAllowFromIPs(spec.Network.AllowFromIPRanges)...)
 	return allErrs
 }
@@ -143,8 +147,11 @@ func ValidateSecurityGroupRules(specs []OscSecurityGroupRule) field.ErrorList {
 	return erl
 }
 
-func ValidateLoadbalancer(spec OscLoadBalancer) field.ErrorList {
+func ValidateLoadbalancer(spec OscLoadBalancer, lbDisabled bool) field.ErrorList {
 	var erl field.ErrorList
+	if lbDisabled {
+		return AppendValidation(erl, ValidateEmptyLoadBalancer(field.NewPath("network", "loadBalancer"), spec))
+	}
 	erl = AppendValidation(erl,
 		ValidateLoadBalancerName(field.NewPath("network", "loadBalancer", "loadbalancername"), spec.LoadBalancerName),
 		Optional(ValidateLoadBalancerType(field.NewPath("network", "loadBalancer", "loadbalancertype"), spec.LoadBalancerType)),
@@ -272,6 +279,14 @@ func ValidatePortRange(p *field.Path, from, to int32, msg string) *field.Error {
 	} else {
 		return field.Invalid(p, to, msg)
 	}
+}
+
+// ValidateEmptyLoadBalancer checks that the loadBalancerName is a valid name of load balancer
+func ValidateEmptyLoadBalancer(p *field.Path, spec OscLoadBalancer) *field.Error {
+	if spec != (OscLoadBalancer{}) {
+		return field.Forbidden(p, "loadBalancer must be empty when disabled")
+	}
+	return nil
 }
 
 var isValidateLoadBalancerName = regexp.MustCompile(`^[0-9A-Za-z\s\-]{0,32}$`).MatchString
