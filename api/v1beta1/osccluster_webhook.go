@@ -9,6 +9,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,18 +62,19 @@ func (OscClusterWebhook) ValidateUpdate(_ context.Context, obj runtime.Object, o
 	}
 	var allErrs field.ErrorList
 	old := oldRaw.(*OscCluster)
-
-	if r.Spec.Network.LoadBalancer.LoadBalancerName != old.Spec.Network.LoadBalancer.LoadBalancerName {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancername"),
-				r.Spec.Network.LoadBalancer.LoadBalancerName, "field is immutable"),
-		)
-	}
-	if r.Spec.Network.LoadBalancer.LoadBalancerType != old.Spec.Network.LoadBalancer.LoadBalancerType {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancertype"),
-				r.Spec.Network.LoadBalancer.LoadBalancerType, "field is immutable"),
-		)
+	if !slices.Contains(r.Spec.Network.Disable, DisableLB) {
+		if r.Spec.Network.LoadBalancer.LoadBalancerName != old.Spec.Network.LoadBalancer.LoadBalancerName {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancername"),
+					r.Spec.Network.LoadBalancer.LoadBalancerName, "field is immutable"),
+			)
+		}
+		if r.Spec.Network.LoadBalancer.LoadBalancerType != old.Spec.Network.LoadBalancer.LoadBalancerType {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancertype"),
+					r.Spec.Network.LoadBalancer.LoadBalancerType, "field is immutable"),
+			)
+		}
 	}
 	if len(allErrs) == 0 {
 		return nil, nil

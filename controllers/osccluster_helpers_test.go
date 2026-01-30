@@ -112,6 +112,7 @@ func patchUseCredentials(c infrastructurev1beta1.OscCredentials) patchOSCCluster
 func patchDisableLB() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
 		m.Spec.Network.Disable = append(m.Spec.Network.Disable, infrastructurev1beta1.DisableLB)
+		m.Spec.Network.LoadBalancer = infrastructurev1beta1.OscLoadBalancer{}
 		m.Spec.ControlPlaneEndpoint = v1beta1.APIEndpoint{
 			Host: "api.example.com",
 			Port: 443,
