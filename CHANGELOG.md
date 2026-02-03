@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.3.0] - 2026-02-04
+
+This version adds:
+* reconciliation rules, allowing reconciliation of resources without changes,
+* repulseServer/repulseCluster placement constraints for nodes.
+
+No changes since v1.3.0-rc.1
+
 ## [v1.3.0-rc.1] - 2026-01-28
 
 ### ✨ Added
