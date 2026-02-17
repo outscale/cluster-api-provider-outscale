@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.3.1] - 2026-02-18
+
+### 🐛 Fixed
+* 🐛 fix(OscMachine/validation/webhook): loadbalancer disabling fixes by @ddavid-numspot and @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/742
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module sigs.k8s.io/cluster-api to v1.10.10 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/720
+* ⬆️ deps(gomod): update module sigs.k8s.io/cluster-api/test to v1.10.10 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/721
+
 ## [v1.3.0] - 2026-02-04
 
 This version adds:
