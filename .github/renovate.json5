@@ -13,6 +13,15 @@
         "sigs.k8s.io/**"
       ],
       "allowedVersions": "v{{ major }}.{{ minor }}"
+    },
+    {
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "golang"
+      ],
+      "allowedVersions": "v{{ major }}.{{ minor }}"
     }
   ]
 }
