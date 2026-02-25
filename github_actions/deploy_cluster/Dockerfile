@@ -1,4 +1,4 @@
-FROM python:3-bookworm@sha256:dea5c0690cedf3c93529f8b62467fe6206a0b6163c2bf9a0c5115f4c8367a33d
+FROM python:3-bookworm@sha256:6cc50e409fb008d64c8c119c33488cf0e2288fb657a9ceeae237d381f842713e
 
 RUN curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor > /usr/share/keyrings/helm.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" > /etc/apt/sources.list.d/helm-stable-debian.list
