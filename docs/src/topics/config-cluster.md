@@ -167,7 +167,7 @@ The default configuration is :
   authoritative: true
   roles:
   - loadbalancer
-  rules:
+  securityGroupRules:
   - flow: Inbound
     ipProtocol: tcp
     fromPortRange: 6443
@@ -185,7 +185,7 @@ The default configuration is :
   authoritative: true
   roles:
   - worker
-  rules:
+  securityGroupRules:
   - flow: Inbound
     ipProtocol: tcp
     fromPortRange: 30000
@@ -205,7 +205,7 @@ The default configuration is :
   authoritative: true
   roles:
   - controlplane
-  rules:
+  securityGroupRules:
   - flow: Inbound
     ipProtocol: tcp
     fromPortRange: 6443
@@ -237,7 +237,7 @@ The default configuration is :
   roles:
   - controlplane
   - worker
-  rules:
+  securityGroupRules:
   - flow: Inbound # ICMP
     ipProtocol: icmp
     fromPortRange: 8
@@ -309,7 +309,7 @@ The default configuration is :
   authoritative: true
   roles:
   - bastion
-  rules:
+  securityGroupRules:
   - flow: Inbound
     ipProtocol: tcp
     fromPortRange: 22
@@ -342,7 +342,7 @@ network:
     - roles:
       - controlplane
       - worker
-      rules:
+      securityGroupRules:
       - flow: Inbound
         ipProtocol: tcp
         fromPortRange: 4240
