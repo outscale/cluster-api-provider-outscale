@@ -6,7 +6,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	github.com/outscale/osc-sdk-go/v2 v2.31.0
-	github.com/samber/lo v1.52.0
+	github.com/samber/lo v1.53.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	k8s.io/api v0.32.12
