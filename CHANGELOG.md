@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.3.2] - 2026-03-11
+
+### 📝 Documentation
+* doc(securityGroupRules): fix rules by @pierreozoux in https://github.com/outscale/cluster-api-provider-outscale/pull/753
+### 🐛 Fixed
+* 🐛 fix(routes tables): referencing nat services by name returned the first one in the default subregion by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/762
+### 📦 Dependency updates
+* ⬆️ deps(dockerfile): update python:3-bookworm docker digest to dea5c06 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/743
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.28.1 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/737
+* ⬆️ deps(gomod): update kubernetes packages to v0.32.12 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/707
+* ⬆️ deps(gomod): update module github.com/onsi/gomega to v1.39.1 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/722
+
 ## [v1.3.1] - 2026-02-18
 
 ### 🐛 Fixed
