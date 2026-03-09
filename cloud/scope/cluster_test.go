@@ -280,3 +280,35 @@ func TestNeedReconciliation(t *testing.T) {
 		}
 	})
 }
+
+func TestGetNatService(t *testing.T) {
+	newScope := func() scope.ClusterScope {
+		return scope.ClusterScope{
+			OscCluster: &infrastructurev1beta1.OscCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Spec: infrastructurev1beta1.OscClusterSpec{
+					Network: infrastructurev1beta1.OscNetwork{
+						NatServices: []infrastructurev1beta1.OscNatService{
+							{Name: "foo", SubregionName: "eu-west-2a"},
+							{Name: "bar", SubregionName: "eu-west-2a"},
+						},
+					},
+				},
+			},
+		}
+	}
+	t.Run("when searching by subregion, the first one is returned", func(t *testing.T) {
+		s := newScope()
+		ns, err := s.GetNatService("", "eu-west-2a")
+		require.NoError(t, err)
+		assert.Equal(t, "foo", ns.Name)
+	})
+	t.Run("when searching by name, the right one is returned", func(t *testing.T) {
+		s := newScope()
+		ns, err := s.GetNatService("bar", "eu-west-2a")
+		require.NoError(t, err)
+		assert.Equal(t, "bar", ns.Name)
+	})
+}

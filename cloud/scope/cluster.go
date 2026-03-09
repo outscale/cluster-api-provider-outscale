@@ -279,6 +279,14 @@ func (s *ClusterScope) GetNatServices() []infrastructurev1beta1.OscNatService {
 // GetNatService return the natService of the cluster
 func (s *ClusterScope) GetNatService(name string, subregion string) (infrastructurev1beta1.OscNatService, error) {
 	nats := s.GetNatServices()
+	if name != "" {
+		for _, spec := range nats {
+			if spec.Name == name {
+				return spec, nil
+			}
+		}
+		return infrastructurev1beta1.OscNatService{}, ErrNoNatFound
+	}
 	if len(nats) == 1 {
 		return nats[0], nil
 	}
@@ -286,10 +294,7 @@ func (s *ClusterScope) GetNatService(name string, subregion string) (infrastruct
 		if spec.SubregionName == "" {
 			spec.SubregionName = s.GetDefaultSubregion()
 		}
-		switch {
-		case name != "" && spec.Name == name:
-			return spec, nil
-		case spec.SubregionName == subregion || subregion == "":
+		if spec.SubregionName == subregion || subregion == "" {
 			return spec, nil
 		}
 	}
