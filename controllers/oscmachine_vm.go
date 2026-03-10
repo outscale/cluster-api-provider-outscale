@@ -46,7 +46,11 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			subregionName = *machineScope.Machine.Spec.FailureDomain
 		} else {
 			subnetName = vmSpec.SubnetName
-			subregionName = vmSpec.SubregionName
+			az, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.GetSubregions())
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			subregionName = az
 		}
 
 		subnetSpec, err := clusterScope.GetSubnet(subnetName, vmSpec.GetRole(), subregionName)
@@ -188,9 +192,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		})
 	}
 	machineScope.SetAddresses(addresses)
-	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane {
-		machineScope.SetFailureDomain(vm.Placement.GetSubregionName())
-	}
+	machineScope.SetFailureDomain(vm.Placement.GetSubregionName())
 
 	if !compute.HasCCMTags(vm) {
 		log.V(2).Info("Adding CCM tags")

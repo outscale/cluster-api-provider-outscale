@@ -26,31 +26,31 @@ spec:
   network:
     subregionName: ${OSC_REGION}a
     subnets:
-    - ipSubnetRange: 10.0.2.0/24
-      roles:
-      - loadbalancer
-      - nat
-      subregionName: ${OSC_REGION}a
-    - ipSubnetRange: 10.0.3.0/24
-      roles:
-      - worker
-      subregionName: ${OSC_REGION}a
-    - ipSubnetRange: 10.0.4.0/24
-      roles:
-      - controlplane
-      subregionName: ${OSC_REGION}a
-    - ipSubnetRange: 10.0.5.0/24
-      roles:
-      - nat
-      subregionName: ${OSC_REGION}b
-    - ipSubnetRange: 10.0.6.0/24
-      roles:
-      - worker
-      subregionName: ${OSC_REGION}b
-    - ipSubnetRange: 10.0.7.0/24
-      roles:
-      - controlplane
-      subregionName: ${OSC_REGION}b
+      - ipSubnetRange: 10.0.2.0/24
+        roles:
+          - loadbalancer
+          - nat
+        subregionName: ${OSC_REGION}a
+      - ipSubnetRange: 10.0.3.0/24
+        roles:
+          - worker
+        subregionName: ${OSC_REGION}a
+      - ipSubnetRange: 10.0.4.0/24
+        roles:
+          - controlplane
+        subregionName: ${OSC_REGION}a
+      - ipSubnetRange: 10.0.5.0/24
+        roles:
+          - nat
+        subregionName: ${OSC_REGION}b
+      - ipSubnetRange: 10.0.6.0/24
+        roles:
+          - worker
+        subregionName: ${OSC_REGION}b
+      - ipSubnetRange: 10.0.7.0/24
+        roles:
+          - controlplane
+        subregionName: ${OSC_REGION}b
     loadBalancer:
       loadbalancername: "${CLUSTER_NAME}-k8s"
     bastion:
@@ -59,10 +59,10 @@ spec:
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: "${CLUSTER_NAME}-md-a"
+  name: "${CLUSTER_NAME}-md"
 spec:
   clusterName: "${CLUSTER_NAME}"
-  replicas: ${WORKER_MACHINE_COUNT}
+  replicas: 4
   selector:
     matchLabels:
   template:
@@ -75,14 +75,14 @@ spec:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
       infrastructureRef:
-        name: "${CLUSTER_NAME}-md-a"
+        name: "${CLUSTER_NAME}-md"
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
-  name: "${CLUSTER_NAME}-md-a"
+  name: "${CLUSTER_NAME}-md"
 spec:
   template:
     spec:
@@ -96,50 +96,9 @@ spec:
             rootDiskIops: ${OSC_IOPS}
             rootDiskType: "${OSC_VOLUME_TYPE}"
           keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_REGION}a
-          vmType: "${OSC_VM_TYPE}"
----
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: MachineDeployment
-metadata:
-  name: "${CLUSTER_NAME}-md-b"
-spec:
-  clusterName: "${CLUSTER_NAME}"
-  replicas: ${WORKER_MACHINE_COUNT}
-  selector:
-    matchLabels:
-  template:
-    spec:
-      clusterName: "${CLUSTER_NAME}"
-      version: "${KUBERNETES_VERSION}"
-      bootstrap:
-        configRef:
-          name: "${CLUSTER_NAME}-md"
-          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-          kind: KubeadmConfigTemplate
-      infrastructureRef:
-        name: "${CLUSTER_NAME}-md-b"
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-        kind: OscMachineTemplate
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscMachineTemplate
-metadata:
-  name: "${CLUSTER_NAME}-md-b"
-spec:
-  template:
-    spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_REGION}b
+          subregionNames:
+            - ${OSC_REGION}a
+            - ${OSC_REGION}b
           vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -185,7 +144,7 @@ apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
   name: "${CLUSTER_NAME}-control-plane"
 spec:
-  replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+  replicas: 3
   machineTemplate:
     infrastructureRef:
       kind: OscMachineTemplate
@@ -200,7 +159,7 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
+        name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:

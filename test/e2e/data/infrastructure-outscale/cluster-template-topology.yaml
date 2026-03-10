@@ -15,12 +15,12 @@ spec:
     controlPlane:
       replicas: ${CONTROL_PLANE_MACHINE_COUNT}
     variables:
-    - name: subregionName
-      value: ${OSC_REGION}a
-    - name: controlPlaneVmType
-      value: tinav6.c4r8p2
-    - name: workerVmType
-      value: tinav6.c4r8p2
+      - name: subregionName
+        value: ${OSC_REGION}a
+      - name: controlPlaneVmType
+        value: tinav6.c4r8p2
+      - name: workerVmType
+        value: tinav6.c4r8p2
     workers:
       machineDeployments:
         - class: "cluster-class-worker"

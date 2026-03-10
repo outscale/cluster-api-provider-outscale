@@ -6,7 +6,6 @@ metadata:
   labels:
     cni: "cluster-api-crs-cni"
     ccm: "cluster-api-crs-ccm"
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   clusterNetwork:
     pods:
@@ -27,8 +26,6 @@ kind: OscCluster
 metadata:
   name: cluster-api
   namespace: default
-  labels:
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   network:
     clusterName: cluster-api
@@ -43,8 +40,6 @@ kind: MachineDeployment
 metadata:
   name: "cluster-api-md-0"
   namespace: default
-  labels:
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   clusterName: "cluster-api"
   replicas: 1
@@ -53,7 +48,7 @@ spec:
   template:
     spec:
       clusterName: "cluster-api"
-      version: "1.29.1"
+      version: "1.32.13"
       bootstrap:
         configRef:
           name: "cluster-api-md-0"
@@ -71,14 +66,13 @@ kind: OscMachineTemplate
 metadata:
   name: "cluster-api-md-0"
   namespace: default
-  labels:
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   template:
     spec:
       node:
         image:
-          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           keypairName: cluster-api
           rootDisk:
@@ -92,14 +86,13 @@ kind: OscMachineTemplate
 metadata:
   name: "cluster-api-control-plane"
   namespace: default
-  labels:
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   template:
     spec:
       node:
         image:
-         name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           keypairName: cluster-api
           rootDisk:
@@ -113,8 +106,6 @@ kind: KubeadmConfigTemplate
 metadata:
   name: "cluster-api-md-0"
   namespace: default
-  labels:
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   template:
     spec:
@@ -129,8 +120,6 @@ kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
   name: "cluster-api-control-plane"
-  labels:
-    cluster.x-k8s.io/watch-filter: "dev"
 spec:
   replicas: 1
   machineTemplate:
@@ -145,11 +134,11 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
+        name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
-  version: "1.29.1"
+        name: "{{ ds.meta_data.local_hostname }}"
+  version: "1.32.13"

@@ -638,9 +638,14 @@ type OscVm struct {
 	PublicIp bool `json:"publicIp,omitempty"`
 	// The name of the pool from which public IPs will be picked.
 	// +optional
-	PublicIpPool  string                `json:"publicIpPool,omitempty"`
-	SubregionName string                `json:"subregionName,omitempty"`
-	PrivateIps    []OscPrivateIpElement `json:"privateIps,omitempty"`
+	PublicIpPool string `json:"publicIpPool,omitempty"`
+	// The subregion where the machine needs to be placed (deprecated, use subregionNames).
+	// +optional
+	SubregionName string `json:"subregionName,omitempty"`
+	// The subregions where the machines needs to be placed.
+	// +optional
+	SubregionNames []string              `json:"subregionNames,omitempty"`
+	PrivateIps     []OscPrivateIpElement `json:"privateIps,omitempty"`
 	// The list of security groups to use (deprecated, use controlplane and/or worker roles on security groups)
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	// The resource id of the vm (not set anymore)
@@ -665,6 +670,13 @@ func (vm *OscVm) GetRole() OscRole {
 		return vm.Role
 	}
 	return RoleWorker
+}
+
+func (vm *OscVm) GetSubregions() []string {
+	if len(vm.SubregionNames) > 0 {
+		return vm.SubregionNames
+	}
+	return []string{vm.SubregionName}
 }
 
 type OscPlacement struct {

@@ -3,7 +3,7 @@ kind: Machine
 metadata:
   creationTimestamp: "2025-02-17T09:48:08Z"
   finalizers:
-  - machine.cluster.x-k8s.io
+    - machine.cluster.x-k8s.io
   generation: 3
   labels:
     cluster.x-k8s.io/cluster-name: test-cluster-api
@@ -13,12 +13,12 @@ metadata:
   name: test-cluster-api-md-0-6p8qk-qgvhr
   namespace: cluster-api-test
   ownerReferences:
-  - apiVersion: cluster.x-k8s.io/v1beta1
-    blockOwnerDeletion: true
-    controller: true
-    kind: MachineSet
-    name: test-cluster-api-md-0-6p8qk
-    uid: b8a1e8e1-bd8d-438f-aff7-95c9db5adc56
+    - apiVersion: cluster.x-k8s.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: MachineSet
+      name: test-cluster-api-md-0-6p8qk
+      uid: b8a1e8e1-bd8d-438f-aff7-95c9db5adc56
   resourceVersion: "20217506"
   uid: a009b2e2-2688-406c-a7db-a0b27a1082fd
 spec:
@@ -42,25 +42,25 @@ spec:
   version: v1.30.7
 status:
   addresses:
-  - address: 10.0.3.29
-    type: InternalIP
+    - address: 10.0.3.29
+      type: InternalIP
   bootstrapReady: true
   conditions:
-  - lastTransitionTime: "2025-02-17T09:53:50Z"
-    status: "True"
-    type: Ready
-  - lastTransitionTime: "2025-02-17T09:53:12Z"
-    status: "True"
-    type: BootstrapReady
-  - lastTransitionTime: "2025-02-17T09:53:50Z"
-    status: "True"
-    type: InfrastructureReady
-  - lastTransitionTime: "2025-02-17T09:56:38Z"
-    message: Node condition Ready is False
-    reason: NodeConditionsFailed
-    severity: Warning
-    status: "False"
-    type: NodeHealthy
+    - lastTransitionTime: "2025-02-17T09:53:50Z"
+      status: "True"
+      type: Ready
+    - lastTransitionTime: "2025-02-17T09:53:12Z"
+      status: "True"
+      type: BootstrapReady
+    - lastTransitionTime: "2025-02-17T09:53:50Z"
+      status: "True"
+      type: InfrastructureReady
+    - lastTransitionTime: "2025-02-17T09:56:38Z"
+      message: Node condition Ready is False
+      reason: NodeConditionsFailed
+      severity: Warning
+      status: "False"
+      type: NodeHealthy
   infrastructureReady: true
   lastUpdated: "2025-02-17T09:56:38Z"
   nodeInfo:
@@ -83,63 +83,65 @@ status:
   phase: Running
   v1beta2:
     conditions:
-    - lastTransitionTime: "2025-02-17T09:48:08Z"
-      message: ""
-      observedGeneration: 3
-      reason: NotReady
-      status: "False"
-      type: Available
-    - lastTransitionTime: "2025-02-17T09:56:38Z"
-      message: |-
-        * NodeHealthy:
-          * Node.Ready: container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin not initialized
-      observedGeneration: 3
-      reason: NotReady
-      status: "False"
-      type: Ready
-    - lastTransitionTime: "2025-02-17T09:48:09Z"
-      message: ""
-      observedGeneration: 3
-      reason: UpToDate
-      status: "True"
-      type: UpToDate
-    - lastTransitionTime: "2025-02-17T09:53:12Z"
-      message: ""
-      observedGeneration: 3
-      reason: Ready
-      status: "True"
-      type: BootstrapConfigReady
-    - lastTransitionTime: "2025-02-17T09:53:50Z"
-      message: ""
-      observedGeneration: 3
-      reason: Ready
-      status: "True"
-      type: InfrastructureReady
-    - lastTransitionTime: "2025-02-17T09:56:38Z"
-      message: '* Node.Ready: container runtime network not ready: NetworkReady=false
-        reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin
-        not initialized'
-      observedGeneration: 3
-      reason: NodeNotHealthy
-      status: "False"
-      type: NodeHealthy
-    - lastTransitionTime: "2025-02-17T09:56:38Z"
-      message: '* Node.Ready: container runtime network not ready: NetworkReady=false
-        reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin
-        not initialized'
-      observedGeneration: 3
-      reason: NodeNotReady
-      status: "False"
-      type: NodeReady
-    - lastTransitionTime: "2025-02-17T09:48:08Z"
-      message: ""
-      observedGeneration: 3
-      reason: NotPaused
-      status: "False"
-      type: Paused
-    - lastTransitionTime: "2025-02-17T09:48:08Z"
-      message: ""
-      observedGeneration: 3
-      reason: NotDeleting
-      status: "False"
-      type: Deleting
+      - lastTransitionTime: "2025-02-17T09:48:08Z"
+        message: ""
+        observedGeneration: 3
+        reason: NotReady
+        status: "False"
+        type: Available
+      - lastTransitionTime: "2025-02-17T09:56:38Z"
+        message: |-
+          * NodeHealthy:
+            * Node.Ready: container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin not initialized
+        observedGeneration: 3
+        reason: NotReady
+        status: "False"
+        type: Ready
+      - lastTransitionTime: "2025-02-17T09:48:09Z"
+        message: ""
+        observedGeneration: 3
+        reason: UpToDate
+        status: "True"
+        type: UpToDate
+      - lastTransitionTime: "2025-02-17T09:53:12Z"
+        message: ""
+        observedGeneration: 3
+        reason: Ready
+        status: "True"
+        type: BootstrapConfigReady
+      - lastTransitionTime: "2025-02-17T09:53:50Z"
+        message: ""
+        observedGeneration: 3
+        reason: Ready
+        status: "True"
+        type: InfrastructureReady
+      - lastTransitionTime: "2025-02-17T09:56:38Z"
+        message:
+          "* Node.Ready: container runtime network not ready: NetworkReady=false
+          reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin
+          not initialized"
+        observedGeneration: 3
+        reason: NodeNotHealthy
+        status: "False"
+        type: NodeHealthy
+      - lastTransitionTime: "2025-02-17T09:56:38Z"
+        message:
+          "* Node.Ready: container runtime network not ready: NetworkReady=false
+          reason:NetworkPluginNotReady message:Network plugin returns error: cni plugin
+          not initialized"
+        observedGeneration: 3
+        reason: NodeNotReady
+        status: "False"
+        type: NodeReady
+      - lastTransitionTime: "2025-02-17T09:48:08Z"
+        message: ""
+        observedGeneration: 3
+        reason: NotPaused
+        status: "False"
+        type: Paused
+      - lastTransitionTime: "2025-02-17T09:48:08Z"
+        message: ""
+        observedGeneration: 3
+        reason: NotDeleting
+        status: "False"
+        type: Deleting
