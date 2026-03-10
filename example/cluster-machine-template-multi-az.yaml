@@ -16,7 +16,7 @@ spec:
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: OscCluster
-    name:  cluster-api-multi-az
+    name: cluster-api-multi-az
     namespace: default
   controlPlaneRef:
     kind: KubeadmControlPlane
@@ -27,16 +27,16 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscCluster
 metadata:
-  name:  cluster-api-multi-az
+  name: cluster-api-multi-az
   namespace: default
 spec:
   network:
     loadBalancer:
       loadbalancername: cluster-api-multi-az-lb
     subregions:
-    - eu-west-2a
-    - eu-west-2b
-    - eu-west-2c
+      - eu-west-2a
+      - eu-west-2b
+      - eu-west-2c
     bastion:
       enable: false
 ---
@@ -50,7 +50,8 @@ spec:
     spec:
       node:
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           name: cluster-api-multi-az-vm-control-plane
           keypairName: cluster-api
@@ -79,52 +80,38 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
+        name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
-  version: "1.29.1"
+        name: "{{ ds.meta_data.local_hostname }}"
+  version: "1.32.13"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
 metadata:
-  name: cluster-api-multi-az-worker-2a
+  name: cluster-api-multi-az-worker
   namespace: default
 spec:
   template:
     spec:
       node:
         image:
-         name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 50
             rootDiskType: gp2
-          subregionName: eu-west-2a
+          subregionNames:
+            - eu-west-2a
+            - eu-west-2b
+            - eu-west-2c
           vmType: "tinav6.c4r8p2"
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: OscMachineTemplate
-metadata:
-  name: cluster-api-multi-az-worker-2b
-  namespace: default
-spec:
-  template:
-    spec:
-      node:
-        image:
-         name: ubuntu-2004-2004-kubernetes-v1.27.7-2023-10-18
-        vm:
-          keypairName: cluster-api
-          rootDisk:
-            rootDiskSize: 50
-            rootDiskType: gp2
-          subregionName: eu-west-2b
-          vmType: "tinav6.c4r8p2"
+
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
@@ -144,7 +131,7 @@ spec:
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: cluster-api-multi-az-worker-2a-md
+  name: cluster-api-multi-az-worker
   namespace: default
 spec:
   clusterName: cluster-api-multi-az
@@ -158,7 +145,7 @@ spec:
         node-role: worker
     spec:
       clusterName: cluster-api-multi-az
-      version: "1.29.1"
+      version: "1.32.13"
       bootstrap:
         configRef:
           name: cluster-api-multi-az-worker-config
@@ -166,37 +153,7 @@ spec:
           kind: KubeadmConfigTemplate
           namespace: default
       infrastructureRef:
-        name: cluster-api-multi-az-worker-2a
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-        kind: OscMachineTemplate
-        namespace: default
----
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: MachineDeployment
-metadata:
-  name: cluster-api-multi-az-worker-2b-md
-  namespace: default
-spec:
-  clusterName: cluster-api-multi-az
-  replicas: 1
-  selector:
-    matchLabels:
-      node-role: worker
-  template:
-    metadata:
-      labels:
-        node-role: worker
-    spec:
-      clusterName: cluster-api-multi-az
-      version: "1.22.11"
-      bootstrap:
-        configRef:
-          name: cluster-api-multi-az-worker-config
-          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-          kind: KubeadmConfigTemplate
-          namespace: default
-      infrastructureRef:
-        name: cluster-api-multi-az-worker-2b
+        name: cluster-api-multi-az-worker
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
         namespace: default

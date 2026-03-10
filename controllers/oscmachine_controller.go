@@ -37,6 +37,7 @@ const OscMachineFinalizer = "oscmachine.infrastructure.cluster.x-k8s.io"
 type OscMachineReconciler struct {
 	Client           client.Client
 	Tracker          *MachineResourceTracker
+	AZAllocator      *MultiAZAllocator
 	ClusterTracker   *ClusterResourceTracker
 	Cloud            services.Servicer
 	Recorder         record.EventRecorder
@@ -227,7 +228,6 @@ func (r *OscMachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 			builder.WithPredicates(predicates.ClusterPausedTransitionsOrInfrastructureReady(mgr.GetScheme(), ctrl.LoggerFrom(ctx))),
 		).
 		Complete(r)
-
 	if err != nil {
 		return fmt.Errorf("error creating controller: %w", err)
 	}

@@ -47,7 +47,7 @@ spec:
   template:
     spec:
       clusterName: "cluster-api"
-      version: "1.29.1"
+      version: "1.32.13"
       bootstrap:
         configRef:
           name: "cluster-api-md-0"
@@ -70,7 +70,8 @@ spec:
     spec:
       node:
         image:
-          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           keypairName: cluster-api
           rootDisk:
@@ -89,7 +90,8 @@ spec:
     spec:
       node:
         image:
-         name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           keypairName: cluster-api
           rootDisk:
@@ -98,7 +100,7 @@ spec:
           role: controlplane
           vmType: "tinav5.c4r8p1"
           tags:
-              osc.fcu.repulse_server: vm-control-plane
+            osc.fcu.repulse_server: vm-control-plane
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
@@ -131,20 +133,20 @@ spec:
     initConfiguration:
       nodeRegistration:
         taints:
-        - key: "key1"
-          value: "value1"
-          effect: "NoSchedule"
+          - key: "key1"
+            value: "value1"
+            effect: "NoSchedule"
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
+        name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         taints:
-        - key: "key1"
-          value: "value1"
-          effect: "NoSchedule"
+          - key: "key1"
+            value: "value1"
+            effect: "NoSchedule"
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-  version: "1.29.1"
+  version: "1.32.13"
