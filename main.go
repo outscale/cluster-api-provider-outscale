@@ -165,10 +165,13 @@ func main() {
 	mtracker := &controllers.MachineResourceTracker{
 		Cloud: cs,
 	}
+	allocator := controllers.NewMultiAZAllocator(mgr.GetClient())
+
 	if err = (&controllers.OscMachineReconciler{
 		Client:           mgr.GetClient(),
 		ClusterTracker:   tracker,
 		Tracker:          mtracker,
+		AZAllocator:      allocator,
 		Cloud:            cs,
 		Recorder:         mgr.GetEventRecorderFor("oscmachine-controller"),
 		ReconcileTimeout: reconcileTimeout,

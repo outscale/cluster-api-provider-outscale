@@ -3,11 +3,7 @@
 
 ## Prerequisites
 
-You should have run the full e2e suite.
-
-```bash
-CCM_OSC_REGION=eu-west-2 KUBECONFIG=~/.kube/config IMG={repository host}/outscale/cluster-api-outscale-controllers IMG_UPGRADE_FROM=ami-29e3ca13 IMG_UPGRADE_TO=ami-92d61a16 E2E_FOCUS=e2e make e2etest
-```
+You should have run the full e2e suite, by triggering the `all E2E tests` workflow on the  main branch.
 
 ## Versioning
 Please use this semantic version:
@@ -17,7 +13,8 @@ Please use this semantic version:
 - Patch release: `v0.1.1`
 
 ## Update metadata.yaml
-Major/minor versions should register their contract version in metadata.yaml:
+Major/minor versions must register their contract version in `metadata.yaml`:
+
 ```yaml
 apiVersion: clusterctl.cluster.x-k8s.io/v1alpha3
 releaseSeries:
@@ -50,4 +47,4 @@ make release-changelog
 ```
 
 <!-- References -->
-[release]: https://github.com/outscale-dev/cluster-api-provider-outscale/blob/main/.github/workflows/release.yml 
+[release]: https://github.com/outscale-dev/cluster-api-provider-outscale/blob/main/.github/workflows/release.yml

@@ -7,7 +7,7 @@ spec:
   node:
     clusterName: test-cluster-api
     image:
-      name: ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14
+      name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
       accountId: "01234"
     keypair:
       name: cluster-api
@@ -20,13 +20,13 @@ spec:
       subregionName: eu-west-2a
       vmType: tinav6.c4r8p2
     volumes:
-    - name: data
-      device: /dev/sdb
-      iops: 500
-      size: 15
-      volumeType: io1
-    - name: images
-      device: /dev/sdc
-      size: 15
-      volumeType: gp2
-      fromSnapshot: snap-foo
+      - name: data
+        device: /dev/sdb
+        iops: 500
+        size: 15
+        volumeType: io1
+      - name: images
+        device: /dev/sdc
+        size: 15
+        volumeType: gp2
+        fromSnapshot: snap-foo

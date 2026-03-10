@@ -17,7 +17,22 @@ You need either to set `subregions` or to create a controlpane subnet per subreg
 
 ## Worker nodes
 
-A node pool (`MachineDeployment`/`OscMachineTemplate` pair) must be created per AZ.
+A node pool (`MachineDeployment`/`OscMachineTemplate` pair) may span multiple AZ:
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+[...]
+spec:
+    template:
+        spec:
+            node:
+                vm:
+                    subregionNames:
+                        - eu-west-2a
+                        - eu-west-2b
+                        - eu-west-2c
+```
 
 ## NAT
 

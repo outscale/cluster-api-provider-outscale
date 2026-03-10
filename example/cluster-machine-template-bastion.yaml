@@ -38,20 +38,20 @@ spec:
     subnets:
       - ipSubnetRange: "10.0.1.0/24"
         roles:
-        - controlplane
+          - controlplane
       - ipSubnetRange: "10.0.2.0/24"
         roles:
-        - worker
+          - worker
       - ipSubnetRange: "10.0.3.0/24"
         roles:
-        - bastion
-        - loadbalancer
-        - nat
+          - bastion
+          - loadbalancer
+          - nat
     bastion:
       enable: true
       name: cluster-api-vm-bastion
       keypairName: cluster-api
-      imageName: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+      imageName: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
       rootDisk:
         rootDiskSize: 15
         rootDiskType: gp2
@@ -70,7 +70,7 @@ spec:
   template:
     spec:
       clusterName: "cluster-api"
-      version: "1.28.5"
+      version: "1.32.13"
       bootstrap:
         configRef:
           name: "cluster-api-md-0"
@@ -93,7 +93,9 @@ spec:
     spec:
       node:
         image:
-          name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
+        vm:
           keypairName: cluster-api
           rootDisk:
             rootDiskSize: 30
@@ -110,7 +112,8 @@ spec:
     spec:
       node:
         image:
-         name: ubuntu-22.04-2204-kubernetes-v1.29.1-2024-02-19
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         vm:
           name: cluster-api-vm-kcp
           keypairName: cluster-api
@@ -153,10 +156,10 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: osc://'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
+        name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: osc://'{{ ds.meta_data.instance_id }}'
-  version: "1.28.5"
+  version: "1.32.13"

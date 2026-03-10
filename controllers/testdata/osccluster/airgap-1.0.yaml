@@ -7,12 +7,12 @@ metadata:
   name: test-cluster-api
   namespace: cluster-api-test
   ownerReferences:
-  - apiVersion: cluster.x-k8s.io/v1beta1
-    blockOwnerDeletion: true
-    controller: true
-    kind: Cluster
-    name: test-cluster-api
-    uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+    - apiVersion: cluster.x-k8s.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Cluster
+      name: test-cluster-api
+      uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
   resourceVersion: "20214284"
   uid: 4973cd7c-439b-4108-b61f-39805379aa0e
 spec:
@@ -20,11 +20,11 @@ spec:
     loadBalancer:
       loadbalancername: test-cluster-api-k8s
     disable:
-    - internet
+      - internet
     netPeering:
       enable: true
       managementAccountId: "mgmt"
       managementNetId: "vpc-mgmt"
     netAccessPoints:
-    - api
+      - api
     subregionName: eu-west-2a
