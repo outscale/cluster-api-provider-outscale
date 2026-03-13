@@ -61,7 +61,7 @@ spec:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: OscMachineTemplate
         name: hello-osc-md-0
-      version: v1.22.10
+      version: 1.32.13
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: OscMachineTemplate
@@ -74,7 +74,8 @@ spec:
       node:
         clusterName: hello-osc
         image:
-          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         keypair:
           name: cluster-api-test
         vm:
@@ -98,11 +99,11 @@ spec:
       node:
         clusterName: hello-osc
         image:
-          name: ubuntu-2004-2004-kubernetes-v1.22.11-2022-08-22
+          name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+          outscaleOpenSource: true
         keypair:
           name: cluster-api-test
         vm:
-          clusterName: hello-osc
           keypairName: cluster-api-test
           loadBalancerName: hello-osc-k8s
           role: controlplane
@@ -126,7 +127,7 @@ spec:
           kubeletExtraArgs:
             cloud-provider: external
             provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-          name: '{{ ds.meta_data.local_hostname }}'
+          name: "{{ ds.meta_data.local_hostname }}"
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane
@@ -140,7 +141,7 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: aws://'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
-        name: '{{ ds.meta_data.local_hostname }}'
+        name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
@@ -152,4 +153,4 @@ spec:
       kind: OscMachineTemplate
       name: hello-osc-control-plane
   replicas: 1
-  version: v1.22.10
+  version: 1.32.13

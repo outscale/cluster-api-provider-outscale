@@ -99,7 +99,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a worker with base parameters, vm is pending",
 			clusterSpec: "ready-0.4", machineSpec: "base-worker",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -143,7 +143,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUseOpenSourceOMI(),
 			},
 			mockFuncs: []mockFunc{
-				mockOpenSourceImageFound("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "eu-west-2", "ami-foo"),
+				mockOpenSourceImageFound("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "eu-west-2", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -160,7 +160,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUseOpenSourceOMI(),
 			},
 			mockFuncs: []mockFunc{
-				mockOpenSourceImageFound("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "us-east-2", "ami-foo"),
+				mockOpenSourceImageFound("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "us-east-2", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -177,7 +177,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUseOpenSourceOMI(),
 			},
 			mockFuncs: []mockFunc{
-				mockOpenSourceImageFound("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "cloudgouv-eu-west-1", "ami-foo"),
+				mockOpenSourceImageFound("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "cloudgouv-eu-west-1", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -192,7 +192,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a controlplane with base parameters, vm is running & LB is ok",
 			clusterSpec: "ready-0.4", machineSpec: "base-controlplane",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
@@ -219,7 +219,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a controlplane with base parameters, vm is running & LB is not found",
 			clusterSpec: "ready-0.4", machineSpec: "base-controlplane",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
@@ -243,7 +243,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Creating a vm with additional volumes",
 			clusterSpec: "ready-0.4", machineSpec: "base-worker-volumes",
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmWithVolumes("i-foo", []infrastructurev1beta1.OscVolume{{
@@ -286,7 +286,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUsePublicIP(),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreatePublicIp("cluster-api-test-worker", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-worker", "1.2.3.4"),
@@ -332,7 +332,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUsePublicIP("pool-foo"),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: ptr.To("ipalloc-foo"), PublicIp: ptr.To("1.2.3.4")}}),
@@ -378,7 +378,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUsePublicIP("pool-foo"),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{}),
@@ -392,7 +392,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchUsePublicIP("pool-foo"),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{LinkPublicIpId: ptr.To("ipassoc-foo"), PublicIp: ptr.To("1.2.3.4")}}),
@@ -408,7 +408,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("")}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
@@ -422,7 +422,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("foo")}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -438,7 +438,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("foo"), ServerStrict: true}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -454,7 +454,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseCluster: "foo"}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -470,7 +470,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseCluster: "foo", ClusterStrict: true}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -486,7 +486,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("foo"), RepulseCluster: "bar", ClusterStrict: true}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
@@ -505,7 +505,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				}),
 			},
 			mockFuncs: []mockFunc{
-				mockImageFoundByName("ubuntu-2004-2004-kubernetes-v1.25.9-2023-04-14", "01234", "ami-foo"),
+				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{

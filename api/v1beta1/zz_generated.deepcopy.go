@@ -1347,6 +1347,11 @@ func (in *OscSubnet) DeepCopy() *OscSubnet {
 func (in *OscVm) DeepCopyInto(out *OscVm) {
 	*out = *in
 	out.RootDisk = in.RootDisk
+	if in.SubregionNames != nil {
+		in, out := &in.SubregionNames, &out.SubregionNames
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.PrivateIps != nil {
 		in, out := &in.PrivateIps, &out.PrivateIps
 		*out = make([]OscPrivateIpElement, len(*in))
