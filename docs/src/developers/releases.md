@@ -35,8 +35,7 @@ Add version to CHANGELOG.md
 Create & push tag:
 ```bash
 export RELEASE_TAG=v1.2.3
-git tag -s ${RELEASE_TAG} -m "🔖 ${RELEASE_TAG}"
-git push origin ${RELEASE_TAG}
+git tag -s ${RELEASE_TAG} -m "🔖 ${RELEASE_TAG}" && git push origin ${RELEASE_TAG}
 ```
 
 This will trigger the [release github action][release].

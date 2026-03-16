@@ -7,7 +7,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -154,7 +153,7 @@ func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, cl
 
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(4).Info("The net is already deleted, no route table expected")
 		return reconcile.Result{}, nil
 	case err != nil:

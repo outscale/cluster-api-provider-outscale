@@ -177,7 +177,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(4).Info("The net is already deleted, no securityGroup expected")
 		return reconcile.Result{}, nil
 	case err != nil:

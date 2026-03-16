@@ -91,7 +91,7 @@ func (r *OscClusterReconciler) reconcileDeleteNetAccessPoints(ctx context.Contex
 	}
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(4).Info("The net is already deleted, no net access point expected")
 		return reconcile.Result{}, nil
 	case err != nil:

@@ -207,7 +207,7 @@ func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clust
 	}
 	vm, err := r.Tracker.getBastion(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(4).Info("The bastion is already deleted")
 		return reconcile.Result{}, nil
 	case err != nil:

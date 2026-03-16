@@ -1428,7 +1428,7 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
     "secret_key": "sk_alt",
     "region": "region_alt"
   }
-}`), 0640)
+}`), 0o640)
 	require.NoError(t, err)
 	tcs := []testcase{
 		{
@@ -1565,7 +1565,7 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
     "secret_key": "sk_mgmt",
     "region": "region_mgmt"
   }
-}`), 0640)
+}`), 0o640)
 	require.NoError(t, err)
 	tcs := []testcase{
 		{
@@ -2673,13 +2673,24 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:           "Cluster is deleted even if no resource has been created",
+			name:           "Cluster is deleted even if no resource have been created",
 			clusterSpec:    "base-0.4",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
 				mockGetLoadBalancer("test-cluster-api-k8s", nil),
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.NetResourceType, "test-cluster-api-net-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:            "An airgapped cluster is deleted even if no resource have been created",
+			clusterSpec:     "airgap-1.0",
+			clusterBaseSpec: "base",
+			clusterPatches:  []patchOSCClusterFunc{patchDeleteCluster()},
+			mockFuncs: []mockFunc{
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 			},
 			assertDeleted: true,
 		},

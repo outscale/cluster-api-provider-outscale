@@ -209,7 +209,7 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 
 	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(2).Info("VM is already deleted")
 		return reconcile.Result{}, nil
 	case err != nil:
