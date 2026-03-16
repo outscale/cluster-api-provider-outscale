@@ -23,3 +23,7 @@ func getResource(name string, m map[string]string) string {
 	}
 	return m[name]
 }
+
+func IsNotFound(err error) bool {
+	return errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource)
+}

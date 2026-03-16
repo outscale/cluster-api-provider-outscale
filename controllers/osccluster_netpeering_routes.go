@@ -128,13 +128,22 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Conte
 		log.V(4).Info("Not deleting existing netPeering routes")
 		return reconcile.Result{}, nil
 	}
-	np, err := r.Tracker.getNetPeering(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get netpeering: %w", err)
-	}
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
+	switch {
+	case IsNotFound(err):
+		log.V(4).Info("The net is already deleted, no net peerings expected")
+		return reconcile.Result{}, nil
+	case err != nil:
+		return reconcile.Result{}, err
+	}
+
+	np, err := r.Tracker.getNetPeering(ctx, clusterScope)
+	switch {
+	case IsNotFound(err):
+		// netpeering does not exist...
+		return reconcile.Result{}, nil
+	case err != nil:
+		return reconcile.Result{}, err
 	}
 
 	// remove routes from management route tables

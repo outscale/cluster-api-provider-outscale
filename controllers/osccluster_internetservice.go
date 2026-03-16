@@ -73,7 +73,7 @@ func (r *OscClusterReconciler) reconcileDeleteInternetService(ctx context.Contex
 	}
 	internetService, err := r.Tracker.getInternetService(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(4).Info("The internet service is already deleted")
 		return reconcile.Result{}, nil
 	case err != nil:

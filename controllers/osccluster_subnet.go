@@ -78,7 +78,7 @@ func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clust
 	for _, subnetSpec := range subnetsSpec {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
 		switch {
-		case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+		case IsNotFound(err):
 			continue
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)

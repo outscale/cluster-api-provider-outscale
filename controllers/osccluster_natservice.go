@@ -108,7 +108,7 @@ func (r *OscClusterReconciler) reconcileDeleteNatService(ctx context.Context, cl
 	}
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound) || errors.Is(err, ErrMissingResource):
+	case IsNotFound(err):
 		log.V(4).Info("The net is already deleted, no nat service expected")
 		return reconcile.Result{}, nil
 	case err != nil:
