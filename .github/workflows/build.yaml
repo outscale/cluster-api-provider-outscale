@@ -40,3 +40,6 @@ jobs:
       - name: 🔎 Run make build
         run: make build
         shell: bash
+      - name: 🔎 Docker Lint
+        run: |
+          make dockerlint
