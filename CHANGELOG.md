@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.4.0] - 2026-03-24
+
+### ✨ Added
+* ✨ feat(OscMachine): add multi-az MachineDeployment by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/764
+### 🐛 Fixed
+* 🐛 fix(airgap): fix deletion of airgapped clusters without resources by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/766
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module github.com/samber/lo to v1.53.0 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/759
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.1 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/761
+* ⬆️ deps(dockerfile): update golang:1.26.1 docker digest to 595c784 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/768
+
 ## [v1.3.2] - 2026-03-11
 
 ### 📝 Documentation
