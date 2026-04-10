@@ -60,6 +60,7 @@ A net with IP range 10.0.0.0/16 will be created.
 | --- | --- | ---
 | `name`| no | the name of the Net
 | `ipRange` | yes | the Ip range in CIDR notation
+| `tags` | no | Extra tags to set on the Net resource (map of key/value pairs)
 
 ## Subnet
 
@@ -93,6 +94,7 @@ CAPOSC automatically creates /24 subnets within the net IP range:
 | `name`| no | The name of the Subnet (required in roles are not used)
 | `ipSubnetRange` | yes | Subnet IP range in CIDR notation
 | `roles` | no | The list of roles for this subnet (required if name is not used)
+| `tags` | no | Extra tags to set on the Subnet resource (map of key/value pairs)
 
 ## Internet service
 
