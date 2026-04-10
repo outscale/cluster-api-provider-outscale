@@ -17,7 +17,7 @@ ARG RUNTIME_IMAGE_TAG=debug-dca9008b864a381b5ce97196a4d8399ac3c2fa65@sha256:ea6a
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # Build the manager binary
-FROM golang:1.26.1@sha256:595c7847cff97c9a9e76f015083c481d26078f961c9c8dca3923132f51fe12f1 AS builder
+FROM golang:1.26.2@sha256:2a2b4b5791cea8ae09caecba7bad0bd9631def96e5fe362e4a5e67009fe4ae61 AS builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
