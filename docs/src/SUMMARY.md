@@ -11,6 +11,7 @@
     - [Preloading images](./topics/preload.md)
     - [Troubleshooting](./topics/troubleshooting.md)
     - [Cluster-Autoscaler](./topics/cluster-autoscaler.md)
+    - [Flatcar Ignition](./topics/config-ignition.md)
     - [Upgrading a cluster](./topics/upgrade-cluster.md)
 - [Development](./developers/develop.md)
     - [How to develop](./developers/developement.md)
