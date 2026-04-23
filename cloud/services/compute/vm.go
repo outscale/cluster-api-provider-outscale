@@ -57,11 +57,11 @@ func (s *Service) CreateVm(ctx context.Context,
 	rootDiskIops := spec.RootDisk.RootDiskIops
 	rootDiskSize := spec.RootDisk.RootDiskSize
 	rootDiskType := spec.RootDisk.RootDiskType
-	bootstrapData, err := machineScope.GetBootstrapData(ctx)
+	bootstrapData, bootstrapFormat, err := machineScope.GetBootstrapData(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
 	}
-	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
+	mergedUserData := utils.MergeBootstrapData(tags, bootstrapData, bootstrapFormat)
 	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
 		Bsu: &osc.BsuToCreate{

@@ -13,6 +13,14 @@ import (
 	"github.com/outscale/osc-sdk-go/v2"
 )
 
+// MergeBootstrapData builds the user data
+func MergeBootstrapData(tags map[string]string, bootstrapData, format string) string {
+	if format == "ignition" {
+		return bootstrapData
+	}
+	return ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
+}
+
 func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 	if len(tags) == 0 {
 		return ""
