@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 package controllers_test
 
 import (
+	"math/rand/v2"
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -82,30 +83,63 @@ func TestMultiAZAllocator(t *testing.T) {
 		_ = infrastructurev1beta1.AddToScheme(fakeScheme)
 		return fake.NewClientBuilder().WithScheme(fakeScheme).WithLists(oms).Build()
 	}
-	t.Run("If already configured, the allocated az is returned", func(t *testing.T) {
+	t.Run("If already configured, the allocated az is returned (LeastNodes)", func(t *testing.T) {
 		m := allocated
 		a := controllers.NewMultiAZAllocator(testClient())
-		az, err := a.AllocateAZ(t.Context(), &m, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta1.SubregionModeLeastNodes, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
 		assert.Equal(t, *m.Status.FailureDomain, az)
 	})
-	t.Run("A non allocated machines is allocated to new azs", func(t *testing.T) {
+	t.Run("A non allocated machines is allocated to new azs (LeastNodes)", func(t *testing.T) {
 		m := nonallocated1
 		a := controllers.NewMultiAZAllocator(testClient())
-		az, err := a.AllocateAZ(t.Context(), &m, []string{"eu-west-2a", "eu-west-2b"})
+		az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta1.SubregionModeLeastNodes, []string{"eu-west-2a", "eu-west-2b"})
 		require.NoError(t, err)
 		assert.Equal(t, "eu-west-2b", az)
 	})
-	t.Run("Non allocated machiness are allocated to all new azs", func(t *testing.T) {
+	t.Run("Non allocated machiness are allocated to all new azs (LeastNodes)", func(t *testing.T) {
 		a := controllers.NewMultiAZAllocator(testClient())
 		m1 := nonallocated1
-		az1, err := a.AllocateAZ(t.Context(), &m1, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta1.SubregionModeLeastNodes, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
 		m2 := nonallocated2
-		az2, err := a.AllocateAZ(t.Context(), &m2, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta1.SubregionModeLeastNodes, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
 		assert.NotEqual(t, az1, az2)
 		assert.Contains(t, []string{"eu-west-2b", "eu-west-2c"}, az1)
 		assert.Contains(t, []string{"eu-west-2b", "eu-west-2c"}, az2)
+	})
+	t.Run("Non allocated machines are randomly allocated (Random)", func(t *testing.T) {
+		rnd := 0
+		controllers.RandIntN = func(n int) (ret int) {
+			ret = rnd
+			rnd++
+			return
+		}
+		defer func() {
+			controllers.RandIntN = rand.IntN
+		}()
+		a := controllers.NewMultiAZAllocator(testClient())
+		m1 := nonallocated1
+		az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta1.SubregionModeRandom, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		require.NoError(t, err)
+		m2 := nonallocated2
+		az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta1.SubregionModeRandom, []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		require.NoError(t, err)
+		assert.Equal(t, "eu-west-2a", az1)
+		assert.Equal(t, "eu-west-2b", az2)
+	})
+	t.Run("By default, leastNodes is used", func(t *testing.T) {
+		controllers.RandIntN = func(n int) (ret int) {
+			t.FailNow()
+			return 0
+		}
+		defer func() {
+			controllers.RandIntN = rand.IntN
+		}()
+		a := controllers.NewMultiAZAllocator(testClient())
+		m1 := nonallocated1
+		_, err := a.AllocateAZ(t.Context(), &m1, "", []string{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		require.NoError(t, err)
 	})
 }

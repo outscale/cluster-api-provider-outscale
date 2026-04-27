@@ -34,6 +34,26 @@ spec:
                         - eu-west-2c
 ```
 
+If `subregionNames` is set, CAPOSC will allocate a node in the specified subregions. If `subregionNames` is not set, CAPOSC will use the subregions defined at cluster level. 
+
+By default (`subregionMode: leastNodes`), nodes are allocated to the subregion having the fewest nodes. When setting `subregionMode: random`, nodes are randomly allocated.
+
+```yaml
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: OscMachineTemplate
+[...]
+spec:
+    template:
+        spec:
+            node:
+                vm:
+                    subregionMode: random
+                    subregionNames:
+                        - eu-west-2a
+                        - eu-west-2b
+                        - eu-west-2c
+```
+
 ## NAT
 
 In automatic mode, CAPOSC expects to find a nat subnet for each subregion where controlplane/worker nodes will be deployed.

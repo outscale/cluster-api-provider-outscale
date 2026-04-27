@@ -46,7 +46,12 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			subregionName = *machineScope.Machine.Spec.FailureDomain
 		} else {
 			subnetName = vmSpec.SubnetName
-			az, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.GetSubregions())
+			azs := vmSpec.GetSubregions()
+			if len(azs) == 0 {
+				azs = clusterScope.GetSubregions()
+				log.V(4).Info("Using cluster subregions")
+			}
+			az, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.SubregionMode, azs)
 			if err != nil {
 				return reconcile.Result{}, err
 			}

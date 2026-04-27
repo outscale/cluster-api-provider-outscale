@@ -28,9 +28,12 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 	allErrs = AppendValidation(allErrs, ValidateRequired(field.NewPath("node", "vm", "keypairName"), spec.Node.Vm.KeypairName, "keypairName is required"))
 	allErrs = AppendValidation(allErrs, ValidateVmType(field.NewPath("node", "vm", "vmType"), spec.Node.Vm.VmType))
 	allErrs = AppendValidation(allErrs, ValidateSubregion(field.NewPath("node", "vm", "subregionName"), spec.Node.Vm.SubregionName))
+	for _, sr := range spec.Node.Vm.SubregionNames {
+		allErrs = AppendValidation(allErrs, ValidateSubregion(field.NewPath("node", "vm", "subregionNames"), sr))
+	}
 
 	for _, spec := range spec.Node.Volumes {
-		allErrs = AppendValidation(allErrs, ValidateVolume(field.NewPath("node", "vm", "subregionName"), spec)...)
+		allErrs = AppendValidation(allErrs, ValidateVolume(field.NewPath("node", "vm", "volumes"), spec)...)
 	}
 	allErrs = AppendValidation(allErrs, ValidateIops(field.NewPath("node", "vm", "rootDisk", "rootDiskIops"), spec.Node.Vm.RootDisk.RootDiskIops, spec.Node.Vm.RootDisk.RootDiskSize))
 	allErrs = AppendValidation(allErrs, ValidateSize(field.NewPath("node", "vm", "rootDisk", "rootDiskSize"), spec.Node.Vm.RootDisk.RootDiskSize))
@@ -119,8 +122,10 @@ func ValidateDeviceName(path *field.Path, deviceName string) *field.Error {
 	}
 }
 
-var isValidTinaVmType = regexp.MustCompile(`^tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]$`).MatchString
-var isValidInferenceVmType = regexp.MustCompile(`^inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA))$`).MatchString
+var (
+	isValidTinaVmType      = regexp.MustCompile(`^tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]$`).MatchString
+	isValidInferenceVmType = regexp.MustCompile(`^inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA))$`).MatchString
+)
 
 // ValidateVmType checks that vmType is a valid vmType
 func ValidateVmType(path *field.Path, vmType string) *field.Error {
