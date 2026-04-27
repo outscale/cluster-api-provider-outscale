@@ -83,13 +83,15 @@ Outscale Open-Source images are published on the `eu-west-2`, `us-east-2` and `c
 | --- | --- | --- | ---
 | `role` | `worker` | no |  The role of the VM (`controlplane` or `worker`)
 | `replica` | n/a | yes | The number of replicas for this node pool
-| `vmType` | `tinav6.c4r8p1` | no |  The type of VM to use
+| `vmType` | `tinav7.c4r8p1` | no |  The type of VM to use
 | `imageId` | n/a | no |  The OMI ID (unless `image.name` is used)
 | `keypairName` | n/a | yes |  The keypair name used to access vm
 | `rootDiskSize` | `60` | no |  The root disk size
 | `rootDiskType` | `io1` | no |  The root disk type (`io1`, `gp2` or `standard`)
 | `rootDiskIops` | `1500` | no |  The root disk iops (only for the `io1` type)
-| `subregionName` | n/a | no | The subregion where the node will be deployed (required for workers, unused for controlplanes)
+| `subregionMode` | leastNodes | no | A node will be allowated to the subregion with the least nodes (leastNodes, default) or to a random subregion (random)
+| `subregionName` | n/a | no | The subregion where the node will be deployed (deprecated, use subregionNames)
+| `subregionNames` | n/a | no | The subregions where the node will be deployed (optional for workers, unused for controlplanes) - If not set, the cluster subregions will be used
 | `subnetName` | n/a | no | The name of the subnet where to deploy the VM (not required if you have defined roles for your subnets)
 | `securityGroupNames` | n/a | no | The name of the security groups to associate the VM with (not required if you have defined roles for your security groups)
 | `publicIp` | false | no | Set to true if you want the node to have a public IP

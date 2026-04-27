@@ -157,7 +157,9 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta1.OscSubnet {
 	for _, fd := range fds {
 		for _, roles := range [][]infrastructurev1beta1.OscRole{
 			{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion, infrastructurev1beta1.RoleNat},
-			{infrastructurev1beta1.RoleWorker}, {infrastructurev1beta1.RoleControlPlane}} {
+			{infrastructurev1beta1.RoleWorker},
+			{infrastructurev1beta1.RoleControlPlane},
+		} {
 			net.IP[2]++
 			subnet := infrastructurev1beta1.OscSubnet{
 				IpSubnetRange: net.String(),
@@ -484,7 +486,6 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta1.OscS
 		Description: "Node securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker},
 		SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{
-
 			// Calico - see https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements#network-requirements
 			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRange: s.GetNet().IpRange},     // BGP
 			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRange: s.GetNet().IpRange},   // VXLAN/flannel
@@ -733,12 +734,12 @@ func (s *ClusterScope) getReconcilationRule(reconciler infrastructurev1beta1.Rec
 	switch reconciler {
 	case infrastructurev1beta1.ReconcilerSecurityGroup:
 		return infrastructurev1beta1.OscReconciliationRule{
-			Mode:                 infrastructurev1beta1.Random,
+			Mode:                 infrastructurev1beta1.ReconciliationModeRandom,
 			ReconciliationChance: 10,
 		}
 	default:
 		return infrastructurev1beta1.OscReconciliationRule{
-			Mode: infrastructurev1beta1.OnChange,
+			Mode: infrastructurev1beta1.ReconciliationModeOnChange,
 		}
 	}
 }
@@ -757,9 +758,9 @@ func (s *ClusterScope) NeedReconciliation(reconciler infrastructurev1beta1.Recon
 	}
 	r := s.getReconcilationRule(reconciler)
 	switch r.Mode {
-	case infrastructurev1beta1.Always:
+	case infrastructurev1beta1.ReconciliationModeAlways:
 		return true
-	case infrastructurev1beta1.Random:
+	case infrastructurev1beta1.ReconciliationModeRandom:
 		return Rand() < r.ReconciliationChance
 	default:
 		return false
@@ -779,7 +780,8 @@ func (s *ClusterScope) PatchObject(ctx context.Context) error {
 	setConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.NetReadyCondition,
 		infrastructurev1beta1.SubnetsReadyCondition,
-		infrastructurev1beta1.LoadBalancerReadyCondition}
+		infrastructurev1beta1.LoadBalancerReadyCondition,
+	}
 	setConditions = append(setConditions,
 		infrastructurev1beta1.InternetServicesReadyCondition,
 		infrastructurev1beta1.NatServicesReadyCondition,
