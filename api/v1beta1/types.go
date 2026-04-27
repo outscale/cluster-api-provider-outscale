@@ -529,9 +529,9 @@ type OscReconcilerGeneration map[Reconciler]int64
 type ReconciliationMode string
 
 const (
-	OnChange ReconciliationMode = "onChange"
-	Always   ReconciliationMode = "always"
-	Random   ReconciliationMode = "random"
+	ReconciliationModeOnChange ReconciliationMode = "onChange"
+	ReconciliationModeAlways   ReconciliationMode = "always"
+	ReconciliationModeRandom   ReconciliationMode = "random"
 )
 
 type OscReconciliationRule struct {
@@ -610,13 +610,21 @@ type OscKeypair struct {
 	DeleteKeypair bool `json:"deleteKeypair,omitempty"`
 }
 
+// +kubebuilder:validation:Enum:=leastNodes;random
+type SubregionMode string
+
+const (
+	SubregionModeLeastNodes SubregionMode = "leastNodes"
+	SubregionModeRandom     SubregionMode = "random"
+)
+
 type OscVm struct {
 	Name    string `json:"name,omitempty"`
 	ImageId string `json:"imageId,omitempty"`
 	// The keypair name
 	// +kubebuilder:validation:Required
 	KeypairName string `json:"keypairName,omitempty"`
-	// The type of vm (tinav6.c4r8p1 by default)
+	// The type of vm (tinav7.c4r8p1 by default)
 	// +optional
 	VmType string `json:"vmType,omitempty"`
 	// unused
@@ -642,7 +650,10 @@ type OscVm struct {
 	// The subregion where the machine needs to be placed (deprecated, use subregionNames).
 	// +optional
 	SubregionName string `json:"subregionName,omitempty"`
-	// The subregions where the machines needs to be placed.
+	// The way nodes will be allocated in subregions (leastNodes or random; by default, leastNodes).
+	// +optional
+	SubregionMode SubregionMode `json:"subregionMode,omitempty"`
+	// The subregions where the machines needs to be placed. If empty, the subregions defined at cluster level will be used.
 	// +optional
 	SubregionNames []string              `json:"subregionNames,omitempty"`
 	PrivateIps     []OscPrivateIpElement `json:"privateIps,omitempty"`
@@ -707,7 +718,7 @@ type OscBastion struct {
 	ImageName      string `json:"imageName,omitempty"`
 	ImageAccountId string `json:"imageAccountId,omitempty"`
 	KeypairName    string `json:"keypairName,omitempty"`
-	// The type of VM (tinav6.c1r1p2 by default)
+	// The type of VM (tinav7.c1r1p2 by default)
 	// +optional
 	VmType string `json:"vmType,omitempty"`
 	// unused
@@ -755,12 +766,12 @@ const (
 	VmStateStopping     = VmState("stopping")
 	VmStateStopped      = VmState("stopped")
 
-	DefaultVmType       string = "tinav6.c4r8p1"
+	DefaultVmType       string = "tinav7.c4r8p1"
 	DefaultRootDiskType string = "io1"
 	DefaultRootDiskSize int32  = 60
 	DefaultRootDiskIops int32  = 1500
 
-	DefaultVmBastionType       string = "tinav6.c1r1p2"
+	DefaultVmBastionType       string = "tinav7.c1r1p2"
 	DefaultRootDiskBastionType string = "gp2"
 	DefaultRootDiskBastionSize int32  = 15
 
