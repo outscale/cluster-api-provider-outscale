@@ -32,6 +32,9 @@ spec:
       loadbalancertype: "internal"
     net:
       ipRange: 10.1.0.0/16
+      tags:
+        "OWNER": "This a test"
+        "MANAGEDBY": "e2etests"
     netPeering:
       enable: true
     netAccessPoints:

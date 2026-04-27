@@ -44,7 +44,7 @@ func ValidateOscClusterSpec(spec OscClusterSpec) field.ErrorList {
 
 func ValidateNet(spec OscNet, reuse OscReuse) field.ErrorList {
 	switch {
-	case spec == OscNet{}:
+	case spec.IsZero():
 		return nil
 	case reuse.Net:
 		return MergeValidation(

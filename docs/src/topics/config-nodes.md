@@ -65,7 +65,7 @@ You will need to mount snapshot-based volumes during cloud-init. In `KubeadmConf
 
 ## OscMachineTemplate configuration
 
-`OscMachineTemplate` resources include a `spec.template.spec.node` node definition, with three attributes: `image`, `vm`, `volumes` and `reconciliationRule`.
+`OscMachineTemplate` resources include a `spec.template.spec.node` node definition, with the following attributes: `image`, `vm`, `volumes`, `reconciliationRule` and `tags`.
 
 ### `image`
 
@@ -152,6 +152,20 @@ placement:
   repulseCluster: <cluster name>
   repluseServer: <cluster name>
   serverStrict: true
+```
+
+## `tags`
+
+Extra tags can be added to VM resources by setting a map of key/value pairs at the `node` level:
+
+```yaml
+[...]
+  node:
+    vm: [...]
+    tags:
+      environment: production
+      team: platform
+[...]
 ```
 
 ### Subnet & security group selection

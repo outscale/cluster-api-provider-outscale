@@ -48,7 +48,7 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscN
 	}
 	netTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{netTag, clusterTag},
+		Tags:        append([]osc.ResourceTag{netTag, clusterTag}, utils.ConvertsTagsToOutscaleTags(spec.Tags)...),
 	}
 
 	err = tag.AddTag(ctx, netTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))

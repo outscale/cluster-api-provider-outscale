@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### ✨ Added
+* ✨ feat(tags): add support for extra tags on Net, Subnet and VM resources
+
 ## [v1.4.0] - 2026-03-24
 
 ### ✨ Added

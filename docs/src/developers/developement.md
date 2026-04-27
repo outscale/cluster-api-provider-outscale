@@ -104,7 +104,7 @@ cluster-api-provider-outscale-controller-manager-7d5c48d67t6d7f   2/2     Runnin
 In order to test the change of an api, please do:
 
 ```    
-make manifest
+make manifests
 make generate
 make capm
 kubectl apply -f capm.yaml

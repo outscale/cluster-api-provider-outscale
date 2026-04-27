@@ -209,6 +209,9 @@ type OscNet struct {
 	// The Id of the Net to reuse (if useExisting.net is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// Tags to add to the net.
+	// +optional
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 func (o *OscNet) IsZero() bool {
@@ -277,6 +280,10 @@ type OscSubnet struct {
 	// The id of the Subnet to reuse (if useExisting.net is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// + optional
+	// Tags to add to the subnet.
+	// +optional
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 type OscNatService struct {

@@ -48,3 +48,14 @@ func RoleTags(roles []infrastructurev1beta1.OscRole) []osc.ResourceTag {
 	}
 	return rs
 }
+
+func ConvertsTagsToOutscaleTags(tags map[string]string) []osc.ResourceTag {
+	oscTags := []osc.ResourceTag{}
+	for key, value := range tags {
+		oscTags = append(oscTags, osc.ResourceTag{
+			Key:   key,
+			Value: value,
+		})
+	}
+	return oscTags
+}
