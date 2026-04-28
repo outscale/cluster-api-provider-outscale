@@ -16,6 +16,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
+	"github.com/outscale/osc-sdk-go/v2"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -31,6 +32,14 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	vmSpec := machineScope.GetVm()
 
+	var fgpu *osc.FlexibleGpu
+	if vmSpec.FGPU != nil {
+		var err error
+		fgpu, err = r.Tracker.getFGPU(ctx, machineScope, clusterScope)
+		if err != nil && !IsNotFound(err) {
+			return reconcile.Result{}, err
+		}
+	}
 	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
 	switch {
 	case err == nil:
@@ -39,13 +48,16 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
 		// Check if a machine needs to be placed in a subregion.
-		// failure domain may either be a subnet name (CAPOSC up to v0.4.0) or a subregion (v0.5.0 or later).
-		var subnetName, subregionName string
-		if machineScope.Machine.Spec.FailureDomain != nil {
+		subnetName := vmSpec.SubnetName
+		var subregionName string
+		switch {
+		case fgpu != nil:
+			subregionName = *fgpu.SubregionName
+		case machineScope.Machine.Spec.FailureDomain != nil:
+			// failure domain may either be a subnet name (CAPOSC up to v0.4.0) or a subregion (v0.5.0 or later).
 			subnetName = *machineScope.Machine.Spec.FailureDomain
 			subregionName = *machineScope.Machine.Spec.FailureDomain
-		} else {
-			subnetName = vmSpec.SubnetName
+		default:
 			azs := vmSpec.GetSubregions()
 			if len(azs) == 0 {
 				azs = clusterScope.GetSubregions()
@@ -56,6 +68,24 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				return reconcile.Result{}, err
 			}
 			subregionName = az
+		}
+
+		// Allocate a FGPU
+		// If the subregion has no FGPU capacity, an error is returned. Let the next loop try in another subregion.
+		switch {
+		case vmSpec.FGPU == nil:
+		// no fGPU configured
+		case machineScope.IsControlPlane():
+			log.V(2).Info("Control-plane nodes are not allowed to have fGPUs")
+		case fgpu == nil:
+			log.V(3).Info("Allocating fGPU", "model", vmSpec.FGPU.Model)
+			fgpu, err = r.Cloud.FlexibleGPU(clusterScope.Tenant).AllocateFGPU(ctx, vmSpec.FGPU.Model, subregionName, machineScope)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			log.V(2).Info("fGPU allocated", "fGPUId", fgpu.GetFlexibleGpuId(), "model", vmSpec.FGPU.Model)
+			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
+				infrastructurev1beta1.FGPUAllocatedReason, "%s (%s) allocated", fgpu.GetFlexibleGpuId(), vmSpec.FGPU.Model)
 		}
 
 		subnetSpec, err := clusterScope.GetSubnet(subnetName, vmSpec.GetRole(), subregionName)
@@ -104,6 +134,8 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 			}
 			vmTags[compute.AutoAttachExternalIPTag] = publicIp
+			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
+				infrastructurev1beta1.IPAllocated, "IP %s allocated", publicIp)
 		}
 
 		repulse := machineScope.GetPlacement()
@@ -144,11 +176,45 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		r.Tracker.trackVm(machineScope, vm)
 		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
 		machineScope.SetProviderID(vm.Placement.GetSubregionName(), vmId)
-		r.Recorder.Event(machineScope.OscMachine, corev1.EventTypeNormal, infrastructurev1beta1.VmCreatedReason, "VM created")
+		r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
+			infrastructurev1beta1.VmCreatedReason, "VM %s created in %s", vm.GetVmId(), subregionName)
 	}
 
-	if vm.GetState() != "running" {
-		log.V(4).Info(fmt.Sprintf("VM %s is not yet running", vm.GetVmId()))
+	switch {
+	case fgpu == nil:
+	case fgpu.GetState() == "allocated":
+		switch vm.GetState() {
+		case "stopped":
+			log.V(3).Info("Attaching fGPU", "vmId", vm.GetVmId(), "fGPUId", fgpu.GetFlexibleGpuId())
+			err := r.Cloud.FlexibleGPU(clusterScope.Tenant).LinkFGPU(ctx, fgpu.GetFlexibleGpuId(), vm.GetVmId())
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("link fgpu: %w", err)
+			}
+			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
+				infrastructurev1beta1.FGPUAttachedReason, "%s attached", fgpu.GetFlexibleGpuId())
+		default:
+			log.V(4).Info("Waiting for VM state", "vmId", vm.GetVmId(), "state", vm.GetState())
+		}
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+	case fgpu.GetState() == "attached":
+		log.V(4).Info("fGPU is attached", "vmId", vm.GetVmId(), "fGPUId", fgpu.GetFlexibleGpuId())
+	default:
+		log.V(4).Info("Waiting for fGPU state", "vmId", vm.GetVmId(), "fGPUId", fgpu.GetFlexibleGpuId(), "state", fgpu.GetState())
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	switch vm.GetState() {
+	case "stopped":
+		log.V(3).Info("Starting VM", "vmId", vm.GetVmId())
+		err := r.Cloud.VM(clusterScope.Tenant).StartVm(ctx, vm.GetVmId())
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("start vm: %w", err)
+		}
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+	case "running":
+		log.V(4).Info("VM is running", "vmId", vm.GetVmId())
+	default:
+		log.V(4).Info("VM is not yet running", "vmId", vm.GetVmId(), "state", vm.GetState())
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 

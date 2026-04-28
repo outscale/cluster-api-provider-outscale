@@ -24,12 +24,13 @@ const (
 	NetPeeringResourceType      ResourceType = "vpc-peering-connection"
 	SubnetResourceType          ResourceType = "subnet"
 	InternetServiceResourceType ResourceType = "internet-service"
-	NetAccessPointResourceType ResourceType = "internet-service"
+	NetAccessPointResourceType  ResourceType = "internet-service"
 	NatResourceType             ResourceType = "natgateway"
 	VmResourceType              ResourceType = "instance"
 	RouteTableResourceType      ResourceType = "route-table"
 	SecurityGroupResourceType   ResourceType = "security-group"
 	PublicIPResourceType        ResourceType = "public-ip"
+	FlexibleGPUResourceType     ResourceType = "flexible-gpu"
 )
 
 const (

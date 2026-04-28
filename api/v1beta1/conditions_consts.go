@@ -63,6 +63,12 @@ const (
 )
 
 const (
+	IPAllocated         string = "IPAllocated"
+	FGPUAllocatedReason string = "fGPUAllocated"
+	FGPUAttachedReason  string = "fGPUAttached"
+)
+
+const (
 	SecurityGroupCreatedReason              string                  = "SecurityGroupCreated"
 	SecurityGroupReadyCondition             clusterv1.ConditionType = "SecurityGroupsReady"
 	SecurityGroupReconciliationFailedReason string                  = "SecurityGroupReconciliationFailed"
