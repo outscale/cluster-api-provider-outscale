@@ -62,6 +62,7 @@ providers:
           - sourcePath: "../data/infrastructure-outscale/cluster-template.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-topology.yaml"
           - sourcePath: "../data/infrastructure-outscale/clusterclass-cluster-class.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-fgpu.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-multiaz.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-public.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-airgap.yaml"
@@ -81,7 +82,9 @@ variables:
   OSC_VOLUME_TYPE: "gp2"
   OSC_KEYPAIR_NAME: "cluster-api"
   OSC_SUBREGION_NAME: "${OSC_SUBREGION_NAME:eu-west-2a}"
-  OSC_VM_TYPE: "tinav6.c4r8p2"
+  OSC_VM_TYPE: "tinav7.c4r8p2"
+  OSC_VM_TYPE_FGPU: "tinav5.c2r4p1"
+  OSC_FGPU_MODEL: "nvidia-p6"
   WORKER_MACHINE_COUNT: 1
   CONTROL_PLANE_MACHINE_COUNT: 1
   CNI: "${PWD}/test/e2e/data/cni/calico/calico.yaml"

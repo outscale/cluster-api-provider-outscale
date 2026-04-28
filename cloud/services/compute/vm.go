@@ -46,12 +46,15 @@ type OscVmInterface interface {
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
 	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
 	AddCCMTags(ctx context.Context, clusterName string, hostname string, vmId string) error
+	StartVm(ctx context.Context, vmId string) error
+	StopVm(ctx context.Context, vmId string) error
 }
 
 // CreateVm creates a VM.
 func (s *Service) CreateVm(ctx context.Context,
 	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
-	volumes []infrastructurev1beta1.OscVolume) (*osc.Vm, error) {
+	volumes []infrastructurev1beta1.OscVolume,
+) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
 	rootDiskIops := spec.RootDisk.RootDiskIops
@@ -104,6 +107,10 @@ func (s *Service) CreateVm(ctx context.Context,
 		UserData:            &mergedUserDataEnc,
 		BlockDeviceMappings: &volMappings,
 		ClientToken:         &vmClientToken,
+	}
+
+	if spec.FGPU != nil {
+		vmOpt.BootOnCreation = ptr.To(false)
 	}
 
 	if len(privateIps) > 0 {
@@ -269,6 +276,26 @@ func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) 
 		vm := *vms
 		return &vm[0], nil
 	}
+}
+
+// StartVm starts a VM
+func (s *Service) StartVm(ctx context.Context, vmId string) error {
+	req := osc.StartVmsRequest{
+		VmIds: []string{vmId},
+	}
+
+	_, httpRes, err := s.tenant.Client().VmApi.StartVms(s.tenant.ContextWithAuth(ctx)).StartVmsRequest(req).Execute()
+	return utils.LogAndExtractError(ctx, "StartVms", req, httpRes, err)
+}
+
+// StopVm stops a VM
+func (s *Service) StopVm(ctx context.Context, vmId string) error {
+	req := osc.StopVmsRequest{
+		VmIds: []string{vmId},
+	}
+
+	_, httpRes, err := s.tenant.Client().VmApi.StopVms(s.tenant.ContextWithAuth(ctx)).StopVmsRequest(req).Execute()
+	return utils.LogAndExtractError(ctx, "StopVms", req, httpRes, err)
 }
 
 // HasCCMTags checks if a Vm has both CCM tags.

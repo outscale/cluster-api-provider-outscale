@@ -130,3 +130,31 @@ func (mr *MockOscVmInterfaceMockRecorder) GetVmFromClientToken(ctx, clientToken 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmFromClientToken", reflect.TypeOf((*MockOscVmInterface)(nil).GetVmFromClientToken), ctx, clientToken)
 }
+
+// StartVm mocks base method.
+func (m *MockOscVmInterface) StartVm(ctx context.Context, vmId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartVm", ctx, vmId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StartVm indicates an expected call of StartVm.
+func (mr *MockOscVmInterfaceMockRecorder) StartVm(ctx, vmId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartVm", reflect.TypeOf((*MockOscVmInterface)(nil).StartVm), ctx, vmId)
+}
+
+// StopVm mocks base method.
+func (m *MockOscVmInterface) StopVm(ctx context.Context, vmId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StopVm", ctx, vmId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StopVm indicates an expected call of StopVm.
+func (mr *MockOscVmInterfaceMockRecorder) StopVm(ctx, vmId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopVm", reflect.TypeOf((*MockOscVmInterface)(nil).StopVm), ctx, vmId)
+}

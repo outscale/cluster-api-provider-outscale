@@ -71,10 +71,10 @@ type MockCloudServices struct {
 	PublicIpMock        *mock_security.MockOscPublicIpInterface
 	LoadBalancerMock    *mock_loadbalancer.MockOscLoadBalancerInterface
 
-	VMMock    *mock_compute.MockOscVmInterface
-	ImageMock *mock_compute.MockOscImageInterface
-
-	TagMock *mock_tag.MockOscTagInterface
+	VMMock          *mock_compute.MockOscVmInterface
+	ImageMock       *mock_compute.MockOscImageInterface
+	FlexibleGPUMock *mock_compute.MockOscFGPUInterface
+	TagMock         *mock_tag.MockOscTagInterface
 }
 
 func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloudServices {
@@ -93,8 +93,9 @@ func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloud
 		PublicIpMock:        mock_security.NewMockOscPublicIpInterface(mockCtrl),
 		LoadBalancerMock:    mock_loadbalancer.NewMockOscLoadBalancerInterface(mockCtrl),
 
-		VMMock:    mock_compute.NewMockOscVmInterface(mockCtrl),
-		ImageMock: mock_compute.NewMockOscImageInterface(mockCtrl),
+		VMMock:          mock_compute.NewMockOscVmInterface(mockCtrl),
+		ImageMock:       mock_compute.NewMockOscImageInterface(mockCtrl),
+		FlexibleGPUMock: mock_compute.NewMockOscFGPUInterface(mockCtrl),
 
 		TagMock: mock_tag.NewMockOscTagInterface(mockCtrl),
 	}
@@ -164,19 +165,28 @@ func (s *MockCloudServices) Image(t tenant.Tenant) compute.OscImageInterface {
 	return s.ImageMock
 }
 
+func (s *MockCloudServices) FlexibleGPU(t tenant.Tenant) compute.OscFGPUInterface {
+	s.tenant = t
+	return s.FlexibleGPUMock
+}
+
 func (s *MockCloudServices) Tag(t tenant.Tenant) tag.OscTagInterface {
 	s.tenant = t
 	return s.TagMock
 }
 
-type patchOSCClusterFunc func(m *v1beta1.OscCluster)
-type patchOSCMachineFunc func(m *v1beta1.OscMachine)
+type (
+	patchOSCClusterFunc func(m *v1beta1.OscCluster)
+	patchOSCMachineFunc func(m *v1beta1.OscMachine)
+)
 
 type mockFunc func(s *MockCloudServices)
 
-type assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
-type assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
-type assertTenantFunc func(t *testing.T, tnt tenant.Tenant)
+type (
+	assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
+	assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
+	assertTenantFunc     func(t *testing.T, tnt tenant.Tenant)
+)
 
 type testcase struct {
 	name                             string

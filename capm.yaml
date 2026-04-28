@@ -1870,6 +1870,15 @@ spec:
                       deviceName:
                         description: unused
                         type: string
+                      fGPU:
+                        description: The fGPU configuration for this VM.
+                        properties:
+                          model:
+                            description: |-
+                              The fGPU model to add to the VM (e.g. nvidia-h100).
+                              The fGPU will be released when the node VM is deleted.
+                            type: string
+                        type: object
                       imageId:
                         type: string
                       keypairName:
@@ -2184,6 +2193,10 @@ spec:
                 type: object
               resources:
                 properties:
+                  fGPU:
+                    additionalProperties:
+                      type: string
+                    type: object
                   image:
                     additionalProperties:
                       type: string
@@ -2392,6 +2405,15 @@ spec:
                               deviceName:
                                 description: unused
                                 type: string
+                              fGPU:
+                                description: The fGPU configuration for this VM.
+                                properties:
+                                  model:
+                                    description: |-
+                                      The fGPU model to add to the VM (e.g. nvidia-h100).
+                                      The fGPU will be released when the node VM is deleted.
+                                    type: string
+                                type: object
                               imageId:
                                 type: string
                               keypairName:
