@@ -561,6 +561,7 @@ type OscNodeResource struct {
 
 type OscMachineResources struct {
 	Vm        map[string]string `json:"vm,omitempty"`
+	FGPU      map[string]string `json:"fGPU,omitempty"`
 	Image     map[string]string `json:"image,omitempty"`
 	Volumes   map[string]string `json:"volumes,omitempty"`
 	PublicIPs map[string]string `json:"publicIps,omitempty"`
@@ -610,6 +611,12 @@ type OscKeypair struct {
 	DeleteKeypair bool `json:"deleteKeypair,omitempty"`
 }
 
+type OscFGPU struct {
+	// The fGPU model to add to the VM (e.g. nvidia-h100).
+	// The fGPU will be released when the node VM is deleted.
+	Model string `json:"model,omitempty"`
+}
+
 type OscVm struct {
 	Name    string `json:"name,omitempty"`
 	ImageId string `json:"imageId,omitempty"`
@@ -639,6 +646,9 @@ type OscVm struct {
 	// The name of the pool from which public IPs will be picked.
 	// +optional
 	PublicIpPool string `json:"publicIpPool,omitempty"`
+	// The fGPU configuration for this VM.
+	// +optional
+	FGPU *OscFGPU `json:"fGPU,omitempty"`
 	// The subregion where the machine needs to be placed (deprecated, use subregionNames).
 	// +optional
 	SubregionName string `json:"subregionName,omitempty"`
