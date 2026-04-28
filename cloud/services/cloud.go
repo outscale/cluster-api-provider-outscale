@@ -34,6 +34,7 @@ type Servicer interface {
 
 	VM(t tenant.Tenant) compute.OscVmInterface
 	Image(t tenant.Tenant) compute.OscImageInterface
+	FlexibleGPU(t tenant.Tenant) compute.OscFGPUInterface
 
 	Tag(t tenant.Tenant) tag.OscTagInterface
 }
@@ -78,47 +79,52 @@ func (s *Services) Subnet(t tenant.Tenant) net.OscSubnetInterface {
 	return net.NewService(t)
 }
 
-// getInternetServiceSvc returns internetServiceSvc
+// InternetService returns an internetService service
 func (s *Services) InternetService(t tenant.Tenant) net.OscInternetServiceInterface {
 	return net.NewService(t)
 }
 
-// getRouteTableSvc returns routeTableSvc
+// RouteTable returns a routeTable service
 func (s *Services) RouteTable(t tenant.Tenant) security.OscRouteTableInterface {
 	return security.NewService(t)
 }
 
-// getSecurityGroupSvc returns securityGroupSvc
+// SecurityGroup returns a securityGroup service
 func (s *Services) SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface {
 	return security.NewService(t)
 }
 
-// getNatServiceSvc returns natServiceSvc
+// NatService returns a natService service
 func (s *Services) NatService(t tenant.Tenant) net.OscNatServiceInterface {
 	return net.NewService(t)
 }
 
-// getVmSvc returns vmSvc
+// VM returns a VM service
 func (s *Services) VM(t tenant.Tenant) compute.OscVmInterface {
 	return compute.NewService(t)
 }
 
-// getImageSvc returns imageSvc
+// Image returns an image service
 func (s *Services) Image(t tenant.Tenant) compute.OscImageInterface {
 	return compute.NewService(t)
 }
 
-// getPublicIpSvc returns publicIpSvc
+// FlexibleGpu returns a fGPU service
+func (s *Services) FlexibleGPU(t tenant.Tenant) compute.OscFGPUInterface {
+	return compute.NewService(t)
+}
+
+// PublicIp returns a public IP service
 func (s *Services) PublicIp(t tenant.Tenant) security.OscPublicIpInterface {
 	return security.NewService(t)
 }
 
-// getLoadBalancerSvc returns loadBalancerSvc
+// LoadBalancer returns a loadBalancer service
 func (s *Services) LoadBalancer(t tenant.Tenant) loadbalancer.OscLoadBalancerInterface {
 	return loadbalancer.NewService(t)
 }
 
-// getTagSvc returns tagSvc
+// Tag service returns a tag service
 func (s *Services) Tag(t tenant.Tenant) tag.OscTagInterface {
 	return tag.NewService(t)
 }

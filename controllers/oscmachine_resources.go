@@ -180,3 +180,50 @@ func (t *MachineResourceTracker) untrackIP(machineScope *scope.MachineScope, nam
 	}
 	delete(rsrc.PublicIPs, name)
 }
+
+func (t *MachineResourceTracker) getFGPU(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (*osc.FlexibleGpu, error) {
+	fgpu, id, err := t._getFGPUOrId(ctx, machineScope, clusterScope)
+	switch {
+	case err != nil:
+		return nil, err
+	case fgpu != nil:
+		t.trackFGPU(machineScope, fgpu)
+		return fgpu, err
+	}
+	fgpu, err = t.Cloud.FlexibleGPU(clusterScope.Tenant).GetFGPU(ctx, id)
+	switch {
+	case err != nil:
+		return nil, err
+	case fgpu == nil:
+		return nil, fmt.Errorf("get fgpu %s: %w", id, ErrMissingResource)
+	default:
+		t.trackFGPU(machineScope, fgpu)
+		return fgpu, err
+	}
+}
+
+// getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
+func (t *MachineResourceTracker) _getFGPUOrId(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (*osc.FlexibleGpu, string, error) {
+	rsrc := machineScope.GetResources()
+	id := getResource(defaultResource, rsrc.FGPU)
+	if id != "" {
+		return nil, id, nil
+	}
+	name := machineScope.GetName()
+	tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.FlexibleGPUResourceType, tag.NameKey, name)
+	if err != nil {
+		return nil, "", fmt.Errorf("get fgpu: %w", err)
+	}
+	if tg.GetResourceId() != "" {
+		return nil, tg.GetResourceId(), nil
+	}
+	return nil, "", fmt.Errorf("get fgpu: %w", ErrNoResourceFound)
+}
+
+func (t *MachineResourceTracker) trackFGPU(machineScope *scope.MachineScope, fgpu *osc.FlexibleGpu) {
+	rsrc := machineScope.GetResources()
+	if rsrc.FGPU == nil {
+		rsrc.FGPU = map[string]string{}
+	}
+	rsrc.FGPU[defaultResource] = *fgpu.FlexibleGpuId
+}

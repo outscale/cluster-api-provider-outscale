@@ -36,7 +36,7 @@ jobs:
       run: |
         make unit-test
         cat covers.txt
-      shell: bash  
+      shell: bash
   e2e-quickstart:
     runs-on: [self-hosted, linux]
     needs: [unit]
@@ -69,6 +69,7 @@ jobs:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
+        exclude_resource_types: access_key
     - name: 👷 Deploy management cluster
       id: management
       uses: ./github_actions/deploy_cluster
@@ -88,11 +89,11 @@ jobs:
       uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version-file: 'go.mod'
-    - name: 📦 Build and push Docker image 
+    - name: 📦 Build and push Docker image
       run: |
         docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
         sudo apt-get update
-        sudo apt install -y docker-buildx-plugin 
+        sudo apt install -y docker-buildx-plugin
         make docker-buildx
         make docker-push
       env:
@@ -150,4 +151,4 @@ jobs:
       shell: bash
       env:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
-        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system      
+        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system

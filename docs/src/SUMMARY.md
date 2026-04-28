@@ -6,6 +6,7 @@
     - [Reusing existing resources](./topics/config-cluster-reuse.md)
     - [Configuring nodes](./topics/config-nodes.md)
     - [Multi AZ clusters](./topics/config-multiaz.md)
+    - [Adding fGPU](./topics/config-fgpu.md)
     - [Securing cluster access](./topics/config-security.md)
     - [Air-gapped clusters](./topics/config-airgap.md)
     - [Preloading images](./topics/preload.md)
@@ -19,4 +20,4 @@
     - [How to release](./developers/releases.md)
     - [How to release new kubernetes omi](./developers/kubernetes-omi-generation.md)
     - [How to release a custom kubernetes omi based on ubuntu](./developers/release-custom-omi-ubuntu.md)
-    - [How to migrate with new providerid](./developers/change-providerid.md) 
+    - [How to migrate with new providerid](./developers/change-providerid.md)

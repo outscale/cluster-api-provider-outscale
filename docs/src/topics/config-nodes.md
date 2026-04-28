@@ -154,6 +154,14 @@ placement:
   serverStrict: true
 ```
 
+## `fGPU`
+
+A flexible GPU can be attached to the node.
+
+| Name | Default | Required | Description
+| --- | --- | --- | ---
+| `model`| n/a | yes | The fGPU model (nvidia-h100, ...)
+
 ### Subnet & security group selection
 
 If not set, CAPOSC will use the subnet having the right role in the specified subregion.
