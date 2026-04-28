@@ -442,4 +442,4 @@ By default, no bastion is created.
 | `rootDiskSize` | `15` | no |  The Root Disk Size
 | `rootDiskIops` | n/a | no |  The Root Disk Iops (only for io1)
 | `rootDiskType` | `gp2` | no |  The Root Disk Type (io1, gp2, standard)
-| `vmType` | `tinav6.c1r1p2` | no |  The vmType use for the bastion
+| `vmType` | `tinav7.c1r1p2` | no |  The vmType use for the bastion

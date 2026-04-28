@@ -291,9 +291,9 @@ func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta1.Recon
 		return false
 	}
 	switch r.Mode {
-	case infrastructurev1beta1.Always:
+	case infrastructurev1beta1.ReconciliationModeAlways:
 		return true
-	case infrastructurev1beta1.Random:
+	case infrastructurev1beta1.ReconciliationModeRandom:
 		return Rand() < r.ReconciliationChance
 	default:
 		return false

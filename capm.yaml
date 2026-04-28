@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260309081511-e46e4d3fd0d2
+    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -230,7 +230,7 @@ spec:
                         description: unused
                         type: string
                       vmType:
-                        description: The type of VM (tinav6.c1r1p2 by default)
+                        description: The type of VM (tinav7.c1r1p2 by default)
                         type: string
                     type: object
                   clusterName:
@@ -947,7 +947,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260309081511-e46e4d3fd0d2
+    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1220,7 +1220,7 @@ spec:
                                 description: unused
                                 type: string
                               vmType:
-                                description: The type of VM (tinav6.c1r1p2 by default)
+                                description: The type of VM (tinav7.c1r1p2 by default)
                                 type: string
                             type: object
                           clusterName:
@@ -1723,7 +1723,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260309081511-e46e4d3fd0d2
+    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1971,13 +1971,21 @@ spec:
                         description: The subnet of the node (deprecated, use controlplane
                           and/or worker roles on subnets)
                         type: string
+                      subregionMode:
+                        description: The way nodes will be allocated in subregions
+                          (leastNodes or random; by default, leastNode).
+                        enum:
+                        - leastNodes
+                        - random
+                        type: string
                       subregionName:
                         description: The subregion where the machine needs to be placed
                           (deprecated, use subregionNames).
                         type: string
                       subregionNames:
                         description: The subregions where the machines needs to be
-                          placed.
+                          placed. If empty, the subregions defined at cluster level
+                          will be used.
                         items:
                           type: string
                         type: array
@@ -1987,7 +1995,7 @@ spec:
                         description: Tags to add to the VM.
                         type: object
                       vmType:
-                        description: The type of vm (tinav6.c4r8p1 by default)
+                        description: The type of vm (tinav7.c4r8p1 by default)
                         type: string
                       volumeDeviceName:
                         description: unused
@@ -2206,7 +2214,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260309081511-e46e4d3fd0d2
+    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -2486,13 +2494,21 @@ spec:
                                 description: The subnet of the node (deprecated, use
                                   controlplane and/or worker roles on subnets)
                                 type: string
+                              subregionMode:
+                                description: The way nodes will be allocated in subregions
+                                  (leastNodes or random; by default, leastNode).
+                                enum:
+                                - leastNodes
+                                - random
+                                type: string
                               subregionName:
                                 description: The subregion where the machine needs
                                   to be placed (deprecated, use subregionNames).
                                 type: string
                               subregionNames:
                                 description: The subregions where the machines needs
-                                  to be placed.
+                                  to be placed. If empty, the subregions defined at
+                                  cluster level will be used.
                                 items:
                                   type: string
                                 type: array
@@ -2502,7 +2518,7 @@ spec:
                                 description: Tags to add to the VM.
                                 type: object
                               vmType:
-                                description: The type of vm (tinav6.c4r8p1 by default)
+                                description: The type of vm (tinav7.c4r8p1 by default)
                                 type: string
                               volumeDeviceName:
                                 description: unused

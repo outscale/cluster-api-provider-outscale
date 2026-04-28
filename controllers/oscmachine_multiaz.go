@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand/v2"
 	"sync"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -21,9 +22,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+var RandIntN = rand.IntN
+
 type MultiAZAllocator struct {
+	client client.Client
+
 	mu          sync.Mutex
-	client      client.Client
 	deployments map[types.NamespacedName][]types.NamespacedName
 	azs         map[types.NamespacedName]string
 }
@@ -55,10 +59,26 @@ func (a *MultiAZAllocator) name(m *infrastructurev1beta1.OscMachine) types.Names
 	}
 }
 
-func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, azs []string) (string, error) {
-	if len(azs) == 1 {
+func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, mode infrastructurev1beta1.SubregionMode, azs []string) (string, error) {
+	switch {
+	case len(azs) == 0:
+		return "", errors.New("no subregions configured")
+	case len(azs) == 1:
 		return azs[0], nil
+	case mode == infrastructurev1beta1.SubregionModeRandom:
+		return a.allocateRandomAZ(ctx, m, azs)
+	default:
+		return a.allocateLeastNodeAZ(ctx, m, azs)
 	}
+}
+
+func (a *MultiAZAllocator) allocateRandomAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, azs []string) (string, error) {
+	az := azs[RandIntN(len(azs))]
+	log.FromContext(ctx).V(3).Info("Assigning machine to subregion", "machine", m.Name, "subregion", az)
+	return az, nil
+}
+
+func (a *MultiAZAllocator) allocateLeastNodeAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, azs []string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	name := a.name(m)
