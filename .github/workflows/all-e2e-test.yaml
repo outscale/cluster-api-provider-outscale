@@ -44,6 +44,7 @@ jobs:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
+        exclude_resource_types: access_key
     - name: 👷 Deploy management cluster
       id: management
       uses: ./.github/actions/deploy_cluster
