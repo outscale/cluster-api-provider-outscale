@@ -75,8 +75,7 @@ status:
       "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-bastion"
     natService:
       "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo"
-    publicIPs:
-      "bastion": "ipalloc-bastion"
+    publicIps:
       "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat"
   reconcilerGeneration:
     net: 3

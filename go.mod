@@ -1,6 +1,6 @@
 module github.com/outscale/cluster-api-provider-outscale
 
-go 1.25.0
+go 1.25.3
 
 require (
 	github.com/onsi/ginkgo/v2 v2.28.1
@@ -24,7 +24,7 @@ require go.yaml.in/yaml/v3 v3.0.4 // indirect
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	cel.dev/expr v0.18.0 // indirect
-	dario.cat/mergo v1.0.1 // indirect
+	dario.cat/mergo v1.0.2 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect

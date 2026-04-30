@@ -288,7 +288,14 @@ func mockGetSecurityGroupsFromNet(netId string, sgs []osc.SecurityGroup) mockFun
 	}
 }
 
-func mockPublicIpFound(publicIpId string) mockFunc {
+func mockPublicIpFound(publicIpId string, pip ...*osc.PublicIp) mockFunc {
+	if len(pip) > 0 {
+		return func(s *MockCloudServices) {
+			s.PublicIpMock.EXPECT().
+				GetPublicIp(gomock.Any(), gomock.Eq(publicIpId)).
+				Return(pip[0], nil)
+		}
+	}
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
 			GetPublicIp(gomock.Any(), gomock.Eq(publicIpId)).

@@ -21,22 +21,11 @@ func (r *OscMachineReconciler) reconcileDeletePublicIp(ctx context.Context, clus
 		log.V(4).Info("Not deleting publicip from pool")
 		return reconcile.Result{}, nil
 	}
-	svc := r.Cloud.PublicIp(clusterScope.Tenant)
 	for k, id := range r.Tracker.getPublicIps(machineScope) {
-		ip, err := svc.GetPublicIp(ctx, id)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get publicIp %s: %w", id, err)
-		}
-		if ip == nil {
-			r.Tracker.untrackIP(machineScope, k)
-			continue
-		}
-		log.V(3).Info("Deleting publicip")
-		err = svc.DeletePublicIp(ctx, id)
+		err := r.Tracker.IPAllocator(machineScope).DeallocateIP(ctx, k, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete publicIp %s: %w", id, err)
 		}
-		log.V(2).Info("Deleted publicip", "publicIpId", id)
 		r.Tracker.untrackIP(machineScope, k)
 	}
 	return reconcile.Result{}, nil

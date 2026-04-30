@@ -52,9 +52,7 @@ func (a *IPAllocator) AllocateIP(ctx context.Context, key, name, pool string, cl
 			return id, pip.GetPublicIp(), nil
 		}
 	}
-	var (
-		pip *osc.PublicIp
-	)
+	var pip *osc.PublicIp
 	if pool != "" {
 		pip, err = a.allocateFromPool(ctx, pool, clusterScope)
 	} else {
@@ -136,8 +134,8 @@ func (a *IPAllocator) DeallocateIP(ctx context.Context, key string, clusterScope
 			return errors.New("decallocate ip: IP is still linked")
 		}
 
-		if security.PoolName(pip) != "" {
-			log.V(3).Info("Not deleting public IP from pool", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+		if !security.CanDelete(pip) {
+			log.V(3).Info("Not deleting public IP from pool or with no delete tag", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
 			return nil
 		}
 		log.V(2).Info("Deleting public IP", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())

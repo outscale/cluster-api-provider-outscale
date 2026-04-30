@@ -98,6 +98,10 @@ Outscale Open-Source images are published on the `eu-west-2`, `us-east-2` and `c
 | `publicIpPool` | n/a | no | Name of a public IP pool to use if you want the node to have a predefined public IP. See [Reusing public IPs](config-cluster-reuse.md) for more information (requires CAPOSC v1.1.0)
 | `tags` | n/a | no | Additional tags to set on the VM
 
+> Public IPs attached to nodes are released on node deletion unless:
+> * the IP belongs to a pool,
+> * or the public IP has an `OscK8sNoDelete` tag key. 
+
 ### `volumes`
 
 `volumes` is a list of additional volumes.
