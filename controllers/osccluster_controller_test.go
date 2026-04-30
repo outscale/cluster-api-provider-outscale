@@ -12,6 +12,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -2612,7 +2613,6 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 
 func TestReconcileOSCCluster_Delete(t *testing.T) {
 	tcs := []testcase{
-		// TODO: ready-0.5 test
 		{
 			name:           "Deleting a v0.4 cluster",
 			clusterSpec:    "ready-0.4",
@@ -2669,6 +2669,121 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteSubnet("subnet-174f5ec4"),
 				mockNetFound("vpc-24ba90ce"),
 				mockDeleteNet("vpc-24ba90ce"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:           "Deleting a v1.0 cluster",
+			clusterSpec:    "ready-1.0",
+			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
+			mockFuncs: []mockFunc{
+				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockDeleteLoadBalancer("test-cluster-api-k8s"),
+
+				mockListNatServices("vpc-foo", []osc.NatService{{
+					NatServiceId: ptr.To("nat-223a4dd4"),
+					PublicIps: &[]osc.PublicIpLight{{
+						PublicIpId: ptr.To("ipalloc-nat"),
+					}},
+				}}),
+				mockDeleteNatService("nat-223a4dd4"),
+				mockPublicIpFound("ipalloc-nat"),
+				mockDeletePublicIp("ipalloc-nat"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}}},
+					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}}},
+					{RouteTableId: ptr.To("rtb-eeacfe8a"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}}},
+				}),
+				mockUnlinkRouteTable("rtbassoc-643430b3"),
+				mockDeleteRouteTable("rtb-0a4640a6"),
+				mockUnlinkRouteTable("rtbassoc-09475c37"),
+				mockDeleteRouteTable("rtb-194c971e"),
+				mockUnlinkRouteTable("rtbassoc-90bda9c8"),
+				mockDeleteRouteTable("rtb-eeacfe8a"),
+
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
+					{
+						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{}, {}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+					},
+					{
+						SecurityGroupId: ptr.To("sg-750ae810"), InboundRules: &[]osc.SecurityGroupRule{{}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+					},
+				}),
+				mockDeleteSecurityGroup("sg-a093d014", nil),
+				mockDeleteSecurityGroup("sg-750ae810", nil),
+
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
+
+				mockListNetAccessPoints("vpc-foo", nil),
+
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:           "A NAT public IP is not deleted if properly tagged",
+			clusterSpec:    "ready-1.0",
+			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
+			mockFuncs: []mockFunc{
+				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockDeleteLoadBalancer("test-cluster-api-k8s"),
+
+				mockListNatServices("vpc-foo", []osc.NatService{{
+					NatServiceId: ptr.To("nat-223a4dd4"),
+					PublicIps: &[]osc.PublicIpLight{{
+						PublicIpId: ptr.To("ipalloc-nat"),
+					}},
+				}}),
+				mockDeleteNatService("nat-223a4dd4"),
+				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIpId: ptr.To("ipalloc-nat"), Tags: &[]osc.ResourceTag{{Key: security.NoDeleteTag}}}),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}}},
+					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}}},
+					{RouteTableId: ptr.To("rtb-eeacfe8a"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}}},
+				}),
+				mockUnlinkRouteTable("rtbassoc-643430b3"),
+				mockDeleteRouteTable("rtb-0a4640a6"),
+				mockUnlinkRouteTable("rtbassoc-09475c37"),
+				mockDeleteRouteTable("rtb-194c971e"),
+				mockUnlinkRouteTable("rtbassoc-90bda9c8"),
+				mockDeleteRouteTable("rtb-eeacfe8a"),
+
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
+					{
+						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{}, {}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+					},
+					{
+						SecurityGroupId: ptr.To("sg-750ae810"), InboundRules: &[]osc.SecurityGroupRule{{}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+					},
+				}),
+				mockDeleteSecurityGroup("sg-a093d014", nil),
+				mockDeleteSecurityGroup("sg-750ae810", nil),
+
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
+
+				mockListNetAccessPoints("vpc-foo", nil),
+
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
 			},
 			assertDeleted: true,
 		},

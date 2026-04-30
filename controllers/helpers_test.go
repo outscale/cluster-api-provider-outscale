@@ -169,14 +169,18 @@ func (s *MockCloudServices) Tag(t tenant.Tenant) tag.OscTagInterface {
 	return s.TagMock
 }
 
-type patchOSCClusterFunc func(m *v1beta1.OscCluster)
-type patchOSCMachineFunc func(m *v1beta1.OscMachine)
+type (
+	patchOSCClusterFunc func(m *v1beta1.OscCluster)
+	patchOSCMachineFunc func(m *v1beta1.OscMachine)
+)
 
 type mockFunc func(s *MockCloudServices)
 
-type assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
-type assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
-type assertTenantFunc func(t *testing.T, tnt tenant.Tenant)
+type (
+	assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
+	assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
+	assertTenantFunc     func(t *testing.T, tnt tenant.Tenant)
+)
 
 type testcase struct {
 	name                             string
@@ -278,7 +282,14 @@ func mockGetSecurityGroupsFromNet(netId string, sgs []osc.SecurityGroup) mockFun
 	}
 }
 
-func mockPublicIpFound(publicIpId string) mockFunc {
+func mockPublicIpFound(publicIpId string, pip ...*osc.PublicIp) mockFunc {
+	if len(pip) > 0 {
+		return func(s *MockCloudServices) {
+			s.PublicIpMock.EXPECT().
+				GetPublicIp(gomock.Any(), gomock.Eq(publicIpId)).
+				Return(pip[0], nil)
+		}
+	}
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
 			GetPublicIp(gomock.Any(), gomock.Eq(publicIpId)).

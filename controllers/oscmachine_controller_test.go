@@ -11,6 +11,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"github.com/outscale/osc-sdk-go/v2"
@@ -664,6 +665,22 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockGetVm("i-046f4bd0", "running", true),
 				mockDeleteVm("i-046f4bd0"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "deleting a 1.0 machine with a no delete public ip",
+			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			machineBaseSpec: "ready-worker",
+			machinePatches: []patchOSCMachineFunc{
+				patchDeleteMachine(),
+				patchUsePublicIP(),
+				patchPublicIPStatus("ipalloc-worker"),
+			},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", "running", true),
+				mockDeleteVm("i-046f4bd0"),
+				mockPublicIpFound("ipalloc-worker", &osc.PublicIp{PublicIpId: ptr.To("ipalloc-worker"), Tags: &[]osc.ResourceTag{{Key: security.NoDeleteTag}}}),
 			},
 			assertDeleted: true,
 		},

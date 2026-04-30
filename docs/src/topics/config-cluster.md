@@ -104,6 +104,10 @@ By default, NAT services use dynamically generated public IPs.
 
 You can set `network.natPublicIpPool` with the name of a public IP pool to use predefined public IPs. See [Reusing public IPs](config-cluster-reuse.md) for more information.
 
+> Public IPs attached to NAT services are released on cluster deletion unless:
+> * the IP belongs to a pool,
+> * or the public IP has an `OscK8sNoDelete` tag key. 
+
 ### Automatic mode
 
 One NAT service is created for each subnet having the `nat` role.

@@ -9,13 +9,17 @@ package security
 import (
 	"context"
 	"errors"
+	"slices"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
-const PublicIPPoolTag = "OscK8sIPPool"
+const (
+	PublicIPPoolTag = "OscK8sIPPool"
+	NoDeleteTag     = "OscK8sNoDelete"
+)
 
 //go:generate ../../../bin/mockgen -destination mock_security/publicip_mock.go -package mock_security -source ./publicip.go
 type OscPublicIpInterface interface {
@@ -173,4 +177,24 @@ func PoolName(ip *osc.PublicIp) string {
 		}
 	}
 	return ""
+}
+
+// Has checks if a tag slice contains a tag.
+// If called with 1 string param, it checks if a key exists.
+// If called with 2 string params, it checks if a key exists with the exact value.
+func HasTag(tags *[]osc.ResourceTag, kv ...string) bool {
+	if tags == nil {
+		return false
+	}
+	if len(kv) == 0 {
+		return true
+	}
+	return slices.ContainsFunc(*tags, func(t osc.ResourceTag) bool {
+		return kv[0] == t.Key && (len(kv) == 1 || kv[1] == t.Value)
+	})
+}
+
+// CanDelete returns the true if the IP can be deleted (no nodelete tag, no pool tag)
+func CanDelete(ip *osc.PublicIp) bool {
+	return !HasTag(ip.Tags, PublicIPPoolTag) && !HasTag(ip.Tags, NoDeleteTag)
 }
