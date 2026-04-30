@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.5.0-rc.1] - 2026-05-04
+
+### ✨ Added
+* ✨ feat(OscMachine): random AZ allocation by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/798
+* ✨ feat(OscMachine): fGPU allocation by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/799
+* ✨ feat(public IPs): do not delete OscK8sNoDelete tagged IPs by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/802
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update k8s.io/utils digest to 28399d8 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/712
+* ⬆️ deps(dockerfile): update python:3-bookworm docker digest to d823dbd by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/769
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.2 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/785
+* ⬆️ deps(dockerfile): update golang:1.26.2 docker digest to 5f3787b by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/789
+* ⬆️ deps(gomod): update module github.com/outscale/osc-sdk-go/v2 to v2.33.0 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/736
+* ⬆️ deps(gomod): update kubernetes packages to v0.32.13 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/755
+* ⬆️ deps(dockerfile): update python:3-bookworm docker digest to 7e4daf6 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/784
+* ⬆️ deps(dockerfile): update golang:1.26.2 docker digest to b54cbf5 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/796
+
 ## [v1.4.0] - 2026-03-24
 
 ### ✨ Added
