@@ -93,7 +93,7 @@ jobs:
       id: preloader
       uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@main
       with:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.kubeconfig.outputs.KUBECONFIG }}"
+        KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG }}
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
