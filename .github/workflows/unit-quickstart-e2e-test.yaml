@@ -72,7 +72,7 @@ jobs:
         exclude_resource_types: access_key
     - name: 👷 Create k8s Kind Cluster
       id: kind
-      uses: helm/kind-action@v1
+      uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1
       with:
         cluster_name: caposc
     - name: ⬇️ Install Go
@@ -81,13 +81,12 @@ jobs:
         go-version-file: 'go.mod'
     - name: 📦 Build and push Docker image
       run: |
-        docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
         sudo apt-get update
         sudo apt install -y docker-buildx-plugin
         make docker-buildx
         make docker-push-kind
       env:
-        IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
+        IMG: outscale/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: 🔎 Preloader snapshot
       id: preloader

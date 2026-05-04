@@ -202,7 +202,7 @@ trivy-ignore-check:
 ##@ kind
 
 KIND ?= kind
-KIND_CLUSTER ?= cluster-api-e2e
+KIND_CLUSTER ?= caposc
 KIND_IMAGE ?= kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1
 
 .PHONY: setup-test-e2e
@@ -215,7 +215,7 @@ setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 
 
 .PHONY: cleanup-test-e2e
-cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
+	cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 ##@ Build
