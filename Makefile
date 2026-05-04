@@ -125,24 +125,12 @@ mock-generate: mockgen ## Generate mock
 generate-image-docs:
 	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -k "${K8S_VERSION}"
 
-
-.PHONY: fmt
-fmt: ## Run go fmt against code.
-	go fmt ./...
-
-.PHONY: vet
-vet: ## Run go vet against code.
-	go vet ./...
-
 .PHONY: format
-format: gofmt gospace yamlspace yamlfmt
+format: gofmt yamlspace yamlfmt
 
+.PHONY: gofmt
 gofmt: ## Run gofmt
 	find . -name "*.go" | xargs gofmt -s -w
-
-.PHONY: gospace
-gospace: ## Run to remove trailling space
-	find . -name "*.go" -type f -print0 | xargs -0 sed -i 's/[[:space:]]*$$//'
 
 .PHONY: yamlspace
 yamlspace: ## Run to remove trailling space
@@ -160,18 +148,6 @@ unit-test:
 	go test -v -coverprofile=apicovers.out  ./api/v1beta1
 	go tool cover -func=apicovers.out -o apicovers.txt
 	go tool cover -html=apicovers.out -o apicovers.html
-
-.PHONY: cloud-init-secret
-cloud-init-secret:
-	kubectl create secret generic cluster-api-test --save-config --dry-run=client --from-file=${PWD}/testenv/value -o yaml | kubectl apply -f -
-
-.PHONY: testenv
-testenv: cloud-init-secret
-	USE_EXISTING_CLUSTER=true OSC_REGION=${OSC_REGION} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} go test -v -coverprofile=covers.out  ./testenv/ -ginkgo.v -ginkgo.show-node-events -test.v -test.timeout 120m
-
-.PHONY: testclean
-testclean:
-	USE_EXISTING_CLUSTER=true go test -v -coverprofile=covers.out  ./testclean/ -clusterToClean=${ClusterToClean} -ginkgo.v -ginkgo.show-node-events -test.v
 
 .PHONY: e2e-conf-class-file
 e2e-conf-class-file: envsubst
@@ -223,14 +199,33 @@ trivy-scan:
 trivy-ignore-check:
 	@./hack/verify-trivyignore.sh
 
+##@ kind
+
+KIND ?= kind
+KIND_CLUSTER ?= cluster-api-e2e
+KIND_IMAGE ?= kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1
+
+.PHONY: setup-test-e2e
+setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
+	@command -v $(KIND) >/dev/null 2>&1 || { \
+		echo "Kind is not installed. Please install Kind manually."; \
+		exit 1; \
+	}
+	$(KIND) create cluster --name $(KIND_CLUSTER) --image $(KIND_IMAGE)
+
+
+.PHONY: cleanup-test-e2e
+cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
+	@$(KIND) delete cluster --name $(KIND_CLUSTER)
+
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
+build: generate ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: manifests generate ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
@@ -248,7 +243,13 @@ docker-build-dev: ## Generate and Build docker image with the manager
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+.PHONY: docker-push-kind
+docker-push-kind: ## Push docker image with the manager.
+	$(KIND) load docker-image ${IMG} --name ${KIND_CLUSTER}
+
 ##@ Docs
+
 .PHONY: helm-docs
 helm-docs: ## Generate helm docs
 	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:latest
@@ -462,10 +463,6 @@ install-buildifier: ## Download shellcheck
 .PHONY: install-shellcheck
 install-shellcheck: ## Download shellcheck
 	GOPATH=${GET_GOPATH} MINIMUM_SHELLCHECK_VERSION=$(MINIMUM_SHELLCHECK_VERSION) ./hack/verify-shellcheck.sh
-
-.PHONY: verify-boilerplate
-verify-boilerplate: ## Verify boilerplate text exists in each file
-	GOPATH=${GET_GOPATH} ./hack/verify-boilerplate.sh
 
 .PHONY: install-kubectl
 install-kubectl: ## Download kubectl

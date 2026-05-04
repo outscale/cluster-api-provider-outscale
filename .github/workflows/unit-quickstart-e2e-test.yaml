@@ -74,10 +74,7 @@ jobs:
       id: management
       uses: ./github_actions/deploy_cluster
       with:
-        RUNNER_NAME: ${{ runner.name }}
-        OKS_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}
-        OKS_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY_OKS }}
-        OKS_REGION: ${{ vars.OKS_REGION }}
+        DEPLOY_CLUSTER: false
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
@@ -95,7 +92,7 @@ jobs:
         sudo apt-get update
         sudo apt install -y docker-buildx-plugin
         make docker-buildx
-        make docker-push
+        make docker-push-kind
       env:
         IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
