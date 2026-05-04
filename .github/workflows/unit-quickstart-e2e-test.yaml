@@ -85,14 +85,15 @@ jobs:
         sudo apt install -y docker-buildx-plugin
         make docker-buildx
         make docker-push-kind
+
+        kubectl cluster-info --context kind-caposc
       env:
         IMG: outscale/cluster-api-outscale-controllers:${{ github.sha }}
         DOCKER_BUILDKIT: 1
     - name: 🔎 Preloader snapshot
       id: preloader
-      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@main
+      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@no_kubeconfig
       with:
-        KUBECONFIG: missing.kubeconfig
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
