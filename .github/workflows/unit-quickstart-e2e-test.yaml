@@ -71,11 +71,10 @@ jobs:
       uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1
       with:
         cluster_name: caposc
-    - name: 👷 Kubeconfig
+    - name: 👷 Set kubectl context
       id: kubeconfig
       run: |
-        kind get kubeconfig --name=caposc > management.kubeconfig
-        echo "KUBECONFIG=management.kubeconfig" >> $GITHUB_OUTPUT
+        kubectl config use-context kind-caposc
     - name: ⬇️ Install Go
       uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
@@ -93,7 +92,6 @@ jobs:
       id: preloader
       uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@main
       with:
-        KUBECONFIG: ${{ steps.kubeconfig.outputs.KUBECONFIG }}
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
@@ -102,7 +100,6 @@ jobs:
       run: make credential
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.kubeconfig.outputs.KUBECONFIG }}"
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
     - name: 🧪 Launch quickstart e2e tests
@@ -116,7 +113,6 @@ jobs:
       shell: bash
       id: e2etest
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.kubeconfig.outputs.KUBECONFIG }}"
         CCM_OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         CCM_OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         CCM_OSC_REGION: ${{ env.OSC_REGION }}
@@ -133,12 +129,10 @@ jobs:
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.kubeconfig.outputs.KUBECONFIG }}"
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
     - name: 📝 Get cluster api logs
       run: make logs-capi
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.kubeconfig.outputs.KUBECONFIG }}"
         CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
