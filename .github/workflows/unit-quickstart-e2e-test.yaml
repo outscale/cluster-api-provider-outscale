@@ -70,18 +70,11 @@ jobs:
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
         exclude_resource_types: access_key
-    - name: 👷 Deploy management cluster
-      id: management
-      uses: ./github_actions/deploy_cluster
+    - name: 👷 Create k8s Kind Cluster
+      id: kind
+      uses: helm/kind-action@v1
       with:
-        DEPLOY_CLUSTER: false
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
-        CLUSTER_NAME: "caposc"
-        IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
-        IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
-        CERT_MANAGER: "true"
+        cluster_name: caposc
     - name: ⬇️ Install Go
       uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
