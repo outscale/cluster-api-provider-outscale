@@ -9,7 +9,7 @@ import (
 	"context"
 	"errors"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 func TenantFromEnv() (Tenant, error) {

@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +20,7 @@ import (
 // MachineScopeParams is a collection of input parameters to create a new scope
 type MachineTemplateScopeParams struct {
 	Client             client.Client
-	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
+	OscMachineTemplate *infrastructurev1beta2.OscMachineTemplate
 }
 
 // NewMachineScope create new machineScope from parameters which is called at each reconciliation iteration
@@ -44,7 +44,7 @@ func NewMachineTemplateScope(params MachineTemplateScopeParams) (*MachineTemplat
 type MachineTemplateScope struct {
 	client             client.Client
 	patchHelper        *patch.Helper
-	OscMachineTemplate *infrastructurev1beta1.OscMachineTemplate
+	OscMachineTemplate *infrastructurev1beta2.OscMachineTemplate
 }
 
 // Close closes the scope of the machine configuration and status
@@ -67,18 +67,14 @@ func (m *MachineTemplateScope) PatchObject(ctx context.Context) error {
 }
 
 func (m *MachineTemplateScope) GetVmType() string {
-	return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.VmType
+	return m.OscMachineTemplate.Spec.Template.Spec.Vm.VmType
 }
 
-func (m *MachineTemplateScope) GetRole() infrastructurev1beta1.OscRole {
-	if m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Role != "" {
-		return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Role
+func (m *MachineTemplateScope) GetRole() infrastructurev1beta2.OscRole {
+	if m.OscMachineTemplate.Spec.Template.Spec.Vm.Role != "" {
+		return m.OscMachineTemplate.Spec.Template.Spec.Vm.Role
 	}
-	return infrastructurev1beta1.RoleWorker
-}
-
-func (m *MachineTemplateScope) GetClusterName() string {
-	return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.ClusterName
+	return infrastructurev1beta2.RoleWorker
 }
 
 func (m *MachineTemplateScope) GetCapacity() corev1.ResourceList {

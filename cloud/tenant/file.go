@@ -9,34 +9,30 @@ import (
 	"context"
 	"fmt"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/options"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/outscale/osc-sdk-go/v3/pkg/profile"
 )
 
-func TenantFromFile(path, profile string) (Tenant, error) {
-	if profile == "" {
-		profile = "default"
+func TenantFromFile(path, prof string) (Tenant, error) {
+	if prof == "" {
+		prof = "default"
 	}
-	cfg, err := osc.LoadConfigFile(&path)
+	cfg, err := profile.New(profile.FromFile(path, prof))
 	if err != nil {
 		return nil, fmt.Errorf("from file: %w", err)
 	}
 	return &fileTenant{
-		cfg:     cfg,
-		profile: profile,
+		profile: cfg,
 	}, nil
 }
 
 type fileTenant struct {
-	cfg     *osc.ConfigFile
-	profile string
+	profile *profile.Profile
 }
 
 func (t *fileTenant) Region() string {
-	cfg, err := t.cfg.Configuration(t.profile)
-	if err != nil {
-		panic(err) // should never occur, as TenantFromFile has checked that Configuration() does not return an error
-	}
-	return cfg.Servers[0].Variables["region"].DefaultValue
+	return t.profile.Region
 }
 
 func (t *fileTenant) ContextWithAuth(ctx context.Context) context.Context {
@@ -47,13 +43,13 @@ func (t *fileTenant) ContextWithAuth(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (t *fileTenant) Client() *osc.APIClient {
+func (t *fileTenant) Client() *osc.Client {
 	cfg, err := t.cfg.Configuration(t.profile)
 	if err != nil {
 		panic(err) // should never occur, as TenantFromFile has checked that Configuration() does not return an error
 	}
 	cfg.UserAgent = userAgent()
-	return osc.NewAPIClient(cfg)
+	return osc.NewClient(cfg, options.WithUseragent(userAgent()))
 }
 
 var _ Tenant = (*fileTenant)(nil)

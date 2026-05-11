@@ -7,11 +7,9 @@ package net
 
 import (
 	"context"
-	"errors"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/natservice_mock.go -package mock_net -source ./natservice.go
@@ -26,18 +24,17 @@ type OscNatServiceInterface interface {
 
 // CreateNatService create the nat in the public subnet of the net
 func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, clientToken, natServiceName, clusterID string) (*osc.NatService, error) {
-	natServiceRequest := osc.CreateNatServiceRequest{
+	req := osc.CreateNatServiceRequest{
 		PublicIpId:  publicIpId,
 		ClientToken: &clientToken,
 		SubnetId:    subnetId,
 	}
 
-	natServiceResponse, httpRes, err := s.tenant.Client().NatServiceApi.CreateNatService(s.tenant.ContextWithAuth(ctx)).CreateNatServiceRequest(natServiceRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "CreateNatService", natServiceRequest, httpRes, err)
+	resp, err := s.tenant.Client().CreateNatService(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	resourceIds := []string{*natServiceResponse.NatService.NatServiceId}
+	resourceIds := []string{resp.NatService.NatServiceId}
 	natServiceTag := osc.ResourceTag{
 		Key:   "Name",
 		Value: natServiceName,
@@ -50,23 +47,17 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, cl
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{natServiceTag, clusterTag},
 	}
-	err = tag.AddTag(ctx, natServiceTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
+	err = tag.AddTag(ctx, natServiceTagRequest, resourceIds, s.tenant.Client())
 	if err != nil {
 		return nil, err
 	}
-	natService, ok := natServiceResponse.GetNatServiceOk()
-	if !ok {
-		return nil, errors.New("cannot create natService")
-	}
-	return natService, nil
+	return resp.NatService, nil
 }
 
 // DeleteNatService  delete the nat
 func (s *Service) DeleteNatService(ctx context.Context, natServiceId string) error {
-	deleteNatServiceRequest := osc.DeleteNatServiceRequest{NatServiceId: natServiceId}
-
-	_, httpRes, err := s.tenant.Client().NatServiceApi.DeleteNatService(s.tenant.ContextWithAuth(ctx)).DeleteNatServiceRequest(deleteNatServiceRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "DeleteNatService", deleteNatServiceRequest, httpRes, err)
+	req := osc.DeleteNatServiceRequest{NatServiceId: natServiceId}
+	_, err := s.tenant.Client().DeleteNatService(ctx, req)
 	return err
 }
 
@@ -77,21 +68,14 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 			NatServiceIds: &[]string{natServiceId},
 		},
 	}
-
-	readNatServicesResponse, httpRes, err := s.tenant.Client().NatServiceApi.ReadNatServices(s.tenant.ContextWithAuth(ctx)).ReadNatServicesRequest(readNatServicesRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadNatServices(ctx, readNatServicesRequest)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	natServices, ok := readNatServicesResponse.GetNatServicesOk()
-	if !ok {
-		return nil, errors.New("cannot get natService")
-	}
-	if len(*natServices) == 0 {
+	case len(*resp.NatServices) == 0:
 		return nil, nil
-	} else {
-		natService := *natServices
-		return &natService[0], nil
+	default:
+		return &(*resp.NatServices)[0], nil
 	}
 }
 
@@ -103,20 +87,14 @@ func (s *Service) GetNatServiceFromClientToken(ctx context.Context, clientToken 
 		},
 	}
 
-	readNatServicesResponse, httpRes, err := s.tenant.Client().NatServiceApi.ReadNatServices(s.tenant.ContextWithAuth(ctx)).ReadNatServicesRequest(readNatServicesRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadNatServices(ctx, readNatServicesRequest)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	natServices, ok := readNatServicesResponse.GetNatServicesOk()
-	if !ok {
-		return nil, errors.New("cannot get natService")
-	}
-	if len(*natServices) == 0 {
+	case len(*resp.NatServices) == 0:
 		return nil, nil
-	} else {
-		natService := *natServices
-		return &natService[0], nil
+	default:
+		return &(*resp.NatServices)[0], nil
 	}
 }
 
@@ -128,14 +106,9 @@ func (s *Service) ListNatServices(ctx context.Context, netId string) ([]osc.NatS
 		},
 	}
 
-	readNatServicesResponse, httpRes, err := s.tenant.Client().NatServiceApi.ReadNatServices(s.tenant.ContextWithAuth(ctx)).ReadNatServicesRequest(readNatServicesRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNatServices", readNatServicesRequest, httpRes, err)
+	resp, err := s.tenant.Client().ReadNatServices(ctx, readNatServicesRequest)
 	if err != nil {
 		return nil, err
 	}
-	natServices, ok := readNatServicesResponse.GetNatServicesOk()
-	if !ok {
-		return nil, errors.New("cannot get natService")
-	}
-	return *natServices, nil
+	return *resp.NatServices, nil
 }

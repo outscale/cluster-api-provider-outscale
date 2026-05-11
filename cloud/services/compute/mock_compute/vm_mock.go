@@ -13,9 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	v1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	scope "github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	osc "github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -58,7 +58,7 @@ func (mr *MockOscVmInterfaceMockRecorder) AddCCMTags(ctx, clusterName, hostname,
 }
 
 // CreateVm mocks base method.
-func (m *MockOscVmInterface) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *v1beta1.OscVm, imageId, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken string, tags map[string]string, volumes []v1beta1.OscVolume) (*osc.Vm, error) {
+func (m *MockOscVmInterface) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *v1beta2.OscVm, imageId, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken string, tags map[string]string, volumes []v1beta2.OscVolume) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateVm", ctx, machineScope, spec, imageId, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, tags, volumes)
 	ret0, _ := ret[0].(*osc.Vm)
@@ -70,21 +70,6 @@ func (m *MockOscVmInterface) CreateVm(ctx context.Context, machineScope *scope.M
 func (mr *MockOscVmInterfaceMockRecorder) CreateVm(ctx, machineScope, spec, imageId, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, tags, volumes any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVm", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVm), ctx, machineScope, spec, imageId, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, tags, volumes)
-}
-
-// CreateVmBastion mocks base method.
-func (m *MockOscVmInterface) CreateVmBastion(ctx context.Context, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVmBastion", ctx, spec, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, imageId, tags)
-	ret0, _ := ret[0].(*osc.Vm)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateVmBastion indicates an expected call of CreateVmBastion.
-func (mr *MockOscVmInterfaceMockRecorder) CreateVmBastion(ctx, spec, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, imageId, tags any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmBastion", reflect.TypeOf((*MockOscVmInterface)(nil).CreateVmBastion), ctx, spec, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, imageId, tags)
 }
 
 // DeleteVm mocks base method.

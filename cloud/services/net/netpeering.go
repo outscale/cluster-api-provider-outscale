@@ -7,11 +7,9 @@ package net
 
 import (
 	"context"
-	"errors"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/netpeering_mock.go -package mock_net -source ./netpeering.go
@@ -27,18 +25,17 @@ type OscNetPeeringInterface interface {
 
 // CreateNetPeering creates a net peering
 func (s *Service) CreateNetPeering(ctx context.Context, netID, mgmtNetID, mgmtAccountID, clusterID string) (*osc.NetPeering, error) {
-	netPeeringRequest := osc.CreateNetPeeringRequest{
+	req := osc.CreateNetPeeringRequest{
 		SourceNetId:     netID,
 		AccepterNetId:   mgmtNetID,
 		AccepterOwnerId: &mgmtAccountID,
 	}
 
-	netPeeringResponse, httpRes, err := s.tenant.Client().NetPeeringApi.CreateNetPeering(s.tenant.ContextWithAuth(ctx)).CreateNetPeeringRequest(netPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "CreateNetPeering", netPeeringRequest, httpRes, err)
+	resp, err := s.tenant.Client().CreateNetPeering(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	resourceIds := []string{*netPeeringResponse.NetPeering.NetPeeringId}
+	resourceIds := []string{resp.NetPeering.NetPeeringId}
 	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterID,
 		Value: "owned",
@@ -47,63 +44,49 @@ func (s *Service) CreateNetPeering(ctx context.Context, netID, mgmtNetID, mgmtAc
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err = tag.AddTag(ctx, netPeeringTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
+	err = tag.AddTag(ctx, netPeeringTagRequest, resourceIds, s.tenant.Client())
 	if err != nil {
 		return nil, err
 	}
-	netPeering, ok := netPeeringResponse.GetNetPeeringOk()
-	if !ok {
-		return nil, errors.New("cannot create netPeering")
-	}
-	return netPeering, nil
+	return resp.NetPeering, nil
 }
 
 // AcceptNetPeering accepts a net peering
 func (s *Service) AcceptNetPeering(ctx context.Context, netPeeringID string) error {
-	acceptNetPeeringRequest := osc.AcceptNetPeeringRequest{NetPeeringId: netPeeringID}
-
-	_, httpRes, err := s.tenant.Client().NetPeeringApi.AcceptNetPeering(s.tenant.ContextWithAuth(ctx)).AcceptNetPeeringRequest(acceptNetPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "AcceptNetPeering", acceptNetPeeringRequest, httpRes, err)
+	req := osc.AcceptNetPeeringRequest{NetPeeringId: netPeeringID}
+	_, err := s.tenant.Client().AcceptNetPeering(ctx, req)
 	return err
 }
 
 // DeleteNetPeering deletes a net peering
 func (s *Service) DeleteNetPeering(ctx context.Context, netPeeringID string) error {
-	deleteNetPeeringRequest := osc.DeleteNetPeeringRequest{NetPeeringId: netPeeringID}
-
-	_, httpRes, err := s.tenant.Client().NetPeeringApi.DeleteNetPeering(s.tenant.ContextWithAuth(ctx)).DeleteNetPeeringRequest(deleteNetPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "DeleteNetPeering", deleteNetPeeringRequest, httpRes, err)
+	req := osc.DeleteNetPeeringRequest{NetPeeringId: netPeeringID}
+	_, err := s.tenant.Client().DeleteNetPeering(ctx, req)
 	return err
 }
 
 // GetNetPeering retrieves a net peering
 func (s *Service) GetNetPeering(ctx context.Context, netPeeringID string) (*osc.NetPeering, error) {
-	readNetPeeringRequest := osc.ReadNetPeeringsRequest{
+	req := osc.ReadNetPeeringsRequest{
 		Filters: &osc.FiltersNetPeering{
 			NetPeeringIds: &[]string{netPeeringID},
 		},
 	}
 
-	readNetPeeringResponse, httpRes, err := s.tenant.Client().NetPeeringApi.ReadNetPeerings(s.tenant.ContextWithAuth(ctx)).ReadNetPeeringsRequest(readNetPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetPeerings", readNetPeeringRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadNetPeerings(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	netPeerings, ok := readNetPeeringResponse.GetNetPeeringsOk()
-	if !ok {
-		return nil, errors.New("cannot get netPeering")
-	}
-	if len(*netPeerings) == 0 {
+	case len(*resp.NetPeerings) == 0:
 		return nil, nil
-	} else {
-		netPeering := *netPeerings
-		return &netPeering[0], nil
+	default:
+		return &(*resp.NetPeerings)[0], nil
 	}
 }
 
 // GetNetPeeringFromNet retrieves a net peering from its info
 func (s *Service) GetNetPeeringFromNet(ctx context.Context, netID, mgmtNetID, mgmtAccountID string) (*osc.NetPeering, error) {
-	readNetPeeringRequest := osc.ReadNetPeeringsRequest{
+	req := osc.ReadNetPeeringsRequest{
 		Filters: &osc.FiltersNetPeering{
 			SourceNetNetIds:       &[]string{netID},
 			AccepterNetNetIds:     &[]string{mgmtNetID},
@@ -111,52 +94,42 @@ func (s *Service) GetNetPeeringFromNet(ctx context.Context, netID, mgmtNetID, mg
 		},
 	}
 
-	readNetPeeringResponse, httpRes, err := s.tenant.Client().NetPeeringApi.ReadNetPeerings(s.tenant.ContextWithAuth(ctx)).ReadNetPeeringsRequest(readNetPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetPeerings", readNetPeeringRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadNetPeerings(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	netPeerings, ok := readNetPeeringResponse.GetNetPeeringsOk()
-	if !ok {
-		return nil, errors.New("cannot get netPeering")
-	}
-	if len(*netPeerings) == 0 {
+	case len(*resp.NetPeerings) == 0:
 		return nil, nil
-	} else {
-		netPeering := *netPeerings
-		return &netPeering[0], nil
+	default:
+		return &(*resp.NetPeerings)[0], nil
 	}
 }
 
 // ListNetPeerings lists all net peerings in a net.
 func (s *Service) ListNetPeerings(ctx context.Context, netId string) ([]osc.NetPeering, error) {
-	var netPeerings []osc.NetPeering
-
-	readNetPeeringRequest := osc.ReadNetPeeringsRequest{
+	req := osc.ReadNetPeeringsRequest{
 		Filters: &osc.FiltersNetPeering{
 			SourceNetNetIds: &[]string{netId},
 		},
 	}
 
-	readNetPeeringResponse, httpRes, err := s.tenant.Client().NetPeeringApi.ReadNetPeerings(s.tenant.ContextWithAuth(ctx)).ReadNetPeeringsRequest(readNetPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetPeerings", readNetPeeringRequest, httpRes, err)
+	resp, err := s.tenant.Client().ReadNetPeerings(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	netPeerings = append(netPeerings, readNetPeeringResponse.GetNetPeerings()...)
+	netPeerings := *resp.NetPeerings
 
-	readNetPeeringRequest = osc.ReadNetPeeringsRequest{
+	req = osc.ReadNetPeeringsRequest{
 		Filters: &osc.FiltersNetPeering{
 			AccepterNetNetIds: &[]string{netId},
 		},
 	}
 
-	readNetPeeringResponse, httpRes, err = s.tenant.Client().NetPeeringApi.ReadNetPeerings(s.tenant.ContextWithAuth(ctx)).ReadNetPeeringsRequest(readNetPeeringRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetPeerings", readNetPeeringRequest, httpRes, err)
+	resp, err = s.tenant.Client().ReadNetPeerings(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	netPeerings = append(netPeerings, readNetPeeringResponse.GetNetPeerings()...)
+	netPeerings = append(netPeerings, *resp.NetPeerings...)
 
 	return netPeerings, nil
 }

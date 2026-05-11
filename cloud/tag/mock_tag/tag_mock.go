@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	osc "github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	gomock "go.uber.org/mock/gomock"
 )
 

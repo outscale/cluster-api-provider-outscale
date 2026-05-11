@@ -9,12 +9,9 @@ package tag
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 type ResourceType string
@@ -47,26 +44,14 @@ type OscTagInterface interface {
 }
 
 // AddTag add a tag to a resource
-func AddTag(ctx context.Context, createTagRequest osc.CreateTagsRequest, resourceIds []string, api *osc.APIClient, auth context.Context) error {
-	addTagNameCallBack := func() (bool, error) {
-		_, httpRes, err := api.TagApi.CreateTags(auth).CreateTagsRequest(createTagRequest).Execute()
-		err = utils.LogAndExtractError(ctx, "CreateTags", createTagRequest, httpRes, err)
-		if err != nil {
-			// we wish to retry on TCP errors, but not on 400 errors.
-			if utils.RetryIf(httpRes) || httpRes == nil {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
-	}
-	backoff := utils.EnvBackoff()
-	return wait.ExponentialBackoff(backoff, addTagNameCallBack)
+func AddTag(ctx context.Context, req osc.CreateTagsRequest, resourceIds []string, api *osc.Client) error {
+	_, err := api.CreateTags(ctx, req)
+	return err
 }
 
 // ReadTag read a tag of a resource
 func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value string) (*osc.Tag, error) {
-	readTagsRequest := osc.ReadTagsRequest{
+	req := osc.ReadTagsRequest{
 		Filters: &osc.FiltersTag{
 			ResourceTypes: &[]string{string(rsrcType)},
 			Keys:          &[]string{key},
@@ -74,23 +59,14 @@ func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value
 		},
 	}
 
-	readTagsResponse, httpRes, err := s.tenant.Client().TagApi.ReadTags(s.tenant.ContextWithAuth(ctx)).ReadTagsRequest(readTagsRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadTags", readTagsRequest, httpRes, err)
-	if err != nil {
-		if httpRes != nil {
-			fmt.Printf("Error with http result %s", httpRes.Status)
-		}
+	resp, err := s.tenant.Client().ReadTags(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	tags, ok := readTagsResponse.GetTagsOk()
-	if !ok {
-		return nil, errors.New("cannot get tag")
-	}
-	if len(*tags) == 0 {
+	case len(*resp.Tags) == 0:
 		return nil, nil
-	} else {
-		tag := *tags
-		return &tag[0], nil
+	default:
+		return &(*resp.Tags)[0], nil
 	}
 }
 
@@ -106,13 +82,4 @@ func ValidateTagNameValue(tagValue string) (string, error) {
 	} else {
 		return tagValue, errors.New("Invalid Tag Name")
 	}
-}
-
-func GetTagValue(key string, tags []osc.ResourceTag) string {
-	for _, tg := range tags {
-		if key == tg.GetKey() {
-			return tg.GetValue()
-		}
-	}
-	return ""
 }

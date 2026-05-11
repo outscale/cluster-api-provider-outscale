@@ -10,23 +10,24 @@ import (
 	"errors"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *OscClusterReconciler) getMgmtAccountID(clusterScope *scope.ClusterScope) string {
-	if clusterScope.GetNetwork().NetPeering.ManagementAccountID != "" {
-		return clusterScope.GetNetwork().NetPeering.ManagementAccountID
+	if clusterScope.GetSpec().NetPeering.ManagementAccountID != "" {
+		return clusterScope.GetSpec().NetPeering.ManagementAccountID
 	}
 	return r.Metadata.AccountID
 }
 
 func (r *OscClusterReconciler) getMgmtNetID(clusterScope *scope.ClusterScope) string {
-	if clusterScope.GetNetwork().NetPeering.ManagementNetID != "" {
-		return clusterScope.GetNetwork().NetPeering.ManagementNetID
+	if clusterScope.GetSpec().NetPeering.ManagementNetID != "" {
+		return clusterScope.GetSpec().NetPeering.ManagementNetID
 	}
 	return r.Metadata.NetID
 }
@@ -34,11 +35,11 @@ func (r *OscClusterReconciler) getMgmtNetID(clusterScope *scope.ClusterScope) st
 // reconcileNetPeering reconcile the NetPeering of the cluster.
 func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not reconciling netPeering for existing net")
 		return reconcile.Result{}, nil
 	}
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNetPeering) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNetPeering) {
 		log.V(4).Info("No need for netPeering reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -50,45 +51,45 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 	case errors.Is(err, ErrNoResourceFound):
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
-	case np.State.GetName() == "active":
-		log.V(4).Info("Found active netPeering", "mgmtNetID", np.AccepterNet.GetNetId(), "mgmtAccount", np.AccepterNet.GetAccountId())
+	case np.State.Name == osc.NetPeeringStateNameActive:
+		log.V(4).Info("Found active netPeering", "mgmtNetID", *np.AccepterNet.NetId, "mgmtAccount", *np.AccepterNet.AccountId)
 		return reconcile.Result{}, nil
 	}
 	netId, err := r.Tracker.getNetId(ctx, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if np == nil || np.State.GetName() != "pending-acceptance" {
+	if np == nil || np.State.Name != osc.NetPeeringStateNamePendingAcceptance {
 		log.V(3).Info("Creating netPeering")
 		np, err = svc.CreateNetPeering(ctx, netId, r.getMgmtNetID(clusterScope), r.getMgmtAccountID(clusterScope), clusterScope.GetUID())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create netPeering: %w", err)
 		}
-		log.V(2).Info("Created netPeering", "netPeeringId", np.GetNetPeeringId())
-		r.Tracker.setNetPeeringId(clusterScope, np.GetNetPeeringId())
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering created")
+		log.V(2).Info("Created netPeering", "netPeeringId", np.NetPeeringId)
+		r.Tracker.setNetPeeringId(clusterScope, np.NetPeeringId)
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering created")
 	}
-	if np.State.GetName() == "pending-acceptance" {
+	if np.State.Name == osc.NetPeeringStateNamePendingAcceptance {
 		mgmt, err := getMgmtTenant(ctx, r.Client, r.Cloud, clusterScope.OscCluster)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get mgmt credentials: %w", err)
 		}
 		mgmtSvc := r.Cloud.NetPeering(mgmt)
-		log.V(2).Info("Accepting netPeering", "netPeeringId", np.GetNetPeeringId())
-		err = mgmtSvc.AcceptNetPeering(ctx, np.GetNetPeeringId())
+		log.V(2).Info("Accepting netPeering", "netPeeringId", np.NetPeeringId)
+		err = mgmtSvc.AcceptNetPeering(ctx, np.NetPeeringId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot accept netPeering: %w", err)
 		}
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering accepted")
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering accepted")
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNetPeering)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeering)
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteNetPeering reconcile the destruction of the NetPeering of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNetPeering(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing netPeerings")
 		return reconcile.Result{}, nil
 	}
@@ -106,11 +107,11 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeering(ctx context.Context, cl
 		return reconcile.Result{}, fmt.Errorf("list netPeerings: %w", err)
 	}
 	for _, np := range nps {
-		if np.State.GetName() != "pending-acceptance" && np.State.GetName() != "active" {
+		if np.State.Name != osc.NetPeeringStateNamePendingAcceptance && np.State.Name != "active" {
 			continue
 		}
-		log.V(2).Info("Deleting netPeering", "netPeeringId", np.GetNetPeeringId())
-		err = svc.DeleteNetPeering(ctx, np.GetNetPeeringId())
+		log.V(2).Info("Deleting netPeering", "netPeeringId", np.NetPeeringId)
+		err = svc.DeleteNetPeering(ctx, np.NetPeeringId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete netPeering: %w", err)
 		}

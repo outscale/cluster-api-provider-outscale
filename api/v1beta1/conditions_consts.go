@@ -6,60 +6,60 @@ SPDX-License-Identifier: Apache-2.0
 
 package v1beta1
 
-import clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+import clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 
 const (
-	NetCreatedReason              string                  = "NetCreated"
-	NetReadyCondition             clusterv1.ConditionType = "NetReady"
-	NetReconciliationFailedReason string                  = "NetReconciliationFailed"
+	NetCreatedReason              string                       = "NetCreated"
+	NetReadyCondition             clusterv1beta1.ConditionType = "NetReady"
+	NetReconciliationFailedReason string                       = "NetReconciliationFailed"
 )
 
 const (
-	NetPeeringCreatedReason              string                  = "NetPeeringCreated"
-	NetPeeringReadyCondition             clusterv1.ConditionType = "NetPeeringReady"
-	NetPeeringReconciliationFailedReason string                  = "NetPeeringReconciliationFailed"
+	NetPeeringCreatedReason              string                       = "NetPeeringCreated"
+	NetPeeringReadyCondition             clusterv1beta1.ConditionType = "NetPeeringReady"
+	NetPeeringReconciliationFailedReason string                       = "NetPeeringReconciliationFailed"
 )
 
 const (
-	NetAccessPointCreatedReason               string                  = "NetAccessPointCreated"
-	NetAccessPointsReadyCondition             clusterv1.ConditionType = "NetAccessPointsReady"
-	NetAccessPointsReconciliationFailedReason string                  = "NetAccessPointsReconciliationFailed"
+	NetAccessPointCreatedReason               string                       = "NetAccessPointCreated"
+	NetAccessPointsReadyCondition             clusterv1beta1.ConditionType = "NetAccessPointsReady"
+	NetAccessPointsReconciliationFailedReason string                       = "NetAccessPointsReconciliationFailed"
 )
 
 const (
-	SubnetCreatedReason               string                  = "SubnetCreated"
-	SubnetsReadyCondition             clusterv1.ConditionType = "SubnetsReady"
-	SubnetsReconciliationFailedReason string                  = "SubnetsReconciliationFailed"
+	SubnetCreatedReason               string                       = "SubnetCreated"
+	SubnetsReadyCondition             clusterv1beta1.ConditionType = "SubnetsReady"
+	SubnetsReconciliationFailedReason string                       = "SubnetsReconciliationFailed"
 )
 
 const (
-	InternetServicesCreatedReason  string                  = "InternetServiceCreated"
-	InternetServicesReadyCondition clusterv1.ConditionType = "InternetServiceReady"
-	InternetServicesFailedReason   string                  = "InternetServiceFailed"
+	InternetServicesCreatedReason  string                       = "InternetServiceCreated"
+	InternetServicesReadyCondition clusterv1beta1.ConditionType = "InternetServiceReady"
+	InternetServicesFailedReason   string                       = "InternetServiceFailed"
 )
 
 const (
-	NatServicesCreatedReason              string                  = "NatServicesCreated"
-	NatServicesReadyCondition             clusterv1.ConditionType = "NatServicesReady"
-	NatServicesReconciliationFailedReason string                  = "NatServicesReconciliationFailed"
+	NatServicesCreatedReason              string                       = "NatServicesCreated"
+	NatServicesReadyCondition             clusterv1beta1.ConditionType = "NatServicesReady"
+	NatServicesReconciliationFailedReason string                       = "NatServicesReconciliationFailed"
 )
 
 const (
-	RouteTableCreatedReason              string                  = "RouteTableCreated"
-	RouteTablesReadyCondition            clusterv1.ConditionType = "RouteTablesReady"
-	RouteTableReconciliationFailedReason string                  = "RouteTableReconciliationFailed"
+	RouteTableCreatedReason              string                       = "RouteTableCreated"
+	RouteTablesReadyCondition            clusterv1beta1.ConditionType = "RouteTablesReady"
+	RouteTableReconciliationFailedReason string                       = "RouteTableReconciliationFailed"
 )
 
 const (
-	VmReadyCondition                      clusterv1.ConditionType = "VmReady"
-	VmNotFoundReason                      string                  = "VmNotFound"
-	VmTerminatedReason                    string                  = "VmTerminated"
-	VmStoppedReason                       string                  = "VmStopped"
-	VmNotReadyReason                      string                  = "VmNotReady"
-	VmCreatedReason                       string                  = "VmCreated"
-	VmProvisionFailedReason               string                  = "VmProvisionFailed"
-	WaitingForClusterInfrastructureReason string                  = "WaitingForClusterInfrastructure"
-	WaitingForBootstrapDataReason         string                  = "WaitingForBoostrapData"
+	VmReadyCondition                      clusterv1beta1.ConditionType = "VmReady"
+	VmNotFoundReason                      string                       = "VmNotFound"
+	VmTerminatedReason                    string                       = "VmTerminated"
+	VmStoppedReason                       string                       = "VmStopped"
+	VmNotReadyReason                      string                       = "VmNotReady"
+	VmCreatedReason                       string                       = "VmCreated"
+	VmProvisionFailedReason               string                       = "VmProvisionFailed"
+	WaitingForClusterInfrastructureReason string                       = "WaitingForClusterInfrastructure"
+	WaitingForBootstrapDataReason         string                       = "WaitingForBoostrapData"
 )
 
 const (
@@ -69,18 +69,18 @@ const (
 )
 
 const (
-	SecurityGroupCreatedReason              string                  = "SecurityGroupCreated"
-	SecurityGroupReadyCondition             clusterv1.ConditionType = "SecurityGroupsReady"
-	SecurityGroupReconciliationFailedReason string                  = "SecurityGroupReconciliationFailed"
+	SecurityGroupCreatedReason              string                       = "SecurityGroupCreated"
+	SecurityGroupReadyCondition             clusterv1beta1.ConditionType = "SecurityGroupsReady"
+	SecurityGroupReconciliationFailedReason string                       = "SecurityGroupReconciliationFailed"
 )
 
 const (
-	LoadBalancerCreatedReason  string                  = "LoadBalancerCreated"
-	LoadBalancerReadyCondition clusterv1.ConditionType = "LoadBalancerReady"
-	LoadBalancerFailedReason   string                  = "LoadBalancerFailed"
+	LoadBalancerCreatedReason  string                       = "LoadBalancerCreated"
+	LoadBalancerReadyCondition clusterv1beta1.ConditionType = "LoadBalancerReady"
+	LoadBalancerFailedReason   string                       = "LoadBalancerFailed"
 )
 
 const (
-	VolumeReadyCondition             clusterv1.ConditionType = "VolumeReady"
-	VolumeReconciliationFailedReason string                  = "VolumeFailed"
+	VolumeReadyCondition             clusterv1beta1.ConditionType = "VolumeReady"
+	VolumeReconciliationFailedReason string                       = "VolumeFailed"
 )

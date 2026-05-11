@@ -9,15 +9,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/goutils/sdk/ptr"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -25,9 +26,14 @@ import (
 // reconcileVm reconcile the vm of the machine
 func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if !machineScope.NeedReconciliation(infrastructurev1beta1.ReconcilerVm) {
+	if !machineScope.NeedReconciliation(infrastructurev1beta2.ReconcilerVm) {
 		log.V(4).Info("No need for vm reconciliation")
 		return reconcile.Result{}, nil
+	}
+
+	bootstrapData, err := machineScope.GetBootstrapData(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to decode bootstrap data: %w", err)
 	}
 
 	vmSpec := machineScope.GetVm()
@@ -43,22 +49,19 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
 	switch {
 	case err == nil:
-		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
+		machineScope.SetVmState(vm.State)
 	case !errors.Is(err, ErrNoResourceFound):
 		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
 		// Check if a machine needs to be placed in a subregion.
-		subnetName := vmSpec.SubnetName
 		var subregionName string
 		switch {
 		case fgpu != nil:
-			subregionName = *fgpu.SubregionName
-		case machineScope.Machine.Spec.FailureDomain != nil:
-			// failure domain may either be a subnet name (CAPOSC up to v0.4.0) or a subregion (v0.5.0 or later).
-			subnetName = *machineScope.Machine.Spec.FailureDomain
-			subregionName = *machineScope.Machine.Spec.FailureDomain
+			subregionName = fgpu.SubregionName
+		case machineScope.Machine.Spec.FailureDomain != "":
+			subregionName = machineScope.Machine.Spec.FailureDomain
 		default:
-			azs := vmSpec.GetSubregions()
+			azs := vmSpec.Subregions
 			if len(azs) == 0 {
 				azs = clusterScope.GetSubregions()
 				log.V(4).Info("Using cluster subregions")
@@ -83,12 +86,12 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			log.V(2).Info("fGPU allocated", "fGPUId", fgpu.GetFlexibleGpuId(), "model", vmSpec.FGPU.Model)
+			log.V(2).Info("fGPU allocated", "fGPUId", fgpu.FlexibleGpuId, "model", vmSpec.FGPU.Model)
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-				infrastructurev1beta1.FGPUAllocatedReason, "%s (%s) allocated", fgpu.GetFlexibleGpuId(), vmSpec.FGPU.Model)
+				infrastructurev1beta2.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(subnetName, vmSpec.GetRole(), subregionName)
+		subnetSpec, err := clusterScope.GetSubnet(vmSpec.GetRole(), subregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
 		}
@@ -109,118 +112,80 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			}
 			securityGroupIds = append(securityGroupIds, securityGroupId)
 		}
-		vmPrivateIps := machineScope.GetVmPrivateIps()
-		privateIps := make([]string, 0, len(vmPrivateIps))
-		for _, vmPrivateIp := range vmPrivateIps {
-			privateIp := vmPrivateIp.PrivateIp
-			privateIps = append(privateIps, privateIp)
-		}
+
 		imageId, err := r.Tracker.getImageId(ctx, machineScope, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 		vmName := machineScope.GetName()
-		vmTags := vmSpec.Tags
-		if vmTags == nil {
-			vmTags = map[string]string{}
-		} else {
-			// we need to clone the map to avoid changing the spec...
-			vmTags = maps.Clone(vmTags)
-		}
 
+		var publicIp string
 		if vmSpec.PublicIp {
-			_, publicIp, err := r.Tracker.IPAllocator(machineScope).AllocateIP(ctx, defaultResource, vmName, vmSpec.PublicIpPool, clusterScope)
+			var err error
+			_, publicIp, err = r.Tracker.IPAllocator(machineScope).AllocateIP(ctx, defaultResource, vmName, vmSpec.PublicIpPool, clusterScope)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 			}
-			vmTags[compute.AutoAttachExternalIPTag] = publicIp
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-				infrastructurev1beta1.IPAllocated, "IP %s allocated", publicIp)
+				infrastructurev1beta2.IPAllocated, "IP %s allocated", publicIp)
 		}
 
-		repulse := machineScope.GetPlacement()
-		switch {
-		case repulse.RepulseCluster != "" && repulse.ClusterStrict:
-			vmTags[compute.RepulseClusterStrictTag] = repulse.RepulseCluster
-		case repulse.RepulseCluster != "" && !repulse.ClusterStrict:
-			vmTags[compute.RepulseClusterTag] = repulse.RepulseCluster
-
-		case repulse.AttractCluster != "" && repulse.ClusterStrict:
-			vmTags[compute.AttractClusterStrictTag] = repulse.AttractCluster
-		case repulse.AttractCluster != "" && !repulse.ClusterStrict:
-			vmTags[compute.AttractClusterTag] = repulse.AttractCluster
-		}
-		switch {
-		case repulse.RepulseServer != nil && *repulse.RepulseServer != "" && repulse.ServerStrict:
-			vmTags[compute.RepulseServerStrictTag] = *repulse.RepulseServer
-		case repulse.RepulseServer != nil && *repulse.RepulseServer != "" && !repulse.ServerStrict:
-			vmTags[compute.RepulseServerTag] = *repulse.RepulseServer
-
-		case repulse.AttractServer != "" && repulse.ServerStrict:
-			vmTags[compute.AttractServerStrictTag] = repulse.AttractServer
-		case repulse.AttractServer != "" && !repulse.ServerStrict:
-			vmTags[compute.AttractServerTag] = repulse.AttractServer
-		}
-
-		keypairName := vmSpec.KeypairName
 		vmType := vmSpec.VmType
-		volumes := machineScope.GetVolumes()
 		clientToken := machineScope.GetClientToken(clusterScope)
-		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
-		vm, err = r.Cloud.VM(clusterScope.Tenant).CreateVm(ctx, machineScope, &vmSpec, imageId, subnetId, securityGroupIds, privateIps, vmName, clientToken, vmTags, volumes)
+		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "vmType", vmType, "publicIp", publicIp)
+		vm, err = r.Cloud.VM(clusterScope.Tenant).CreateVm(ctx, &vmSpec, bootstrapData, imageId, subnetId, securityGroupIds, vmName, clientToken, publicIp)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
 		}
-		vmId := vm.GetVmId()
-		log.V(2).Info("VM created", "vmId", vmId)
+		log.V(2).Info("VM created", "vmId", vm.VmId)
 		r.Tracker.trackVm(machineScope, vm)
-		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
-		machineScope.SetProviderID(vm.Placement.GetSubregionName(), vmId)
+		machineScope.SetVmState(vm.State)
+		machineScope.SetProviderID(vm.Placement.SubregionName, vm.VmId)
 		r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-			infrastructurev1beta1.VmCreatedReason, "VM %s created in %s", vm.GetVmId(), subregionName)
+			infrastructurev1beta2.VmCreatedReason, "VM %s created in %s", vm.VmId, subregionName)
 	}
 
 	switch {
 	case fgpu == nil:
-	case fgpu.GetState() == "allocated":
-		switch vm.GetState() {
+	case fgpu.State == "allocated":
+		switch vm.State {
 		case "stopped":
-			log.V(3).Info("Attaching fGPU", "vmId", vm.GetVmId(), "fGPUId", fgpu.GetFlexibleGpuId())
-			err := r.Cloud.FlexibleGPU(clusterScope.Tenant).LinkFGPU(ctx, fgpu.GetFlexibleGpuId(), vm.GetVmId())
+			log.V(3).Info("Attaching fGPU", "vmId", vm.VmId, "fGPUId", fgpu.FlexibleGpuId)
+			err := r.Cloud.FlexibleGPU(clusterScope.Tenant).LinkFGPU(ctx, fgpu.FlexibleGpuId, vm.VmId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("link fgpu: %w", err)
 			}
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-				infrastructurev1beta1.FGPUAttachedReason, "%s attached", fgpu.GetFlexibleGpuId())
+				infrastructurev1beta2.FGPUAttachedReason, "%s attached", fgpu.FlexibleGpuId)
 		default:
-			log.V(4).Info("Waiting for VM state", "vmId", vm.GetVmId(), "state", vm.GetState())
+			log.V(4).Info("Waiting for VM state", "vmId", vm.VmId, "state", vm.State)
 		}
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
-	case fgpu.GetState() == "attached":
-		log.V(4).Info("fGPU is attached", "vmId", vm.GetVmId(), "fGPUId", fgpu.GetFlexibleGpuId())
+	case fgpu.State == "attached":
+		log.V(4).Info("fGPU is attached", "vmId", vm.VmId, "fGPUId", fgpu.FlexibleGpuId)
 	default:
-		log.V(4).Info("Waiting for fGPU state", "vmId", vm.GetVmId(), "fGPUId", fgpu.GetFlexibleGpuId(), "state", fgpu.GetState())
+		log.V(4).Info("Waiting for fGPU state", "vmId", vm.VmId, "fGPUId", fgpu.FlexibleGpuId, "state", fgpu.State)
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	switch vm.GetState() {
+	switch vm.State {
 	case "stopped":
-		log.V(3).Info("Starting VM", "vmId", vm.GetVmId())
-		err := r.Cloud.VM(clusterScope.Tenant).StartVm(ctx, vm.GetVmId())
+		log.V(3).Info("Starting VM", "vmId", vm.VmId)
+		err := r.Cloud.VM(clusterScope.Tenant).StartVm(ctx, vm.VmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("start vm: %w", err)
 		}
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	case "running":
-		log.V(4).Info("VM is running", "vmId", vm.GetVmId())
+		log.V(4).Info("VM is running", "vmId", vm.VmId)
 	default:
-		log.V(4).Info("VM is not yet running", "vmId", vm.GetVmId(), "state", vm.GetState())
+		log.V(4).Info("VM is not yet running", "vmId", vm.VmId, "state", vm.State)
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
 	machineScope.SetReady()
 
-	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane && !clusterScope.IsLBDisabled() {
+	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.IsLBDisabled() {
 		svc := r.Cloud.LoadBalancer(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
@@ -230,49 +195,42 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		if loadbalancer == nil {
 			return reconcile.Result{}, errors.New("no loadbalancer found")
 		}
-		if !slices.Contains(loadbalancer.GetBackendVmIds(), vm.GetVmId()) {
+		if !slices.Contains(loadbalancer.BackendVmIds, vm.VmId) {
 			log.V(2).Info("Linking loadbalancer", "loadBalancerName", loadBalancerName)
-			err := svc.LinkLoadBalancerBackendMachines(ctx, []string{vm.GetVmId()}, loadBalancerName)
+			err := svc.LinkLoadBalancerBackendMachines(ctx, []string{vm.VmId}, loadBalancerName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot link vm %s to loadBalancerName %s: %w", vm.GetVmId(), loadBalancerName, err)
+				return reconcile.Result{}, fmt.Errorf("cannot link vm %s to loadBalancerName %s: %w", vm.VmId, loadBalancerName, err)
 			}
 		}
 	}
 
-	privateDnsName, ok := vm.GetPrivateDnsNameOk()
-	if !ok {
-		return reconcile.Result{}, errors.New("cannot find privateDnsName")
-	}
-	privateIp, ok := vm.GetPrivateIpOk()
-	if !ok {
-		return reconcile.Result{}, errors.New("cannot find privateIp")
-	}
-	addresses := []corev1.NodeAddress{}
+	privateDnsName := ptr.From(vm.PrivateDnsName)
+	addresses := []clusterv1.MachineAddress{}
 	addresses = append(
 		addresses,
-		corev1.NodeAddress{
-			Type:    corev1.NodeInternalIP,
-			Address: *privateIp,
+		clusterv1.MachineAddress{
+			Type:    clusterv1.MachineInternalIP,
+			Address: vm.PrivateIp,
 		},
 	)
 	// Expose Public IP if one is set
-	if publicIp, ok := vm.GetPublicIpOk(); ok {
-		addresses = append(addresses, corev1.NodeAddress{
-			Type:    corev1.NodeExternalIP,
-			Address: *publicIp,
+	if vm.PublicIp != nil {
+		addresses = append(addresses, clusterv1.MachineAddress{
+			Type:    clusterv1.MachineExternalIP,
+			Address: *vm.PublicIp,
 		})
 	}
 	machineScope.SetAddresses(addresses)
-	machineScope.SetFailureDomain(vm.Placement.GetSubregionName())
+	machineScope.SetFailureDomain(vm.Placement.SubregionName)
 
 	if !compute.HasCCMTags(vm) {
 		log.V(2).Info("Adding CCM tags")
-		err = r.Cloud.VM(clusterScope.Tenant).AddCCMTags(ctx, clusterScope.GetUID(), *privateDnsName, vm.GetVmId())
+		err = r.Cloud.VM(clusterScope.Tenant).AddCCMTags(ctx, clusterScope.GetUID(), privateDnsName, vm.VmId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot add ccm tag: %w", err)
 		}
 	}
-	machineScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerVm)
+	machineScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerVm)
 	return reconcile.Result{}, nil
 }
 
@@ -287,30 +245,30 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 		return reconcile.Result{}, nil
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("cannot get vm: %w", err)
-	case vm.GetState() == "terminated":
+	case vm.State == osc.VmStateTerminated:
 		log.V(4).Info("VM is already deleted")
 		return reconcile.Result{}, nil
 	}
 
 	vmSpec := machineScope.GetVm()
-	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane && !clusterScope.IsLBDisabled() {
+	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.IsLBDisabled() {
 		svc := r.Cloud.LoadBalancer(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
 		}
-		if loadbalancer != nil && slices.Contains(loadbalancer.GetBackendVmIds(), vm.GetVmId()) {
+		if loadbalancer != nil && slices.Contains(loadbalancer.BackendVmIds, vm.VmId) {
 			log.V(2).Info("Unlinking loadbalancer", "loadBalancerName", loadBalancerName)
-			err := svc.UnlinkLoadBalancerBackendMachines(ctx, []string{vm.GetVmId()}, loadBalancerName)
+			err := svc.UnlinkLoadBalancerBackendMachines(ctx, []string{vm.VmId}, loadBalancerName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot unlink vm %s to loadBalancerName %s: %w", vm.GetVmId(), loadBalancerName, err)
+				return reconcile.Result{}, fmt.Errorf("cannot unlink vm %s to loadBalancerName %s: %w", vm.VmId, loadBalancerName, err)
 			}
 		}
 	}
 
-	log.V(2).Info("Deleting VM", "vmId", vm.GetVmId())
-	err = r.Cloud.VM(clusterScope.Tenant).DeleteVm(ctx, vm.GetVmId())
+	log.V(2).Info("Deleting VM", "vmId", vm.VmId)
+	err = r.Cloud.VM(clusterScope.Tenant).DeleteVm(ctx, vm.VmId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete vm: %w", err)
 	}
@@ -326,7 +284,7 @@ func addTag(clusterScope *scope.ClusterScope, machineScope *scope.MachineScope, 
 	}
 
 	// Define the cluster name and VM ID
-	vmId := vm.GetVmId()
+	vmId := vm.VmId
 	vmTag := osc.ResourceTag{
 		Key:   "OscK8sNodeName",
 		Value: *privateDnsName,

@@ -8,24 +8,24 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta1.OscRouteTable, routeSpec infrastructurev1beta1.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta2.OscRouteTable, routeSpec infrastructurev1beta2.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	destinationIpRange := routeSpec.Destination
-	for _, route := range routeTable.GetRoutes() {
-		if route.GetDestinationIpRange() == destinationIpRange {
-			return reconcile.Result{}, nil
-		}
+	if slices.ContainsFunc(routeTable.Routes, func(r osc.Route) bool {
+		return r.DestinationIpRange == routeSpec.Destination
+	}) {
+		return reconcile.Result{}, nil
 	}
 	var resourceId string
 	var err error
@@ -36,7 +36,7 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
 	case "nat":
-		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.SubregionName)
+		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.Subregion)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
@@ -45,11 +45,11 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
 	default:
-		log.V(3).Info("Route has no target !", "destinationIpRange", destinationIpRange)
+		log.V(3).Info("Route has no target !", "destinationIpRange", routeSpec.Destination)
 		return reconcile.Result{}, nil
 	}
-	log.V(2).Info("Creating route", "destination", destinationIpRange, "resourceId", resourceId)
-	_, err = r.Cloud.RouteTable(clusterScope.Tenant).CreateRoute(ctx, destinationIpRange, routeTable.GetRouteTableId(), resourceId, routeSpec.TargetType)
+	log.V(2).Info("Creating route", "destination", routeSpec.Destination, "resourceId", resourceId)
+	_, err = r.Cloud.RouteTable(clusterScope.Tenant).CreateRoute(ctx, routeSpec.Destination, routeTable.RouteTableId, resourceId, routeSpec.TargetType)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create route: %w", err)
 	}
@@ -58,14 +58,14 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 }
 
 // reconcileRouteTable reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, roles ...infrastructurev1beta1.OscRole) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, roles ...infrastructurev1beta2.OscRole) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerRouteTable) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerRouteTable) {
 		log.V(4).Info("No need for routeTable reconciliation")
 		return reconcile.Result{}, nil
 	}
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(3).Info("Using existing routeTables")
 		return reconcile.Result{}, nil
 	}
@@ -82,8 +82,8 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 	}
 	rtblForSubnet := map[string]*osc.RouteTable{}
 	for _, rtbl := range rtbls {
-		for _, link := range rtbl.GetLinkRouteTables() {
-			rtblForSubnet[link.GetSubnetId()] = &rtbl
+		for _, link := range rtbl.LinkRouteTables {
+			rtblForSubnet[link.SubnetId] = &rtbl
 		}
 	}
 	routeTablesSpec := clusterScope.GetRouteTables()
@@ -94,7 +94,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 			names = []string{""}
 		}
 		for _, name := range names {
-			subnetSpec, err := clusterScope.GetSubnet(name, routeTableSpec.Role, routeTableSpec.SubregionName)
+			subnetSpec, err := clusterScope.GetSubnet(routeTableSpec.Role, routeTableSpec.Subregion)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot find subnet with name %q role %q: %w", name, routeTableSpec.Role, err)
 			}
@@ -116,12 +116,12 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}
-				log.V(2).Info("Created routetable", "routetableId", rtbl.GetRouteTableId())
-				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
+				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
+				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
-				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.GetRouteTableId(), "subnetId", subnetId)
-				_, err := svc.LinkRouteTable(ctx, rtbl.GetRouteTableId(), subnetId)
+				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
+				_, err := svc.LinkRouteTable(ctx, rtbl.RouteTableId, subnetId)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
 				}
@@ -138,7 +138,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 		}
 	}
 	if len(roles) == 0 {
-		clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerRouteTable)
+		clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerRouteTable)
 	}
 	return reconcile.Result{}, nil
 }
@@ -146,7 +146,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 // reconcileDeleteRouteTable reconcile the destruction of the RouteTable of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(3).Info("Not deleting existing routeTables")
 		return reconcile.Result{}, nil
 	}
@@ -166,15 +166,15 @@ func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, cl
 	}
 
 	for _, rtbl := range rtbls {
-		for _, link := range *rtbl.LinkRouteTables {
-			log.V(2).Info("Unlinking route table", "routeTableId", rtbl.GetRouteTableId(), "linkId", link.GetLinkRouteTableId())
+		for _, link := range rtbl.LinkRouteTables {
+			log.V(2).Info("Unlinking route table", "routeTableId", rtbl.RouteTableId, "linkId", link.GetLinkRouteTableId())
 			err := svc.UnlinkRouteTable(ctx, link.GetLinkRouteTableId())
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot unlink routeTable: %w", err)
 			}
 		}
-		log.V(2).Info("Deleting routeTable", "routeTableId", rtbl.GetRouteTableId())
-		err = svc.DeleteRouteTable(ctx, rtbl.GetRouteTableId())
+		log.V(2).Info("Deleting routeTable", "routeTableId", rtbl.RouteTableId)
+		err = svc.DeleteRouteTable(ctx, rtbl.RouteTableId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete routeTable: %w", err)
 		}

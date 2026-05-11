@@ -12,36 +12,36 @@ import (
 	"slices"
 	"strings"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // reconcileSecurityGroupAddRules reconciles rules for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta2.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 		var rules []osc.SecurityGroupRule
 		switch strings.ToLower(securityGroupRuleSpec.Flow) {
 		case "inbound":
-			rules = sg.GetInboundRules()
+			rules = sg.InboundRules
 		case "outbound":
-			rules = sg.GetOutboundRules()
+			rules = sg.OutboundRules
 		}
 		flow := securityGroupRuleSpec.Flow
 		protocol := securityGroupRuleSpec.IpProtocol
-		fromPort := securityGroupRuleSpec.GetFromPortRange()
-		toPort := securityGroupRuleSpec.GetToPortRange()
+		fromPort := securityGroupRuleSpec.FromPortRange
+		toPort := securityGroupRuleSpec.ToPortRange
 		var existingRanges []string
 		for _, rule := range rules {
-			if rule.GetFromPortRange() != fromPort || rule.GetToPortRange() != toPort || rule.GetIpProtocol() != protocol {
+			if rule.FromPortRange != fromPort || rule.ToPortRange != toPort || rule.IpProtocol != protocol {
 				continue
 			}
-			existingRanges = append(existingRanges, rule.GetIpRanges()...)
+			existingRanges = append(existingRanges, rule.IpRanges...)
 		}
 		ipRanges := securityGroupRuleSpec.GetIpRanges()
 		for _, ipRange := range ipRanges {
@@ -49,7 +49,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 				continue
 			}
 			log.V(2).Info("Creating securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", protocol, "fromPort", fromPort, "toPort", toPort)
-			_, err := r.Cloud.SecurityGroup(clusterScope.Tenant).CreateSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, protocol, ipRange, "", fromPort, toPort)
+			_, err := r.Cloud.SecurityGroup(clusterScope.Tenant).CreateSecurityGroupRule(ctx, sg.SecurityGroupId, flow, protocol, ipRange, "", fromPort, toPort)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create securityGroupRule: %w", err)
 			}
@@ -59,32 +59,32 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 }
 
 // reconcileSecurityGroupDeleteRules deletes all rules not in spec for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta2.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	var checkRules = func(flow string, rules []osc.SecurityGroupRule) error {
+	checkRules := func(flow string, rules []osc.SecurityGroupRule) error {
 		for _, rule := range rules {
 			// Skipping rule created by CCM. There is no way to be sure this comes from the CCM,
 			// but the CCM creates rules with an associated SG, and the config from the CRD only uses ipRanges.
-			if len(rule.GetSecurityGroupsMembers()) > 0 {
+			if len(rule.SecurityGroupsMembers) > 0 {
 				log.V(5).Info("Skipping rule associated with another SG")
 				continue
 			}
 			var okRanges []string
 			for _, spec := range securityGroupRulesSpec {
 				if flow != spec.Flow ||
-					rule.GetFromPortRange() != spec.GetFromPortRange() || rule.GetToPortRange() != spec.GetToPortRange() ||
-					rule.GetIpProtocol() != spec.IpProtocol {
+					rule.FromPortRange != spec.FromPortRange || rule.ToPortRange != spec.ToPortRange ||
+					rule.IpProtocol != spec.IpProtocol {
 					continue
 				}
 				okRanges = append(okRanges, spec.GetIpRanges()...)
 			}
-			ipRanges := rule.GetIpRanges()
+			ipRanges := rule.IpRanges
 			for _, ipRange := range ipRanges {
 				if slices.Contains(okRanges, ipRange) {
 					continue
 				}
-				log.V(2).Info("Deleting securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", rule.GetIpProtocol(), "fromPort", rule.GetFromPortRange(), "toPort", rule.GetToPortRange())
-				err := r.Cloud.SecurityGroup(clusterScope.Tenant).DeleteSecurityGroupRule(ctx, sg.GetSecurityGroupId(), flow, rule.GetIpProtocol(), ipRange, "", rule.GetFromPortRange(), rule.GetToPortRange())
+				log.V(2).Info("Deleting securityGroupRule", "flow", flow, "ipRange", ipRange, "protocol", rule.IpProtocol, "fromPort", rule.FromPortRange, "toPort", rule.ToPortRange)
+				err := r.Cloud.SecurityGroup(clusterScope.Tenant).DeleteSecurityGroupRule(ctx, sg.SecurityGroupId, flow, rule.IpProtocol, ipRange, "", rule.FromPortRange, rule.ToPortRange)
 				if err != nil {
 					return fmt.Errorf("cannot create securityGroupRule: %w", err)
 				}
@@ -92,11 +92,11 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 		}
 		return nil
 	}
-	err := checkRules("Inbound", sg.GetInboundRules())
+	err := checkRules("Inbound", sg.InboundRules)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = checkRules("Outbound", sg.GetOutboundRules())
+	err = checkRules("Outbound", sg.OutboundRules)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -107,12 +107,12 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerSecurityGroup) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerSecurityGroup) {
 		log.V(4).Info("No need for securityGroup reconciliation")
 		return reconcile.Result{}, nil
 	}
 
-	if clusterScope.GetNetwork().UseExisting.SecurityGroups {
+	if clusterScope.GetSpec().UseExisting.SecurityGroups {
 		log.V(3).Info("Using existing securityGroups")
 		return reconcile.Result{}, nil
 	}
@@ -133,27 +133,27 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
 			}
-			log.V(2).Info("Created securityGroup", "securityGroupId", securityGroup.GetSecurityGroupId())
-			r.Tracker.setSecurityGroupId(clusterScope, securityGroupSpec, securityGroup.GetSecurityGroupId())
-			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.SecurityGroupCreatedReason, "Security group created %v", securityGroupSpec.Roles)
+			log.V(2).Info("Created securityGroup", "securityGroupId", securityGroup.SecurityGroupId)
+			r.Tracker.setSecurityGroupId(clusterScope, securityGroupSpec, securityGroup.SecurityGroupId)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SecurityGroupCreatedReason, "Security group created %v", securityGroupSpec.Roles)
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		}
 		securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
-		if securityGroupSpec.HasRole(infrastructurev1beta1.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
+		if securityGroupSpec.HasRole(infrastructurev1beta2.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
 			ips, err := r.listNATPublicIPs(ctx, clusterScope, true)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot list NAT public IPs: %w", err)
 			}
-			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta1.OscSecurityGroupRule{
+			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow:          "Inbound",
 				IpProtocol:    "tcp",
-				FromPortRange: infrastructurev1beta1.APIPort,
-				ToPortRange:   infrastructurev1beta1.APIPort,
+				FromPortRange: infrastructurev1beta2.APIPort,
+				ToPortRange:   infrastructurev1beta2.APIPort,
 				IpRanges:      ips,
 			})
 		}
-		log.V(4).Info("Checking securityGroup rules", "securityGroupId", securityGroup.GetSecurityGroupId())
+		log.V(4).Info("Checking securityGroup rules", "securityGroupId", securityGroup.SecurityGroupId)
 		_, err = r.reconcileSecurityGroupAddRules(ctx, clusterScope, securityGroupRulesSpec, securityGroup)
 		if err == nil && securityGroupSpec.Authoritative {
 			_, err = r.reconcileSecurityGroupDeleteRules(ctx, clusterScope, securityGroupRulesSpec, securityGroup)
@@ -162,7 +162,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 			return reconcile.Result{}, fmt.Errorf("check rules: %w", err)
 		}
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerSecurityGroup)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerSecurityGroup)
 	return reconcile.Result{}, nil
 }
 
@@ -170,7 +170,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if clusterScope.GetNetwork().UseExisting.SecurityGroups {
+	if clusterScope.GetSpec().UseExisting.SecurityGroups {
 		log.V(3).Info("Not deleting existing securityGroups")
 		return reconcile.Result{}, nil
 	}
@@ -191,22 +191,22 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 	}
 	var sgerr error
 	for _, securityGroup := range securityGroups {
-		if securityGroup.GetSecurityGroupName() == "default" {
+		if securityGroup.SecurityGroupName == "default" {
 			continue
 		}
-		log.V(2).Info("Deleting inbound rules", "securityGroupId", securityGroup.GetSecurityGroupId())
-		for _, rule := range securityGroup.GetInboundRules() {
-			for _, member := range rule.GetSecurityGroupsMembers() {
-				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.GetSecurityGroupId(), "Inbound", rule.GetIpProtocol(), "", *member.SecurityGroupId, rule.GetFromPortRange(), rule.GetToPortRange())
+		log.V(2).Info("Deleting inbound rules", "securityGroupId", securityGroup.SecurityGroupId)
+		for _, rule := range securityGroup.InboundRules {
+			for _, member := range rule.SecurityGroupsMembers {
+				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.SecurityGroupId, "Inbound", rule.IpProtocol, "", member.SecurityGroupId, rule.FromPortRange, rule.ToPortRange)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot delete rule: %w", err)
 				}
 			}
 		}
-		log.V(2).Info("Deleting outbound rules", "securityGroupId", securityGroup.GetSecurityGroupId())
-		for _, rule := range securityGroup.GetOutboundRules() {
-			for _, member := range rule.GetSecurityGroupsMembers() {
-				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.GetSecurityGroupId(), "Outbound", rule.GetIpProtocol(), "", *member.SecurityGroupId, rule.GetFromPortRange(), rule.GetToPortRange())
+		log.V(2).Info("Deleting outbound rules", "securityGroupId", securityGroup.SecurityGroupId)
+		for _, rule := range securityGroup.OutboundRules {
+			for _, member := range rule.SecurityGroupsMembers {
+				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.SecurityGroupId, "Outbound", rule.IpProtocol, "", member.SecurityGroupId, rule.FromPortRange, rule.ToPortRange)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot delete rule: %w", err)
 				}
@@ -214,13 +214,13 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 		}
 	}
 	for _, securityGroup := range securityGroups {
-		if securityGroup.GetSecurityGroupName() == "default" {
+		if securityGroup.SecurityGroupName == "default" {
 			continue
 		}
-		log.V(2).Info("Deleting securityGroup", "securityGroupId", securityGroup.GetSecurityGroupId())
-		err := securityGroupSvc.DeleteSecurityGroup(ctx, securityGroup.GetSecurityGroupId())
+		log.V(2).Info("Deleting securityGroup", "securityGroupId", securityGroup.SecurityGroupId)
+		err := securityGroupSvc.DeleteSecurityGroup(ctx, securityGroup.SecurityGroupId)
 		if err != nil {
-			sgerr = fmt.Errorf("cannot delete %s: %w", securityGroup.GetSecurityGroupId(), err)
+			sgerr = fmt.Errorf("cannot delete %s: %w", securityGroup.SecurityGroupId, err)
 		}
 	}
 	return reconcile.Result{}, sgerr

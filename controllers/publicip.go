@@ -13,8 +13,8 @@ import (
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -49,7 +49,7 @@ func (a *IPAllocator) AllocateIP(ctx context.Context, key, name, pool string, cl
 			// we need to reallocate
 			log.V(3).Info("Known IP is already linked, reallocating", "publicIpId", id)
 		default:
-			return id, pip.GetPublicIp(), nil
+			return id, pip.PublicIp, nil
 		}
 	}
 	var pip *osc.PublicIp
@@ -61,8 +61,8 @@ func (a *IPAllocator) AllocateIP(ctx context.Context, key, name, pool string, cl
 	if err != nil {
 		return "", "", fmt.Errorf("allocate ip: %w", err)
 	}
-	a.setPublicIP(key, pip.GetPublicIpId())
-	return pip.GetPublicIpId(), pip.GetPublicIp(), nil
+	a.setPublicIP(key, pip.PublicIpId)
+	return pip.PublicIpId, pip.PublicIp, nil
 }
 
 func (a *IPAllocator) allocate(ctx context.Context, name string, clusterScope *scope.ClusterScope) (*osc.PublicIp, error) {
@@ -72,7 +72,7 @@ func (a *IPAllocator) allocate(ctx context.Context, name string, clusterScope *s
 	if err != nil {
 		return nil, err
 	}
-	log.V(2).Info("Allocated publicIp", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+	log.V(2).Info("Allocated publicIp", "publicIpId", pip.PublicIpId, "publicIp", pip.PublicIp)
 	return pip, nil
 }
 
@@ -95,7 +95,7 @@ func (a *IPAllocator) allocateFromPool(ctx context.Context, pool string, cluster
 	for i := range pips {
 		pip := pips[(off+i)%len(pips)]
 		if pip.LinkPublicIpId == nil {
-			log.V(3).Info("Found publicIp in pool", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+			log.V(3).Info("Found publicIp in pool", "publicIpId", pip.PublicIpId, "publicIp", pip.PublicIp)
 			return &pip, nil
 		}
 	}
@@ -115,7 +115,7 @@ func (a *IPAllocator) RetrackIP(ctx context.Context, key, publicIp string, clust
 		return fmt.Errorf("retrack ip: %w", err)
 	}
 	if ip != nil {
-		a.setPublicIP(key, ip.GetPublicIpId())
+		a.setPublicIP(key, ip.PublicIpId)
 	}
 	return nil
 }
@@ -134,11 +134,11 @@ func (a *IPAllocator) DeallocateIP(ctx context.Context, key string, clusterScope
 			return errors.New("decallocate ip: IP is still linked")
 		}
 
-		if !security.CanDelete(pip) {
-			log.V(3).Info("Not deleting public IP from pool or with no delete tag", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+		if !net.CanDelete(pip) {
+			log.V(3).Info("Not deleting public IP from pool or with no delete tag", "publicIpId", pip.PublicIpId, "publicIp", pip.PublicIp)
 			return nil
 		}
-		log.V(2).Info("Deleting public IP", "publicIpId", pip.GetPublicIpId(), "publicIp", pip.GetPublicIp())
+		log.V(2).Info("Deleting public IP", "publicIpId", pip.PublicIpId, "publicIp", pip.PublicIp)
 		err = a.Cloud.PublicIp(clusterScope.Tenant).DeletePublicIp(ctx, id)
 		if err != nil {
 			return fmt.Errorf("decallocate ip: %w", err)

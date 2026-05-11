@@ -10,9 +10,7 @@ import (
 	"sync"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/loadbalancer"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 )
@@ -24,17 +22,16 @@ type Servicer interface {
 	NetPeering(t tenant.Tenant) net.OscNetPeeringInterface
 	NetAccessPoint(t tenant.Tenant) net.OscNetAccessPointInterface
 	Subnet(t tenant.Tenant) net.OscSubnetInterface
-	SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface
-
 	InternetService(t tenant.Tenant) net.OscInternetServiceInterface
-	RouteTable(t tenant.Tenant) security.OscRouteTableInterface
+	RouteTable(t tenant.Tenant) net.OscRouteTableInterface
 	NatService(t tenant.Tenant) net.OscNatServiceInterface
-	PublicIp(t tenant.Tenant) security.OscPublicIpInterface
-	LoadBalancer(t tenant.Tenant) loadbalancer.OscLoadBalancerInterface
+	PublicIp(t tenant.Tenant) net.OscPublicIpInterface
+	LoadBalancer(t tenant.Tenant) net.OscLoadBalancerInterface
 
 	VM(t tenant.Tenant) compute.OscVmInterface
 	Image(t tenant.Tenant) compute.OscImageInterface
 	FlexibleGPU(t tenant.Tenant) compute.OscFGPUInterface
+	SecurityGroup(t tenant.Tenant) compute.OscSecurityGroupInterface
 
 	Tag(t tenant.Tenant) tag.OscTagInterface
 }
@@ -85,13 +82,13 @@ func (s *Services) InternetService(t tenant.Tenant) net.OscInternetServiceInterf
 }
 
 // RouteTable returns a routeTable service
-func (s *Services) RouteTable(t tenant.Tenant) security.OscRouteTableInterface {
-	return security.NewService(t)
+func (s *Services) RouteTable(t tenant.Tenant) net.OscRouteTableInterface {
+	return net.NewService(t)
 }
 
 // SecurityGroup returns a securityGroup service
-func (s *Services) SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface {
-	return security.NewService(t)
+func (s *Services) SecurityGroup(t tenant.Tenant) compute.OscSecurityGroupInterface {
+	return compute.NewService(t)
 }
 
 // NatService returns a natService service
@@ -115,13 +112,13 @@ func (s *Services) FlexibleGPU(t tenant.Tenant) compute.OscFGPUInterface {
 }
 
 // PublicIp returns a public IP service
-func (s *Services) PublicIp(t tenant.Tenant) security.OscPublicIpInterface {
-	return security.NewService(t)
+func (s *Services) PublicIp(t tenant.Tenant) net.OscPublicIpInterface {
+	return net.NewService(t)
 }
 
 // LoadBalancer returns a loadBalancer service
-func (s *Services) LoadBalancer(t tenant.Tenant) loadbalancer.OscLoadBalancerInterface {
-	return loadbalancer.NewService(t)
+func (s *Services) LoadBalancer(t tenant.Tenant) net.OscLoadBalancerInterface {
+	return net.NewService(t)
 }
 
 // Tag returns a tag service

@@ -13,13 +13,13 @@ import (
 	"slices"
 	"strings"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	capierrors "sigs.k8s.io/cluster-api/errors"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -31,8 +31,8 @@ type MachineScopeParams struct {
 	Client     client.Client
 	Cluster    *clusterv1.Cluster
 	Machine    *clusterv1.Machine
-	OscCluster *infrastructurev1beta1.OscCluster
-	OscMachine *infrastructurev1beta1.OscMachine
+	OscCluster *infrastructurev1beta2.OscCluster
+	OscMachine *infrastructurev1beta2.OscMachine
 }
 
 // NewMachineScope create new machineScope from parameters which is called at each reconciliation iteration
@@ -73,8 +73,8 @@ type MachineScope struct {
 	patchHelper *patch.Helper
 	Cluster     *clusterv1.Cluster
 	Machine     *clusterv1.Machine
-	OscCluster  *infrastructurev1beta1.OscCluster
-	OscMachine  *infrastructurev1beta1.OscMachine
+	OscCluster  *infrastructurev1beta2.OscCluster
+	OscMachine  *infrastructurev1beta2.OscMachine
 }
 
 // Close closes the scope of the machine configuration and status
@@ -86,6 +86,7 @@ func (m *MachineScope) Close(ctx context.Context) error {
 func (m *MachineScope) GetName() string {
 	return m.OscMachine.Name
 }
+
 func (m *MachineScope) GetClientToken(clusterScope *ClusterScope) string {
 	ct := m.OscMachine.Name + "-" + clusterScope.GetUID()
 	if len(ct) > 64 {
@@ -104,43 +105,28 @@ func (m *MachineScope) GetUID() string {
 	return string(m.Machine.UID)
 }
 
-// GetVolumes returns the volume of the cluster
-func (m *MachineScope) GetVolumes() []infrastructurev1beta1.OscVolume {
-	return m.OscMachine.Spec.Node.Volumes
+// GetAdditionalVolumes returns the volume of the cluster
+func (m *MachineScope) GetAdditionalVolumes() []infrastructurev1beta2.OscVolume {
+	return m.OscMachine.Spec.Vm.AdditionalVolumes
 }
 
 // GetVm returns the vm
-func (m *MachineScope) GetVm() infrastructurev1beta1.OscVm {
-	return m.OscMachine.Spec.Node.Vm
+func (m *MachineScope) GetVm() infrastructurev1beta2.OscVm {
+	return m.OscMachine.Spec.Vm
 }
 
 // GetImage returns the image
-func (m *MachineScope) GetImage() *infrastructurev1beta1.OscImage {
-	return &m.OscMachine.Spec.Node.Image
-}
-
-// SetImageId sets ImageId
-func (m *MachineScope) SetImageId(imageId string) {
-	m.OscMachine.Spec.Node.Vm.ImageId = imageId
-}
-
-// GetImageId returns ImageId
-func (m *MachineScope) GetImageId() string {
-	return m.GetVm().ImageId
-}
-
-// GetVmPrivateIps returns the VM privateIps
-func (m *MachineScope) GetVmPrivateIps() []infrastructurev1beta1.OscPrivateIpElement {
-	return m.GetVm().PrivateIps
+func (m *MachineScope) GetImage() *infrastructurev1beta2.OscImage {
+	return &m.OscMachine.Spec.Vm.Image
 }
 
 // GetVmSecurityGroups returns the VM securityGroups
-func (m *MachineScope) GetVmSecurityGroups() []infrastructurev1beta1.OscSecurityGroupElement {
+func (m *MachineScope) GetVmSecurityGroups() []infrastructurev1beta2.OscSecurityGroupElement {
 	return m.GetVm().SecurityGroupNames
 }
 
 // GetPlacement returns the VM placement constraints.
-func (m *MachineScope) GetPlacement() infrastructurev1beta1.OscPlacement {
+func (m *MachineScope) GetPlacement() infrastructurev1beta2.OscPlacement {
 	repulse := m.GetVm().Placement
 	if m.IsControlPlane() || repulse.RepulseCluster != "" || repulse.RepulseServer != nil || repulse.AttractCluster != "" || repulse.AttractServer != "" {
 		return repulse
@@ -150,7 +136,7 @@ func (m *MachineScope) GetPlacement() infrastructurev1beta1.OscPlacement {
 		return strings.HasPrefix(k, "osc.fcu.repulse") || strings.HasPrefix(k, "osc.fcu.attract")
 	})
 	if !hasRepulse {
-		return infrastructurev1beta1.OscPlacement{
+		return infrastructurev1beta2.OscPlacement{
 			RepulseServer: ptr.To(m.Machine.Labels[clusterv1.MachineDeploymentNameLabel]),
 		}
 	}
@@ -158,56 +144,9 @@ func (m *MachineScope) GetPlacement() infrastructurev1beta1.OscPlacement {
 	return repulse
 }
 
-// GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetLinkPublicIpRef() *infrastructurev1beta1.OscResourceReference {
-	return &m.OscMachine.Status.Node.LinkPublicIpRef
-}
-
-// GetLinkPublicIpRef get the status of linkPublicIpRef (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetPublicIpIdRef() *infrastructurev1beta1.OscResourceReference {
-	return &m.OscMachine.Status.Node.PublicIpIdRef
-}
-
-// GetVolumeRef get the status of volume (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetVolumeRef() *infrastructurev1beta1.OscResourceReference {
-	ref := &m.OscMachine.Status.Node.VolumeRef
-	if ref.ResourceMap == nil {
-		ref.ResourceMap = make(map[string]string)
-	}
-	return ref
-}
-
-// GetVmRef get the status of vm (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetVmRef() *infrastructurev1beta1.OscResourceReference {
-	return &m.OscMachine.Status.Node.VmRef
-}
-
-// GetImageRef get the status of image (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetImageRef() *infrastructurev1beta1.OscResourceReference {
-	return &m.OscMachine.Status.Node.ImageRef
-}
-
-// GetKeyPairRef get the status of key pair (a Map with tag name with machine uid associate with resource response id)
-func (m *MachineScope) GetKeypairRef() *infrastructurev1beta1.OscResourceReference {
-	return &m.OscMachine.Status.Node.KeypairRef
-}
-
 // IsControlPlane check if it is control plane
 func (m *MachineScope) IsControlPlane() bool {
 	return util.IsControlPlaneMachine(m.Machine)
-}
-
-// GetNode return the node
-func (m *MachineScope) GetNode() *infrastructurev1beta1.OscNode {
-	return &m.OscMachine.Spec.Node
-}
-
-// GetRole return the role
-func (m *MachineScope) GetRole() string {
-	if m.IsControlPlane() {
-		return infrastructurev1beta1.APIServerRoleTagValue
-	}
-	return infrastructurev1beta1.NodeRoleTagValue
 }
 
 // GetProviderID return the providerID
@@ -234,66 +173,51 @@ func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
 }
 
 // GetVmState return the vmState
-func (m *MachineScope) GetVmState() *infrastructurev1beta1.VmState {
+func (m *MachineScope) GetVmState() *osc.VmState {
 	return m.OscMachine.Status.VmState
 }
 
 // SetVmState set vmstate
-func (m *MachineScope) SetVmState(v infrastructurev1beta1.VmState) {
+func (m *MachineScope) SetVmState(v osc.VmState) {
 	m.OscMachine.Status.VmState = &v
 }
 
 // SetReady set machine status ready
 func (m *MachineScope) SetReady() {
-	m.OscMachine.Status.Ready = true
-}
-
-// SetReady set machine status not ready
-func (m *MachineScope) SetNotReady() {
-	m.OscMachine.Status.Ready = false
-}
-
-// SetFailureMessage set failure message
-func (m *MachineScope) SetFailureMessage(v error) {
-	m.OscMachine.Status.FailureMessage = ptr.To(v.Error())
-}
-
-// SetFailureReason set failure reason
-func (m *MachineScope) SetFailureReason(v capierrors.MachineStatusError) {
-	m.OscMachine.Status.FailureReason = &v
+	m.OscMachine.Status.Initialization.Provisioned = new(true)
 }
 
 // SetAddresses set node address
-func (m *MachineScope) SetAddresses(addrs []corev1.NodeAddress) {
+func (m *MachineScope) SetAddresses(addrs []clusterv1.MachineAddress) {
 	m.OscMachine.Status.Addresses = addrs
 }
 
 // SetFailureDomain set failure domain.
 func (m *MachineScope) SetFailureDomain(subregion string) {
-	m.OscMachine.Status.FailureDomain = &subregion
+	m.OscMachine.Status.FailureDomain = subregion
 }
 
 // GetResources returns the resource list from the OscCluster status.
-func (s *MachineScope) GetResources() *infrastructurev1beta1.OscMachineResources {
+func (s *MachineScope) GetResources() *infrastructurev1beta2.OscMachineResources {
 	return &s.OscMachine.Status.Resources
 }
 
 // NeedReconciliation returns true if a reconciler needs to run.
-func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta1.Reconciler) bool {
+func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta2.Reconciler) bool {
 	if s.OscMachine.Status.ReconcilerGeneration == nil {
 		return true
 	}
 	if s.OscMachine.Status.ReconcilerGeneration[reconciler] < s.OscMachine.Generation {
 		return true
 	}
-	r := s.OscMachine.Spec.Node.ReconciliationRule
+	r := s.OscMachine.Spec.ReconciliationRule
 	if r == nil {
 		return false
 	}
 	switch r.Mode {
-	case infrastructurev1beta1.ReconciliationModeAlways:
+	case infrastructurev1beta2.ReconciliationModeAlways:
 		return true
-	case infrastructurev1beta1.ReconciliationModeRandom:
+	case infrastructurev1beta2.ReconciliationModeRandom:
 		return Rand() < r.ReconciliationChance
 	default:
 		return false
@@ -301,9 +225,9 @@ func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta1.Recon
 }
 
 // SetReconciliationGeneration marks a reconciler as having finished its job for a specific cluster generation.
-func (s *MachineScope) SetReconciliationGeneration(reconciler infrastructurev1beta1.Reconciler) {
+func (s *MachineScope) SetReconciliationGeneration(reconciler infrastructurev1beta2.Reconciler) {
 	if s.OscMachine.Status.ReconcilerGeneration == nil {
-		s.OscMachine.Status.ReconcilerGeneration = map[infrastructurev1beta1.Reconciler]int64{}
+		s.OscMachine.Status.ReconcilerGeneration = map[infrastructurev1beta2.Reconciler]int64{}
 	}
 	s.OscMachine.Status.ReconcilerGeneration[reconciler] = s.OscMachine.Generation
 }
@@ -311,7 +235,7 @@ func (s *MachineScope) SetReconciliationGeneration(reconciler infrastructurev1be
 // PatchObject keep the machine configuration and status
 func (m *MachineScope) PatchObject(ctx context.Context) error {
 	applicableConditions := []clusterv1.ConditionType{
-		infrastructurev1beta1.VmReadyCondition,
+		infrastructurev1beta2.VmReadyCondition,
 	}
 	conditions.SetSummary(m.OscMachine,
 		conditions.WithConditions(applicableConditions...),
@@ -323,7 +247,7 @@ func (m *MachineScope) PatchObject(ctx context.Context) error {
 		m.OscMachine,
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,
-			infrastructurev1beta1.VmReadyCondition,
+			infrastructurev1beta2.VmReadyCondition,
 		}})
 }
 

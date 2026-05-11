@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
+	osc "github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,31 +42,31 @@ func (m *MockOscImageInterface) EXPECT() *MockOscImageInterfaceMockRecorder {
 }
 
 // GetImage mocks base method.
-func (m *MockOscImageInterface) GetImage(ctx context.Context, imageId string) (*osc.Image, error) {
+func (m *MockOscImageInterface) GetImage(ctx context.Context, id string) (*osc.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImage", ctx, imageId)
+	ret := m.ctrl.Call(m, "GetImage", ctx, id)
 	ret0, _ := ret[0].(*osc.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetImage indicates an expected call of GetImage.
-func (mr *MockOscImageInterfaceMockRecorder) GetImage(ctx, imageId any) *gomock.Call {
+func (mr *MockOscImageInterfaceMockRecorder) GetImage(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockOscImageInterface)(nil).GetImage), ctx, imageId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockOscImageInterface)(nil).GetImage), ctx, id)
 }
 
 // GetImageByName mocks base method.
-func (m *MockOscImageInterface) GetImageByName(ctx context.Context, imageName, accountId string) (*osc.Image, error) {
+func (m *MockOscImageInterface) GetImageByName(ctx context.Context, name, accountId string) (*osc.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageByName", ctx, imageName, accountId)
+	ret := m.ctrl.Call(m, "GetImageByName", ctx, name, accountId)
 	ret0, _ := ret[0].(*osc.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetImageByName indicates an expected call of GetImageByName.
-func (mr *MockOscImageInterfaceMockRecorder) GetImageByName(ctx, imageName, accountId any) *gomock.Call {
+func (mr *MockOscImageInterfaceMockRecorder) GetImageByName(ctx, name, accountId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageByName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageByName), ctx, imageName, accountId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageByName", reflect.TypeOf((*MockOscImageInterface)(nil).GetImageByName), ctx, name, accountId)
 }

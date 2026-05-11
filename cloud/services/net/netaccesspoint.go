@@ -7,12 +7,10 @@ package net
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_net/netaccesspoint_mock.go -package mock_net -source ./netaccesspoint.go
@@ -30,18 +28,17 @@ func netAccessPointServiceName(region, service string) string {
 
 // CreateNetAccessPoint launch the net access point
 func (s *Service) CreateNetAccessPoint(ctx context.Context, netId, region, service string, rtblIds []string, clusterID string) (*osc.NetAccessPoint, error) {
-	netAccessPointRequest := osc.CreateNetAccessPointRequest{
+	req := osc.CreateNetAccessPointRequest{
 		NetId:         netId,
 		ServiceName:   netAccessPointServiceName(region, service),
 		RouteTableIds: &rtblIds,
 	}
 
-	netAccessPointResponse, httpRes, err := s.tenant.Client().NetAccessPointApi.CreateNetAccessPoint(s.tenant.ContextWithAuth(ctx)).CreateNetAccessPointRequest(netAccessPointRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "CreateNetAccessPoint", netAccessPointRequest, httpRes, err)
+	resp, err := s.tenant.Client().CreateNetAccessPoint(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	resourceIds := []string{*netAccessPointResponse.NetAccessPoint.NetAccessPointId}
+	resourceIds := []string{resp.NetAccessPoint.NetAccessPointId}
 	clusterTag := osc.ResourceTag{
 		Key:   "OscK8sClusterID/" + clusterID,
 		Value: "owned",
@@ -50,90 +47,72 @@ func (s *Service) CreateNetAccessPoint(ctx context.Context, netId, region, servi
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err = tag.AddTag(ctx, netAccessPointTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
+	err = tag.AddTag(ctx, netAccessPointTagRequest, resourceIds, s.tenant.Client())
 	if err != nil {
 		return nil, err
 	}
-	netAccessPoint, ok := netAccessPointResponse.GetNetAccessPointOk()
-	if !ok {
-		return nil, errors.New("cannot create netAccessPoint")
-	}
-	return netAccessPoint, nil
+	return resp.NetAccessPoint, nil
 }
 
 // DeleteNetAccessPoint deletes an net access point.
 func (s *Service) DeleteNetAccessPoint(ctx context.Context, netAccessPointId string) error {
-	deleteNetAccessPointRequest := osc.DeleteNetAccessPointRequest{NetAccessPointId: netAccessPointId}
+	req := osc.DeleteNetAccessPointRequest{NetAccessPointId: netAccessPointId}
 
-	_, httpRes, err := s.tenant.Client().NetAccessPointApi.DeleteNetAccessPoint(s.tenant.ContextWithAuth(ctx)).DeleteNetAccessPointRequest(deleteNetAccessPointRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "DeleteNetAccessPoint", deleteNetAccessPointRequest, httpRes, err)
+	_, err := s.tenant.Client().DeleteNetAccessPoint(ctx, req)
 	return err
 }
 
 // ListNetAccessPoint lists all net access points for a net.
 func (s *Service) ListNetAccessPoints(ctx context.Context, netId string) ([]osc.NetAccessPoint, error) {
-	readNetAccessPointRequest := osc.ReadNetAccessPointsRequest{
+	req := osc.ReadNetAccessPointsRequest{
 		Filters: &osc.FiltersNetAccessPoint{
 			NetIds: &[]string{netId},
-			States: &[]string{"pending", "available"},
+			States: &[]osc.NetAccessPointState{osc.NetAccessPointStatePending, osc.NetAccessPointStateAvailable},
 		},
 	}
 
-	resp, httpRes, err := s.tenant.Client().NetAccessPointApi.ReadNetAccessPoints(s.tenant.ContextWithAuth(ctx)).ReadNetAccessPointsRequest(readNetAccessPointRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetAccessPoints", readNetAccessPointRequest, httpRes, err)
+	resp, err := s.tenant.Client().ReadNetAccessPoints(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return resp.GetNetAccessPoints(), nil
+	return *resp.NetAccessPoints, nil
 }
 
 // GetNetAccessPoint fetches a net access point by id
 func (s *Service) GetNetAccessPoint(ctx context.Context, netAccessPointId string) (*osc.NetAccessPoint, error) {
-	readNetAccessPointRequest := osc.ReadNetAccessPointsRequest{
+	req := osc.ReadNetAccessPointsRequest{
 		Filters: &osc.FiltersNetAccessPoint{
 			NetAccessPointIds: &[]string{netAccessPointId},
 		},
 	}
 
-	resp, httpRes, err := s.tenant.Client().NetAccessPointApi.ReadNetAccessPoints(s.tenant.ContextWithAuth(ctx)).ReadNetAccessPointsRequest(readNetAccessPointRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetAccessPoints", readNetAccessPointRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadNetAccessPoints(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	netAccessPoints, ok := resp.GetNetAccessPointsOk()
-	if !ok {
-		return nil, errors.New("cannot read netAccessPoint")
-	}
-	if len(*netAccessPoints) == 0 {
+	case len(*resp.NetAccessPoints) == 0:
 		return nil, nil
-	} else {
-		netAccessPoint := *netAccessPoints
-		return &netAccessPoint[0], nil
+	default:
+		return &(*resp.NetAccessPoints)[0], nil
 	}
 }
 
 // GetNetAccessPointFor fetches a net access point for a net and a service.
 func (s *Service) GetNetAccessPointFor(ctx context.Context, netId, region, service string) (*osc.NetAccessPoint, error) {
-	readNetAccessPointRequest := osc.ReadNetAccessPointsRequest{
+	req := osc.ReadNetAccessPointsRequest{
 		Filters: &osc.FiltersNetAccessPoint{
 			NetIds:       &[]string{netId},
 			ServiceNames: &[]string{netAccessPointServiceName(region, service)},
 		},
 	}
 
-	resp, httpRes, err := s.tenant.Client().NetAccessPointApi.ReadNetAccessPoints(s.tenant.ContextWithAuth(ctx)).ReadNetAccessPointsRequest(readNetAccessPointRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadNetAccessPoints", readNetAccessPointRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadNetAccessPoints(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	netAccessPoints, ok := resp.GetNetAccessPointsOk()
-	if !ok {
-		return nil, errors.New("cannot read netAccessPoint")
-	}
-	if len(*netAccessPoints) == 0 {
+	case len(*resp.NetAccessPoints) == 0:
 		return nil, nil
-	} else {
-		netAccessPoint := *netAccessPoints
-		return &netAccessPoint[0], nil
+	default:
+		return &(*resp.NetAccessPoints)[0], nil
 	}
 }

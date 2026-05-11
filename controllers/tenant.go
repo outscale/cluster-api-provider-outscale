@@ -9,16 +9,16 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta1.OscCluster) (tenant.Tenant, error) {
+func getTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta2.OscCluster) (tenant.Tenant, error) {
 	switch {
 	case cluster.Spec.Credentials.FromFile != "":
 		return tenant.TenantFromFile(cluster.Spec.Credentials.FromFile, cluster.Spec.Credentials.Profile)
@@ -29,7 +29,7 @@ func getTenant(ctx context.Context, cl client.Client, c services.Servicer, clust
 	}
 }
 
-func getMgmtTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta1.OscCluster) (tenant.Tenant, error) {
+func getMgmtTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta2.OscCluster) (tenant.Tenant, error) {
 	creds := cluster.Spec.Network.NetPeering.ManagementCredentials
 	switch {
 	case creds.FromFile != "":

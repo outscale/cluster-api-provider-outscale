@@ -8,55 +8,50 @@ package compute
 import (
 	"context"
 
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 //go:generate ../../../bin/mockgen -destination mock_compute/image_mock.go -package mock_compute -source ./image.go
 type OscImageInterface interface {
-	GetImage(ctx context.Context, imageId string) (*osc.Image, error)
-	GetImageByName(ctx context.Context, imageName, accountId string) (*osc.Image, error)
+	GetImage(ctx context.Context, id string) (*osc.Image, error)
+	GetImageByName(ctx context.Context, name, accountId string) (*osc.Image, error)
 }
 
-// GetImage retrieve image from imageId
-func (s *Service) GetImage(ctx context.Context, imageId string) (*osc.Image, error) {
-	readImageRequest := osc.ReadImagesRequest{
-		Filters: &osc.FiltersImage{ImageIds: &[]string{imageId}},
+// GetImage retrieves an image by id
+func (s *Service) GetImage(ctx context.Context, id string) (*osc.Image, error) {
+	req := osc.ReadImagesRequest{
+		Filters: &osc.FiltersImage{ImageIds: &[]string{id}},
 	}
 
-	readImagesResponse, httpRes, err := s.tenant.Client().ImageApi.ReadImages(s.tenant.ContextWithAuth(ctx)).ReadImagesRequest(readImageRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadImages", readImageRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadImages(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	if len(readImagesResponse.GetImages()) == 0 {
+	case len(*resp.Images) == 0:
 		return nil, nil
+	default:
+		return &(*resp.Images)[0], nil
 	}
-	image := readImagesResponse.GetImages()[0]
-
-	return &image, nil
 }
 
-// GetImageByName retrieve image from imageName/owner
-func (s *Service) GetImageByName(ctx context.Context, imageName, accountId string) (*osc.Image, error) {
-	readImageRequest := osc.ReadImagesRequest{
+// GetImageByName retrieves image by name/owner
+func (s *Service) GetImageByName(ctx context.Context, name, accountId string) (*osc.Image, error) {
+	req := osc.ReadImagesRequest{
 		Filters: &osc.FiltersImage{
-			ImageNames: &[]string{imageName},
+			ImageNames: &[]string{name},
 		},
 	}
 	if accountId != "" {
-		readImageRequest.Filters.AccountIds = &[]string{accountId}
+		req.Filters.AccountIds = &[]string{accountId}
 	}
 
-	readImagesResponse, httpRes, err := s.tenant.Client().ImageApi.ReadImages(s.tenant.ContextWithAuth(ctx)).ReadImagesRequest(readImageRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadImages", readImageRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadImages(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-	if len(readImagesResponse.GetImages()) == 0 {
+	case len(*resp.Images) == 0:
 		return nil, nil
+	default:
+		return &(*resp.Images)[0], nil
 	}
-	image := readImagesResponse.GetImages()[0]
-
-	return &image, nil
 }

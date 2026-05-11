@@ -8,16 +8,13 @@ package compute
 import (
 	"context"
 	b64 "encoding/base64"
-	"errors"
-	"fmt"
-	"slices"
-	"strings"
+	"maps"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/goutils/k8s/tags"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"k8s.io/utils/ptr"
 )
 
@@ -40,8 +37,7 @@ const (
 
 //go:generate ../../../bin/mockgen -destination mock_compute/vm_mock.go -package mock_compute -source ./vm.go
 type OscVmInterface interface {
-	CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string, volumes []infrastructurev1beta1.OscVolume) (*osc.Vm, error)
-	CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error)
+	CreateVm(ctx context.Context, spec *infrastructurev1beta2.OscVm, bootstrapData, imageId, subnetId string, securityGroupIds []string, vmName, vmClientToken string, publicIp string) (*osc.Vm, error)
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
 	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
@@ -50,84 +46,98 @@ type OscVmInterface interface {
 	StopVm(ctx context.Context, vmId string) error
 }
 
+func volumeToCreate(vol infrastructurev1beta2.OscVolume) *osc.BsuToCreate {
+	v := &osc.BsuToCreate{
+		VolumeType: &vol.Type,
+	}
+	if vol.Size > 0 {
+		v.VolumeSize = &vol.Size
+	}
+	if vol.Type == osc.VolumeTypeIo1 {
+		v.Iops = &vol.Iops
+	}
+	if vol.FromSnapshot != "" {
+		v.SnapshotId = &vol.FromSnapshot
+	}
+	return v
+}
+
 // CreateVm creates a VM.
 func (s *Service) CreateVm(ctx context.Context,
-	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
-	volumes []infrastructurev1beta1.OscVolume,
+	spec *infrastructurev1beta2.OscVm, bootstrapData, imageId, subnetId string, securityGroupIds []string, vmName, vmClientToken string, publicIp string,
 ) (*osc.Vm, error) {
-	keypairName := spec.KeypairName
-	vmType := spec.VmType
-	rootDiskIops := spec.RootDisk.RootDiskIops
-	rootDiskSize := spec.RootDisk.RootDiskSize
-	rootDiskType := spec.RootDisk.RootDiskType
-	bootstrapData, err := machineScope.GetBootstrapData(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
-	}
-	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
-	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
-	rootDisk := osc.BlockDeviceMappingVmCreation{
-		Bsu: &osc.BsuToCreate{
-			VolumeType: &rootDiskType,
-			VolumeSize: &rootDiskSize,
-		},
-		DeviceName: ptr.To("/dev/sda1"),
-	}
-	if rootDiskType == "io1" {
-		rootDisk.Bsu.Iops = &rootDiskIops
-	}
-	volMappings := []osc.BlockDeviceMappingVmCreation{
-		rootDisk,
-	}
-	for _, vol := range volumes {
-		bsuVol := osc.BlockDeviceMappingVmCreation{
-			Bsu: &osc.BsuToCreate{
-				VolumeType: &vol.VolumeType,
-			},
-			DeviceName: &vol.Device,
-		}
-		if vol.Size > 0 {
-			bsuVol.Bsu.VolumeSize = &vol.Size
-		}
-		if vol.VolumeType == "io1" {
-			bsuVol.Bsu.Iops = &vol.Iops
-		}
-		if vol.FromSnapshot != "" {
-			bsuVol.Bsu.SnapshotId = &vol.FromSnapshot
-		}
-		volMappings = append(volMappings, bsuVol)
+	vmTags := spec.Tags
+	if vmTags == nil {
+		vmTags = map[string]string{}
+	} else {
+		// we need to clone the map to avoid changing the spec...
+		vmTags = maps.Clone(vmTags)
 	}
 
-	vmOpt := osc.CreateVmsRequest{
+	var publicIp string
+	if publicIp != "" {
+		vmTags[AutoAttachExternalIPTag] = publicIp
+	}
+
+	placement := spec.Placement
+	switch {
+	case placement.RepulseCluster != "" && placement.ClusterStrict:
+		vmTags[RepulseClusterStrictTag] = placement.RepulseCluster
+	case placement.RepulseCluster != "" && !placement.ClusterStrict:
+		vmTags[RepulseClusterTag] = placement.RepulseCluster
+
+	case placement.AttractCluster != "" && placement.ClusterStrict:
+		vmTags[AttractClusterStrictTag] = placement.AttractCluster
+	case placement.AttractCluster != "" && !placement.ClusterStrict:
+		vmTags[AttractClusterTag] = placement.AttractCluster
+	}
+	switch {
+	case placement.RepulseServer != nil && *placement.RepulseServer != "" && placement.ServerStrict:
+		vmTags[RepulseServerStrictTag] = *placement.RepulseServer
+	case placement.RepulseServer != nil && *placement.RepulseServer != "" && !placement.ServerStrict:
+		vmTags[RepulseServerTag] = *placement.RepulseServer
+
+	case placement.AttractServer != "" && placement.ServerStrict:
+		vmTags[AttractServerStrictTag] = placement.AttractServer
+	case placement.AttractServer != "" && !placement.ServerStrict:
+		vmTags[AttractServerTag] = placement.AttractServer
+	}
+	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(vmTags) + bootstrapData
+	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
+	volMappings := []osc.BlockDeviceMappingVmCreation{
+		{
+			Bsu:        volumeToCreate(spec.RootVolume),
+			DeviceName: new("/dev/sda1"),
+		},
+	}
+	for _, vol := range spec.AdditionalVolumes {
+		volMappings = append(volMappings, osc.BlockDeviceMappingVmCreation{
+			Bsu:        volumeToCreate(vol),
+			DeviceName: &vol.Device,
+		})
+	}
+
+	req := osc.CreateVmsRequest{
 		ImageId:             imageId,
-		KeypairName:         &keypairName,
-		VmType:              &vmType,
+		KeypairName:         &spec.KeypairName,
+		VmType:              &spec.VmType,
 		SubnetId:            &subnetId,
-		SecurityGroupIds:    &securityGroupIds,
+		SecurityGroupIds:    securityGroupIds,
 		UserData:            &mergedUserDataEnc,
-		BlockDeviceMappings: &volMappings,
+		BlockDeviceMappings: volMappings,
 		ClientToken:         &vmClientToken,
 	}
 
 	if spec.FGPU != nil {
-		vmOpt.BootOnCreation = ptr.To(false)
+		req.BootOnCreation = ptr.To(false)
 	}
 
-	if len(privateIps) > 0 {
-		vmOpt.SetPrivateIps(privateIps)
-	}
-
-	vmResponse, httpRes, err := s.tenant.Client().VmApi.CreateVms(s.tenant.ContextWithAuth(ctx)).CreateVmsRequest(vmOpt).Execute()
-	err = utils.LogAndExtractError(ctx, "CreateVms", vmOpt, httpRes, err)
+	resp, err := s.tenant.Client().CreateVms(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	vms, ok := vmResponse.GetVmsOk()
-	if !ok {
-		return nil, errors.New("cannot get vm")
-	}
-	vmID := *(*vmResponse.Vms)[0].VmId
-	resourceIds := []string{vmID}
+	vm := &(*resp.Vms)[0]
+	resourceIds := []string{vm.VmId}
 	vmTag := osc.ResourceTag{
 		Key:   "Name",
 		Value: vmName,
@@ -136,145 +146,55 @@ func (s *Service) CreateVm(ctx context.Context,
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err = tag.AddTag(ctx, vmTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
+	err = tag.AddTag(ctx, vmTagRequest, resourceIds, s.tenant.Client())
 	if err != nil {
 		return nil, err
 	}
-	if len(*vms) == 0 {
-		return nil, nil
-	} else {
-		vm := *vms
-		return &vm[0], nil
-	}
-}
-
-// CreateVmBastion create a bastion vm
-func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
-	keypairName := spec.KeypairName
-	vmType := spec.VmType
-	rootDiskIops := spec.RootDisk.RootDiskIops
-	rootDiskSize := spec.RootDisk.RootDiskSize
-	rootDiskType := spec.RootDisk.RootDiskType
-
-	userDataEnc := b64.StdEncoding.EncodeToString([]byte(utils.ConvertsTagsToUserDataOutscaleSection(tags)))
-	rootDisk := osc.BlockDeviceMappingVmCreation{
-		Bsu: &osc.BsuToCreate{
-			VolumeType: &rootDiskType,
-			VolumeSize: &rootDiskSize,
-		},
-		DeviceName: ptr.To("/dev/sda1"),
-	}
-	if rootDiskType == "io1" {
-		rootDisk.Bsu.Iops = &rootDiskIops
-	}
-
-	vmOpt := osc.CreateVmsRequest{
-		ImageId:          imageId,
-		KeypairName:      &keypairName,
-		VmType:           &vmType,
-		SubnetId:         &subnetId,
-		SecurityGroupIds: &securityGroupIds,
-		UserData:         &userDataEnc,
-		BlockDeviceMappings: &[]osc.BlockDeviceMappingVmCreation{
-			rootDisk,
-		},
-		ClientToken: &vmClientToken,
-	}
-
-	if len(privateIps) > 0 {
-		vmOpt.SetPrivateIps(privateIps)
-	}
-
-	vmResponse, httpRes, err := s.tenant.Client().VmApi.CreateVms(s.tenant.ContextWithAuth(ctx)).CreateVmsRequest(vmOpt).Execute()
-	err = utils.LogAndExtractError(ctx, "CreateVms", vmOpt, httpRes, err)
-	if err != nil {
-		fmt.Printf("Error with http result %s", httpRes.Status)
-		return nil, err
-	}
-	vms, ok := vmResponse.GetVmsOk()
-	if !ok {
-		return nil, errors.New("cannot get vm")
-	}
-	vmID := *(*vmResponse.Vms)[0].VmId
-	resourceIds := []string{vmID}
-	vmTag := osc.ResourceTag{
-		Key:   "Name",
-		Value: vmName,
-	}
-	vmTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{vmTag},
-	}
-	err = tag.AddTag(ctx, vmTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
-	if err != nil {
-		return nil, err
-	}
-	if len(*vms) == 0 {
-		return nil, nil
-	} else {
-		vm := *vms
-		return &vm[0], nil
-	}
+	return vm, nil
 }
 
 // DeleteVm delete machine vm
 func (s *Service) DeleteVm(ctx context.Context, vmId string) error {
-	deleteVmsRequest := osc.DeleteVmsRequest{VmIds: []string{vmId}}
-
-	_, httpRes, err := s.tenant.Client().VmApi.DeleteVms(s.tenant.ContextWithAuth(ctx)).DeleteVmsRequest(deleteVmsRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "DeleteVms", deleteVmsRequest, httpRes, err)
+	req := osc.DeleteVmsRequest{VmIds: []string{vmId}}
+	_, err := s.tenant.Client().DeleteVms(ctx, req)
 	return err
 }
 
 // GetVm retrieve vm from vmId
 func (s *Service) GetVm(ctx context.Context, vmId string) (*osc.Vm, error) {
-	readVmsRequest := osc.ReadVmsRequest{
+	req := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			VmIds: &[]string{vmId},
 		},
 	}
 
-	readVmsResponse, httpRes, err := s.tenant.Client().VmApi.ReadVms(s.tenant.ContextWithAuth(ctx)).ReadVmsRequest(readVmsRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadVmsRequest", readVmsRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadVms(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-
-	vms, ok := readVmsResponse.GetVmsOk()
-	if !ok {
-		return nil, errors.New("cannot get vm")
-	}
-	if len(*vms) == 0 {
+	case len(*resp.Vms) == 0:
 		return nil, nil
-	} else {
-		vm := *vms
-		return &vm[0], nil
+	default:
+		return &(*resp.Vms)[0], nil
 	}
 }
 
 // GetVmFromClientToken retrieve vm from vmId
 func (s *Service) GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error) {
-	readVmsRequest := osc.ReadVmsRequest{
+	req := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			ClientTokens: &[]string{clientToken},
 		},
 	}
 
-	readVmsResponse, httpRes, err := s.tenant.Client().VmApi.ReadVms(s.tenant.ContextWithAuth(ctx)).ReadVmsRequest(readVmsRequest).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadVms", readVmsRequest, httpRes, err)
-	if err != nil {
+	resp, err := s.tenant.Client().ReadVms(ctx, req)
+	switch {
+	case err != nil:
 		return nil, err
-	}
-
-	vms, ok := readVmsResponse.GetVmsOk()
-	if !ok {
-		return nil, errors.New("cannot get vm")
-	}
-	if len(*vms) == 0 {
+	case len(*resp.Vms) == 0:
 		return nil, nil
-	} else {
-		vm := *vms
-		return &vm[0], nil
+	default:
+		return &(*resp.Vms)[0], nil
 	}
 }
 
@@ -283,9 +203,8 @@ func (s *Service) StartVm(ctx context.Context, vmId string) error {
 	req := osc.StartVmsRequest{
 		VmIds: []string{vmId},
 	}
-
-	_, httpRes, err := s.tenant.Client().VmApi.StartVms(s.tenant.ContextWithAuth(ctx)).StartVmsRequest(req).Execute()
-	return utils.LogAndExtractError(ctx, "StartVms", req, httpRes, err)
+	_, err := s.tenant.Client().StartVms(ctx, req)
+	return err
 }
 
 // StopVm stops a VM
@@ -293,18 +212,13 @@ func (s *Service) StopVm(ctx context.Context, vmId string) error {
 	req := osc.StopVmsRequest{
 		VmIds: []string{vmId},
 	}
-
-	_, httpRes, err := s.tenant.Client().VmApi.StopVms(s.tenant.ContextWithAuth(ctx)).StopVmsRequest(req).Execute()
-	return utils.LogAndExtractError(ctx, "StopVms", req, httpRes, err)
+	_, err := s.tenant.Client().StopVms(ctx, req)
+	return err
 }
 
 // HasCCMTags checks if a Vm has both CCM tags.
 func HasCCMTags(vm *osc.Vm) bool {
-	return slices.ContainsFunc(vm.GetTags(), func(t osc.ResourceTag) bool {
-		return t.Key == TagKeyNodeName
-	}) && slices.ContainsFunc(vm.GetTags(), func(t osc.ResourceTag) bool {
-		return strings.HasPrefix(t.Key, TagKeyClusterIDPrefix)
-	})
+	return tags.Has(vm.Tags, tags.VmNodeName)
 }
 
 // AddCCMTags add ccm tag
@@ -312,16 +226,16 @@ func (s *Service) AddCCMTags(ctx context.Context, clusterName string, hostname s
 	resourceIds := []string{vmId}
 
 	nodeTag := osc.ResourceTag{
-		Key:   TagKeyNodeName,
+		Key:   tags.VmNodeName,
 		Value: hostname,
 	}
 	clusterTag := osc.ResourceTag{
-		Key:   TagKeyClusterIDPrefix + clusterName,
-		Value: "owned",
+		Key:   tags.ClusterIDKey(clusterName),
+		Value: tags.ResourceLifecycleOwned,
 	}
 	nodeTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{nodeTag, clusterTag},
 	}
-	return tag.AddTag(ctx, nodeTagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
+	return tag.AddTag(ctx, nodeTagRequest, resourceIds, s.tenant.Client())
 }

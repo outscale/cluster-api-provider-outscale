@@ -13,25 +13,22 @@ import (
 	"testing"
 
 	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/loadbalancer"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/loadbalancer/mock_loadbalancer"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net/mock_net"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security/mock_security"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tag/mock_tag"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -63,13 +60,13 @@ type MockCloudServices struct {
 	NetPeeringMock     *mock_net.MockOscNetPeeringInterface
 	NetAccessPointMock *mock_net.MockOscNetAccessPointInterface
 	SubnetMock         *mock_net.MockOscSubnetInterface
-	SecurityGroupMock  *mock_security.MockOscSecurityGroupInterface
+	SecurityGroupMock  *mock_compute.MockOscSecurityGroupInterface
 
 	InternetServiceMock *mock_net.MockOscInternetServiceInterface
-	RouteTableMock      *mock_security.MockOscRouteTableInterface
+	RouteTableMock      *mock_net.MockOscRouteTableInterface
 	NatServiceMock      *mock_net.MockOscNatServiceInterface
-	PublicIpMock        *mock_security.MockOscPublicIpInterface
-	LoadBalancerMock    *mock_loadbalancer.MockOscLoadBalancerInterface
+	PublicIpMock        *mock_net.MockOscPublicIpInterface
+	LoadBalancerMock    *mock_net.MockOscLoadBalancerInterface
 
 	VMMock          *mock_compute.MockOscVmInterface
 	ImageMock       *mock_compute.MockOscImageInterface
@@ -85,13 +82,13 @@ func newMockCloudServices(mockCtrl *gomock.Controller, region string) *MockCloud
 		NetPeeringMock:     mock_net.NewMockOscNetPeeringInterface(mockCtrl),
 		NetAccessPointMock: mock_net.NewMockOscNetAccessPointInterface(mockCtrl),
 		SubnetMock:         mock_net.NewMockOscSubnetInterface(mockCtrl),
-		SecurityGroupMock:  mock_security.NewMockOscSecurityGroupInterface(mockCtrl),
+		SecurityGroupMock:  mock_compute.NewMockOscSecurityGroupInterface(mockCtrl),
 
 		InternetServiceMock: mock_net.NewMockOscInternetServiceInterface(mockCtrl),
-		RouteTableMock:      mock_security.NewMockOscRouteTableInterface(mockCtrl),
+		RouteTableMock:      mock_net.NewMockOscRouteTableInterface(mockCtrl),
 		NatServiceMock:      mock_net.NewMockOscNatServiceInterface(mockCtrl),
-		PublicIpMock:        mock_security.NewMockOscPublicIpInterface(mockCtrl),
-		LoadBalancerMock:    mock_loadbalancer.NewMockOscLoadBalancerInterface(mockCtrl),
+		PublicIpMock:        mock_net.NewMockOscPublicIpInterface(mockCtrl),
+		LoadBalancerMock:    mock_net.NewMockOscLoadBalancerInterface(mockCtrl),
 
 		VMMock:          mock_compute.NewMockOscVmInterface(mockCtrl),
 		ImageMock:       mock_compute.NewMockOscImageInterface(mockCtrl),
@@ -125,7 +122,7 @@ func (s *MockCloudServices) Subnet(t tenant.Tenant) net.OscSubnetInterface {
 	return s.SubnetMock
 }
 
-func (s *MockCloudServices) SecurityGroup(t tenant.Tenant) security.OscSecurityGroupInterface {
+func (s *MockCloudServices) SecurityGroup(t tenant.Tenant) compute.OscSecurityGroupInterface {
 	s.tenant = t
 	return s.SecurityGroupMock
 }
@@ -135,7 +132,7 @@ func (s *MockCloudServices) InternetService(t tenant.Tenant) net.OscInternetServ
 	return s.InternetServiceMock
 }
 
-func (s *MockCloudServices) RouteTable(t tenant.Tenant) security.OscRouteTableInterface {
+func (s *MockCloudServices) RouteTable(t tenant.Tenant) net.OscRouteTableInterface {
 	s.tenant = t
 	return s.RouteTableMock
 }
@@ -145,12 +142,12 @@ func (s *MockCloudServices) NatService(t tenant.Tenant) net.OscNatServiceInterfa
 	return s.NatServiceMock
 }
 
-func (s *MockCloudServices) PublicIp(t tenant.Tenant) security.OscPublicIpInterface {
+func (s *MockCloudServices) PublicIp(t tenant.Tenant) net.OscPublicIpInterface {
 	s.tenant = t
 	return s.PublicIpMock
 }
 
-func (s *MockCloudServices) LoadBalancer(t tenant.Tenant) loadbalancer.OscLoadBalancerInterface {
+func (s *MockCloudServices) LoadBalancer(t tenant.Tenant) net.OscLoadBalancerInterface {
 	s.tenant = t
 	return s.LoadBalancerMock
 }
@@ -176,15 +173,15 @@ func (s *MockCloudServices) Tag(t tenant.Tenant) tag.OscTagInterface {
 }
 
 type (
-	patchOSCClusterFunc func(m *v1beta1.OscCluster)
-	patchOSCMachineFunc func(m *v1beta1.OscMachine)
+	patchOSCClusterFunc func(m *infrastructurev1beta2.OscCluster)
+	patchOSCMachineFunc func(m *infrastructurev1beta2.OscMachine)
 )
 
 type mockFunc func(s *MockCloudServices)
 
 type (
-	assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
-	assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
+	assertOSCMachineFunc func(t *testing.T, m *infrastructurev1beta2.OscMachine)
+	assertOSCClusterFunc func(t *testing.T, c *infrastructurev1beta2.OscCluster)
 	assertTenantFunc     func(t *testing.T, tnt tenant.Tenant)
 )
 
@@ -237,7 +234,7 @@ func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *v1b
 	return &cluster, &osccluster
 }
 
-func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.Machine, *v1beta1.OscMachine) {
+func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.Machine, *infrastructurev1beta2.OscMachine) {
 	var machine clusterv1.Machine
 	var mname string
 	switch base {
@@ -250,7 +247,7 @@ func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.
 		decode(t, "machine/"+base+".yaml", &machine)
 		mname = machine.Name
 	}
-	var oscmachine v1beta1.OscMachine
+	var oscmachine infrastructurev1beta2.OscMachine
 	decode(t, "oscmachine/"+spec+".yaml", &oscmachine)
 	oscmachine.Labels = map[string]string{clusterv1.ClusterNameLabel: clusterName}
 	oscmachine.OwnerReferences = []metav1.OwnerReference{{
@@ -274,8 +271,8 @@ func mockReadTagByNameFound(typ tag.ResourceType, name, resourceId string) mockF
 		s.TagMock.EXPECT().
 			ReadTag(gomock.Any(), gomock.Eq(typ), gomock.Eq(tag.NameKey), gomock.Eq(name)).
 			Return(&osc.Tag{
-				Value:      &name,
-				ResourceId: &resourceId,
+				Value:      name,
+				ResourceId: resourceId,
 			}, nil)
 	}
 }
@@ -299,7 +296,7 @@ func mockPublicIpFound(publicIpId string, pip ...*osc.PublicIp) mockFunc {
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
 			GetPublicIp(gomock.Any(), gomock.Eq(publicIpId)).
-			Return(&osc.PublicIp{PublicIpId: &publicIpId}, nil)
+			Return(&osc.PublicIp{PublicIpId: publicIpId}, nil)
 	}
 }
 
@@ -307,7 +304,7 @@ func mockGetPublicIpByIp(publicIp, publicIpId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
 			GetPublicIpByIp(gomock.Any(), gomock.Eq(publicIp)).
-			Return(&osc.PublicIp{PublicIpId: &publicIpId, PublicIp: &publicIp}, nil)
+			Return(&osc.PublicIp{PublicIpId: publicIpId, PublicIp: publicIp}, nil)
 	}
 }
 
@@ -315,7 +312,7 @@ func mockCreatePublicIp(name, clusterID, publicIpId, publicIp string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.PublicIpMock.EXPECT().
 			CreatePublicIp(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterID)).
-			Return(&osc.PublicIp{PublicIpId: &publicIpId, PublicIp: &publicIp}, nil)
+			Return(&osc.PublicIp{PublicIpId: publicIpId, PublicIp: publicIp}, nil)
 	}
 }
 
