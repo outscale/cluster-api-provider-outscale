@@ -15,43 +15,35 @@ CCM=$7
 CERT_MANAGER=$8
 KUSTOMIZE_PATH=$9
 
-OKS_ACCESS_KEY=`echo $OKS_AKSK|cut -d% -f 1`
-OKS_SECRET_KEY=`echo $OKS_AKSK|cut -d% -f 2`
-OKS_REGION=`echo $OKS_AKSK|cut -d% -f 3`
-
-export OSC_ACCESS_KEY=`echo $OSC_AKSK|cut -d% -f 1`
-export OSC_SECRET_KEY=`echo $OSC_AKSK|cut -d% -f 2`
-export OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
-
-export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
-export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
-
 # F***g DNS
 echo "options use-vc single-request attempts:5" >> /etc/resolv.conf
 
+# OKS kubeconfig
+OKS_ACCESS_KEY=`echo $OKS_AKSK|cut -d% -f 1`
+OKS_SECRET_KEY=`echo $OKS_AKSK|cut -d% -f 2`
+OKS_REGION=`echo $OKS_AKSK|cut -d% -f 3`
 cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$//'|cut -c1-40|sed -r 's/[^a-z0-9-]+/-/g'`
-# OKS
-/.venv/bin/oks-cli profile add --profile-name "default" --access-key $OKS_ACCESS_KEY --secret-key $OKS_SECRET_KEY --region $OKS_REGION
-/.venv/bin/oks-cli project login --project-name github-runner
-/.venv/bin/oks-cli cluster list
-kubeconfig=`/.venv/bin/oks-cli cluster kubeconfig --cluster-name $cluster_name --print-path`
-export KUBECONFIG=$kubeconfig
-cp $KUBECONFIG oks.kubeconfig
-echo "MANAGEMENT_KUBECONFIG=oks.kubeconfig" >> $GITHUB_OUTPUT
+octl profile add oks --ak $OKS_ACCESS_KEY --sk $OKS_SECRET_KEY --region $OKS_REGION
+octl kube cluster kubeconfig $cluster_name --profile oks > management.kubeconfig
+export KUBECONFIG=management.kubeconfig
+echo "MANAGEMENT_KUBECONFIG=management.kubeconfig" >> $GITHUB_OUTPUT
 
 # clusterctl
+OSC_REGION=`echo $OSC_AKSK|cut -d% -f 3`
 export OSC_SUBREGION_NAME=${OSC_REGION}a
 export OSC_KEYPAIR_NAME=cluster-api
 export OSC_IOPS=1000
 export OSC_VOLUME_SIZE=30
 export OSC_VOLUME_TYPE=gp2
-export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
 ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM="$ip/32"
 mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM_CAPI="$mip/32"
 export OSC_NAT_IP_POOL=caposc
+export OSC_IMAGE_NAME=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 1`
+export OSC_IMAGE_ACCOUNT_ID=`echo $OSC_IMAGE_NAME_ACCOUNT_ID|cut -d% -f 2`
 export OSC_IMAGE_OPENSOURCE=true
+export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
 clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME --from https://github.com/outscale/cluster-api-provider-outscale/blob/main/templates/cluster-template-secure.yaml > clusterapi.yaml
 # clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
 
@@ -101,9 +93,11 @@ for i in {1..50}; do
 done
 
 if [ "$CCM" = "true" ]; then
+  export OSC_ACCESS_KEY=`echo $OSC_AKSK|cut -d% -f 1`
+  export OSC_SECRET_KEY=`echo $OSC_AKSK|cut -d% -f 2`
   echo "installing CCM v1"
   KUBE_MAJORMINOR=`echo $KUBERNETES_VERSION|cut -d . -f 1,2`
-  CCM_VERSION=$KUBE_MAJORMINOR.4-alpha.1
+  CCM_VERSION=$KUBE_MAJORMINOR.5
   kubectl create secret generic osc-secret --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY -n kube-system
   helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret \
     --set image.tag=$CCM_VERSION

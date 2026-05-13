@@ -50,9 +50,11 @@ jobs:
     - name: ⬇️ Install kubectl
       uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5
       with:
-        version: v1.34.2
+        version: v1.34.8
     - name: ⬇️ Install helm
       uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5
+      with:
+        version: v3.20.0
     - name: ⬇️ Install kustomize
       uses: imranismail/setup-kustomize@53f941b41dca13ed61874bbc6b4b6e1562877530 # v3
       with:
@@ -72,7 +74,7 @@ jobs:
         exclude_resource_types: access_key
     - name: 👷 Deploy management cluster
       id: management
-      uses: ./github_actions/deploy_cluster
+      uses: ./.github/actions/deploy_cluster
       with:
         RUNNER_NAME: ${{ runner.name }}
         OKS_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}

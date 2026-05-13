@@ -23,9 +23,11 @@ jobs:
     - name: ⬇️ Install kubectl
       uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5
       with:
-        version: v1.34.2
+        version: v1.34.8
     - name: ⬇️ Install helm
       uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5
+      with:
+        version: v3.20.0
     - name: ⬇️ Install kustomize
       uses: imranismail/setup-kustomize@53f941b41dca13ed61874bbc6b4b6e1562877530 # v3
       with:
@@ -44,7 +46,7 @@ jobs:
         region: ${{ env.OSC_REGION }}
     - name: 👷 Deploy management cluster
       id: management
-      uses: ./github_actions/deploy_cluster
+      uses: ./.github/actions/deploy_cluster
       with:
         RUNNER_NAME: ${{ runner.name }}
         OKS_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}
@@ -61,11 +63,11 @@ jobs:
       uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version-file: 'go.mod'
-    - name: 📦 Build and push Docker image 
+    - name: 📦 Build and push Docker image
       run: |
         docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
         sudo apt-get update
-        sudo apt install -y docker-buildx-plugin 
+        sudo apt install -y docker-buildx-plugin
         make docker-buildx
         make docker-push
       env:
@@ -125,4 +127,4 @@ jobs:
       shell: bash
       env:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
-        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system      
+        CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
