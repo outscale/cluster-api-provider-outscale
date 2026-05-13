@@ -73,7 +73,7 @@ OSC_SUBREGION_NAME ?= eu-west-2a
 ClusterToClean ?= capo-quickstart
 MINIMUM_MDBOOK_VERSION=0.4.21
 TRIVY_IMAGE := aquasec/trivy:latest
-DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' ! -path "./hack/*" ! -path "./github_actions/*")
+DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' ! -path "./hack/*" ! -path "./.github/actions/*")
 HADOLINT_VERSION := v2.14.0-alpine@sha256:7aba693c1442eb31c0b015c129697cb3b6cb7da589d85c7562f9deb435a6657c
 REUSELINT_VERSION := 6.2@sha256:85462a75c0f8efda09ddd190b92816b70e7662577c8427429e11e1b9f25a992e
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
