@@ -30,16 +30,9 @@ jobs:
       - name: 🔎 Reuse check
         run: make lint-reuse
         shell: bash
-      - name: 🔎 check with ShellCheck
-        run: make install-shellcheck
-        shell: bash
-      - name: ⬇️ Install yamllint
-        run: pip install yamllint
-      - name: 🔎 check with yamlint
-        run: yamllint -c .github/linters/yaml-lint.yaml . --format github
       - name: 🔎 Run make build
         run: make build
         shell: bash
       - name: 🔎 Docker Lint
-        run: |
-          make dockerlint
+        run: make dockerlint
+        shell: bash

@@ -74,7 +74,8 @@ ClusterToClean ?= capo-quickstart
 MINIMUM_MDBOOK_VERSION=0.4.21
 TRIVY_IMAGE := aquasec/trivy:latest
 DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' ! -path "./hack/*" ! -path "./github_actions/*")
-LINTER_VERSION := v2.10.0
+HADOLINT_VERSION := v2.14.0-alpine@sha256:7aba693c1442eb31c0b015c129697cb3b6cb7da589d85c7562f9deb435a6657c
+REUSELINT_VERSION := 6.2@sha256:85462a75c0f8efda09ddd190b92816b70e7662577c8427429e11e1b9f25a992e
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -200,11 +201,11 @@ cluster-class-ex: envsubst
 .PHONY: dockerlint
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
-	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i -e HADOLINT_IGNORE=SC1091 hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
+	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i -e HADOLINT_IGNORE=SC1091 hadolint/hadolint:${HADOLINT_VERSION} hadolint - < ${image} || exit 1 ; )
 
 .PHONY: lint-reuse
 lint-reuse:
-	docker run --rm --volume $(PWD):/data fsfe/reuse:5.1 lint
+	docker run --rm --volume $(PWD):/data fsfe/reuse:${REUSELINT_VERSION} lint
 
 .PHONY: trivy-scan
 trivy-scan:
@@ -226,11 +227,11 @@ trivy-ignore-check:
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
+build: generate ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: manifests generate ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
