@@ -7,7 +7,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -61,7 +60,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 // reconcileSecurityGroupDeleteRules deletes all rules not in spec for a securityGroup.
 func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	var checkRules = func(flow string, rules []osc.SecurityGroupRule) error {
+	checkRules := func(flow string, rules []osc.SecurityGroupRule) error {
 		for _, rule := range rules {
 			// Skipping rule created by CCM. There is no way to be sure this comes from the CCM,
 			// but the CCM creates rules with an associated SG, and the config from the CRD only uses ipRanges.
@@ -126,7 +125,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroup, err := r.Tracker.getSecurityGroup(ctx, securityGroupSpec, clusterScope)
 		switch {
-		case errors.Is(err, ErrNoResourceFound):
+		case IsNotFound(err):
 			log.V(3).Info("Creating securityGroup", "securityGroupName", securityGroupSpec.Name)
 			name := clusterScope.GetSecurityGroupName(securityGroupSpec)
 			securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterScope.GetUID(), name, securityGroupSpec.Description, securityGroupSpec.Tag, securityGroupSpec.Roles)

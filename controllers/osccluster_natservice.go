@@ -7,7 +7,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -39,7 +38,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 	for _, natServiceSpec := range natServiceSpecs {
 		natService, err := r.Tracker.getNatService(ctx, natServiceSpec, clusterScope)
 		switch {
-		case errors.Is(err, ErrNoResourceFound):
+		case IsNotFound(err):
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 		default:

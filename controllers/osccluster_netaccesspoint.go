@@ -7,7 +7,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -62,7 +61,7 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 	for _, service := range clusterScope.GetNetwork().NetAccessPoints {
 		netAccessPoint, err := r.Tracker.getNetAccessPoint(ctx, service, clusterScope)
 		switch {
-		case errors.Is(err, ErrNoResourceFound):
+		case IsNotFound(err):
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		default:

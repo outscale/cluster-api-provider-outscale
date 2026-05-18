@@ -436,6 +436,7 @@ func (t *ClusterResourceTracker) setBastionId(clusterScope *scope.ClusterScope, 
 	}
 	rsrc.Bastion[defaultResource] = id
 }
+
 func (t *ClusterResourceTracker) _getSecurityGroupOrId(ctx context.Context, sg infrastructurev1beta1.OscSecurityGroup, clusterScope *scope.ClusterScope) (*osc.SecurityGroup, string, error) {
 	if sg.ResourceId != "" {
 		return nil, sg.ResourceId, nil

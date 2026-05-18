@@ -119,7 +119,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 
 	vm, err := r.Tracker.getBastion(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound):
+	case IsNotFound(err):
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 	default:
