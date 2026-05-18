@@ -44,7 +44,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	switch {
 	case err == nil:
 		machineScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
-	case !errors.Is(err, ErrNoResourceFound):
+	case !IsNotFound(err):
 		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
 		// Check if a machine needs to be placed in a subregion.

@@ -369,6 +369,14 @@ func mockGetNatServiceFromClientToken(token string, ns *osc.NatService) mockFunc
 	}
 }
 
+func mockNatServiceNotFound(id string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NatServiceMock.EXPECT().
+			GetNatService(gomock.Any(), gomock.Eq(id)).
+			Return(nil, nil)
+	}
+}
+
 func mockNatServiceFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NatServiceMock.EXPECT().

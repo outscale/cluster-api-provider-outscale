@@ -2603,6 +2603,106 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				}),
 			},
 		},
+		{
+			name:            "A NAT service has been deleted, it is recreated with the associated routes",
+			clusterSpec:     "ready-1.0",
+			clusterBaseSpec: "base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchIncrementGeneration(),
+			},
+			mockFuncs: []mockFunc{
+				mockNetFound("vpc-foo"),
+				mockSubnetFound("subnet-public"),
+				mockSubnetFound("subnet-kw"),
+				mockSubnetFound("subnet-kcp"),
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+
+				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
+					SecurityGroupId: ptr.To("sg-kw"),
+					InboundRules: &[]osc.SecurityGroupRule{
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.4.0/24"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
+					},
+				}),
+				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
+					SecurityGroupId: ptr.To("sg-kcp"),
+					InboundRules: &[]osc.SecurityGroupRule{
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					},
+				}),
+				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
+					SecurityGroupId: ptr.To("sg-lb"),
+					InboundRules: &[]osc.SecurityGroupRule{
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					},
+					OutboundRules: &[]osc.SecurityGroupRule{
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					},
+				}),
+				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
+					SecurityGroupId: ptr.To("sg-node"),
+					InboundRules: &[]osc.SecurityGroupRule{
+						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
+						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
+					},
+					OutboundRules: &[]osc.SecurityGroupRule{
+						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
+						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					},
+				}),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
+						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+					},
+					{
+						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
+						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+					},
+					{
+						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
+						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+					},
+				}),
+				mockNatServiceNotFound("nat-foo"),
+				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIp: ptr.To("1.2.3.4")}),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-bar"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
+						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+					},
+					{
+						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
+						Routes: &[]osc.Route{},
+					},
+					{
+						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
+						Routes: &[]osc.Route{},
+					},
+				}),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-bar", "nat"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-bar", "nat"),
+
+				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {

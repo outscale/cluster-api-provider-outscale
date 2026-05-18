@@ -7,7 +7,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -28,7 +27,7 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 
 	net, err := r.Tracker.getNet(ctx, clusterScope)
 	switch {
-	case errors.Is(err, ErrNoResourceFound):
+	case IsNotFound(err) && !clusterScope.GetNetwork().UseExisting.Net:
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 	default:
