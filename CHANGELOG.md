@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.5.0] - 2026-06-03
+
+### 📝 Documentation
+* 📝 doc: update troubleshooting page by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/807
+### 🐛 Fixed
+* 🐛 fix: controller is stuck when a resource has been deleted by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/819
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.28.3 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/801
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.3 by @Open-Source-Bot in https://github.com/outscale/cluster-api-provider-outscale/pull/812
+
 ## [v1.5.0-rc.1] - 2026-05-04
 
 ### ✨ Added

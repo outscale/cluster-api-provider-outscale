@@ -85,7 +85,7 @@ func TestHelmTemplate(t *testing.T) {
 }
 
 func TestHelmTemplate_Deployment(t *testing.T) {
-	var getDeployment = func(t *testing.T, vars ...string) *appsv1.Deployment {
+	getDeployment := func(t *testing.T, vars ...string) *appsv1.Deployment {
 		specs := getHelmSpecs(t, vars...)
 		for _, obj := range specs {
 			if dep, ok := obj.(*appsv1.Deployment); ok {
@@ -109,7 +109,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}, dep.Spec.Template.ObjectMeta)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 2)
 		manager := dep.Spec.Template.Spec.Containers[1]
-		assert.Equal(t, "registry.hub.docker.com/outscale/cluster-api-outscale-controllers:v0.4.0", manager.Image)
+		assert.Equal(t, "registry.hub.docker.com/outscale/cluster-api-outscale-controllers:v1.5.0", manager.Image)
 		assert.Equal(t, []string{
 			"--health-probe-bind-address=:8081",
 			"--metrics-bind-address=127.0.0.1:8080",
