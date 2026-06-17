@@ -66,7 +66,7 @@ jobs:
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@master
+      uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # master
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
@@ -103,7 +103,7 @@ jobs:
         DOCKER_BUILDKIT: 1
     - name: 🔎 Preloader snapshot
       id: preloader
-      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@main
+      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@81d998cebedf3a43e86bd9ec7608323f022b1ae8 # main
       with:
         KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
