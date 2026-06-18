@@ -9,13 +9,12 @@ import (
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	tag "github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -28,7 +27,7 @@ func patchMoveCluster() patchOSCClusterFunc {
 
 func patchDeleteCluster() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta1.OscCluster) {
-		m.DeletionTimestamp = ptr.To(metav1.Now())
+		m.DeletionTimestamp = new(metav1.Now())
 		if len(m.Finalizers) == 0 {
 			m.Finalizers = []string{controllers.OscClusterFinalizer}
 		}
@@ -124,7 +123,7 @@ func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			GetNet(gomock.Any(), gomock.Eq(id)).
-			Return(&osc.Net{NetId: ptr.To(id)}, nil)
+			Return(&osc.Net{NetId: id}, nil)
 	}
 }
 
@@ -140,7 +139,7 @@ func mockCreateNet(spec infrastructurev1beta1.OscNet, clusterID, netName, netId 
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateNet(gomock.Any(), gomock.Eq(spec), gomock.Eq(clusterID), gomock.Eq(netName)).
-			Return(&osc.Net{NetId: &netId}, nil)
+			Return(&osc.Net{NetId: netId}, nil)
 	}
 }
 
@@ -154,7 +153,7 @@ func mockDeleteNet(id string) mockFunc {
 
 func mockGetSubnetFromNet(netId, ipRange string, sn *osc.Subnet) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SubnetMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetSubnetFromNet(gomock.Any(), gomock.Eq(netId), gomock.Eq(ipRange)).
 			Return(sn, nil)
 	}
@@ -162,7 +161,7 @@ func mockGetSubnetFromNet(netId, ipRange string, sn *osc.Subnet) mockFunc {
 
 func mockGetSubnet(id string, subnet *osc.Subnet) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SubnetMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetSubnet(gomock.Any(), gomock.Eq(id)).
 			Return(subnet, nil)
 	}
@@ -170,23 +169,23 @@ func mockGetSubnet(id string, subnet *osc.Subnet) mockFunc {
 
 func mockSubnetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SubnetMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetSubnet(gomock.Any(), gomock.Eq(id)).
-			Return(&osc.Subnet{SubnetId: ptr.To(id)}, nil)
+			Return(&osc.Subnet{SubnetId: id}, nil)
 	}
 }
 
 func mockCreateSubnet(spec infrastructurev1beta1.OscSubnet, netId, clusterID, name, subnetId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SubnetMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateSubnet(gomock.Any(), gomock.Eq(spec), gomock.Eq(netId), gomock.Eq(clusterID), gomock.Eq(name)).
-			Return(&osc.Subnet{SubnetId: &subnetId, NetId: &netId, IpRange: &spec.IpSubnetRange}, nil)
+			Return(&osc.Subnet{SubnetId: subnetId, NetId: netId, IpRange: spec.IpSubnetRange}, nil)
 	}
 }
 
 func mockDeleteSubnet(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SubnetMock.EXPECT().
+		s.NetMock.EXPECT().
 			DeleteSubnet(gomock.Any(), gomock.Eq(id)).
 			Return(nil)
 	}
@@ -194,29 +193,29 @@ func mockDeleteSubnet(id string) mockFunc {
 
 func mockInternetServiceFound(netId, id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetInternetService(gomock.Any(), gomock.Eq(id)).
 			Return(&osc.InternetService{
-				InternetServiceId: ptr.To(id),
-				NetId:             ptr.To(netId),
+				InternetServiceId: id,
+				NetId:             netId,
 			}, nil)
 	}
 }
 
 func mockInternetServiceForNetFound(netId, id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetInternetServiceForNet(gomock.Any(), gomock.Eq(netId)).
 			Return(&osc.InternetService{
-				InternetServiceId: ptr.To(id),
-				NetId:             ptr.To(netId),
+				InternetServiceId: id,
+				NetId:             netId,
 			}, nil)
 	}
 }
 
 func mockGetInternetServiceForNet(netId string, is *osc.InternetService) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetInternetServiceForNet(gomock.Any(), gomock.Eq(netId)).
 			Return(is, nil)
 	}
@@ -224,17 +223,17 @@ func mockGetInternetServiceForNet(netId string, is *osc.InternetService) mockFun
 
 func mockCreateInternetService(name, clusterId, internetServiceId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateInternetService(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterId)).
 			Return(&osc.InternetService{
-				InternetServiceId: &internetServiceId,
+				InternetServiceId: internetServiceId,
 			}, nil)
 	}
 }
 
 func mockLinkInternetService(id, netId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			LinkInternetService(gomock.Any(), gomock.Eq(id), gomock.Eq(netId)).
 			Return(nil)
 	}
@@ -242,7 +241,7 @@ func mockLinkInternetService(id, netId string) mockFunc {
 
 func mockUnlinkInternetService(id, netId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			UnlinkInternetService(gomock.Any(), gomock.Eq(id), gomock.Eq(netId)).
 			Return(nil)
 	}
@@ -250,7 +249,7 @@ func mockUnlinkInternetService(id, netId string) mockFunc {
 
 func mockDeleteInternetService(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.InternetServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			DeleteInternetService(gomock.Any(), gomock.Eq(id)).
 			Return(nil)
 	}
@@ -258,7 +257,7 @@ func mockDeleteInternetService(id string) mockFunc {
 
 func mockGetSecurityGroupFromName(name string, sg *osc.SecurityGroup) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
+		s.ComputeMock.EXPECT().
 			GetSecurityGroupFromName(gomock.Any(), gomock.Eq(name)).
 			Return(sg, nil)
 	}
@@ -266,8 +265,8 @@ func mockGetSecurityGroupFromName(name string, sg *osc.SecurityGroup) mockFunc {
 
 func mockGetSecurityGroup(sgId string, sg *osc.SecurityGroup) mockFunc {
 	return func(s *MockCloudServices) {
-		sg.SecurityGroupId = &sgId
-		s.SecurityGroupMock.EXPECT().
+		sg.SecurityGroupId = sgId
+		s.ComputeMock.EXPECT().
 			GetSecurityGroup(gomock.Any(), gomock.Eq(sgId)).
 			Return(sg, nil)
 	}
@@ -275,23 +274,23 @@ func mockGetSecurityGroup(sgId string, sg *osc.SecurityGroup) mockFunc {
 
 func mockCreateSecurityGroup(netId, clusterId, name, description, tag string, roles []infrastructurev1beta1.OscRole, sgId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
+		s.ComputeMock.EXPECT().
 			CreateSecurityGroup(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterId), gomock.Eq(name), gomock.Eq(description), gomock.Eq(tag), gomock.Eq(roles)).
-			Return(&osc.SecurityGroup{SecurityGroupId: &sgId}, nil)
+			Return(&osc.SecurityGroup{SecurityGroupId: sgId}, nil)
 	}
 }
 
-func mockCreateSecurityGroupRule(sg, flow, proto, ipRanges string, portFrom, portTo int32) mockFunc {
+func mockCreateSecurityGroupRule(sg, flow, proto, ipRanges string, fromPort, toPort int) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
-			CreateSecurityGroupRule(gomock.Any(), sg, flow, proto, ipRanges, "", portFrom, portTo).
-			Return(&osc.SecurityGroup{SecurityGroupId: ptr.To(sg)}, nil)
+		s.ComputeMock.EXPECT().
+			CreateSecurityGroupRule(gomock.Any(), sg, flow, proto, ipRanges, "", fromPort, toPort).
+			Return(&osc.SecurityGroup{SecurityGroupId: sg}, nil)
 	}
 }
 
-func mockDeleteSecurityGroupRule(sg, flow, proto, ipRange, sgMember string, fromPort int32, toPort int32) mockFunc {
+func mockDeleteSecurityGroupRule(sg, flow, proto, ipRange, sgMember string, fromPort, toPort int) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
+		s.ComputeMock.EXPECT().
 			DeleteSecurityGroupRule(gomock.Any(), gomock.Eq(sg), gomock.Eq(flow), gomock.Eq(proto), gomock.Eq(ipRange), gomock.Eq(sgMember), gomock.Eq(fromPort), gomock.Eq(toPort)).
 			Return(nil)
 	}
@@ -299,7 +298,7 @@ func mockDeleteSecurityGroupRule(sg, flow, proto, ipRange, sgMember string, from
 
 func mockDeleteSecurityGroup(sg string, err error) mockFunc {
 	return func(s *MockCloudServices) {
-		s.SecurityGroupMock.EXPECT().
+		s.ComputeMock.EXPECT().
 			DeleteSecurityGroup(gomock.Any(), gomock.Eq(sg)).
 			Return(err)
 	}
@@ -307,7 +306,7 @@ func mockDeleteSecurityGroup(sg string, err error) mockFunc {
 
 func mockGetRouteTablesFromNet(netId string, rts []osc.RouteTable) mockFunc {
 	return func(s *MockCloudServices) {
-		s.RouteTableMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetRouteTablesFromNet(gomock.Any(), gomock.Eq(netId)).
 			Return(rts, nil)
 	}
@@ -315,15 +314,15 @@ func mockGetRouteTablesFromNet(netId string, rts []osc.RouteTable) mockFunc {
 
 func mockCreateRouteTable(netId, clusterID, name, routeTableId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.RouteTableMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateRouteTable(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterID), gomock.Eq(name)).
-			Return(&osc.RouteTable{RouteTableId: &routeTableId}, nil)
+			Return(&osc.RouteTable{RouteTableId: routeTableId}, nil)
 	}
 }
 
 func mockLinkRouteTable(routeTableId, subnetId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.RouteTableMock.EXPECT().
+		s.NetMock.EXPECT().
 			LinkRouteTable(gomock.Any(), gomock.Eq(routeTableId), gomock.Eq(subnetId)).
 			Return("", nil)
 	}
@@ -331,7 +330,7 @@ func mockLinkRouteTable(routeTableId, subnetId string) mockFunc {
 
 func mockCreateRoute(routeTableId, dest, resourceId, resourceType string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.RouteTableMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateRoute(gomock.Any(), gomock.Eq(dest), gomock.Eq(routeTableId), gomock.Eq(resourceId), gomock.Eq(resourceType)).
 			Return(&osc.RouteTable{}, nil)
 	}
@@ -339,7 +338,7 @@ func mockCreateRoute(routeTableId, dest, resourceId, resourceType string) mockFu
 
 func mockUnlinkRouteTable(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.RouteTableMock.EXPECT().
+		s.NetMock.EXPECT().
 			UnlinkRouteTable(gomock.Any(), gomock.Eq(id)).
 			Return(nil)
 	}
@@ -347,7 +346,7 @@ func mockUnlinkRouteTable(id string) mockFunc {
 
 func mockDeleteRouteTable(routeTableId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.RouteTableMock.EXPECT().
+		s.NetMock.EXPECT().
 			DeleteRouteTable(gomock.Any(), gomock.Eq(routeTableId)).
 			Return(nil)
 	}
@@ -355,7 +354,7 @@ func mockDeleteRouteTable(routeTableId string) mockFunc {
 
 func mockListNatServices(netId string, nats []osc.NatService) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NatServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			ListNatServices(gomock.Any(), gomock.Eq(netId)).
 			Return(nats, nil)
 	}
@@ -363,7 +362,7 @@ func mockListNatServices(netId string, nats []osc.NatService) mockFunc {
 
 func mockGetNatServiceFromClientToken(token string, ns *osc.NatService) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NatServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetNatServiceFromClientToken(gomock.Any(), gomock.Eq(token)).
 			Return(ns, nil)
 	}
@@ -371,7 +370,7 @@ func mockGetNatServiceFromClientToken(token string, ns *osc.NatService) mockFunc
 
 func mockNatServiceNotFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NatServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetNatService(gomock.Any(), gomock.Eq(id)).
 			Return(nil, nil)
 	}
@@ -379,25 +378,25 @@ func mockNatServiceNotFound(id string) mockFunc {
 
 func mockNatServiceFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NatServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetNatService(gomock.Any(), gomock.Eq(id)).
 			Return(&osc.NatService{
-				NatServiceId: ptr.To(id),
+				NatServiceId: id,
 			}, nil)
 	}
 }
 
 func mockCreateNatService(publicIpId, subnetId, clientToken, name, clusterID, natServiceId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NatServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateNatService(gomock.Any(), gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(clientToken), gomock.Eq(name), gomock.Eq(clusterID)).
-			Return(&osc.NatService{NatServiceId: &natServiceId}, nil)
+			Return(&osc.NatService{NatServiceId: natServiceId}, nil)
 	}
 }
 
 func mockDeleteNatService(id string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NatServiceMock.EXPECT().
+		s.NetMock.EXPECT().
 			DeleteNatService(gomock.Any(), gomock.Eq(id)).
 			Return(nil)
 	}
@@ -405,7 +404,7 @@ func mockDeleteNatService(id string) mockFunc {
 
 func mockGetLoadBalancer(name string, lb *osc.LoadBalancer) mockFunc {
 	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetLoadBalancer(gomock.Any(), gomock.Eq(name)).
 			Return(lb, nil)
 	}
@@ -413,7 +412,7 @@ func mockGetLoadBalancer(name string, lb *osc.LoadBalancer) mockFunc {
 
 func mockListNetAccessPoints(netId string, naps []osc.NetAccessPoint) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NetAccessPointMock.EXPECT().
+		s.NetMock.EXPECT().
 			ListNetAccessPoints(gomock.Any(), gomock.Eq(netId)).
 			Return(naps, nil)
 	}
@@ -421,48 +420,48 @@ func mockListNetAccessPoints(netId string, naps []osc.NetAccessPoint) mockFunc {
 
 func mockLoadBalancerFound(name, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
+		s.NetMock.EXPECT().
 			GetLoadBalancer(gomock.Any(), gomock.Eq(name)).
 			Return(&osc.LoadBalancer{
-				LoadBalancerName: ptr.To(name),
-				DnsName:          ptr.To(name + ".lbu.outscale.com"),
-				Tags:             &[]osc.ResourceTag{{Key: tag.NameKey, Value: nameTag}},
-				HealthCheck:      &osc.HealthCheck{},
+				LoadBalancerName: name,
+				DnsName:          name + ".lbu.outscale.com",
+				Tags:             []osc.ResourceTag{{Key: tag.NameKey, Value: nameTag}},
+				HealthCheck:      osc.HealthCheck{},
 			}, nil)
 	}
 }
 
 func mockCreateLoadBalancer(loadBalancerName, loadBalancerType, subnetId, securityGroupId string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == loadBalancerName && spec.LoadBalancerType == loadBalancerType
 			}), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
 			Return(&osc.LoadBalancer{
-				LoadBalancerName: &loadBalancerName,
-				DnsName:          ptr.To(loadBalancerName + ".outscale.dev"),
-				Listeners:        &[]osc.Listener{{LoadBalancerPort: ptr.To[int32](6443)}},
+				LoadBalancerName: loadBalancerName,
+				DnsName:          loadBalancerName + ".outscale.dev",
+				Listeners:        []osc.Listener{{LoadBalancerPort: 6443}},
 			}, nil)
 	}
 }
 
 func mockConfigureHealthCheck(loadBalancerName string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
+		s.NetMock.EXPECT().
 			ConfigureHealthCheck(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == loadBalancerName
 			})).
 			Return(&osc.LoadBalancer{
-				LoadBalancerName: &loadBalancerName,
-				DnsName:          ptr.To(loadBalancerName + ".outscale.dev"),
-				Listeners:        &[]osc.Listener{{LoadBalancerPort: ptr.To[int32](6443)}},
+				LoadBalancerName: loadBalancerName,
+				DnsName:          loadBalancerName + ".outscale.dev",
+				Listeners:        []osc.Listener{{LoadBalancerPort: 6443}},
 			}, nil)
 	}
 }
 
 func mockCreateLoadBalancerTag(loadBalancerName, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
+		s.NetMock.EXPECT().
 			CreateLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == loadBalancerName
 			}), gomock.Eq(&osc.ResourceTag{Key: tag.NameKey, Value: nameTag})).
@@ -472,7 +471,7 @@ func mockCreateLoadBalancerTag(loadBalancerName, nameTag string) mockFunc {
 
 func mockDeleteLoadBalancer(name string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.LoadBalancerMock.EXPECT().
+		s.NetMock.EXPECT().
 			DeleteLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == name
 			})).
@@ -490,33 +489,33 @@ func mockReadOwnedByTag(rsrcType tag.ResourceType, clusterID string, tag *osc.Ta
 
 func mockCreateVmBastion(vmId, subnetId string, securityGroupIds, privateIps []string, vmName, clientToken, imageId string, vmTags map[string]string) mockFunc {
 	created := []osc.BlockDeviceMappingCreated{{
-		DeviceName: ptr.To("/dev/sda1"),
-		Bsu: &osc.BsuCreated{
-			VolumeId: ptr.To(string(defaultRootVolumeId)),
+		DeviceName: "/dev/sda1",
+		Bsu: osc.BsuCreated{
+			VolumeId: defaultRootVolumeId,
 		},
 	}}
 	return func(s *MockCloudServices) {
-		s.VMMock.
+		s.ComputeMock.
 			EXPECT().
 			CreateVmBastion(gomock.Any(), gomock.Any(),
 				gomock.Eq(subnetId), gomock.Eq(securityGroupIds), gomock.Eq(privateIps), gomock.Eq(vmName), gomock.Eq(clientToken), gomock.Eq(imageId), gomock.Eq(vmTags)).
 			Return(&osc.Vm{
-				VmId:                ptr.To(vmId),
-				PrivateDnsName:      ptr.To(defaultPrivateDnsName),
-				PrivateIp:           ptr.To(defaultPrivateIp),
-				BlockDeviceMappings: &created,
-				State:               ptr.To("pending"),
+				VmId:                vmId,
+				PrivateDnsName:      new(defaultPrivateDnsName),
+				PrivateIp:           defaultPrivateIp,
+				BlockDeviceMappings: created,
+				State:               osc.VmStatePending,
 			}, nil)
 	}
 }
 
 func mockCreateNetPeering(netID, mgmtNetID, mgmtAccountID, clusterID string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NetPeeringMock.EXPECT().CreateNetPeering(gomock.Any(), gomock.Eq(netID), gomock.Eq(mgmtNetID), gomock.Eq(mgmtAccountID), gomock.Eq(clusterID)).
+		s.NetMock.EXPECT().CreateNetPeering(gomock.Any(), gomock.Eq(netID), gomock.Eq(mgmtNetID), gomock.Eq(mgmtAccountID), gomock.Eq(clusterID)).
 			Return(&osc.NetPeering{
-				NetPeeringId: ptr.To("np-foo"),
-				State: &osc.NetPeeringState{
-					Name: ptr.To("pending-acceptance"),
+				NetPeeringId: "np-foo",
+				State: osc.NetPeeringState{
+					Name: osc.NetPeeringStateNamePendingAcceptance,
 				},
 			}, nil)
 	}
@@ -524,18 +523,18 @@ func mockCreateNetPeering(netID, mgmtNetID, mgmtAccountID, clusterID string) moc
 
 func mockAcceptNetPeering() mockFunc {
 	return func(s *MockCloudServices) {
-		s.NetPeeringMock.EXPECT().AcceptNetPeering(gomock.Any(), gomock.Eq("np-foo")).
+		s.NetMock.EXPECT().AcceptNetPeering(gomock.Any(), gomock.Eq("np-foo")).
 			Return(nil)
 	}
 }
 
-func mockGetNetPeering(state string) mockFunc {
+func mockGetNetPeering(state osc.NetPeeringStateName) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NetPeeringMock.EXPECT().GetNetPeering(gomock.Any(), gomock.Eq("np-foo")).
+		s.NetMock.EXPECT().GetNetPeering(gomock.Any(), gomock.Eq("np-foo")).
 			Return(&osc.NetPeering{
-				NetPeeringId: ptr.To("np-foo"),
-				State: &osc.NetPeeringState{
-					Name: &state,
+				NetPeeringId: "np-foo",
+				State: osc.NetPeeringState{
+					Name: state,
 				},
 			}, nil)
 	}
@@ -543,26 +542,28 @@ func mockGetNetPeering(state string) mockFunc {
 
 func mockCreateNetAccessPoint(netID, service, clusterID string, routeTables []string) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NetAccessPointMock.EXPECT().CreateNetAccessPoint(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service), gomock.Eq(routeTables), gomock.Eq(clusterID)).
+		s.NetMock.EXPECT().CreateNetAccessPoint(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service), gomock.Eq(routeTables), gomock.Eq(clusterID)).
 			Return(&osc.NetAccessPoint{}, nil)
 	}
 }
 
 func mockGetNetAccessPoint(netID, service string, nap *osc.NetAccessPoint) mockFunc {
 	return func(s *MockCloudServices) {
-		s.NetAccessPointMock.EXPECT().GetNetAccessPointFor(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service)).
+		s.NetMock.EXPECT().GetNetAccessPointFor(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service)).
 			Return(nap, nil)
 	}
 }
 
 func assertStatusClusterResources(rsrcs infrastructurev1beta1.OscClusterResources) assertOSCClusterFunc {
 	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
+		t.Helper()
 		assert.Equal(t, rsrcs, c.Status.Resources)
 	}
 }
 
 func assertControlPlaneEndpoint(endpoint string, port int32) assertOSCClusterFunc {
 	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
+		t.Helper()
 		assert.Equal(t, endpoint, c.Spec.ControlPlaneEndpoint.Host)
 		assert.Equal(t, port, c.Spec.ControlPlaneEndpoint.Port)
 	}
@@ -570,6 +571,7 @@ func assertControlPlaneEndpoint(endpoint string, port int32) assertOSCClusterFun
 
 func assertHasClusterFinalizer() assertOSCClusterFunc {
 	return func(t *testing.T, m *infrastructurev1beta1.OscCluster) {
+		t.Helper()
 		assert.True(t, controllerutil.ContainsFinalizer(m, controllers.OscClusterFinalizer))
 	}
 }

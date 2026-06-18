@@ -12,10 +12,10 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
+	tag "github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -185,8 +184,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-routetable-kcp", "rtb-kcp"),
@@ -316,8 +315,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -457,8 +456,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -564,8 +563,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockListNatServices("vpc-foo", []osc.NatService{{
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIp: ptr.To("6.7.8.9"),
+					PublicIps: []osc.PublicIpLight{{
+						PublicIp: "6.7.8.9",
 					}},
 				}}),
 				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
@@ -619,8 +618,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -705,8 +704,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockListNatServices("vpc-foo", []osc.NatService{{
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIp: ptr.To("6.7.8.9"),
+					PublicIps: []osc.PublicIpLight{{
+						PublicIp: "6.7.8.9",
 					}},
 				}}),
 				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
@@ -741,8 +740,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -815,8 +814,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockListNatServices("vpc-foo", []osc.NatService{{
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIp: ptr.To("5.6.7.8"),
+					PublicIps: []osc.PublicIpLight{{
+						PublicIp: "5.6.7.8",
 					}},
 				}}),
 				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
@@ -865,8 +864,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -1006,12 +1005,12 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public-2a"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public-2a")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public-2a", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public-2a"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-public-2b"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public-2b")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public-2b", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public-2b"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 
@@ -1223,13 +1222,13 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
 				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: ptr.To("ipalloc-nat")}}),
+				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: "ipalloc-nat"}}),
 				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -1360,8 +1359,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 				}),
 				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
@@ -1651,23 +1650,23 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 				mockAcceptNetPeering(),
 				mockGetNetPeering("active"),
 				mockGetRouteTablesFromNet("vpc-mgmt", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-mgmt"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}}},
+					{RouteTableId: "rtb-mgmt", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
 				}),
-				mockGetNet("vpc-mgmt", &osc.Net{IpRange: ptr.To("10.1.0.0/16")}),
+				mockGetNet("vpc-mgmt", &osc.Net{IpRange: "10.1.0.0/16"}),
 				mockCreateRoute("rtb-mgmt", "10.0.0.0/16", "np-foo", "netPeering"),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}}},
-					{RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}}},
-					{RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}}},
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
 				}),
 				mockCreateRoute("rtb-public", "10.1.0.0/16", "np-foo", "netPeering"),
 				mockCreateRoute("rtb-kcp", "10.1.0.0/16", "np-foo", "netPeering"),
 				mockCreateRoute("rtb-kw", "10.1.0.0/16", "np-foo", "netPeering"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}}},
-					{RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}}},
-					{RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}}},
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
 				}),
 				mockGetNetAccessPoint("vpc-foo", "api", nil),
 				mockCreateNetAccessPoint("vpc-foo", "api", "9e1db9c4-bf0a-4583-8999-203ec002c520", []string{"rtb-kw", "rtb-kcp"}),
@@ -1683,87 +1682,87 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 			clusterSpec:     "airgap-1.0",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
-				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("vpc-foo")}),
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
 				mockNetFound("vpc-foo"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kcp")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kw")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-public")}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: "subnet-kcp"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: "subnet-kw"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: "subnet-public"}),
 
 				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kw"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kcp"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-lb"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-node"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}}},
-					{RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}}},
-					{RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}}},
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
 				}),
 
-				mockReadOwnedByTag(tag.NetPeeringResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("np-foo")}),
-				mockGetNetPeering("pending-acceptance"),
+				mockReadOwnedByTag(tag.NetPeeringResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "np-foo"}),
+				mockGetNetPeering(osc.NetPeeringStateNamePendingAcceptance),
 				mockAcceptNetPeering(),
 				mockGetNetPeering("active"),
 				mockGetRouteTablesFromNet("vpc-mgmt", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-mgmt")},
+					{RouteTableId: "rtb-mgmt"},
 				}),
-				mockGetNet("vpc-mgmt", &osc.Net{IpRange: ptr.To("10.1.0.0/16")}),
+				mockGetNet("vpc-mgmt", &osc.Net{IpRange: "10.1.0.0/16"}),
 				mockCreateRoute("rtb-mgmt", "10.0.0.0/16", "np-foo", "netPeering"),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-public")},
-					{RouteTableId: ptr.To("rtb-kcp")},
-					{RouteTableId: ptr.To("rtb-kw")},
+					{RouteTableId: "rtb-public"},
+					{RouteTableId: "rtb-kcp"},
+					{RouteTableId: "rtb-kw"},
 				}),
 				mockCreateRoute("rtb-public", "10.1.0.0/16", "np-foo", "netPeering"),
 				mockCreateRoute("rtb-kcp", "10.1.0.0/16", "np-foo", "netPeering"),
 				mockCreateRoute("rtb-kw", "10.1.0.0/16", "np-foo", "netPeering"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}}},
-					{RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}}},
-					{RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}}},
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
 				}),
 				mockGetNetAccessPoint("vpc-foo", "api", &osc.NetAccessPoint{}),
 
@@ -1807,54 +1806,54 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2379), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockCreateSecurityGroupRule("sg-750ae810", "Inbound", "udp", "1.2.3.4/32", 32, 32),
 				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51820), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51821), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -1862,19 +1861,19 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-223a4dd4"),
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 
@@ -1897,54 +1896,54 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2379), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockCreateSecurityGroupRule("sg-750ae810", "Outbound", "udp", "1.2.3.4/32", 32, 32),
 				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51820), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51821), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -1952,19 +1951,19 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-223a4dd4"),
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 
@@ -1987,55 +1986,55 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2379), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockCreateSecurityGroupRule("sg-750ae810", "Inbound", "udp", "1.2.3.4/32", 32, 32),
 				mockCreateSecurityGroupRule("sg-750ae810", "Inbound", "udp", "1.2.3.5/32", 32, 32),
 				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51820), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51821), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -2043,19 +2042,19 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-223a4dd4"),
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 
@@ -2085,80 +2084,80 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-foo"),
 
 				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kw"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "1.2.3.4/32", 24, 25),
 				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "4.5.6.7/32", 24, 25),
 				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kcp"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-lb"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-node"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 
@@ -2181,81 +2180,81 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-foo"),
 
 				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kw"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](33), ToPortRange: ptr.To[int32](33), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 33, ToPortRange: 33, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockDeleteSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", "", 33, 33),
 				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kcp"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-lb"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-node"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 
@@ -2278,80 +2277,80 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-foo"),
 
 				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kw"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kcp"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-lb"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-node"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), SecurityGroupsMembers: &[]osc.SecurityGroupsMember{{SecurityGroupId: ptr.To("sg-ccmlb")}}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, SecurityGroupsMembers: []osc.SecurityGroupsMember{{SecurityGroupId: "sg-ccmlb"}}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 
@@ -2370,53 +2369,53 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
 
 				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2379), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.3.0/24", "10.0.4.0/24"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51820), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51821), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -2424,19 +2423,19 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockNatServiceFound("nat-223a4dd4"),
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
 					{
-						RouteTableId:    ptr.To("rtb-0a4640a6"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-0a4640a6",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-194c971e"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-194c971e",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 					{
-						RouteTableId:    ptr.To("rtb-eeacfe8a"),
-						LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}},
-						Routes:          &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0")}},
+						RouteTableId:    "rtb-eeacfe8a",
+						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
+						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
 					},
 				}),
 
@@ -2462,111 +2461,111 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "base-bastion-1.0",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
-				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: ptr.To("vpc-foo")}),
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
 				mockNetFound("vpc-foo"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kcp")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-kw")}),
-				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: ptr.To("subnet-public")}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: "subnet-kcp"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: "subnet-kw"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: "subnet-public"}),
 				mockInternetServiceForNetFound("vpc-foo", "igw-foo"),
 
 				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kw"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kcp"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-lb"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-node"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](22), ToPortRange: ptr.To[int32](22), IpRanges: &[]string{"10.0.2.0/24"}},
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: []string{"10.0.2.0/24"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 				mockGetSecurityGroupFromName("test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-bastion"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](22), ToPortRange: ptr.To[int32](22), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-bastion",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](22), ToPortRange: ptr.To[int32](22), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.NatService{
-					NatServiceId: ptr.To("nat-foo"),
-					PublicIps:    &[]osc.PublicIpLight{{PublicIpId: ptr.To("ipalloc-nat")}},
+					NatServiceId: "nat-foo",
+					PublicIps:    []osc.PublicIpLight{{PublicIpId: "ipalloc-nat"}},
 				}),
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 
 				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 
 				mockGetVmFromClientToken("bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
-					VmId:     ptr.To("i-bastion"),
-					PublicIp: ptr.To("1.2.3.4"),
-					State:    ptr.To("running"),
+					VmId:     "i-bastion",
+					PublicIp: new("1.2.3.4"),
+					State:    osc.VmStateRunning,
 				}),
 				mockGetPublicIpByIp("1.2.3.4", "ipalloc-bastion"),
 			},
@@ -2618,83 +2617,83 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				mockInternetServiceFound("vpc-foo", "igw-foo"),
 
 				mockGetSecurityGroup("sg-kw", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kw"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.3.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10250), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](443), ToPortRange: ptr.To[int32](443), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](1024), ToPortRange: ptr.To[int32](65535), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-kcp", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-kcp"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](10250), ToPortRange: ptr.To[int32](10252), IpRanges: &[]string{"10.0.4.0/24"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](2378), ToPortRange: ptr.To[int32](2380), IpRanges: &[]string{"10.0.4.0/24"}},
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-lb", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-lb"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"0.0.0.0/0"}},
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](6443), ToPortRange: ptr.To[int32](6443), IpRanges: &[]string{"10.0.4.0/24"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
 					},
 				}),
 				mockGetSecurityGroup("sg-node", &osc.SecurityGroup{
-					SecurityGroupId: ptr.To("sg-node"),
-					InboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("icmp"), FromPortRange: ptr.To[int32](8), ToPortRange: ptr.To[int32](8), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](179), ToPortRange: ptr.To[int32](179), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](4789), ToPortRange: ptr.To[int32](4789), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](5473), ToPortRange: ptr.To[int32](5473), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51820), ToPortRange: ptr.To[int32](51821), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("4"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8285), ToPortRange: ptr.To[int32](8285), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](8472), ToPortRange: ptr.To[int32](8472), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4240), ToPortRange: ptr.To[int32](4240), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](4244), ToPortRange: ptr.To[int32](4244), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("udp"), FromPortRange: ptr.To[int32](51871), ToPortRange: ptr.To[int32](51871), IpRanges: &[]string{"10.0.0.0/16"}},
-						{IpProtocol: ptr.To("tcp"), FromPortRange: ptr.To[int32](30000), ToPortRange: ptr.To[int32](32767), IpRanges: &[]string{"10.0.0.0/16"}},
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
 					},
-					OutboundRules: &[]osc.SecurityGroupRule{
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"0.0.0.0/0"}},
-						{IpProtocol: ptr.To("-1"), FromPortRange: ptr.To[int32](-1), ToPortRange: ptr.To[int32](-1), IpRanges: &[]string{"10.0.0.0/16"}},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
 					},
 				}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("nat-foo")}},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
 				mockNatServiceNotFound("nat-foo"),
-				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIp: ptr.To("1.2.3.4")}),
+				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIp: "1.2.3.4"}),
 				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-bar"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
-						RouteTableId: ptr.To("rtb-public"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-public")}},
-						Routes: &[]osc.Route{{DestinationIpRange: ptr.To("0.0.0.0/0"), GatewayId: ptr.To("igw-foo")}},
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kcp"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kcp")}},
-						Routes: &[]osc.Route{},
+						RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}},
+						Routes: []osc.Route{},
 					},
 					{
-						RouteTableId: ptr.To("rtb-kw"), LinkRouteTables: &[]osc.LinkRouteTable{{SubnetId: ptr.To("subnet-kw")}},
-						Routes: &[]osc.Route{},
+						RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}},
+						Routes: []osc.Route{},
 					},
 				}),
 				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-bar", "nat"),
@@ -2722,9 +2721,9 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
 
 				mockListNatServices("vpc-24ba90ce", []osc.NatService{{
-					NatServiceId: ptr.To("nat-223a4dd4"),
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIpId: ptr.To("ipalloc-nat"),
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
@@ -2733,9 +2732,9 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				// mockDeletePublicIp("ipalloc-nat"),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}}},
-					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}}},
-					{RouteTableId: ptr.To("rtb-eeacfe8a"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}}},
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
+					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
 				}),
 				mockUnlinkRouteTable("rtbassoc-643430b3"),
 				mockDeleteRouteTable("rtb-0a4640a6"),
@@ -2746,10 +2745,10 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 
 				mockGetSecurityGroupsFromNet("vpc-24ba90ce", []osc.SecurityGroup{
 					{
-						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{}, {}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 					{
-						SecurityGroupId: ptr.To("sg-750ae810"), InboundRules: &[]osc.SecurityGroupRule{{}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 				}),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
@@ -2781,9 +2780,9 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
 
 				mockListNatServices("vpc-foo", []osc.NatService{{
-					NatServiceId: ptr.To("nat-223a4dd4"),
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIpId: ptr.To("ipalloc-nat"),
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
@@ -2791,9 +2790,9 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeletePublicIp("ipalloc-nat"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}}},
-					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}}},
-					{RouteTableId: ptr.To("rtb-eeacfe8a"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}}},
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
+					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
 				}),
 				mockUnlinkRouteTable("rtbassoc-643430b3"),
 				mockDeleteRouteTable("rtb-0a4640a6"),
@@ -2804,10 +2803,10 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 
 				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
 					{
-						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{}, {}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 					{
-						SecurityGroupId: ptr.To("sg-750ae810"), InboundRules: &[]osc.SecurityGroupRule{{}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 				}),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
@@ -2839,18 +2838,18 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
 
 				mockListNatServices("vpc-foo", []osc.NatService{{
-					NatServiceId: ptr.To("nat-223a4dd4"),
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIpId: ptr.To("ipalloc-nat"),
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
-				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIpId: ptr.To("ipalloc-nat"), Tags: &[]osc.ResourceTag{{Key: security.NoDeleteTag}}}),
+				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIpId: "ipalloc-nat", Tags: []osc.ResourceTag{{Key: net.NoDeleteTag}}}),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3"), SubnetId: ptr.To("subnet-1555ea91")}}},
-					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37"), SubnetId: ptr.To("subnet-c1a282b0")}}},
-					{RouteTableId: ptr.To("rtb-eeacfe8a"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-90bda9c8"), SubnetId: ptr.To("subnet-174f5ec4")}}},
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
+					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
 				}),
 				mockUnlinkRouteTable("rtbassoc-643430b3"),
 				mockDeleteRouteTable("rtb-0a4640a6"),
@@ -2861,10 +2860,10 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 
 				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
 					{
-						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{}, {}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 					{
-						SecurityGroupId: ptr.To("sg-750ae810"), InboundRules: &[]osc.SecurityGroupRule{{}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 				}),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
@@ -2917,9 +2916,9 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockGetLoadBalancer("test-cluster-api-k8s", nil),
 
 				mockListNatServices("vpc-24ba90ce", []osc.NatService{{
-					NatServiceId: ptr.To("nat-223a4dd4"),
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIpId: ptr.To("ipalloc-nat"),
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
@@ -2928,8 +2927,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				// mockDeletePublicIp("ipalloc-nat"),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3")}}},
-					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37")}}},
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37"}}},
 				}),
 				mockUnlinkRouteTable("rtbassoc-643430b3"),
 				mockDeleteRouteTable("rtb-0a4640a6"),
@@ -2938,10 +2937,10 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 
 				mockGetSecurityGroupsFromNet("vpc-24ba90ce", []osc.SecurityGroup{
 					{
-						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{}, {}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 					{
-						SecurityGroupId: ptr.To("sg-750ae810"), InboundRules: &[]osc.SecurityGroupRule{{}}, OutboundRules: &[]osc.SecurityGroupRule{{}},
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
 				}),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
@@ -2973,9 +2972,9 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
 
 				mockListNatServices("vpc-24ba90ce", []osc.NatService{{
-					NatServiceId: ptr.To("nat-223a4dd4"),
-					PublicIps: &[]osc.PublicIpLight{{
-						PublicIpId: ptr.To("ipalloc-nat"),
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
@@ -2984,8 +2983,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				// mockDeletePublicIp("ipalloc-nat"),
 
 				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{RouteTableId: ptr.To("rtb-0a4640a6"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-643430b3")}}},
-					{RouteTableId: ptr.To("rtb-194c971e"), LinkRouteTables: &[]osc.LinkRouteTable{{LinkRouteTableId: ptr.To("rtbassoc-09475c37")}}},
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37"}}},
 				}),
 				mockUnlinkRouteTable("rtbassoc-643430b3"),
 				mockDeleteRouteTable("rtb-0a4640a6"),
@@ -2994,17 +2993,17 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 
 				mockGetSecurityGroupsFromNet("vpc-24ba90ce", []osc.SecurityGroup{
 					{
-						SecurityGroupId: ptr.To("sg-a093d014"), InboundRules: &[]osc.SecurityGroupRule{{
-							FromPortRange: ptr.To(int32(33)), ToPortRange: ptr.To(int32(34)), IpProtocol: ptr.To("tcp"), SecurityGroupsMembers: &[]osc.SecurityGroupsMember{{SecurityGroupId: ptr.To("sg-foo")}, {SecurityGroupId: ptr.To("sg-bar")}},
-						}}, OutboundRules: &[]osc.SecurityGroupRule{{
-							FromPortRange: ptr.To(int32(35)), ToPortRange: ptr.To(int32(36)), IpProtocol: ptr.To("tcp"), SecurityGroupsMembers: &[]osc.SecurityGroupsMember{{SecurityGroupId: ptr.To("sg-foo")}, {SecurityGroupId: ptr.To("sg-bar")}},
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{
+							FromPortRange: 33, ToPortRange: 34, IpProtocol: "tcp", SecurityGroupsMembers: []osc.SecurityGroupsMember{{SecurityGroupId: "sg-foo"}, {SecurityGroupId: "sg-bar"}},
+						}}, OutboundRules: []osc.SecurityGroupRule{{
+							FromPortRange: 35, ToPortRange: 36, IpProtocol: "tcp", SecurityGroupsMembers: []osc.SecurityGroupsMember{{SecurityGroupId: "sg-foo"}, {SecurityGroupId: "sg-bar"}},
 						}},
 					},
 				}),
-				mockDeleteSecurityGroupRule("sg-a093d014", "Inbound", "tcp", "", "sg-foo", int32(33), int32(34)),
-				mockDeleteSecurityGroupRule("sg-a093d014", "Inbound", "tcp", "", "sg-bar", int32(33), int32(34)),
-				mockDeleteSecurityGroupRule("sg-a093d014", "Outbound", "tcp", "", "sg-foo", int32(35), int32(36)),
-				mockDeleteSecurityGroupRule("sg-a093d014", "Outbound", "tcp", "", "sg-bar", int32(35), int32(36)),
+				mockDeleteSecurityGroupRule("sg-a093d014", "Inbound", "tcp", "", "sg-foo", 33, 34),
+				mockDeleteSecurityGroupRule("sg-a093d014", "Inbound", "tcp", "", "sg-bar", 33, 34),
+				mockDeleteSecurityGroupRule("sg-a093d014", "Outbound", "tcp", "", "sg-foo", 35, 36),
+				mockDeleteSecurityGroupRule("sg-a093d014", "Outbound", "tcp", "", "sg-bar", 35, 36),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
 
 				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),

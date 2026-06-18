@@ -12,8 +12,8 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 const bastionIPResourceKey = "bastion"
@@ -55,9 +55,9 @@ func (t *ClusterResourceTracker) getNetId(ctx context.Context, clusterScope *sco
 	if err != nil {
 		return "", fmt.Errorf("get net: %w", err)
 	}
-	if tg.GetResourceId() != "" {
-		t.setNetId(clusterScope, tg.GetResourceId())
-		return tg.GetResourceId(), nil
+	if tg != nil && tg.ResourceId != "" {
+		t.setNetId(clusterScope, tg.ResourceId)
+		return tg.ResourceId, nil
 	}
 	// Search by name (retrocompatibility)
 	if clusterScope.GetNet().Name != "" {
@@ -66,9 +66,9 @@ func (t *ClusterResourceTracker) getNetId(ctx context.Context, clusterScope *sco
 		if err != nil {
 			return "", fmt.Errorf("get net: %w", err)
 		}
-		if tg.GetResourceId() != "" {
-			t.setNetId(clusterScope, tg.GetResourceId())
-			return tg.GetResourceId(), nil
+		if tg != nil && tg.ResourceId != "" {
+			t.setNetId(clusterScope, tg.ResourceId)
+			return tg.ResourceId, nil
 		}
 	}
 	return "", fmt.Errorf("get net: %w", ErrNoResourceFound)
@@ -87,7 +87,7 @@ func (t *ClusterResourceTracker) getNetPeering(ctx context.Context, clusterScope
 	if err != nil {
 		return nil, err
 	}
-	n, err := t.Cloud.NetPeering(clusterScope.Tenant).GetNetPeering(ctx, id)
+	n, err := t.Cloud.Net(clusterScope.Tenant).GetNetPeering(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -110,9 +110,9 @@ func (t *ClusterResourceTracker) getNetPeeringId(ctx context.Context, clusterSco
 	if err != nil {
 		return "", fmt.Errorf("get net peering: %w", err)
 	}
-	if tg.GetResourceId() != "" {
-		t.setNetPeeringId(clusterScope, tg.GetResourceId())
-		return tg.GetResourceId(), nil
+	if tg != nil && tg.ResourceId != "" {
+		t.setNetPeeringId(clusterScope, tg.ResourceId)
+		return tg.ResourceId, nil
 	}
 	return "", fmt.Errorf("get net peering: %w", ErrNoResourceFound)
 }
@@ -135,15 +135,15 @@ func (t *ClusterResourceTracker) _getInternetServiceOrId(ctx context.Context, cl
 	if err != nil {
 		return nil, "", fmt.Errorf("get net for internet service: %w", err)
 	}
-	is, err := t.Cloud.InternetService(clusterScope.Tenant).GetInternetServiceForNet(ctx, netId)
+	is, err := t.Cloud.Net(clusterScope.Tenant).GetInternetServiceForNet(ctx, netId)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get internet service for net: %w", err)
 	case is == nil:
 		return nil, "", fmt.Errorf("get internet service: %w", ErrNoResourceFound)
 	default:
-		t.setInternetServiceId(clusterScope, is.GetInternetServiceId())
-		return is, is.GetInternetServiceId(), nil
+		t.setInternetServiceId(clusterScope, is.InternetServiceId)
+		return is, is.InternetServiceId, nil
 	}
 }
 
@@ -155,7 +155,7 @@ func (t *ClusterResourceTracker) getInternetService(ctx context.Context, cluster
 	case is != nil:
 		return is, nil
 	}
-	is, err = t.Cloud.InternetService(clusterScope.Tenant).GetInternetService(ctx, id)
+	is, err = t.Cloud.Net(clusterScope.Tenant).GetInternetService(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -190,15 +190,15 @@ func (t *ClusterResourceTracker) _getNetAccessPointOrId(ctx context.Context, ser
 	if err != nil {
 		return nil, "", fmt.Errorf("get net for net access point: %w", err)
 	}
-	nap, err := t.Cloud.NetAccessPoint(clusterScope.Tenant).GetNetAccessPointFor(ctx, netId, clusterScope.Tenant.Region(), string(service))
+	nap, err := t.Cloud.Net(clusterScope.Tenant).GetNetAccessPointFor(ctx, netId, clusterScope.Tenant.Region(), string(service))
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get net access point for net: %w", err)
 	case nap == nil:
 		return nil, "", fmt.Errorf("get net access point: %w", ErrNoResourceFound)
 	default:
-		t.setNetAccessPointId(clusterScope, service, nap.GetNetAccessPointId())
-		return nap, nap.GetNetAccessPointId(), nil
+		t.setNetAccessPointId(clusterScope, service, nap.NetAccessPointId)
+		return nap, nap.NetAccessPointId, nil
 	}
 }
 
@@ -210,7 +210,7 @@ func (t *ClusterResourceTracker) getNetAccessPoint(ctx context.Context, service 
 	case nap != nil:
 		return nap, nil
 	}
-	nap, err = t.Cloud.NetAccessPoint(clusterScope.Tenant).GetNetAccessPoint(ctx, id)
+	nap, err = t.Cloud.Net(clusterScope.Tenant).GetNetAccessPoint(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -244,15 +244,15 @@ func (t *ClusterResourceTracker) _getSubnetOrId(ctx context.Context, subnet infr
 	if err != nil {
 		return nil, "", fmt.Errorf("get net for subnet: %w", err)
 	}
-	sn, err := t.Cloud.Subnet(clusterScope.Tenant).GetSubnetFromNet(ctx, netId, subnet.IpSubnetRange)
+	sn, err := t.Cloud.Net(clusterScope.Tenant).GetSubnetFromNet(ctx, netId, subnet.IpSubnetRange)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get subnet from net: %w", err)
 	case sn == nil:
 		return nil, "", fmt.Errorf("get subnet: %w", ErrNoResourceFound)
 	default:
-		t.setSubnetId(clusterScope, subnet, sn.GetSubnetId())
-		return sn, sn.GetSubnetId(), nil
+		t.setSubnetId(clusterScope, subnet, sn.SubnetId)
+		return sn, sn.SubnetId, nil
 	}
 }
 
@@ -264,7 +264,7 @@ func (t *ClusterResourceTracker) getSubnet(ctx context.Context, subnet infrastru
 	case sn != nil:
 		return sn, nil
 	}
-	sn, err = t.Cloud.Subnet(clusterScope.Tenant).GetSubnet(ctx, id)
+	sn, err = t.Cloud.Net(clusterScope.Tenant).GetSubnet(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -297,13 +297,13 @@ func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat inf
 	if id != "" {
 		return nil, id, nil
 	}
-	ns, err := t.Cloud.NatService(clusterScope.Tenant).GetNatServiceFromClientToken(ctx, clientToken)
+	ns, err := t.Cloud.Net(clusterScope.Tenant).GetNatServiceFromClientToken(ctx, clientToken)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get nat service from client token: %w", err)
 	case ns != nil:
-		t.setNatServiceId(clusterScope, nat, ns.GetNatServiceId())
-		return ns, ns.GetNatServiceId(), nil
+		t.setNatServiceId(clusterScope, nat, ns.NatServiceId)
+		return ns, ns.NatServiceId, nil
 	}
 	if nat.Name != "" {
 		nameValue := nat.Name + "-" + clusterScope.GetUID()
@@ -313,8 +313,8 @@ func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat inf
 			return nil, "", fmt.Errorf("get nat service from tag: %w", err)
 		case tag == nil:
 		default:
-			t.setNatServiceId(clusterScope, nat, tag.GetResourceId())
-			return nil, tag.GetResourceId(), nil
+			t.setNatServiceId(clusterScope, nat, tag.ResourceId)
+			return nil, tag.ResourceId, nil
 		}
 	}
 	return nil, "", fmt.Errorf("get nat service: %w", ErrNoResourceFound)
@@ -327,12 +327,12 @@ func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastr
 		return nil, err
 	case ns != nil:
 		// update IP tracking, in case status was reset
-		if len(ns.GetPublicIps()) > 0 {
-			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.GetPublicIps()[0].GetPublicIpId())
+		if len(ns.PublicIps) > 0 {
+			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.PublicIps[0].PublicIpId)
 		}
 		return ns, nil
 	}
-	ns, err = t.Cloud.NatService(clusterScope.Tenant).GetNatService(ctx, id)
+	ns, err = t.Cloud.Net(clusterScope.Tenant).GetNatService(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -340,8 +340,8 @@ func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastr
 		return nil, fmt.Errorf("get nat service %s: %w", id, ErrMissingResource)
 	default:
 		// update IP tracking, in case status was reset
-		if len(ns.GetPublicIps()) > 0 {
-			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.GetPublicIps()[0].GetPublicIpId())
+		if len(ns.PublicIps) > 0 {
+			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.PublicIps[0].PublicIpId)
 		}
 		return ns, nil
 	}
@@ -353,7 +353,7 @@ func (t *ClusterResourceTracker) getNatServiceId(ctx context.Context, nat infras
 	case err != nil:
 		return "", err
 	case ns != nil:
-		return ns.GetNatServiceId(), nil
+		return ns.NatServiceId, nil
 	default:
 		return id, nil
 	}
@@ -378,18 +378,24 @@ func (t *ClusterResourceTracker) getBastion(ctx context.Context, clusterScope *s
 	case err != nil:
 		return nil, err
 	case vm != nil:
-		err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, vm.GetPublicIp(), clusterScope)
-		return vm, err
+		if vm.PublicIp != nil {
+			err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, *vm.PublicIp, clusterScope)
+			return vm, err
+		}
+		return vm, nil
 	}
-	vm, err = t.Cloud.VM(clusterScope.Tenant).GetVm(ctx, id)
+	vm, err = t.Cloud.Compute(clusterScope.Tenant).GetVm(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
 	case vm == nil:
 		return nil, fmt.Errorf("get bastion %s: %w", id, ErrMissingResource)
 	default:
-		err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, vm.GetPublicIp(), clusterScope)
-		return vm, err
+		if vm.PublicIp != nil {
+			err := t.IPAllocator(clusterScope).RetrackIP(ctx, bastionIPResourceKey, *vm.PublicIp, clusterScope)
+			return vm, err
+		}
+		return vm, nil
 	}
 }
 
@@ -406,13 +412,13 @@ func (t *ClusterResourceTracker) _getBastionOrId(ctx context.Context, clusterSco
 		return nil, id, nil
 	}
 	clientToken := clusterScope.GetBastionClientToken()
-	vm, err := t.Cloud.VM(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
+	vm, err := t.Cloud.Compute(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get bastion from client token: %w", err)
 	case vm != nil:
-		t.setBastionId(clusterScope, vm.GetVmId())
-		return vm, vm.GetVmId(), nil
+		t.setBastionId(clusterScope, vm.VmId)
+		return vm, vm.VmId, nil
 	}
 	// Search by name (retrocompatibility)
 	if clusterScope.GetBastion().Name != "" {
@@ -421,9 +427,9 @@ func (t *ClusterResourceTracker) _getBastionOrId(ctx context.Context, clusterSco
 		if err != nil {
 			return nil, "", fmt.Errorf("get bastion: %w", err)
 		}
-		if tg.GetResourceId() != "" {
-			t.setBastionId(clusterScope, tg.GetResourceId())
-			return nil, tg.GetResourceId(), nil
+		if tg != nil && tg.ResourceId != "" {
+			t.setBastionId(clusterScope, tg.ResourceId)
+			return nil, tg.ResourceId, nil
 		}
 	}
 	return nil, "", fmt.Errorf("get bastion: %w", ErrNoResourceFound)
@@ -448,15 +454,15 @@ func (t *ClusterResourceTracker) _getSecurityGroupOrId(ctx context.Context, sg i
 	if id != "" {
 		return nil, id, nil
 	}
-	ns, err := t.Cloud.SecurityGroup(clusterScope.Tenant).GetSecurityGroupFromName(ctx, name)
+	ns, err := t.Cloud.Compute(clusterScope.Tenant).GetSecurityGroupFromName(ctx, name)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get securityGroup from securityGroupName: %w", err)
 	case ns == nil:
 		return nil, "", fmt.Errorf("get securityGroup: %w", ErrNoResourceFound)
 	default:
-		t.setSecurityGroupId(clusterScope, sg, ns.GetSecurityGroupId())
-		return ns, ns.GetSecurityGroupId(), nil
+		t.setSecurityGroupId(clusterScope, sg, ns.SecurityGroupId)
+		return ns, ns.SecurityGroupId, nil
 	}
 }
 
@@ -468,7 +474,7 @@ func (t *ClusterResourceTracker) getSecurityGroup(ctx context.Context, sg infras
 	case ns != nil:
 		return ns, nil
 	}
-	ns, err = t.Cloud.SecurityGroup(clusterScope.Tenant).GetSecurityGroup(ctx, id)
+	ns, err = t.Cloud.Compute(clusterScope.Tenant).GetSecurityGroup(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -485,7 +491,7 @@ func (t *ClusterResourceTracker) getSecurityGroupId(ctx context.Context, sg infr
 	case err != nil:
 		return "", err
 	case ns != nil:
-		return ns.GetSecurityGroupId(), nil
+		return ns.SecurityGroupId, nil
 	default:
 		return id, nil
 	}

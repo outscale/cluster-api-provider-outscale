@@ -14,9 +14,9 @@ import (
 	"sync"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -129,7 +129,7 @@ func (a *MultiAZAllocator) refreshWorkers(ctx context.Context, ns string) error 
 		}
 		name := a.name(&m)
 		a.deployments[deploy] = append(a.deployments[deploy], name)
-		a.azs[name] = ptr.Deref(m.Status.FailureDomain, "")
+		a.azs[name] = ptr.From(m.Status.FailureDomain)
 	}
 	return nil
 }

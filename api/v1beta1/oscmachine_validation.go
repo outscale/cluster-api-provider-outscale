@@ -10,8 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -99,23 +101,25 @@ func ValidateSize(path *field.Path, size int32) *field.Error {
 }
 
 // ValidateVolumeType checks that volumeType is a valid volumeType
-func ValidateVolumeType(path *field.Path, volumeType string) *field.Error {
-	switch volumeType {
-	case "", "standard", "gp2", "io1":
+func ValidateVolumeType(path *field.Path, volumeType osc.VolumeType) *field.Error {
+	switch {
+	case volumeType == "":
+		return nil
+	case slices.Contains(volumeType.Values(), string(volumeType)):
 		return nil
 	default:
 		return field.Invalid(path, volumeType, "invalid volume type (allowed: standard, gp2, io1)")
 	}
 }
 
-var isValidateDeviceName = regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
+var isValidDeviceName = regexp.MustCompile(`^(\/dev\/sda1|\/dev\/sd[a-z]{1}|\/dev\/xvd[a-z]{1})$`).MatchString
 
 // ValidateDeviceName checks that DeviceName  is a valid DeviceName
 func ValidateDeviceName(path *field.Path, deviceName string) *field.Error {
 	switch {
 	case deviceName == "":
 		return field.Required(path, "device name is required")
-	case isValidateDeviceName(deviceName):
+	case isValidDeviceName(deviceName):
 		return nil
 	default:
 		return field.Invalid(path, deviceName, "device must use the /dev/(s|xv)d[a-z] format")

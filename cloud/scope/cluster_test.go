@@ -259,7 +259,6 @@ func TestNeedReconciliation(t *testing.T) {
 		})
 		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService))
 		assert.False(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
-
 	})
 	t.Run("always works", func(t *testing.T) {
 		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
@@ -268,7 +267,6 @@ func TestNeedReconciliation(t *testing.T) {
 		})
 		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService))
 		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
-
 	})
 	t.Run("random works", func(t *testing.T) {
 		s := newScope([]infrastructurev1beta1.OscReconciliationRule{

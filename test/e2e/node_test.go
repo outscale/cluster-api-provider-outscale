@@ -10,7 +10,6 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	"k8s.io/utils/ptr"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 )
 
@@ -24,7 +23,7 @@ var _ = Describe("Node drain", func() {
 				BootstrapClusterProxy:  bootstrapClusterProxy,
 				ArtifactFolder:         artifactFolder,
 				SkipCleanup:            skipCleanup,
-				Flavor:                 ptr.To("node-drain"),
+				Flavor:                 new("node-drain"),
 			}
 		})
 	})

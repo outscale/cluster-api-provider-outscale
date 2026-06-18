@@ -17,6 +17,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -579,11 +580,12 @@ func (s *ClusterScope) GetSecurityGroupName(sg infrastructurev1beta1.OscSecurity
 	if sg.Name != "" {
 		return sg.Name + "-" + s.GetUID()
 	}
-	name := s.GetName() + "-"
+	var name strings.Builder
+	name.WriteString(s.GetName() + "-")
 	for _, role := range sg.Roles {
-		name += string(role) + "-"
+		name.WriteString(string(role) + "-")
 	}
-	return name + s.GetUID()
+	return name.String() + s.GetUID()
 }
 
 // SetFailureDomain sets the infrastructure provider failure domain key to the spec given as input.
@@ -711,12 +713,12 @@ func (s *ClusterScope) GetImage() *infrastructurev1beta1.OscImage {
 }
 
 // SetVmState set vmstate
-func (s *ClusterScope) SetVmState(v infrastructurev1beta1.VmState) {
+func (s *ClusterScope) SetVmState(v osc.VmState) {
 	s.OscCluster.Status.VmState = &v
 }
 
 // SetVmState set vmstate
-func (s *ClusterScope) GetVmState() *infrastructurev1beta1.VmState {
+func (s *ClusterScope) GetVmState() *osc.VmState {
 	return s.OscCluster.Status.VmState
 }
 

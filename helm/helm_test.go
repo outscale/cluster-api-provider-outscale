@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/cluster-api/test/framework"
 )
 
@@ -96,7 +95,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	}
 	t.Run("The deployment has the right defaults", func(t *testing.T) {
 		dep := getDeployment(t)
-		assert.Equal(t, ptr.To(int32(1)), dep.Spec.Replicas)
+		assert.Equal(t, new(int32(1)), dep.Spec.Replicas)
 		assert.Equal(t, metav1.ObjectMeta{
 			Labels: map[string]string{
 				"chart":         "clusterapioutscale-1.0.0",
@@ -157,7 +156,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			},
 		}, manager.Resources)
 		assert.Equal(t, &corev1.SecurityContext{
-			AllowPrivilegeEscalation: ptr.To(false),
+			AllowPrivilegeEscalation: new(false),
 		}, manager.SecurityContext)
 	})
 	t.Run("Resources can be set", func(t *testing.T) {

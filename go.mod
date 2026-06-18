@@ -1,25 +1,35 @@
 module github.com/outscale/cluster-api-provider-outscale
 
-go 1.25.3
+go 1.26.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0
-	github.com/outscale/osc-sdk-go/v2 v2.33.0
+	github.com/outscale/goutils/k8s v0.0.2
+	github.com/outscale/goutils/sdk v0.0.4
+	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.2
 	github.com/samber/lo v1.53.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	k8s.io/api v0.32.13
 	k8s.io/apimachinery v0.32.13
 	k8s.io/client-go v0.32.13
-	k8s.io/klog/v2 v2.130.1
+	k8s.io/klog/v2 v2.140.0
 	k8s.io/kubectl v0.32.13
 	sigs.k8s.io/cluster-api v1.10.10
 	sigs.k8s.io/cluster-api/test v1.10.10
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
-require go.yaml.in/yaml/v3 v3.0.4 // indirect
+require (
+	github.com/aws/smithy-go/aws-http-auth v1.1.2 // indirect
+	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
+	github.com/oapi-codegen/runtime v1.3.1 // indirect
+	go.uber.org/ratelimit v0.3.1 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+)
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect

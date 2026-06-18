@@ -12,9 +12,8 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/profile"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,9 +49,9 @@ func getTenantFromSecret(ctx context.Context, cl client.Client, name, ns string)
 	if err != nil {
 		return nil, fmt.Errorf("tenant from secret: %w", err)
 	}
-	return tenant.TenantFromConfigEnv(&osc.ConfigEnv{
-		AccessKey: ptr.To(string(secret.Data["access_key"])),
-		SecretKey: ptr.To(string(secret.Data["secret_key"])),
-		Region:    ptr.To(string(secret.Data["region"])),
+	return tenant.TenantFromProfile(&profile.Profile{
+		AccessKey: string(secret.Data["access_key"]),
+		SecretKey: string(secret.Data["secret_key"]),
+		Region:    string(secret.Data["region"]),
 	})
 }

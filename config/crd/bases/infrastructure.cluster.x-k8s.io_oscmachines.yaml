@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260617054137-77554a003f64
   name: oscmachines.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -482,6 +482,8 @@ spec:
                     type: object
                 type: object
               vmState:
+                description: VmState The state of the VM (`pending` \| `running` \|
+                  `stopping` \| `stopped` \| `shutting-down` \| `terminated` \| `quarantine`).
                 type: string
             type: object
         type: object

@@ -9,6 +9,7 @@ package v1beta1
 import (
 	"strings"
 
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
@@ -34,7 +35,7 @@ type OscClusterStatus struct {
 	ReconcilerGeneration OscReconcilerGeneration  `json:"reconcilerGeneration,omitempty"`
 	FailureDomains       clusterv1.FailureDomains `json:"failureDomains,omitempty"`
 	Conditions           clusterv1.Conditions     `json:"conditions,omitempty"`
-	VmState              *VmState                 `json:"vmState,omitempty"`
+	VmState              *osc.VmState             `json:"vmState,omitempty"`
 }
 
 //+kubebuilder:object:root=true

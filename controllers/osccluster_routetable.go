@@ -11,7 +11,7 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -22,8 +22,8 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 	log := ctrl.LoggerFrom(ctx)
 
 	destinationIpRange := routeSpec.Destination
-	for _, route := range routeTable.GetRoutes() {
-		if route.GetDestinationIpRange() == destinationIpRange {
+	for _, route := range routeTable.Routes {
+		if route.DestinationIpRange == destinationIpRange {
 			return reconcile.Result{}, nil
 		}
 	}
@@ -49,7 +49,7 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 		return reconcile.Result{}, nil
 	}
 	log.V(2).Info("Creating route", "destination", destinationIpRange, "resourceId", resourceId)
-	_, err = r.Cloud.RouteTable(clusterScope.Tenant).CreateRoute(ctx, destinationIpRange, routeTable.GetRouteTableId(), resourceId, routeSpec.TargetType)
+	_, err = r.Cloud.Net(clusterScope.Tenant).CreateRoute(ctx, destinationIpRange, routeTable.RouteTableId, resourceId, routeSpec.TargetType)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create route: %w", err)
 	}
@@ -75,15 +75,15 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.RouteTable(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	rtblForSubnet := map[string]*osc.RouteTable{}
 	for _, rtbl := range rtbls {
-		for _, link := range rtbl.GetLinkRouteTables() {
-			rtblForSubnet[link.GetSubnetId()] = &rtbl
+		for _, link := range rtbl.LinkRouteTables {
+			rtblForSubnet[link.SubnetId] = &rtbl
 		}
 	}
 	routeTablesSpec := clusterScope.GetRouteTables()
@@ -116,12 +116,12 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}
-				log.V(2).Info("Created routetable", "routetableId", rtbl.GetRouteTableId())
+				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
 				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
-				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.GetRouteTableId(), "subnetId", subnetId)
-				_, err := svc.LinkRouteTable(ctx, rtbl.GetRouteTableId(), subnetId)
+				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
+				_, err := svc.LinkRouteTable(ctx, rtbl.RouteTableId, subnetId)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
 				}
@@ -159,22 +159,22 @@ func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, cl
 	case err != nil:
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.RouteTable(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	for _, rtbl := range rtbls {
-		for _, link := range *rtbl.LinkRouteTables {
-			log.V(2).Info("Unlinking route table", "routeTableId", rtbl.GetRouteTableId(), "linkId", link.GetLinkRouteTableId())
-			err := svc.UnlinkRouteTable(ctx, link.GetLinkRouteTableId())
+		for _, link := range rtbl.LinkRouteTables {
+			log.V(2).Info("Unlinking route table", "routeTableId", rtbl.RouteTableId, "linkId", link.LinkRouteTableId)
+			err := svc.UnlinkRouteTable(ctx, link.LinkRouteTableId)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot unlink routeTable: %w", err)
 			}
 		}
-		log.V(2).Info("Deleting routeTable", "routeTableId", rtbl.GetRouteTableId())
-		err = svc.DeleteRouteTable(ctx, rtbl.GetRouteTableId())
+		log.V(2).Info("Deleting routeTable", "routeTableId", rtbl.RouteTableId)
+		err = svc.DeleteRouteTable(ctx, rtbl.RouteTableId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot delete routeTable: %w", err)
 		}

@@ -4,11 +4,16 @@ SPDX-FileCopyrightText: 2022 The Kubernetes Authors
 SPDX-License-Identifier: Apache-2.0
 */
 
-package security
+package tag
 
 import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 )
+
+//go:generate ../../../bin/mockgen -destination mock_tag/tag_mock.go -package mock_tag -source ./service.go
+type Servicer interface {
+	TagInterface
+}
 
 // Service is a collection of interfaces
 type Service struct {
