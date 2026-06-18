@@ -11,10 +11,10 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services/security"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -110,27 +109,27 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
+				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			next: &testcase{
 				name:        "worker has been created, but vm is still pending",
 				clusterSpec: "ready-0.4", machineSpec: "base-worker",
-				machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", infrastructurev1beta1.VmStatePending, false)},
+				machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", osc.VmStatePending, false)},
 				mockFuncs: []mockFunc{
 					mockGetVm("i-foo", "pending", false),
 				},
 				requeue:        true,
-				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false)},
+				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", osc.VmStatePending, false)},
 				next: &testcase{
 					name:        "worker has been created, and vm is now running",
 					clusterSpec: "ready-0.4", machineSpec: "base-worker",
-					machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", infrastructurev1beta1.VmStatePending, false)},
+					machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", osc.VmStatePending, false)},
 					mockFuncs: []mockFunc{
 						mockGetVm("i-foo", "running", false),
 						mockVmSetCCMTag("i-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 					},
 					machineAsserts: []assertOSCMachineFunc{
-						assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
+						assertVmExists("i-foo", osc.VmStateRunning, true),
 						assertVolumesAreConfigured(),
 					},
 				},
@@ -200,7 +199,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
+				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			requeue: true,
 			next: &testcase{
@@ -212,7 +211,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", osc.VmStateRunning, true),
 				},
 			},
 		},
@@ -228,7 +227,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
+				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -264,7 +263,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
+				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -273,7 +272,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", osc.VmStateRunning, true),
 					assertVolumesAreConfigured("/dev/sdb", "vol-bar", "/dev/sdc", "vol-baz"),
 				},
 			},
@@ -299,7 +298,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
+				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -308,7 +307,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", osc.VmStateRunning, true),
 					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",
@@ -336,7 +335,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: ptr.To("ipalloc-foo"), PublicIp: ptr.To("1.2.3.4")}}),
+				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: "ipalloc-foo", PublicIp: "1.2.3.4"}}),
 				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.AutoAttachExternalIPTag: "1.2.3.4",
 					compute.RepulseServerTag:        "test-cluster-api-md-0",
@@ -345,7 +344,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
-				assertVmExists("i-foo", infrastructurev1beta1.VmStatePending, false),
+				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			next: &testcase{
 				mockFuncs: []mockFunc{
@@ -354,7 +353,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				},
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
-					assertVmExists("i-foo", infrastructurev1beta1.VmStateRunning, true),
+					assertVmExists("i-foo", osc.VmStateRunning, true),
 					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",
@@ -396,7 +395,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{LinkPublicIpId: ptr.To("ipassoc-foo"), PublicIp: ptr.To("1.2.3.4")}}),
+				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{LinkPublicIpId: new("ipassoc-foo"), PublicIp: "1.2.3.4"}}),
 			},
 			hasError: true,
 		},
@@ -406,7 +405,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "The default server repulse can be disabled",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("")}),
+				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("")}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -420,7 +419,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "A server repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("foo")}),
+				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("foo")}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -436,7 +435,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "A strict server repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("foo"), ServerStrict: true}),
+				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("foo"), ServerStrict: true}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -484,7 +483,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Both repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: ptr.To("foo"), RepulseCluster: "bar", ClusterStrict: true}),
+				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("foo"), RepulseCluster: "bar", ClusterStrict: true}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -551,9 +550,9 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
 				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
-					VmId:  ptr.To("i-worker"),
-					State: ptr.To("running"),
-					Tags: &[]osc.ResourceTag{
+					VmId:  "i-worker",
+					State: osc.VmStateRunning,
+					Tags: []osc.ResourceTag{
 						{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
 						{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
 					},
@@ -580,10 +579,10 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			},
 			mockFuncs: []mockFunc{
 				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
-					VmId:     ptr.To("i-worker"),
-					PublicIp: ptr.To("1.2.3.4"),
-					State:    ptr.To("running"),
-					Tags: &[]osc.ResourceTag{
+					VmId:     "i-worker",
+					PublicIp: new("1.2.3.4"),
+					State:    osc.VmStateRunning,
+					Tags: []osc.ResourceTag{
 						{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
 						{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
 					},
@@ -680,7 +679,7 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockGetVm("i-046f4bd0", "running", true),
 				mockDeleteVm("i-046f4bd0"),
-				mockPublicIpFound("ipalloc-worker", &osc.PublicIp{PublicIpId: ptr.To("ipalloc-worker"), Tags: &[]osc.ResourceTag{{Key: security.NoDeleteTag}}}),
+				mockPublicIpFound("ipalloc-worker", &osc.PublicIp{PublicIpId: "ipalloc-worker", Tags: []osc.ResourceTag{{Key: net.NoDeleteTag}}}),
 			},
 			assertDeleted: true,
 		},

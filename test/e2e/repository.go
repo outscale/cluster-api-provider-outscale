@@ -23,7 +23,7 @@ import (
 
 type clusterctlConfig struct {
 	Path   string
-	Values map[string]interface{}
+	Values map[string]any
 }
 
 type providerConfig struct {
@@ -89,7 +89,7 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 
 	clusterctlConfigFile := &clusterctlConfig{
 		Path: filepath.Join(input.RepositoryFolder, "clusterctl-config.yaml"),
-		Values: map[string]interface{}{
+		Values: map[string]any{
 			"providers":       providers,
 			"overridesFolder": overridePath,
 		},
@@ -110,12 +110,13 @@ func (i *CreateRepositoryInput) RegisterClusterResourceSetConfigMapTransformatio
 
 	i.FileTransformations = append(i.FileTransformations, func(template []byte) ([]byte, error) {
 		oldData := fmt.Sprintf("data: ${%s}", envSubstVar)
-		newData := "data:\n"
-		newData += "  resources: |\n"
-		for _, l := range strings.Split(string(manifestData), "\n") {
-			newData += strings.Repeat(" ", 4) + l + "\n"
+		var newData strings.Builder
+		newData.WriteString("data:\n")
+		newData.WriteString("  resources: |\n")
+		for l := range strings.SplitSeq(string(manifestData), "\n") {
+			newData.WriteString(strings.Repeat(" ", 4) + l + "\n")
 		}
-		changeTemplate := bytes.ReplaceAll(template, []byte(oldData), []byte(newData))
+		changeTemplate := bytes.ReplaceAll(template, []byte(oldData), []byte(newData.String()))
 		return changeTemplate, nil
 	})
 }

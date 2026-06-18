@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/samber/lo"
-	"k8s.io/utils/ptr"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,8 +33,8 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 				BootstrapClusterProxy:  bootstrapClusterProxy,
 				ArtifactFolder:         artifactFolder,
 				SkipCleanup:            skipCleanup,
-				Flavor:                 ptr.To("fgpu"),
-				WorkerMachineCount:     ptr.To[int64](1),
+				Flavor:                 new("fgpu"),
+				WorkerMachineCount:     new(int64(1)),
 			}
 		})
 	})
@@ -49,9 +48,9 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 				BootstrapClusterProxy:    bootstrapClusterProxy,
 				ArtifactFolder:           artifactFolder,
 				SkipCleanup:              skipCleanup,
-				Flavor:                   ptr.To("multiaz"),
-				ControlPlaneMachineCount: ptr.To[int64](3),
-				WorkerMachineCount:       ptr.To[int64](4),
+				Flavor:                   new("multiaz"),
+				ControlPlaneMachineCount: new(int64(3)),
+				WorkerMachineCount:       new(int64(4)),
 				PostMachinesProvisioned: func(managementClusterProxy framework.ClusterProxy, workloadClusterNamespace, workloadClusterName string) {
 					var ms infrastructurev1beta1.OscMachineList
 					err := managementClusterProxy.GetClient().List(ctx, &ms, client.InNamespace(workloadClusterNamespace))
@@ -85,7 +84,7 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 				BootstrapClusterProxy:  bootstrapClusterProxy,
 				ArtifactFolder:         artifactFolder,
 				SkipCleanup:            skipCleanup,
-				Flavor:                 ptr.To("airgap"),
+				Flavor:                 new("airgap"),
 			}
 		})
 	})
@@ -112,7 +111,7 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 				BootstrapClusterProxy:  bootstrapClusterProxy,
 				ArtifactFolder:         artifactFolder,
 				SkipCleanup:            skipCleanup,
-				Flavor:                 ptr.To("topology"),
+				Flavor:                 new("topology"),
 			}
 		})
 	})
@@ -126,7 +125,7 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 				BootstrapClusterProxy:  bootstrapClusterProxy,
 				ArtifactFolder:         artifactFolder,
 				SkipCleanup:            skipCleanup,
-				Flavor:                 ptr.To("public"),
+				Flavor:                 new("public"),
 			}
 		})
 	})

@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -33,7 +32,7 @@ func TestMultiAZAllocator(t *testing.T) {
 			},
 		},
 		Status: infrastructurev1beta1.OscMachineStatus{
-			FailureDomain: ptr.To("eu-west-2a"),
+			FailureDomain: new("eu-west-2a"),
 		},
 	}
 	nonallocated1 := infrastructurev1beta1.OscMachine{
@@ -71,7 +70,7 @@ func TestMultiAZAllocator(t *testing.T) {
 						},
 					},
 					Status: infrastructurev1beta1.OscMachineStatus{
-						FailureDomain: ptr.To("eu-west-2b"),
+						FailureDomain: new("eu-west-2b"),
 					},
 				},
 			},

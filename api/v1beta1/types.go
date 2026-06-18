@@ -8,6 +8,8 @@ package v1beta1
 import (
 	"slices"
 	"strings"
+
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 type OscRole string
@@ -591,7 +593,7 @@ type OscVolume struct {
 	// (unused)
 	SubregionName string `json:"subregionName,omitempty"`
 	// The volume type (io1, gp2 or standard)
-	VolumeType string `json:"volumeType,omitempty"`
+	VolumeType osc.VolumeType `json:"volumeType,omitempty"`
 	// (unused)
 	ResourceId string `json:"resourceId,omitempty"`
 	// The id of a snapshot to use as a volume source.
@@ -763,27 +765,20 @@ type OscRootDisk struct {
 	RootDiskSize int32 `json:"rootDiskSize,omitempty"`
 	// The volume type (io1, gp2 or standard) (io1 by default)
 	// +optional
-	RootDiskType string `json:"rootDiskType,omitempty"`
+	RootDiskType osc.VolumeType `json:"rootDiskType,omitempty"`
 }
 
 type VmState string
 
 const (
-	VmStatePending      = VmState("pending")
-	VmStateRunning      = VmState("running")
-	VmStateShuttingDown = VmState("shutting-down")
-	VmStateTerminated   = VmState("terminated")
-	VmStateStopping     = VmState("stopping")
-	VmStateStopped      = VmState("stopped")
+	DefaultVmType       string         = "tinav7.c4r8p1"
+	DefaultRootDiskType osc.VolumeType = "io1"
+	DefaultRootDiskSize int32          = 60
+	DefaultRootDiskIops int32          = 1500
 
-	DefaultVmType       string = "tinav7.c4r8p1"
-	DefaultRootDiskType string = "io1"
-	DefaultRootDiskSize int32  = 60
-	DefaultRootDiskIops int32  = 1500
-
-	DefaultVmBastionType       string = "tinav7.c1r1p2"
-	DefaultRootDiskBastionType string = "gp2"
-	DefaultRootDiskBastionSize int32  = 15
+	DefaultVmBastionType       string         = "tinav7.c1r1p2"
+	DefaultRootDiskBastionType osc.VolumeType = "gp2"
+	DefaultRootDiskBastionSize int32          = 15
 
 	DefaultLoadBalancerType     string = "internet-facing"
 	DefaultLoadBalancerProtocol string = "TCP"

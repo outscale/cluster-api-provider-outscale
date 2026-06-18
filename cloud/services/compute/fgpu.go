@@ -11,14 +11,11 @@ import (
 	"strings"
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/utils/ptr"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
-//go:generate ../../../bin/mockgen -destination mock_compute/fgpu_mock.go -package mock_compute -source ./fgpu.go
-type OscFGPUInterface interface {
+type FGPUInterface interface {
 	GetFGPU(ctx context.Context, id string) (*osc.FlexibleGpu, error)
 	AllocateFGPU(ctx context.Context, model, az string, machineScope *scope.MachineScope) (*osc.FlexibleGpu, error)
 	LinkFGPU(ctx context.Context, fGPUId, vmId string) error
@@ -28,18 +25,17 @@ func (s *Service) AllocateFGPU(ctx context.Context, model, az string, machineSco
 	req := osc.CreateFlexibleGpuRequest{
 		ModelName:          model,
 		SubregionName:      az,
-		DeleteOnVmDeletion: ptr.To(true),
+		DeleteOnVmDeletion: new(true),
 	}
 	if after, ok := strings.CutPrefix(machineScope.GetVm().VmType, "tina"); ok {
 		gen, _, _ := strings.Cut(after, ".")
 		req.Generation = &gen
 	}
-	resp, httpRes, err := s.tenant.Client().FlexibleGpuApi.CreateFlexibleGpu(s.tenant.ContextWithAuth(ctx)).CreateFlexibleGpuRequest(req).Execute()
-	err = utils.LogAndExtractError(ctx, "CreateFlexibleGpu", req, httpRes, err)
+	resp, err := s.tenant.Client().CreateFlexibleGpu(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	resourceIds := []string{resp.FlexibleGpu.GetFlexibleGpuId()}
+	resourceIds := []string{resp.FlexibleGpu.FlexibleGpuId}
 	nodeTag := osc.ResourceTag{
 		Key:   tag.NameKey,
 		Value: machineScope.GetName(),
@@ -48,7 +44,7 @@ func (s *Service) AllocateFGPU(ctx context.Context, model, az string, machineSco
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{nodeTag},
 	}
-	err = tag.AddTag(ctx, tagRequest, resourceIds, s.tenant.Client(), s.tenant.ContextWithAuth(ctx))
+	err = s.tags.AddTag(ctx, tagRequest, resourceIds)
 	if err != nil {
 		return nil, fmt.Errorf("tag fgpu: %w", err)
 	}
@@ -61,12 +57,11 @@ func (s *Service) GetFGPU(ctx context.Context, id string) (*osc.FlexibleGpu, err
 			FlexibleGpuIds: &[]string{id},
 		},
 	}
-	resp, httpRes, err := s.tenant.Client().FlexibleGpuApi.ReadFlexibleGpus(s.tenant.ContextWithAuth(ctx)).ReadFlexibleGpusRequest(req).Execute()
-	err = utils.LogAndExtractError(ctx, "ReadFlexibleGpus", req, httpRes, err)
+	resp, err := s.tenant.Client().ReadFlexibleGpus(ctx, req)
 	switch {
 	case err != nil:
 		return nil, err
-	case len(resp.GetFlexibleGpus()) == 0:
+	case len(*resp.FlexibleGpus) == 0:
 		return nil, nil
 	default:
 		return &(*resp.FlexibleGpus)[0], nil
@@ -78,6 +73,6 @@ func (s *Service) LinkFGPU(ctx context.Context, fGPUId, vmId string) error {
 		FlexibleGpuId: fGPUId,
 		VmId:          vmId,
 	}
-	_, httpRes, err := s.tenant.Client().FlexibleGpuApi.LinkFlexibleGpu(s.tenant.ContextWithAuth(ctx)).LinkFlexibleGpuRequest(req).Execute()
-	return utils.LogAndExtractError(ctx, "LinkFlexibleGpu", req, httpRes, err)
+	_, err := s.tenant.Client().LinkFlexibleGpu(ctx, req)
+	return err
 }

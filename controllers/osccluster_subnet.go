@@ -30,7 +30,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.Subnet(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	for _, subnetSpec := range clusterScope.GetSubnets() {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
 		switch {
@@ -38,7 +38,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		default:
-			log.V(4).Info("Found existing subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.SubregionName, "subnetId", subnet.GetSubnetId())
+			log.V(4).Info("Found existing subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.SubregionName, "subnetId", subnet.SubnetId)
 			continue
 		}
 		subnetSpec.SubregionName = clusterScope.GetSubnetSubregion(subnetSpec)
@@ -47,8 +47,8 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
 		}
-		log.V(2).Info("Created subnet", "subnetId", subnet.GetSubnetId())
-		r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.GetSubnetId())
+		log.V(2).Info("Created subnet", "subnetId", subnet.SubnetId)
+		r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.SubnetId)
 		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.SubnetCreatedReason, "Subnet created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 	}
 
@@ -72,7 +72,7 @@ func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clust
 		log.V(4).Info("Not deleting existing subnets")
 		return reconcile.Result{}, nil
 	}
-	svc := r.Cloud.Subnet(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	subnetsSpec := clusterScope.GetSubnets()
 	for _, subnetSpec := range subnetsSpec {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
@@ -82,7 +82,7 @@ func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clust
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 		}
-		subnetId := subnet.GetSubnetId()
+		subnetId := subnet.SubnetId
 		log.V(2).Info("Deleting subnet", "subnetId", subnetId)
 		err = svc.DeleteSubnet(ctx, subnetId)
 		if err != nil {

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {

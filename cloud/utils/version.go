@@ -7,9 +7,7 @@ package utils
 
 import "strings"
 
-var (
-	version = "dev"
-)
+var version = "dev"
 
 // GetVersion retrieves the version of the provider
 func GetVersion() string {

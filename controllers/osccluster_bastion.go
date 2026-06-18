@@ -14,6 +14,7 @@ import (
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -123,9 +124,9 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 	default:
-		log.V(4).Info("Found bastion", "vmId", vm.GetVmId(), "vmState", vm.GetState())
-		clusterScope.SetVmState(infrastructurev1beta1.VmState(vm.GetState()))
-		if vm.GetState() != "running" {
+		log.V(4).Info("Found bastion", "vmId", vm.VmId, "vmState", vm.State)
+		clusterScope.SetVmState(vm.State)
+		if vm.State != osc.VmStateRunning {
 			return reconcile.Result{}, errors.New("bastion is not yet running")
 		}
 		clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerBastion)
@@ -160,6 +161,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	if len(bastionSecurityGroups) == 0 {
 		return reconcile.Result{}, errors.New("no securityGroup found")
 	}
+	svc := r.Cloud.Compute(clusterScope.Tenant)
 	securityGroupIds := make([]string, 0, len(bastionSecurityGroups))
 	for _, sgSpec := range bastionSecurityGroups {
 		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
@@ -171,14 +173,14 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 	imageId := bastionSpec.ImageId
 	if imageId == "" && bastionSpec.ImageName != "" {
-		image, err := r.Cloud.Image(clusterScope.Tenant).GetImageByName(ctx, bastionSpec.ImageName, bastionSpec.ImageAccountId)
+		image, err := svc.GetImageByName(ctx, bastionSpec.ImageName, bastionSpec.ImageAccountId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot find image %s: %w", bastionSpec.ImageName, err)
 		}
 		if image == nil {
 			return reconcile.Result{}, fmt.Errorf("cannot find image %s", bastionSpec.ImageName)
 		}
-		imageId = *image.ImageId
+		imageId = image.ImageId
 	}
 
 	log.V(3).Info("Creating bastion", "vmType", bastionSpec.VmType)
@@ -187,13 +189,13 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 	bastionName := clusterScope.GetBastionName()
 	clientToken := clusterScope.GetBastionClientToken()
-	vm, err = r.Cloud.VM(clusterScope.Tenant).CreateVmBastion(ctx, &bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, clientToken, imageId, tags)
+	vm, err = svc.CreateVmBastion(ctx, &bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, clientToken, imageId, tags)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create bastion: %w", err)
 	}
-	log.V(2).Info("Bastion created", "vmId", vm.GetVmId())
-	r.Tracker.setBastionId(clusterScope, vm.GetVmId())
-	clusterScope.SetVmState(infrastructurev1beta1.VmStatePending)
+	log.V(2).Info("Bastion created", "vmId", vm.VmId)
+	r.Tracker.setBastionId(clusterScope, vm.VmId)
+	clusterScope.SetVmState(osc.VmStatePending)
 	r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.VmCreatedReason, "Bastion created")
 	return reconcile.Result{}, errors.New("VM is not running yet")
 }
@@ -212,16 +214,16 @@ func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clust
 		return reconcile.Result{}, nil
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
-	case vm.GetState() == "terminated":
+	case vm.State == "terminated":
 		log.V(4).Info("The bastion is already deleted")
 		return reconcile.Result{}, nil
 	}
 
 	log.V(3).Info("Deleting bastion")
-	err = r.Cloud.VM(clusterScope.Tenant).DeleteVm(ctx, vm.GetVmId())
+	err = r.Cloud.Compute(clusterScope.Tenant).DeleteVm(ctx, vm.VmId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot delete bastion: %w", err)
 	}
-	log.V(2).Info("Bastion deleted", "vmId", vm.GetVmId())
+	log.V(2).Info("Bastion deleted", "vmId", vm.VmId)
 	return reconcile.Result{}, nil
 }

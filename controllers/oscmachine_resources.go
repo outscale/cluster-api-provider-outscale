@@ -12,8 +12,8 @@ import (
 
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -35,10 +35,13 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 		return nil, err
 	case vm != nil:
 		t.trackVm(machineScope, vm)
-		err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, vm.GetPublicIp(), clusterScope)
-		return vm, err
+		if vm.PublicIp != nil {
+			err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, *vm.PublicIp, clusterScope)
+			return vm, err
+		}
+		return vm, nil
 	}
-	vm, err = t.Cloud.VM(clusterScope.Tenant).GetVm(ctx, id)
+	vm, err = t.Cloud.Compute(clusterScope.Tenant).GetVm(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -46,8 +49,11 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 		return nil, fmt.Errorf("get vm %s: %w", id, ErrMissingResource)
 	default:
 		t.trackVm(machineScope, vm)
-		err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, vm.GetPublicIp(), clusterScope)
-		return vm, err
+		if vm.PublicIp != nil {
+			err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, *vm.PublicIp, clusterScope)
+			return vm, err
+		}
+		return vm, nil
 	}
 }
 
@@ -64,12 +70,12 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 		return nil, id, nil
 	}
 	clientToken := machineScope.GetClientToken(clusterScope)
-	vm, err := t.Cloud.VM(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
+	vm, err := t.Cloud.Compute(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get vm from client token: %w", err)
 	case vm != nil:
-		return vm, vm.GetVmId(), nil
+		return vm, vm.VmId, nil
 	}
 	// Search by name (retrocompatibility)
 	name := machineScope.GetName() + "-" + clusterScope.GetUID()
@@ -77,15 +83,15 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 	if err != nil {
 		return nil, "", fmt.Errorf("get vm: %w", err)
 	}
-	if tg.GetResourceId() != "" {
-		return nil, tg.GetResourceId(), nil
+	if tg != nil && tg.ResourceId != "" {
+		return nil, tg.ResourceId, nil
 	}
 	return nil, "", fmt.Errorf("get vm: %w", ErrNoResourceFound)
 }
 
 func (t *MachineResourceTracker) trackVm(machineScope *scope.MachineScope, vm *osc.Vm) {
-	t.setVmId(machineScope, vm.GetVmId())
-	t.setVolumeIds(machineScope, vm.GetBlockDeviceMappings())
+	t.setVmId(machineScope, vm.VmId)
+	t.setVolumeIds(machineScope, vm.BlockDeviceMappings)
 }
 
 func (t *MachineResourceTracker) setVmId(machineScope *scope.MachineScope, id string) {
@@ -102,7 +108,7 @@ func (t *MachineResourceTracker) setVolumeIds(machineScope *scope.MachineScope, 
 		rsrc.Volumes = map[string]string{}
 	}
 	for _, device := range devices {
-		rsrc.Volumes[device.GetDeviceName()] = device.Bsu.GetVolumeId()
+		rsrc.Volumes[device.DeviceName] = device.Bsu.VolumeId
 	}
 }
 
@@ -125,9 +131,9 @@ func (t *MachineResourceTracker) getImageId(ctx context.Context, machineScope *s
 		default:
 			accountId = imageSpec.AccountId
 		}
-		image, err = t.Cloud.Image(clusterScope.Tenant).GetImageByName(ctx, imageSpec.Name, accountId)
+		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImageByName(ctx, imageSpec.Name, accountId)
 	} else {
-		image, err = t.Cloud.Image(clusterScope.Tenant).GetImage(ctx, machineScope.GetImageId())
+		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImage(ctx, machineScope.GetImageId())
 	}
 	if err != nil {
 		return "", fmt.Errorf("cannot get image: %w", err)
@@ -135,8 +141,8 @@ func (t *MachineResourceTracker) getImageId(ctx context.Context, machineScope *s
 	if image == nil {
 		return "", errors.New("no image found")
 	}
-	t.setImageId(machineScope, image.GetImageId())
-	return image.GetImageId(), nil
+	t.setImageId(machineScope, image.ImageId)
+	return image.ImageId, nil
 }
 
 func (t *MachineResourceTracker) setImageId(machineScope *scope.MachineScope, imageId string) {
@@ -190,7 +196,7 @@ func (t *MachineResourceTracker) getFGPU(ctx context.Context, machineScope *scop
 		t.trackFGPU(machineScope, fgpu)
 		return fgpu, err
 	}
-	fgpu, err = t.Cloud.FlexibleGPU(clusterScope.Tenant).GetFGPU(ctx, id)
+	fgpu, err = t.Cloud.Compute(clusterScope.Tenant).GetFGPU(ctx, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -214,8 +220,8 @@ func (t *MachineResourceTracker) _getFGPUOrId(ctx context.Context, machineScope 
 	if err != nil {
 		return nil, "", fmt.Errorf("get fgpu: %w", err)
 	}
-	if tg.GetResourceId() != "" {
-		return nil, tg.GetResourceId(), nil
+	if tg != nil && tg.ResourceId != "" {
+		return nil, tg.ResourceId, nil
 	}
 	return nil, "", fmt.Errorf("get fgpu: %w", ErrNoResourceFound)
 }
@@ -225,5 +231,5 @@ func (t *MachineResourceTracker) trackFGPU(machineScope *scope.MachineScope, fgp
 	if rsrc.FGPU == nil {
 		rsrc.FGPU = map[string]string{}
 	}
-	rsrc.FGPU[defaultResource] = *fgpu.FlexibleGpuId
+	rsrc.FGPU[defaultResource] = fgpu.FlexibleGpuId
 }

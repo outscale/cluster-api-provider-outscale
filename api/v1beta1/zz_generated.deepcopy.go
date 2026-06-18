@@ -21,6 +21,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	apiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -263,7 +264,7 @@ func (in *OscClusterStatus) DeepCopyInto(out *OscClusterStatus) {
 	}
 	if in.VmState != nil {
 		in, out := &in.VmState, &out.VmState
-		*out = new(VmState)
+		*out = new(osc.VmState)
 		**out = **in
 	}
 }
@@ -676,7 +677,7 @@ func (in *OscMachineStatus) DeepCopyInto(out *OscMachineStatus) {
 	}
 	if in.VmState != nil {
 		in, out := &in.VmState, &out.VmState
-		*out = new(VmState)
+		*out = new(osc.VmState)
 		**out = **in
 	}
 	in.Node.DeepCopyInto(&out.Node)

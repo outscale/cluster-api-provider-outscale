@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package v1beta1
 
 import (
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -26,7 +27,7 @@ type OscMachineStatus struct {
 	FailureDomain  *string                    `json:"failureDomain,omitempty"`
 	FailureReason  *errors.MachineStatusError `json:"failureReason,omitempty"`
 	FailureMessage *string                    `json:"failureMessage,omitempty"`
-	VmState        *VmState                   `json:"vmState,omitempty"`
+	VmState        *osc.VmState               `json:"vmState,omitempty"`
 	// deprecated, replaced by resources
 	Node                 OscNodeResource         `json:"node,omitempty"`
 	Resources            OscMachineResources     `json:"resources,omitempty"`

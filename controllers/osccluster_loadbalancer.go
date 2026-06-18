@@ -12,8 +12,9 @@ import (
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
-	tag "github.com/outscale/cluster-api-provider-outscale/cloud/tag"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
+	"github.com/outscale/goutils/k8s/tags"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,12 +22,8 @@ import (
 )
 
 func getLoadBalancerNameTag(lb *osc.LoadBalancer) string {
-	for _, tg := range lb.GetTags() {
-		if tg.Key == tag.NameKey {
-			return tg.Value
-		}
-	}
-	return ""
+	name, _ := tags.GetName(lb.Tags)
+	return name
 }
 
 // reconcileLoadBalancer reconciles the loadBalancer of the cluster.
@@ -40,7 +37,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
-	svc := r.Cloud.LoadBalancer(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
@@ -49,7 +46,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	nameTag := loadBalancerName + "-" + clusterScope.GetUID()
 	if loadbalancer != nil {
 		lbName := getLoadBalancerNameTag(loadbalancer)
-		if lbName == "" && *loadbalancer.LoadBalancerName == loadBalancerName {
+		if lbName == "" && loadbalancer.LoadBalancerName == loadBalancerName {
 			return reconcile.Result{}, fmt.Errorf("a LoadBalancer with name %s already exists", loadBalancerName)
 		}
 		if lbName != "" && lbName != nameTag {
@@ -95,14 +92,14 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 			return reconcile.Result{}, fmt.Errorf("cannot configure healthcheck: %w", err)
 		}
 	}
-	if len(loadbalancer.GetTags()) == 0 {
+	if len(loadbalancer.Tags) == 0 {
 		log.V(2).Info("Creating loadBalancer name tag", "loadBalancerName", loadBalancerName)
-		err = svc.CreateLoadBalancerTag(ctx, &loadBalancerSpec, osc.NewResourceTag(tag.NameKey, nameTag))
+		err = svc.CreateLoadBalancerTag(ctx, &loadBalancerSpec, &osc.ResourceTag{Key: tag.NameKey, Value: nameTag})
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot tag loadBalancer: %w", err)
 		}
 	}
-	controlPlaneEndpoint := loadbalancer.GetDnsName()
+	controlPlaneEndpoint := loadbalancer.DnsName
 	log.V(4).Info("Set controlPlaneEndpoint", "endpoint", controlPlaneEndpoint)
 
 	controlPlanePort := loadBalancerSpec.Listener.LoadBalancerPort
@@ -122,7 +119,7 @@ func (r *OscClusterReconciler) reconcileDeleteLoadBalancer(ctx context.Context, 
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
 	loadBalancerName := loadBalancerSpec.LoadBalancerName
 
-	svc := r.Cloud.LoadBalancer(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 	if err != nil {
 		return reconcile.Result{}, err

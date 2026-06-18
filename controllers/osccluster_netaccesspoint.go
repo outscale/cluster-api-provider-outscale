@@ -35,15 +35,15 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 	region := clusterScope.Tenant.Region()
 
 	// Find routetables to link to
-	svc := r.Cloud.RouteTable(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	rtblForSubnet := map[string]string{}
 	for _, rtbl := range rtbls {
-		for _, link := range rtbl.GetLinkRouteTables() {
-			rtblForSubnet[link.GetSubnetId()] = rtbl.GetRouteTableId()
+		for _, link := range rtbl.LinkRouteTables {
+			rtblForSubnet[link.SubnetId] = rtbl.RouteTableId
 		}
 	}
 	rtblIds := make([]string, 0, len(rtbls))
@@ -65,17 +65,17 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		default:
-			log.V(4).Info("Found existing netAccessPoint", "netAccessPointId", netAccessPoint.GetNetAccessPointId())
+			log.V(4).Info("Found existing netAccessPoint", "netAccessPointId", netAccessPoint.NetAccessPointId)
 			continue
 		}
 		log.V(3).Info("Creating net access point", "service", service)
-		netAccessPoint, err = r.Cloud.NetAccessPoint(clusterScope.Tenant).CreateNetAccessPoint(ctx, netId, region, string(service), rtblIds, clusterScope.GetUID())
+		netAccessPoint, err = svc.CreateNetAccessPoint(ctx, netId, region, string(service), rtblIds, clusterScope.GetUID())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create netAccessPoint: %w", err)
 		}
-		log.V(2).Info("Created net access point", "netAccessPointId", netAccessPoint.GetNetAccessPointId())
+		log.V(2).Info("Created net access point", "netAccessPointId", netAccessPoint.NetAccessPointId)
 		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetAccessPointCreatedReason, "Net Access Point created %s", service)
-		r.Tracker.setNetAccessPointId(clusterScope, service, netAccessPoint.GetNetAccessPointId())
+		r.Tracker.setNetAccessPointId(clusterScope, service, netAccessPoint.NetAccessPointId)
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNetAccessPoint)
 	return reconcile.Result{}, nil
@@ -96,14 +96,14 @@ func (r *OscClusterReconciler) reconcileDeleteNetAccessPoints(ctx context.Contex
 	case err != nil:
 		return reconcile.Result{}, err
 	}
-	svc := r.Cloud.NetAccessPoint(clusterScope.Tenant)
+	svc := r.Cloud.Net(clusterScope.Tenant)
 	naps, err := svc.ListNetAccessPoints(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("list net access points: %w", err)
 	}
 	for _, nap := range naps {
-		log.V(2).Info("Deleting netAccessPoint", "netAccessPointId", nap.GetNetAccessPointId())
-		err = svc.DeleteNetAccessPoint(ctx, nap.GetNetAccessPointId())
+		log.V(2).Info("Deleting netAccessPoint", "netAccessPointId", nap.NetAccessPointId)
+		err = svc.DeleteNetAccessPoint(ctx, nap.NetAccessPointId)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("delete netAccessPoint: %w", err)
 		}
