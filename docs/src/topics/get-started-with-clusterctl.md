@@ -22,7 +22,7 @@ The CAPOSC (Cluster Api Provider for OutSCale) infrastructure driver is based on
 | CAPOSC v0.x    | v1beta1        |
 | CAPOSC v1.x    | v1beta1        |
 
-CAPI v1.10 uses v1beta1 schemas internally. CAPI v1.11 switches to v1beta2 schemas but remains compatible with v1beta1. Therefore, using CAPI v1.11 is expected to work.
+CAPI v1.10 uses v1beta1 schemas internally. CAPI v1.11 switches to v1beta1 schemas but remains compatible with v1beta1. Therefore, using CAPI v1.11 is expected to work.
 
 ## Installing clusterctl
 

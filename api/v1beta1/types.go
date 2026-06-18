@@ -787,7 +787,7 @@ const (
 	DefaultUnhealthyThreshold   int32  = 3
 	DefaultTimeout              int32  = 10
 
-	APIPort int32 = 6443
+	APIPort = 6443
 )
 
 // SetDefaultValue set the vm default values

@@ -11,7 +11,7 @@ import (
 
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 func OscReplaceName(name string) string {
@@ -21,26 +21,26 @@ func OscReplaceName(name string) string {
 
 // OscClusterSpec defines the desired state of OscCluster
 type OscClusterSpec struct {
-	Credentials          OscCredentials        `json:"credentials,omitempty"`
-	Network              OscNetwork            `json:"network,omitempty"`
-	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
+	Credentials          OscCredentials             `json:"credentials,omitempty"`
+	Network              OscNetwork                 `json:"network,omitempty"`
+	ControlPlaneEndpoint clusterv1beta1.APIEndpoint `json:"controlPlaneEndpoint,omitempty"`
 }
 
 // OscClusterStatus defines the observed state of OscCluster
 type OscClusterStatus struct {
 	Ready bool `json:"ready,omitempty"`
 	// deprecated, replaced by resources
-	Network              OscNetworkResource       `json:"network,omitempty"`
-	Resources            OscClusterResources      `json:"resources,omitempty"`
-	ReconcilerGeneration OscReconcilerGeneration  `json:"reconcilerGeneration,omitempty"`
-	FailureDomains       clusterv1.FailureDomains `json:"failureDomains,omitempty"`
-	Conditions           clusterv1.Conditions     `json:"conditions,omitempty"`
-	VmState              *osc.VmState             `json:"vmState,omitempty"`
+	Network              OscNetworkResource            `json:"network,omitempty"`
+	Resources            OscClusterResources           `json:"resources,omitempty"`
+	ReconcilerGeneration OscReconcilerGeneration       `json:"reconcilerGeneration,omitempty"`
+	FailureDomains       clusterv1beta1.FailureDomains `json:"failureDomains,omitempty"`
+	Conditions           clusterv1beta1.Conditions     `json:"conditions,omitempty"`
+	VmState              *osc.VmState                  `json:"vmState,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=oscclusters,scope=Namespaced,categories=cluster-api
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=oscclusters,scope=Namespaced,categories=cluster-api
 
 // OscCluster is the Schema for the oscclusters API
 type OscCluster struct {
@@ -51,7 +51,7 @@ type OscCluster struct {
 	Status OscClusterStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // OscClusterList contains a list of OscCluster
 type OscClusterList struct {
@@ -61,12 +61,12 @@ type OscClusterList struct {
 }
 
 // GetConditions returns status of the state of the cluster resource.
-func (r *OscCluster) GetConditions() clusterv1.Conditions {
+func (r *OscCluster) GetConditions() clusterv1beta1.Conditions {
 	return r.Status.Conditions
 }
 
 // SetConditions set status of the state of the cluster resource from clusterv1.Conditions.
-func (r *OscCluster) SetConditions(conditions clusterv1.Conditions) {
+func (r *OscCluster) SetConditions(conditions clusterv1beta1.Conditions) {
 	r.Status.Conditions = conditions
 }
 

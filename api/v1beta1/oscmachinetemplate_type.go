@@ -9,7 +9,7 @@ package v1beta1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 // OscMachineTemplateSpec define oscMachine template
@@ -18,14 +18,13 @@ type OscMachineTemplateSpec struct {
 }
 
 type OscMachineTemplateStatus struct {
-	Capacity   corev1.ResourceList  `json:"capacity,omitempty"`
-	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
+	Capacity   corev1.ResourceList       `json:"capacity,omitempty"`
+	Conditions clusterv1beta1.Conditions `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=oscmachinetemplates,scope=Namespaced,categories=cluster-api
-// +kubebuilder:storageversion
 
 // OscMachineTemplate is the Schema for the OscMachineTemplate API
 type OscMachineTemplate struct {
@@ -46,15 +45,15 @@ type OscMachineTemplateList struct {
 
 // OscMachineTemplateResource is the Schema for the OscMachineTemplate api
 type OscMachineTemplateResource struct {
-	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty"`
-	Spec       OscMachineSpec       `json:"spec"`
+	ObjectMeta clusterv1beta1.ObjectMeta `json:"metadata,omitempty"`
+	Spec       OscMachineSpec            `json:"spec"`
 }
 
-func (m *OscMachineTemplate) GetConditions() clusterv1.Conditions {
+func (m *OscMachineTemplate) GetConditions() clusterv1beta1.Conditions {
 	return m.Status.Conditions
 }
 
-func (m *OscMachineTemplate) SetConditions(conditions clusterv1.Conditions) {
+func (m *OscMachineTemplate) SetConditions(conditions clusterv1beta1.Conditions) {
 	m.Status.Conditions = conditions
 }
 

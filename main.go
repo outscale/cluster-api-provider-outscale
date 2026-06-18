@@ -11,11 +11,6 @@ import (
 	"os"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
-	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
-	"github.com/outscale/cluster-api-provider-outscale/controllers"
-	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -25,13 +20,20 @@ import (
 	v1 "k8s.io/component-base/logs/api/v1"
 	_ "k8s.io/component-base/logs/json/register"
 	"k8s.io/klog/v2"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
+	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
+	"github.com/outscale/cluster-api-provider-outscale/controllers"
+	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -45,6 +47,7 @@ func init() {
 	utilruntime.Must(clusterv1.AddToScheme(scheme))
 	utilruntime.Must(bootstrapv1.AddToScheme(scheme))
 	utilruntime.Must(infrastructurev1beta1.AddToScheme(scheme))
+	utilruntime.Must(infrastructurev1beta2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -205,6 +208,22 @@ func main() {
 	}
 	if err = (&infrastructurev1beta1.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
 		logger.Error(err, "unable to create webhook", "webhook", "OscCluster")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscCluster")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscMachineTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscMachine")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscClusterTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

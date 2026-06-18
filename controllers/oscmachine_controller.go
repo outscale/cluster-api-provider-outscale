@@ -16,10 +16,11 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
+	conditions "sigs.k8s.io/cluster-api/util/conditions/deprecated/v1beta1"
+	"sigs.k8s.io/cluster-api/util/deprecated/v1beta1/conditions"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -166,11 +167,6 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
 		log.V(3).Info("Bootstrap data secret reference is not yet available")
 		return ctrl.Result{}, nil
-	}
-
-	errs := infrastructurev1beta1.ValidateOscMachineSpec(oscmachine.Spec)
-	if len(errs) > 0 {
-		return reconcile.Result{}, errs.ToAggregate()
 	}
 
 	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope)

@@ -36,10 +36,9 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 	case vm != nil:
 		t.trackVm(machineScope, vm)
 		if vm.PublicIp != nil {
-			err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, *vm.PublicIp, clusterScope)
-			return vm, err
+			err = t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, *vm.PublicIp, clusterScope)
 		}
-		return vm, nil
+		return vm, err
 	}
 	vm, err = t.Cloud.Compute(clusterScope.Tenant).GetVm(ctx, id)
 	switch {
@@ -50,22 +49,16 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 	default:
 		t.trackVm(machineScope, vm)
 		if vm.PublicIp != nil {
-			err := t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, *vm.PublicIp, clusterScope)
-			return vm, err
+			err = t.IPAllocator(machineScope).RetrackIP(ctx, defaultResource, *vm.PublicIp, clusterScope)
 		}
-		return vm, nil
+		return vm, err
 	}
 }
 
 // getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
 func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (*osc.Vm, string, error) {
-	id := machineScope.GetVm().ResourceId
-	if id != "" {
-		return nil, id, nil
-	}
-
 	rsrc := machineScope.GetResources()
-	id = getResource(defaultResource, rsrc.Vm)
+	id := getResource(defaultResource, rsrc.Vm)
 	if id != "" {
 		return nil, id, nil
 	}
@@ -133,7 +126,7 @@ func (t *MachineResourceTracker) getImageId(ctx context.Context, machineScope *s
 		}
 		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImageByName(ctx, imageSpec.Name, accountId)
 	} else {
-		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImage(ctx, machineScope.GetImageId())
+		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImage(ctx, imageSpec.ID)
 	}
 	if err != nil {
 		return "", fmt.Errorf("cannot get image: %w", err)

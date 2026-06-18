@@ -81,7 +81,7 @@ status:
     uid: 2b508d0f-457d-4a60-97f5-5c3c70ac156e
   observedGeneration: 3
   phase: Running
-  v1beta2:
+  v1beta1:
     conditions:
       - lastTransitionTime: "2025-02-17T09:48:08Z"
         message: ""

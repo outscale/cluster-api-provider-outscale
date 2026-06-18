@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
@@ -20,8 +20,9 @@ import (
 )
 
 // reconcileSecurityGroupAddRules reconciles rules for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta2.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
+
 	svc := r.Cloud.Compute(clusterScope.Tenant)
 	for _, securityGroupRuleSpec := range securityGroupRulesSpec {
 		var rules []osc.SecurityGroupRule
@@ -58,8 +59,9 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 }
 
 // reconcileSecurityGroupDeleteRules deletes all rules not in spec for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta2.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
+
 	svc := r.Cloud.Compute(clusterScope.Tenant)
 	checkRules := func(flow string, rules []osc.SecurityGroupRule) error {
 		for _, rule := range rules {
@@ -107,7 +109,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerSecurityGroup) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerSecurityGroup) {
 		log.V(4).Info("No need for securityGroup reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -121,7 +123,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	securityGroupSvc := r.Cloud.Compute(clusterScope.Tenant)
+	svc := r.Cloud.Compute(clusterScope.Tenant)
 	securityGroupsSpec := clusterScope.GetSecurityGroups()
 	for _, securityGroupSpec := range securityGroupsSpec {
 		securityGroup, err := r.Tracker.getSecurityGroup(ctx, securityGroupSpec, clusterScope)
@@ -129,27 +131,27 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 		case IsNotFound(err):
 			log.V(3).Info("Creating securityGroup", "securityGroupName", securityGroupSpec.Name)
 			name := clusterScope.GetSecurityGroupName(securityGroupSpec)
-			securityGroup, err = securityGroupSvc.CreateSecurityGroup(ctx, netId, clusterScope.GetUID(), name, securityGroupSpec.Description, securityGroupSpec.Tag, securityGroupSpec.Roles)
+			securityGroup, err = svc.CreateSecurityGroup(ctx, netId, clusterScope.GetUID(), name, securityGroupSpec.Description, securityGroupSpec.Tag, securityGroupSpec.Roles)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot create securityGroup: %w", err)
 			}
 			log.V(2).Info("Created securityGroup", "securityGroupId", securityGroup.SecurityGroupId)
 			r.Tracker.setSecurityGroupId(clusterScope, securityGroupSpec, securityGroup.SecurityGroupId)
-			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.SecurityGroupCreatedReason, "Security group created %v", securityGroupSpec.Roles)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SecurityGroupCreatedReason, "Security group created %v", securityGroupSpec.Roles)
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		}
 		securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
-		if securityGroupSpec.HasRole(infrastructurev1beta1.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
+		if securityGroupSpec.HasRole(infrastructurev1beta2.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
 			ips, err := r.listNATPublicIPs(ctx, clusterScope, true)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot list NAT public IPs: %w", err)
 			}
-			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta1.OscSecurityGroupRule{
+			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow:          "Inbound",
 				IpProtocol:    "tcp",
-				FromPortRange: infrastructurev1beta1.APIPort,
-				ToPortRange:   infrastructurev1beta1.APIPort,
+				FromPortRange: infrastructurev1beta2.APIPort,
+				ToPortRange:   infrastructurev1beta2.APIPort,
 				IpRanges:      ips,
 			})
 		}
@@ -162,7 +164,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 			return reconcile.Result{}, fmt.Errorf("check rules: %w", err)
 		}
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerSecurityGroup)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerSecurityGroup)
 	return reconcile.Result{}, nil
 }
 
@@ -184,8 +186,8 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
 	}
 
-	securityGroupSvc := r.Cloud.Compute(clusterScope.Tenant)
-	securityGroups, err := securityGroupSvc.GetSecurityGroupsFromNet(ctx, netId)
+	svc := r.Cloud.Compute(clusterScope.Tenant)
+	securityGroups, err := svc.GetSecurityGroupsFromNet(ctx, netId)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("list securityGroups: %w", err)
 	}
@@ -197,7 +199,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 		log.V(2).Info("Deleting inbound rules", "securityGroupId", securityGroup.SecurityGroupId)
 		for _, rule := range securityGroup.InboundRules {
 			for _, member := range rule.SecurityGroupsMembers {
-				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.SecurityGroupId, "Inbound", rule.IpProtocol, "", member.SecurityGroupId, rule.FromPortRange, rule.ToPortRange)
+				err = svc.DeleteSecurityGroupRule(ctx, securityGroup.SecurityGroupId, "Inbound", rule.IpProtocol, "", member.SecurityGroupId, rule.FromPortRange, rule.ToPortRange)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot delete rule: %w", err)
 				}
@@ -206,7 +208,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 		log.V(2).Info("Deleting outbound rules", "securityGroupId", securityGroup.SecurityGroupId)
 		for _, rule := range securityGroup.OutboundRules {
 			for _, member := range rule.SecurityGroupsMembers {
-				err = securityGroupSvc.DeleteSecurityGroupRule(ctx, securityGroup.SecurityGroupId, "Outbound", rule.IpProtocol, "", member.SecurityGroupId, rule.FromPortRange, rule.ToPortRange)
+				err = svc.DeleteSecurityGroupRule(ctx, securityGroup.SecurityGroupId, "Outbound", rule.IpProtocol, "", member.SecurityGroupId, rule.FromPortRange, rule.ToPortRange)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot delete rule: %w", err)
 				}
@@ -218,7 +220,7 @@ func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context,
 			continue
 		}
 		log.V(2).Info("Deleting securityGroup", "securityGroupId", securityGroup.SecurityGroupId)
-		err := securityGroupSvc.DeleteSecurityGroup(ctx, securityGroup.SecurityGroupId)
+		err := svc.DeleteSecurityGroup(ctx, securityGroup.SecurityGroupId)
 		if err != nil {
 			sgerr = fmt.Errorf("cannot delete %s: %w", securityGroup.SecurityGroupId, err)
 		}

@@ -24,7 +24,7 @@ import (
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	apiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	corev1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/errors"
 )
 
@@ -250,14 +250,14 @@ func (in *OscClusterStatus) DeepCopyInto(out *OscClusterStatus) {
 	}
 	if in.FailureDomains != nil {
 		in, out := &in.FailureDomains, &out.FailureDomains
-		*out = make(apiv1beta1.FailureDomains, len(*in))
+		*out = make(corev1beta1.FailureDomains, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make(apiv1beta1.Conditions, len(*in))
+		*out = make(corev1beta1.Conditions, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -691,7 +691,7 @@ func (in *OscMachineStatus) DeepCopyInto(out *OscMachineStatus) {
 	}
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make(apiv1beta1.Conditions, len(*in))
+		*out = make(corev1beta1.Conditions, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -812,7 +812,7 @@ func (in *OscMachineTemplateStatus) DeepCopyInto(out *OscMachineTemplateStatus) 
 	}
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make(apiv1beta1.Conditions, len(*in))
+		*out = make(corev1beta1.Conditions, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

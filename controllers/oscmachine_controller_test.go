@@ -9,7 +9,7 @@ import (
 	"context"
 	"testing"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -40,7 +40,7 @@ func runMachineTest(t *testing.T, tc testcase) {
 	_ = clientgoscheme.AddToScheme(fakeScheme)
 	_ = clusterv1.AddToScheme(fakeScheme)
 	_ = apiextensionsv1.AddToScheme(fakeScheme)
-	_ = infrastructurev1beta1.AddToScheme(fakeScheme)
+	_ = infrastructurev1beta2.AddToScheme(fakeScheme)
 	client := fake.NewClientBuilder().WithScheme(fakeScheme).
 		WithStatusSubresource(om).WithObjects(c, oc, m, om).Build()
 	mockCtrl := gomock.NewController(t)
@@ -77,7 +77,7 @@ func runMachineTest(t *testing.T, tc testcase) {
 			require.NoError(t, err)
 			assert.Equal(t, step.requeue, res.RequeueAfter > 0 || res.Requeue)
 		}
-		var out infrastructurev1beta1.OscMachine
+		var out infrastructurev1beta2.OscMachine
 		err = client.Get(context.TODO(), nsn, &out)
 		switch {
 		case step.assertDeleted:
@@ -246,16 +246,16 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmWithVolumes("i-foo", []infrastructurev1beta1.OscVolume{{
-					Name:       "data",
-					Size:       15,
-					VolumeType: "io1",
-					Iops:       500,
-					Device:     "/dev/sdb",
+				mockCreateVmWithVolumes("i-foo", []infrastructurev1beta2.OscVolume{{
+					Name:   "data",
+					Size:   15,
+					Type:   "io1",
+					Iops:   500,
+					Device: "/dev/sdb",
 				}, {
 					Name:         "images",
 					Size:         15,
-					VolumeType:   "gp2",
+					Type:         "gp2",
 					Device:       "/dev/sdc",
 					FromSnapshot: "snap-foo",
 				}}, "vol-bar", "vol-baz"),
@@ -308,7 +308,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
 					assertVmExists("i-foo", osc.VmStateRunning, true),
-					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+					assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",
 						},
@@ -354,7 +354,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				machineAsserts: []assertOSCMachineFunc{
 					assertHasMachineFinalizer(),
 					assertVmExists("i-foo", osc.VmStateRunning, true),
-					assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+					assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",
 						},
@@ -405,7 +405,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "The default server repulse can be disabled",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("")}),
+				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("")}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -419,7 +419,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "A server repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("foo")}),
+				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("foo")}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -435,7 +435,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "A strict server repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("foo"), ServerStrict: true}),
+				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("foo"), ServerStrict: true}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -451,7 +451,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "A cluster repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseCluster: "foo"}),
+				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseCluster: "foo"}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -467,7 +467,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "A strict cluster repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseCluster: "foo", ClusterStrict: true}),
+				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseCluster: "foo", ClusterStrict: true}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -483,7 +483,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			name:        "Both repulse can be configured",
 			clusterSpec: "ready-1.0", machineSpec: "base-worker",
 			machinePatches: []patchOSCMachineFunc{
-				patchRepulse(infrastructurev1beta1.OscPlacement{RepulseServer: new("foo"), RepulseCluster: "bar", ClusterStrict: true}),
+				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("foo"), RepulseCluster: "bar", ClusterStrict: true}),
 			},
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
@@ -533,7 +533,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 				mockGetVm("i-046f4bd0", "running", true),
 			},
 			machineAsserts: []assertOSCMachineFunc{
-				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
 					Vm: map[string]string{
 						"default": "i-046f4bd0",
 					},
@@ -559,7 +559,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 				}),
 			},
 			machineAsserts: []assertOSCMachineFunc{
-				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
 					Vm: map[string]string{
 						"default": "i-worker",
 					},
@@ -590,7 +590,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 				mockGetPublicIpByIp("1.2.3.4", "ipalloc-worker"),
 			},
 			machineAsserts: []assertOSCMachineFunc{
-				assertStatusMachineResources(infrastructurev1beta1.OscMachineResources{
+				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
 					Vm: map[string]string{
 						"default": "i-worker",
 					},

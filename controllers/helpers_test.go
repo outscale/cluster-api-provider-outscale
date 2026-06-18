@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -89,15 +89,15 @@ func (s *MockCloudServices) Tag(t tenant.Tenant) tag.Servicer {
 }
 
 type (
-	patchOSCClusterFunc func(m *v1beta1.OscCluster)
-	patchOSCMachineFunc func(m *v1beta1.OscMachine)
+	patchOSCClusterFunc func(m *infrastructurev1beta2.OscCluster)
+	patchOSCMachineFunc func(m *infrastructurev1beta2.OscMachine)
 )
 
 type mockFunc func(s *MockCloudServices)
 
 type (
-	assertOSCMachineFunc func(t *testing.T, m *v1beta1.OscMachine)
-	assertOSCClusterFunc func(t *testing.T, c *v1beta1.OscCluster)
+	assertOSCMachineFunc func(t *testing.T, m *infrastructurev1beta2.OscMachine)
+	assertOSCClusterFunc func(t *testing.T, c *infrastructurev1beta2.OscCluster)
 	assertTenantFunc     func(t *testing.T, tnt tenant.Tenant)
 )
 
@@ -126,7 +126,7 @@ func trimVersion(spec string) string {
 	return reVersion.ReplaceAllString(spec, "")
 }
 
-func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *v1beta1.OscCluster) {
+func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *infrastructurev1beta2.OscCluster) {
 	var cluster clusterv1.Cluster
 	var cname string
 	switch base {
@@ -139,7 +139,7 @@ func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *v1b
 		decode(t, "cluster/"+base+".yaml", &cluster)
 		cname = cluster.Name
 	}
-	var osccluster v1beta1.OscCluster
+	var osccluster infrastructurev1beta2.OscCluster
 	decode(t, "osccluster/"+spec+".yaml", &osccluster)
 	osccluster.Labels = map[string]string{clusterv1.ClusterNameLabel: osccluster.Name}
 	osccluster.OwnerReferences = []metav1.OwnerReference{{
@@ -150,7 +150,7 @@ func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *v1b
 	return &cluster, &osccluster
 }
 
-func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.Machine, *v1beta1.OscMachine) {
+func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.Machine, *infrastructurev1beta2.OscMachine) {
 	var machine clusterv1.Machine
 	var mname string
 	switch base {
@@ -163,7 +163,7 @@ func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.
 		decode(t, "machine/"+base+".yaml", &machine)
 		mname = machine.Name
 	}
-	var oscmachine v1beta1.OscMachine
+	var oscmachine infrastructurev1beta2.OscMachine
 	decode(t, "oscmachine/"+spec+".yaml", &oscmachine)
 	oscmachine.Labels = map[string]string{clusterv1.ClusterNameLabel: clusterName}
 	oscmachine.OwnerReferences = []metav1.OwnerReference{{

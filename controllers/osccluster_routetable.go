@@ -8,8 +8,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
@@ -18,14 +19,13 @@ import (
 )
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta1.OscRouteTable, routeSpec infrastructurev1beta1.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta2.OscRouteTable, routeSpec infrastructurev1beta2.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	destinationIpRange := routeSpec.Destination
-	for _, route := range routeTable.Routes {
-		if route.DestinationIpRange == destinationIpRange {
-			return reconcile.Result{}, nil
-		}
+	if slices.ContainsFunc(routeTable.Routes, func(r osc.Route) bool {
+		return r.DestinationIpRange == routeSpec.Destination
+	}) {
+		return reconcile.Result{}, nil
 	}
 	var resourceId string
 	var err error
@@ -45,11 +45,11 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
 	default:
-		log.V(3).Info("Route has no target !", "destinationIpRange", destinationIpRange)
+		log.V(3).Info("Route has no target !", "destinationIpRange", routeSpec.Destination)
 		return reconcile.Result{}, nil
 	}
-	log.V(2).Info("Creating route", "destination", destinationIpRange, "resourceId", resourceId)
-	_, err = r.Cloud.Net(clusterScope.Tenant).CreateRoute(ctx, destinationIpRange, routeTable.RouteTableId, resourceId, routeSpec.TargetType)
+	log.V(2).Info("Creating route", "destination", routeSpec.Destination, "resourceId", resourceId)
+	_, err = r.Cloud.Net(clusterScope.Tenant).CreateRoute(ctx, routeSpec.Destination, routeTable.RouteTableId, resourceId, routeSpec.TargetType)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot create route: %w", err)
 	}
@@ -58,10 +58,10 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 }
 
 // reconcileRouteTable reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, roles ...infrastructurev1beta1.OscRole) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, roles ...infrastructurev1beta2.OscRole) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerRouteTable) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerRouteTable) {
 		log.V(4).Info("No need for routeTable reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -86,17 +86,16 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 			rtblForSubnet[link.SubnetId] = &rtbl
 		}
 	}
-	routeTablesSpec := clusterScope.GetRouteTables()
-	for _, routeTableSpec := range routeTablesSpec {
+	for _, spec := range clusterScope.GetRouteTables() {
 		var rtbl *osc.RouteTable
-		names := routeTableSpec.Subnets
+		names := spec.Subnets
 		if len(names) == 0 {
 			names = []string{""}
 		}
 		for _, name := range names {
-			subnetSpec, err := clusterScope.GetSubnet(name, routeTableSpec.Role, routeTableSpec.SubregionName)
+			subnetSpec, err := clusterScope.GetSubnet(spec.Name, spec.Role, spec.SubregionName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot find subnet with name %q role %q: %w", name, routeTableSpec.Role, err)
+				return reconcile.Result{}, fmt.Errorf("cannot find subnet with name %q role %q: %w", name, spec.Role, err)
 			}
 			if len(roles) > 0 && !clusterScope.SubnetHasRole(subnetSpec, roles[0]) {
 				continue
@@ -112,12 +111,12 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 				continue
 			case rtbl == nil && rtblForSubnet[subnetId] == nil:
 				log.V(2).Info("Creating routetable", "subnetId", subnetId)
-				rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), routeTableSpec.Name)
+				rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), spec.Name)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}
 				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
-				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
+				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
 				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
@@ -130,15 +129,15 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 		if rtbl == nil {
 			continue
 		}
-		for _, routeSpec := range routeTableSpec.Routes {
-			_, err = r.reconcileRoute(ctx, clusterScope, routeTableSpec, routeSpec, rtbl)
+		for _, routeSpec := range spec.Routes {
+			_, err = r.reconcileRoute(ctx, clusterScope, spec, routeSpec, rtbl)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		}
 	}
 	if len(roles) == 0 {
-		clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerRouteTable)
+		clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerRouteTable)
 	}
 	return reconcile.Result{}, nil
 }

@@ -50,7 +50,7 @@ status:
   infrastructureReady: true
   observedGeneration: 2
   phase: Provisioned
-  v1beta2:
+  v1beta1:
     conditions:
       - lastTransitionTime: "2025-02-17T09:47:38Z"
         message: |-

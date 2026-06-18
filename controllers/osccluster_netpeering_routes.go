@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"slices"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	"github.com/outscale/goutils/sdk/ptr"
@@ -29,7 +29,7 @@ func (r *OscClusterReconciler) getManagementRouteTablesAndIPRange(ctx context.Co
 	if err != nil {
 		return nil, "", fmt.Errorf("find mgmt route tables: %w", err)
 	}
-	subnetId := clusterScope.GetNetwork().NetPeering.ManagementSubnetID
+	subnetId := clusterScope.GetSpec().NetPeering.ManagementSubnetID
 	if subnetId == "" {
 		n, err := mgmtSvc.GetNet(ctx, netId)
 		if err != nil {
@@ -54,11 +54,11 @@ func (r *OscClusterReconciler) getManagementRouteTablesAndIPRange(ctx context.Co
 // reconcileNetPeeringRoutes reconcile the NetPeering routes.
 func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not reconciling netPeering routes for existing net")
 		return reconcile.Result{}, nil
 	}
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNetPeeringRoutes) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNetPeeringRoutes) {
 		log.V(4).Info("No need for netPeering routes reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -93,7 +93,7 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("create mgmt route: %w", err)
 			}
-			r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering management route created")
+			r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering management route created")
 		}
 	}
 
@@ -115,17 +115,17 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("create workload route: %w", err)
 		}
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering workload route created")
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering workload route created")
 	}
 
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNetPeeringRoutes)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeeringRoutes)
 	return reconcile.Result{}, nil
 }
 
 // reconcileDeleteNetPeering reconcile the destruction of the NetPeering of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing netPeering routes")
 		return reconcile.Result{}, nil
 	}

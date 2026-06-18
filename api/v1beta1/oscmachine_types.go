@@ -10,7 +10,7 @@ import (
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/errors"
 )
 
@@ -29,10 +29,10 @@ type OscMachineStatus struct {
 	FailureMessage *string                    `json:"failureMessage,omitempty"`
 	VmState        *osc.VmState               `json:"vmState,omitempty"`
 	// deprecated, replaced by resources
-	Node                 OscNodeResource         `json:"node,omitempty"`
-	Resources            OscMachineResources     `json:"resources,omitempty"`
-	ReconcilerGeneration OscReconcilerGeneration `json:"reconcilerGeneration,omitempty"`
-	Conditions           clusterv1.Conditions    `json:"conditions,omitempty"`
+	Node                 OscNodeResource           `json:"node,omitempty"`
+	Resources            OscMachineResources       `json:"resources,omitempty"`
+	ReconcilerGeneration OscReconcilerGeneration   `json:"reconcilerGeneration,omitempty"`
+	Conditions           clusterv1beta1.Conditions `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -61,12 +61,12 @@ type OscMachineList struct {
 }
 
 // GetConditions return status of the state of the machine resource
-func (r *OscMachine) GetConditions() clusterv1.Conditions {
+func (r *OscMachine) GetConditions() clusterv1beta1.Conditions {
 	return r.Status.Conditions
 }
 
 // SetConditions set status of the state of the machine resource from machine
-func (r *OscMachine) SetConditions(conditions clusterv1.Conditions) {
+func (r *OscMachine) SetConditions(conditions clusterv1beta1.Conditions) {
 	r.Status.Conditions = conditions
 }
 
