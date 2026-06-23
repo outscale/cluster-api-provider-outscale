@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"slices"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	"github.com/outscale/goutils/sdk/ptr"
@@ -58,7 +58,7 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 		log.V(4).Info("Not reconciling netPeering routes for existing net")
 		return reconcile.Result{}, nil
 	}
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNetPeeringRoutes) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNetPeeringRoutes) {
 		log.V(4).Info("No need for netPeering routes reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -93,7 +93,7 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("create mgmt route: %w", err)
 			}
-			r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering management route created")
+			r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering management route created")
 		}
 	}
 
@@ -115,10 +115,10 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("create workload route: %w", err)
 		}
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering workload route created")
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering workload route created")
 	}
 
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNetPeeringRoutes)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeeringRoutes)
 	return reconcile.Result{}, nil
 }
 

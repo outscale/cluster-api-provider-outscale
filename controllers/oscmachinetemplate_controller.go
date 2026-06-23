@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
@@ -35,7 +35,7 @@ type OscMachineTemplateReconciler struct {
 func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	machineTemplate := &infrastructurev1beta1.OscMachineTemplate{}
+	machineTemplate := &infrastructurev1beta2.OscMachineTemplate{}
 	if err := r.Get(ctx, req.NamespacedName, machineTemplate); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -82,7 +82,7 @@ func (r *OscMachineTemplateReconciler) reconcileDelete(ctx context.Context, mach
 func (r *OscMachineTemplateReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
-		For(&infrastructurev1beta1.OscMachineTemplate{}).
+		For(&infrastructurev1beta2.OscMachineTemplate{}).
 		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(mgr.GetScheme(), ctrl.LoggerFrom(ctx), r.WatchFilterValue)).
 		Complete(r)
 }

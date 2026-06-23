@@ -8,7 +8,7 @@ package scope_test
 import (
 	"testing"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,98 +18,98 @@ import (
 
 func TestClusterScope_GetSubnets(t *testing.T) {
 	t.Run("Default subnets are computed on a default net if none set", func(t *testing.T) {
-		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta1.OscCluster{}}
+		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta2.OscCluster{}}
 		clusterScope.OscCluster.Spec.Network.SubregionName = "eu-west2a"
 		subnets := clusterScope.GetSubnets()
-		assert.Equal(t, []infrastructurev1beta1.OscSubnet{
-			{IpSubnetRange: "10.0.2.0/24", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.0.3.0/24", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.0.4.0/24", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}, SubregionName: "eu-west2a"},
+		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
+			{IpSubnetRange: "10.0.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
+			{IpSubnetRange: "10.0.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
+			{IpSubnetRange: "10.0.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, SubregionName: "eu-west2a"},
 		}, subnets)
 	})
 	t.Run("Default subnets are computed on a custom net if not set", func(t *testing.T) {
-		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta1.OscCluster{}}
+		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta2.OscCluster{}}
 		clusterScope.OscCluster.Spec.Network.Net.IpRange = "10.1.0.0/16"
 		clusterScope.OscCluster.Spec.Network.SubregionName = "eu-west2a"
 		subnets := clusterScope.GetSubnets()
-		assert.Equal(t, []infrastructurev1beta1.OscSubnet{
-			{IpSubnetRange: "10.1.2.0/24", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.1.3.0/24", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.1.4.0/24", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}, SubregionName: "eu-west2a"},
+		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
+			{IpSubnetRange: "10.1.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
+			{IpSubnetRange: "10.1.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
+			{IpSubnetRange: "10.1.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, SubregionName: "eu-west2a"},
 		}, subnets)
 	})
 }
 
 func TestClusterScope_GetSubnet(t *testing.T) {
 	tts := []struct {
-		subnets         []infrastructurev1beta1.OscSubnet
+		subnets         []infrastructurev1beta2.OscSubnet
 		searchName      string
-		searchRole      infrastructurev1beta1.OscRole
+		searchRole      infrastructurev1beta2.OscRole
 		searchSubregion string
 		expectName      string
 	}{
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta1.RoleLoadBalancer,
+			searchRole: infrastructurev1beta2.RoleLoadBalancer,
 			expectName: "1",
 		},
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta1.RoleBastion,
+			searchRole: infrastructurev1beta2.RoleBastion,
 			expectName: "1",
 		},
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta1.RoleControlPlane,
+			searchRole: infrastructurev1beta2.RoleControlPlane,
 			expectName: "2",
 		},
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta1.RoleWorker,
+			searchRole: infrastructurev1beta2.RoleWorker,
 			expectName: "3",
 		},
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole:      infrastructurev1beta1.RoleWorker,
+			searchRole:      infrastructurev1beta2.RoleWorker,
 			searchSubregion: "eu-west2a",
 			expectName:      "3",
 		},
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}, SubregionName: "eu-west2a"},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
 			},
-			searchRole: infrastructurev1beta1.RoleWorker,
+			searchRole: infrastructurev1beta2.RoleWorker,
 			expectName: "3",
 		},
 		{
-			subnets: []infrastructurev1beta1.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer, infrastructurev1beta1.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleWorker}},
+			subnets: []infrastructurev1beta2.OscSubnet{
+				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole:      infrastructurev1beta1.RoleWorker,
+			searchRole:      infrastructurev1beta2.RoleWorker,
 			searchSubregion: "eu-west2b",
 			expectName:      "3",
 		},
@@ -117,9 +117,9 @@ func TestClusterScope_GetSubnet(t *testing.T) {
 
 	for _, tt := range tts {
 		clusterScope := &scope.ClusterScope{
-			OscCluster: &infrastructurev1beta1.OscCluster{
-				Spec: infrastructurev1beta1.OscClusterSpec{
-					Network: infrastructurev1beta1.OscNetwork{
+			OscCluster: &infrastructurev1beta2.OscCluster{
+				Spec: infrastructurev1beta2.OscClusterSpec{
+					Network: infrastructurev1beta2.OscNetwork{
 						SubregionName: "eu-west2a",
 						Subnets:       tt.subnets,
 					},
@@ -139,19 +139,19 @@ func TestClusterScope_GetSubnet(t *testing.T) {
 
 func TestClusterScope_GetSecurityGroupsFor(t *testing.T) {
 	tts := []struct {
-		searchRole  infrastructurev1beta1.OscRole
+		searchRole  infrastructurev1beta2.OscRole
 		expectNames []string
 	}{
 		{
-			searchRole:  infrastructurev1beta1.RoleLoadBalancer,
+			searchRole:  infrastructurev1beta2.RoleLoadBalancer,
 			expectNames: []string{"foo-lb"},
 		},
 		{
-			searchRole:  infrastructurev1beta1.RoleControlPlane,
+			searchRole:  infrastructurev1beta2.RoleControlPlane,
 			expectNames: []string{"foo-controlplane", "foo-node"},
 		},
 		{
-			searchRole:  infrastructurev1beta1.RoleWorker,
+			searchRole:  infrastructurev1beta2.RoleWorker,
 			expectNames: []string{"foo-worker", "foo-node"},
 		},
 	}
@@ -164,7 +164,7 @@ func TestClusterScope_GetSecurityGroupsFor(t *testing.T) {
 					UID:  "abcd",
 				},
 			},
-			OscCluster: &infrastructurev1beta1.OscCluster{},
+			OscCluster: &infrastructurev1beta2.OscCluster{},
 		}
 
 		sgs, err := clusterScope.GetSecurityGroupsFor(nil, tt.searchRole)
@@ -178,19 +178,19 @@ func TestClusterScope_GetSecurityGroupsFor(t *testing.T) {
 
 func TestClusterScope_GetSecurityGroups(t *testing.T) {
 	clusterScope := &scope.ClusterScope{
-		OscCluster: &infrastructurev1beta1.OscCluster{
-			Spec: infrastructurev1beta1.OscClusterSpec{
-				Network: infrastructurev1beta1.OscNetwork{
+		OscCluster: &infrastructurev1beta2.OscCluster{
+			Spec: infrastructurev1beta2.OscClusterSpec{
+				Network: infrastructurev1beta2.OscNetwork{
 					SubregionName: "eu-west2a",
-					SecurityGroups: []infrastructurev1beta1.OscSecurityGroup{{
-						Roles:              []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleBastion},
-						SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					SecurityGroups: []infrastructurev1beta2.OscSecurityGroup{{
+						Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleBastion},
+						SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
 					}, {
-						Roles:              []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleLoadBalancer},
-						SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+						Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer},
+						SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
 					}, {
-						Roles:              []infrastructurev1beta1.OscRole{infrastructurev1beta1.RoleControlPlane, infrastructurev1beta1.RoleWorker},
-						SecurityGroupRules: []infrastructurev1beta1.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+						Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker},
+						SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
 					}},
 					AllowFromIPRanges: []string{"1.2.3.0/24"},
 					AllowToIPRanges:   []string{"2.3.4.0/24"},
@@ -204,19 +204,19 @@ func TestClusterScope_GetSecurityGroups(t *testing.T) {
 	}
 	for _, sg := range sgs {
 		switch sg.Roles[0] {
-		case infrastructurev1beta1.RoleBastion:
-			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+		case infrastructurev1beta2.RoleBastion:
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: []string{"1.2.3.0/24"},
 			})
-			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"2.3.4.0/24"},
 			})
-		case infrastructurev1beta1.RoleLoadBalancer:
-			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+		case infrastructurev1beta2.RoleLoadBalancer:
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"1.2.3.0/24"},
 			})
-		case infrastructurev1beta1.RoleControlPlane:
-			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta1.OscSecurityGroupRule{
+		case infrastructurev1beta2.RoleControlPlane:
+			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"2.3.4.0/24"},
 			})
 		}
@@ -224,57 +224,57 @@ func TestClusterScope_GetSecurityGroups(t *testing.T) {
 }
 
 func TestNeedReconciliation(t *testing.T) {
-	newScope := func(r []infrastructurev1beta1.OscReconciliationRule) scope.ClusterScope {
+	newScope := func(r []infrastructurev1beta2.OscReconciliationRule) scope.ClusterScope {
 		return scope.ClusterScope{
-			OscCluster: &infrastructurev1beta1.OscCluster{
+			OscCluster: &infrastructurev1beta2.OscCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Generation: 1,
 				},
-				Spec: infrastructurev1beta1.OscClusterSpec{
-					Network: infrastructurev1beta1.OscNetwork{
+				Spec: infrastructurev1beta2.OscClusterSpec{
+					Network: infrastructurev1beta2.OscNetwork{
 						ReconciliationRules: r,
 					},
 				},
-				Status: infrastructurev1beta1.OscClusterStatus{
-					ReconcilerGeneration: infrastructurev1beta1.OscReconcilerGeneration{
-						infrastructurev1beta1.ReconcilerInternetService: 1,
-						infrastructurev1beta1.ReconcilerNatService:      0,
+				Status: infrastructurev1beta2.OscClusterStatus{
+					ReconcilerGeneration: infrastructurev1beta2.OscReconcilerGeneration{
+						infrastructurev1beta2.ReconcilerInternetService: 1,
+						infrastructurev1beta2.ReconcilerNatService:      0,
 					},
 				},
 			},
 		}
 	}
 	t.Run("the right rule is selected", func(t *testing.T) {
-		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.ReconciliationModeOnChange},
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerAll}, Mode: infrastructurev1beta1.ReconciliationModeAlways},
+		s := newScope([]infrastructurev1beta2.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerInternetService}, Mode: infrastructurev1beta2.ReconciliationModeOnChange},
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerAll}, Mode: infrastructurev1beta2.ReconciliationModeAlways},
 		})
-		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerBastion))
-		assert.False(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta2.ReconcilerBastion))
+		assert.False(t, s.NeedReconciliation(infrastructurev1beta2.ReconcilerInternetService))
 	})
 	t.Run("onChange works", func(t *testing.T) {
-		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.ReconciliationModeOnChange},
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerNatService}, Mode: infrastructurev1beta1.ReconciliationModeOnChange},
+		s := newScope([]infrastructurev1beta2.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerInternetService}, Mode: infrastructurev1beta2.ReconciliationModeOnChange},
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerNatService}, Mode: infrastructurev1beta2.ReconciliationModeOnChange},
 		})
-		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService))
-		assert.False(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta2.ReconcilerNatService))
+		assert.False(t, s.NeedReconciliation(infrastructurev1beta2.ReconcilerInternetService))
 	})
 	t.Run("always works", func(t *testing.T) {
-		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.ReconciliationModeAlways},
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerNatService}, Mode: infrastructurev1beta1.ReconciliationModeAlways},
+		s := newScope([]infrastructurev1beta2.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerInternetService}, Mode: infrastructurev1beta2.ReconciliationModeAlways},
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerNatService}, Mode: infrastructurev1beta2.ReconciliationModeAlways},
 		})
-		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService))
-		assert.True(t, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService))
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta2.ReconcilerNatService))
+		assert.True(t, s.NeedReconciliation(infrastructurev1beta2.ReconcilerInternetService))
 	})
 	t.Run("random works", func(t *testing.T) {
-		s := newScope([]infrastructurev1beta1.OscReconciliationRule{
-			{AppliesTo: []infrastructurev1beta1.Reconciler{infrastructurev1beta1.ReconcilerInternetService}, Mode: infrastructurev1beta1.ReconciliationModeRandom, ReconciliationChance: 10},
+		s := newScope([]infrastructurev1beta2.OscReconciliationRule{
+			{AppliesTo: []infrastructurev1beta2.Reconciler{infrastructurev1beta2.ReconcilerInternetService}, Mode: infrastructurev1beta2.ReconciliationModeRandom, ReconciliationChance: 10},
 		})
 		for i := 0; i <= 99; i++ {
 			scope.Rand = func() int { return i }
-			assert.Equal(t, i < 10, s.NeedReconciliation(infrastructurev1beta1.ReconcilerInternetService), i)
+			assert.Equal(t, i < 10, s.NeedReconciliation(infrastructurev1beta2.ReconcilerInternetService), i)
 		}
 	})
 }
@@ -282,13 +282,13 @@ func TestNeedReconciliation(t *testing.T) {
 func TestGetNatService(t *testing.T) {
 	newScope := func() scope.ClusterScope {
 		return scope.ClusterScope{
-			OscCluster: &infrastructurev1beta1.OscCluster{
+			OscCluster: &infrastructurev1beta2.OscCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Generation: 1,
 				},
-				Spec: infrastructurev1beta1.OscClusterSpec{
-					Network: infrastructurev1beta1.OscNetwork{
-						NatServices: []infrastructurev1beta1.OscNatService{
+				Spec: infrastructurev1beta2.OscClusterSpec{
+					Network: infrastructurev1beta2.OscNetwork{
+						NatServices: []infrastructurev1beta2.OscNatService{
 							{Name: "foo", SubregionName: "eu-west-2a"},
 							{Name: "bar", SubregionName: "eu-west-2a"},
 						},

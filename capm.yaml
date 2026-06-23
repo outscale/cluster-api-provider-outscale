@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260707165829-18b698ec2113
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -529,7 +529,7 @@ spec:
                           - random
                           type: string
                         reconciliationChance:
-                          description: The chance (in percent, 1-100) of a reconcilation
+                          description: The chance (in percent, 1-100) of a reconciliation
                             happening when no change have been detected (when mode=random)
                           type: integer
                       type: object
@@ -934,6 +934,715 @@ spec:
                     type: object
                 type: object
               vmState:
+                description: VmState The state of the VM (`pending` \| `running` \|
+                  `stopping` \| `stopped` \| `shutting-down` \| `terminated` \| `quarantine`).
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - name: v1beta2
+    schema:
+      openAPIV3Schema:
+        description: OscCluster is the Schema for the oscclusters API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OscClusterSpec defines the desired state of OscCluster
+            properties:
+              controlPlaneEndpoint:
+                description: APIEndpoint represents a reachable Kubernetes API endpoint.
+                properties:
+                  host:
+                    description: host is the hostname on which the API server is serving.
+                    maxLength: 512
+                    type: string
+                  port:
+                    description: port is the port on which the API server is serving.
+                    format: int32
+                    type: integer
+                required:
+                - host
+                - port
+                type: object
+              credentials:
+                properties:
+                  fromFile:
+                    description: Load credentials from this file instead of the env.
+                    type: string
+                  fromSecret:
+                    description: Load credentials from this secret instead of the
+                      env.
+                    type: string
+                  profile:
+                    description: Name of profile stored in file (unused when using
+                      fromSecret, "default" by default).
+                    type: string
+                type: object
+              network:
+                properties:
+                  additionalSecurityRules:
+                    description: Additional rules to add to the automatic security
+                      groups
+                    items:
+                      properties:
+                        roles:
+                          description: The roles of automatic securityGroup to add
+                            rules to.
+                          items:
+                            type: string
+                          type: array
+                        rules:
+                          description: The rules to add.
+                          items:
+                            properties:
+                              flow:
+                                description: The flow of the security group (inbound
+                                  or outbound)
+                                type: string
+                              fromPortRange:
+                                description: The beginning of the port range
+                                format: int32
+                                type: integer
+                              ipProtocol:
+                                description: The ip protocol name (tcp, udp, icmp
+                                  or -1)
+                                type: string
+                              ipRange:
+                                description: The ip range of the security group rule
+                                  (deprecated, use ipRanges)
+                                type: string
+                              ipRanges:
+                                description: The list of ip ranges of the security
+                                  group rule
+                                items:
+                                  type: string
+                                type: array
+                              name:
+                                description: The tag name associate with the security
+                                  group
+                                type: string
+                              resourceId:
+                                description: The security group rule id
+                                type: string
+                              toPortRange:
+                                description: The end of the port range
+                                format: int32
+                                type: integer
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  allowFromIPRanges:
+                    description: The list of IP ranges (in CIDR notation) to restrict
+                      bastion/Kubernetes API access to.
+                    items:
+                      type: string
+                    type: array
+                  allowToIPRanges:
+                    description: The list of IP ranges (in CIDR notation) the nodes
+                      can talk to ("0.0.0.0/0" if not set).
+                    items:
+                      type: string
+                    type: array
+                  bastion:
+                    description: The bastion configuration
+                    properties:
+                      PublicIpId:
+                        description: The ID of an existing public IP to use for this
+                          VM.
+                        type: string
+                      enable:
+                        type: boolean
+                      imageAccountId:
+                        type: string
+                      imageId:
+                        type: string
+                      imageName:
+                        type: string
+                      keypairName:
+                        type: string
+                      name:
+                        type: string
+                      privateIps:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            privateIp:
+                              type: string
+                          type: object
+                        type: array
+                      resourceId:
+                        description: the vm id (deprecated, not set anymore)
+                        type: string
+                      rootDisk:
+                        properties:
+                          rootDiskIops:
+                            description: The root disk iops (io1 volumes only) (1500
+                              by default)
+                            format: int32
+                            type: integer
+                          rootDiskSize:
+                            description: The volume size in gibibytes (GiB) (60 by
+                              default)
+                            format: int32
+                            type: integer
+                          rootDiskType:
+                            description: The volume type (io1, gp2 or standard) (io1
+                              by default)
+                            type: string
+                        type: object
+                      securityGroupNames:
+                        description: The list of security groups (deprecated use bastion
+                          role in security groups)
+                        items:
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                        type: array
+                      subnetName:
+                        description: The subnet of the vm (deprecated use bastion
+                          role in subnets)
+                        type: string
+                      vmType:
+                        description: The type of VM (tinav7.c1r1p2 by default)
+                        type: string
+                    type: object
+                  controlPlaneSubnets:
+                    description: List of subnet to spread controlPlane nodes (deprecated,
+                      add controlplane role to subnets)
+                    items:
+                      type: string
+                    type: array
+                  disable:
+                    description: List of disabled features (internet = no internet
+                      service, no nat services)
+                    items:
+                      enum:
+                      - internet
+                      - loadbalancer
+                      type: string
+                    type: array
+                  internetService:
+                    description: The Internet Service configuration
+                    properties:
+                      name:
+                        description: The name of the Internet service
+                        type: string
+                    type: object
+                  loadBalancer:
+                    description: The Load Balancer configuration
+                    properties:
+                      healthCheck:
+                        description: The healthCheck configuration of the Load Balancer
+                        properties:
+                          checkinterval:
+                            description: the time in second between two pings
+                            format: int32
+                            type: integer
+                          healthythreshold:
+                            description: the consecutive number of pings which are
+                              successful to consider the vm healthy
+                            format: int32
+                            type: integer
+                          port:
+                            description: the HealthCheck port number
+                            format: int32
+                            type: integer
+                          protocol:
+                            description: The HealthCheck protocol ('HTTP'|'TCP')
+                            type: string
+                          timeout:
+                            description: the Timeout to consider VM unhealthy
+                            format: int32
+                            type: integer
+                          unhealthythreshold:
+                            description: the consecutive number of pings which are
+                              failed to consider the vm unhealthy
+                            format: int32
+                            type: integer
+                        type: object
+                      listener:
+                        description: The Listener configuration of the loadBalancer
+                        properties:
+                          backendport:
+                            description: The port on which the backend VMs will listen
+                            format: int32
+                            type: integer
+                          backendprotocol:
+                            description: The protocol ('HTTP'|'TCP') to route the
+                              traffic to the backend vm
+                            type: string
+                          loadbalancerport:
+                            description: The port on which the loadbalancer will listen
+                            format: int32
+                            type: integer
+                          loadbalancerprotocol:
+                            description: the routing protocol ('HTTP'|'TCP')
+                            type: string
+                        type: object
+                      loadbalancername:
+                        description: The Load Balancer unique name
+                        type: string
+                      loadbalancertype:
+                        description: The Load Balancer type (internet-facing or internal)
+                        type: string
+                      securitygroupname:
+                        description: The security group name for the load-balancer
+                          (deprecated, add loadbalancer role to a security group)
+                        type: string
+                      subnetname:
+                        description: The subnet name where to add the load balancer
+                          (deprecated, add loadbalancer role to a subnet)
+                        type: string
+                    type: object
+                  natPublicIpPool:
+                    description: The IP Pool storing the Nat Services public IPs
+                    type: string
+                  natService:
+                    description: The Nat Service configuration
+                    properties:
+                      name:
+                        description: The name of the Nat Service
+                        type: string
+                      subnetname:
+                        description: The name of the Subnet to which the Nat Service
+                          will be attached (deprecated, add nat role to subnets)
+                        type: string
+                      subregionName:
+                        description: The name of the Subregion to which the Nat Service
+                          will be attached, unless a subnet has been defined
+                        type: string
+                    type: object
+                  natServices:
+                    description: The Nat Services configuration
+                    items:
+                      properties:
+                        name:
+                          description: The name of the Nat Service
+                          type: string
+                        subnetname:
+                          description: The name of the Subnet to which the Nat Service
+                            will be attached (deprecated, add nat role to subnets)
+                          type: string
+                        subregionName:
+                          description: The name of the Subregion to which the Nat
+                            Service will be attached, unless a subnet has been defined
+                          type: string
+                      type: object
+                    type: array
+                  net:
+                    description: The Net configuration
+                    properties:
+                      ipRange:
+                        description: the ip range in CIDR notation of the Net
+                        type: string
+                      name:
+                        description: the network name
+                        type: string
+                      resourceId:
+                        description: The Id of the Net to reuse (if useExisting.net
+                          is set)
+                        type: string
+                    type: object
+                  netAccessPoints:
+                    description: The NetAccessPoints configuration, required if internet
+                      is disabled.
+                    items:
+                      enum:
+                      - api
+                      - directlink
+                      - eim
+                      - kms
+                      - lbu
+                      - oos
+                      type: string
+                    type: array
+                  netPeering:
+                    description: The NetPeering configuration, required if the load
+                      balancer is internal, and management and workload clusters are
+                      on separate VPCs.
+                    properties:
+                      enable:
+                        description: Create a NetPeering between the management and
+                          workload VPCs.
+                        type: boolean
+                      managementAccountId:
+                        description: The management cluster account ID (optional,
+                          fetched from the metadata server if not set).
+                        type: string
+                      managementCredentials:
+                        description: The credentials of the management cluster account.
+                          Required if management and workload cluster are not in the
+                          same account.
+                        properties:
+                          fromFile:
+                            description: Load credentials from this file instead of
+                              the env.
+                            type: string
+                          fromSecret:
+                            description: Load credentials from this secret instead
+                              of the env.
+                            type: string
+                          profile:
+                            description: Name of profile stored in file (unused when
+                              using fromSecret, "default" by default).
+                            type: string
+                        type: object
+                      managementNetId:
+                        description: The management cluster net ID (optional, fetched
+                          from the metadata server if not set).
+                        type: string
+                      managementSubnetId:
+                        description: By default, all subnets of managementNetId are
+                          routed to the netPeering. If set, only the specified subnet
+                          will be routed.
+                        type: string
+                    type: object
+                  reconciliationRules:
+                    description: 'Reconciliation rules (default: {securityGroup, random,
+                      10%}, {*, onChange}). Only the first matching rule applies.'
+                    items:
+                      properties:
+                        appliesTo:
+                          description: The list of items this rule applies to (bastion,
+                            net, netPeering, netPeering/routes, subnet, internetService,
+                            netAccessPoint, natService, routeTable, securityGroup,
+                            loadbalancer, vm or * for all)
+                          items:
+                            enum:
+                            - bastion
+                            - net
+                            - netPeering
+                            - netPeering/routes
+                            - subnet
+                            - internetService
+                            - netAccessPoint
+                            - natService
+                            - routeTable
+                            - securityGroup
+                            - loadbalancer
+                            - vm
+                            - '*'
+                            type: string
+                          type: array
+                        mode:
+                          description: 'The mode of reconciliation: onChange (only
+                            when the spec change, default), always, random (onChange
+                            + randomPercent% chance)'
+                          enum:
+                          - onChange
+                          - always
+                          - random
+                          type: string
+                        reconciliationChance:
+                          description: The chance (in percent, 1-100) of a reconciliation
+                            happening when no change have been detected (when mode=random)
+                          type: integer
+                      type: object
+                    type: array
+                  routeTables:
+                    description: The Route Table configuration
+                    items:
+                      properties:
+                        name:
+                          description: The tag name associate with the Route Table
+                          type: string
+                        role:
+                          description: The role for this route table
+                          type: string
+                        routes:
+                          description: The Route configuration
+                          items:
+                            properties:
+                              destination:
+                                description: the destination match Ip range with CIDR
+                                  notation
+                                type: string
+                              name:
+                                description: The tag name associate with the Route
+                                type: string
+                              resourceId:
+                                description: The Route Id response
+                                type: string
+                              targetName:
+                                description: The tag name associate with the target
+                                  resource type
+                                type: string
+                              targetType:
+                                description: The target resource type which can be
+                                  Internet Service (gateway) or Nat Service (nat-service)
+                                type: string
+                            type: object
+                          type: array
+                        subnets:
+                          description: The subnet tag name associate with a Subnet
+                            (deprecated, use roles)
+                          items:
+                            type: string
+                          type: array
+                        subregionName:
+                          description: The subregion for this route table
+                          type: string
+                      type: object
+                    type: array
+                  securityGroups:
+                    description: The Security Groups configuration.
+                    items:
+                      properties:
+                        authoritative:
+                          description: Is the Security Group configuration authoritative
+                            ? (if yes, all rules not found in configuration will be
+                            deleted).
+                          type: boolean
+                        description:
+                          description: The description of the security group
+                          type: string
+                        name:
+                          description: The name of the security group
+                          type: string
+                        resourceId:
+                          description: When useExisting.securityGroup is set, the
+                            id of an existing securityGroup to use.
+                          type: string
+                        roles:
+                          description: The roles the securityGroup applies to.
+                          items:
+                            type: string
+                          type: array
+                        securityGroupRules:
+                          description: The list of rules for this securityGroup.
+                          items:
+                            properties:
+                              flow:
+                                description: The flow of the security group (inbound
+                                  or outbound)
+                                type: string
+                              fromPortRange:
+                                description: The beginning of the port range
+                                format: int32
+                                type: integer
+                              ipProtocol:
+                                description: The ip protocol name (tcp, udp, icmp
+                                  or -1)
+                                type: string
+                              ipRange:
+                                description: The ip range of the security group rule
+                                  (deprecated, use ipRanges)
+                                type: string
+                              ipRanges:
+                                description: The list of ip ranges of the security
+                                  group rule
+                                items:
+                                  type: string
+                                type: array
+                              name:
+                                description: The tag name associate with the security
+                                  group
+                                type: string
+                              resourceId:
+                                description: The security group rule id
+                                type: string
+                              toPortRange:
+                                description: The end of the port range
+                                format: int32
+                                type: integer
+                            type: object
+                          type: array
+                        tag:
+                          type: string
+                      type: object
+                    type: array
+                  subnets:
+                    description: The Subnets configuration
+                    items:
+                      properties:
+                        ipSubnetRange:
+                          description: the Ip range in CIDR notation of the Subnet
+                          type: string
+                        name:
+                          description: The name of the Subnet
+                          type: string
+                        resourceId:
+                          description: The id of the Subnet to reuse (if useExisting.net
+                            is set)
+                          type: string
+                        roles:
+                          description: The role of the Subnet (controlplane, worker,
+                            loadbalancer, bastion or nat)
+                          items:
+                            type: string
+                          type: array
+                        subregionName:
+                          description: The subregion name of the Subnet
+                          type: string
+                      type: object
+                    type: array
+                  subregionName:
+                    description: The default subregion name (deprecated, use subregions)
+                    type: string
+                  subregions:
+                    description: The list of subregions where to deploy this cluster
+                    items:
+                      type: string
+                    type: array
+                  useExisting:
+                    description: Reuse externally managed resources ?
+                    properties:
+                      net:
+                        description: If set, net, subnets, internet service, nat services
+                          and route tables are externally managed
+                        type: boolean
+                      securityGroups:
+                        description: If set, security groups are externally managed.
+                        type: boolean
+                    type: object
+                type: object
+            type: object
+          status:
+            description: OscClusterStatus defines the observed state of OscCluster
+            properties:
+              conditions:
+                description: Conditions provide observations of the operational state
+                  of a Cluster API resource.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
+                      type: string
+                    reason:
+                      description: |-
+                        reason is the reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether or not this field is considered a guaranteed API.
+                        This field may be empty.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    severity:
+                      description: |-
+                        severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
+                      maxLength: 32
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
+                        can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+              failureDomains:
+                additionalProperties:
+                  description: |-
+                    FailureDomainSpec is the Schema for Cluster API failure domains.
+                    It allows controllers to understand how many failure domains a cluster can optionally span across.
+                  properties:
+                    attributes:
+                      additionalProperties:
+                        type: string
+                      description: attributes is a free form map of attributes an
+                        infrastructure provider might use or require.
+                      type: object
+                    controlPlane:
+                      description: controlPlane determines if this failure domain
+                        is suitable for use by control plane machines.
+                      type: boolean
+                  type: object
+                description: FailureDomains is a slice of FailureDomains.
+                type: object
+              ready:
+                type: boolean
+              reconcilerGeneration:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              resources:
+                properties:
+                  bastion:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  internetService:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  natService:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  net:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  netAccessPoint:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  netPeering:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  publicIps:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  securityGroup:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  subnet:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+              vmState:
+                description: VmState The state of the VM (`pending` \| `running` \|
+                  `stopping` \| `stopped` \| `shutting-down` \| `terminated` \| `quarantine`).
                 type: string
             type: object
         type: object
@@ -947,7 +1656,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260707165829-18b698ec2113
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1534,7 +2243,7 @@ spec:
                                   type: string
                                 reconciliationChance:
                                   description: The chance (in percent, 1-100) of a
-                                    reconcilation happening when no change have been
+                                    reconciliation happening when no change have been
                                     detected (when mode=random)
                                   type: integer
                               type: object
@@ -1716,6 +2425,667 @@ spec:
             type: object
         type: object
     served: true
+    storage: false
+  - name: v1beta2
+    schema:
+      openAPIV3Schema:
+        description: OscClusterTemplate is the Schema for the oscclustertemplates
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OscClusterTemplateSpec defines the desired state of OscClusterTemplate
+            properties:
+              template:
+                properties:
+                  metadata:
+                    description: |-
+                      ObjectMeta is metadata that all persisted resources must have, which includes all objects
+                      users must create. This is a copy of customizable fields from metav1.ObjectMeta.
+
+                      ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template` and `MachineSet.Template`,
+                      which are not top-level Kubernetes objects. Given that metav1.ObjectMeta has lots of special cases
+                      and read-only fields which end up in the generated CRD validation, having it as a subset simplifies
+                      the API and some issues that can impact user experience.
+
+                      During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054)
+                      for v1alpha2, we noticed a failure would occur running Cluster API test suite against the new CRDs,
+                      specifically `spec.metadata.creationTimestamp in body must be of type string: "null"`.
+                      The investigation showed that `controller-tools@v2` behaves differently than its previous version
+                      when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1) package.
+
+                      In more details, we found that embedded (non-top level) types that embedded `metav1.ObjectMeta`
+                      had validation properties, including for `creationTimestamp` (metav1.Time).
+                      The `metav1.Time` type specifies a custom json marshaller that, when IsZero() is true, returns `null`
+                      which breaks validation because the field isn't marked as nullable.
+
+                      In future versions, controller-tools@v2 might allow overriding the type and validation for embedded
+                      types. When that happens, this hack should be revisited.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          annotations is an unstructured key value map stored with a resource that may be
+                          set by external tools to store and retrieve arbitrary metadata. They are not
+                          queryable and should be preserved when modifying objects.
+                          More info: http://kubernetes.io/docs/user-guide/annotations
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          labels is a map of string keys and values that can be used to organize and categorize
+                          (scope and select) objects. May match selectors of replication controllers
+                          and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels
+                        type: object
+                    type: object
+                  spec:
+                    description: OscClusterSpec defines the desired state of OscCluster
+                    properties:
+                      controlPlaneEndpoint:
+                        description: APIEndpoint represents a reachable Kubernetes
+                          API endpoint.
+                        properties:
+                          host:
+                            description: host is the hostname on which the API server
+                              is serving.
+                            maxLength: 512
+                            type: string
+                          port:
+                            description: port is the port on which the API server
+                              is serving.
+                            format: int32
+                            type: integer
+                        required:
+                        - host
+                        - port
+                        type: object
+                      credentials:
+                        properties:
+                          fromFile:
+                            description: Load credentials from this file instead of
+                              the env.
+                            type: string
+                          fromSecret:
+                            description: Load credentials from this secret instead
+                              of the env.
+                            type: string
+                          profile:
+                            description: Name of profile stored in file (unused when
+                              using fromSecret, "default" by default).
+                            type: string
+                        type: object
+                      network:
+                        properties:
+                          additionalSecurityRules:
+                            description: Additional rules to add to the automatic
+                              security groups
+                            items:
+                              properties:
+                                roles:
+                                  description: The roles of automatic securityGroup
+                                    to add rules to.
+                                  items:
+                                    type: string
+                                  type: array
+                                rules:
+                                  description: The rules to add.
+                                  items:
+                                    properties:
+                                      flow:
+                                        description: The flow of the security group
+                                          (inbound or outbound)
+                                        type: string
+                                      fromPortRange:
+                                        description: The beginning of the port range
+                                        format: int32
+                                        type: integer
+                                      ipProtocol:
+                                        description: The ip protocol name (tcp, udp,
+                                          icmp or -1)
+                                        type: string
+                                      ipRange:
+                                        description: The ip range of the security
+                                          group rule (deprecated, use ipRanges)
+                                        type: string
+                                      ipRanges:
+                                        description: The list of ip ranges of the
+                                          security group rule
+                                        items:
+                                          type: string
+                                        type: array
+                                      name:
+                                        description: The tag name associate with the
+                                          security group
+                                        type: string
+                                      resourceId:
+                                        description: The security group rule id
+                                        type: string
+                                      toPortRange:
+                                        description: The end of the port range
+                                        format: int32
+                                        type: integer
+                                    type: object
+                                  type: array
+                              type: object
+                            type: array
+                          allowFromIPRanges:
+                            description: The list of IP ranges (in CIDR notation)
+                              to restrict bastion/Kubernetes API access to.
+                            items:
+                              type: string
+                            type: array
+                          allowToIPRanges:
+                            description: The list of IP ranges (in CIDR notation)
+                              the nodes can talk to ("0.0.0.0/0" if not set).
+                            items:
+                              type: string
+                            type: array
+                          bastion:
+                            description: The bastion configuration
+                            properties:
+                              PublicIpId:
+                                description: The ID of an existing public IP to use
+                                  for this VM.
+                                type: string
+                              enable:
+                                type: boolean
+                              imageAccountId:
+                                type: string
+                              imageId:
+                                type: string
+                              imageName:
+                                type: string
+                              keypairName:
+                                type: string
+                              name:
+                                type: string
+                              privateIps:
+                                items:
+                                  properties:
+                                    name:
+                                      type: string
+                                    privateIp:
+                                      type: string
+                                  type: object
+                                type: array
+                              resourceId:
+                                description: the vm id (deprecated, not set anymore)
+                                type: string
+                              rootDisk:
+                                properties:
+                                  rootDiskIops:
+                                    description: The root disk iops (io1 volumes only)
+                                      (1500 by default)
+                                    format: int32
+                                    type: integer
+                                  rootDiskSize:
+                                    description: The volume size in gibibytes (GiB)
+                                      (60 by default)
+                                    format: int32
+                                    type: integer
+                                  rootDiskType:
+                                    description: The volume type (io1, gp2 or standard)
+                                      (io1 by default)
+                                    type: string
+                                type: object
+                              securityGroupNames:
+                                description: The list of security groups (deprecated
+                                  use bastion role in security groups)
+                                items:
+                                  properties:
+                                    name:
+                                      type: string
+                                  type: object
+                                type: array
+                              subnetName:
+                                description: The subnet of the vm (deprecated use
+                                  bastion role in subnets)
+                                type: string
+                              vmType:
+                                description: The type of VM (tinav7.c1r1p2 by default)
+                                type: string
+                            type: object
+                          controlPlaneSubnets:
+                            description: List of subnet to spread controlPlane nodes
+                              (deprecated, add controlplane role to subnets)
+                            items:
+                              type: string
+                            type: array
+                          disable:
+                            description: List of disabled features (internet = no
+                              internet service, no nat services)
+                            items:
+                              enum:
+                              - internet
+                              - loadbalancer
+                              type: string
+                            type: array
+                          internetService:
+                            description: The Internet Service configuration
+                            properties:
+                              name:
+                                description: The name of the Internet service
+                                type: string
+                            type: object
+                          loadBalancer:
+                            description: The Load Balancer configuration
+                            properties:
+                              healthCheck:
+                                description: The healthCheck configuration of the
+                                  Load Balancer
+                                properties:
+                                  checkinterval:
+                                    description: the time in second between two pings
+                                    format: int32
+                                    type: integer
+                                  healthythreshold:
+                                    description: the consecutive number of pings which
+                                      are successful to consider the vm healthy
+                                    format: int32
+                                    type: integer
+                                  port:
+                                    description: the HealthCheck port number
+                                    format: int32
+                                    type: integer
+                                  protocol:
+                                    description: The HealthCheck protocol ('HTTP'|'TCP')
+                                    type: string
+                                  timeout:
+                                    description: the Timeout to consider VM unhealthy
+                                    format: int32
+                                    type: integer
+                                  unhealthythreshold:
+                                    description: the consecutive number of pings which
+                                      are failed to consider the vm unhealthy
+                                    format: int32
+                                    type: integer
+                                type: object
+                              listener:
+                                description: The Listener configuration of the loadBalancer
+                                properties:
+                                  backendport:
+                                    description: The port on which the backend VMs
+                                      will listen
+                                    format: int32
+                                    type: integer
+                                  backendprotocol:
+                                    description: The protocol ('HTTP'|'TCP') to route
+                                      the traffic to the backend vm
+                                    type: string
+                                  loadbalancerport:
+                                    description: The port on which the loadbalancer
+                                      will listen
+                                    format: int32
+                                    type: integer
+                                  loadbalancerprotocol:
+                                    description: the routing protocol ('HTTP'|'TCP')
+                                    type: string
+                                type: object
+                              loadbalancername:
+                                description: The Load Balancer unique name
+                                type: string
+                              loadbalancertype:
+                                description: The Load Balancer type (internet-facing
+                                  or internal)
+                                type: string
+                              securitygroupname:
+                                description: The security group name for the load-balancer
+                                  (deprecated, add loadbalancer role to a security
+                                  group)
+                                type: string
+                              subnetname:
+                                description: The subnet name where to add the load
+                                  balancer (deprecated, add loadbalancer role to a
+                                  subnet)
+                                type: string
+                            type: object
+                          natPublicIpPool:
+                            description: The IP Pool storing the Nat Services public
+                              IPs
+                            type: string
+                          natService:
+                            description: The Nat Service configuration
+                            properties:
+                              name:
+                                description: The name of the Nat Service
+                                type: string
+                              subnetname:
+                                description: The name of the Subnet to which the Nat
+                                  Service will be attached (deprecated, add nat role
+                                  to subnets)
+                                type: string
+                              subregionName:
+                                description: The name of the Subregion to which the
+                                  Nat Service will be attached, unless a subnet has
+                                  been defined
+                                type: string
+                            type: object
+                          natServices:
+                            description: The Nat Services configuration
+                            items:
+                              properties:
+                                name:
+                                  description: The name of the Nat Service
+                                  type: string
+                                subnetname:
+                                  description: The name of the Subnet to which the
+                                    Nat Service will be attached (deprecated, add
+                                    nat role to subnets)
+                                  type: string
+                                subregionName:
+                                  description: The name of the Subregion to which
+                                    the Nat Service will be attached, unless a subnet
+                                    has been defined
+                                  type: string
+                              type: object
+                            type: array
+                          net:
+                            description: The Net configuration
+                            properties:
+                              ipRange:
+                                description: the ip range in CIDR notation of the
+                                  Net
+                                type: string
+                              name:
+                                description: the network name
+                                type: string
+                              resourceId:
+                                description: The Id of the Net to reuse (if useExisting.net
+                                  is set)
+                                type: string
+                            type: object
+                          netAccessPoints:
+                            description: The NetAccessPoints configuration, required
+                              if internet is disabled.
+                            items:
+                              enum:
+                              - api
+                              - directlink
+                              - eim
+                              - kms
+                              - lbu
+                              - oos
+                              type: string
+                            type: array
+                          netPeering:
+                            description: The NetPeering configuration, required if
+                              the load balancer is internal, and management and workload
+                              clusters are on separate VPCs.
+                            properties:
+                              enable:
+                                description: Create a NetPeering between the management
+                                  and workload VPCs.
+                                type: boolean
+                              managementAccountId:
+                                description: The management cluster account ID (optional,
+                                  fetched from the metadata server if not set).
+                                type: string
+                              managementCredentials:
+                                description: The credentials of the management cluster
+                                  account. Required if management and workload cluster
+                                  are not in the same account.
+                                properties:
+                                  fromFile:
+                                    description: Load credentials from this file instead
+                                      of the env.
+                                    type: string
+                                  fromSecret:
+                                    description: Load credentials from this secret
+                                      instead of the env.
+                                    type: string
+                                  profile:
+                                    description: Name of profile stored in file (unused
+                                      when using fromSecret, "default" by default).
+                                    type: string
+                                type: object
+                              managementNetId:
+                                description: The management cluster net ID (optional,
+                                  fetched from the metadata server if not set).
+                                type: string
+                              managementSubnetId:
+                                description: By default, all subnets of managementNetId
+                                  are routed to the netPeering. If set, only the specified
+                                  subnet will be routed.
+                                type: string
+                            type: object
+                          reconciliationRules:
+                            description: 'Reconciliation rules (default: {securityGroup,
+                              random, 10%}, {*, onChange}). Only the first matching
+                              rule applies.'
+                            items:
+                              properties:
+                                appliesTo:
+                                  description: The list of items this rule applies
+                                    to (bastion, net, netPeering, netPeering/routes,
+                                    subnet, internetService, netAccessPoint, natService,
+                                    routeTable, securityGroup, loadbalancer, vm or
+                                    * for all)
+                                  items:
+                                    enum:
+                                    - bastion
+                                    - net
+                                    - netPeering
+                                    - netPeering/routes
+                                    - subnet
+                                    - internetService
+                                    - netAccessPoint
+                                    - natService
+                                    - routeTable
+                                    - securityGroup
+                                    - loadbalancer
+                                    - vm
+                                    - '*'
+                                    type: string
+                                  type: array
+                                mode:
+                                  description: 'The mode of reconciliation: onChange
+                                    (only when the spec change, default), always,
+                                    random (onChange + randomPercent% chance)'
+                                  enum:
+                                  - onChange
+                                  - always
+                                  - random
+                                  type: string
+                                reconciliationChance:
+                                  description: The chance (in percent, 1-100) of a
+                                    reconciliation happening when no change have been
+                                    detected (when mode=random)
+                                  type: integer
+                              type: object
+                            type: array
+                          routeTables:
+                            description: The Route Table configuration
+                            items:
+                              properties:
+                                name:
+                                  description: The tag name associate with the Route
+                                    Table
+                                  type: string
+                                role:
+                                  description: The role for this route table
+                                  type: string
+                                routes:
+                                  description: The Route configuration
+                                  items:
+                                    properties:
+                                      destination:
+                                        description: the destination match Ip range
+                                          with CIDR notation
+                                        type: string
+                                      name:
+                                        description: The tag name associate with the
+                                          Route
+                                        type: string
+                                      resourceId:
+                                        description: The Route Id response
+                                        type: string
+                                      targetName:
+                                        description: The tag name associate with the
+                                          target resource type
+                                        type: string
+                                      targetType:
+                                        description: The target resource type which
+                                          can be Internet Service (gateway) or Nat
+                                          Service (nat-service)
+                                        type: string
+                                    type: object
+                                  type: array
+                                subnets:
+                                  description: The subnet tag name associate with
+                                    a Subnet (deprecated, use roles)
+                                  items:
+                                    type: string
+                                  type: array
+                                subregionName:
+                                  description: The subregion for this route table
+                                  type: string
+                              type: object
+                            type: array
+                          securityGroups:
+                            description: The Security Groups configuration.
+                            items:
+                              properties:
+                                authoritative:
+                                  description: Is the Security Group configuration
+                                    authoritative ? (if yes, all rules not found in
+                                    configuration will be deleted).
+                                  type: boolean
+                                description:
+                                  description: The description of the security group
+                                  type: string
+                                name:
+                                  description: The name of the security group
+                                  type: string
+                                resourceId:
+                                  description: When useExisting.securityGroup is set,
+                                    the id of an existing securityGroup to use.
+                                  type: string
+                                roles:
+                                  description: The roles the securityGroup applies
+                                    to.
+                                  items:
+                                    type: string
+                                  type: array
+                                securityGroupRules:
+                                  description: The list of rules for this securityGroup.
+                                  items:
+                                    properties:
+                                      flow:
+                                        description: The flow of the security group
+                                          (inbound or outbound)
+                                        type: string
+                                      fromPortRange:
+                                        description: The beginning of the port range
+                                        format: int32
+                                        type: integer
+                                      ipProtocol:
+                                        description: The ip protocol name (tcp, udp,
+                                          icmp or -1)
+                                        type: string
+                                      ipRange:
+                                        description: The ip range of the security
+                                          group rule (deprecated, use ipRanges)
+                                        type: string
+                                      ipRanges:
+                                        description: The list of ip ranges of the
+                                          security group rule
+                                        items:
+                                          type: string
+                                        type: array
+                                      name:
+                                        description: The tag name associate with the
+                                          security group
+                                        type: string
+                                      resourceId:
+                                        description: The security group rule id
+                                        type: string
+                                      toPortRange:
+                                        description: The end of the port range
+                                        format: int32
+                                        type: integer
+                                    type: object
+                                  type: array
+                                tag:
+                                  type: string
+                              type: object
+                            type: array
+                          subnets:
+                            description: The Subnets configuration
+                            items:
+                              properties:
+                                ipSubnetRange:
+                                  description: the Ip range in CIDR notation of the
+                                    Subnet
+                                  type: string
+                                name:
+                                  description: The name of the Subnet
+                                  type: string
+                                resourceId:
+                                  description: The id of the Subnet to reuse (if useExisting.net
+                                    is set)
+                                  type: string
+                                roles:
+                                  description: The role of the Subnet (controlplane,
+                                    worker, loadbalancer, bastion or nat)
+                                  items:
+                                    type: string
+                                  type: array
+                                subregionName:
+                                  description: The subregion name of the Subnet
+                                  type: string
+                              type: object
+                            type: array
+                          subregionName:
+                            description: The default subregion name (deprecated, use
+                              subregions)
+                            type: string
+                          subregions:
+                            description: The list of subregions where to deploy this
+                              cluster
+                            items:
+                              type: string
+                            type: array
+                          useExisting:
+                            description: Reuse externally managed resources ?
+                            properties:
+                              net:
+                                description: If set, net, subnets, internet service,
+                                  nat services and route tables are externally managed
+                                type: boolean
+                              securityGroups:
+                                description: If set, security groups are externally
+                                  managed.
+                                type: boolean
+                            type: object
+                        type: object
+                    type: object
+                required:
+                - spec
+                type: object
+            required:
+            - template
+            type: object
+        type: object
+    served: true
     storage: true
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -1723,7 +3093,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260707165829-18b698ec2113
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -1858,7 +3228,7 @@ spec:
                         - random
                         type: string
                       reconciliationChance:
-                        description: The chance (in percent, 1-100) of a reconcilation
+                        description: The chance (in percent, 1-100) of a reconciliation
                           happening when no change have been detected (when mode=random)
                         type: integer
                     type: object
@@ -2215,6 +3585,397 @@ spec:
                     type: object
                 type: object
               vmState:
+                description: VmState The state of the VM (`pending` \| `running` \|
+                  `stopping` \| `stopped` \| `shutting-down` \| `terminated` \| `quarantine`).
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - additionalPrinterColumns:
+    - jsonPath: .spec.node.vm.vmType
+      name: VM Type
+      type: string
+    - jsonPath: .spec.providerID
+      name: ProviderID
+      type: string
+    - jsonPath: .status.vmState
+      name: State
+      type: string
+    name: v1beta2
+    schema:
+      openAPIV3Schema:
+        description: OscMachine is the Schema for the oscmachines API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OscMachineSpec defines the desired state of OscMachine
+            properties:
+              node:
+                properties:
+                  image:
+                    properties:
+                      accountId:
+                        description: The image account owner ID.
+                        type: string
+                      name:
+                        description: The image name.
+                        type: string
+                      outscaleOpenSource:
+                        description: Use an "Outscale Opensource" image
+                        type: boolean
+                    type: object
+                  keypair:
+                    description: deprecated, use vm.keypairName
+                    properties:
+                      clusterName:
+                        description: Deprecated
+                        type: string
+                      deleteKeypair:
+                        description: Deprecated
+                        type: boolean
+                      name:
+                        description: Deprecated
+                        type: string
+                      publicKey:
+                        description: Deprecated
+                        type: string
+                      resourceId:
+                        description: Deprecated
+                        type: string
+                    type: object
+                  reconciliationRule:
+                    description: 'Reconciliation rules (default: {*, onChange})'
+                    properties:
+                      appliesTo:
+                        description: The list of items this rule applies to (bastion,
+                          net, netPeering, netPeering/routes, subnet, internetService,
+                          netAccessPoint, natService, routeTable, securityGroup, loadbalancer,
+                          vm or * for all)
+                        items:
+                          enum:
+                          - bastion
+                          - net
+                          - netPeering
+                          - netPeering/routes
+                          - subnet
+                          - internetService
+                          - netAccessPoint
+                          - natService
+                          - routeTable
+                          - securityGroup
+                          - loadbalancer
+                          - vm
+                          - '*'
+                          type: string
+                        type: array
+                      mode:
+                        description: 'The mode of reconciliation: onChange (only when
+                          the spec change, default), always, random (onChange + randomPercent%
+                          chance)'
+                        enum:
+                        - onChange
+                        - always
+                        - random
+                        type: string
+                      reconciliationChance:
+                        description: The chance (in percent, 1-100) of a reconciliation
+                          happening when no change have been detected (when mode=random)
+                        type: integer
+                    type: object
+                  vm:
+                    properties:
+                      fGPU:
+                        description: The fGPU configuration for this VM.
+                        properties:
+                          model:
+                            description: |-
+                              The fGPU model to add to the VM (e.g. nvidia-h100).
+                              The fGPU will be released when the node VM is deleted.
+                            type: string
+                        type: object
+                      imageId:
+                        type: string
+                      keypairName:
+                        description: The keypair name
+                        type: string
+                      name:
+                        type: string
+                      placement:
+                        description: VM placement constraints.
+                        properties:
+                          attractCluster:
+                            description: Try to put VMs with the same attractCluster
+                              value on the same cluster.
+                            type: string
+                          attractServer:
+                            description: Try to put VMs with the same attractServer
+                              value on the same physical server.
+                            type: string
+                          clusterStrict:
+                            description: clusterStrict makes repulseCluster/attractCluster
+                              mandatory. CreateVm will fail if VM placement is not
+                              possible.
+                            type: boolean
+                          repulseCluster:
+                            description: Try to put VMs with the same repulseCluster
+                              value on different clusters. Not set by default.
+                            type: string
+                          repulseServer:
+                            description: |-
+                              Try to put VMs with the same repulseServer value on different physical servers. For workers, set by default to the MachineDeployment name unless RepulseCluster is set.
+                              Define to an empty string if you want to disable.
+                            type: string
+                          serverStrict:
+                            description: serverStrict makes repulseServer/attractServer
+                              mandatory. CreateVm will fail if VM placement is not
+                              possible.
+                            type: boolean
+                        type: object
+                      privateIps:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            privateIp:
+                              type: string
+                          type: object
+                        type: array
+                      publicIp:
+                        description: If set, a public IP will be configured.
+                        type: boolean
+                      publicIpPool:
+                        description: The name of the pool from which public IPs will
+                          be picked.
+                        type: string
+                      resourceId:
+                        description: The resource id of the vm (not set anymore)
+                        type: string
+                      role:
+                        description: The node role (controlplane or worker, worker
+                          by default).
+                        type: string
+                      rootDisk:
+                        properties:
+                          rootDiskIops:
+                            description: The root disk iops (io1 volumes only) (1500
+                              by default)
+                            format: int32
+                            type: integer
+                          rootDiskSize:
+                            description: The volume size in gibibytes (GiB) (60 by
+                              default)
+                            format: int32
+                            type: integer
+                          rootDiskType:
+                            description: The volume type (io1, gp2 or standard) (io1
+                              by default)
+                            type: string
+                        type: object
+                      securityGroupNames:
+                        description: The list of security groups to use (deprecated,
+                          use controlplane and/or worker roles on security groups)
+                        items:
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                        type: array
+                      subnetName:
+                        description: The subnet of the node (deprecated, use controlplane
+                          and/or worker roles on subnets)
+                        type: string
+                      subregionMode:
+                        description: The way nodes will be allocated in subregions
+                          (leastNodes or random; by default, leastNodes).
+                        enum:
+                        - leastNodes
+                        - random
+                        type: string
+                      subregionName:
+                        description: The subregion where the machine needs to be placed
+                          (deprecated, use subregionNames).
+                        type: string
+                      subregionNames:
+                        description: The subregions where the machines needs to be
+                          placed. If empty, the subregions defined at cluster level
+                          will be used.
+                        items:
+                          type: string
+                        type: array
+                      tags:
+                        additionalProperties:
+                          type: string
+                        description: Tags to add to the VM.
+                        type: object
+                      vmType:
+                        description: The type of vm (tinav7.c4r8p1 by default)
+                        type: string
+                    required:
+                    - keypairName
+                    type: object
+                  volumes:
+                    items:
+                      properties:
+                        device:
+                          description: The volume device (/dev/xvdX)
+                          type: string
+                        fromSnapshot:
+                          description: The id of a snapshot to use as a volume source.
+                          type: string
+                        iops:
+                          description: The volume iops (io1 volumes only)
+                          format: int32
+                          type: integer
+                        name:
+                          description: The volume name.
+                          type: string
+                        size:
+                          description: The volume size in gibibytes (GiB)
+                          format: int32
+                          type: integer
+                        volumeType:
+                          description: The volume type (io1, gp2 or standard)
+                          type: string
+                      required:
+                      - device
+                      type: object
+                    type: array
+                type: object
+              providerID:
+                type: string
+            type: object
+          status:
+            description: OscMachineStatus defines the observed state of OscMachine
+            properties:
+              addresses:
+                items:
+                  description: NodeAddress contains information for the node's address.
+                  properties:
+                    address:
+                      description: The node address.
+                      type: string
+                    type:
+                      description: Node address type, one of Hostname, ExternalIP
+                        or InternalIP.
+                      type: string
+                  required:
+                  - address
+                  - type
+                  type: object
+                type: array
+              conditions:
+                description: Conditions provide observations of the operational state
+                  of a Cluster API resource.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
+                      type: string
+                    reason:
+                      description: |-
+                        reason is the reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether or not this field is considered a guaranteed API.
+                        This field may be empty.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    severity:
+                      description: |-
+                        severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
+                      maxLength: 32
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
+                        can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+              failureDomain:
+                type: string
+              failureMessage:
+                type: string
+              failureReason:
+                description: MachineStatusError defines errors states for Machine
+                  objects.
+                type: string
+              ready:
+                type: boolean
+              reconcilerGeneration:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              resources:
+                properties:
+                  fGPU:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  image:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  publicIps:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  vm:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  volumes:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+              vmState:
+                description: VmState The state of the VM (`pending` \| `running` \|
+                  `stopping` \| `stopped` \| `shutting-down` \| `terminated` \| `quarantine`).
                 type: string
             type: object
         type: object
@@ -2227,7 +3988,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1-0.20260427133051-791381fc02b1
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260707165829-18b698ec2113
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -2392,7 +4153,7 @@ spec:
                                 - random
                                 type: string
                               reconciliationChance:
-                                description: The chance (in percent, 1-100) of a reconcilation
+                                description: The chance (in percent, 1-100) of a reconciliation
                                   happening when no change have been detected (when
                                   mode=random)
                                 type: integer
@@ -2578,6 +4339,394 @@ spec:
                                 subregionName:
                                   description: (unused)
                                   type: string
+                                volumeType:
+                                  description: The volume type (io1, gp2 or standard)
+                                  type: string
+                              required:
+                              - device
+                              type: object
+                            type: array
+                        type: object
+                      providerID:
+                        type: string
+                    type: object
+                required:
+                - spec
+                type: object
+            required:
+            - template
+            type: object
+          status:
+            properties:
+              capacity:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: ResourceList is a set of (resource name, quantity) pairs.
+                type: object
+              conditions:
+                description: Conditions provide observations of the operational state
+                  of a Cluster API resource.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
+                      type: string
+                    reason:
+                      description: |-
+                        reason is the reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether or not this field is considered a guaranteed API.
+                        This field may be empty.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    severity:
+                      description: |-
+                        severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
+                      maxLength: 32
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
+                        can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - name: v1beta2
+    schema:
+      openAPIV3Schema:
+        description: OscMachineTemplate is the Schema for the OscMachineTemplate API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OscMachineTemplateSpec define oscMachine template
+            properties:
+              template:
+                description: OscMachineTemplateResource is the Schema for the OscMachineTemplate
+                  api
+                properties:
+                  metadata:
+                    description: |-
+                      ObjectMeta is metadata that all persisted resources must have, which includes all objects
+                      users must create. This is a copy of customizable fields from metav1.ObjectMeta.
+
+                      ObjectMeta is embedded in `Machine.Spec`, `MachineDeployment.Template` and `MachineSet.Template`,
+                      which are not top-level Kubernetes objects. Given that metav1.ObjectMeta has lots of special cases
+                      and read-only fields which end up in the generated CRD validation, having it as a subset simplifies
+                      the API and some issues that can impact user experience.
+
+                      During the [upgrade to controller-tools@v2](https://github.com/kubernetes-sigs/cluster-api/pull/1054)
+                      for v1alpha2, we noticed a failure would occur running Cluster API test suite against the new CRDs,
+                      specifically `spec.metadata.creationTimestamp in body must be of type string: "null"`.
+                      The investigation showed that `controller-tools@v2` behaves differently than its previous version
+                      when handling types from [metav1](k8s.io/apimachinery/pkg/apis/meta/v1) package.
+
+                      In more details, we found that embedded (non-top level) types that embedded `metav1.ObjectMeta`
+                      had validation properties, including for `creationTimestamp` (metav1.Time).
+                      The `metav1.Time` type specifies a custom json marshaller that, when IsZero() is true, returns `null`
+                      which breaks validation because the field isn't marked as nullable.
+
+                      In future versions, controller-tools@v2 might allow overriding the type and validation for embedded
+                      types. When that happens, this hack should be revisited.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          annotations is an unstructured key value map stored with a resource that may be
+                          set by external tools to store and retrieve arbitrary metadata. They are not
+                          queryable and should be preserved when modifying objects.
+                          More info: http://kubernetes.io/docs/user-guide/annotations
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          labels is a map of string keys and values that can be used to organize and categorize
+                          (scope and select) objects. May match selectors of replication controllers
+                          and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels
+                        type: object
+                    type: object
+                  spec:
+                    description: OscMachineSpec defines the desired state of OscMachine
+                    properties:
+                      node:
+                        properties:
+                          image:
+                            properties:
+                              accountId:
+                                description: The image account owner ID.
+                                type: string
+                              name:
+                                description: The image name.
+                                type: string
+                              outscaleOpenSource:
+                                description: Use an "Outscale Opensource" image
+                                type: boolean
+                            type: object
+                          keypair:
+                            description: deprecated, use vm.keypairName
+                            properties:
+                              clusterName:
+                                description: Deprecated
+                                type: string
+                              deleteKeypair:
+                                description: Deprecated
+                                type: boolean
+                              name:
+                                description: Deprecated
+                                type: string
+                              publicKey:
+                                description: Deprecated
+                                type: string
+                              resourceId:
+                                description: Deprecated
+                                type: string
+                            type: object
+                          reconciliationRule:
+                            description: 'Reconciliation rules (default: {*, onChange})'
+                            properties:
+                              appliesTo:
+                                description: The list of items this rule applies to
+                                  (bastion, net, netPeering, netPeering/routes, subnet,
+                                  internetService, netAccessPoint, natService, routeTable,
+                                  securityGroup, loadbalancer, vm or * for all)
+                                items:
+                                  enum:
+                                  - bastion
+                                  - net
+                                  - netPeering
+                                  - netPeering/routes
+                                  - subnet
+                                  - internetService
+                                  - netAccessPoint
+                                  - natService
+                                  - routeTable
+                                  - securityGroup
+                                  - loadbalancer
+                                  - vm
+                                  - '*'
+                                  type: string
+                                type: array
+                              mode:
+                                description: 'The mode of reconciliation: onChange
+                                  (only when the spec change, default), always, random
+                                  (onChange + randomPercent% chance)'
+                                enum:
+                                - onChange
+                                - always
+                                - random
+                                type: string
+                              reconciliationChance:
+                                description: The chance (in percent, 1-100) of a reconciliation
+                                  happening when no change have been detected (when
+                                  mode=random)
+                                type: integer
+                            type: object
+                          vm:
+                            properties:
+                              fGPU:
+                                description: The fGPU configuration for this VM.
+                                properties:
+                                  model:
+                                    description: |-
+                                      The fGPU model to add to the VM (e.g. nvidia-h100).
+                                      The fGPU will be released when the node VM is deleted.
+                                    type: string
+                                type: object
+                              imageId:
+                                type: string
+                              keypairName:
+                                description: The keypair name
+                                type: string
+                              name:
+                                type: string
+                              placement:
+                                description: VM placement constraints.
+                                properties:
+                                  attractCluster:
+                                    description: Try to put VMs with the same attractCluster
+                                      value on the same cluster.
+                                    type: string
+                                  attractServer:
+                                    description: Try to put VMs with the same attractServer
+                                      value on the same physical server.
+                                    type: string
+                                  clusterStrict:
+                                    description: clusterStrict makes repulseCluster/attractCluster
+                                      mandatory. CreateVm will fail if VM placement
+                                      is not possible.
+                                    type: boolean
+                                  repulseCluster:
+                                    description: Try to put VMs with the same repulseCluster
+                                      value on different clusters. Not set by default.
+                                    type: string
+                                  repulseServer:
+                                    description: |-
+                                      Try to put VMs with the same repulseServer value on different physical servers. For workers, set by default to the MachineDeployment name unless RepulseCluster is set.
+                                      Define to an empty string if you want to disable.
+                                    type: string
+                                  serverStrict:
+                                    description: serverStrict makes repulseServer/attractServer
+                                      mandatory. CreateVm will fail if VM placement
+                                      is not possible.
+                                    type: boolean
+                                type: object
+                              privateIps:
+                                items:
+                                  properties:
+                                    name:
+                                      type: string
+                                    privateIp:
+                                      type: string
+                                  type: object
+                                type: array
+                              publicIp:
+                                description: If set, a public IP will be configured.
+                                type: boolean
+                              publicIpPool:
+                                description: The name of the pool from which public
+                                  IPs will be picked.
+                                type: string
+                              resourceId:
+                                description: The resource id of the vm (not set anymore)
+                                type: string
+                              role:
+                                description: The node role (controlplane or worker,
+                                  worker by default).
+                                type: string
+                              rootDisk:
+                                properties:
+                                  rootDiskIops:
+                                    description: The root disk iops (io1 volumes only)
+                                      (1500 by default)
+                                    format: int32
+                                    type: integer
+                                  rootDiskSize:
+                                    description: The volume size in gibibytes (GiB)
+                                      (60 by default)
+                                    format: int32
+                                    type: integer
+                                  rootDiskType:
+                                    description: The volume type (io1, gp2 or standard)
+                                      (io1 by default)
+                                    type: string
+                                type: object
+                              securityGroupNames:
+                                description: The list of security groups to use (deprecated,
+                                  use controlplane and/or worker roles on security
+                                  groups)
+                                items:
+                                  properties:
+                                    name:
+                                      type: string
+                                  type: object
+                                type: array
+                              subnetName:
+                                description: The subnet of the node (deprecated, use
+                                  controlplane and/or worker roles on subnets)
+                                type: string
+                              subregionMode:
+                                description: The way nodes will be allocated in subregions
+                                  (leastNodes or random; by default, leastNodes).
+                                enum:
+                                - leastNodes
+                                - random
+                                type: string
+                              subregionName:
+                                description: The subregion where the machine needs
+                                  to be placed (deprecated, use subregionNames).
+                                type: string
+                              subregionNames:
+                                description: The subregions where the machines needs
+                                  to be placed. If empty, the subregions defined at
+                                  cluster level will be used.
+                                items:
+                                  type: string
+                                type: array
+                              tags:
+                                additionalProperties:
+                                  type: string
+                                description: Tags to add to the VM.
+                                type: object
+                              vmType:
+                                description: The type of vm (tinav7.c4r8p1 by default)
+                                type: string
+                            required:
+                            - keypairName
+                            type: object
+                          volumes:
+                            items:
+                              properties:
+                                device:
+                                  description: The volume device (/dev/xvdX)
+                                  type: string
+                                fromSnapshot:
+                                  description: The id of a snapshot to use as a volume
+                                    source.
+                                  type: string
+                                iops:
+                                  description: The volume iops (io1 volumes only)
+                                  format: int32
+                                  type: integer
+                                name:
+                                  description: The volume name.
+                                  type: string
+                                size:
+                                  description: The volume size in gibibytes (GiB)
+                                  format: int32
+                                  type: integer
                                 volumeType:
                                   description: The volume type (io1, gp2 or standard)
                                   type: string
@@ -3012,6 +5161,26 @@ metadata:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
   name: cluster-api-provider-outscale-mutating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-api-provider-outscale-webhook-service
+      namespace: cluster-api-provider-outscale-system
+      path: /mutate-infrastructure-cluster-x-k8s-io-v1beta2-osccluster
+  failurePolicy: Fail
+  name: mosccluster.kb.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oscclusters
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

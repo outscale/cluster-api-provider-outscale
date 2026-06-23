@@ -235,7 +235,7 @@ setup-kind: ## Set up a Kind cluster for e2e tests if it does not exist
 
 .PHONY: use-kind
 use-kind:
-	kubectl cluster-info --context kind-$(KIND_CLUSTER)
+	kubectl config use-context kind-$(KIND_CLUSTER)
 
 .PHONY: credentials
 credentials: ## Set Credentials
@@ -472,8 +472,7 @@ install-packer: ## Download packer
 
 .PHONY: install-yamlfmt
 install-yamlfmt: ## donwload yaml fmt
-        GOPATH=$(GET_GOPATH) MINIMUM_YAMLFMT_VERSION=$(MINIMUM_YAMLFMT_VERSION) ./hack/ensure-yamlfmt.sh
-
+	GOPATH=$(GET_GOPATH) MINIMUM_YAMLFMT_VERSION=$(MINIMUM_YAMLFMT_VERSION) ./hack/ensure-yamlfmt.sh
 
 .PHONY: install-gh
 install-gh: ## Download gh
@@ -514,11 +513,6 @@ undeploy-clusterapi:  ## undeploy clusterapi
 .PHONY: install-kubebuildertool
 install-kubebuildertool: ## Download kubebuildertool
 	GOPATH=${GET_GOPATH} MINIMUM_KUBEBUILDERTOOL_VERSION=$(MINIMUM_KUBEBUILDERTOOL_VERSION) ./hack/ensure-kubebuildertool.sh
-
-
-.PHONY: install-kind
-install-kind: ## Download kind
-        GOPATH=${GET_GOPATH} MINIMUM_KIND_VERSION=$(MINIMUM_KIND_VERSION) ./hack/ensure-kind.sh
 
 LOCAL_KUSTOMIZE ?= $(shell pwd)/bin/kustomize
 .PHONY: kustomize

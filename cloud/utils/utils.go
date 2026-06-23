@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
@@ -28,7 +28,7 @@ func ConvertsTagsToUserDataOutscaleSection(tags map[string]string) string {
 	return b.String()
 }
 
-func RoleTags(roles []infrastructurev1beta1.OscRole) []osc.ResourceTag {
+func RoleTags(roles []infrastructurev1beta2.OscRole) []osc.ResourceTag {
 	rs := make([]osc.ResourceTag, 0, len(roles))
 	for _, role := range roles {
 		rs = append(rs, osc.ResourceTag{
@@ -36,11 +36,11 @@ func RoleTags(roles []infrastructurev1beta1.OscRole) []osc.ResourceTag {
 		})
 		// CCM 0.4 compatibility.
 		switch role {
-		case infrastructurev1beta1.RoleService:
+		case infrastructurev1beta2.RoleService:
 			rs = append(rs, osc.ResourceTag{
 				Key: "kubernetes.io/role/elb",
 			})
-		case infrastructurev1beta1.RoleInternalService:
+		case infrastructurev1beta2.RoleInternalService:
 			rs = append(rs, osc.ResourceTag{
 				Key: "kubernetes.io/role/internal-elb",
 			})

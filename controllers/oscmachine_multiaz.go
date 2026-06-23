@@ -13,7 +13,7 @@ import (
 	"math/rand/v2"
 	"sync"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,7 +40,7 @@ func NewMultiAZAllocator(c client.Client) *MultiAZAllocator {
 	}
 }
 
-func (a *MultiAZAllocator) deployment(m *infrastructurev1beta1.OscMachine) (types.NamespacedName, error) {
+func (a *MultiAZAllocator) deployment(m *infrastructurev1beta2.OscMachine) (types.NamespacedName, error) {
 	md := m.GetLabels()[clusterv1.MachineDeploymentNameLabel]
 	if md == "" {
 		return types.NamespacedName{}, errors.New("no MachineDeployment label found")
@@ -52,33 +52,33 @@ func (a *MultiAZAllocator) deployment(m *infrastructurev1beta1.OscMachine) (type
 	return key, nil
 }
 
-func (a *MultiAZAllocator) name(m *infrastructurev1beta1.OscMachine) types.NamespacedName {
+func (a *MultiAZAllocator) name(m *infrastructurev1beta2.OscMachine) types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: m.GetNamespace(),
 		Name:      m.GetName(),
 	}
 }
 
-func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, mode infrastructurev1beta1.SubregionMode, azs []string) (string, error) {
+func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, mode infrastructurev1beta2.SubregionMode, azs []string) (string, error) {
 	switch {
 	case len(azs) == 0:
 		return "", errors.New("no subregions configured")
 	case len(azs) == 1:
 		return azs[0], nil
-	case mode == infrastructurev1beta1.SubregionModeRandom:
+	case mode == infrastructurev1beta2.SubregionModeRandom:
 		return a.allocateRandomAZ(ctx, m, azs)
 	default:
 		return a.allocateLeastNodeAZ(ctx, m, azs)
 	}
 }
 
-func (a *MultiAZAllocator) allocateRandomAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, azs []string) (string, error) {
+func (a *MultiAZAllocator) allocateRandomAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []string) (string, error) {
 	az := azs[RandIntN(len(azs))]
 	log.FromContext(ctx).V(3).Info("Assigning machine to subregion", "machine", m.Name, "subregion", az)
 	return az, nil
 }
 
-func (a *MultiAZAllocator) allocateLeastNodeAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, azs []string) (string, error) {
+func (a *MultiAZAllocator) allocateLeastNodeAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	name := a.name(m)
@@ -101,7 +101,7 @@ func (a *MultiAZAllocator) allocateLeastNodeAZ(ctx context.Context, m *infrastru
 }
 
 func (a *MultiAZAllocator) refreshWorkers(ctx context.Context, ns string) error {
-	var ms infrastructurev1beta1.OscMachineList
+	var ms infrastructurev1beta2.OscMachineList
 	err := a.client.List(ctx, &ms, client.InNamespace(ns))
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (a *MultiAZAllocator) refreshWorkers(ctx context.Context, ns string) error 
 		if err != nil {
 			continue
 		}
-		if m.Spec.Node.Vm.GetRole() == infrastructurev1beta1.RoleControlPlane {
+		if m.Spec.Node.Vm.GetRole() == infrastructurev1beta2.RoleControlPlane {
 			continue
 		}
 		name := a.name(&m)
@@ -134,7 +134,7 @@ func (a *MultiAZAllocator) refreshWorkers(ctx context.Context, ns string) error 
 	return nil
 }
 
-func (a *MultiAZAllocator) allocateAZ(ctx context.Context, m *infrastructurev1beta1.OscMachine, azs []string) (string, error) {
+func (a *MultiAZAllocator) allocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []string) (string, error) {
 	logger := log.FromContext(ctx)
 	deploy, err := a.deployment(m)
 	if err != nil {

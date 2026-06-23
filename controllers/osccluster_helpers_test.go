@@ -8,7 +8,7 @@ package controllers_test
 import (
 	"testing"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
@@ -20,13 +20,13 @@ import (
 )
 
 func patchMoveCluster() patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
-		m.Status = infrastructurev1beta1.OscClusterStatus{}
+	return func(m *infrastructurev1beta2.OscCluster) {
+		m.Status = infrastructurev1beta2.OscClusterStatus{}
 	}
 }
 
 func patchDeleteCluster() patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.DeletionTimestamp = new(metav1.Now())
 		if len(m.Finalizers) == 0 {
 			m.Finalizers = []string{controllers.OscClusterFinalizer}
@@ -35,38 +35,38 @@ func patchDeleteCluster() patchOSCClusterFunc {
 }
 
 func patchUseExistingNet() patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Network.UseExisting.Net = true
 	}
 }
 
 func patchUseExistingSecurityGroups() patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Network.UseExisting.SecurityGroups = true
 	}
 }
 
 func patchRestrictFromIP(ips ...string) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Network.AllowFromIPRanges = ips
 	}
 }
 
 func patchRestrictToIP(ips ...string) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Network.AllowToIPRanges = ips
 	}
 }
 
-func patchManualSGs(sgs []infrastructurev1beta1.OscSecurityGroup) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+func patchManualSGs(sgs []infrastructurev1beta2.OscSecurityGroup) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
 		m.Spec.Network.SecurityGroups = sgs
 	}
 }
 
-func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+func patchAddSGRule(name string, r infrastructurev1beta2.OscSecurityGroupRule) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
 		for i, sg := range m.Spec.Network.SecurityGroups {
 			if sg.Name == name {
@@ -77,41 +77,41 @@ func patchAddSGRule(name string, r infrastructurev1beta1.OscSecurityGroupRule) p
 	}
 }
 
-func patchAdditionalSGRule(add infrastructurev1beta1.OscAdditionalSecurityRules) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+func patchAdditionalSGRule(add infrastructurev1beta2.OscAdditionalSecurityRules) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
 		m.Spec.Network.AdditionalSecurityRules = append(m.Spec.Network.AdditionalSecurityRules, add)
 	}
 }
 
 func patchIncrementGeneration() patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
 	}
 }
 
 func patchSubregions(subregions ...string) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Network.Subregions = subregions
 	}
 }
 
 func patchNATIPFromPool(name string) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Network.NatPublicIpPool = name
 	}
 }
 
-func patchUseCredentials(c infrastructurev1beta1.OscCredentials) patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
+func patchUseCredentials(c infrastructurev1beta2.OscCredentials) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Credentials = c
 	}
 }
 
 func patchDisableLB() patchOSCClusterFunc {
-	return func(m *infrastructurev1beta1.OscCluster) {
-		m.Spec.Network.Disable = append(m.Spec.Network.Disable, infrastructurev1beta1.DisableLB)
-		m.Spec.Network.LoadBalancer = infrastructurev1beta1.OscLoadBalancer{}
+	return func(m *infrastructurev1beta2.OscCluster) {
+		m.Spec.Network.Disable = append(m.Spec.Network.Disable, infrastructurev1beta2.DisableLB)
+		m.Spec.Network.LoadBalancer = infrastructurev1beta2.OscLoadBalancer{}
 		m.Spec.ControlPlaneEndpoint = v1beta1.APIEndpoint{
 			Host: "api.example.com",
 			Port: 443,
@@ -135,7 +135,7 @@ func mockGetNet(id string, net *osc.Net) mockFunc {
 	}
 }
 
-func mockCreateNet(spec infrastructurev1beta1.OscNet, clusterID, netName, netId string) mockFunc {
+func mockCreateNet(spec infrastructurev1beta2.OscNet, clusterID, netName, netId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateNet(gomock.Any(), gomock.Eq(spec), gomock.Eq(clusterID), gomock.Eq(netName)).
@@ -175,7 +175,7 @@ func mockSubnetFound(id string) mockFunc {
 	}
 }
 
-func mockCreateSubnet(spec infrastructurev1beta1.OscSubnet, netId, clusterID, name, subnetId string) mockFunc {
+func mockCreateSubnet(spec infrastructurev1beta2.OscSubnet, netId, clusterID, name, subnetId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateSubnet(gomock.Any(), gomock.Eq(spec), gomock.Eq(netId), gomock.Eq(clusterID), gomock.Eq(name)).
@@ -272,7 +272,7 @@ func mockGetSecurityGroup(sgId string, sg *osc.SecurityGroup) mockFunc {
 	}
 }
 
-func mockCreateSecurityGroup(netId, clusterId, name, description, tag string, roles []infrastructurev1beta1.OscRole, sgId string) mockFunc {
+func mockCreateSecurityGroup(netId, clusterId, name, description, tag string, roles []infrastructurev1beta2.OscRole, sgId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ComputeMock.EXPECT().
 			CreateSecurityGroup(gomock.Any(), gomock.Eq(netId), gomock.Eq(clusterId), gomock.Eq(name), gomock.Eq(description), gomock.Eq(tag), gomock.Eq(roles)).
@@ -434,7 +434,7 @@ func mockLoadBalancerFound(name, nameTag string) mockFunc {
 func mockCreateLoadBalancer(loadBalancerName, loadBalancerType, subnetId, securityGroupId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			CreateLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+			CreateLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == loadBalancerName && spec.LoadBalancerType == loadBalancerType
 			}), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
 			Return(&osc.LoadBalancer{
@@ -448,7 +448,7 @@ func mockCreateLoadBalancer(loadBalancerName, loadBalancerType, subnetId, securi
 func mockConfigureHealthCheck(loadBalancerName string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			ConfigureHealthCheck(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+			ConfigureHealthCheck(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == loadBalancerName
 			})).
 			Return(&osc.LoadBalancer{
@@ -462,7 +462,7 @@ func mockConfigureHealthCheck(loadBalancerName string) mockFunc {
 func mockCreateLoadBalancerTag(loadBalancerName, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			CreateLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+			CreateLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == loadBalancerName
 			}), gomock.Eq(&osc.ResourceTag{Key: tag.NameKey, Value: nameTag})).
 			Return(nil)
@@ -472,7 +472,7 @@ func mockCreateLoadBalancerTag(loadBalancerName, nameTag string) mockFunc {
 func mockDeleteLoadBalancer(name string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			DeleteLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta1.OscLoadBalancer) bool {
+			DeleteLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
 				return spec.LoadBalancerName == name
 			})).
 			Return(nil)
@@ -554,15 +554,15 @@ func mockGetNetAccessPoint(netID, service string, nap *osc.NetAccessPoint) mockF
 	}
 }
 
-func assertStatusClusterResources(rsrcs infrastructurev1beta1.OscClusterResources) assertOSCClusterFunc {
-	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
+func assertStatusClusterResources(rsrcs infrastructurev1beta2.OscClusterResources) assertOSCClusterFunc {
+	return func(t *testing.T, c *infrastructurev1beta2.OscCluster) {
 		t.Helper()
 		assert.Equal(t, rsrcs, c.Status.Resources)
 	}
 }
 
 func assertControlPlaneEndpoint(endpoint string, port int32) assertOSCClusterFunc {
-	return func(t *testing.T, c *infrastructurev1beta1.OscCluster) {
+	return func(t *testing.T, c *infrastructurev1beta2.OscCluster) {
 		t.Helper()
 		assert.Equal(t, endpoint, c.Spec.ControlPlaneEndpoint.Host)
 		assert.Equal(t, port, c.Spec.ControlPlaneEndpoint.Port)
@@ -570,7 +570,7 @@ func assertControlPlaneEndpoint(endpoint string, port int32) assertOSCClusterFun
 }
 
 func assertHasClusterFinalizer() assertOSCClusterFunc {
-	return func(t *testing.T, m *infrastructurev1beta1.OscCluster) {
+	return func(t *testing.T, m *infrastructurev1beta2.OscCluster) {
 		t.Helper()
 		assert.True(t, controllerutil.ContainsFinalizer(m, controllers.OscClusterFinalizer))
 	}

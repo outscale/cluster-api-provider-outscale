@@ -8,24 +8,24 @@ package net
 import (
 	"context"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 type LoadBalancerInterface interface {
-	ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error)
+	ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer) (*osc.LoadBalancer, error)
 	GetLoadBalancer(ctx context.Context, loadBalancerName string) (*osc.LoadBalancer, error)
-	CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
-	DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error
+	CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error)
+	DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer) error
 	LinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
 	UnlinkLoadBalancerBackendMachines(ctx context.Context, vmIds []string, loadBalancerName string) error
-	CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error
-	DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
+	CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error
+	DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error
 }
 
 // ConfigureHealthCheck update loadBalancer to configure healthCheck
 // Keep backoff: secondary call to CreateLoadBalancer
-func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	checkInterval := spec.HealthCheck.CheckInterval
 	healthyThreshold := spec.HealthCheck.HealthyThreshold
 	port := spec.HealthCheck.Port
@@ -91,7 +91,7 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 
 // CreateLoadBalancerTag create the load balancer tag
 // Keep backoff for now, secondary call to CreateLoadBalancer.
-func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
+func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
 	req := osc.CreateLoadBalancerTagsRequest{
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 		Tags:              []osc.ResourceTag{*loadBalancerTag},
@@ -101,7 +101,7 @@ func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructur
 }
 
 // CreateLoadBalancer create the load balancer
-func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
+func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
 	loadBalancerType := spec.LoadBalancerType
 	backendPort := spec.Listener.BackendPort
 	loadBalancerPort := spec.Listener.LoadBalancerPort
@@ -131,7 +131,7 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 }
 
 // DeleteLoadBalancer delete the loadbalancer
-func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer) error {
+func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer) error {
 	req := osc.DeleteLoadBalancerRequest{
 		LoadBalancerName: spec.LoadBalancerName,
 	}
@@ -140,7 +140,7 @@ func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1
 }
 
 // DeleteLoadBalancerTag delete the loadbalancerTag
-func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
+func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
 	req := osc.DeleteLoadBalancerTagsRequest{
 		LoadBalancerNames: []string{spec.LoadBalancerName},
 		Tags:              []osc.ResourceLoadBalancerTag{loadBalancerTag},

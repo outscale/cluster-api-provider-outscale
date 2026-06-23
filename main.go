@@ -12,6 +12,7 @@ import (
 	"time"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
@@ -45,6 +46,7 @@ func init() {
 	utilruntime.Must(clusterv1.AddToScheme(scheme))
 	utilruntime.Must(bootstrapv1.AddToScheme(scheme))
 	utilruntime.Must(infrastructurev1beta1.AddToScheme(scheme))
+	utilruntime.Must(infrastructurev1beta2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -192,19 +194,35 @@ func main() {
 	}
 
 	if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscMachine")
+		logger.Error(err, "unable to create webhook", "webhook", "OscMachine", "version", "v1beta1")
 		os.Exit(1)
 	}
 	if err = (&infrastructurev1beta1.OscMachineTemplate{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate")
+		logger.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate", "version", "v1beta1")
 		os.Exit(1)
 	}
 	if err = (&infrastructurev1beta1.OscClusterTemplate{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate")
+		logger.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate", "version", "v1beta1")
 		os.Exit(1)
 	}
 	if err = (&infrastructurev1beta1.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscCluster")
+		logger.Error(err, "unable to create webhook", "webhook", "OscCluster", "version", "v1beta1")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
+		logger.Error(err, "unable to create webhook", "webhook", "OscMachine", "version", "v1beta2")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscMachineTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+		logger.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate", "version", "v1beta2")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscClusterTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+		logger.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate", "version", "v1beta2")
+		os.Exit(1)
+	}
+	if err = (&infrastructurev1beta2.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		logger.Error(err, "unable to create webhook", "webhook", "OscCluster", "version", "v1beta2")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

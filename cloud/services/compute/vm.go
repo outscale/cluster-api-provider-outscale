@@ -10,7 +10,7 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/goutils/k8s/tags"
@@ -36,10 +36,10 @@ const (
 
 type VmInterface interface {
 	CreateVm(ctx context.Context,
-		machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
-		volumes []infrastructurev1beta1.OscVolume,
+		machineScope *scope.MachineScope, spec *infrastructurev1beta2.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
+		volumes []infrastructurev1beta2.OscVolume,
 	) (*osc.Vm, error)
-	CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error)
+	CreateVmBastion(ctx context.Context, spec *infrastructurev1beta2.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error)
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
 	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
@@ -49,8 +49,8 @@ type VmInterface interface {
 }
 
 func (s *Service) CreateVm(ctx context.Context,
-	machineScope *scope.MachineScope, spec *infrastructurev1beta1.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
-	volumes []infrastructurev1beta1.OscVolume,
+	machineScope *scope.MachineScope, spec *infrastructurev1beta2.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
+	volumes []infrastructurev1beta2.OscVolume,
 ) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
@@ -140,7 +140,7 @@ func (s *Service) CreateVm(ctx context.Context,
 }
 
 // CreateVmBastion create a bastion vm
-func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1beta1.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
+func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1beta2.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
 	rootDiskIops := spec.RootDisk.RootDiskIops

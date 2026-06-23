@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	"github.com/outscale/osc-sdk-go/v3/pkg/profile"
@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func getTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta1.OscCluster) (tenant.Tenant, error) {
+func getTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta2.OscCluster) (tenant.Tenant, error) {
 	logger := log.FromContext(ctx).V(4)
 	switch {
 	case cluster.Spec.Credentials.FromFile != "":
@@ -33,7 +33,7 @@ func getTenant(ctx context.Context, cl client.Client, c services.Servicer, clust
 	}
 }
 
-func getMgmtTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta1.OscCluster) (tenant.Tenant, error) {
+func getMgmtTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta2.OscCluster) (tenant.Tenant, error) {
 	logger := log.FromContext(ctx).V(4)
 	creds := cluster.Spec.Network.NetPeering.ManagementCredentials
 	switch {

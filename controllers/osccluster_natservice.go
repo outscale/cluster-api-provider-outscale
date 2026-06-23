@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +21,7 @@ import (
 func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNatService) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNatService) {
 		log.V(4).Info("No need for natService reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -53,7 +53,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(natServiceSpec.SubnetName, infrastructurev1beta1.RoleNat, natServiceSpec.SubregionName)
+		subnetSpec, err := clusterScope.GetSubnet(natServiceSpec.SubnetName, infrastructurev1beta2.RoleNat, natServiceSpec.SubregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}
@@ -70,9 +70,9 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		}
 		log.V(2).Info("Created natService", "natServiceId", natService.NatServiceId)
 		r.Tracker.setNatServiceId(clusterScope, natServiceSpec, natService.NatServiceId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NatServicesCreatedReason, "NAT created %s", natServiceSpec.SubregionName)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created %s", natServiceSpec.SubregionName)
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNatService)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNatService)
 	return reconcile.Result{}, nil
 }
 

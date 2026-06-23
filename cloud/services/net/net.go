@@ -8,18 +8,18 @@ package net
 import (
 	"context"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 type NetInterface interface {
-	CreateNet(ctx context.Context, spec infrastructurev1beta1.OscNet, clusterID, netName string) (*osc.Net, error)
+	CreateNet(ctx context.Context, spec infrastructurev1beta2.OscNet, clusterID, netName string) (*osc.Net, error)
 	DeleteNet(ctx context.Context, netId string) error
 	GetNet(ctx context.Context, netId string) (*osc.Net, error)
 }
 
 // CreateNet create the net from spec (in order to retrieve ip range)
-func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta1.OscNet, clusterID, netName string) (*osc.Net, error) {
+func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta2.OscNet, clusterID, netName string) (*osc.Net, error) {
 	req := osc.CreateNetRequest{
 		IpRange: spec.IpRange,
 	}

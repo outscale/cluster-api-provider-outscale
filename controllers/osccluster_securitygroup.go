@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ import (
 )
 
 // reconcileSecurityGroupAddRules reconciles rules for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta2.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	svc := r.Cloud.Compute(clusterScope.Tenant)
 	for _, securityGroupRuleSpec := range securityGroupRulesSpec {
@@ -58,7 +58,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 }
 
 // reconcileSecurityGroupDeleteRules deletes all rules not in spec for a securityGroup.
-func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta1.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Context, clusterScope *scope.ClusterScope, securityGroupRulesSpec []infrastructurev1beta2.OscSecurityGroupRule, sg *osc.SecurityGroup) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	svc := r.Cloud.Compute(clusterScope.Tenant)
 	checkRules := func(flow string, rules []osc.SecurityGroupRule) error {
@@ -107,7 +107,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerSecurityGroup) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerSecurityGroup) {
 		log.V(4).Info("No need for securityGroup reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -135,21 +135,21 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 			}
 			log.V(2).Info("Created securityGroup", "securityGroupId", securityGroup.SecurityGroupId)
 			r.Tracker.setSecurityGroupId(clusterScope, securityGroupSpec, securityGroup.SecurityGroupId)
-			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.SecurityGroupCreatedReason, "Security group created %v", securityGroupSpec.Roles)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SecurityGroupCreatedReason, "Security group created %v", securityGroupSpec.Roles)
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		}
 		securityGroupRulesSpec := securityGroupSpec.SecurityGroupRules
-		if securityGroupSpec.HasRole(infrastructurev1beta1.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
+		if securityGroupSpec.HasRole(infrastructurev1beta2.RoleLoadBalancer) && clusterScope.HasIPRestriction() {
 			ips, err := r.listNATPublicIPs(ctx, clusterScope, true)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot list NAT public IPs: %w", err)
 			}
-			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta1.OscSecurityGroupRule{
+			securityGroupRulesSpec = append(securityGroupRulesSpec, infrastructurev1beta2.OscSecurityGroupRule{
 				Flow:          "Inbound",
 				IpProtocol:    "tcp",
-				FromPortRange: infrastructurev1beta1.APIPort,
-				ToPortRange:   infrastructurev1beta1.APIPort,
+				FromPortRange: infrastructurev1beta2.APIPort,
+				ToPortRange:   infrastructurev1beta2.APIPort,
 				IpRanges:      ips,
 			})
 		}
@@ -162,7 +162,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 			return reconcile.Result{}, fmt.Errorf("check rules: %w", err)
 		}
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerSecurityGroup)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerSecurityGroup)
 	return reconcile.Result{}, nil
 }
 

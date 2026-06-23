@@ -9,7 +9,7 @@ import (
 	"context"
 	"testing"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,11 +19,11 @@ import (
 )
 
 var (
-	defaultVmMachineTemplateInitialize = infrastructurev1beta1.OscMachineTemplateSpec{
-		Template: infrastructurev1beta1.OscMachineTemplateResource{
-			Spec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Volumes: []infrastructurev1beta1.OscVolume{
+	defaultVmMachineTemplateInitialize = infrastructurev1beta2.OscMachineTemplateSpec{
+		Template: infrastructurev1beta2.OscMachineTemplateResource{
+			Spec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Volumes: []infrastructurev1beta2.OscVolume{
 						{
 							Name:       "test-volume",
 							Iops:       1000,
@@ -31,27 +31,25 @@ var (
 							VolumeType: "io1",
 						},
 					},
-					Vm: infrastructurev1beta1.OscVm{
-						ClusterName: "test-cluster",
-						Name:        "test-vm",
-						ImageId:     "ami-00000000",
-						Role:        "controlplane",
-						RootDisk: infrastructurev1beta1.OscRootDisk{
+					Vm: infrastructurev1beta2.OscVm{
+						Name:    "test-vm",
+						ImageId: "ami-00000000",
+						Role:    "controlplane",
+						RootDisk: infrastructurev1beta2.OscRootDisk{
 							RootDiskSize: 30,
 							RootDiskIops: 1500,
 							RootDiskType: "io1",
 						},
-						KeypairName:      "rke",
-						SubregionName:    "eu-west-2a",
-						SubnetName:       "test-subnet",
-						LoadBalancerName: "test-loadbalancer",
-						VmType:           "tinav3.c2r4p2",
-						SecurityGroupNames: []infrastructurev1beta1.OscSecurityGroupElement{
+						KeypairName:   "rke",
+						SubregionName: "eu-west-2a",
+						SubnetName:    "test-subnet",
+						VmType:        "tinav3.c2r4p2",
+						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 							{
 								Name: "test-securitygroup",
 							},
 						},
-						PrivateIps: []infrastructurev1beta1.OscPrivateIpElement{
+						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
 							{
 								Name:      "test-privateip",
 								PrivateIp: "10.0.0.17",
@@ -62,11 +60,11 @@ var (
 			},
 		},
 	}
-	awsTypeVmMachineTemplate = infrastructurev1beta1.OscMachineTemplateSpec{
-		Template: infrastructurev1beta1.OscMachineTemplateResource{
-			Spec: infrastructurev1beta1.OscMachineSpec{
-				Node: infrastructurev1beta1.OscNode{
-					Vm: infrastructurev1beta1.OscVm{
+	awsTypeVmMachineTemplate = infrastructurev1beta2.OscMachineTemplateSpec{
+		Template: infrastructurev1beta2.OscMachineTemplateResource{
+			Spec: infrastructurev1beta2.OscMachineSpec{
+				Node: infrastructurev1beta2.OscNode{
+					Vm: infrastructurev1beta2.OscVm{
 						VmType: "m4.2xlarge",
 					},
 				},
@@ -76,10 +74,11 @@ var (
 )
 
 // Setup set osccluster, oscmachine, machineScope and clusterScope
-func SetupMachineTemplate(t *testing.T, name string, machineSpec infrastructurev1beta1.OscMachineTemplateSpec) (machineTemplateScope *scope.MachineTemplateScope) {
+func SetupMachineTemplate(t *testing.T, name string, machineSpec infrastructurev1beta2.OscMachineTemplateSpec) (machineTemplateScope *scope.MachineTemplateScope) {
+	t.Helper()
 	t.Logf("Validate to %s", name)
 
-	oscMachineTemplate := infrastructurev1beta1.OscMachineTemplate{
+	oscMachineTemplate := infrastructurev1beta2.OscMachineTemplate{
 		Spec: machineSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       "uid",
@@ -98,7 +97,7 @@ func SetupMachineTemplate(t *testing.T, name string, machineSpec infrastructurev
 func TestReconcileCapacity(t *testing.T) {
 	capacityTestCases := []struct {
 		name                string
-		machineTemplateSpec infrastructurev1beta1.OscMachineTemplateSpec
+		machineTemplateSpec infrastructurev1beta2.OscMachineTemplateSpec
 		expGetCapacityFound bool
 	}{
 		{

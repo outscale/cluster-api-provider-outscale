@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,7 +19,7 @@ import (
 // reconcileNetAccessPoints reconcile the NetAccessPoints of the cluster.
 func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNetAccessPoint) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNetAccessPoint) {
 		log.V(4).Info("No need for netAccessPoint reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -48,7 +48,7 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 	}
 	rtblIds := make([]string, 0, len(rtbls))
 	for _, subnetSpec := range clusterScope.GetSubnets() {
-		if !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta1.RoleWorker) && !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta1.RoleControlPlane) {
+		if !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleWorker) && !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleControlPlane) {
 			continue
 		}
 		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
@@ -74,10 +74,10 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 			return reconcile.Result{}, fmt.Errorf("cannot create netAccessPoint: %w", err)
 		}
 		log.V(2).Info("Created net access point", "netAccessPointId", netAccessPoint.NetAccessPointId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetAccessPointCreatedReason, "Net Access Point created %s", service)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetAccessPointCreatedReason, "Net Access Point created %s", service)
 		r.Tracker.setNetAccessPointId(clusterScope, service, netAccessPoint.NetAccessPointId)
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNetAccessPoint)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetAccessPoint)
 	return reconcile.Result{}, nil
 }
 

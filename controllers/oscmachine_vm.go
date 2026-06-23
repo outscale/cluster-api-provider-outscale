@@ -13,7 +13,7 @@ import (
 	"slices"
 	"time"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
@@ -25,7 +25,7 @@ import (
 // reconcileVm reconcile the vm of the machine
 func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if !machineScope.NeedReconciliation(infrastructurev1beta1.ReconcilerVm) {
+	if !machineScope.NeedReconciliation(infrastructurev1beta2.ReconcilerVm) {
 		log.V(4).Info("No need for vm reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -85,7 +85,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			}
 			log.V(2).Info("fGPU allocated", "fGPUId", fgpu.FlexibleGpuId, "model", vmSpec.FGPU.Model)
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-				infrastructurev1beta1.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
+				infrastructurev1beta2.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
 		}
 
 		subnetSpec, err := clusterScope.GetSubnet(subnetName, vmSpec.GetRole(), subregionName)
@@ -135,7 +135,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			}
 			vmTags[compute.AutoAttachExternalIPTag] = publicIp
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-				infrastructurev1beta1.IPAllocated, "IP %s allocated", publicIp)
+				infrastructurev1beta2.IPAllocated, "IP %s allocated", publicIp)
 		}
 
 		repulse := machineScope.GetPlacement()
@@ -177,7 +177,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		machineScope.SetVmState(vm.State)
 		machineScope.SetProviderID(vm.Placement.SubregionName, vmId)
 		r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-			infrastructurev1beta1.VmCreatedReason, "VM %s created in %s", vm.VmId, subregionName)
+			infrastructurev1beta2.VmCreatedReason, "VM %s created in %s", vm.VmId, subregionName)
 	}
 
 	switch {
@@ -191,7 +191,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				return reconcile.Result{}, fmt.Errorf("link fgpu: %w", err)
 			}
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
-				infrastructurev1beta1.FGPUAttachedReason, "%s attached", fgpu.FlexibleGpuId)
+				infrastructurev1beta2.FGPUAttachedReason, "%s attached", fgpu.FlexibleGpuId)
 		default:
 			log.V(4).Info("Waiting for VM state", "vmId", vm.VmId, "state", vm.State)
 		}
@@ -220,7 +220,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	machineScope.SetReady()
 
-	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane && !clusterScope.IsLBDisabled() {
+	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.IsLBDisabled() {
 		svc := r.Cloud.Net(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
@@ -267,7 +267,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			return reconcile.Result{}, fmt.Errorf("cannot add ccm tag: %w", err)
 		}
 	}
-	machineScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerVm)
+	machineScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerVm)
 	return reconcile.Result{}, nil
 }
 
@@ -288,7 +288,7 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 	}
 
 	vmSpec := machineScope.GetVm()
-	if vmSpec.GetRole() == infrastructurev1beta1.RoleControlPlane && !clusterScope.IsLBDisabled() {
+	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.IsLBDisabled() {
 		svc := r.Cloud.Net(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
