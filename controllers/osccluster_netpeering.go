@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +38,7 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 		log.V(4).Info("Not reconciling netPeering for existing net")
 		return reconcile.Result{}, nil
 	}
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerNetPeering) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNetPeering) {
 		log.V(4).Info("No need for netPeering reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -66,7 +66,7 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 		}
 		log.V(2).Info("Created netPeering", "netPeeringId", np.NetPeeringId)
 		r.Tracker.setNetPeeringId(clusterScope, np.NetPeeringId)
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering created")
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering created")
 	}
 	if np.State.Name == osc.NetPeeringStateNamePendingAcceptance {
 		mgmt, err := getMgmtTenant(ctx, r.Client, r.Cloud, clusterScope.OscCluster)
@@ -79,9 +79,9 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot accept netPeering: %w", err)
 		}
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.NetPeeringCreatedReason, "NetPeering accepted")
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering accepted")
 	}
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerNetPeering)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeering)
 	return reconcile.Result{}, nil
 }
 

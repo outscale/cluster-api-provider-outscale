@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +18,7 @@ import (
 )
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta1.OscRouteTable, routeSpec infrastructurev1beta1.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta2.OscRouteTable, routeSpec infrastructurev1beta2.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	destinationIpRange := routeSpec.Destination
@@ -58,10 +58,10 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 }
 
 // reconcileRouteTable reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, roles ...infrastructurev1beta1.OscRole) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterScope *scope.ClusterScope, roles ...infrastructurev1beta2.OscRole) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerRouteTable) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerRouteTable) {
 		log.V(4).Info("No need for routeTable reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -117,7 +117,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}
 				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
-				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
+				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
 				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
@@ -138,7 +138,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 		}
 	}
 	if len(roles) == 0 {
-		clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerRouteTable)
+		clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerRouteTable)
 	}
 	return reconcile.Result{}, nil
 }

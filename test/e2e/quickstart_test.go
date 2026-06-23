@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/samber/lo"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
@@ -22,6 +22,21 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.KubernetesVersionUpgradeTo))
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.CPMachineTemplateUpgradeTo))
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.WorkersMachineTemplateUpgradeTo))
+	})
+
+	Context("Running the quick-start v1beta1 spec", func() {
+		capi_e2e.QuickStartSpec(ctx, func() capi_e2e.QuickStartSpecInput {
+			return capi_e2e.QuickStartSpecInput{
+				E2EConfig:              e2eConfig,
+				ClusterctlConfigPath:   clusterctlConfigPath,
+				InfrastructureProvider: &infraProvider,
+				BootstrapClusterProxy:  bootstrapClusterProxy,
+				ArtifactFolder:         artifactFolder,
+				SkipCleanup:            skipCleanup,
+				Flavor:                 new("v1beta1"),
+				WorkerMachineCount:     new(int64(1)),
+			}
+		})
 	})
 
 	Context("Running the quick-start fGPU spec", func() {
@@ -52,7 +67,7 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 				ControlPlaneMachineCount: new(int64(3)),
 				WorkerMachineCount:       new(int64(4)),
 				PostMachinesProvisioned: func(managementClusterProxy framework.ClusterProxy, workloadClusterNamespace, workloadClusterName string) {
-					var ms infrastructurev1beta1.OscMachineList
+					var ms infrastructurev1beta2.OscMachineList
 					err := managementClusterProxy.GetClient().List(ctx, &ms, client.InNamespace(workloadClusterNamespace))
 					Expect(err).To(Succeed())
 					Expect(ms.Items).To(HaveLen(7))

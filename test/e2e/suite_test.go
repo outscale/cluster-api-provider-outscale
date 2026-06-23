@@ -17,6 +17,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	utils "github.com/outscale/cluster-api-provider-outscale/test/e2e/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	capi_e2e "sigs.k8s.io/cluster-api/test/e2e"
@@ -127,7 +128,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// Before all ParallelNodes.
 	Expect(configPath).To(BeAnExistingFile(), "Invalid test suite argument. e2e.config should be an existing file.")
-	Expect(os.MkdirAll(artifactFolder, 0755)).To(Succeed(), "Invalid test suite argument. Can't create e2e.artifacts-folder %q", artifactFolder)
+	Expect(os.MkdirAll(artifactFolder, 0o755)).To(Succeed(), "Invalid test suite argument. Can't create e2e.artifacts-folder %q", artifactFolder)
 
 	By("Initializing a runtime.Scheme with all the GVK relevant for this test")
 	scheme := initScheme()
@@ -186,6 +187,7 @@ func initScheme() *runtime.Scheme {
 	sc := runtime.NewScheme()
 	framework.TryAddDefaultSchemes(sc)
 	Expect(infrastructurev1beta1.AddToScheme(sc)).To(Succeed())
+	Expect(infrastructurev1beta2.AddToScheme(sc)).To(Succeed())
 
 	return sc
 }

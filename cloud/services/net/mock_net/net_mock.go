@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	v1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	osc "github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -57,7 +57,7 @@ func (mr *MockServicerMockRecorder) AcceptNetPeering(ctx, netPeeringID any) *gom
 }
 
 // ConfigureHealthCheck mocks base method.
-func (m *MockServicer) ConfigureHealthCheck(ctx context.Context, spec *v1beta1.OscLoadBalancer) (*osc.LoadBalancer, error) {
+func (m *MockServicer) ConfigureHealthCheck(ctx context.Context, spec *v1beta2.OscLoadBalancer) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureHealthCheck", ctx, spec)
 	ret0, _ := ret[0].(*osc.LoadBalancer)
@@ -87,7 +87,7 @@ func (mr *MockServicerMockRecorder) CreateInternetService(ctx, internetServiceNa
 }
 
 // CreateLoadBalancer mocks base method.
-func (m *MockServicer) CreateLoadBalancer(ctx context.Context, spec *v1beta1.OscLoadBalancer, subnetId, securityGroupId string) (*osc.LoadBalancer, error) {
+func (m *MockServicer) CreateLoadBalancer(ctx context.Context, spec *v1beta2.OscLoadBalancer, subnetId, securityGroupId string) (*osc.LoadBalancer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLoadBalancer", ctx, spec, subnetId, securityGroupId)
 	ret0, _ := ret[0].(*osc.LoadBalancer)
@@ -102,7 +102,7 @@ func (mr *MockServicerMockRecorder) CreateLoadBalancer(ctx, spec, subnetId, secu
 }
 
 // CreateLoadBalancerTag mocks base method.
-func (m *MockServicer) CreateLoadBalancerTag(ctx context.Context, spec *v1beta1.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
+func (m *MockServicer) CreateLoadBalancerTag(ctx context.Context, spec *v1beta2.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLoadBalancerTag", ctx, spec, loadBalancerTag)
 	ret0, _ := ret[0].(error)
@@ -131,7 +131,7 @@ func (mr *MockServicerMockRecorder) CreateNatService(ctx, publicIpId, subnetId, 
 }
 
 // CreateNet mocks base method.
-func (m *MockServicer) CreateNet(ctx context.Context, spec v1beta1.OscNet, clusterID, netName string) (*osc.Net, error) {
+func (m *MockServicer) CreateNet(ctx context.Context, spec v1beta2.OscNet, clusterID, netName string) (*osc.Net, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNet", ctx, spec, clusterID, netName)
 	ret0, _ := ret[0].(*osc.Net)
@@ -221,7 +221,7 @@ func (mr *MockServicerMockRecorder) CreateRouteTable(ctx, netId, clusterID, rout
 }
 
 // CreateSubnet mocks base method.
-func (m *MockServicer) CreateSubnet(ctx context.Context, spec v1beta1.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error) {
+func (m *MockServicer) CreateSubnet(ctx context.Context, spec v1beta2.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSubnet", ctx, spec, netId, clusterID, subnetName)
 	ret0, _ := ret[0].(*osc.Subnet)
@@ -250,7 +250,7 @@ func (mr *MockServicerMockRecorder) DeleteInternetService(ctx, internetServiceId
 }
 
 // DeleteLoadBalancer mocks base method.
-func (m *MockServicer) DeleteLoadBalancer(ctx context.Context, spec *v1beta1.OscLoadBalancer) error {
+func (m *MockServicer) DeleteLoadBalancer(ctx context.Context, spec *v1beta2.OscLoadBalancer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteLoadBalancer", ctx, spec)
 	ret0, _ := ret[0].(error)
@@ -264,7 +264,7 @@ func (mr *MockServicerMockRecorder) DeleteLoadBalancer(ctx, spec any) *gomock.Ca
 }
 
 // DeleteLoadBalancerTag mocks base method.
-func (m *MockServicer) DeleteLoadBalancerTag(ctx context.Context, spec *v1beta1.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
+func (m *MockServicer) DeleteLoadBalancerTag(ctx context.Context, spec *v1beta2.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteLoadBalancerTag", ctx, spec, loadBalancerTag)
 	ret0, _ := ret[0].(error)

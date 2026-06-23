@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	corev1 "k8s.io/api/core/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -20,7 +20,7 @@ import (
 // reconcileSubnet reconcile the subnet of the cluster.
 func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if !clusterScope.NeedReconciliation(infrastructurev1beta1.ReconcilerSubnet) {
+	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerSubnet) {
 		log.V(4).Info("No need for subnet reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -49,19 +49,19 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		}
 		log.V(2).Info("Created subnet", "subnetId", subnet.SubnetId)
 		r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.SubnetId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta1.SubnetCreatedReason, "Subnet created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
 	}
 
 	// add failureDomains
 	for _, subnetSpec := range clusterScope.GetSubnets() {
-		if clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta1.RoleControlPlane) {
+		if clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleControlPlane) {
 			clusterScope.SetFailureDomain(clusterScope.GetSubnetSubregion(subnetSpec), clusterv1.FailureDomainSpec{
 				ControlPlane: true,
 			})
 		}
 	}
 
-	clusterScope.SetReconciliationGeneration(infrastructurev1beta1.ReconcilerSubnet)
+	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerSubnet)
 	return reconcile.Result{}, nil
 }
 

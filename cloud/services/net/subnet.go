@@ -8,20 +8,20 @@ package net
 import (
 	"context"
 
-	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 type SubnetInterface interface {
-	CreateSubnet(ctx context.Context, spec infrastructurev1beta1.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error)
+	CreateSubnet(ctx context.Context, spec infrastructurev1beta2.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error)
 	DeleteSubnet(ctx context.Context, subnetId string) error
 	GetSubnet(ctx context.Context, subnetId string) (*osc.Subnet, error)
 	GetSubnetFromNet(ctx context.Context, netId, ipRange string) (*osc.Subnet, error)
 }
 
 // CreateSubnet create the subnet associate to the net
-func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta1.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error) {
+func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta2.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error) {
 	req := osc.CreateSubnetRequest{
 		IpRange:       spec.IpSubnetRange,
 		NetId:         netId,

@@ -541,7 +541,7 @@ type OscReconciliationRule struct {
 	AppliesTo []Reconciler `json:"appliesTo,omitempty"`
 	// The mode of reconciliation: onChange (only when the spec change, default), always, random (onChange + randomPercent% chance)
 	Mode ReconciliationMode `json:"mode,omitempty"`
-	// The chance (in percent, 1-100) of a reconcilation happening when no change have been detected (when mode=random)
+	// The chance (in percent, 1-100) of a reconciliation happening when no change have been detected (when mode=random)
 	// +optional
 	ReconciliationChance int `json:"reconciliationChance,omitempty"`
 }

@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	v1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	scope "github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	osc "github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	gomock "go.uber.org/mock/gomock"
@@ -73,7 +73,7 @@ func (mr *MockServicerMockRecorder) AllocateFGPU(ctx, model, az, machineScope an
 }
 
 // CreateSecurityGroup mocks base method.
-func (m *MockServicer) CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string, roles []v1beta1.OscRole) (*osc.SecurityGroup, error) {
+func (m *MockServicer) CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string, roles []v1beta2.OscRole) (*osc.SecurityGroup, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSecurityGroup", ctx, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag, roles)
 	ret0, _ := ret[0].(*osc.SecurityGroup)
@@ -103,7 +103,7 @@ func (mr *MockServicerMockRecorder) CreateSecurityGroupRule(ctx, securityGroupId
 }
 
 // CreateVm mocks base method.
-func (m *MockServicer) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *v1beta1.OscVm, imageId, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken string, tags map[string]string, volumes []v1beta1.OscVolume) (*osc.Vm, error) {
+func (m *MockServicer) CreateVm(ctx context.Context, machineScope *scope.MachineScope, spec *v1beta2.OscVm, imageId, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken string, tags map[string]string, volumes []v1beta2.OscVolume) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateVm", ctx, machineScope, spec, imageId, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, tags, volumes)
 	ret0, _ := ret[0].(*osc.Vm)
@@ -118,7 +118,7 @@ func (mr *MockServicerMockRecorder) CreateVm(ctx, machineScope, spec, imageId, s
 }
 
 // CreateVmBastion mocks base method.
-func (m *MockServicer) CreateVmBastion(ctx context.Context, spec *v1beta1.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
+func (m *MockServicer) CreateVmBastion(ctx context.Context, spec *v1beta2.OscBastion, subnetId string, securityGroupIds, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateVmBastion", ctx, spec, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, imageId, tags)
 	ret0, _ := ret[0].(*osc.Vm)
