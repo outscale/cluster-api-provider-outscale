@@ -38,6 +38,12 @@ jobs:
         echo "ip=`curl -s https://api.ipify.org`" | tee $GITHUB_OUTPUT
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
+    - name: ⬇️ Install octl
+      uses: outscale/octl/.github/actions/setup_octl@d67a35038e4ff9765d6863fe715a875e9873a605 # v0.0.28
+      with:
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_REGION: ${{ env.OSC_REGION }}
     - name: 🧹 Frieza
       uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # master
       with:
@@ -84,12 +90,10 @@ jobs:
         OSC_REGION: ${{ env.OSC_REGION }}
         CSI: true
     - name: 🔐 Create CAPOSC ns and credentials
-      run: make credential
+      run: make credentials
       shell: bash
       env:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
     - name: 🧪 Launch e2e tests
       run: |
         from=`echo ${{ vars.IMG_UPGRADE_FROM }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`

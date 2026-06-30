@@ -17,7 +17,7 @@ You can initialize the credentials which is used by the clusterctl with::
 export OSC_ACCESS_KEY=<your-access-key>
 export OSC_SECRET_KEY=<your-secret-access-key>
 export OSC_REGION=<your-region>
-make credential
+make credentials
 ./bin/clusterctl init -c talos -b talos -i outscale
 ```
 

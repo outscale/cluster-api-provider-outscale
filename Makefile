@@ -182,10 +182,6 @@ e2e-conf-class-file: envsubst
 e2etest: envsubst e2e-conf-class-file ccm-file
 	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -ginkgo.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_CLASS_FILE)
 
-.PHONY: e2etestkind
-e2etestkind: envsubst e2e-conf-class-file ccm-file
-	USE_EXISTING_CLUSTER=false IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -ginkgo.timeout 180m -e2e.use-existing-cluster=false -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_CLASS_FILE)
-
 .PHONY: ccm-file
 ccm-file: envsubst
 	$(ENVSUBST) < $(E2E_CONF_CCM_FILE_SOURCE) > $(E2E_CONF_CCM_FILE)
@@ -224,6 +220,61 @@ trivy-scan:
 trivy-ignore-check:
 	@./hack/verify-trivyignore.sh
 
+KIND ?= kind
+KIND_CLUSTER ?= caposc
+KIND_NODE_IMAGE ?= kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256
+KIND_REGISTRY_PORT ?= 5001
+
+.PHONY: setup-kind
+setup-kind: ## Set up a Kind cluster for e2e tests if it does not exist
+	@command -v $(KIND) >/dev/null 2>&1 || { \
+		echo "Kind is not installed. Please install Kind manually."; \
+		exit 1; \
+	}
+	hack/ensure-dev.sh $(KIND_CLUSTER) $(KIND_NODE_IMAGE)
+
+.PHONY: use-kind
+use-kind:
+	kubectl cluster-info --context kind-$(KIND_CLUSTER)
+
+.PHONY: credentials
+credentials: ## Set Credentials
+	kubectl create namespace cluster-api-provider-outscale-system ||:
+	octl kube secret --name cluster-api-provider-outscale --namespace cluster-api-provider-outscale-system | kubectl apply -f - ||:
+
+.PHONY: setup-dev
+setup-dev: setup-kind use-kind credentials deploy-clusterapi
+
+KIND_IMG_TAG ?= $(shell date '+%Y%m%d%H%M')
+KIND_IMG ?= localhost:$(KIND_REGISTRY_PORT)/$(IMAGE_NAME):$(KIND_IMG_TAG)
+
+.PHONY: build-dev
+build-dev:
+	docker build --build-arg VERSION=$(VERSION) -t ${KIND_IMG} .
+
+.PHONY: push-dev
+push-dev:
+	docker push ${KIND_IMG}
+
+.PHONY: deploy-dev
+deploy-dev: build-dev push-dev deploy
+
+KUSTOMIZE := $(shell command -v kustomize 2> /dev/null)
+
+.PHONY: deploy
+deploy: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+ifndef KUSTOMIZE
+	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${KIND_IMG}
+	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
+else
+	cd config/default && $(KUSTOMIZE) edit set image controller=${KIND_IMG}
+	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
+endif
+
+.PHONY: cleanup-dev
+cleanup-dev: ## Tear down the Kind cluster used for e2e tests
+	@$(KIND) delete cluster --name $(KIND_CLUSTER)
+
 ##@ Build
 
 .PHONY: build
@@ -242,13 +293,10 @@ docker-build: # Build docker image with the manager
 docker-buildx: # Build docker image with the manager
 	docker buildx build --platform=linux/amd64 --build-arg VERSION=$(VERSION) --load -t ${IMG} .
 
-.PHONY: docker-build-dev
-docker-build-dev: ## Generate and Build docker image with the manager
-	generate docker-build
-
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
 ##@ Docs
 .PHONY: helm-docs
 helm-docs: ## Generate helm docs
@@ -267,24 +315,6 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
-
-KUSTOMIZE := $(shell command -v kustomize 2> /dev/null)
-
-.PHONY: deploy
-deploy: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-ifndef KUSTOMIZE
-	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${IMG}
-	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
-else
-	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
-endif
-
-.PHONY: credential
-credential: ## Set Credentials
-	kubectl create namespace cluster-api-provider-outscale-system --dry-run=client -o yaml | kubectl apply -f - ||:
-	@kubectl create secret generic cluster-api-provider-outscale --from-literal=access_key=${OSC_ACCESS_KEY} --from-literal=secret_key=${OSC_SECRET_KEY} --from-literal=region=${OSC_REGION}  -n cluster-api-provider-outscale-system ||:
 
 .PHONY: clusterclass
 clusterclass: envsubst ## Set Clusterclass
@@ -320,9 +350,6 @@ else
 	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | $(ENVSUBST)  > capm.yaml
 endif
-
-.PHONY: deploy-dev
-deploy-dev: manifests deploy  ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 
 .PHONY: undeploy
 undeploy: envsubst ## Undeploy controller to the K8s cluster specified in ~/.kube/config.
