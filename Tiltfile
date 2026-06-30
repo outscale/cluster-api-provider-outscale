@@ -38,7 +38,7 @@ def create_capm():
       print("No AK/SK secret for capo")
       fail("Need to have OSC_SECRET_KEY and OSC_ACCESS_KEY environement variable")
   else: 
-    cred_cmd = "make credential"
+    cred_cmd = "make credentials"
     local(cred_cmd)
     local(capo_cmd)
 deploy_capi()

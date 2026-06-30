@@ -112,7 +112,7 @@ variables:
   NODE_DRAIN_TIMEOUT: "60s"
   PRELOAD_SNAPSHOT_ID: ""
 intervals:
-  default/wait-cluster: ["15m", "10s"]
+  default/wait-cluster: ["30m", "10s"]
   default/wait-control-plane: ["30m", "10s"]
   default/wait-worker-nodes: ["30m", "10s"]
   default/wait-controllers: ["15m", "10s"]
