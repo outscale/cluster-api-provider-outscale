@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
     - name: Install kustomize
       run: make kustomize
     - name: Install envsubst
@@ -38,7 +38,7 @@ jobs:
         RELEASE_TAG: ${{ github.ref_name }}
     - name: Get changelog for release
       id: changelog
-      uses: mindsers/changelog-reader-action@32aa5b4c155d76c94e4ec883a223c947b2f02656 # v2
+      uses: mindsers/changelog-reader-action@1faaf50aa09d5793d9a100819973df801febfb31 # v2.4.0
       with:
         path: "CHANGELOG.md"
         version: ${{ github.ref_name }}
@@ -48,9 +48,9 @@ jobs:
     #     IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
     #     RELEASE_TAG: ${{ github.ref_name }}
     #     PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
-    #     GH_REPO: ${{ github.repository }} 
+    #     GH_REPO: ${{ github.repository }}
     - name: Create Release
-      uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
+      uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
       with:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}

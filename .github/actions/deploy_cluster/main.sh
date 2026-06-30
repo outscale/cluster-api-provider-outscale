@@ -81,7 +81,7 @@ export KUBECONFIG=$kubeconfig
 
 # install calico
 kubectl \
-  apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+  apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.32.1/manifests/calico.yaml
 
 echo "waiting for nodes"
 for i in {1..50}; do
@@ -97,7 +97,7 @@ if [ "$CCM" = "true" ]; then
   export OSC_SECRET_KEY=`echo $OSC_AKSK|cut -d% -f 2`
   echo "installing CCM v1"
   KUBE_MAJORMINOR=`echo $KUBERNETES_VERSION|cut -d . -f 1,2`
-  CCM_VERSION=$KUBE_MAJORMINOR.5
+  CCM_VERSION=$KUBE_MAJORMINOR.7
   kubectl create secret generic osc-secret --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY -n kube-system
   helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret \
     --set image.tag=$CCM_VERSION
@@ -118,7 +118,7 @@ if [ "$CERT_MANAGER" = "true" ]; then
     cert-manager jetstack/cert-manager \
     --namespace cert-manager \
     --create-namespace \
-    --version v1.17.2 \
+    --version v1.19.1 \
     --set crds.enabled=true \
     --set prometheus.enabled=false \
     --set webhook.timeoutSeconds=4 \
