@@ -2,6 +2,8 @@ module github.com/outscale/cluster-api-provider-outscale
 
 go 1.26.0
 
+toolchain go1.26.4
+
 require (
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0
