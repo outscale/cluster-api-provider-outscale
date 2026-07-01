@@ -11,10 +11,10 @@ import (
 	"github.com/outscale/osc-sdk-go/v3/pkg/profile"
 )
 
-func TenantFromEnv() (Tenant, error) {
-	prof, err := profile.New(profile.FromEnv())
+func Default() (Tenant, error) {
+	prof, err := profile.New()
 	if err != nil {
 		return nil, fmt.Errorf("tenant from env: %w", err)
 	}
-	return TenantFromProfile(prof)
+	return FromProfile(prof)
 }
