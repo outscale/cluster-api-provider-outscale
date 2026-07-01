@@ -11,7 +11,7 @@ import (
 	"github.com/outscale/osc-sdk-go/v3/pkg/profile"
 )
 
-func TenantFromFile(path, profileName string) (Tenant, error) {
+func FromFile(path, profileName string) (Tenant, error) {
 	if profileName == "" {
 		profileName = "default"
 	}
@@ -19,5 +19,5 @@ func TenantFromFile(path, profileName string) (Tenant, error) {
 	if err != nil {
 		return nil, fmt.Errorf("from file: %w", err)
 	}
-	return TenantFromProfile(prof)
+	return FromProfile(prof)
 }

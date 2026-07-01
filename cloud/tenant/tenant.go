@@ -39,7 +39,7 @@ func (t *tenant) Client() *osc.Client {
 	return t.client
 }
 
-func TenantFromProfile(prof *profile.Profile) (Tenant, error) {
+func FromProfile(prof *profile.Profile) (Tenant, error) {
 	c, err := newSDKClient(prof)
 	if err != nil {
 		return nil, err

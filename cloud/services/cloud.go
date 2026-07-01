@@ -24,7 +24,7 @@ type Servicer interface {
 }
 
 type Services struct {
-	once          sync.Once
+	mu            sync.Mutex
 	defaultTenant tenant.Tenant
 }
 
@@ -33,14 +33,16 @@ func NewServices() (*Services, error) {
 }
 
 func (s *Services) DefaultTenant() (tenant.Tenant, error) {
-	var err error
-	s.once.Do(func() {
-		s.defaultTenant, err = tenant.TenantFromEnv()
-	})
-	if err != nil {
-		return nil, fmt.Errorf("tenant from env: %w", err)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.defaultTenant == nil {
+		var err error
+		s.defaultTenant, err = tenant.Default()
+		if err != nil {
+			return nil, fmt.Errorf("default tenant: %w", err)
+		}
 	}
-	return s.defaultTenant, err
+	return s.defaultTenant, nil
 }
 
 // Net returns the Net service
