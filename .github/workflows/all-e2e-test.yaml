@@ -45,7 +45,7 @@ jobs:
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # master
+      uses: outscale/frieza-github-actions/frieza-clean@1d8b83bc64d2230a0c3bc9f018ba6c0c67df98e8 # v0.15.0-hotfix.0
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
