@@ -109,7 +109,7 @@ jobs:
         DOCKER_BUILDKIT: 1
     - name: 🔎 Preloader snapshot
       id: preloader
-      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@81d998cebedf3a43e86bd9ec7608323f022b1ae8 # main
+      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@a8c71d7842b29371c2be945ac4500b0cb2867017 # main
       with:
         KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
