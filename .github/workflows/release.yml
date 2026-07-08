@@ -12,49 +12,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-    - name: Install kustomize
-      run: make kustomize
-    - name: Install envsubst
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
+    - name: ⬇️ Install kustomize
+      uses: imranismail/setup-kustomize@53f941b41dca13ed61874bbc6b4b6e1562877530 # v3.0.0
+      with:
+        kustomize-version: 5.7.1
+    - name: ⬇️ Install envsubst
       run: make envsubst
-    - name: Docker login
-      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-      env:
-        DOCKER_USER: ${{secrets.DOCKER_USER}}
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-    - name: build and push docker image
-      run: |
-        make docker-build
-        make docker-push
-      env:
-        IMG: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
-        RELEASE_TAG: ${{ github.ref_name }}
-        VERSION: ${{ github.ref_name }}
-        DOCKER_BUILDKIT: 1
+    - name: ⬇️ Set up Docker Buildx
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+    - name: 🐳 Login to Docker Hub
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      with:
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
     - name: generate artefacts
       run: make release
       env:
-        IMG_RELEASE: registry.hub.docker.com/${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
+        IMG_RELEASE: outscale/cluster-api-outscale-controllers:${{ github.ref_name }}
         RELEASE_TAG: ${{ github.ref_name }}
-    - name: Get changelog for release
-      id: changelog
-      uses: mindsers/changelog-reader-action@1faaf50aa09d5793d9a100819973df801febfb31 # v2.4.0
+    - name: 📦 Run GoReleaser
+      uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
       with:
-        path: "CHANGELOG.md"
-        version: ${{ github.ref_name }}
-    # - name: create release
-    #   run: make create-gh-release
-    #   env:
-    #     IMG_RELEASE: ${{ secrets.DOCKER_REGISTRY_REPO }}/cluster-api-outscale-controllers:${{ github.ref_name }}
-    #     RELEASE_TAG: ${{ github.ref_name }}
-    #     PREVIOUS_RELEASE_TAG: ${{ secrets.PREVIOUS_RELEASE_TAG }}
-    #     GH_REPO: ${{ github.repository }}
-    - name: Create Release
-      uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
-      with:
-        tag_name: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
-        draft: true
-        prerelease: false
-        body: ${{ steps.changelog.outputs.changes }}
-        files: out/*.yaml
+        version: 'v2.15.4'
+        args: release --clean
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
