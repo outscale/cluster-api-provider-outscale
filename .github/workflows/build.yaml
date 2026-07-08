@@ -25,14 +25,20 @@ jobs:
     steps:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: ⬇️ Install Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: 'go.mod'
       - name: 🔎 golangci-lint
         uses: outscale/goutils/.github/actions/lint@ba9b0e7bcc1ab4b8fd2c69d8b4de17d86218f5b5 # v1.0.0
       - name: 🔎 Reuse check
         run: make lint-reuse
         shell: bash
-      - name: 🔎 Run make build
-        run: make build
-        shell: bash
-      - name: 🔎 Docker Lint
-        run: make dockerlint
-        shell: bash
+      - name: 🔎 Build
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: 'v2.15.4'
+          args: release --clean --snapshot
+          shell: bash

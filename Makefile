@@ -25,8 +25,6 @@ OSC_ACCESS_KEY ?= access
 OSC_SECRET_KEY ?= secret
 OSC_CLUSTER ?= cluster-api
 CLUSTER ?= cluster-api
-GH_ORG_NAME ?= outscale
-GH_REPO_NAME ?= cluster-api-provider-outscale
 GIT_USERNAME ?= Outscale Bot
 GIT_USEREMAIL ?= opensource+bot@outscale.com
 K8S_VERSION ?= v1.30.3
@@ -45,7 +43,6 @@ MIN_GO_VERSION=1.23
 MINIMUM_TILT_VERSION=0.25.3
 MINIMUM_PACKER_VERSION=1.8.1
 MINIMUM_CONTROLLER_GEN_VERSION=0.16.5
-MINIMUM_GH_VERSION=2.12.1
 MINIMUM_KIND_USE_VERSION=v0.20.0
 MINIMUM_ENVTEST_VERSION=1.30.3
 MINIMUM_HELM_VERSION=v3.11.3
@@ -122,9 +119,9 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 mock-generate: mockgen ## Generate mock
 	go generate ./...
 
-.PHONY: generate-image-docs
-generate-image-docs:
-	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -k "${K8S_VERSION}"
+# .PHONY: generate-image-docs
+# generate-image-docs:
+# 	./.github/scripts/launch.sh -c "${GIT_BRANCH}" -o "${GH_ORG_NAME}" -r "${GH_REPO_NAME}" -n "${GIT_USERNAME}" -e "${GIT_USEREMAIL}" -k "${K8S_VERSION}"
 
 
 .PHONY: fmt
@@ -285,17 +282,15 @@ build: generate ## Build manager binary.
 run: manifests generate ## Run a controller from your host.
 	go run ./main.go
 
-.PHONY: docker-build
-docker-build: # Build docker image with the manager
-	docker build --build-arg VERSION=$(VERSION) -t ${IMG} .
+REGISTRY_IMAGE ?= $(IMAGE)
+REGISTRY_TAG ?= $(IMAGE_TAG)
+.PHONY: image-tag
+image-tag:
+	docker tag $(IMAGE):$(IMAGE_TAG) $(REGISTRY_IMAGE):$(REGISTRY_TAG)
 
-.PHONY: docker-buildx
-docker-buildx: # Build docker image with the manager
-	docker buildx build --platform=linux/amd64 --build-arg VERSION=$(VERSION) --load -t ${IMG} .
-
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+.PHONY: image-push
+image-push: ## Push docker image with the manager.
+	docker push $(REGISTRY_IMAGE):$(REGISTRY_TAG)
 
 ##@ Docs
 .PHONY: helm-docs
@@ -364,10 +359,7 @@ endif
 ##@ Release
 
 RELEASE_DIR := out
-GH_ORG_NAME ?= outscale-dev
-GH_REPO_NAME ?= cluster-api-provider-outscale
 RELEASE_BINARY ?= cluster-api
-GH_REPO ?= outscale-dev/$(GH_REPO_NAME)
 GOARCH  := $(shell go env GOARCH)
 GOOS    := $(shell go env GOOS)
 GET_GOPATH ?= $(shell go env GOPATH)
@@ -423,24 +415,6 @@ check-previous-release-tag: ## Check if the previous release tag is set
 check-release-tag: ## Check if the release tag is set
 	@if [ -z "${RELEASE_TAG}" ]; then echo "RELEASE_TAG is not set"; exit 1; fi
 
-.PHONY: check-github-token
-check-github-token:
-	@if [ -z "${SECRET_GITHUB_TOKEN}" ]; then echo "GITHUB_TOKEN is not set"; exit 1; fi
-
-.PHONY: gh-login
-gh-login: gh check-github-token
-	cat <<< "${SECRET_GITHUB_TOKEN}"  | $(GH)  auth login --with-token
-
-GH = $(shell pwd)/bin/gh
-
-.PHONY: release-changelog
-release-changelog: gh release_dir check-release-tag check-previous-release-tag
-	./hack/releasechangelog.sh -t $(RELEASE_TAG) -p ${PREVIOUS_RELEASE_TAG} -g ${GH} -o $(GH_ORG_NAME) -r $(GH_REPO_NAME) -i $(IMG_RELEASE)  > $(RELEASE_DIR)/CHANGELOG.md
-
-.PHONY: create-gh-release
-create-gh-release: gh
-	$(GH) release create $(RELEASE_TAG) -d -F $(RELEASE_DIR)/CHANGELOG.md -t $(RELEASE_TAG) -R $(GH_REPO) $(RELEASE_DIR)/*.yaml
-
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen
@@ -473,10 +447,6 @@ install-packer: ## Download packer
 .PHONY: install-yamlfmt
 install-yamlfmt: ## donwload yaml fmt
 	GOPATH=$(GET_GOPATH) MINIMUM_YAMLFMT_VERSION=$(MINIMUM_YAMLFMT_VERSION) ./hack/ensure-yamlfmt.sh
-
-.PHONY: install-gh
-install-gh: ## Download gh
-	GOPATH=$(GET_GOPATH) MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh
 
 .PHONY: install-kind
 install-kind: ## Download kind
@@ -533,12 +503,6 @@ ENVSUBST = $(shell pwd)/bin/envsubst
 .PHONY: envsubst
 envsubst: ## Download envsubst
 	GOPATH=${GET_GOPATH} ./hack/ensure-envsubst.sh
-
-GH = $(shell pwd)/bin/gh
-.PHONY: gh
-gh: ## Download gh
-	GOPATH=${GET_GOPATH} MINIMUM_GH_VERSION=$(MINIMUM_GH_VERSION) ./hack/ensure-gh.sh
-
 
 install-dev-prerequisites: ## Install clusterctl, controller-gen, envsubst, envtest, gh, go, helm, kind, kubectl, kustomize, packer, til
 	@echo "Start install all depencies"
