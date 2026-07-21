@@ -6,13 +6,13 @@ SPDX-License-Identifier: BSD-3-Clause
 package v1beta1_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TestOscClusterTemplate_ValidateCreate check good and bad validation of oscCluster spec
@@ -37,8 +37,9 @@ func TestOscClusterTemplate_ValidateCreate(t *testing.T) {
 	h := infrastructurev1beta1.OscClusterTemplateWebhook{}
 	for _, ctc := range clusterTestCases {
 		t.Run(ctc.name, func(t *testing.T) {
+			ctx := admission.NewContextWithRequest(t.Context(), admission.Request{})
 			oscInfraClusterTemplate := createOscInfraClusterTemplate(ctc.clusterSpec, "webhook-test", "default")
-			_, err := h.ValidateCreate(context.TODO(), oscInfraClusterTemplate)
+			_, err := h.ValidateCreate(ctx, oscInfraClusterTemplate)
 			if ctc.expValidateCreateErr != nil {
 				require.EqualError(t, err, ctc.expValidateCreateErr.Error(), "ValidateCreate() should return the same error")
 			} else {

@@ -7,13 +7,13 @@ SPDX-License-Identifier: Apache-2.0
 package v1beta1_test
 
 import (
-	"context"
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TestOscMachineTemplate_ValidateCreate check good and bad update of oscMachineTemplate
@@ -263,8 +263,9 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 	h := infrastructurev1beta1.OscMachineTemplateWebhook{}
 	for _, mtc := range machineTestCases {
 		t.Run(mtc.name, func(t *testing.T) {
+			ctx := admission.NewContextWithRequest(t.Context(), admission.Request{})
 			oscInfraMachineTemplate := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
-			_, err := h.ValidateCreate(context.TODO(), oscInfraMachineTemplate)
+			_, err := h.ValidateCreate(ctx, oscInfraMachineTemplate)
 			if mtc.errorCount > 0 {
 				require.Error(t, err, "ValidateCreate should return the same errror")
 				require.Len(t, err.(*apierrors.StatusError).Status().Details.Causes, mtc.errorCount)
@@ -347,9 +348,10 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 	h := infrastructurev1beta1.OscMachineTemplateWebhook{}
 	for _, mtc := range machineTestCases {
 		t.Run(mtc.name, func(t *testing.T) {
+			ctx := admission.NewContextWithRequest(t.Context(), admission.Request{})
 			oscOldInfraMachineTemplate := createOscInfraMachineTemplate(mtc.oldMachineSpec, "old-webhook-test", "default")
 			oscInfraMachineTemplate := createOscInfraMachineTemplate(mtc.machineSpec, "webhook-test", "default")
-			_, err := h.ValidateUpdate(context.TODO(), oscInfraMachineTemplate, oscOldInfraMachineTemplate)
+			_, err := h.ValidateUpdate(ctx, oscInfraMachineTemplate, oscOldInfraMachineTemplate)
 			if mtc.hasError {
 				require.Error(t, err)
 			} else {
