@@ -14,6 +14,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/cluster-api/util/topology"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -57,12 +58,21 @@ func (OscMachineTemplateWebhook) ValidateCreate(_ context.Context, obj runtime.O
 }
 
 // ValidateUpdate implements webhook.CustomValidator.
-func (OscMachineTemplateWebhook) ValidateUpdate(_ context.Context, obj runtime.Object, oldRaw runtime.Object) (admission.Warnings, error) {
+func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, obj runtime.Object, oldRaw runtime.Object) (admission.Warnings, error) {
 	r, ok := obj.(*OscMachineTemplate)
 	if !ok {
 		return nil, fmt.Errorf("expected an OscMachineTemplate object but got %T", r)
 	}
 	var allErrs field.ErrorList
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, apierrors.NewBadRequest(fmt.Sprintf("expected a admission.Request inside context: %v", err))
+	}
+	if topology.ShouldSkipImmutabilityChecks(req, r) {
+		return nil, nil
+	}
+
 	old := oldRaw.(*OscMachineTemplate)
 	if !reflect.DeepEqual(r.Spec.Template.Spec, old.Spec.Template.Spec) {
 		allErrs = append(allErrs,
