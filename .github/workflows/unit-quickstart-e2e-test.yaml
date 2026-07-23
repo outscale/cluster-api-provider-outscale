@@ -54,7 +54,7 @@ jobs:
     - name: ⬇️ Install helm
       uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
       with:
-        version: v3.21.1
+        version: v3.21.3
     - name: ⬇️ Install kustomize
       uses: imranismail/setup-kustomize@53f941b41dca13ed61874bbc6b4b6e1562877530 # v3.0.0
       with:
