@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.5.1] - 2026-08-19
+
+### 🐛 Fixed
+* 🐛 fix(webhooks): OscMachineTemplate immutability should not be enforced during topology dry-runs by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/865
+
 ## [v1.5.0] - 2026-06-03
 
 ### 📝 Documentation
