@@ -17,7 +17,7 @@ apicovers.txt
 covers.txt
 apicovers.html
 covers.html
-getstarted.*
+getstarted*
 secret.*
 *.kubeconfig
 clusterctl-settings.json
