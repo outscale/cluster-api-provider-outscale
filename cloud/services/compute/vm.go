@@ -279,7 +279,7 @@ func (s *Service) AddCCMTags(ctx context.Context, clusterName string, hostname s
 	}
 	clusterTag := osc.ResourceTag{
 		Key:   tags.ClusterIDKey(clusterName),
-		Value: tags.ResourceLifecycleOwned,
+		Value: string(tags.ResourceLifecycleOwned),
 	}
 	nodeTagRequest := osc.CreateTagsRequest{
 		ResourceIds: resourceIds,
