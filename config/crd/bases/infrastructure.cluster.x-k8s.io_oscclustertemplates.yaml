@@ -1006,12 +1006,14 @@ spec:
                       disable:
                         description: List of disabled features (internet = no internet
                           service, no nat services)
-                        items:
-                          enum:
-                          - internet
-                          - loadbalancer
-                          type: string
-                        type: array
+                        properties:
+                          internet:
+                            description: If set, net, subnets, internet service, nat
+                              services and route tables are externally managed
+                            type: boolean
+                          loadbalancer:
+                            type: boolean
+                        type: object
                       internetService:
                         description: The Internet Service configuration
                         properties:
