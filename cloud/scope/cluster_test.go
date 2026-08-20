@@ -19,7 +19,7 @@ import (
 func TestClusterScope_GetSubnets(t *testing.T) {
 	t.Run("Default subnets are computed on a default net if none set", func(t *testing.T) {
 		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta2.OscCluster{}}
-		clusterScope.OscCluster.Spec.Network.SubregionName = "eu-west2a"
+		clusterScope.OscCluster.Spec.SubregionName = "eu-west2a"
 		subnets := clusterScope.GetSubnets()
 		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
 			{IpSubnetRange: "10.0.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
@@ -29,8 +29,8 @@ func TestClusterScope_GetSubnets(t *testing.T) {
 	})
 	t.Run("Default subnets are computed on a custom net if not set", func(t *testing.T) {
 		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta2.OscCluster{}}
-		clusterScope.OscCluster.Spec.Network.Net.IpRange = "10.1.0.0/16"
-		clusterScope.OscCluster.Spec.Network.SubregionName = "eu-west2a"
+		clusterScope.OscCluster.Spec.Net.IpRange = "10.1.0.0/16"
+		clusterScope.OscCluster.Spec.SubregionName = "eu-west2a"
 		subnets := clusterScope.GetSubnets()
 		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
 			{IpSubnetRange: "10.1.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
@@ -119,10 +119,8 @@ func TestClusterScope_GetSubnet(t *testing.T) {
 		clusterScope := &scope.ClusterScope{
 			OscCluster: &infrastructurev1beta2.OscCluster{
 				Spec: infrastructurev1beta2.OscClusterSpec{
-					Network: infrastructurev1beta2.OscNetwork{
-						SubregionName: "eu-west2a",
-						Subnets:       tt.subnets,
-					},
+					SubregionName: "eu-west2a",
+					Subnets:       tt.subnets,
 				},
 			},
 		}
@@ -180,26 +178,24 @@ func TestClusterScope_GetSecurityGroups(t *testing.T) {
 	clusterScope := &scope.ClusterScope{
 		OscCluster: &infrastructurev1beta2.OscCluster{
 			Spec: infrastructurev1beta2.OscClusterSpec{
-				Network: infrastructurev1beta2.OscNetwork{
-					SubregionName: "eu-west2a",
-					SecurityGroups: []infrastructurev1beta2.OscSecurityGroup{{
-						Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleBastion},
-						SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
-					}, {
-						Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer},
-						SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
-					}, {
-						Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker},
-						SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
-					}},
-					AllowFromIPRanges: []string{"1.2.3.0/24"},
-					AllowToIPRanges:   []string{"2.3.4.0/24"},
-				},
+				SubregionName: "eu-west2a",
+				SecurityGroups: []infrastructurev1beta2.OscSecurityGroup{{
+					Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleBastion},
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+				}, {
+					Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer},
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+				}, {
+					Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker},
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+				}},
+				AllowFromIPRanges: []string{"1.2.3.0/24"},
+				AllowToIPRanges:   []string{"2.3.4.0/24"},
 			},
 		},
 	}
 	sgs := clusterScope.GetSecurityGroups()
-	for _, sg := range clusterScope.OscCluster.Spec.Network.SecurityGroups {
+	for _, sg := range clusterScope.OscCluster.Spec.SecurityGroups {
 		assert.Len(t, sg.SecurityGroupRules, 1, "The source spec must not be changed")
 	}
 	for _, sg := range sgs {
@@ -231,9 +227,7 @@ func TestNeedReconciliation(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: infrastructurev1beta2.OscClusterSpec{
-					Network: infrastructurev1beta2.OscNetwork{
-						ReconciliationRules: r,
-					},
+					ReconciliationRules: r,
 				},
 				Status: infrastructurev1beta2.OscClusterStatus{
 					ReconcilerGeneration: infrastructurev1beta2.OscReconcilerGeneration{
@@ -287,11 +281,9 @@ func TestGetNatService(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: infrastructurev1beta2.OscClusterSpec{
-					Network: infrastructurev1beta2.OscNetwork{
-						NatServices: []infrastructurev1beta2.OscNatService{
-							{Name: "foo", SubregionName: "eu-west-2a"},
-							{Name: "bar", SubregionName: "eu-west-2a"},
-						},
+					NatServices: []infrastructurev1beta2.OscNatService{
+						{Name: "foo", SubregionName: "eu-west-2a"},
+						{Name: "bar", SubregionName: "eu-west-2a"},
 					},
 				},
 			},

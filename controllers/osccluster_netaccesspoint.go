@@ -23,7 +23,7 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 		log.V(4).Info("No need for netAccessPoint reconciliation")
 		return reconcile.Result{}, nil
 	}
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(3).Info("Reusing existing netAccessPoints")
 		return reconcile.Result{}, nil
 	}
@@ -58,7 +58,7 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 		rtblIds = append(rtblIds, rtblForSubnet[subnetId])
 	}
 
-	for _, service := range clusterScope.GetNetwork().NetAccessPoints {
+	for _, service := range clusterScope.GetSpec().NetAccessPoints {
 		netAccessPoint, err := r.Tracker.getNetAccessPoint(ctx, service, clusterScope)
 		switch {
 		case IsNotFound(err):
@@ -84,7 +84,7 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 // reconcileDeleteNetAccessPoints reconcile the destruction of the NetAccessPoint of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNetAccessPoints(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing netAccessPoints")
 		return reconcile.Result{}, nil
 	}

@@ -27,7 +27,7 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 
 	net, err := r.Tracker.getNet(ctx, clusterScope)
 	switch {
-	case IsNotFound(err) && !clusterScope.GetNetwork().UseExisting.Net:
+	case IsNotFound(err) && !clusterScope.GetSpec().UseExisting.Net:
 	case err != nil:
 		return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 	default:
@@ -51,7 +51,7 @@ func (r *OscClusterReconciler) reconcileNet(ctx context.Context, clusterScope *s
 // reconcileDeleteNet reconcile the destruction of the Net of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNet(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing net")
 		return reconcile.Result{}, nil
 	}

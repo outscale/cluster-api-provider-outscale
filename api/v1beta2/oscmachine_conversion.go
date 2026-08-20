@@ -7,3 +7,5 @@ SPDX-License-Identifier: Apache-2.0
 package v1beta2
 
 func (*OscMachine) Hub() {}
+
+func (*OscMachineList) Hub() {}

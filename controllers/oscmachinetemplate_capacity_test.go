@@ -22,38 +22,36 @@ var (
 	defaultVmMachineTemplateInitialize = infrastructurev1beta2.OscMachineTemplateSpec{
 		Template: infrastructurev1beta2.OscMachineTemplateResource{
 			Spec: infrastructurev1beta2.OscMachineSpec{
-				Node: infrastructurev1beta2.OscNode{
-					Volumes: []infrastructurev1beta2.OscVolume{
+				Volumes: []infrastructurev1beta2.OscVolume{
+					{
+						Name:       "test-volume",
+						Iops:       1000,
+						Size:       50,
+						VolumeType: "io1",
+					},
+				},
+				Vm: infrastructurev1beta2.OscVm{
+					Name:    "test-vm",
+					ImageId: "ami-00000000",
+					Role:    "controlplane",
+					RootDisk: infrastructurev1beta2.OscRootDisk{
+						RootDiskSize: 30,
+						RootDiskIops: 1500,
+						RootDiskType: "io1",
+					},
+					KeypairName:   "rke",
+					SubregionName: "eu-west-2a",
+					SubnetName:    "test-subnet",
+					VmType:        "tinav3.c2r4p2",
+					SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 						{
-							Name:       "test-volume",
-							Iops:       1000,
-							Size:       50,
-							VolumeType: "io1",
+							Name: "test-securitygroup",
 						},
 					},
-					Vm: infrastructurev1beta2.OscVm{
-						Name:    "test-vm",
-						ImageId: "ami-00000000",
-						Role:    "controlplane",
-						RootDisk: infrastructurev1beta2.OscRootDisk{
-							RootDiskSize: 30,
-							RootDiskIops: 1500,
-							RootDiskType: "io1",
-						},
-						KeypairName:   "rke",
-						SubregionName: "eu-west-2a",
-						SubnetName:    "test-subnet",
-						VmType:        "tinav3.c2r4p2",
-						SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
-							{
-								Name: "test-securitygroup",
-							},
-						},
-						PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
-							{
-								Name:      "test-privateip",
-								PrivateIp: "10.0.0.17",
-							},
+					PrivateIps: []infrastructurev1beta2.OscPrivateIpElement{
+						{
+							Name:      "test-privateip",
+							PrivateIp: "10.0.0.17",
 						},
 					},
 				},
@@ -63,10 +61,8 @@ var (
 	awsTypeVmMachineTemplate = infrastructurev1beta2.OscMachineTemplateSpec{
 		Template: infrastructurev1beta2.OscMachineTemplateResource{
 			Spec: infrastructurev1beta2.OscMachineSpec{
-				Node: infrastructurev1beta2.OscNode{
-					Vm: infrastructurev1beta2.OscVm{
-						VmType: "m4.2xlarge",
-					},
+				Vm: infrastructurev1beta2.OscVm{
+					VmType: "m4.2xlarge",
 				},
 			},
 		},

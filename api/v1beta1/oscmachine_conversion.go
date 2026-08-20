@@ -10,47 +10,46 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 	srcNode := src.Node
 	*dst = infrastructurev1beta2.OscMachineSpec{
 		ProviderID: src.ProviderID,
-		Node: infrastructurev1beta2.OscNode{
-			Vm: infrastructurev1beta2.OscVm{
-				Name:           srcNode.Vm.Name,
-				ImageId:        srcNode.Vm.ImageId,
-				KeypairName:    srcNode.Vm.KeypairName,
-				VmType:         srcNode.Vm.VmType,
-				SubnetName:     srcNode.Vm.SubnetName,
-				PublicIp:       srcNode.Vm.PublicIp,
-				RootDisk:       infrastructurev1beta2.OscRootDisk(srcNode.Vm.RootDisk),
-				SubregionName:  srcNode.Vm.SubregionName,
-				SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
-				SubregionNames: srcNode.Vm.SubregionNames,
-				SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
-					return infrastructurev1beta2.OscSecurityGroupElement(src)
-				}),
-				Role:      infrastructurev1beta2.OscRole(srcNode.Vm.Role),
-				Tags:      srcNode.Vm.Tags,
-				Placement: infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
-			},
-			Volumes: lo.Map(srcNode.Volumes, func(src OscVolume, _ int) infrastructurev1beta2.OscVolume {
-				return infrastructurev1beta2.OscVolume{
-					Name:         src.Name,
-					Device:       src.Device,
-					Iops:         src.Iops,
-					Size:         src.Size,
-					VolumeType:   src.VolumeType,
-					FromSnapshot: src.FromSnapshot,
-				}
+
+		Vm: infrastructurev1beta2.OscVm{
+			Name:           srcNode.Vm.Name,
+			ImageId:        srcNode.Vm.ImageId,
+			KeypairName:    srcNode.Vm.KeypairName,
+			VmType:         srcNode.Vm.VmType,
+			SubnetName:     srcNode.Vm.SubnetName,
+			PublicIp:       srcNode.Vm.PublicIp,
+			RootDisk:       infrastructurev1beta2.OscRootDisk(srcNode.Vm.RootDisk),
+			SubregionName:  srcNode.Vm.SubregionName,
+			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
+			SubregionNames: srcNode.Vm.SubregionNames,
+			SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
+				return infrastructurev1beta2.OscSecurityGroupElement(src)
 			}),
-			Image: infrastructurev1beta2.OscImage{
-				Name:               srcNode.Image.Name,
-				AccountId:          srcNode.Image.AccountId,
-				OutscaleOpenSource: srcNode.Image.OutscaleOpenSource,
-			},
+			Role:      infrastructurev1beta2.OscRole(srcNode.Vm.Role),
+			Tags:      srcNode.Vm.Tags,
+			Placement: infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
+		},
+		Volumes: lo.Map(srcNode.Volumes, func(src OscVolume, _ int) infrastructurev1beta2.OscVolume {
+			return infrastructurev1beta2.OscVolume{
+				Name:         src.Name,
+				Device:       src.Device,
+				Iops:         src.Iops,
+				Size:         src.Size,
+				VolumeType:   src.VolumeType,
+				FromSnapshot: src.FromSnapshot,
+			}
+		}),
+		Image: infrastructurev1beta2.OscImage{
+			Name:               srcNode.Image.Name,
+			AccountId:          srcNode.Image.AccountId,
+			OutscaleOpenSource: srcNode.Image.OutscaleOpenSource,
 		},
 	}
 	if src.Node.Vm.FGPU != nil {
-		dst.Node.Vm.FGPU = new(infrastructurev1beta2.OscFGPU(*src.Node.Vm.FGPU))
+		dst.Vm.FGPU = new(infrastructurev1beta2.OscFGPU(*src.Node.Vm.FGPU))
 	}
 	if src.Node.ReconciliationRule != nil {
-		dst.Node.ReconciliationRule = &infrastructurev1beta2.OscReconciliationRule{
+		dst.ReconciliationRule = &infrastructurev1beta2.OscReconciliationRule{
 			AppliesTo: lo.Map(src.Node.ReconciliationRule.AppliesTo, func(src Reconciler, _ int) infrastructurev1beta2.Reconciler {
 				return infrastructurev1beta2.Reconciler(src)
 			}),
@@ -62,29 +61,28 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 }
 
 func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec) error {
-	srcNode := src.Node
 	*dst = OscMachineSpec{
 		ProviderID: src.ProviderID,
 		Node: OscNode{
 			Vm: OscVm{
-				Name:           srcNode.Vm.Name,
-				ImageId:        srcNode.Vm.ImageId,
-				KeypairName:    srcNode.Vm.KeypairName,
-				VmType:         srcNode.Vm.VmType,
-				SubnetName:     srcNode.Vm.SubnetName,
-				PublicIp:       srcNode.Vm.PublicIp,
-				RootDisk:       OscRootDisk(srcNode.Vm.RootDisk),
-				SubregionName:  srcNode.Vm.SubregionName,
-				SubregionMode:  SubregionMode(srcNode.Vm.SubregionMode),
-				SubregionNames: srcNode.Vm.SubregionNames,
-				SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
+				Name:           src.Vm.Name,
+				ImageId:        src.Vm.ImageId,
+				KeypairName:    src.Vm.KeypairName,
+				VmType:         src.Vm.VmType,
+				SubnetName:     src.Vm.SubnetName,
+				PublicIp:       src.Vm.PublicIp,
+				RootDisk:       OscRootDisk(src.Vm.RootDisk),
+				SubregionName:  src.Vm.SubregionName,
+				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
+				SubregionNames: src.Vm.SubregionNames,
+				SecurityGroupNames: lo.Map(src.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
 					return OscSecurityGroupElement(src)
 				}),
-				Role:      OscRole(srcNode.Vm.Role),
-				Tags:      srcNode.Vm.Tags,
-				Placement: OscPlacement(srcNode.Vm.Placement),
+				Role:      OscRole(src.Vm.Role),
+				Tags:      src.Vm.Tags,
+				Placement: OscPlacement(src.Vm.Placement),
 			},
-			Volumes: lo.Map(srcNode.Volumes, func(src infrastructurev1beta2.OscVolume, _ int) OscVolume {
+			Volumes: lo.Map(src.Volumes, func(src infrastructurev1beta2.OscVolume, _ int) OscVolume {
 				return OscVolume{
 					Name:         src.Name,
 					Device:       src.Device,
@@ -95,22 +93,22 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 				}
 			}),
 			Image: OscImage{
-				Name:               srcNode.Image.Name,
-				AccountId:          srcNode.Image.AccountId,
-				OutscaleOpenSource: srcNode.Image.OutscaleOpenSource,
+				Name:               src.Image.Name,
+				AccountId:          src.Image.AccountId,
+				OutscaleOpenSource: src.Image.OutscaleOpenSource,
 			},
 		},
 	}
-	if src.Node.Vm.FGPU != nil {
-		dst.Node.Vm.FGPU = new(OscFGPU(*src.Node.Vm.FGPU))
+	if src.Vm.FGPU != nil {
+		dst.Node.Vm.FGPU = new(OscFGPU(*src.Vm.FGPU))
 	}
-	if src.Node.ReconciliationRule != nil {
+	if src.ReconciliationRule != nil {
 		dst.Node.ReconciliationRule = &OscReconciliationRule{
-			AppliesTo: lo.Map(src.Node.ReconciliationRule.AppliesTo, func(src infrastructurev1beta2.Reconciler, _ int) Reconciler {
+			AppliesTo: lo.Map(src.ReconciliationRule.AppliesTo, func(src infrastructurev1beta2.Reconciler, _ int) Reconciler {
 				return Reconciler(src)
 			}),
-			Mode:                 ReconciliationMode(src.Node.ReconciliationRule.Mode),
-			ReconciliationChance: src.Node.ReconciliationRule.ReconciliationChance,
+			Mode:                 ReconciliationMode(src.ReconciliationRule.Mode),
+			ReconciliationChance: src.ReconciliationRule.ReconciliationChance,
 		}
 	}
 	return nil
@@ -154,4 +152,28 @@ func (dst *OscMachine) ConvertFrom(srcRaw conversion.Hub) error {
 	return dst.Spec.ConvertFrom(&src.Spec)
 }
 
-var _ conversion.Convertible = (*OscCluster)(nil)
+var _ conversion.Convertible = (*OscMachine)(nil)
+
+func (src *OscMachineList) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*infrastructurev1beta2.OscMachineList)
+	dst.Items = make([]infrastructurev1beta2.OscMachine, len(src.Items))
+	for i := range src.Items {
+		if err := src.Items[i].ConvertTo(&dst.Items[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (dst *OscMachineList) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*infrastructurev1beta2.OscMachineList)
+	dst.Items = make([]OscMachine, len(src.Items))
+	for i := range src.Items {
+		if err := dst.Items[i].ConvertFrom(&src.Items[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+var _ conversion.Convertible = (*OscMachineList)(nil)

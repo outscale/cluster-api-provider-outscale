@@ -49,9 +49,9 @@ func patchMoveMachine() patchOSCMachineFunc {
 
 func patchUsePublicIP(pool ...string) patchOSCMachineFunc {
 	return func(m *infrastructurev1beta2.OscMachine) {
-		m.Spec.Node.Vm.PublicIp = true
+		m.Spec.Vm.PublicIp = true
 		if len(pool) > 0 {
-			m.Spec.Node.Vm.PublicIpPool = pool[0]
+			m.Spec.Vm.PublicIpPool = pool[0]
 		}
 	}
 }
@@ -76,19 +76,19 @@ func patchDeleteMachine() patchOSCMachineFunc {
 
 func patchUseOpenSourceOMI() patchOSCMachineFunc {
 	return func(m *infrastructurev1beta2.OscMachine) {
-		m.Spec.Node.Image.OutscaleOpenSource = true
+		m.Spec.Image.OutscaleOpenSource = true
 	}
 }
 
 func patchRepulse(rep infrastructurev1beta2.OscPlacement) patchOSCMachineFunc {
 	return func(m *infrastructurev1beta2.OscMachine) {
-		m.Spec.Node.Vm.Placement = rep
+		m.Spec.Vm.Placement = rep
 	}
 }
 
 func patchTags(tags map[string]string) patchOSCMachineFunc {
 	return func(m *infrastructurev1beta2.OscMachine) {
-		m.Spec.Node.Vm.Tags = tags
+		m.Spec.Vm.Tags = tags
 	}
 }
 
