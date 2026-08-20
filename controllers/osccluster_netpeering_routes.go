@@ -29,7 +29,7 @@ func (r *OscClusterReconciler) getManagementRouteTablesAndIPRange(ctx context.Co
 	if err != nil {
 		return nil, "", fmt.Errorf("find mgmt route tables: %w", err)
 	}
-	subnetId := clusterScope.GetNetwork().NetPeering.ManagementSubnetID
+	subnetId := clusterScope.GetSpec().NetPeering.ManagementSubnetID
 	if subnetId == "" {
 		n, err := mgmtSvc.GetNet(ctx, netId)
 		if err != nil {
@@ -54,7 +54,7 @@ func (r *OscClusterReconciler) getManagementRouteTablesAndIPRange(ctx context.Co
 // reconcileNetPeeringRoutes reconcile the NetPeering routes.
 func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not reconciling netPeering routes for existing net")
 		return reconcile.Result{}, nil
 	}
@@ -125,7 +125,7 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 // reconcileDeleteNetPeering reconcile the destruction of the NetPeering of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing netPeering routes")
 		return reconcile.Result{}, nil
 	}

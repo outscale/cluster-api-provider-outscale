@@ -23,12 +23,11 @@ kind: OscCluster
 metadata:
   name: "${CLUSTER_NAME}"
 spec:
-  network:
-    subregionName: ${OSC_REGION}a
-    loadBalancer:
-      loadbalancername: "${CLUSTER_NAME}-k8s"
-    bastion:
-      enable: false
+  subregionName: ${OSC_REGION}a
+  loadBalancer:
+    loadbalancername: "${CLUSTER_NAME}-k8s"
+  bastion:
+    enable: false
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -60,18 +59,17 @@ metadata:
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_REGION}a
-          vmType: "${OSC_VM_TYPE}"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+        outscaleOpenSource: true
+      vm:
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        subregionName: ${OSC_REGION}a
+        vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
@@ -80,19 +78,18 @@ metadata:
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_REGION}a
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          role: controlplane
-          vmType: "${OSC_VM_TYPE}"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+        outscaleOpenSource: true
+      vm:
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        subregionName: ${OSC_REGION}a
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        role: controlplane
+        vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate

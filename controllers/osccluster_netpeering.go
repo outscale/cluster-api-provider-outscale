@@ -18,15 +18,15 @@ import (
 )
 
 func (r *OscClusterReconciler) getMgmtAccountID(clusterScope *scope.ClusterScope) string {
-	if clusterScope.GetNetwork().NetPeering.ManagementAccountID != "" {
-		return clusterScope.GetNetwork().NetPeering.ManagementAccountID
+	if clusterScope.GetSpec().NetPeering.ManagementAccountID != "" {
+		return clusterScope.GetSpec().NetPeering.ManagementAccountID
 	}
 	return r.Metadata.AccountID
 }
 
 func (r *OscClusterReconciler) getMgmtNetID(clusterScope *scope.ClusterScope) string {
-	if clusterScope.GetNetwork().NetPeering.ManagementNetID != "" {
-		return clusterScope.GetNetwork().NetPeering.ManagementNetID
+	if clusterScope.GetSpec().NetPeering.ManagementNetID != "" {
+		return clusterScope.GetSpec().NetPeering.ManagementNetID
 	}
 	return r.Metadata.NetID
 }
@@ -34,7 +34,7 @@ func (r *OscClusterReconciler) getMgmtNetID(clusterScope *scope.ClusterScope) st
 // reconcileNetPeering reconcile the NetPeering of the cluster.
 func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not reconciling netPeering for existing net")
 		return reconcile.Result{}, nil
 	}
@@ -88,7 +88,7 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 // reconcileDeleteNetPeering reconcile the destruction of the NetPeering of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNetPeering(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing netPeerings")
 		return reconcile.Result{}, nil
 	}

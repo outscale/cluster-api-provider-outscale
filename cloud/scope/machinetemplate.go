@@ -67,12 +67,12 @@ func (m *MachineTemplateScope) PatchObject(ctx context.Context) error {
 }
 
 func (m *MachineTemplateScope) GetVmType() string {
-	return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.VmType
+	return m.OscMachineTemplate.Spec.Template.Spec.Vm.VmType
 }
 
 func (m *MachineTemplateScope) GetRole() infrastructurev1beta2.OscRole {
-	if m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Role != "" {
-		return m.OscMachineTemplate.Spec.Template.Spec.Node.Vm.Role
+	if m.OscMachineTemplate.Spec.Template.Spec.Vm.Role != "" {
+		return m.OscMachineTemplate.Spec.Template.Spec.Vm.Role
 	}
 	return infrastructurev1beta2.RoleWorker
 }

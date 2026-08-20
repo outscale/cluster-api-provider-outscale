@@ -36,41 +36,43 @@ func patchDeleteCluster() patchOSCClusterFunc {
 
 func patchUseExistingNet() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.UseExisting.Net = true
+		m.Spec.UseExisting.Net = true
+		// NAT public IP was not allocated by us, it is not tracked
+		m.Status.Resources.PublicIPs = nil
 	}
 }
 
 func patchUseExistingSecurityGroups() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.UseExisting.SecurityGroups = true
+		m.Spec.UseExisting.SecurityGroups = true
 	}
 }
 
 func patchRestrictFromIP(ips ...string) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.AllowFromIPRanges = ips
+		m.Spec.AllowFromIPRanges = ips
 	}
 }
 
 func patchRestrictToIP(ips ...string) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.AllowToIPRanges = ips
+		m.Spec.AllowToIPRanges = ips
 	}
 }
 
 func patchManualSGs(sgs []infrastructurev1beta2.OscSecurityGroup) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
-		m.Spec.Network.SecurityGroups = sgs
+		m.Spec.SecurityGroups = sgs
 	}
 }
 
 func patchAddSGRule(name string, r infrastructurev1beta2.OscSecurityGroupRule) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
-		for i, sg := range m.Spec.Network.SecurityGroups {
+		for i, sg := range m.Spec.SecurityGroups {
 			if sg.Name == name {
-				m.Spec.Network.SecurityGroups[i].SecurityGroupRules = append(m.Spec.Network.SecurityGroups[i].SecurityGroupRules, r)
+				m.Spec.SecurityGroups[i].SecurityGroupRules = append(m.Spec.SecurityGroups[i].SecurityGroupRules, r)
 				return
 			}
 		}
@@ -80,7 +82,7 @@ func patchAddSGRule(name string, r infrastructurev1beta2.OscSecurityGroupRule) p
 func patchAdditionalSGRule(add infrastructurev1beta2.OscAdditionalSecurityRules) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
-		m.Spec.Network.AdditionalSecurityRules = append(m.Spec.Network.AdditionalSecurityRules, add)
+		m.Spec.AdditionalSecurityRules = append(m.Spec.AdditionalSecurityRules, add)
 	}
 }
 
@@ -92,13 +94,13 @@ func patchIncrementGeneration() patchOSCClusterFunc {
 
 func patchSubregions(subregions ...string) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.Subregions = subregions
+		m.Spec.Subregions = subregions
 	}
 }
 
 func patchNATIPFromPool(name string) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.NatPublicIpPool = name
+		m.Spec.NatPublicIpPool = name
 	}
 }
 
@@ -110,8 +112,8 @@ func patchUseCredentials(c infrastructurev1beta2.OscCredentials) patchOSCCluster
 
 func patchDisableLB() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Network.Disable = append(m.Spec.Network.Disable, infrastructurev1beta2.DisableLB)
-		m.Spec.Network.LoadBalancer = infrastructurev1beta2.OscLoadBalancer{}
+		m.Spec.Disable = append(m.Spec.Disable, infrastructurev1beta2.DisableLB)
+		m.Spec.LoadBalancer = infrastructurev1beta2.OscLoadBalancer{}
 		m.Spec.ControlPlaneEndpoint = v1beta1.APIEndpoint{
 			Host: "api.example.com",
 			Port: 443,

@@ -244,13 +244,15 @@ setup-dev: setup-kind use-kind credentials deploy-clusterapi
 
 KIND_IMG_TAG ?= $(shell date '+%Y%m%d%H%M')
 KIND_IMG ?= localhost:$(KIND_REGISTRY_PORT)/$(IMAGE_NAME):$(KIND_IMG_TAG)
+DEV_REF ?= $(shell git rev-parse HEAD)
 
 .PHONY: build-dev
 build-dev:
-	docker build --build-arg VERSION=$(VERSION) -t ${KIND_IMG} .
+	goreleaser release --clean --snapshot
 
 .PHONY: push-dev
 push-dev:
+	docker tag $(REGISTRY)/$(IMAGE_NAME):${DEV_REF}-amd64 ${KIND_IMG}
 	docker push ${KIND_IMG}
 
 .PHONY: deploy-dev
@@ -261,10 +263,10 @@ KUSTOMIZE := $(shell command -v kustomize 2> /dev/null)
 .PHONY: deploy
 deploy: envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 ifndef KUSTOMIZE
-	cd config/default && $(LOCAL_KUSTOMIZE) edit set image controller=${KIND_IMG}
+	cd config/default && $(LOCAL_KUSTOMIZE) edit set image outscale/cluster-api-outscale-controllers=${KIND_IMG}
 	$(LOCAL_KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 else
-	cd config/default && $(KUSTOMIZE) edit set image controller=${KIND_IMG}
+	cd config/default && $(KUSTOMIZE) edit set image outscale/cluster-api-outscale-controllers=${KIND_IMG}
 	$(KUSTOMIZE) build config/default | $(ENVSUBST) | kubectl apply -f -
 endif
 

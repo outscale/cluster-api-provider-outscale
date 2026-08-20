@@ -9,8 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute/mock_compute"
@@ -120,10 +122,10 @@ type testcase struct {
 	next *testcase
 }
 
-var reVersion = regexp.MustCompile("-[0-9.]+$")
+var reAPIVersion = regexp.MustCompile("^v1beta[12]/")
 
 func trimVersion(spec string) string {
-	return reVersion.ReplaceAllString(spec, "")
+	return reAPIVersion.ReplaceAllString(spec, "")
 }
 
 func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *infrastructurev1beta2.OscCluster) {
@@ -140,8 +142,16 @@ func loadClusterSpecs(t *testing.T, spec, base string) (*clusterv1.Cluster, *inf
 		decode(t, "cluster/"+base+".yaml", &cluster)
 		cname = cluster.Name
 	}
+
 	var osccluster infrastructurev1beta2.OscCluster
-	decode(t, "osccluster/"+spec+".yaml", &osccluster)
+	if strings.HasPrefix(spec, "v1beta1") {
+		var osccluster1 infrastructurev1beta1.OscCluster
+		decode(t, "osccluster/"+spec+".yaml", &osccluster1)
+		err := osccluster1.ConvertTo(&osccluster)
+		require.NoError(t, err)
+	} else {
+		decode(t, "osccluster/"+spec+".yaml", &osccluster)
+	}
 	osccluster.Labels = map[string]string{clusterv1.ClusterNameLabel: osccluster.Name}
 	osccluster.OwnerReferences = []metav1.OwnerReference{{
 		APIVersion: "cluster.x-k8s.io/v1beta1",
@@ -166,7 +176,14 @@ func loadMachineSpecs(t *testing.T, spec, base, clusterName string) (*clusterv1.
 		mname = machine.Name
 	}
 	var oscmachine infrastructurev1beta2.OscMachine
-	decode(t, "oscmachine/"+spec+".yaml", &oscmachine)
+	if strings.HasPrefix(spec, "v1beta1") {
+		var oscmachine1 infrastructurev1beta1.OscMachine
+		decode(t, "oscmachine/"+spec+".yaml", &oscmachine1)
+		err := oscmachine1.ConvertTo(&oscmachine)
+		require.NoError(t, err)
+	} else {
+		decode(t, "oscmachine/"+spec+".yaml", &oscmachine)
+	}
 	oscmachine.Labels = map[string]string{clusterv1.ClusterNameLabel: clusterName}
 	oscmachine.OwnerReferences = []metav1.OwnerReference{{
 		APIVersion: "cluster.x-k8s.io/v1beta1",
