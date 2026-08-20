@@ -33,7 +33,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: outscale/cluster-api-outscale-controllers:dev
         name: manager
         imagePullPolicy: IfNotPresent
         securityContext:
@@ -63,7 +63,7 @@ spec:
           - name: OSC_ACCESS_KEY
             valueFrom:
               secretKeyRef:
-                name: cluster-api-provider-outscale 
+                name: cluster-api-provider-outscale
                 key: access_key
                 optional: true
           - name: OSC_SECRET_KEY

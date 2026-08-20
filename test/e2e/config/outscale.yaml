@@ -51,7 +51,7 @@ providers:
         value: "../../../config/default"
         contract: v1beta1
         replacements:
-          - old: controller:latest
+          - old: outscale/cluster-api-outscale-controllers:dev
             new: ${IMG:-}
           - old: "imagePullPolicy: Always"
             new: "imagePullPolicy: IfNotPresent"

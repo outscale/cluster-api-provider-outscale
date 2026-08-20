@@ -24,17 +24,6 @@ const (
 	RoleInternalService OscRole = "service.internal"
 )
 
-type OscNode struct {
-	Vm      OscVm       `json:"vm,omitempty"`
-	Image   OscImage    `json:"image,omitempty"`
-	Volumes []OscVolume `json:"volumes,omitempty"`
-	// deprecated, use vm.keypairName
-	KeyPair OscKeypair `json:"keypair,omitempty"`
-	// Reconciliation rules (default: {*, onChange})
-	// +optional
-	ReconciliationRule *OscReconciliationRule `json:"reconciliationRule,omitempty"`
-}
-
 type OscCredentials struct {
 	// Load credentials from this secret instead of the env.
 	// +optional
@@ -45,70 +34,6 @@ type OscCredentials struct {
 	// Name of profile stored in file (unused when using fromSecret, "default" by default).
 	// +optional
 	Profile string `json:"profile,omitempty"`
-}
-
-type OscNetwork struct {
-	// Reuse externally managed resources ?
-	// +optional
-	UseExisting OscReuse `json:"useExisting,omitempty,omitzero"`
-	// List of disabled features (internet = no internet service, no nat services)
-	// +optional
-	Disable []OscDisable `json:"disable,omitempty"`
-	// The Load Balancer configuration
-	// +optional
-	LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty,omitzero"`
-	// The Net configuration
-	// +optional
-	Net OscNet `json:"net,omitempty,omitzero"`
-	// The NetPeering configuration, required if the load balancer is internal, and management and workload clusters are on separate VPCs.
-	// +optional
-	NetPeering OscNetPeering `json:"netPeering,omitempty,omitzero"`
-	// The NetAccessPoints configuration, required if internet is disabled.
-	// +optional
-	NetAccessPoints []OscNetAccessPointService `json:"netAccessPoints,omitempty"`
-	// List of subnet to spread controlPlane nodes (deprecated, add controlplane role to subnets)
-	// +optional
-	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
-	// The Subnets configuration
-	// +optional
-	Subnets []OscSubnet `json:"subnets,omitempty"`
-	// The Internet Service configuration
-	// +optional
-	InternetService OscInternetService `json:"internetService,omitempty,omitzero"`
-	// The Nat Service configuration
-	// +optional
-	NatService OscNatService `json:"natService,omitempty,omitzero"`
-	// The Nat Services configuration
-	// +optional
-	NatServices []OscNatService `json:"natServices,omitempty"`
-	// The IP Pool storing the Nat Services public IPs
-	// +optional
-	NatPublicIpPool string `json:"natPublicIpPool,omitempty"`
-	// The Route Table configuration
-	// +optional
-	RouteTables []OscRouteTable `json:"routeTables,omitempty"`
-	// The Security Groups configuration.
-	// +optional
-	SecurityGroups []OscSecurityGroup `json:"securityGroups,omitempty"`
-	// Additional rules to add to the automatic security groups
-	// +optional
-	AdditionalSecurityRules []OscAdditionalSecurityRules `json:"additionalSecurityRules,omitempty"`
-	// The bastion configuration
-	// + optional
-	Bastion OscBastion `json:"bastion,omitempty,omitzero"`
-	// The default subregion name (deprecated, use subregions)
-	SubregionName string `json:"subregionName,omitempty"`
-	// The list of subregions where to deploy this cluster
-	Subregions []string `json:"subregions,omitempty"`
-	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
-	// + optional
-	AllowFromIPRanges []string `json:"allowFromIPRanges,omitempty"`
-	// The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
-	// + optional
-	AllowToIPRanges []string `json:"allowToIPRanges,omitempty"`
-	// Reconciliation rules (default: {securityGroup, random, 10%}, {*, onChange}). Only the first matching rule applies.
-	// + optional
-	ReconciliationRules []OscReconciliationRule `json:"reconciliationRules,omitempty"`
 }
 
 type OscReuse struct {
