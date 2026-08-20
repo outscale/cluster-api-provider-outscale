@@ -34,7 +34,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 	for _, subnetSpec := range clusterScope.GetSubnets() {
 		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
 		switch {
-		case IsNotFound(err) && !clusterScope.GetNetwork().UseExisting.Net:
+		case IsNotFound(err) && !clusterScope.GetSpec().UseExisting.Net:
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		default:
@@ -68,7 +68,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 // reconcileDeleteSubnet reconcile the destruction of the Subnet of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing subnets")
 		return reconcile.Result{}, nil
 	}

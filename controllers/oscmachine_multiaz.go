@@ -124,7 +124,7 @@ func (a *MultiAZAllocator) refreshWorkers(ctx context.Context, ns string) error 
 		if err != nil {
 			continue
 		}
-		if m.Spec.Node.Vm.GetRole() == infrastructurev1beta2.RoleControlPlane {
+		if m.Spec.Vm.GetRole() == infrastructurev1beta2.RoleControlPlane {
 			continue
 		}
 		name := a.name(&m)

@@ -10,7 +10,7 @@ spec:
     pods:
       cidrBlocks: ["10.42.0.0/16"]
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
     kind: OscCluster
     name: "${CLUSTER_NAME}"
   controlPlaneRef:
@@ -18,17 +18,16 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     name: "${CLUSTER_NAME}-control-plane"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscCluster
 metadata:
   name: "${CLUSTER_NAME}"
 spec:
-  network:
-    subregionName: ${OSC_REGION}a
-    loadBalancer:
-      loadbalancername: "upgrade-k8s-again"
-    bastion:
-      enable: false
+  subregionName: ${OSC_REGION}a
+  loadBalancer:
+    loadbalancername: "upgrade-k8s-again"
+  bastion:
+    enable: false
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -50,103 +49,99 @@ spec:
           kind: KubeadmConfigTemplate
       infrastructureRef:
         name: "${CLUSTER_NAME}-md-0"
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
         kind: OscMachineTemplate
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "${CLUSTER_NAME}-md-0"
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          privateIps:
-            - name: ${CLUSTER_NAME}-privateip-kw
-              privateIp: "10.0.0.138"
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: ${OSC_REGION}a
-          vmType: "${OSC_VM_TYPE}"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+        outscaleOpenSource: true
+      vm:
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        privateIps:
+          - name: ${CLUSTER_NAME}-privateip-kw
+            privateIp: "10.0.0.138"
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        subregionName: ${OSC_REGION}a
+        vmType: "${OSC_VM_TYPE}"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "worker-k8s-upgrade-and-conformance"
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          privateIps:
-            - name: ${CLUSTER_NAME}-privateip-kw-upgrade
-              privateIp: "10.0.0.136"
-          subregionName: ${OSC_REGION}a
-          vmType: "${OSC_VM_TYPE}"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+        outscaleOpenSource: true
+      vm:
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        privateIps:
+          - name: ${CLUSTER_NAME}-privateip-kw-upgrade
+            privateIp: "10.0.0.136"
+        subregionName: ${OSC_REGION}a
+        vmType: "${OSC_VM_TYPE}"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "${CLUSTER_NAME}-control-plane"
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_REGION}a
-          privateIps:
-            - name: ${CLUSTER_NAME}-privateip-kcp
-              privateIp: "10.0.0.38"
-          role: controlplane
-          vmType: "${OSC_VM_TYPE}"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+        outscaleOpenSource: true
+      vm:
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        subregionName: ${OSC_REGION}a
+        privateIps:
+          - name: ${CLUSTER_NAME}-privateip-kcp
+            privateIp: "10.0.0.38"
+        role: controlplane
+        vmType: "${OSC_VM_TYPE}"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cp-k8s-upgrade-and-conformance"
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
-          outscaleOpenSource: true
-        vm:
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: ${OSC_REGION}a
-          privateIps:
-            - name: ${CLUSTER_NAME}-privateip-kcp-upgrade
-              privateIp: "10.0.0.36"
-          role: controlplane
-          loadBalancerName: "upgrade-k8s-again"
-          vmType: "${OSC_VM_TYPE}"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
+        outscaleOpenSource: true
+      vm:
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        subregionName: ${OSC_REGION}a
+        privateIps:
+          - name: ${CLUSTER_NAME}-privateip-kcp-upgrade
+            privateIp: "10.0.0.36"
+        role: controlplane
+        loadBalancerName: "upgrade-k8s-again"
+        vmType: "${OSC_VM_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
@@ -174,7 +169,7 @@ spec:
   machineTemplate:
     infrastructureRef:
       kind: OscMachineTemplate
-      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
     initConfiguration:

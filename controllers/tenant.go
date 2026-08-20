@@ -35,7 +35,7 @@ func getTenant(ctx context.Context, cl client.Client, c services.Servicer, clust
 
 func getMgmtTenant(ctx context.Context, cl client.Client, c services.Servicer, cluster *infrastructurev1beta2.OscCluster) (tenant.Tenant, error) {
 	logger := log.FromContext(ctx).V(4)
-	creds := cluster.Spec.Network.NetPeering.ManagementCredentials
+	creds := cluster.Spec.NetPeering.ManagementCredentials
 	switch {
 	case creds.FromFile != "":
 		logger.Info("Using tenant from file for management cluster", "file", creds.FromFile, "profile", creds.Profile)

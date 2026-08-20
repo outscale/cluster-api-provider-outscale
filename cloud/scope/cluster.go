@@ -105,47 +105,47 @@ func (s *ClusterScope) GetRegion() string {
 	return s.Tenant.Region()
 }
 
-// GetNetwork return the network of the cluster
-func (s *ClusterScope) GetNetwork() *infrastructurev1beta2.OscNetwork {
-	return &s.OscCluster.Spec.Network
+// GetSpec return the OscCluster spec
+func (s *ClusterScope) GetSpec() *infrastructurev1beta2.OscClusterSpec {
+	return &s.OscCluster.Spec
 }
 
 // GetNet return the net of the cluster
 func (s *ClusterScope) GetNet() infrastructurev1beta2.OscNet {
-	if s.OscCluster.Spec.Network.Net.IsZero() {
+	if s.OscCluster.Spec.Net.IsZero() {
 		return infrastructurev1beta2.DefaultNet
 	}
-	return s.OscCluster.Spec.Network.Net
+	return s.OscCluster.Spec.Net
 }
 
 // GetNetName return the name of the net
 func (s *ClusterScope) GetNetName() string {
-	if s.OscCluster.Spec.Network.Net.Name != "" {
-		return s.OscCluster.Spec.Network.Net.Name
+	if s.OscCluster.Spec.Net.Name != "" {
+		return s.OscCluster.Spec.Net.Name
 	}
 	return "Net for " + s.OscCluster.Name
 }
 
 // GetDefaultSubregion returns the default subregion.
 func (s *ClusterScope) GetDefaultSubregion() string {
-	if len(s.GetNetwork().Subregions) > 0 {
-		return s.GetNetwork().Subregions[0]
+	if len(s.GetSpec().Subregions) > 0 {
+		return s.GetSpec().Subregions[0]
 	}
-	return s.GetNetwork().SubregionName
+	return s.GetSpec().SubregionName
 }
 
 // GetSubregions returns the subregions where to deploy the cluster.
 func (s *ClusterScope) GetSubregions() []string {
-	if len(s.GetNetwork().Subregions) > 0 {
-		return s.GetNetwork().Subregions
+	if len(s.GetSpec().Subregions) > 0 {
+		return s.GetSpec().Subregions
 	}
-	return []string{s.GetNetwork().SubregionName}
+	return []string{s.GetSpec().SubregionName}
 }
 
 // GetSubnets returns the subnets of the cluster.
 func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
-	if len(s.OscCluster.Spec.Network.Subnets) > 0 {
-		return s.OscCluster.Spec.Network.Subnets
+	if len(s.OscCluster.Spec.Subnets) > 0 {
+		return s.OscCluster.Spec.Subnets
 	}
 	_, net, err := net.ParseCIDR(s.GetNet().IpRange)
 	if err != nil {
@@ -195,10 +195,10 @@ func (s *ClusterScope) SubnetHasRole(spec infrastructurev1beta2.OscSubnet, role 
 	if len(spec.Roles) > 0 {
 		return slices.Contains(spec.Roles, role)
 	}
-	if slices.Contains(s.OscCluster.Spec.Network.ControlPlaneSubnets, spec.Name) || strings.Contains(spec.Name, "kcp") {
+	if slices.Contains(s.OscCluster.Spec.ControlPlaneSubnets, spec.Name) || strings.Contains(spec.Name, "kcp") {
 		return role == infrastructurev1beta2.RoleControlPlane
 	}
-	if s.OscCluster.Spec.Network.LoadBalancer.SubnetName != "" && spec.Name == s.OscCluster.Spec.Network.LoadBalancer.SubnetName {
+	if s.OscCluster.Spec.LoadBalancer.SubnetName != "" && spec.Name == s.OscCluster.Spec.LoadBalancer.SubnetName {
 		return role == infrastructurev1beta2.RoleLoadBalancer || role == infrastructurev1beta2.RoleBastion || role == infrastructurev1beta2.RoleNat
 	}
 	return role == infrastructurev1beta2.RoleWorker
@@ -234,18 +234,18 @@ func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta2.OscSubnet) strin
 
 // IsInternetDisabled checks if internet is disabled.
 func (s *ClusterScope) IsInternetDisabled() bool {
-	return slices.Contains(s.GetNetwork().Disable, infrastructurev1beta2.DisableInternet)
+	return slices.Contains(s.GetSpec().Disable, infrastructurev1beta2.DisableInternet)
 }
 
 // IsLBDisabled checks if loadbalancer is disabled.
 func (s *ClusterScope) IsLBDisabled() bool {
-	return slices.Contains(s.GetNetwork().Disable, infrastructurev1beta2.DisableLB)
+	return slices.Contains(s.GetSpec().Disable, infrastructurev1beta2.DisableLB)
 }
 
 // GetInternetServiceName return the name of the net
 func (s *ClusterScope) GetInternetServiceName() string {
-	if s.OscCluster.Spec.Network.InternetService.Name != "" {
-		return s.OscCluster.Spec.Network.InternetService.Name
+	if s.OscCluster.Spec.InternetService.Name != "" {
+		return s.OscCluster.Spec.InternetService.Name
 	}
 	return "Internet Service for " + s.OscCluster.Name
 }
@@ -258,12 +258,12 @@ func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
 		return nil
 	}
 	switch {
-	case s.OscCluster.Spec.Network.UseExisting.Net:
+	case s.OscCluster.Spec.UseExisting.Net:
 		return nil
-	case len(s.OscCluster.Spec.Network.NatServices) > 0:
-		return s.OscCluster.Spec.Network.NatServices
-	case s.OscCluster.Spec.Network.NatService != infrastructurev1beta2.OscNatService{}:
-		return []infrastructurev1beta2.OscNatService{s.OscCluster.Spec.Network.NatService}
+	case len(s.OscCluster.Spec.NatServices) > 0:
+		return s.OscCluster.Spec.NatServices
+	case s.OscCluster.Spec.NatService != infrastructurev1beta2.OscNatService{}:
+		return []infrastructurev1beta2.OscNatService{s.OscCluster.Spec.NatService}
 	default:
 		var nss []infrastructurev1beta2.OscNatService
 		for _, subnet := range s.GetSubnets() {
@@ -330,8 +330,8 @@ func (s *ClusterScope) GetNatServiceClientToken(nat infrastructurev1beta2.OscNat
 
 // GetRouteTables return the routeTables of the cluster
 func (s *ClusterScope) GetRouteTables() []infrastructurev1beta2.OscRouteTable {
-	if len(s.OscCluster.Spec.Network.RouteTables) > 0 {
-		return s.OscCluster.Spec.Network.RouteTables
+	if len(s.OscCluster.Spec.RouteTables) > 0 {
+		return s.OscCluster.Spec.RouteTables
 	}
 	subnets := s.GetSubnets()
 	rtbls := make([]infrastructurev1beta2.OscRouteTable, 0, len(subnets))
@@ -360,11 +360,11 @@ func (s *ClusterScope) GetRouteTables() []infrastructurev1beta2.OscRouteTable {
 
 // HasIPRestriction returns true if AllowFromIps is set.
 func (s *ClusterScope) HasIPRestriction() bool {
-	return len(s.OscCluster.Spec.Network.AllowFromIPRanges) > 0
+	return len(s.OscCluster.Spec.AllowFromIPRanges) > 0
 }
 
 func (s *ClusterScope) getAdditionalRules(roles ...infrastructurev1beta2.OscRole) []infrastructurev1beta2.OscSecurityGroupRule {
-	for _, ar := range s.GetNetwork().AdditionalSecurityRules {
+	for _, ar := range s.GetSpec().AdditionalSecurityRules {
 		if slices.Equal(roles, ar.Roles) {
 			return ar.Rules
 		}
@@ -374,19 +374,19 @@ func (s *ClusterScope) getAdditionalRules(roles ...infrastructurev1beta2.OscRole
 
 // GetSecurityGroups returns the list of all security groups for the cluster.
 func (s *ClusterScope) GetSecurityGroups() []infrastructurev1beta2.OscSecurityGroup {
-	if len(s.OscCluster.Spec.Network.SecurityGroups) > 0 {
+	if len(s.OscCluster.Spec.SecurityGroups) > 0 {
 		return s.getManualSecurityGroups()
 	}
 	return s.getAutomaticSecurityGroups()
 }
 
 func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta2.OscSecurityGroup {
-	allowedIn := s.OscCluster.Spec.Network.AllowFromIPRanges
-	allowedOut := s.OscCluster.Spec.Network.AllowToIPRanges
+	allowedIn := s.OscCluster.Spec.AllowFromIPRanges
+	allowedOut := s.OscCluster.Spec.AllowToIPRanges
 	if len(allowedIn) == 0 && len(allowedOut) == 0 {
-		return s.OscCluster.Spec.Network.SecurityGroups
+		return s.OscCluster.Spec.SecurityGroups
 	}
-	sgs := slices.Clone(s.OscCluster.Spec.Network.SecurityGroups)
+	sgs := slices.Clone(s.OscCluster.Spec.SecurityGroups)
 	for i := range sgs {
 		sgs[i].SecurityGroupRules = slices.Clone(sgs[i].SecurityGroupRules)
 	}
@@ -432,7 +432,7 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		}
 		allSN = append(allSN, sn.IpSubnetRange)
 	}
-	allowedIn := s.OscCluster.Spec.Network.AllowFromIPRanges
+	allowedIn := s.OscCluster.Spec.AllowFromIPRanges
 	if len(allowedIn) == 0 {
 		allowedIn = []string{"0.0.0.0/0"}
 	}
@@ -474,7 +474,7 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 	}
 	controlplane.SecurityGroupRules = append(controlplane.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta2.RoleControlPlane)...)
 
-	allowedOut := s.OscCluster.Spec.Network.AllowToIPRanges
+	allowedOut := s.OscCluster.Spec.AllowToIPRanges
 	switch {
 	case len(allowedOut) == 0:
 		allowedOut = []string{"0.0.0.0/0"}
@@ -516,7 +516,7 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 	}
 	node.SecurityGroupRules = append(node.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker)...)
 
-	if !s.OscCluster.Spec.Network.Bastion.Enable {
+	if !s.OscCluster.Spec.Bastion.Enable {
 		return []infrastructurev1beta2.OscSecurityGroup{lb, worker, controlplane, node}
 	}
 	node.SecurityGroupRules = append(node.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
@@ -598,7 +598,7 @@ func (s *ClusterScope) SetFailureDomain(id string, spec clusterv1.FailureDomainS
 
 // GetLoadBalancer return the loadbalanacer of the cluster
 func (s *ClusterScope) GetLoadBalancer() infrastructurev1beta2.OscLoadBalancer {
-	lb := s.OscCluster.Spec.Network.LoadBalancer
+	lb := s.OscCluster.Spec.LoadBalancer
 	if lb.LoadBalancerName == "" {
 		lb.LoadBalancerName = s.GetName() + "-k8s"
 	}
@@ -608,7 +608,7 @@ func (s *ClusterScope) GetLoadBalancer() infrastructurev1beta2.OscLoadBalancer {
 
 // GetIpSubnetRange return IpSubnetRang from the subnet
 func (s *ClusterScope) GetIpSubnetRange(name string) string {
-	subnets := s.OscCluster.Spec.Network.Subnets
+	subnets := s.OscCluster.Spec.Subnets
 	for _, subnet := range subnets {
 		if subnet.Name == name {
 			return subnet.IpSubnetRange
@@ -619,7 +619,7 @@ func (s *ClusterScope) GetIpSubnetRange(name string) string {
 
 // GetSecurityGroupRule return slices of securityGroupRule asscociated with securityGroup Name
 func (s *ClusterScope) GetSecurityGroupRule(name string) []infrastructurev1beta2.OscSecurityGroupRule {
-	securityGroups := s.OscCluster.Spec.Network.SecurityGroups
+	securityGroups := s.OscCluster.Spec.SecurityGroups
 	for _, securityGroup := range securityGroups {
 		if securityGroup.Name == name {
 			return securityGroup.SecurityGroupRules
@@ -665,25 +665,25 @@ func (s *ClusterScope) SetReady() {
 
 // GetBastion return the vm bastion
 func (s *ClusterScope) GetBastion() infrastructurev1beta2.OscBastion {
-	if !s.OscCluster.Spec.Network.Bastion.Enable {
+	if !s.OscCluster.Spec.Bastion.Enable {
 		return infrastructurev1beta2.OscBastion{}
 	}
-	bastionSpec := s.OscCluster.Spec.Network.Bastion
+	bastionSpec := s.OscCluster.Spec.Bastion
 	bastionSpec.SetDefaultValue()
 	return bastionSpec
 }
 
 // GetBastionName return the name of the bastion
 func (s *ClusterScope) GetBastionName() string {
-	if s.OscCluster.Spec.Network.Bastion.Name != "" {
-		return s.OscCluster.Spec.Network.Bastion.Name
+	if s.OscCluster.Spec.Bastion.Name != "" {
+		return s.OscCluster.Spec.Bastion.Name
 	}
 	return "Bastion for " + s.GetName()
 }
 
 func (s *ClusterScope) GetBastionClientToken() string {
-	if s.OscCluster.Spec.Network.Bastion.Name != "" {
-		ct := s.OscCluster.Spec.Network.Bastion.Name + "-" + s.GetUID()
+	if s.OscCluster.Spec.Bastion.Name != "" {
+		ct := s.OscCluster.Spec.Bastion.Name + "-" + s.GetUID()
 		if len(ct) > 64 {
 			ct = ct[len(ct)-64:]
 		}
@@ -718,7 +718,7 @@ func (s *ClusterScope) GetResources() *infrastructurev1beta2.OscClusterResources
 }
 
 func (s *ClusterScope) getreconciliationRule(reconciler infrastructurev1beta2.Reconciler) infrastructurev1beta2.OscReconciliationRule {
-	for _, r := range s.GetNetwork().ReconciliationRules {
+	for _, r := range s.GetSpec().ReconciliationRules {
 		if slices.Contains(r.AppliesTo, infrastructurev1beta2.ReconcilerAll) || slices.Contains(r.AppliesTo, reconciler) {
 			return r
 		}

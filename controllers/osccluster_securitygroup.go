@@ -112,7 +112,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 		return reconcile.Result{}, nil
 	}
 
-	if clusterScope.GetNetwork().UseExisting.SecurityGroups {
+	if clusterScope.GetSpec().UseExisting.SecurityGroups {
 		log.V(3).Info("Using existing securityGroups")
 		return reconcile.Result{}, nil
 	}
@@ -170,7 +170,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroup(ctx context.Context, clust
 func (r *OscClusterReconciler) reconcileDeleteSecurityGroup(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	if clusterScope.GetNetwork().UseExisting.SecurityGroups {
+	if clusterScope.GetSpec().UseExisting.SecurityGroups {
 		log.V(3).Info("Not deleting existing securityGroups")
 		return reconcile.Result{}, nil
 	}

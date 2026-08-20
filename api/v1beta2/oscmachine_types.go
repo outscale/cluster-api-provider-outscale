@@ -19,7 +19,15 @@ import (
 // OscMachineSpec defines the desired state of OscMachine
 type OscMachineSpec struct {
 	ProviderID *string `json:"providerID,omitempty"`
-	Node       OscNode `json:"node,omitempty"`
+
+	Vm      OscVm       `json:"vm,omitempty"`
+	Image   OscImage    `json:"image,omitempty"`
+	Volumes []OscVolume `json:"volumes,omitempty"`
+	// deprecated, use vm.keypairName
+	KeyPair OscKeypair `json:"keypair,omitempty"`
+	// Reconciliation rules (default: {*, onChange})
+	// +optional
+	ReconciliationRule *OscReconciliationRule `json:"reconciliationRule,omitempty"`
 }
 
 // OscMachineStatus defines the observed state of OscMachine

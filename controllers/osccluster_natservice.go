@@ -25,7 +25,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		log.V(4).Info("No need for natService reconciliation")
 		return reconcile.Result{}, nil
 	}
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(3).Info("Reusing existing natServices")
 		return reconcile.Result{}, nil
 	}
@@ -48,7 +48,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		}
 
 		publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
-			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope.GetNetwork().NatPublicIpPool, clusterScope)
+			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope.GetSpec().NatPublicIpPool, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 		}
@@ -102,7 +102,7 @@ func (r *OscClusterReconciler) listNATPublicIPs(ctx context.Context, clusterScop
 // reconcileDeleteNatService reconcile the destruction of the NatService of the cluster.
 func (r *OscClusterReconciler) reconcileDeleteNatService(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if clusterScope.GetNetwork().UseExisting.Net {
+	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(3).Info("Not deleting existing nat services")
 		return reconcile.Result{}, nil
 	}
