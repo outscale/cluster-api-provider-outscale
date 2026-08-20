@@ -112,7 +112,7 @@ func patchUseCredentials(c infrastructurev1beta2.OscCredentials) patchOSCCluster
 
 func patchDisableLB() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
-		m.Spec.Disable = append(m.Spec.Disable, infrastructurev1beta2.DisableLB)
+		m.Spec.Disable.Loadbalancer = true
 		m.Spec.LoadBalancer = infrastructurev1beta2.OscLoadBalancer{}
 		m.Spec.ControlPlaneEndpoint = v1beta1.APIEndpoint{
 			Host: "api.example.com",

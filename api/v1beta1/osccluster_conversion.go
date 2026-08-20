@@ -13,9 +13,10 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 
 		Credentials: infrastructurev1beta2.OscCredentials(src.Credentials),
 		UseExisting: infrastructurev1beta2.OscReuse(srcNet.UseExisting),
-		Disable: lo.Map(srcNet.Disable, func(src OscDisable, _ int) infrastructurev1beta2.OscDisable {
-			return infrastructurev1beta2.OscDisable(src)
-		}),
+		Disable: infrastructurev1beta2.OscDisable{
+			Internet:     lo.Contains(srcNet.Disable, DisableInternet),
+			Loadbalancer: lo.Contains(srcNet.Disable, DisableLB),
+		},
 		LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
 			LoadBalancerName:  srcNet.LoadBalancer.LoadBalancerName,
 			LoadBalancerType:  srcNet.LoadBalancer.LoadBalancerType,
@@ -138,9 +139,6 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 	dst.Credentials = OscCredentials(src.Credentials)
 	dst.Network = OscNetwork{
 		UseExisting: OscReuse(src.UseExisting),
-		Disable: lo.Map(src.Disable, func(src infrastructurev1beta2.OscDisable, _ int) OscDisable {
-			return OscDisable(src)
-		}),
 		LoadBalancer: OscLoadBalancer{
 			LoadBalancerName:  src.LoadBalancer.LoadBalancerName,
 			LoadBalancerType:  src.LoadBalancer.LoadBalancerType,
@@ -254,6 +252,12 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 				ReconciliationChance: src.ReconciliationChance,
 			}
 		}),
+	}
+	if src.Disable.Internet {
+		dst.Network.Disable = append(dst.Network.Disable, DisableInternet)
+	}
+	if src.Disable.Loadbalancer {
+		dst.Network.Disable = append(dst.Network.Disable, DisableLB)
 	}
 	return nil
 }

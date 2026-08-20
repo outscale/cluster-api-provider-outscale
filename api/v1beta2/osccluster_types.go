@@ -29,7 +29,7 @@ type OscClusterSpec struct {
 	UseExisting OscReuse `json:"useExisting,omitempty,omitzero"`
 	// List of disabled features (internet = no internet service, no nat services)
 	// +optional
-	Disable []OscDisable `json:"disable,omitempty"`
+	Disable OscDisable `json:"disable,omitempty"`
 	// The Load Balancer configuration
 	// +optional
 	LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty,omitzero"`

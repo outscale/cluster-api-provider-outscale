@@ -139,7 +139,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.SubnetsReadyCondition)
 
-	if !clusterScope.IsInternetDisabled() {
+	if !clusterScope.GetSpec().Disable.Internet {
 		_, err = r.reconcileInternetService(ctx, clusterScope)
 		if err != nil {
 			conditions.MarkFalse(osccluster, infrastructurev1beta2.InternetServicesReadyCondition, infrastructurev1beta2.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
@@ -201,7 +201,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.SecurityGroupReadyCondition)
 
-	if !clusterScope.IsLBDisabled() {
+	if !clusterScope.GetSpec().Disable.Loadbalancer {
 		_, err = r.reconcileLoadBalancer(ctx, clusterScope)
 		if err != nil {
 			conditions.MarkFalse(osccluster, infrastructurev1beta2.LoadBalancerReadyCondition, infrastructurev1beta2.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
@@ -253,14 +253,14 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		}
 	}
 
-	if !clusterScope.IsLBDisabled() {
+	if !clusterScope.GetSpec().Disable.Loadbalancer {
 		_, err = r.reconcileDeleteLoadBalancer(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete loadBalancer: %w", err)
 		}
 	}
 
-	if !clusterScope.IsInternetDisabled() {
+	if !clusterScope.GetSpec().Disable.Internet {
 		_, err = r.reconcileDeleteNatService(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete natServices: %w", err)
@@ -295,7 +295,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("reconcile delete securityGroups: %w", err)
 	}
-	if !clusterScope.IsInternetDisabled() {
+	if !clusterScope.GetSpec().Disable.Internet {
 		_, err = r.reconcileDeleteInternetService(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete internetServices: %w", err)

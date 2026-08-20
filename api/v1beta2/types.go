@@ -43,13 +43,11 @@ type OscReuse struct {
 	SecurityGroups bool `json:"securityGroups,omitempty"`
 }
 
-// +kubebuilder:validation:Enum:=internet;loadbalancer
-type OscDisable string
-
-const (
-	DisableInternet OscDisable = "internet"
-	DisableLB       OscDisable = "loadbalancer"
-)
+type OscDisable struct {
+	// If set, net, subnets, internet service, nat services and route tables are externally managed
+	Internet     bool `json:"internet,omitempty"`
+	Loadbalancer bool `json:"loadbalancer,omitempty"`
+}
 
 type OscLoadBalancer struct {
 	// The Load Balancer unique name
