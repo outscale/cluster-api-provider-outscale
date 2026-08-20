@@ -25,7 +25,7 @@ metadata:
 spec:
   subregionName: ${OSC_REGION}a
   disable:
-    - internet
+    internet: true
   loadBalancer:
     loadbalancername: "${CLUSTER_NAME}-k8s"
     loadbalancertype: "internal"
