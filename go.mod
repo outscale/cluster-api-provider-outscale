@@ -11,7 +11,7 @@ require (
 	github.com/outscale/goutils/sdk v0.0.6
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.4
 	github.com/samber/lo v1.53.0
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.1
 	go.uber.org/mock v0.6.0
 	k8s.io/api v0.32.13
 	k8s.io/apimachinery v0.32.13
@@ -31,7 +31,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/oapi-codegen/runtime v1.6.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 )
 
 require (
