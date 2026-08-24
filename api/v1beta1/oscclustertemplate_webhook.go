@@ -57,22 +57,22 @@ func (OscClusterTemplateWebhook) ValidateCreate(_ context.Context, obj runtime.O
 }
 
 // ValidateUpdate implements webhook.CustomValidator.
-func (OscClusterTemplateWebhook) ValidateUpdate(_ context.Context, obj runtime.Object, oldRaw runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*OscClusterTemplate)
+func (OscClusterTemplateWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	oldC, ok := oldObj.(*OscClusterTemplate)
 	if !ok {
-		return nil, fmt.Errorf("expected an OscClusterTemplate object but got %T", r)
+		return nil, fmt.Errorf("expected an OscClusterTemplate object but got %T", oldC)
 	}
 	var allErrs field.ErrorList
-	old := oldRaw.(*OscClusterTemplate)
-	if !reflect.DeepEqual(r.Spec.Template.Spec, old.Spec.Template.Spec) {
+	newC := newObj.(*OscClusterTemplate)
+	if !reflect.DeepEqual(newC.Spec.Template.Spec, oldC.Spec.Template.Spec) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("template", "spec"), r, "spec is immutable."),
+			field.Invalid(field.NewPath("template", "spec"), newC, "spec is immutable."),
 		)
 	}
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemmplate").GroupKind(), r.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscClusterTemmplate").GroupKind(), newC.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.CustomValidator.
