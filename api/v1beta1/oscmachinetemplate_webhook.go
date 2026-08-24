@@ -58,10 +58,10 @@ func (OscMachineTemplateWebhook) ValidateCreate(_ context.Context, obj runtime.O
 }
 
 // ValidateUpdate implements webhook.CustomValidator.
-func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, obj runtime.Object, oldRaw runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*OscMachineTemplate)
+func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	oldM, ok := oldObj.(*OscMachineTemplate)
 	if !ok {
-		return nil, fmt.Errorf("expected an OscMachineTemplate object but got %T", r)
+		return nil, fmt.Errorf("expected an OscMachineTemplate object but got %T", oldM)
 	}
 	var allErrs field.ErrorList
 
@@ -69,20 +69,20 @@ func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, obj runtime
 	if err != nil {
 		return nil, apierrors.NewBadRequest(fmt.Sprintf("expected a admission.Request inside context: %v", err))
 	}
-	if topology.ShouldSkipImmutabilityChecks(req, r) {
+
+	newM := newObj.(*OscMachineTemplate)
+	if topology.ShouldSkipImmutabilityChecks(req, newM) {
 		return nil, nil
 	}
-
-	old := oldRaw.(*OscMachineTemplate)
-	if !reflect.DeepEqual(r.Spec.Template.Spec, old.Spec.Template.Spec) {
+	if !reflect.DeepEqual(newM.Spec.Template.Spec, oldM.Spec.Template.Spec) {
 		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("template", "spec"), r, "spec is immutable"),
+			field.Invalid(field.NewPath("template", "spec"), newM, "spec is immutable"),
 		)
 	}
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachineTemplate").GroupKind(), r.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachineTemplate").GroupKind(), newM.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.CustomValidator.
