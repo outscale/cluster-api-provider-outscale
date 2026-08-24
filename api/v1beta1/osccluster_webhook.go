@@ -55,31 +55,31 @@ func (OscClusterWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (
 }
 
 // ValidateUpdate implements webhook.CustomValidator.
-func (OscClusterWebhook) ValidateUpdate(_ context.Context, obj runtime.Object, oldRaw runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*OscCluster)
+func (OscClusterWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	oldC, ok := oldObj.(*OscCluster)
 	if !ok {
-		return nil, fmt.Errorf("expected an OscCluster object but got %T", r)
+		return nil, fmt.Errorf("expected an OscCluster object but got %T", oldC)
 	}
 	var allErrs field.ErrorList
-	old := oldRaw.(*OscCluster)
-	if !slices.Contains(r.Spec.Network.Disable, DisableLB) {
-		if r.Spec.Network.LoadBalancer.LoadBalancerName != old.Spec.Network.LoadBalancer.LoadBalancerName {
+	newC := newObj.(*OscCluster)
+	if !slices.Contains(oldC.Spec.Network.Disable, DisableLB) {
+		if newC.Spec.Network.LoadBalancer.LoadBalancerName != oldC.Spec.Network.LoadBalancer.LoadBalancerName {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancername"),
-					r.Spec.Network.LoadBalancer.LoadBalancerName, "field is immutable"),
+					newC.Spec.Network.LoadBalancer.LoadBalancerName, "field is immutable"),
 			)
 		}
-		if r.Spec.Network.LoadBalancer.LoadBalancerType != old.Spec.Network.LoadBalancer.LoadBalancerType {
+		if newC.Spec.Network.LoadBalancer.LoadBalancerType != oldC.Spec.Network.LoadBalancer.LoadBalancerType {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancertype"),
-					r.Spec.Network.LoadBalancer.LoadBalancerType, "field is immutable"),
+					newC.Spec.Network.LoadBalancer.LoadBalancerType, "field is immutable"),
 			)
 		}
 	}
 	if len(allErrs) == 0 {
 		return nil, nil
 	}
-	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), r.Name, allErrs)
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscCluster").GroupKind(), newC.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.CustomValidator.
