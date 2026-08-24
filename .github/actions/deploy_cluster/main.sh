@@ -97,7 +97,7 @@ if [ "$CCM" = "true" ]; then
   export OSC_SECRET_KEY=`echo $OSC_AKSK|cut -d% -f 2`
   echo "installing CCM v1"
   KUBE_MAJORMINOR=`echo $KUBERNETES_VERSION|cut -d . -f 1,2`
-  CCM_VERSION=$KUBE_MAJORMINOR.7
+  CCM_VERSION=$KUBE_MAJORMINOR.8
   kubectl create secret generic osc-secret --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY -n kube-system
   helm install --wait k8s-osc-ccm oci://registry-1.docker.io/outscalehelm/osc-cloud-controller-manager --set oscSecretName=osc-secret \
     --set image.tag=$CCM_VERSION
