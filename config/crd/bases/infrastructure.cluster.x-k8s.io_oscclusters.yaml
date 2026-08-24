@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.1-0.20260817093026-6104e87aa9a0
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260824093317-b4d235cf2b5b
   name: oscclusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -962,6 +962,10 @@ spec:
                       description: The rules to add.
                       items:
                         properties:
+                          description:
+                            description: The tag name associate with the security
+                              group
+                            type: string
                           flow:
                             description: The flow of the security group (inbound or
                               outbound)
@@ -983,10 +987,6 @@ spec:
                             items:
                               type: string
                             type: array
-                          name:
-                            description: The tag name associate with the security
-                              group
-                            type: string
                           resourceId:
                             description: The security group rule id
                             type: string
@@ -1056,15 +1056,6 @@ spec:
                           default)
                         type: string
                     type: object
-                  securityGroupNames:
-                    description: The list of security groups (deprecated use bastion
-                      role in security groups)
-                    items:
-                      properties:
-                        name:
-                          type: string
-                      type: object
-                    type: array
                   subnetName:
                     description: The subnet of the vm (deprecated use bastion role
                       in subnets)
@@ -1123,7 +1114,7 @@ spec:
               internetService:
                 description: The Internet Service configuration
                 properties:
-                  name:
+                  description:
                     description: The name of the Internet service
                     type: string
                 type: object
@@ -1199,12 +1190,8 @@ spec:
               natService:
                 description: The Nat Service configuration
                 properties:
-                  name:
+                  description:
                     description: The name of the Nat Service
-                    type: string
-                  subnetname:
-                    description: The name of the Subnet to which the Nat Service will
-                      be attached (deprecated, add nat role to subnets)
                     type: string
                   subregionName:
                     description: The name of the Subregion to which the Nat Service
@@ -1215,12 +1202,8 @@ spec:
                 description: The Nat Services configuration
                 items:
                   properties:
-                    name:
+                    description:
                       description: The name of the Nat Service
-                      type: string
-                    subnetname:
-                      description: The name of the Subnet to which the Nat Service
-                        will be attached (deprecated, add nat role to subnets)
                       type: string
                     subregionName:
                       description: The name of the Subregion to which the Nat Service
@@ -1231,11 +1214,11 @@ spec:
               net:
                 description: The Net configuration
                 properties:
+                  description:
+                    description: the network name
+                    type: string
                   ipRange:
                     description: the ip range in CIDR notation of the Net
-                    type: string
-                  name:
-                    description: the network name
                     type: string
                   resourceId:
                     description: The Id of the Net to reuse (if useExisting.net is
@@ -1342,7 +1325,7 @@ spec:
                 description: The Route Table configuration
                 items:
                   properties:
-                    name:
+                    description:
                       description: The tag name associate with the Route Table
                       type: string
                     role:
@@ -1352,12 +1335,12 @@ spec:
                       description: The Route configuration
                       items:
                         properties:
+                          description:
+                            description: The tag name associate with the Route
+                            type: string
                           destination:
                             description: the destination match Ip range with CIDR
                               notation
-                            type: string
-                          name:
-                            description: The tag name associate with the Route
                             type: string
                           resourceId:
                             description: The Route Id response
@@ -1410,6 +1393,10 @@ spec:
                       description: The list of rules for this securityGroup.
                       items:
                         properties:
+                          description:
+                            description: The tag name associate with the security
+                              group
+                            type: string
                           flow:
                             description: The flow of the security group (inbound or
                               outbound)
@@ -1431,10 +1418,6 @@ spec:
                             items:
                               type: string
                             type: array
-                          name:
-                            description: The tag name associate with the security
-                              group
-                            type: string
                           resourceId:
                             description: The security group rule id
                             type: string
@@ -1452,11 +1435,11 @@ spec:
                 description: The Subnets configuration
                 items:
                   properties:
+                    description:
+                      description: The name of the Subnet
+                      type: string
                     ipSubnetRange:
                       description: the Ip range in CIDR notation of the Subnet
-                      type: string
-                    name:
-                      description: The name of the Subnet
                       type: string
                     resourceId:
                       description: The id of the Subnet to reuse (if useExisting.net

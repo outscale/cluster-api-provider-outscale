@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.1-0.20260817093026-6104e87aa9a0
+    controller-gen.kubebuilder.io/version: v0.21.1-0.20260824093317-b4d235cf2b5b
   name: oscmachines.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -547,7 +547,7 @@ spec:
                   deleteKeypair:
                     description: Deprecated
                     type: boolean
-                  name:
+                  description:
                     description: Deprecated
                     type: string
                   publicKey:
@@ -600,6 +600,8 @@ spec:
                 type: object
               vm:
                 properties:
+                  description:
+                    type: string
                   fGPU:
                     description: The fGPU configuration for this VM.
                     properties:
@@ -613,8 +615,6 @@ spec:
                     type: string
                   keypairName:
                     description: The keypair name
-                    type: string
-                  name:
                     type: string
                   placement:
                     description: VM placement constraints.
@@ -684,19 +684,6 @@ spec:
                           default)
                         type: string
                     type: object
-                  securityGroupNames:
-                    description: The list of security groups to use (deprecated, use
-                      controlplane and/or worker roles on security groups)
-                    items:
-                      properties:
-                        name:
-                          type: string
-                      type: object
-                    type: array
-                  subnetName:
-                    description: The subnet of the node (deprecated, use controlplane
-                      and/or worker roles on subnets)
-                    type: string
                   subregionMode:
                     description: The way nodes will be allocated in subregions (leastNodes
                       or random; by default, leastNodes).
@@ -728,6 +715,9 @@ spec:
               volumes:
                 items:
                   properties:
+                    description:
+                      description: The volume name.
+                      type: string
                     device:
                       description: The volume device (/dev/xvdX)
                       type: string
@@ -738,9 +728,6 @@ spec:
                       description: The volume iops (io1 volumes only)
                       format: int32
                       type: integer
-                    name:
-                      description: The volume name.
-                      type: string
                     size:
                       description: The volume size in gibibytes (GiB)
                       format: int32

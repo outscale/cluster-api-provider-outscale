@@ -55,7 +55,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	}
 
 	if loadbalancer == nil {
-		subnetSpec, err := clusterScope.GetSubnet(loadBalancerSpec.SubnetName, infrastructurev1beta2.RoleLoadBalancer, "")
+		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleLoadBalancer, "")
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}

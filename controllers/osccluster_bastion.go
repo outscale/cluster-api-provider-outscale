@@ -134,7 +134,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 
 	bastionSpec := clusterScope.GetBastion()
-	subnetSpec, err := clusterScope.GetSubnet(bastionSpec.SubnetName, infrastructurev1beta2.RoleBastion, "")
+	subnetSpec, err := clusterScope.GetSubnet( infrastructurev1beta2.RoleBastion, "")
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("get subnet: %w", err)
 	}

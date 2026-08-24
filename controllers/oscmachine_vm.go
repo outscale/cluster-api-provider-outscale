@@ -88,7 +88,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				infrastructurev1beta2.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(subnetName, vmSpec.GetRole(), subregionName)
+		subnetSpec, err := clusterScope.GetSubnet(vmSpec.GetRole(), subregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
 		}

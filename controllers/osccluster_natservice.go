@@ -53,7 +53,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(natServiceSpec.SubnetName, infrastructurev1beta2.RoleNat, natServiceSpec.SubregionName)
+		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleNat, natServiceSpec.SubregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}

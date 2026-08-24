@@ -120,9 +120,6 @@ func (s *ClusterScope) GetNet() infrastructurev1beta2.OscNet {
 
 // GetNetName return the name of the net
 func (s *ClusterScope) GetNetName() string {
-	if s.OscCluster.Spec.Net.Name != "" {
-		return s.OscCluster.Spec.Net.Name
-	}
 	return "Net for " + s.OscCluster.Name
 }
 
@@ -175,14 +172,12 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
 
 var ErrNoSubnetFound = errors.New("subnet not found")
 
-func (s *ClusterScope) GetSubnet(name string, role infrastructurev1beta2.OscRole, subregion string) (infrastructurev1beta2.OscSubnet, error) {
+func (s *ClusterScope) GetSubnet(role infrastructurev1beta2.OscRole, subregion string) (infrastructurev1beta2.OscSubnet, error) {
 	if subregion == "" {
 		subregion = s.GetDefaultSubregion()
 	}
 	for _, spec := range s.GetSubnets() {
 		switch {
-		case name != "" && spec.Name == name:
-			return spec, nil
 		case !s.SubnetHasRole(spec, role):
 		case s.GetSubnetSubregion(spec) == subregion:
 			return spec, nil
@@ -195,11 +190,8 @@ func (s *ClusterScope) SubnetHasRole(spec infrastructurev1beta2.OscSubnet, role 
 	if len(spec.Roles) > 0 {
 		return slices.Contains(spec.Roles, role)
 	}
-	if slices.Contains(s.OscCluster.Spec.ControlPlaneSubnets, spec.Name) || strings.Contains(spec.Name, "kcp") {
+	if slices.Contains(s.OscCluster.Spec.ControlPlaneSubnets, spec.Description) || strings.Contains(spec.Description, "kcp") {
 		return role == infrastructurev1beta2.RoleControlPlane
-	}
-	if s.OscCluster.Spec.LoadBalancer.SubnetName != "" && spec.Name == s.OscCluster.Spec.LoadBalancer.SubnetName {
-		return role == infrastructurev1beta2.RoleLoadBalancer || role == infrastructurev1beta2.RoleBastion || role == infrastructurev1beta2.RoleNat
 	}
 	return role == infrastructurev1beta2.RoleWorker
 }
@@ -216,9 +208,6 @@ func (s *ClusterScope) GetSubnetSubregion(spec infrastructurev1beta2.OscSubnet) 
 }
 
 func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta2.OscSubnet) string {
-	if spec.Name != "" {
-		return spec.Name
-	}
 	fd := s.GetSubnetSubregion(spec)
 	switch {
 	case s.SubnetIsPublic(spec):
@@ -234,9 +223,6 @@ func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta2.OscSubnet) strin
 
 // GetInternetServiceName return the name of the net
 func (s *ClusterScope) GetInternetServiceName() string {
-	if s.OscCluster.Spec.InternetService.Name != "" {
-		return s.OscCluster.Spec.InternetService.Name
-	}
 	return "Internet Service for " + s.OscCluster.Name
 }
 
@@ -262,7 +248,6 @@ func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
 			}
 			nss = append(nss, infrastructurev1beta2.OscNatService{
 				SubregionName: s.GetSubnetSubregion(subnet),
-				SubnetName:    subnet.Name,
 			})
 		}
 		return nss
@@ -270,16 +255,8 @@ func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
 }
 
 // GetNatService return the natService of the cluster
-func (s *ClusterScope) GetNatService(name string, subregion string) (infrastructurev1beta2.OscNatService, error) {
+func (s *ClusterScope) GetNatService(subregion string) (infrastructurev1beta2.OscNatService, error) {
 	nats := s.GetNatServices()
-	if name != "" {
-		for _, spec := range nats {
-			if spec.Name == name {
-				return spec, nil
-			}
-		}
-		return infrastructurev1beta2.OscNatService{}, ErrNoNatFound
-	}
 	if len(nats) == 1 {
 		return nats[0], nil
 	}
@@ -296,8 +273,8 @@ func (s *ClusterScope) GetNatService(name string, subregion string) (infrastruct
 
 // GetNatServiceName return the name of a nat service
 func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta2.OscNatService) string {
-	if nat.Name != "" {
-		return nat.Name
+	if nat.Description != "" {
+		return nat.Description
 	}
 	name := "Nat service for " + s.OscCluster.Name
 	if nat.SubregionName != "" {
@@ -308,8 +285,8 @@ func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta2.OscNatService
 
 // GetNatServiceClientToken return the client token for a nat service
 func (s *ClusterScope) GetNatServiceClientToken(nat infrastructurev1beta2.OscNatService) string {
-	if nat.Name != "" {
-		ct := nat.Name + "-" + s.GetUID()
+	if nat.Description != "" {
+		ct := nat.Description + "-" + s.GetUID()
 		if len(ct) > 64 {
 			ct = ct[len(ct)-64:]
 		}
@@ -327,11 +304,11 @@ func (s *ClusterScope) GetRouteTables() []infrastructurev1beta2.OscRouteTable {
 	rtbls := make([]infrastructurev1beta2.OscRouteTable, 0, len(subnets))
 	for _, subnet := range subnets {
 		rtbl := infrastructurev1beta2.OscRouteTable{
-			Name:          s.GetSubnetName(subnet),
+			Description:   s.GetSubnetName(subnet),
 			SubregionName: s.GetSubnetSubregion(subnet),
 		}
-		if subnet.Name != "" {
-			rtbl.Subnets = []string{subnet.Name}
+		if subnet.Description != "" {
+			rtbl.Subnets = []string{subnet.Description}
 		}
 		if len(subnet.Roles) > 0 {
 			rtbl.Role = subnet.Roles[0]
@@ -567,9 +544,6 @@ func (s *ClusterScope) GetSecurityGroupsFor(names []infrastructurev1beta2.OscSec
 
 // GetSecurityGroupName returns the SecurityGroupName attribute value for a security group.
 func (s *ClusterScope) GetSecurityGroupName(sg infrastructurev1beta2.OscSecurityGroup) string {
-	if sg.Name != "" {
-		return sg.Name + "-" + s.GetUID()
-	}
 	var name strings.Builder
 	name.WriteString(s.GetName() + "-")
 	for _, role := range sg.Roles {
@@ -600,7 +574,7 @@ func (s *ClusterScope) GetLoadBalancer() infrastructurev1beta2.OscLoadBalancer {
 func (s *ClusterScope) GetIpSubnetRange(name string) string {
 	subnets := s.OscCluster.Spec.Subnets
 	for _, subnet := range subnets {
-		if subnet.Name == name {
+		if subnet.Description == name {
 			return subnet.IpSubnetRange
 		}
 	}

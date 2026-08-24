@@ -12,26 +12,23 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 		ProviderID: src.ProviderID,
 
 		Vm: infrastructurev1beta2.OscVm{
-			Name:           srcNode.Vm.Name,
-			ImageId:        srcNode.Vm.ImageId,
-			KeypairName:    srcNode.Vm.KeypairName,
-			VmType:         srcNode.Vm.VmType,
-			SubnetName:     srcNode.Vm.SubnetName,
+			Description: srcNode.Vm.Name,
+			ImageId:     srcNode.Vm.ImageId,
+			KeypairName: srcNode.Vm.KeypairName,
+			VmType:      srcNode.Vm.VmType,
+			// SubnetName:     srcNode.Vm.SubnetName,
 			PublicIp:       srcNode.Vm.PublicIp,
 			RootDisk:       infrastructurev1beta2.OscRootDisk(srcNode.Vm.RootDisk),
 			SubregionName:  srcNode.Vm.SubregionName,
 			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
 			SubregionNames: srcNode.Vm.SubregionNames,
-			SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
-				return infrastructurev1beta2.OscSecurityGroupElement(src)
-			}),
-			Role:      infrastructurev1beta2.OscRole(srcNode.Vm.Role),
-			Tags:      srcNode.Vm.Tags,
-			Placement: infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
+			Role:           infrastructurev1beta2.OscRole(srcNode.Vm.Role),
+			Tags:           srcNode.Vm.Tags,
+			Placement:      infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
 		},
 		Volumes: lo.Map(srcNode.Volumes, func(src OscVolume, _ int) infrastructurev1beta2.OscVolume {
 			return infrastructurev1beta2.OscVolume{
-				Name:         src.Name,
+				Description:  src.Name,
 				Device:       src.Device,
 				Iops:         src.Iops,
 				Size:         src.Size,
@@ -65,26 +62,23 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 		ProviderID: src.ProviderID,
 		Node: OscNode{
 			Vm: OscVm{
-				Name:           src.Vm.Name,
+				Name:           src.Vm.Description,
 				ImageId:        src.Vm.ImageId,
 				KeypairName:    src.Vm.KeypairName,
 				VmType:         src.Vm.VmType,
-				SubnetName:     src.Vm.SubnetName,
 				PublicIp:       src.Vm.PublicIp,
 				RootDisk:       OscRootDisk(src.Vm.RootDisk),
 				SubregionName:  src.Vm.SubregionName,
 				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
 				SubregionNames: src.Vm.SubregionNames,
-				SecurityGroupNames: lo.Map(src.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
-					return OscSecurityGroupElement(src)
-				}),
+
 				Role:      OscRole(src.Vm.Role),
 				Tags:      src.Vm.Tags,
 				Placement: OscPlacement(src.Vm.Placement),
 			},
 			Volumes: lo.Map(src.Volumes, func(src infrastructurev1beta2.OscVolume, _ int) OscVolume {
 				return OscVolume{
-					Name:         src.Name,
+					Name:         src.Description,
 					Device:       src.Device,
 					Iops:         src.Iops,
 					Size:         src.Size,

@@ -77,15 +77,6 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 	case vm != nil:
 		return vm, vm.VmId, nil
 	}
-	// Search by name (retrocompatibility)
-	name := machineScope.GetName() + "-" + clusterScope.GetUID()
-	tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.VmResourceType, tag.NameKey, name)
-	if err != nil {
-		return nil, "", fmt.Errorf("get vm: %w", err)
-	}
-	if tg != nil && tg.ResourceId != "" {
-		return nil, tg.ResourceId, nil
-	}
 	return nil, "", fmt.Errorf("get vm: %w", ErrNoResourceFound)
 }
 

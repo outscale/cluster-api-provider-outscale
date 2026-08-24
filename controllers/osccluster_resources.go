@@ -59,18 +59,6 @@ func (t *ClusterResourceTracker) getNetId(ctx context.Context, clusterScope *sco
 		t.setNetId(clusterScope, tg.ResourceId)
 		return tg.ResourceId, nil
 	}
-	// Search by name (retrocompatibility)
-	if clusterScope.GetNet().Name != "" {
-		nameValue := clusterScope.GetNet().Name + "-" + clusterScope.GetUID()
-		tg, err = t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.NetResourceType, tag.NameKey, nameValue)
-		if err != nil {
-			return "", fmt.Errorf("get net: %w", err)
-		}
-		if tg != nil && tg.ResourceId != "" {
-			t.setNetId(clusterScope, tg.ResourceId)
-			return tg.ResourceId, nil
-		}
-	}
 	return "", fmt.Errorf("get net: %w", ErrNoResourceFound)
 }
 
@@ -305,18 +293,6 @@ func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat inf
 		t.setNatServiceId(clusterScope, nat, ns.NatServiceId)
 		return ns, ns.NatServiceId, nil
 	}
-	if nat.Name != "" {
-		nameValue := nat.Name + "-" + clusterScope.GetUID()
-		tag, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.NatResourceType, tag.NameKey, nameValue)
-		switch {
-		case err != nil:
-			return nil, "", fmt.Errorf("get nat service from tag: %w", err)
-		case tag == nil:
-		default:
-			t.setNatServiceId(clusterScope, nat, tag.ResourceId)
-			return nil, tag.ResourceId, nil
-		}
-	}
 	return nil, "", fmt.Errorf("get nat service: %w", ErrNoResourceFound)
 }
 
@@ -419,18 +395,6 @@ func (t *ClusterResourceTracker) _getBastionOrId(ctx context.Context, clusterSco
 	case vm != nil:
 		t.setBastionId(clusterScope, vm.VmId)
 		return vm, vm.VmId, nil
-	}
-	// Search by name (retrocompatibility)
-	if clusterScope.GetBastion().Name != "" {
-		nameValue := clusterScope.GetBastionName() + "-" + clusterScope.GetUID()
-		tg, err := t.Cloud.Tag(clusterScope.Tenant).ReadTag(ctx, tag.VmResourceType, tag.NameKey, nameValue)
-		if err != nil {
-			return nil, "", fmt.Errorf("get bastion: %w", err)
-		}
-		if tg != nil && tg.ResourceId != "" {
-			t.setBastionId(clusterScope, tg.ResourceId)
-			return nil, tg.ResourceId, nil
-		}
 	}
 	return nil, "", fmt.Errorf("get bastion: %w", ErrNoResourceFound)
 }

@@ -31,7 +31,7 @@ var (
 					},
 				},
 				Vm: infrastructurev1beta2.OscVm{
-					Name:    "test-vm",
+					Description:    "test-vm",
 					ImageId: "ami-00000000",
 					Role:    "controlplane",
 					RootDisk: infrastructurev1beta2.OscRootDisk{

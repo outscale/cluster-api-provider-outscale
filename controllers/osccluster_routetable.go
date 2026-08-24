@@ -36,7 +36,7 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
 	case "nat":
-		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.SubregionName)
+		natSpec, err := clusterScope.GetNatService(routeTableSpec.SubregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
@@ -94,7 +94,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 			names = []string{""}
 		}
 		for _, name := range names {
-			subnetSpec, err := clusterScope.GetSubnet(name, routeTableSpec.Role, routeTableSpec.SubregionName)
+			subnetSpec, err := clusterScope.GetSubnet(routeTableSpec.Role, routeTableSpec.SubregionName)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot find subnet with name %q role %q: %w", name, routeTableSpec.Role, err)
 			}
@@ -112,7 +112,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 				continue
 			case rtbl == nil && rtblForSubnet[subnetId] == nil:
 				log.V(2).Info("Creating routetable", "subnetId", subnetId)
-				rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), routeTableSpec.Name)
+				rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), routeTableSpec.Description)
 				if err != nil {
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}

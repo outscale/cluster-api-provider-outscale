@@ -109,7 +109,7 @@ type OscLoadBalancerHealthCheck struct {
 type OscNet struct {
 	// the network name
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// the ip range in CIDR notation of the Net
 	// +optional
 	IpRange string `json:"ipRange,omitempty"`
@@ -159,13 +159,13 @@ const (
 type OscInternetService struct {
 	// The name of the Internet service
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 type OscSubnet struct {
 	// The name of the Subnet
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The role of the Subnet (controlplane, worker, loadbalancer, bastion or nat)
 	// +optional
 	Roles []OscRole `json:"roles,omitempty"`
@@ -183,10 +183,7 @@ type OscSubnet struct {
 type OscNatService struct {
 	// The name of the Nat Service
 	// +optional
-	Name string `json:"name,omitempty"`
-	// The name of the Subnet to which the Nat Service will be attached (deprecated, add nat role to subnets)
-	// +optional
-	SubnetName string `json:"subnetname,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The name of the Subregion to which the Nat Service will be attached, unless a subnet has been defined
 	// +optional
 	SubregionName string `json:"subregionName,omitempty"`
@@ -195,7 +192,7 @@ type OscNatService struct {
 type OscRouteTable struct {
 	// The tag name associate with the Route Table
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The subnet tag name associate with a Subnet (deprecated, use roles)
 	// +optional
 	Subnets []string `json:"subnets,omitempty"`
@@ -259,7 +256,7 @@ type OscAdditionalSecurityRules struct {
 type OscRoute struct {
 	// The tag name associate with the Route
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The tag name associate with the target resource type
 	// +optional
 	TargetName string `json:"targetName,omitempty"`
@@ -279,14 +276,10 @@ type OscPrivateIpElement struct {
 	PrivateIp string `json:"privateIp,omitempty"`
 }
 
-type OscSecurityGroupElement struct {
-	Name string `json:"name,omitempty"`
-}
-
 type OscSecurityGroupRule struct {
 	// The tag name associate with the security group
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The flow of the security group (inbound or outbound)
 	// +optional
 	Flow string `json:"flow,omitempty"`
@@ -407,7 +400,7 @@ type OscImage struct {
 
 type OscVolume struct {
 	// The volume name.
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The volume device (/dev/xvdX)
 	// +kubebuilder:validation:Required
 	Device string `json:"device"`
@@ -423,7 +416,7 @@ type OscVolume struct {
 
 type OscKeypair struct {
 	// Deprecated
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// Deprecated
 	PublicKey string `json:"publicKey,omitempty"`
 	// Deprecated
@@ -449,18 +442,15 @@ type OscFGPU struct {
 }
 
 type OscVm struct {
-	Name    string `json:"name,omitempty"`
-	ImageId string `json:"imageId,omitempty"`
+	Description string `json:"description,omitempty"`
+	ImageId     string `json:"imageId,omitempty"`
 	// The keypair name
 	// +kubebuilder:validation:Required
 	KeypairName string `json:"keypairName,omitempty"`
 	// The type of vm (tinav7.c4r8p1 by default)
 	// +optional
-	VmType string `json:"vmType,omitempty"`
-	// The subnet of the node (deprecated, use controlplane and/or worker roles on subnets)
-	// +optional
-	SubnetName string      `json:"subnetName,omitempty"`
-	RootDisk   OscRootDisk `json:"rootDisk,omitempty"`
+	VmType   string      `json:"vmType,omitempty"`
+	RootDisk OscRootDisk `json:"rootDisk,omitempty"`
 	// If set, a public IP will be configured.
 	// +optional
 	PublicIp bool `json:"publicIp,omitempty"`
@@ -480,8 +470,6 @@ type OscVm struct {
 	// +optional
 	SubregionNames []string              `json:"subregionNames,omitempty"`
 	PrivateIps     []OscPrivateIpElement `json:"privateIps,omitempty"`
-	// The list of security groups to use (deprecated, use controlplane and/or worker roles on security groups)
-	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	// The resource id of the vm (not set anymore)
 	ResourceId string `json:"resourceId,omitempty"`
 	// The node role (controlplane or worker, worker by default).
@@ -547,9 +535,6 @@ type OscBastion struct {
 	// +optional
 	PublicIpId string                `json:"PublicIpId,omitempty"`
 	PrivateIps []OscPrivateIpElement `json:"privateIps,omitempty"`
-	// The list of security groups (deprecated use bastion role in security groups)
-	// +optional
-	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	// the vm id (deprecated, not set anymore)
 	ResourceId string `json:"resourceId,omitempty"`
 	Enable     bool   `json:"enable,omitempty"`
