@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.5.2](https://github.com/outscale/cluster-api-provider-outscale/releases/tag/v1.5.2) - 2026-08-25
+
+### 🐛 Fixed
+* 🐛 fix(webhooks): fix param order by @jfbus in https://github.com/outscale/cluster-api-provider-outscale/pull/896
+
+
 ## [v1.5.1] - 2026-08-19
 
 ### 🐛 Fixed
