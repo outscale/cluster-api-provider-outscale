@@ -11,6 +11,7 @@ test/e2e/config/*-envsubst.yaml
 test/e2e/data/ccm/ccm.yaml
 # Test binary, built with `go test -c`
 *.test
+__debug*
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 apicovers.txt
@@ -23,3 +24,5 @@ secret.*
 clusterctl-settings.json
 # Dependency directories (remove the comment below to include it)
 bin/
+dist/
+out/
