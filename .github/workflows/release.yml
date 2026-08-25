@@ -29,8 +29,10 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: generate artefacts
-      run: make release
+    - name: 🔨Generate artefacts
+      run: |
+        make release
+        git reset HEAD --hard
       env:
         IMG_RELEASE: outscale/cluster-api-outscale-controllers:${{ github.ref_name }}
         RELEASE_TAG: ${{ github.ref_name }}
