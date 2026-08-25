@@ -66,7 +66,7 @@ jobs:
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install octl
-      uses: outscale/octl/.github/actions/setup_octl@29f89fd6d31b0d9180f182b8eb85904afb4231fc # v0.0.30
+      uses: outscale/octl/.github/actions/setup_octl@1611a6d99b4017e59a3a5d755fdbf0147ac070e8 # v0.0.31
       with:
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
