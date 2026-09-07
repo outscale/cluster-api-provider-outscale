@@ -93,7 +93,7 @@ jobs:
         REGISTRY_TAG: ${{ github.sha }}
     - name: 🔎 Preloader snapshot
       id: preloader
-      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@bbb72fcb3bac49f017b463e576433665fb73f781 # main
+      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@32608b29ace3474bcb6da081c9c2c8323ea8fb28 # main
       with:
         KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
