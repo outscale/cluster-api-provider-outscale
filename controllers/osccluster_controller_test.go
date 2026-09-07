@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
@@ -43,6 +44,7 @@ func runClusterTest(t *testing.T, tc testcase) {
 	_ = clientgoscheme.AddToScheme(fakeScheme)
 	_ = clusterv1.AddToScheme(fakeScheme)
 	_ = apiextensionsv1.AddToScheme(fakeScheme)
+	_ = infrastructurev1beta1.AddToScheme(fakeScheme)
 	_ = infrastructurev1beta2.AddToScheme(fakeScheme)
 	client := fake.NewClientBuilder().WithScheme(fakeScheme).
 		WithStatusSubresource(oc).WithObjects(c, oc).Build()
@@ -105,136 +107,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 
 	tcs := []testcase{
 		{
-			name:        "creating a cluster with a v0.4 manual config",
-			clusterSpec: "base-0.4",
-			mockFuncs: []mockFunc{
-				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameNoneFound(tag.NetResourceType, "test-cluster-api-net-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateNet(infrastructurev1beta2.OscNet{
-					Name:    "test-cluster-api-net",
-					IpRange: "10.0.0.0/16",
-				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-net", "vpc-foo"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
-				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
-					Name:          "test-cluster-api-subnet-kcp",
-					IpSubnetRange: "10.0.4.0/24",
-					SubregionName: "eu-west-2a",
-				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-subnet-kcp", "subnet-kcp"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
-				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
-					Name:          "test-cluster-api-subnet-kw",
-					IpSubnetRange: "10.0.3.0/24",
-					SubregionName: "eu-west-2a",
-				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-subnet-kw", "subnet-kw"),
-				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
-				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
-					Name:          "test-cluster-api-subnet-public",
-					IpSubnetRange: "10.0.2.0/24",
-					SubregionName: "eu-west-2a",
-				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-subnet-public", "subnet-public"),
-				mockGetInternetServiceForNet("vpc-foo", nil),
-				mockCreateInternetService("test-cluster-api-internetservice", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
-				mockLinkInternetService("igw-foo", "vpc-foo"),
-
-				mockGetSecurityGroupFromName("test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520",
-					"Security Group Kw with cluster-api", "", nil, "sg-kw"),
-				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
-				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
-				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
-				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 30000, 32767),
-				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 30000, 32767),
-
-				mockGetSecurityGroupFromName("test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520",
-					"Security Group Kcp with cluster-api", "", nil, "sg-kcp"),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.3.0/24", 30000, 32767),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 30000, 32767),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.3.0/24", 6443, 6443),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 6443, 6443),
-				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2379),
-
-				mockGetSecurityGroupFromName("test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
-					"Security Group Lb with cluster-api", "", nil, "sg-lb"),
-				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
-
-				mockGetSecurityGroupFromName("test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
-					"Security Group Node with cluster-api", "OscK8sMainSG", nil, "sg-node"),
-				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
-				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
-				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51820),
-				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51821, 51821),
-				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
-				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
-
-				mockGetRouteTablesFromNet("vpc-foo", nil),
-				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-routetable-public", "rtb-public"),
-				mockLinkRouteTable("rtb-public", "subnet-public"),
-				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
-
-				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameNoneFound(tag.NatResourceType, "test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreatePublicIp("test-cluster-api-natservice", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-natservice", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
-
-				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
-					{
-						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
-						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
-					},
-				}),
-				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-routetable-kcp", "rtb-kcp"),
-				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
-				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
-				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-routetable-kw", "rtb-kw"),
-				mockLinkRouteTable("rtb-kw", "subnet-kw"),
-				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
-
-				mockGetLoadBalancer("test-cluster-api-k8s", nil),
-				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
-				mockConfigureHealthCheck("test-cluster-api-k8s"),
-				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-			},
-			clusterAsserts: []assertOSCClusterFunc{
-				assertHasClusterFinalizer(),
-				assertStatusClusterResources(infrastructurev1beta2.OscClusterResources{
-					Net: map[string]string{
-						"default": "vpc-foo",
-					},
-					Subnet: map[string]string{
-						"10.0.2.0/24": "subnet-public",
-						"10.0.3.0/24": "subnet-kw",
-						"10.0.4.0/24": "subnet-kcp",
-					},
-					InternetService: map[string]string{
-						"default": "igw-foo",
-					},
-					SecurityGroup: map[string]string{
-						"test-cluster-api-securitygroup-kcp-9e1db9c4-bf0a-4583-8999-203ec002c520":  "sg-kcp",
-						"test-cluster-api-securitygroup-kw-9e1db9c4-bf0a-4583-8999-203ec002c520":   "sg-kw",
-						"test-cluster-api-securitygroup-lb-9e1db9c4-bf0a-4583-8999-203ec002c520":   "sg-lb",
-						"test-cluster-api-securitygroup-node-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-node",
-					},
-					NatService: map[string]string{
-						"test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
-					},
-					PublicIPs: map[string]string{
-						"test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
-					},
-				}),
-				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
-			},
-			next: &testcase{
-				name: "A second run has all references in cache",
-			},
-		},
-		{
-			name:        "creating a cluster with a v1.0 automatic config",
-			clusterSpec: "base-1.0",
+			name:        "[v1beta1] creating a cluster with an automatic config",
+			clusterSpec: "v1beta1/base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockCreateNet(infrastructurev1beta2.OscNet{
@@ -360,12 +234,12 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
 			},
 			next: &testcase{
-				name: "A second run has all references in cache",
+				name: "[v1beta1] A second run has all references in cache",
 			},
 		},
 		{
-			name:            "creating a cluster with a v1.0 automatic config and a bastion",
-			clusterSpec:     "base-bastion-1.0",
+			name:            "[v1beta1] creating a cluster with a automatic config and a bastion",
+			clusterSpec:     "v1beta1/base-bastion",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -511,8 +385,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			},
 		},
 		{
-			name:            "creating a v1.0 automatic config with a bastion and IP restriction",
-			clusterSpec:     "base-bastion-1.0",
+			name:            "[v1beta1] creating a automatic config with a bastion and IP restriction",
+			clusterSpec:     "v1beta1/base-bastion",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchRestrictFromIP("1.2.3.4/32", "2.3.4.5/32"),
@@ -640,8 +514,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:            "creating a v1.0 config with manual SGs, a bastion and IP restriction",
-			clusterSpec:     "base-bastion-1.0",
+			name:            "[v1beta1] creating a config with manual SGs, a bastion and IP restriction",
+			clusterSpec:     "v1beta1/base-bastion",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchRestrictFromIP("1.2.3.4/32", "2.3.4.5/32"),
@@ -762,8 +636,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:            "the default outbound rule can be disabled",
-			clusterSpec:     "base-bastion-1.0",
+			name:            "[v1beta1] the default outbound rule can be disabled",
+			clusterSpec:     "v1beta1/base-bastion",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchRestrictFromIP("1.2.3.4/32", "2.3.4.5/32"),
@@ -886,8 +760,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:        "creating a multiaz cluster with a v1.0 automatic config",
-			clusterSpec: "base-1.0",
+			name:        "[v1beta1] creating a multiaz cluster with a automatic config",
+			clusterSpec: "v1beta1/base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchSubregions("eu-west-2a", "eu-west-2b"),
 			},
@@ -1033,8 +907,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			},
 		},
 		{
-			name:            "reusing a network",
-			clusterSpec:     "reuse-net-1.0",
+			name:            "[v1beta1] reusing a network",
+			clusterSpec:     "v1beta1/reuse-net",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -1103,8 +977,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			},
 		},
 		{
-			name:            "reusing a network, net is not created if missing",
-			clusterSpec:     "reuse-net-1.0",
+			name:            "[v1beta1] reusing a network, net is not created if missing",
+			clusterSpec:     "v1beta1/reuse-net",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockGetNet("vpc-foo", nil),
@@ -1112,8 +986,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:            "reusing a network, subnet is not created if missing",
-			clusterSpec:     "reuse-net-1.0",
+			name:            "[v1beta1] reusing a network, subnet is not created if missing",
+			clusterSpec:     "v1beta1/reuse-net",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -1122,8 +996,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:            "reusing net + security groups",
-			clusterSpec:     "reuse-all-1.0",
+			name:            "[v1beta1] reusing net + security groups",
+			clusterSpec:     "v1beta1/reuse-all",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -1144,8 +1018,8 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			},
 		},
 		{
-			name:           "using NAT IPs from a pool",
-			clusterSpec:    "base-1.0",
+			name:           "[v1beta1] using NAT IPs from a pool",
+			clusterSpec:    "v1beta1/base",
 			clusterPatches: []patchOSCClusterFunc{patchNATIPFromPool("pool-foo")},
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -1272,12 +1146,12 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
 			},
 			next: &testcase{
-				name: "A second run has all references in cache",
+				name: "[v1beta1] A second run has all references in cache",
 			},
 		},
 		{
-			name:           "disabling LBU",
-			clusterSpec:    "base-1.0",
+			name:           "[v1beta1] disabling LBU",
+			clusterSpec:    "v1beta1/base",
 			clusterPatches: []patchOSCClusterFunc{patchDisableLB()},
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -1399,7 +1273,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				}),
 			},
 			next: &testcase{
-				name: "A second run has all references in cache",
+				name: "[v1beta1] A second run has all references in cache",
 			},
 		},
 	}
@@ -1431,8 +1305,8 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
 	require.NoError(t, err)
 	tcs := []testcase{
 		{
-			name:            "using the default credentials",
-			clusterSpec:     "reuse-all-1.0",
+			name:            "[v1beta1] using the default credentials",
+			clusterSpec:     "v1beta1/reuse-all",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -1451,8 +1325,8 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
 			},
 		},
 		{
-			name:            "using the credentials from a secret",
-			clusterSpec:     "reuse-all-1.0",
+			name:            "[v1beta1] using the credentials from a secret",
+			clusterSpec:     "v1beta1/reuse-all",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchUseCredentials(infrastructurev1beta2.OscCredentials{
@@ -1489,8 +1363,8 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
 			},
 		},
 		{
-			name:            "using the credentials from a file (default profile)",
-			clusterSpec:     "reuse-all-1.0",
+			name:            "[v1beta1] using the credentials from a file (default profile)",
+			clusterSpec:     "v1beta1/reuse-all",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchUseCredentials(infrastructurev1beta2.OscCredentials{
@@ -1514,8 +1388,8 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
 			},
 		},
 		{
-			name:            "using the credentials from a file (alt profile)",
-			clusterSpec:     "reuse-all-1.0",
+			name:            "[v1beta1] using the credentials from a file (alt profile)",
+			clusterSpec:     "v1beta1/reuse-all",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchUseCredentials(infrastructurev1beta2.OscCredentials{
@@ -1568,8 +1442,8 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 	require.NoError(t, err)
 	tcs := []testcase{
 		{
-			name:            "creating an airgapped cluster",
-			clusterSpec:     "airgap-1.0",
+			name:            "[v1beta1] creating an airgapped cluster",
+			clusterSpec:     "v1beta1/airgap",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -1677,8 +1551,8 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 			},
 		},
 		{
-			name:            "when retrying on a non accepted netpeering, the netpeering is accepted and routed and creation continues",
-			clusterSpec:     "airgap-1.0",
+			name:            "[v1beta1] when retrying on a non accepted netpeering, the netpeering is accepted and routed and creation continues",
+			clusterSpec:     "v1beta1/airgap",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
@@ -1785,284 +1659,13 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 
 	tcs := []testcase{
 		{
-			name:            "reconciliation on a reconciled cluster does nothing",
-			clusterSpec:     "ready-1.0",
+			name:            "[v1beta1] reconciliation on a reconciled cluster does nothing",
+			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 		},
 		{
-			name:        "An inbound rule may be added to a 0.4 cluster (IpRange)",
-			clusterSpec: "ready-0.4",
-			clusterPatches: []patchOSCClusterFunc{
-				patchAddSGRule("test-cluster-api-securitygroup-kcp", infrastructurev1beta2.OscSecurityGroupRule{
-					Flow: "Inbound", IpProtocol: "udp", FromPortRange: 32, ToPortRange: 32, IpRange: "1.2.3.4/32",
-				}),
-			},
-			mockFuncs: []mockFunc{
-				mockNetFound("vpc-24ba90ce"),
-				mockSubnetFound("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-
-				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
-					},
-				}),
-				mockCreateSecurityGroupRule("sg-750ae810", "Inbound", "udp", "1.2.3.4/32", 32, 32),
-				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
-					},
-				}),
-
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameFound(tag.NatResourceType, "test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-223a4dd4"),
-				mockNatServiceFound("nat-223a4dd4"),
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-
-				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-			},
-		},
-		{
-			name:        "An outbound rule may be added to a 0.4 cluster (IpRange)",
-			clusterSpec: "ready-0.4",
-			clusterPatches: []patchOSCClusterFunc{
-				patchAddSGRule("test-cluster-api-securitygroup-kcp", infrastructurev1beta2.OscSecurityGroupRule{
-					Flow: "Outbound", IpProtocol: "udp", FromPortRange: 32, ToPortRange: 32, IpRange: "1.2.3.4/32",
-				}),
-			},
-			mockFuncs: []mockFunc{
-				mockNetFound("vpc-24ba90ce"),
-				mockSubnetFound("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-
-				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
-					},
-				}),
-				mockCreateSecurityGroupRule("sg-750ae810", "Outbound", "udp", "1.2.3.4/32", 32, 32),
-				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
-					},
-				}),
-
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameFound(tag.NatResourceType, "test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-223a4dd4"),
-				mockNatServiceFound("nat-223a4dd4"),
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-
-				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-			},
-		},
-		{
-			name:        "An inbound rule may be added to a 0.4 cluster (IpRanges)",
-			clusterSpec: "ready-0.4",
-			clusterPatches: []patchOSCClusterFunc{
-				patchAddSGRule("test-cluster-api-securitygroup-kcp", infrastructurev1beta2.OscSecurityGroupRule{
-					Flow: "Inbound", IpProtocol: "udp", FromPortRange: 32, ToPortRange: 32, IpRanges: []string{"1.2.3.4/32", "1.2.3.5/32"},
-				}),
-			},
-			mockFuncs: []mockFunc{
-				mockNetFound("vpc-24ba90ce"),
-				mockSubnetFound("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-
-				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
-					},
-				}),
-				mockCreateSecurityGroupRule("sg-750ae810", "Inbound", "udp", "1.2.3.4/32", 32, 32),
-				mockCreateSecurityGroupRule("sg-750ae810", "Inbound", "udp", "1.2.3.5/32", 32, 32),
-				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
-					},
-				}),
-
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameFound(tag.NatResourceType, "test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-223a4dd4"),
-				mockNatServiceFound("nat-223a4dd4"),
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-
-				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-			},
-		},
-		{
-			name:            "A rule may be added to a v1.0 cluster (automatic config)",
-			clusterSpec:     "ready-1.0",
+			name:            "[v1beta1] A rule may be added to a cluster (automatic config)",
+			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchAdditionalSGRule(infrastructurev1beta2.OscAdditionalSecurityRules{
@@ -2164,8 +1767,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:            "A rule may be removed from a v1.0 cluster (automatic config)",
-			clusterSpec:     "ready-1.0",
+			name:            "[v1beta1] A rule may be removed from a cluster (automatic config)",
+			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchIncrementGeneration(),
@@ -2261,8 +1864,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:            "A rule with an associated SG (likely CCM created) is not removed from a v1.0 cluster (automatic config)",
-			clusterSpec:     "ready-1.0",
+			name:            "[v1beta1] A rule with an associated SG (likely CCM created) is not removed from a cluster (automatic config)",
+			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchIncrementGeneration(),
@@ -2357,107 +1960,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:           "A v0.4 cluster has been moved by clusterctl move, status is updated",
-			clusterSpec:    "ready-0.4",
-			clusterPatches: []patchOSCClusterFunc{patchMoveCluster()},
-			mockFuncs: []mockFunc{
-				mockNetFound("vpc-24ba90ce"),
-				mockSubnetFound("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-
-				mockGetSecurityGroup("sg-750ae810", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2379, IpRanges: []string{"10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-a093d014", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-7eb16ccb", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
-					},
-				}),
-				mockGetSecurityGroup("sg-0cd1f87e", &osc.SecurityGroup{
-					InboundRules: []osc.SecurityGroupRule{
-						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51820, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 51821, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
-						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
-					},
-				}),
-
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-				mockGetNatServiceFromClientToken("test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameFound(tag.NatResourceType, "test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-223a4dd4"),
-				mockNatServiceFound("nat-223a4dd4"),
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{
-						RouteTableId:    "rtb-0a4640a6",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-194c971e",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-					{
-						RouteTableId:    "rtb-eeacfe8a",
-						LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}},
-						Routes:          []osc.Route{{DestinationIpRange: "0.0.0.0/0"}},
-					},
-				}),
-
-				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-			},
-			clusterAsserts: []assertOSCClusterFunc{
-				// All other resources have a ResourceId field, no need to store a ref in status.
-				assertStatusClusterResources(infrastructurev1beta2.OscClusterResources{
-					InternetService: map[string]string{
-						"default": "igw-c3c49899",
-					},
-					NatService: map[string]string{
-						"test-cluster-api-natservice-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-223a4dd4",
-					},
-				}),
-			},
-			next: &testcase{
-				name: "A second run has all references in cache",
-			},
-		},
-		{
-			name:            "A v1.0 cluster with a bastion has been moved by clusterctl move, status is updated",
-			clusterSpec:     "base-bastion-1.0",
+			name:            "[v1beta1] A cluster with a bastion has been moved by clusterctl move, status is updated",
+			clusterSpec:     "v1beta1/base-bastion",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
@@ -2602,8 +2106,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:            "A NAT service has been deleted, it is recreated with the associated routes",
-			clusterSpec:     "ready-1.0",
+			name:            "[v1beta1] A NAT service has been deleted, it is recreated with the associated routes",
+			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchIncrementGeneration(),
@@ -2712,67 +2216,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 func TestReconcileOSCCluster_Delete(t *testing.T) {
 	tcs := []testcase{
 		{
-			name:           "Deleting a v0.4 cluster",
-			clusterSpec:    "ready-0.4",
-			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
-			mockFuncs: []mockFunc{
-				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockDeleteLoadBalancer("test-cluster-api-k8s"),
-
-				mockListNatServices("vpc-24ba90ce", []osc.NatService{{
-					NatServiceId: "nat-223a4dd4",
-					PublicIps: []osc.PublicIpLight{{
-						PublicIpId: "ipalloc-nat",
-					}},
-				}}),
-				mockDeleteNatService("nat-223a4dd4"),
-				// IP tracking needs a reconciliation loop to run to register NAT IPs.
-				// mockPublicIpFound("ipalloc-nat"),
-				// mockDeletePublicIp("ipalloc-nat"),
-
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
-					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
-					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
-					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
-				}),
-				mockUnlinkRouteTable("rtbassoc-643430b3"),
-				mockDeleteRouteTable("rtb-0a4640a6"),
-				mockUnlinkRouteTable("rtbassoc-09475c37"),
-				mockDeleteRouteTable("rtb-194c971e"),
-				mockUnlinkRouteTable("rtbassoc-90bda9c8"),
-				mockDeleteRouteTable("rtb-eeacfe8a"),
-
-				mockGetSecurityGroupsFromNet("vpc-24ba90ce", []osc.SecurityGroup{
-					{
-						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
-					},
-					{
-						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
-					},
-				}),
-				mockDeleteSecurityGroup("sg-a093d014", nil),
-				mockDeleteSecurityGroup("sg-750ae810", nil),
-
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
-				mockDeleteInternetService("igw-c3c49899"),
-
-				mockListNetAccessPoints("vpc-24ba90ce", nil),
-
-				mockSubnetFound("subnet-c1a282b0"),
-				mockDeleteSubnet("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockDeleteSubnet("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockDeleteSubnet("subnet-174f5ec4"),
-				mockNetFound("vpc-24ba90ce"),
-				mockDeleteNet("vpc-24ba90ce"),
-			},
-			assertDeleted: true,
-		},
-		{
-			name:           "Deleting a v1.0 cluster",
-			clusterSpec:    "ready-1.0",
+			name:           "[v1beta1] Deleting a cluster",
+			clusterSpec:    "v1beta1/ready",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
 				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
@@ -2829,8 +2274,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:           "A NAT public IP is not deleted if properly tagged",
-			clusterSpec:    "ready-1.0",
+			name:           "[v1beta1] A NAT public IP is not deleted if properly tagged",
+			clusterSpec:    "v1beta1/ready",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
 				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
@@ -2886,19 +2331,18 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:           "Cluster is deleted even if no resource have been created",
-			clusterSpec:    "base-0.4",
+			name:           "[v1beta1] Cluster is deleted even if no resource have been created",
+			clusterSpec:    "v1beta1/base",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
 				mockGetLoadBalancer("test-cluster-api-k8s", nil),
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
-				mockReadTagByNameNoneFound(tag.NetResourceType, "test-cluster-api-net-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
 			assertDeleted: true,
 		},
 		{
-			name:            "An airgapped cluster is deleted even if no resource have been created",
-			clusterSpec:     "airgap-1.0",
+			name:            "[v1beta1] An airgapped cluster is deleted even if no resource have been created",
+			clusterSpec:     "v1beta1/airgap",
 			clusterBaseSpec: "base",
 			clusterPatches:  []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
@@ -2908,24 +2352,23 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:           "If LB is already deleted, continue with the rest",
-			clusterSpec:    "ready-0.4",
+			name:           "[v1beta1] If LB is already deleted, continue with the rest",
+			clusterSpec:    "v1beta1/ready",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
 				mockGetLoadBalancer("test-cluster-api-k8s", nil),
 
-				mockListNatServices("vpc-24ba90ce", []osc.NatService{{
+				mockListNatServices("vpc-foo", []osc.NatService{{
 					NatServiceId: "nat-223a4dd4",
 					PublicIps: []osc.PublicIpLight{{
 						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
-				// IP tracking needs a reconciliation loop to run to register NAT IPs.
-				// mockPublicIpFound("ipalloc-nat"),
-				// mockDeletePublicIp("ipalloc-nat"),
+				mockPublicIpFound("ipalloc-nat"),
+				mockDeletePublicIp("ipalloc-nat"),
 
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3"}}},
 					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37"}}},
 				}),
@@ -2934,7 +2377,7 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockUnlinkRouteTable("rtbassoc-09475c37"),
 				mockDeleteRouteTable("rtb-194c971e"),
 
-				mockGetSecurityGroupsFromNet("vpc-24ba90ce", []osc.SecurityGroup{
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
 					{
 						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
 					},
@@ -2945,43 +2388,42 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteSecurityGroup("sg-a093d014", nil),
 				mockDeleteSecurityGroup("sg-750ae810", nil),
 
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
-				mockDeleteInternetService("igw-c3c49899"),
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
 
-				mockListNetAccessPoints("vpc-24ba90ce", nil),
+				mockListNetAccessPoints("vpc-foo", nil),
 
-				mockSubnetFound("subnet-c1a282b0"),
-				mockDeleteSubnet("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockDeleteSubnet("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockDeleteSubnet("subnet-174f5ec4"),
-				mockNetFound("vpc-24ba90ce"),
-				mockDeleteNet("vpc-24ba90ce"),
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
 			},
 			assertDeleted: true,
 		},
 		{
-			name:           "Delete securityGroupRules with securityGroups before deleting securityGroups",
-			clusterSpec:    "ready-0.4",
+			name:           "[v1beta1] Delete securityGroupRules with securityGroups before deleting securityGroups",
+			clusterSpec:    "v1beta1/ready",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
 				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),
 
-				mockListNatServices("vpc-24ba90ce", []osc.NatService{{
+				mockListNatServices("vpc-foo", []osc.NatService{{
 					NatServiceId: "nat-223a4dd4",
 					PublicIps: []osc.PublicIpLight{{
 						PublicIpId: "ipalloc-nat",
 					}},
 				}}),
 				mockDeleteNatService("nat-223a4dd4"),
-				// IP tracking needs a reconciliation loop to run to register NAT IPs.
-				// mockPublicIpFound("ipalloc-nat"),
-				// mockDeletePublicIp("ipalloc-nat"),
+				mockPublicIpFound("ipalloc-nat"),
+				mockDeletePublicIp("ipalloc-nat"),
 
-				mockGetRouteTablesFromNet("vpc-24ba90ce", []osc.RouteTable{
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3"}}},
 					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37"}}},
 				}),
@@ -2990,7 +2432,7 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockUnlinkRouteTable("rtbassoc-09475c37"),
 				mockDeleteRouteTable("rtb-194c971e"),
 
-				mockGetSecurityGroupsFromNet("vpc-24ba90ce", []osc.SecurityGroup{
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
 					{
 						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{
 							FromPortRange: 33, ToPortRange: 34, IpProtocol: "tcp", SecurityGroupsMembers: []osc.SecurityGroupsMember{{SecurityGroupId: "sg-foo"}, {SecurityGroupId: "sg-bar"}},
@@ -3005,26 +2447,26 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 				mockDeleteSecurityGroupRule("sg-a093d014", "Outbound", "tcp", "", "sg-bar", 35, 36),
 				mockDeleteSecurityGroup("sg-a093d014", nil),
 
-				mockInternetServiceForNetFound("vpc-24ba90ce", "igw-c3c49899"),
-				mockUnlinkInternetService("igw-c3c49899", "vpc-24ba90ce"),
-				mockDeleteInternetService("igw-c3c49899"),
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
 
-				mockListNetAccessPoints("vpc-24ba90ce", nil),
+				mockListNetAccessPoints("vpc-foo", nil),
 
-				mockSubnetFound("subnet-c1a282b0"),
-				mockDeleteSubnet("subnet-c1a282b0"),
-				mockSubnetFound("subnet-1555ea91"),
-				mockDeleteSubnet("subnet-1555ea91"),
-				mockSubnetFound("subnet-174f5ec4"),
-				mockDeleteSubnet("subnet-174f5ec4"),
-				mockNetFound("vpc-24ba90ce"),
-				mockDeleteNet("vpc-24ba90ce"),
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
 			},
 			assertDeleted: true,
 		},
 		{
-			name:        "Deleting a cluster based on an existing network & security groups",
-			clusterSpec: "ready-0.4",
+			name:        "[v1beta1] Deleting a cluster based on an existing network/security groups",
+			clusterSpec: "v1beta1/ready",
 			clusterPatches: []patchOSCClusterFunc{
 				patchDeleteCluster(),
 				patchUseExistingNet(),
@@ -3037,8 +2479,8 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:            "trying to delete a cluster without owner",
-			clusterSpec:     "ready-1.0",
+			name:            "[v1beta1] trying to delete a cluster without owner",
+			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "-",
 			clusterPatches: []patchOSCClusterFunc{
 				patchDeleteCluster(),

@@ -107,22 +107,22 @@ func (m *MachineScope) GetUID() string {
 
 // GetVolumes returns the volume of the cluster
 func (m *MachineScope) GetVolumes() []infrastructurev1beta2.OscVolume {
-	return m.OscMachine.Spec.Node.Volumes
+	return m.OscMachine.Spec.Volumes
 }
 
 // GetVm returns the vm
 func (m *MachineScope) GetVm() infrastructurev1beta2.OscVm {
-	return m.OscMachine.Spec.Node.Vm
+	return m.OscMachine.Spec.Vm
 }
 
 // GetImage returns the image
 func (m *MachineScope) GetImage() *infrastructurev1beta2.OscImage {
-	return &m.OscMachine.Spec.Node.Image
+	return &m.OscMachine.Spec.Image
 }
 
 // SetImageId sets ImageId
 func (m *MachineScope) SetImageId(imageId string) {
-	m.OscMachine.Spec.Node.Vm.ImageId = imageId
+	m.OscMachine.Spec.Vm.ImageId = imageId
 }
 
 // GetImageId returns ImageId
@@ -164,9 +164,9 @@ func (m *MachineScope) IsControlPlane() bool {
 	return util.IsControlPlaneMachine(m.Machine)
 }
 
-// GetNode return the node
-func (m *MachineScope) GetNode() *infrastructurev1beta2.OscNode {
-	return &m.OscMachine.Spec.Node
+// GetSpec return the OscMachine spec
+func (m *MachineScope) GetSpec() *infrastructurev1beta2.OscMachineSpec {
+	return &m.OscMachine.Spec
 }
 
 // GetRole return the role
@@ -253,7 +253,7 @@ func (s *MachineScope) NeedReconciliation(reconciler infrastructurev1beta2.Recon
 	if s.OscMachine.Status.ReconcilerGeneration[reconciler] < s.OscMachine.Generation {
 		return true
 	}
-	r := s.OscMachine.Spec.Node.ReconciliationRule
+	r := s.OscMachine.Spec.ReconciliationRule
 	if r == nil {
 		return false
 	}

@@ -57,7 +57,7 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 	}
 }
 
-// getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
+// _getVmOrId returns the id for the vm, a wrapped ErrNoResourceFound error otherwise.
 func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (*osc.Vm, string, error) {
 	id := machineScope.GetVm().ResourceId
 	if id != "" {
@@ -208,7 +208,7 @@ func (t *MachineResourceTracker) getFGPU(ctx context.Context, machineScope *scop
 	}
 }
 
-// getNetId returns the id for the cluster network, a wrapped ErrNoResourceFound error otherwise.
+// _getFGPUOrId returns the id for the FGPU, a wrapped ErrNoResourceFound error otherwise.
 func (t *MachineResourceTracker) _getFGPUOrId(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (*osc.FlexibleGpu, string, error) {
 	rsrc := machineScope.GetResources()
 	id := getResource(defaultResource, rsrc.FGPU)

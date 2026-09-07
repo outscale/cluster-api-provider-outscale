@@ -11,11 +11,11 @@ spec:
     machineInfrastructure:
       ref:
         kind: OscMachineTemplate
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
         name: "cluster-class-control-plane"
   infrastructure:
     ref:
-      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
       kind: OscClusterTemplate
       name: "cluster-class"
   workers:
@@ -29,7 +29,7 @@ spec:
               name: "cluster-class-worker"
           infrastructure:
             ref:
-              apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+              apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
               kind: OscMachineTemplate
               name: "cluster-class-worker"
   variables:
@@ -55,7 +55,7 @@ spec:
     - name: oscClusterTemplate
       definitions:
         - selector:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: OscClusterTemplate
             matchResources:
               infrastructureCluster: true
@@ -71,7 +71,7 @@ spec:
     - name: OscMachineTemplateControlPlane
       definitions:
         - selector:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: OscMachineTemplate
             matchResources:
               controlPlane: true
@@ -87,7 +87,7 @@ spec:
     - name: OscMachineTemplateControlWorker
       definitions:
         - selector:
-            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
             kind: OscMachineTemplate
             matchResources:
               machineDeploymentClass:
@@ -103,60 +103,57 @@ spec:
               valueFrom:
                 variable: subregionName
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscClusterTemplate
 metadata:
   name: "cluster-class"
 spec:
   template:
     spec:
-      network:
-        subregionName: "eu-west-2b"
-        loadBalancer:
-          loadbalancername: "REPLACEME"
-        bastion:
-          enable: false
+      subregionName: "eu-west-2b"
+      loadBalancer:
+        loadbalancername: "REPLACEME"
+      bastion:
+        enable: false
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cluster-class-worker"
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          subregionName: "eu-west-2b"
-          vmType: "tinav9.c1r1p1"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+        outscaleOpenSource: true
+      vm:
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        subregionName: "eu-west-2b"
+        vmType: "tinav9.c1r1p1"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
 metadata:
   name: "cluster-class-control-plane"
 spec:
   template:
     spec:
-      node:
-        image:
-          name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
-          outscaleOpenSource: true
-        vm:
-          rootDisk:
-            rootDiskSize: ${OSC_VOLUME_SIZE}
-            rootDiskIops: ${OSC_IOPS}
-            rootDiskType: "${OSC_VOLUME_TYPE}"
-          subregionName: "eu-west-2b"
-          keypairName: "${OSC_KEYPAIR_NAME}"
-          role: controlplane
-          vmType: "tinav9.c1r1p1"
+      image:
+        name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
+        outscaleOpenSource: true
+      vm:
+        rootDisk:
+          rootDiskSize: ${OSC_VOLUME_SIZE}
+          rootDiskIops: ${OSC_IOPS}
+          rootDiskType: "${OSC_VOLUME_TYPE}"
+        subregionName: "eu-west-2b"
+        keypairName: "${OSC_KEYPAIR_NAME}"
+        role: controlplane
+        vmType: "tinav9.c1r1p1"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate

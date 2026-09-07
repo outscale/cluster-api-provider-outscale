@@ -9,6 +9,7 @@ import (
 	"context"
 	"testing"
 
+	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
@@ -35,11 +36,12 @@ func runMachineTest(t *testing.T, tc testcase) {
 	for _, fn := range tc.machinePatches {
 		fn(om)
 	}
-	om.Spec.Node.Vm.SetDefaultValue()
+	om.Spec.Vm.SetDefaultValue()
 	fakeScheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(fakeScheme)
 	_ = clusterv1.AddToScheme(fakeScheme)
 	_ = apiextensionsv1.AddToScheme(fakeScheme)
+	_ = infrastructurev1beta1.AddToScheme(fakeScheme)
 	_ = infrastructurev1beta2.AddToScheme(fakeScheme)
 	client := fake.NewClientBuilder().WithScheme(fakeScheme).
 		WithStatusSubresource(om).WithObjects(c, oc, m, om).Build()
@@ -96,13 +98,13 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 	tcs := []testcase{
 		// Worker node, with 3 reconciliation loops
 		{
-			name:        "Creating a worker with base parameters, vm is pending",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			name:        "[v1beta1] Creating a worker with base parameters, vm is pending",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.RepulseServerTag: "test-cluster-api-md-0",
 				}),
 			},
@@ -112,8 +114,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				assertVmExists("i-foo", osc.VmStatePending, false),
 			},
 			next: &testcase{
-				name:        "worker has been created, but vm is still pending",
-				clusterSpec: "ready-0.4", machineSpec: "base-worker",
+				name:        "[v1beta1] worker has been created, but vm is still pending",
+				clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 				machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", osc.VmStatePending, false)},
 				mockFuncs: []mockFunc{
 					mockGetVm("i-foo", "pending", false),
@@ -121,8 +123,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				requeue:        true,
 				machineAsserts: []assertOSCMachineFunc{assertVmExists("i-foo", osc.VmStatePending, false)},
 				next: &testcase{
-					name:        "worker has been created, and vm is now running",
-					clusterSpec: "ready-0.4", machineSpec: "base-worker",
+					name:        "[v1beta1] worker has been created, and vm is now running",
+					clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 					machinePatches: []patchOSCMachineFunc{patchVmExists("i-foo", osc.VmStatePending, false)},
 					mockFuncs: []mockFunc{
 						mockGetVm("i-foo", "running", false),
@@ -136,9 +138,9 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 		},
 		{
-			name:        "Using an opensource image (eu-west-2)",
+			name:        "[v1beta1] Using an opensource image (eu-west-2)",
 			region:      "eu-west-2",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUseOpenSourceOMI(),
 			},
@@ -146,16 +148,16 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockOpenSourceImageFound("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "eu-west-2", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.RepulseServerTag: "test-cluster-api-md-0",
 				}),
 			},
 			requeue: true,
 		},
 		{
-			name:        "Using an opensource image (us-east-2)",
+			name:        "[v1beta1] Using an opensource image (us-east-2)",
 			region:      "us-east-2",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUseOpenSourceOMI(),
 			},
@@ -163,16 +165,16 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockOpenSourceImageFound("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "us-east-2", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.RepulseServerTag: "test-cluster-api-md-0",
 				}),
 			},
 			requeue: true,
 		},
 		{
-			name:        "Using an opensource image (cloudgouv-eu-west-1)",
+			name:        "[v1beta1] Using an opensource image (cloudgouv-eu-west-1)",
 			region:      "cloudgouv-eu-west-1",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUseOpenSourceOMI(),
 			},
@@ -180,7 +182,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockOpenSourceImageFound("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "cloudgouv-eu-west-1", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.RepulseServerTag: "test-cluster-api-md-0",
 				}),
 			},
@@ -189,13 +191,13 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// Control plane node
 		{
-			name:        "Creating a controlplane with base parameters, vm is running & LB is ok",
-			clusterSpec: "ready-0.4", machineSpec: "base-controlplane",
+			name:        "[v1beta1] Creating a controlplane with base parameters, vm is running & LB is ok",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-controlplane",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kcp", []string{"sg-kcp", "sg-node"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertHasMachineFinalizer(),
@@ -216,13 +218,13 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 		},
 		{
-			name:        "Creating a controlplane with base parameters, vm is running & LB is not found",
-			clusterSpec: "ready-0.4", machineSpec: "base-controlplane",
+			name:        "[v1beta1] Creating a controlplane with base parameters, vm is running & LB is not found",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-controlplane",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-c1a282b0", []string{"sg-750ae810", "sg-0cd1f87e"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kcp", []string{"sg-kcp", "sg-node"}, []string{}, "cluster-api-test-controlplane", "uster-api-test-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{}),
 			},
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{
@@ -240,8 +242,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// Volumes
 		{
-			name:        "Creating a vm with additional volumes",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker-volumes",
+			name:        "[v1beta1] Creating a vm with additional volumes",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker-volumes",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -280,8 +282,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// Public IPs
 		{
-			name:        "Creating a vm with a dynamic public IP",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			name:        "[v1beta1] Creating a vm with a dynamic public IP",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUsePublicIP(),
 			},
@@ -290,7 +292,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreatePublicIp("cluster-api-test-worker", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-worker", "1.2.3.4"),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.AutoAttachExternalIPTag: "1.2.3.4",
 					compute.RepulseServerTag:        "test-cluster-api-md-0",
 				}),
@@ -326,8 +328,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 		},
 		{
-			name:        "Creating a vm with a public IP from a pool",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			name:        "[v1beta1] Creating a vm with a public IP from a pool",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUsePublicIP("pool-foo"),
 			},
@@ -336,7 +338,7 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: "ipalloc-foo", PublicIp: "1.2.3.4"}}),
-				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-1555ea91", []string{"sg-a093d014", "sg-0cd1f87e"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
+				mockCreateVmNoVolumes("i-foo", "ami-foo", "subnet-kw", []string{"sg-kw", "sg-node"}, []string{}, "cluster-api-test-worker", "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", map[string]string{
 					compute.AutoAttachExternalIPTag: "1.2.3.4",
 					compute.RepulseServerTag:        "test-cluster-api-md-0",
 				}),
@@ -372,8 +374,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			},
 		},
 		{
-			name:        "When the IP pool is empty, an error is returned",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			name:        "[v1beta1] When the IP pool is empty, an error is returned",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUsePublicIP("pool-foo"),
 			},
@@ -386,8 +388,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:        "When the IP pool is fully used, an error is returned",
-			clusterSpec: "ready-0.4", machineSpec: "base-worker",
+			name:        "[v1beta1] When the IP pool is fully used, an error is returned",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchUsePublicIP("pool-foo"),
 			},
@@ -402,8 +404,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// repulse
 		{
-			name:        "The default server repulse can be disabled",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] The default server repulse can be disabled",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("")}),
 			},
@@ -416,8 +418,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 		},
 		{
-			name:        "A server repulse can be configured",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] A server repulse can be configured",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("foo")}),
 			},
@@ -432,8 +434,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 		},
 		{
-			name:        "A strict server repulse can be configured",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] A strict server repulse can be configured",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("foo"), ServerStrict: true}),
 			},
@@ -448,8 +450,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 		},
 		{
-			name:        "A cluster repulse can be configured",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] A cluster repulse can be configured",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseCluster: "foo"}),
 			},
@@ -464,8 +466,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 		},
 		{
-			name:        "A strict cluster repulse can be configured",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] A strict cluster repulse can be configured",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseCluster: "foo", ClusterStrict: true}),
 			},
@@ -480,8 +482,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 		},
 		{
-			name:        "Both repulse can be configured",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] Both repulse can be configured",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchRepulse(infrastructurev1beta2.OscPlacement{RepulseServer: new("foo"), RepulseCluster: "bar", ClusterStrict: true}),
 			},
@@ -497,8 +499,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 			requeue: true,
 		},
 		{
-			name:        "Repulse is ignored if repulse tags are configured",
-			clusterSpec: "ready-1.0", machineSpec: "base-worker",
+			name:        "[v1beta1] Repulse is ignored if repulse tags are configured",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchTags(map[string]string{
 					compute.RepulseClusterStrictTag: "bar",
@@ -525,27 +527,8 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 func TestReconcileOSCMachine_Update(t *testing.T) {
 	tcs := []testcase{
 		{
-			name:        "worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.4",
-			machineBaseSpec: "ready-worker",
-			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
-			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running", true),
-			},
-			machineAsserts: []assertOSCMachineFunc{
-				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
-					Vm: map[string]string{
-						"default": "i-046f4bd0",
-					},
-					Volumes: map[string]string{
-						"/dev/sda1": "vol-foo",
-					},
-				}),
-			},
-		},
-		{
-			name:        "1.0 worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			name:        "[v1beta1] worker has been moved by clusterctl move, status is updated",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
@@ -570,8 +553,8 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			},
 		},
 		{
-			name:        "1.0 worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			name:        "[v1beta1] worker has been moved by clusterctl move, status is updated",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchMoveMachine(),
@@ -614,8 +597,8 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 func TestReconcileOSCMachine_Delete(t *testing.T) {
 	tcs := []testcase{
 		{
-			name:        "deleting a 0.4 machine",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-0.4",
+			name:        "[v1beta1] deleting a machine",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
 			mockFuncs: []mockFunc{
@@ -625,19 +608,8 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "deleting a 1.0 machine",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
-			machineBaseSpec: "ready-worker",
-			machinePatches:  []patchOSCMachineFunc{patchDeleteMachine()},
-			mockFuncs: []mockFunc{
-				mockGetVm("i-046f4bd0", "running", true),
-				mockDeleteVm("i-046f4bd0"),
-			},
-			assertDeleted: true,
-		},
-		{
-			name:        "deleting a 1.0 machine with a public ip",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			name:        "[v1beta1] deleting a machine with a public ip",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchDeleteMachine(),
@@ -653,8 +625,8 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "deleting a 1.0 machine with a public ip from a pool",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			name:        "[v1beta1] deleting a machine with a public ip from a pool",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchDeleteMachine(),
@@ -668,8 +640,8 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "deleting a 1.0 machine with a no delete public ip",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			name:        "[v1beta1] deleting a machine with a no delete public ip",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "ready-worker",
 			machinePatches: []patchOSCMachineFunc{
 				patchDeleteMachine(),
@@ -684,8 +656,8 @@ func TestReconcileOSCMachine_Delete(t *testing.T) {
 			assertDeleted: true,
 		},
 		{
-			name:        "trying to delete a machine without owner",
-			clusterSpec: "ready-0.4", machineSpec: "ready-worker-1.0",
+			name:        "[v1beta1] trying to delete a machine without owner",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
 			machineBaseSpec: "-",
 			machinePatches: []patchOSCMachineFunc{
 				patchDeleteMachine(),
