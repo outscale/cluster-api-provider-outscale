@@ -1,10 +1,55 @@
 package v1beta1
 
 import (
+	"strings"
+
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/samber/lo"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
+
+func ConvertRulesTo(src []OscSecurityGroupRule) []infrastructurev1beta2.OscSecurityGroupRule {
+	return lo.Map(src, func(src OscSecurityGroupRule, _ int) infrastructurev1beta2.OscSecurityGroupRule {
+		return infrastructurev1beta2.OscSecurityGroupRule{
+			Name:     src.Name,
+			Flow:     ConvertFlowTo(src.Flow),
+			Ports:    []infrastructurev1beta2.Port{infrastructurev1beta2.BuildPort(src.IpProtocol, src.FromPortRange, src.ToPortRange)},
+			IpRanges: src.GetIpRanges(),
+		}
+	})
+}
+
+func ConvertRulesFrom(srcs []infrastructurev1beta2.OscSecurityGroupRule) ([]OscSecurityGroupRule, error) {
+	dst := make([]OscSecurityGroupRule, 0, len(srcs))
+	for _, src := range srcs {
+		for _, p := range src.Ports {
+			proto, fromPort, toPort, err := p.Parse()
+			if err != nil {
+				return nil, err
+			}
+			dst = append(dst, OscSecurityGroupRule{
+				Name:          src.Name,
+				Flow:          ConvertFlowFrom(src.Flow),
+				IpProtocol:    proto,
+				FromPortRange: int32(fromPort), //nolint
+				ToPortRange:   int32(toPort), //nolint
+				IpRanges:      src.IpRanges,
+			})
+		}
+	}
+	return dst, nil
+}
+
+func ConvertFlowTo(src string) infrastructurev1beta2.Flow {
+	if strings.ToLower(src) == "outbound" {
+		return infrastructurev1beta2.FlowOutbound
+	}
+	return infrastructurev1beta2.FlowInbound
+}
+
+func ConvertFlowFrom(src infrastructurev1beta2.Flow) string {
+	return string(src)
+}
 
 func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) error {
 	srcNet := src.Network
@@ -81,15 +126,13 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 		}),
 		SecurityGroups: lo.Map(srcNet.SecurityGroups, func(src OscSecurityGroup, _ int) infrastructurev1beta2.OscSecurityGroup {
 			return infrastructurev1beta2.OscSecurityGroup{
-				Name:        src.Name,
-				Description: src.Description,
-				SecurityGroupRules: lo.Map(src.SecurityGroupRules, func(src OscSecurityGroupRule, _ int) infrastructurev1beta2.OscSecurityGroupRule {
-					return infrastructurev1beta2.OscSecurityGroupRule(src)
-				}),
-				ResourceId:    src.ResourceId,
-				Roles:         lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole { return infrastructurev1beta2.OscRole(src) }),
-				Tag:           src.Tag,
-				Authoritative: src.Authoritative,
+				Name:               src.Name,
+				Description:        src.Description,
+				SecurityGroupRules: ConvertRulesTo(src.SecurityGroupRules),
+				ResourceId:         src.ResourceId,
+				Roles:              lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole { return infrastructurev1beta2.OscRole(src) }),
+				Tag:                src.Tag,
+				Authoritative:      src.Authoritative,
 			}
 		}),
 		AdditionalSecurityRules: lo.Map(srcNet.AdditionalSecurityRules, func(src OscAdditionalSecurityRules, _ int) infrastructurev1beta2.OscAdditionalSecurityRules {
@@ -97,9 +140,7 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 				Roles: lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole {
 					return infrastructurev1beta2.OscRole(src)
 				}),
-				Rules: lo.Map(src.Rules, func(src OscSecurityGroupRule, _ int) infrastructurev1beta2.OscSecurityGroupRule {
-					return infrastructurev1beta2.OscSecurityGroupRule(src)
-				}),
+				Rules: ConvertRulesTo(src.Rules),
 			}
 		}),
 		Bastion: infrastructurev1beta2.OscBastion{
@@ -135,6 +176,7 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 }
 
 func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec) error {
+	var err error
 	dst.ControlPlaneEndpoint = src.ControlPlaneEndpoint
 	dst.Credentials = OscCredentials(src.Credentials)
 	dst.Network = OscNetwork{
@@ -202,26 +244,30 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			}
 		}),
 		SecurityGroups: lo.Map(src.SecurityGroups, func(src infrastructurev1beta2.OscSecurityGroup, _ int) OscSecurityGroup {
+			rules, rerr := ConvertRulesFrom(src.SecurityGroupRules)
+			if rerr != nil {
+				err = rerr
+			}
 			return OscSecurityGroup{
-				Name:        src.Name,
-				Description: src.Description,
-				SecurityGroupRules: lo.Map(src.SecurityGroupRules, func(src infrastructurev1beta2.OscSecurityGroupRule, _ int) OscSecurityGroupRule {
-					return OscSecurityGroupRule(src)
-				}),
-				ResourceId:    src.ResourceId,
-				Roles:         lo.Map(src.Roles, func(src infrastructurev1beta2.OscRole, _ int) OscRole { return OscRole(src) }),
-				Tag:           src.Tag,
-				Authoritative: src.Authoritative,
+				Name:               src.Name,
+				Description:        src.Description,
+				SecurityGroupRules: rules,
+				ResourceId:         src.ResourceId,
+				Roles:              lo.Map(src.Roles, func(src infrastructurev1beta2.OscRole, _ int) OscRole { return OscRole(src) }),
+				Tag:                src.Tag,
+				Authoritative:      src.Authoritative,
 			}
 		}),
 		AdditionalSecurityRules: lo.Map(src.AdditionalSecurityRules, func(src infrastructurev1beta2.OscAdditionalSecurityRules, _ int) OscAdditionalSecurityRules {
+			rules, rerr := ConvertRulesFrom(src.Rules)
+			if rerr != nil {
+				err = rerr
+			}
 			return OscAdditionalSecurityRules{
 				Roles: lo.Map(src.Roles, func(src infrastructurev1beta2.OscRole, _ int) OscRole {
 					return OscRole(src)
 				}),
-				Rules: lo.Map(src.Rules, func(src infrastructurev1beta2.OscSecurityGroupRule, _ int) OscSecurityGroupRule {
-					return OscSecurityGroupRule(src)
-				}),
+				Rules: rules,
 			}
 		}),
 		Bastion: OscBastion{
@@ -259,7 +305,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 	if src.Disable.Loadbalancer {
 		dst.Network.Disable = append(dst.Network.Disable, DisableLB)
 	}
-	return nil
+	return err
 }
 
 func (src *OscCluster) ConvertTo(dstRaw conversion.Hub) error {
