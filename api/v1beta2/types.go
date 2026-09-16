@@ -6,7 +6,10 @@ SPDX-License-Identifier: BSD-3-Clause
 package v1beta2
 
 import (
+	"errors"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
@@ -118,8 +121,12 @@ type OscNet struct {
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
-func (o *OscNet) IsZero() bool {
-	return o.IpRange == "" && o.ResourceId == ""
+func (n OscNet) IsZero() bool {
+	return n.IpRange == "" && n.ResourceId == ""
+}
+
+func (n OscNet) GetIpRanges() []string {
+	return []string{n.IpRange}
 }
 
 var DefaultNet = OscNet{
@@ -283,55 +290,64 @@ type OscSecurityGroupElement struct {
 	Name string `json:"name,omitempty"`
 }
 
+// +kubebuilder:validation:Enum:=Inbound;Outbound
+type Flow string
+
+const (
+	FlowInbound  Flow = "Inbound"
+	FlowOutbound Flow = "Outbound"
+)
+
+// +kubebuilder:validation:Pattern:=^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5}))( ?#.*)?$
+type Port string
+
+var rePort = regexp.MustCompile("^([a-z0-9-]+)(/([0-9]{1,5})(-([0-9]{1,5}))?)?( ?#.*)?")
+
+func (p Port) Parse() (protocol string, fromPort, toPort int, err error) {
+	ms := rePort.FindAllStringSubmatch(string(p), 1)
+	if len(ms) == 0 {
+		return "-1", -1, -1, errors.New("not a port definition")
+	}
+	protocol, from, to := ms[0][1], ms[0][3], ms[0][5]
+	fromPort, toPort = -1, -1
+	if from != "" {
+		fromPort, _ = strconv.Atoi(from) // the regexp only matches numbers
+	}
+	if to != "" {
+		toPort, _ = strconv.Atoi(to)
+	}
+	if fromPort != -1 && toPort == -1 {
+		toPort = fromPort
+	}
+	return
+}
+
+func BuildPort(protocol string, fromPort, toPort int32) Port {
+	b := strings.Builder{}
+	b.WriteString(protocol)
+	if fromPort != -1 {
+		b.WriteString("/")
+		b.WriteString(strconv.Itoa(int(fromPort)))
+	}
+	if toPort != fromPort && toPort != -1 {
+		b.WriteString("-")
+		b.WriteString(strconv.Itoa(int(toPort)))
+	}
+	return Port(b.String())
+}
+
 type OscSecurityGroupRule struct {
 	// The tag name associate with the security group
 	// +optional
 	Name string `json:"name,omitempty"`
-	// The flow of the security group (inbound or outbound)
+	// The flow of the security group (Inbound or Outbound), default Inbound
 	// +optional
-	Flow string `json:"flow,omitempty"`
-	// The ip protocol name (tcp, udp, icmp or -1)
-	// +optional
-	IpProtocol string `json:"ipProtocol,omitempty"`
-	// The ip range of the security group rule (deprecated, use ipRanges)
-	// +optional
-	IpRange string `json:"ipRange,omitempty"`
+	Flow Flow `json:"flow,omitempty"`
+	// The list of ports to open (protocol, protocol/port or protocol/fromPort-toPort)
+	Ports []Port `json:"ports"`
 	// The list of ip ranges of the security group rule
 	// +optional
-	IpRanges []string `json:"ipRanges,omitempty"`
-	// The beginning of the port range
-	// +optional
-	FromPortRange int32 `json:"fromPortRange,omitempty"`
-	// The end of the port range
-	// +optional
-	ToPortRange int32 `json:"toPortRange,omitempty"`
-	// The security group rule id
-	// +optional
-	ResourceId string `json:"resourceId,omitempty"`
-}
-
-func (sgr *OscSecurityGroupRule) GetIpRanges() []string {
-	if len(sgr.IpRanges) > 0 {
-		return sgr.IpRanges
-	}
-	if sgr.IpRange != "" {
-		return []string{sgr.IpRange}
-	}
-	return nil
-}
-
-func (sgr *OscSecurityGroupRule) GetFromPortRange() int32 {
-	if sgr.IpProtocol == "-1" {
-		return -1
-	}
-	return sgr.FromPortRange
-}
-
-func (sgr *OscSecurityGroupRule) GetToPortRange() int32 {
-	if sgr.IpProtocol == "-1" {
-		return -1
-	}
-	return sgr.ToPortRange
+	IpRanges []string `json:"ipRanges"`
 }
 
 type OscClusterResources struct {
@@ -586,7 +602,8 @@ const (
 	DefaultUnhealthyThreshold   int32  = 3
 	DefaultTimeout              int32  = 10
 
-	APIPort int32 = 6443
+	APIPort    int32 = 6443
+	APIPortStr       = "tcp/6443"
 )
 
 // SetDefaultValue set the vm default values

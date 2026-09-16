@@ -181,13 +181,13 @@ func TestClusterScope_GetSecurityGroups(t *testing.T) {
 				SubregionName: "eu-west2a",
 				SecurityGroups: []infrastructurev1beta2.OscSecurityGroup{{
 					Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleBastion},
-					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRanges: []string{"0.0.0.0/0"}}},
 				}, {
 					Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer},
-					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRanges: []string{"0.0.0.0/0"}}},
 				}, {
 					Roles:              []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker},
-					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRange: "0.0.0.0/0"}},
+					SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{{IpRanges: []string{"0.0.0.0/0"}}},
 				}},
 				AllowFromIPRanges: []string{"1.2.3.0/24"},
 				AllowToIPRanges:   []string{"2.3.4.0/24"},
@@ -202,18 +202,18 @@ func TestClusterScope_GetSecurityGroups(t *testing.T) {
 		switch sg.Roles[0] {
 		case infrastructurev1beta2.RoleBastion:
 			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
-				Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: []string{"1.2.3.0/24"},
+				Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: []string{"1.2.3.0/24"},
 			})
 			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
-				Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"2.3.4.0/24"},
+				Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: []string{"2.3.4.0/24"},
 			})
 		case infrastructurev1beta2.RoleLoadBalancer:
 			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
-				Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"1.2.3.0/24"},
+				Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: []string{"1.2.3.0/24"},
 			})
 		case infrastructurev1beta2.RoleControlPlane:
 			assert.Contains(t, sg.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
-				Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"2.3.4.0/24"},
+				Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: []string{"2.3.4.0/24"},
 			})
 		}
 	}

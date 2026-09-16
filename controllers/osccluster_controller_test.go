@@ -1671,8 +1671,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				patchAdditionalSGRule(infrastructurev1beta2.OscAdditionalSecurityRules{
 					Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
 					Rules: []infrastructurev1beta2.OscSecurityGroupRule{{
-						Flow:       "Inbound",
-						IpProtocol: "tcp", FromPortRange: 24, ToPortRange: 25,
+						Flow:     "Inbound",
+						Ports:    []infrastructurev1beta2.Port{"tcp/24-25"},
 						IpRanges: []string{"1.2.3.4/32", "4.5.6.7/32"},
 					}},
 				}),

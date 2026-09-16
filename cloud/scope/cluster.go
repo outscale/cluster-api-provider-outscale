@@ -383,13 +383,15 @@ func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta2.OscSecu
 	if len(allowedIn) > 0 {
 		for i := range sgs {
 			if slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleLoadBalancer) {
-				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
-					infrastructurev1beta2.OscSecurityGroupRule{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allowedIn},
+				sgs[i].SecurityGroupRules = append(
+					sgs[i].SecurityGroupRules,
+					infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: allowedIn},
 				)
 			}
 			if slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleBastion) {
-				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
-					infrastructurev1beta2.OscSecurityGroupRule{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: allowedIn},
+				sgs[i].SecurityGroupRules = append(
+					sgs[i].SecurityGroupRules,
+					infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: allowedIn},
 				)
 			}
 		}
@@ -399,8 +401,9 @@ func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta2.OscSecu
 			if (slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleWorker) &&
 				slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleControlPlane)) ||
 				slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleBastion) {
-				sgs[i].SecurityGroupRules = append(sgs[i].SecurityGroupRules,
-					infrastructurev1beta2.OscSecurityGroupRule{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: allowedOut},
+				sgs[i].SecurityGroupRules = append(
+					sgs[i].SecurityGroupRules,
+					infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: allowedOut},
 				)
 			}
 		}
@@ -431,8 +434,8 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		Description: "LB securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allowedIn},
-			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: allSNCP},
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: allowedIn},
+			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: allSNCP},
 		},
 		Authoritative: true,
 	}
@@ -443,9 +446,8 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		Description: "Worker securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: allSNCP},    // HTTPS
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: allSNCP}, // Applicative ports (services, ...)
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: allSN},  // Kubelet
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/443", "tcp/1024-65535"}, IpRanges: allSNCP},
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/10250 # Kubelet"}, IpRanges: allSN},
 		},
 		Authoritative: true,
 	}
@@ -456,9 +458,8 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		Description: "Controlplane securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRange: s.GetNet().IpRange}, // API
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: allSNCP},           // etcd
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: allSNCP},         // Kubelet
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: s.GetNet().GetIpRanges()}, // API
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/2378-2380 # etcd", "tcp/10250-10252 # Kubelet"}, IpRanges: allSNCP},
 		},
 		Authoritative: true,
 	}
@@ -478,30 +479,35 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 			// Calico - see https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements#network-requirements
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRange: s.GetNet().IpRange},     // BGP
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRange: s.GetNet().IpRange},   // VXLAN/flannel
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRange: s.GetNet().IpRange},   // Typha
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRange: s.GetNet().IpRange},   // Flannel
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRange: s.GetNet().IpRange}, // Wiregard
-			{Flow: "Inbound", IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRange: s.GetNet().IpRange},         // IP-in-IP
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{
+				"tcp/179 # Calico (BGP)",
+				"udp/4789 # Calico (VXLAN/flannel)",
+				"udp/5473 # Calico (Typha)",
+				"udp/8285 # Calico (Flannel)",
+				"udp/51820-51821 # Calico (Wiregard)",
+				"4 # Calico (IP-in-IP)",
+			}, IpRanges: s.GetNet().GetIpRanges()},
 
 			// Cillium - see https://docs.cilium.io/en/stable/operations/system_requirements/#firewall-rules
-			{Flow: "Inbound", IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRange: s.GetNet().IpRange},        // ICMP
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRange: s.GetNet().IpRange},   // Health
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRange: s.GetNet().IpRange},   // Hubble
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRange: s.GetNet().IpRange},   // VXLAN
-			{Flow: "Inbound", IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRange: s.GetNet().IpRange}, // Wiregard
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{
+				"icmp/8 # Cillium (ICMP)",
+				"tcp/4240 # Cillium (Health)",
+				"tcp/4244 # Cillium (Hubble)",
+				"udp/8472 # Cillium (VXLAN)",
+				"udp/51871 # Cillium (Wiregard)",
+			}, IpRanges: s.GetNet().GetIpRanges()},
 
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRange: s.GetNet().IpRange}, // NodePort
-			{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRange: s.GetNet().IpRange},       // internal trafic
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/30000-32767"}, IpRanges: s.GetNet().GetIpRanges()}, // NodePort
+			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: s.GetNet().GetIpRanges()},             // internal traffic
 		},
 		Tag:           "OscK8sMainSG",
 		Authoritative: true,
 	}
 	// Outbound traffic
 	if len(allowedOut) > 0 {
-		node.SecurityGroupRules = append(node.SecurityGroupRules,
-			infrastructurev1beta2.OscSecurityGroupRule{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: allowedOut},
+		node.SecurityGroupRules = append(
+			node.SecurityGroupRules,
+			infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: allowedOut},
 		)
 	}
 	node.SecurityGroupRules = append(node.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker)...)
@@ -510,22 +516,23 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		return []infrastructurev1beta2.OscSecurityGroup{lb, worker, controlplane, node}
 	}
 	node.SecurityGroupRules = append(node.SecurityGroupRules, infrastructurev1beta2.OscSecurityGroupRule{
-		Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: allSNBastion,
+		Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: allSNBastion,
 	})
 	bastion := infrastructurev1beta2.OscSecurityGroup{
 		Name:        s.GetName() + "-bastion",
 		Description: "Bastion securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleBastion},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
-			{Flow: "Inbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRanges: allowedIn},
-			{Flow: "Outbound", IpProtocol: "tcp", FromPortRange: 22, ToPortRange: 22, IpRange: s.GetNet().IpRange},
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: allowedIn},
+			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: s.GetNet().GetIpRanges()},
 		},
 		Authoritative: true,
 	}
 	// Outbound traffic
 	if len(allowedOut) > 0 {
-		bastion.SecurityGroupRules = append(bastion.SecurityGroupRules,
-			infrastructurev1beta2.OscSecurityGroupRule{Flow: "Outbound", IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: allowedOut},
+		bastion.SecurityGroupRules = append(
+			bastion.SecurityGroupRules,
+			infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: allowedOut},
 		)
 	}
 	bastion.SecurityGroupRules = append(bastion.SecurityGroupRules, s.getAdditionalRules(infrastructurev1beta2.RoleBastion)...)
@@ -768,7 +775,8 @@ func (s *ClusterScope) PatchObject(ctx context.Context) error {
 		infrastructurev1beta2.InternetServicesReadyCondition,
 		infrastructurev1beta2.NatServicesReadyCondition,
 		infrastructurev1beta2.RouteTablesReadyCondition)
-	conditions.SetSummary(s.OscCluster,
+	conditions.SetSummary(
+		s.OscCluster,
 		conditions.WithConditions(setConditions...),
 		conditions.WithStepCounterIf(s.OscCluster.ObjectMeta.DeletionTimestamp.IsZero()),
 		conditions.WithStepCounter(),
@@ -783,7 +791,8 @@ func (s *ClusterScope) PatchObject(ctx context.Context) error {
 			infrastructurev1beta2.InternetServicesReadyCondition,
 			infrastructurev1beta2.NatServicesReadyCondition,
 			infrastructurev1beta2.LoadBalancerReadyCondition,
-		}})
+		}},
+	)
 }
 
 func (s *ClusterScope) ListMachines(ctx context.Context) ([]*clusterv1.Machine, []*infrastructurev1beta2.OscMachine, error) {
