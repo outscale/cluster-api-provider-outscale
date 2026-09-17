@@ -5,6 +5,7 @@ import (
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/samber/lo"
+	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -32,7 +33,7 @@ func ConvertRulesFrom(srcs []infrastructurev1beta2.OscSecurityGroupRule) ([]OscS
 				Flow:          ConvertFlowFrom(src.Flow),
 				IpProtocol:    proto,
 				FromPortRange: int32(fromPort), //nolint
-				ToPortRange:   int32(toPort), //nolint
+				ToPortRange:   int32(toPort),   //nolint
 				IpRanges:      src.IpRanges,
 			})
 		}
@@ -321,7 +322,15 @@ func (src *OscCluster) ConvertTo(dstRaw conversion.Hub) error {
 		Conditions:     src.Status.Conditions,
 		VmState:        src.Status.VmState,
 	}
-	return src.Spec.ConvertTo(&dst.Spec)
+	if err := src.Spec.ConvertTo(&dst.Spec); err != nil {
+		return err
+	}
+	restored := &infrastructurev1beta2.OscCluster{}
+	if ok, err := utilconversion.UnmarshalData(src, restored); err != nil || !ok {
+		return err
+	}
+	dst.Spec.Keypair = restored.Spec.Keypair
+	return nil
 }
 
 func (dst *OscCluster) ConvertFrom(srcRaw conversion.Hub) error {
@@ -337,7 +346,10 @@ func (dst *OscCluster) ConvertFrom(srcRaw conversion.Hub) error {
 		Conditions:     src.Status.Conditions,
 		VmState:        src.Status.VmState,
 	}
-	return dst.Spec.ConvertFrom(&src.Spec)
+	if err := dst.Spec.ConvertFrom(&src.Spec); err != nil {
+		return err
+	}
+	return utilconversion.MarshalData(src, dst)
 }
 
 var _ conversion.Convertible = (*OscCluster)(nil)

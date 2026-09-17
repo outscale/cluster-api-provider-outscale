@@ -84,3 +84,9 @@ const (
 	VolumeReadyCondition             clusterv1.ConditionType = "VolumeReady"
 	VolumeReconciliationFailedReason string                  = "VolumeFailed"
 )
+
+const (
+	KeypairCreatedReason  string                  = "KeypairCreated"
+	KeypairReadyCondition clusterv1.ConditionType = "KeypairReady"
+	KeypairFailedReason   string                  = "KeypairFailed"
+)

@@ -23,8 +23,6 @@ type OscMachineSpec struct {
 	Vm      OscVm       `json:"vm,omitempty"`
 	Image   OscImage    `json:"image,omitempty"`
 	Volumes []OscVolume `json:"volumes,omitempty"`
-	// deprecated, use vm.keypairName
-	KeyPair OscKeypair `json:"keypair,omitempty"`
 	// Reconciliation rules (default: {*, onChange})
 	// +optional
 	ReconciliationRule *OscReconciliationRule `json:"reconciliationRule,omitempty"`

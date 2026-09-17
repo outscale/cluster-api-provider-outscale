@@ -625,6 +625,16 @@ func (s *ClusterScope) GetSecurityGroupRule(name string) []infrastructurev1beta2
 	return nil
 }
 
+func (s *ClusterScope) GetKeypair() *infrastructurev1beta2.OscKeypair {
+	skp := s.GetSpec().Keypair
+	if skp == nil || skp.SecretName != "" {
+		return skp
+	}
+	kp := *skp
+	kp.SecretName = s.OscCluster.Name + "-keypair"
+	return &kp
+}
+
 // SetControlPlaneEndpoint set controlPlane endpoint
 func (s *ClusterScope) SetControlPlaneEndpoint(apiEndpoint clusterv1.APIEndpoint) {
 	s.OscCluster.Spec.ControlPlaneEndpoint = apiEndpoint
