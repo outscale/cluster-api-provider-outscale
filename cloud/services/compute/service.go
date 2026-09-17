@@ -16,6 +16,7 @@ type Servicer interface {
 	ImageInterface
 	SecurityGroupInterface
 	VmInterface
+	KeypairInterface
 }
 
 type Service struct {

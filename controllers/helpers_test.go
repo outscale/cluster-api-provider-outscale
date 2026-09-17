@@ -118,6 +118,7 @@ type testcase struct {
 	clusterAsserts                   []assertOSCClusterFunc
 	machineAsserts                   []assertOSCMachineFunc
 	tenantAsserts                    []assertTenantFunc
+	kubeObjectAsserts                []client.Object
 
 	next *testcase
 }

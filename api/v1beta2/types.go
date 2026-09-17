@@ -298,7 +298,7 @@ const (
 	FlowOutbound Flow = "Outbound"
 )
 
-// +kubebuilder:validation:Pattern:=^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5}))( ?#.*)?$
+// +kubebuilder:validation:Pattern:="^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?( ?#.*)?"
 type Port string
 
 var rePort = regexp.MustCompile("^([a-z0-9-]+)(/([0-9]{1,5})(-([0-9]{1,5}))?)?( ?#.*)?")
@@ -377,6 +377,7 @@ const (
 	ReconcilerRouteTable       Reconciler = "routeTable"
 	ReconcilerSecurityGroup    Reconciler = "securityGroup"
 	ReconcilerLoadbalancer     Reconciler = "loadbalancer"
+	ReconcilerKeypair          Reconciler = "keypair"
 
 	ReconcilerVm Reconciler = "vm"
 
@@ -438,16 +439,16 @@ type OscVolume struct {
 }
 
 type OscKeypair struct {
-	// Deprecated
-	Name string `json:"name,omitempty"`
-	// Deprecated
-	PublicKey string `json:"publicKey,omitempty"`
-	// Deprecated
-	ResourceId string `json:"resourceId,omitempty"`
-	// Deprecated
-	ClusterName string `json:"clusterName,omitempty"`
-	// Deprecated
-	DeleteKeypair bool `json:"deleteKeypair,omitempty"`
+	// Name of the keypair to create.
+	// +kubebuilder:validation:MaxLength:=255
+	// +required
+	Name string `json:"name"`
+	// Name of the secret where the private key will be stored, defaults to "<cluster name>-keypair".
+	// +optional
+	SecretName string `json:"secretName,omitempty"`
+	// Keep the keypair after cluster deletion ?
+	// +optional
+	KeepAfterDeletion bool `json:"keepAfterDeletion,omitempty"`
 }
 
 // +kubebuilder:validation:Enum:=leastNodes;random
@@ -467,8 +468,8 @@ type OscFGPU struct {
 type OscVm struct {
 	Name    string `json:"name,omitempty"`
 	ImageId string `json:"imageId,omitempty"`
-	// The keypair name
-	// +kubebuilder:validation:Required
+	// The keypair name.
+	// +required
 	KeypairName string `json:"keypairName,omitempty"`
 	// The type of vm (tinav7.c4r8p1 by default)
 	// +optional
@@ -500,7 +501,7 @@ type OscVm struct {
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	// The resource id of the vm (not set anymore)
 	ResourceId string `json:"resourceId,omitempty"`
-	// The node role (controlplane or worker, worker by default).
+	// The node role (controlplane or worker), defaults to worker.
 	// +optional
 	Role OscRole `json:"role,omitempty"`
 	// Tags to add to the VM.

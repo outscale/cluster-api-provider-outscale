@@ -6,8 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 package controllers_test
 
 import (
-	"context"
 	"os"
+	"reflect"
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
@@ -16,6 +16,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	tag "github.com/outscale/cluster-api-provider-outscale/cloud/services/tag"
 	"github.com/outscale/cluster-api-provider-outscale/controllers"
+	"github.com/outscale/goutils/k8s/tags"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,7 +46,7 @@ func runClusterTest(t *testing.T, tc testcase) {
 	_ = apiextensionsv1.AddToScheme(fakeScheme)
 	_ = infrastructurev1beta1.AddToScheme(fakeScheme)
 	_ = infrastructurev1beta2.AddToScheme(fakeScheme)
-	client := fake.NewClientBuilder().WithScheme(fakeScheme).
+	kclient := fake.NewClientBuilder().WithScheme(fakeScheme).
 		WithStatusSubresource(oc).WithObjects(c, oc).Build()
 	mockCtrl := gomock.NewController(t)
 	region := tc.region
@@ -55,7 +55,7 @@ func runClusterTest(t *testing.T, tc testcase) {
 	}
 	cs := newMockCloudServices(mockCtrl, region)
 	rec := controllers.OscClusterReconciler{
-		Client:   client,
+		Client:   kclient,
 		Recorder: record.NewFakeRecorder(100),
 		Tracker: &controllers.ClusterResourceTracker{
 			Cloud: cs,
@@ -72,10 +72,10 @@ func runClusterTest(t *testing.T, tc testcase) {
 			fn(cs)
 		}
 		for _, obj := range step.kubeObjects {
-			err := client.Create(context.TODO(), obj)
+			err := kclient.Create(t.Context(), obj)
 			require.NoError(t, err)
 		}
-		res, err := rec.Reconcile(context.TODO(), controllerruntime.Request{NamespacedName: nsn})
+		res, err := rec.Reconcile(t.Context(), controllerruntime.Request{NamespacedName: nsn})
 		if step.hasError {
 			require.Error(t, err)
 			assert.Zero(t, res)
@@ -84,7 +84,7 @@ func runClusterTest(t *testing.T, tc testcase) {
 			assert.Equal(t, step.requeue, res.RequeueAfter > 0 || res.Requeue)
 		}
 		var out infrastructurev1beta2.OscCluster
-		err = client.Get(context.TODO(), nsn, &out)
+		err = kclient.Get(t.Context(), nsn, &out)
 		switch {
 		case step.assertDeleted:
 			require.True(t, apierrors.IsNotFound(err), "resource must have been deleted")
@@ -96,6 +96,16 @@ func runClusterTest(t *testing.T, tc testcase) {
 		}
 		for _, fn := range step.tenantAsserts {
 			fn(t, cs.tenant)
+		}
+		for _, obj := range step.kubeObjectAsserts {
+			v := reflect.ValueOf(obj).Elem()
+			loaded := reflect.New(v.Type()).Interface().(client.Object)
+			err = kclient.Get(t.Context(), types.NamespacedName{
+				Namespace: obj.GetNamespace(),
+				Name:      obj.GetName(),
+			}, loaded)
+			require.NoError(t, err)
+			assert.Equal(t, obj, loaded)
 		}
 		step = step.next
 	}
@@ -235,6 +245,137 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			},
 			next: &testcase{
 				name: "[v1beta1] A second run has all references in cache",
+			},
+		},
+		{
+			name:        "[v1beta2] creating a cluster with an automatic config",
+			clusterSpec: "v1beta2/base",
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateNet(infrastructurev1beta2.OscNet{
+					IpRange: "10.0.0.0/16",
+				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "Net for test-cluster-api", "vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.4.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "subnet-kcp"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.3.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "subnet-kw"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.2.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "subnet-public"),
+				mockGetInternetServiceForNet("vpc-foo", nil),
+				mockCreateInternetService("Internet Service for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
+				mockLinkInternetService("igw-foo", "vpc-foo"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Worker securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, "sg-kw"),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 443, 443),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 1024, 65535),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Controlplane securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, "sg-kcp"),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2380),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"LB securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer}, "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Node securityGroup for test-cluster-api", "OscK8sMainSG", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker}, "sg-node"),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51821),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "4", "10.0.0.0/16", -1, -1),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "icmp", "10.0.0.0/16", 8, 8),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51871, 51871),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "0.0.0.0/0", -1, -1),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "10.0.0.0/16", -1, -1),
+
+				mockGetRouteTablesFromNet("vpc-foo", nil),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "rtb-public"),
+				mockLinkRouteTable("rtb-public", "subnet-public"),
+				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
+
+				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
+					},
+				}),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
+				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "rtb-kw"),
+				mockLinkRouteTable("rtb-kw", "subnet-kw"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			clusterAsserts: []assertOSCClusterFunc{
+				assertHasClusterFinalizer(),
+				assertStatusClusterResources(infrastructurev1beta2.OscClusterResources{
+					Net: map[string]string{
+						"default": "vpc-foo",
+					},
+					Subnet: map[string]string{
+						"10.0.2.0/24": "subnet-public",
+						"10.0.3.0/24": "subnet-kw",
+						"10.0.4.0/24": "subnet-kcp",
+					},
+					InternetService: map[string]string{
+						"default": "igw-foo",
+					},
+					SecurityGroup: map[string]string{
+						"test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kcp",
+						"test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520":       "sg-kw",
+						"test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520":           "sg-lb",
+						"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
+					},
+					NatService: map[string]string{
+						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+					},
+					PublicIPs: map[string]string{
+						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+					},
+				}),
+				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
+			},
+			next: &testcase{
+				name: "[v1beta2] A second run has all references in cache",
 			},
 		},
 		{
@@ -1276,6 +1417,479 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				name: "[v1beta1] A second run has all references in cache",
 			},
 		},
+		{
+			name:        "[v1beta2] creating a cluster with a keypair, a secret is created with the default name",
+			clusterSpec: "v1beta2/base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name: "keypair-name",
+				}),
+			},
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateNet(infrastructurev1beta2.OscNet{
+					IpRange: "10.0.0.0/16",
+				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "Net for test-cluster-api", "vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.4.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "subnet-kcp"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.3.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "subnet-kw"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.2.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "subnet-public"),
+				mockGetInternetServiceForNet("vpc-foo", nil),
+				mockCreateInternetService("Internet Service for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
+				mockLinkInternetService("igw-foo", "vpc-foo"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Worker securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, "sg-kw"),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 443, 443),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 1024, 65535),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Controlplane securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, "sg-kcp"),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2380),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"LB securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer}, "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Node securityGroup for test-cluster-api", "OscK8sMainSG", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker}, "sg-node"),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51821),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "4", "10.0.0.0/16", -1, -1),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "icmp", "10.0.0.0/16", 8, 8),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51871, 51871),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "0.0.0.0/0", -1, -1),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "10.0.0.0/16", -1, -1),
+
+				mockGetRouteTablesFromNet("vpc-foo", nil),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "rtb-public"),
+				mockLinkRouteTable("rtb-public", "subnet-public"),
+				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
+
+				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
+					},
+				}),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
+				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "rtb-kw"),
+				mockLinkRouteTable("rtb-kw", "subnet-kw"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+
+				mockNoKeypairFound("keypair-name"),
+				mockCreateKeypair("keypair-name", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			kubeObjectAsserts: []client.Object{
+				&corev1.Secret{
+					Name: "test-cluster-api-keypair", Namespace: "cluster-api-test",
+					ResourceVersion: "1",
+					Immutable:       new(true),
+					Type:            corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
+		},
+		{
+			name:        "[v1beta2] creating a cluster with a keypair, no secret is present but a kp belonging to the cluster exists, it is recreated",
+			clusterSpec: "v1beta2/base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name: "keypair-name",
+				}),
+			},
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateNet(infrastructurev1beta2.OscNet{
+					IpRange: "10.0.0.0/16",
+				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "Net for test-cluster-api", "vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.4.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "subnet-kcp"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.3.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "subnet-kw"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.2.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "subnet-public"),
+				mockGetInternetServiceForNet("vpc-foo", nil),
+				mockCreateInternetService("Internet Service for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
+				mockLinkInternetService("igw-foo", "vpc-foo"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Worker securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, "sg-kw"),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 443, 443),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 1024, 65535),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Controlplane securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, "sg-kcp"),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2380),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"LB securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer}, "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Node securityGroup for test-cluster-api", "OscK8sMainSG", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker}, "sg-node"),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51821),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "4", "10.0.0.0/16", -1, -1),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "icmp", "10.0.0.0/16", 8, 8),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51871, 51871),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "0.0.0.0/0", -1, -1),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "10.0.0.0/16", -1, -1),
+
+				mockGetRouteTablesFromNet("vpc-foo", nil),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "rtb-public"),
+				mockLinkRouteTable("rtb-public", "subnet-public"),
+				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
+
+				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
+					},
+				}),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
+				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "rtb-kw"),
+				mockLinkRouteTable("rtb-kw", "subnet-kw"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+
+				mockKeypairFound("keypair-name", &osc.Keypair{Tags: &[]osc.ResourceTag{{
+					Key:   tags.ClusterIDKey("9e1db9c4-bf0a-4583-8999-203ec002c520"),
+					Value: string(tags.ResourceLifecycleOwned),
+				}}}),
+				mockDeleteKeypair("keypair-name"),
+				mockCreateKeypair("keypair-name", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			kubeObjectAsserts: []client.Object{
+				&corev1.Secret{
+					Name: "test-cluster-api-keypair", Namespace: "cluster-api-test",
+					ResourceVersion: "1",
+					Immutable:       new(true),
+					Type:            corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
+		},
+		{
+			name:        "[v1beta2] creating a cluster with a keypair, no keypair is created if secret already exists",
+			clusterSpec: "v1beta2/base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name: "keypair-name",
+				}),
+			},
+			kubeObjects: []client.Object{
+				&corev1.Secret{
+					Name: "test-cluster-api-keypair", Namespace: "cluster-api-test",
+					Immutable: new(true),
+					Type:      corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateNet(infrastructurev1beta2.OscNet{
+					IpRange: "10.0.0.0/16",
+				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "Net for test-cluster-api", "vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.4.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "subnet-kcp"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.3.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "subnet-kw"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.2.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "subnet-public"),
+				mockGetInternetServiceForNet("vpc-foo", nil),
+				mockCreateInternetService("Internet Service for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
+				mockLinkInternetService("igw-foo", "vpc-foo"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Worker securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, "sg-kw"),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 443, 443),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 1024, 65535),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Controlplane securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, "sg-kcp"),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2380),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"LB securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer}, "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Node securityGroup for test-cluster-api", "OscK8sMainSG", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker}, "sg-node"),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51821),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "4", "10.0.0.0/16", -1, -1),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "icmp", "10.0.0.0/16", 8, 8),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51871, 51871),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "0.0.0.0/0", -1, -1),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "10.0.0.0/16", -1, -1),
+
+				mockGetRouteTablesFromNet("vpc-foo", nil),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "rtb-public"),
+				mockLinkRouteTable("rtb-public", "subnet-public"),
+				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
+
+				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
+					},
+				}),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
+				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "rtb-kw"),
+				mockLinkRouteTable("rtb-kw", "subnet-kw"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+		},
+		{
+			name:        "[v1beta2] creating a cluster with a keypair, a secret is created with the right name",
+			clusterSpec: "v1beta2/base",
+			clusterPatches: []patchOSCClusterFunc{
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name:       "keypair-name",
+					SecretName: "keypair-secret",
+				}),
+			},
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateNet(infrastructurev1beta2.OscNet{
+					IpRange: "10.0.0.0/16",
+				}, "9e1db9c4-bf0a-4583-8999-203ec002c520", "Net for test-cluster-api", "vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.4.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "subnet-kcp"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.3.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "subnet-kw"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", nil),
+				mockCreateSubnet(infrastructurev1beta2.OscSubnet{
+					IpSubnetRange: "10.0.2.0/24",
+					SubregionName: "eu-west-2a",
+					Roles:         []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat},
+				}, "vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "subnet-public"),
+				mockGetInternetServiceForNet("vpc-foo", nil),
+				mockCreateInternetService("Internet Service for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "igw-foo"),
+				mockLinkInternetService("igw-foo", "vpc-foo"),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Worker securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, "sg-kw"),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.3.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 10250, 10250),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 443, 443),
+				mockCreateSecurityGroupRule("sg-kw", "Inbound", "tcp", "10.0.4.0/24", 1024, 65535),
+
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Controlplane securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, "sg-kcp"),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 10250, 10252),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.0.0/16", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-kcp", "Inbound", "tcp", "10.0.4.0/24", 2378, 2380),
+
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"LB securityGroup for test-cluster-api", "", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer}, "sg-lb"),
+				mockCreateSecurityGroupRule("sg-lb", "Inbound", "tcp", "0.0.0.0/0", 6443, 6443),
+				mockCreateSecurityGroupRule("sg-lb", "Outbound", "tcp", "10.0.4.0/24", 6443, 6443),
+
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreateSecurityGroup("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520",
+					"Node securityGroup for test-cluster-api", "OscK8sMainSG", []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane, infrastructurev1beta2.RoleWorker}, "sg-node"),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 179, 179),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 4789, 4789),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 5473, 5473),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8285, 8285),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51820, 51821),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "4", "10.0.0.0/16", -1, -1),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "icmp", "10.0.0.0/16", 8, 8),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4240, 4240),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 4244, 4244),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 8472, 8472),
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "udp", "10.0.0.0/16", 51871, 51871),
+
+				mockCreateSecurityGroupRule("sg-node", "Inbound", "tcp", "10.0.0.0/16", 30000, 32767),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "0.0.0.0/0", -1, -1),
+				mockCreateSecurityGroupRule("sg-node", "Outbound", "-1", "10.0.0.0/16", -1, -1),
+
+				mockGetRouteTablesFromNet("vpc-foo", nil),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Public subnet for test-cluster-api/eu-west-2a", "rtb-public"),
+				mockLinkRouteTable("rtb-public", "subnet-public"),
+				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
+
+				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{
+						RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}},
+						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("igw-foo")}},
+					},
+				}),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Controlplane subnet for test-cluster-api/eu-west-2a", "rtb-kcp"),
+				mockLinkRouteTable("rtb-kcp", "subnet-kcp"),
+				mockCreateRoute("rtb-kcp", "0.0.0.0/0", "nat-foo", "nat"),
+				mockCreateRouteTable("vpc-foo", "9e1db9c4-bf0a-4583-8999-203ec002c520", "Worker subnet for test-cluster-api/eu-west-2a", "rtb-kw"),
+				mockLinkRouteTable("rtb-kw", "subnet-kw"),
+				mockCreateRoute("rtb-kw", "0.0.0.0/0", "nat-foo", "nat"),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+
+				mockNoKeypairFound("keypair-name"),
+				mockCreateKeypair("keypair-name", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			kubeObjectAsserts: []client.Object{
+				&corev1.Secret{
+					Name: "keypair-secret", Namespace: "cluster-api-test",
+					ResourceVersion: "1",
+					Immutable:       new(true),
+					Type:            corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1335,10 +1949,8 @@ func TestReconcileOSCCluster_Multitenant(t *testing.T) {
 			},
 			kubeObjects: []client.Object{
 				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-tenant",
-						Namespace: "cluster-api-test",
-					},
+					Name:      "secret-tenant",
+					Namespace: "cluster-api-test",
 					Data: map[string][]byte{
 						"access_key": []byte("ak_secret"),
 						"secret_key": []byte("sk_secret"),
@@ -2219,6 +2831,231 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 			name:           "[v1beta1] Deleting a cluster",
 			clusterSpec:    "v1beta1/ready",
 			clusterPatches: []patchOSCClusterFunc{patchDeleteCluster()},
+			mockFuncs: []mockFunc{
+				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockDeleteLoadBalancer("test-cluster-api-k8s"),
+
+				mockListNatServices("vpc-foo", []osc.NatService{{
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
+					}},
+				}}),
+				mockDeleteNatService("nat-223a4dd4"),
+				mockPublicIpFound("ipalloc-nat"),
+				mockDeletePublicIp("ipalloc-nat"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
+					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
+				}),
+				mockUnlinkRouteTable("rtbassoc-643430b3"),
+				mockDeleteRouteTable("rtb-0a4640a6"),
+				mockUnlinkRouteTable("rtbassoc-09475c37"),
+				mockDeleteRouteTable("rtb-194c971e"),
+				mockUnlinkRouteTable("rtbassoc-90bda9c8"),
+				mockDeleteRouteTable("rtb-eeacfe8a"),
+
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
+					{
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
+					},
+					{
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
+					},
+				}),
+				mockDeleteSecurityGroup("sg-a093d014", nil),
+				mockDeleteSecurityGroup("sg-750ae810", nil),
+
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
+
+				mockListNetAccessPoints("vpc-foo", nil),
+
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "[v1beta1] Deleting a cluster with a keypair",
+			clusterSpec: "v1beta1/ready",
+			clusterPatches: []patchOSCClusterFunc{
+				patchDeleteCluster(),
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name: "keypair",
+				}),
+			},
+			kubeObjects: []client.Object{
+				&corev1.Secret{
+					Name: "test-cluster-api-keypair", Namespace: "cluster-api-test",
+					Immutable: new(true),
+					Type:      corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
+			mockFuncs: []mockFunc{
+				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockDeleteLoadBalancer("test-cluster-api-k8s"),
+
+				mockListNatServices("vpc-foo", []osc.NatService{{
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
+					}},
+				}}),
+				mockDeleteNatService("nat-223a4dd4"),
+				mockPublicIpFound("ipalloc-nat"),
+				mockDeletePublicIp("ipalloc-nat"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
+					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
+				}),
+				mockUnlinkRouteTable("rtbassoc-643430b3"),
+				mockDeleteRouteTable("rtb-0a4640a6"),
+				mockUnlinkRouteTable("rtbassoc-09475c37"),
+				mockDeleteRouteTable("rtb-194c971e"),
+				mockUnlinkRouteTable("rtbassoc-90bda9c8"),
+				mockDeleteRouteTable("rtb-eeacfe8a"),
+
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
+					{
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
+					},
+					{
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
+					},
+				}),
+				mockDeleteSecurityGroup("sg-a093d014", nil),
+				mockDeleteSecurityGroup("sg-750ae810", nil),
+
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
+
+				mockListNetAccessPoints("vpc-foo", nil),
+
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
+
+				mockKeypairFound("keypair", &osc.Keypair{}),
+				mockDeleteKeypair("keypair"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "[v1beta1] Deleting a cluster with a keypair, the keypar has already been deleted",
+			clusterSpec: "v1beta1/ready",
+			clusterPatches: []patchOSCClusterFunc{
+				patchDeleteCluster(),
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name: "keypair",
+				}),
+			},
+			kubeObjects: []client.Object{
+				&corev1.Secret{
+					Name: "test-cluster-api-keypair", Namespace: "cluster-api-test",
+					Immutable: new(true),
+					Type:      corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
+			mockFuncs: []mockFunc{
+				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+				mockDeleteLoadBalancer("test-cluster-api-k8s"),
+
+				mockListNatServices("vpc-foo", []osc.NatService{{
+					NatServiceId: "nat-223a4dd4",
+					PublicIps: []osc.PublicIpLight{{
+						PublicIpId: "ipalloc-nat",
+					}},
+				}}),
+				mockDeleteNatService("nat-223a4dd4"),
+				mockPublicIpFound("ipalloc-nat"),
+				mockDeletePublicIp("ipalloc-nat"),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-0a4640a6", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-643430b3", SubnetId: "subnet-1555ea91"}}},
+					{RouteTableId: "rtb-194c971e", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-09475c37", SubnetId: "subnet-c1a282b0"}}},
+					{RouteTableId: "rtb-eeacfe8a", LinkRouteTables: []osc.LinkRouteTable{{LinkRouteTableId: "rtbassoc-90bda9c8", SubnetId: "subnet-174f5ec4"}}},
+				}),
+				mockUnlinkRouteTable("rtbassoc-643430b3"),
+				mockDeleteRouteTable("rtb-0a4640a6"),
+				mockUnlinkRouteTable("rtbassoc-09475c37"),
+				mockDeleteRouteTable("rtb-194c971e"),
+				mockUnlinkRouteTable("rtbassoc-90bda9c8"),
+				mockDeleteRouteTable("rtb-eeacfe8a"),
+
+				mockGetSecurityGroupsFromNet("vpc-foo", []osc.SecurityGroup{
+					{
+						SecurityGroupId: "sg-a093d014", InboundRules: []osc.SecurityGroupRule{{}, {}}, OutboundRules: []osc.SecurityGroupRule{{}},
+					},
+					{
+						SecurityGroupId: "sg-750ae810", InboundRules: []osc.SecurityGroupRule{{}}, OutboundRules: []osc.SecurityGroupRule{{}},
+					},
+				}),
+				mockDeleteSecurityGroup("sg-a093d014", nil),
+				mockDeleteSecurityGroup("sg-750ae810", nil),
+
+				mockInternetServiceFound("vpc-foo", "igw-foo"),
+				mockUnlinkInternetService("igw-foo", "vpc-foo"),
+				mockDeleteInternetService("igw-foo"),
+
+				mockListNetAccessPoints("vpc-foo", nil),
+
+				mockSubnetFound("subnet-public"),
+				mockDeleteSubnet("subnet-public"),
+				mockSubnetFound("subnet-kcp"),
+				mockDeleteSubnet("subnet-kcp"),
+				mockSubnetFound("subnet-kw"),
+				mockDeleteSubnet("subnet-kw"),
+				mockNetFound("vpc-foo"),
+				mockDeleteNet("vpc-foo"),
+
+				mockNoKeypairFound("keypair"),
+			},
+			assertDeleted: true,
+		},
+		{
+			name:        "[v1beta1] Deleting a cluster without deleting a keypair that needs to be kept",
+			clusterSpec: "v1beta1/ready",
+			clusterPatches: []patchOSCClusterFunc{
+				patchDeleteCluster(),
+				patchCreateKeypair(infrastructurev1beta2.OscKeypair{
+					Name:              "keypair",
+					KeepAfterDeletion: true,
+				}),
+			},
+			kubeObjects: []client.Object{
+				&corev1.Secret{
+					Name: "test-cluster-api-keypair", Namespace: "cluster-api-test",
+					Immutable: new(true),
+					Type:      corev1.SecretTypeSSHAuth,
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("privatekey"),
+					},
+				},
+			},
 			mockFuncs: []mockFunc{
 				mockLoadBalancerFound("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockDeleteLoadBalancer("test-cluster-api-k8s"),

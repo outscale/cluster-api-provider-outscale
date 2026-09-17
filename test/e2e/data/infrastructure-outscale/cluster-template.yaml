@@ -26,8 +26,8 @@ spec:
   subregionName: ${OSC_REGION}a
   loadBalancer:
     loadbalancername: "${CLUSTER_NAME}-k8s"
-  bastion:
-    enable: false
+  keypair:
+    name: "${CLUSTER_NAME}-keypair"
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -67,7 +67,7 @@ spec:
           rootDiskSize: ${OSC_VOLUME_SIZE}
           rootDiskIops: ${OSC_IOPS}
           rootDiskType: "${OSC_VOLUME_TYPE}"
-        keypairName: "${OSC_KEYPAIR_NAME}"
+        keypairName: "${CLUSTER_NAME}-keypair"
         subregionName: ${OSC_REGION}a
         vmType: "${OSC_VM_TYPE}"
 ---
@@ -87,7 +87,7 @@ spec:
           rootDiskIops: ${OSC_IOPS}
           rootDiskType: "${OSC_VOLUME_TYPE}"
         subregionName: ${OSC_REGION}a
-        keypairName: "${OSC_KEYPAIR_NAME}"
+        keypairName: "${CLUSTER_NAME}-keypair"
         role: controlplane
         vmType: "${OSC_VM_TYPE}"
 ---

@@ -26,7 +26,6 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 		hubSkipOscMachineUnused,
 		spokeSkipVolumeUnused,
 		spokeSkipKeypair,
-		hubSkipKeypair,
 	}
 }
 
@@ -62,4 +61,3 @@ func spokeSkipVolumeUnused(in *infrastructurev1beta1.OscVolume, c fuzz.Continue)
 }
 
 func spokeSkipKeypair(in *infrastructurev1beta1.OscKeypair, c fuzz.Continue) {}
-func hubSkipKeypair(in *infrastructurev1beta2.OscKeypair, c fuzz.Continue)   {}

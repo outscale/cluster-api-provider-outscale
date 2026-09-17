@@ -72,6 +72,21 @@ func (mr *MockServicerMockRecorder) AllocateFGPU(ctx, model, az, machineScope an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllocateFGPU", reflect.TypeOf((*MockServicer)(nil).AllocateFGPU), ctx, model, az, machineScope)
 }
 
+// CreateKeypair mocks base method.
+func (m *MockServicer) CreateKeypair(ctx context.Context, name, clusterID string) (*osc.KeypairCreated, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateKeypair", ctx, name, clusterID)
+	ret0, _ := ret[0].(*osc.KeypairCreated)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateKeypair indicates an expected call of CreateKeypair.
+func (mr *MockServicerMockRecorder) CreateKeypair(ctx, name, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKeypair", reflect.TypeOf((*MockServicer)(nil).CreateKeypair), ctx, name, clusterID)
+}
+
 // CreateSecurityGroup mocks base method.
 func (m *MockServicer) CreateSecurityGroup(ctx context.Context, netId, clusterID, securityGroupName, securityGroupDescription, securityGroupTag string, roles []v1beta2.OscRole) (*osc.SecurityGroup, error) {
 	m.ctrl.T.Helper()
@@ -130,6 +145,20 @@ func (m *MockServicer) CreateVmBastion(ctx context.Context, spec *v1beta2.OscBas
 func (mr *MockServicerMockRecorder) CreateVmBastion(ctx, spec, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, imageId, tags any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVmBastion", reflect.TypeOf((*MockServicer)(nil).CreateVmBastion), ctx, spec, subnetId, securityGroupIds, privateIps, vmName, vmClientToken, imageId, tags)
+}
+
+// DeleteKeypair mocks base method.
+func (m *MockServicer) DeleteKeypair(ctx context.Context, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteKeypair", ctx, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteKeypair indicates an expected call of DeleteKeypair.
+func (mr *MockServicerMockRecorder) DeleteKeypair(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteKeypair", reflect.TypeOf((*MockServicer)(nil).DeleteKeypair), ctx, name)
 }
 
 // DeleteSecurityGroup mocks base method.
@@ -217,6 +246,21 @@ func (m *MockServicer) GetImageByName(ctx context.Context, name, accountId strin
 func (mr *MockServicerMockRecorder) GetImageByName(ctx, name, accountId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageByName", reflect.TypeOf((*MockServicer)(nil).GetImageByName), ctx, name, accountId)
+}
+
+// GetKeypair mocks base method.
+func (m *MockServicer) GetKeypair(ctx context.Context, name string) (*osc.Keypair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKeypair", ctx, name)
+	ret0, _ := ret[0].(*osc.Keypair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKeypair indicates an expected call of GetKeypair.
+func (mr *MockServicerMockRecorder) GetKeypair(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeypair", reflect.TypeOf((*MockServicer)(nil).GetKeypair), ctx, name)
 }
 
 // GetSecurityGroup mocks base method.
