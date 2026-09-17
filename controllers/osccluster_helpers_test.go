@@ -121,6 +121,12 @@ func patchDisableLB() patchOSCClusterFunc {
 	}
 }
 
+func patchCreateKeypair(kp infrastructurev1beta2.OscKeypair) patchOSCClusterFunc {
+	return func(m *infrastructurev1beta2.OscCluster) {
+		m.Spec.Keypair = &kp
+	}
+}
+
 func mockNetFound(id string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
@@ -553,6 +559,35 @@ func mockGetNetAccessPoint(netID, service string, nap *osc.NetAccessPoint) mockF
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().GetNetAccessPointFor(gomock.Any(), gomock.Eq(netID), gomock.Eq("eu-west-2"), gomock.Eq(service)).
 			Return(nap, nil)
+	}
+}
+
+func mockNoKeypairFound(name string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.ComputeMock.EXPECT().GetKeypair(gomock.Any(), gomock.Eq(name)).
+			Return(nil, nil)
+	}
+}
+
+func mockKeypairFound(name string, kp *osc.Keypair) mockFunc {
+	kp.KeypairName = &name
+	return func(s *MockCloudServices) {
+		s.ComputeMock.EXPECT().GetKeypair(gomock.Any(), gomock.Eq(name)).
+			Return(kp, nil)
+	}
+}
+
+func mockCreateKeypair(name, clusterID string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.ComputeMock.EXPECT().CreateKeypair(gomock.Any(), gomock.Eq(name), gomock.Eq(clusterID)).
+			Return(&osc.KeypairCreated{KeypairId: new("kp-foo"), KeypairName: &name, PrivateKey: new("privatekey")}, nil)
+	}
+}
+
+func mockDeleteKeypair(name string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.ComputeMock.EXPECT().DeleteKeypair(gomock.Any(), gomock.Eq(name)).
+			Return(nil)
 	}
 }
 

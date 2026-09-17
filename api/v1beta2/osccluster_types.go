@@ -82,6 +82,9 @@ type OscClusterSpec struct {
 	// The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 	// + optional
 	AllowToIPRanges []string `json:"allowToIPRanges,omitempty"`
+	// A keypair that needs to be created.
+	// + optional
+	Keypair *OscKeypair `json:"keypair,omitempty"`
 	// Reconciliation rules (default: {securityGroup, random, 10%}, {*, onChange}). Only the first matching rule applies.
 	// + optional
 	ReconciliationRules []OscReconciliationRule `json:"reconciliationRules,omitempty"`

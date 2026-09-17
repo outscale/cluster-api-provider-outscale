@@ -10,7 +10,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.21.1-0.20260817093026-6104e87aa9a0
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -983,19 +983,11 @@ spec:
                       items:
                         properties:
                           flow:
-                            description: The flow of the security group (inbound or
-                              outbound)
-                            type: string
-                          fromPortRange:
-                            description: The beginning of the port range
-                            format: int32
-                            type: integer
-                          ipProtocol:
-                            description: The ip protocol name (tcp, udp, icmp or -1)
-                            type: string
-                          ipRange:
-                            description: The ip range of the security group rule (deprecated,
-                              use ipRanges)
+                            description: The flow of the security group (Inbound or
+                              Outbound), default Inbound
+                            enum:
+                            - Inbound
+                            - Outbound
                             type: string
                           ipRanges:
                             description: The list of ip ranges of the security group
@@ -1007,13 +999,15 @@ spec:
                             description: The tag name associate with the security
                               group
                             type: string
-                          resourceId:
-                            description: The security group rule id
-                            type: string
-                          toPortRange:
-                            description: The end of the port range
-                            format: int32
-                            type: integer
+                          ports:
+                            description: The list of ports to open (protocol, protocol/port
+                              or protocol/fromPort-toPort)
+                            items:
+                              pattern: ^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?( ?#.*)?
+                              type: string
+                            type: array
+                        required:
+                        - ports
                         type: object
                       type: array
                   type: object
@@ -1146,6 +1140,23 @@ spec:
                   name:
                     description: The name of the Internet service
                     type: string
+                type: object
+              keypair:
+                description: A keypair that needs to be created.
+                properties:
+                  keepAfterDeletion:
+                    description: Keep the keypair after cluster deletion ?
+                    type: boolean
+                  name:
+                    description: Name of the keypair to create.
+                    maxLength: 255
+                    type: string
+                  secretName:
+                    description: Name of the secret where the private key will be
+                      stored, defaults to "<cluster name>-keypair".
+                    type: string
+                required:
+                - name
                 type: object
               loadBalancer:
                 description: The Load Balancer configuration
@@ -1431,19 +1442,11 @@ spec:
                       items:
                         properties:
                           flow:
-                            description: The flow of the security group (inbound or
-                              outbound)
-                            type: string
-                          fromPortRange:
-                            description: The beginning of the port range
-                            format: int32
-                            type: integer
-                          ipProtocol:
-                            description: The ip protocol name (tcp, udp, icmp or -1)
-                            type: string
-                          ipRange:
-                            description: The ip range of the security group rule (deprecated,
-                              use ipRanges)
+                            description: The flow of the security group (Inbound or
+                              Outbound), default Inbound
+                            enum:
+                            - Inbound
+                            - Outbound
                             type: string
                           ipRanges:
                             description: The list of ip ranges of the security group
@@ -1455,13 +1458,15 @@ spec:
                             description: The tag name associate with the security
                               group
                             type: string
-                          resourceId:
-                            description: The security group rule id
-                            type: string
-                          toPortRange:
-                            description: The end of the port range
-                            format: int32
-                            type: integer
+                          ports:
+                            description: The list of ports to open (protocol, protocol/port
+                              or protocol/fromPort-toPort)
+                            items:
+                              pattern: ^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?( ?#.*)?
+                              type: string
+                            type: array
+                        required:
+                        - ports
                         type: object
                       type: array
                     tag:
@@ -1650,7 +1655,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.21.1-0.20260817093026-6104e87aa9a0
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -2510,20 +2515,11 @@ spec:
                               items:
                                 properties:
                                   flow:
-                                    description: The flow of the security group (inbound
-                                      or outbound)
-                                    type: string
-                                  fromPortRange:
-                                    description: The beginning of the port range
-                                    format: int32
-                                    type: integer
-                                  ipProtocol:
-                                    description: The ip protocol name (tcp, udp, icmp
-                                      or -1)
-                                    type: string
-                                  ipRange:
-                                    description: The ip range of the security group
-                                      rule (deprecated, use ipRanges)
+                                    description: The flow of the security group (Inbound
+                                      or Outbound), default Inbound
+                                    enum:
+                                    - Inbound
+                                    - Outbound
                                     type: string
                                   ipRanges:
                                     description: The list of ip ranges of the security
@@ -2535,13 +2531,16 @@ spec:
                                     description: The tag name associate with the security
                                       group
                                     type: string
-                                  resourceId:
-                                    description: The security group rule id
-                                    type: string
-                                  toPortRange:
-                                    description: The end of the port range
-                                    format: int32
-                                    type: integer
+                                  ports:
+                                    description: The list of ports to open (protocol,
+                                      protocol/port or protocol/fromPort-toPort)
+                                    items:
+                                      pattern: ^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?(
+                                        ?#.*)?
+                                      type: string
+                                    type: array
+                                required:
+                                - ports
                                 type: object
                               type: array
                           type: object
@@ -2680,6 +2679,23 @@ spec:
                           name:
                             description: The name of the Internet service
                             type: string
+                        type: object
+                      keypair:
+                        description: A keypair that needs to be created.
+                        properties:
+                          keepAfterDeletion:
+                            description: Keep the keypair after cluster deletion ?
+                            type: boolean
+                          name:
+                            description: Name of the keypair to create.
+                            maxLength: 255
+                            type: string
+                          secretName:
+                            description: Name of the secret where the private key
+                              will be stored, defaults to "<cluster name>-keypair".
+                            type: string
+                        required:
+                        - name
                         type: object
                       loadBalancer:
                         description: The Load Balancer configuration
@@ -2975,20 +2991,11 @@ spec:
                               items:
                                 properties:
                                   flow:
-                                    description: The flow of the security group (inbound
-                                      or outbound)
-                                    type: string
-                                  fromPortRange:
-                                    description: The beginning of the port range
-                                    format: int32
-                                    type: integer
-                                  ipProtocol:
-                                    description: The ip protocol name (tcp, udp, icmp
-                                      or -1)
-                                    type: string
-                                  ipRange:
-                                    description: The ip range of the security group
-                                      rule (deprecated, use ipRanges)
+                                    description: The flow of the security group (Inbound
+                                      or Outbound), default Inbound
+                                    enum:
+                                    - Inbound
+                                    - Outbound
                                     type: string
                                   ipRanges:
                                     description: The list of ip ranges of the security
@@ -3000,13 +3007,16 @@ spec:
                                     description: The tag name associate with the security
                                       group
                                     type: string
-                                  resourceId:
-                                    description: The security group rule id
-                                    type: string
-                                  toPortRange:
-                                    description: The end of the port range
-                                    format: int32
-                                    type: integer
+                                  ports:
+                                    description: The list of ports to open (protocol,
+                                      protocol/port or protocol/fromPort-toPort)
+                                    items:
+                                      pattern: ^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?(
+                                        ?#.*)?
+                                      type: string
+                                    type: array
+                                required:
+                                - ports
                                 type: object
                               type: array
                             tag:
@@ -3073,7 +3083,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
-    controller-gen.kubebuilder.io/version: v0.21.1-0.20260817093026-6104e87aa9a0
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
@@ -3621,25 +3631,6 @@ spec:
                     description: Use an "Outscale Opensource" image
                     type: boolean
                 type: object
-              keypair:
-                description: deprecated, use vm.keypairName
-                properties:
-                  clusterName:
-                    description: Deprecated
-                    type: string
-                  deleteKeypair:
-                    description: Deprecated
-                    type: boolean
-                  name:
-                    description: Deprecated
-                    type: string
-                  publicKey:
-                    description: Deprecated
-                    type: string
-                  resourceId:
-                    description: Deprecated
-                    type: string
-                type: object
               providerID:
                 type: string
               reconciliationRule:
@@ -3695,7 +3686,7 @@ spec:
                   imageId:
                     type: string
                   keypairName:
-                    description: The keypair name
+                    description: The keypair name.
                     type: string
                   name:
                     type: string
@@ -3748,8 +3739,8 @@ spec:
                     description: The resource id of the vm (not set anymore)
                     type: string
                   role:
-                    description: The node role (controlplane or worker, worker by
-                      default).
+                    description: The node role (controlplane or worker), defaults
+                      to worker.
                     type: string
                   rootDisk:
                     properties:
@@ -3961,12 +3952,23 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.1-0.20260817093026-6104e87aa9a0
+    cert-manager.io/inject-ca-from: cluster-api-provider-outscale-system/cluster-api-provider-outscale-serving-cert
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/v1alpha3: v1alpha3
     cluster.x-k8s.io/v1beta1: v1beta1
   name: oscmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: cluster-api-provider-outscale-webhook-service
+          namespace: cluster-api-provider-outscale-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
   group: infrastructure.cluster.x-k8s.io
   names:
     categories:
@@ -4486,25 +4488,6 @@ spec:
                             description: Use an "Outscale Opensource" image
                             type: boolean
                         type: object
-                      keypair:
-                        description: deprecated, use vm.keypairName
-                        properties:
-                          clusterName:
-                            description: Deprecated
-                            type: string
-                          deleteKeypair:
-                            description: Deprecated
-                            type: boolean
-                          name:
-                            description: Deprecated
-                            type: string
-                          publicKey:
-                            description: Deprecated
-                            type: string
-                          resourceId:
-                            description: Deprecated
-                            type: string
-                        type: object
                       providerID:
                         type: string
                       reconciliationRule:
@@ -4560,7 +4543,7 @@ spec:
                           imageId:
                             type: string
                           keypairName:
-                            description: The keypair name
+                            description: The keypair name.
                             type: string
                           name:
                             type: string
@@ -4615,8 +4598,8 @@ spec:
                             description: The resource id of the vm (not set anymore)
                             type: string
                           role:
-                            description: The node role (controlplane or worker, worker
-                              by default).
+                            description: The node role (controlplane or worker), defaults
+                              to worker.
                             type: string
                           rootDisk:
                             properties:
