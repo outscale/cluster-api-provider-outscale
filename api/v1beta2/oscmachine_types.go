@@ -16,9 +16,20 @@ import (
 	"sigs.k8s.io/cluster-api/errors" //nolint
 )
 
+type ProviderIDScheme string
+
+const (
+	SchemeOutscale ProviderIDScheme = "osc"
+	SchemeAWS      ProviderIDScheme = "aws"
+)
+
 // OscMachineSpec defines the desired state of OscMachine
 type OscMachineSpec struct {
 	ProviderID *string `json:"providerID,omitempty"`
+
+	// The scheme to use to set providerID (aws for v1 clusters, defaults to osc for new clusters)
+	// +optional
+	ProviderIDScheme ProviderIDScheme `json:"providerIDScheme,omitempty"`
 
 	Vm      OscVm       `json:"vm,omitempty"`
 	Image   OscImage    `json:"image,omitempty"`
@@ -28,6 +39,12 @@ type OscMachineSpec struct {
 	// Reconciliation rules (default: {*, onChange})
 	// +optional
 	ReconciliationRule *OscReconciliationRule `json:"reconciliationRule,omitempty"`
+}
+
+func (s *OscMachineSpec) SetDefaults() {
+	if s.ProviderIDScheme == "" {
+		s.ProviderIDScheme = SchemeOutscale
+	}
 }
 
 // OscMachineStatus defines the observed state of OscMachine

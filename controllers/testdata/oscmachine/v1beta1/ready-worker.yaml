@@ -38,7 +38,7 @@ spec:
         rootDiskType: gp2
       vmType: tinav6.c4r8p2
       subregionName: eu-west-2a
-  providerID: aws:///eu-west-2a/i-046f4bd0
+  providerID: osc:///eu-west-2a/i-046f4bd0
 status:
   addresses:
     - address: 10.0.3.29
