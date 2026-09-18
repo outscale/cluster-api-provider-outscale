@@ -1,8 +1,8 @@
 # Migrating from pre v0.2.2 versions
 
-Until version v0.2.2, our providerId use the following format aws://availability-zone/instance-id
+Until version v0.2.2, our providerId use the following format osc://availability-zone/instance-id
 
-New version of cluster-api-provider-outscale will use the following format aws:///availability-zone/instance-id
+New version of cluster-api-provider-outscale will use the following format osc:///availability-zone/instance-id
 
 This documentation is only for kubeadm bootstrapper.
 
@@ -36,11 +36,11 @@ spec:
 
 ```
 kubectl get machine -A
-default        capu-quickstart-control-plane-bzmwp          capu-quickstart   ip-10-0-4-81                              aws:///eu-west-2a/i-8d5b8257   Running    11h   v1.22.11
-default        capu-quickstart-control-plane-n75kk          capu-quickstart   ip-10-0-3-230                             aws:///eu-west-2a/i-c896acba   Running    11h   v1.22.11
-default        capu-quickstart-control-plane-kgx4w          capu-quickstart   ip-10-0-4-62                              aws:///eu-west-2a/i-7db45201   Running    11h   v1.22.11
-default        capu-quickstart-md-0-c54f966f8xjqbbf-pnhv9   capu-quickstart  ip-10-0-3-230.eu-west-2.compute.internal   aws:///eu-west-2a/i-298e40bc   Running    19h   v1.22.11
-default        capu-quickstart-md-0-c54f966f8xjqbbf-x55lv   capu-quickstart   ip-10-0-3-10.eu-west-2.compute.internal    aws:///eu-west-2a/i-817cc83b   Running    11h   v1.22.11
+default        capu-quickstart-control-plane-bzmwp          capu-quickstart   ip-10-0-4-81                              osc:///eu-west-2a/i-8d5b8257   Running    11h   v1.22.11
+default        capu-quickstart-control-plane-n75kk          capu-quickstart   ip-10-0-3-230                             osc:///eu-west-2a/i-c896acba   Running    11h   v1.22.11
+default        capu-quickstart-control-plane-kgx4w          capu-quickstart   ip-10-0-4-62                              osc:///eu-west-2a/i-7db45201   Running    11h   v1.22.11
+default        capu-quickstart-md-0-c54f966f8xjqbbf-pnhv9   capu-quickstart  ip-10-0-3-230.eu-west-2.compute.internal   osc:///eu-west-2a/i-298e40bc   Running    19h   v1.22.11
+default        capu-quickstart-md-0-c54f966f8xjqbbf-x55lv   capu-quickstart   ip-10-0-3-10.eu-west-2.compute.internal    osc:///eu-west-2a/i-817cc83b   Running    11h   v1.22.11
 ```
 
 ## Worker requirements
@@ -81,13 +81,13 @@ kubectl drain --ignore-daemonsets ip-10-0-3-10.eu-west-2.compute.internal
 Replace in KubeadmConfigTemplate:
 
 ```
-aws://
+osc://
 ```
 
 By:
 
 ```
-aws:///
+osc:///
 ```
 
 Then delete previous node
@@ -106,13 +106,13 @@ Please repeat this procedure for each node.
 Replace in KubeadmControlPlane:
 
 ```
-aws://
+osc://
 ```
 
 By:
 
 ```
-aws:///
+osc:///
 ```
 
 It will rollout control plane node automatically.

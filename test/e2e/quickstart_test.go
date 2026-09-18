@@ -24,6 +24,21 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 		Expect(e2eConfig.Variables).To(HaveKey(capi_e2e.WorkersMachineTemplateUpgradeTo))
 	})
 
+	Context("Running the quick-start spec with aws providerID", func() {
+		capi_e2e.QuickStartSpec(ctx, func() capi_e2e.QuickStartSpecInput {
+			return capi_e2e.QuickStartSpecInput{
+				E2EConfig:              e2eConfig,
+				ClusterctlConfigPath:   clusterctlConfigPath,
+				InfrastructureProvider: &infraProvider,
+				BootstrapClusterProxy:  bootstrapClusterProxy,
+				ArtifactFolder:         artifactFolder,
+				SkipCleanup:            skipCleanup,
+				Flavor:                 new("aws"),
+				WorkerMachineCount:     new(int64(1)),
+			}
+		})
+	})
+
 	Context("Running the quick-start v1beta1 spec", func() {
 		capi_e2e.QuickStartSpec(ctx, func() capi_e2e.QuickStartSpecInput {
 			return capi_e2e.QuickStartSpecInput{

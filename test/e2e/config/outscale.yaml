@@ -67,6 +67,7 @@ providers:
           - sourcePath: "../data/infrastructure-outscale/cluster-template-public.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-airgap.yaml"
           - sourcePath: "../data/infrastructure-outscale/cluster-template-v1beta1.yaml"
+          - sourcePath: "../data/infrastructure-outscale/cluster-template-aws.yaml"
           # upgrade_test
           - sourcePath: "../data/infrastructure-outscale/cluster-template-upgrades.yaml"
           # node_test

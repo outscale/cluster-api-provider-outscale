@@ -11,6 +11,8 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 	*dst = infrastructurev1beta2.OscMachineSpec{
 		ProviderID: src.ProviderID,
 
+		ProviderIDScheme: infrastructurev1beta2.SchemeAWS,
+
 		Vm: infrastructurev1beta2.OscVm{
 			Name:           srcNode.Vm.Name,
 			ImageId:        srcNode.Vm.ImageId,
@@ -130,6 +132,7 @@ func (src *OscMachine) ConvertTo(dstRaw conversion.Hub) error {
 		}),
 		Conditions: src.Status.Conditions,
 	}
+	// TODO: restore saved providerIDScheme
 	return src.Spec.ConvertTo(&dst.Spec)
 }
 
@@ -149,6 +152,7 @@ func (dst *OscMachine) ConvertFrom(srcRaw conversion.Hub) error {
 		}),
 		Conditions: src.Status.Conditions,
 	}
+	// TODO: save providerIDScheme
 	return dst.Spec.ConvertFrom(&src.Spec)
 }
 
