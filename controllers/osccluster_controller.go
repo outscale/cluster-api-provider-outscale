@@ -210,6 +210,15 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.LoadBalancerReadyCondition)
 	}
 
+	if clusterScope.GetSpec().Keypair != nil {
+		_, err := r.reconcileKeypair(ctx, clusterScope)
+		if err != nil {
+			conditions.MarkFalse(osccluster, infrastructurev1beta2.KeypairReadyCondition, infrastructurev1beta2.KeypairFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			return reconcile.Result{}, fmt.Errorf("reconcile keypair: %w", err)
+		}
+		conditions.MarkTrue(osccluster, infrastructurev1beta2.KeypairReadyCondition)
+	}
+
 	if clusterScope.GetSpec().Bastion.Enable {
 		_, err := r.reconcileBastion(ctx, clusterScope)
 		if err != nil {
@@ -250,6 +259,13 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		_, err := r.reconcileDeleteBastion(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete bastion: %w", err)
+		}
+	}
+
+	if clusterScope.GetSpec().Keypair != nil {
+		_, err := r.reconcileDeleteKeypair(ctx, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("reconcile keypair: %w", err)
 		}
 	}
 

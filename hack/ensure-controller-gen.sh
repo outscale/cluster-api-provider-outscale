@@ -30,17 +30,17 @@ verify_controller_gen_version() {
 
 	local controller_gen_version
 	controller_gen_version="$(${BIN_ROOT}/controller-gen --version | grep -Eo "([0-9]{1,}\.)+[0-9]{1,}" | head -1)"
-	if [[ "${MINIMUM_CONTROLLER_GEN_VERSION}" != "${controller_gen_version}" ]]; then
+	if [[ "${CONTROLLER_GEN_VERSION}" != "${controller_gen_version}" ]]; then
 		cat <<EOF
 Detected controller-gen version: ${controller_gen_version}
-Install ${MINIMUM_CONTROLLER_GEN_VERSION} of controller-gen
+Install ${CONTROLLER_GEN_VERSION} of controller-gen
 EOF
 
 		echo 'Installing controller-gen' && install_controller_gen
 	else
 		cat <<EOF
 Detected controller-gen version: ${controller_gen_version}.
-controller-gen ${MINIMUM_CONTROLLER_GEN_VERSION} is already installed.
+controller-gen ${CONTROLLER_GEN_VERSION} is already installed.
 EOF
 	fi
 }
@@ -50,7 +50,7 @@ install_controller_gen() {
 		if ! [ -d "${BIN_ROOT}" ]; then
 			mkdir -p "${BIN_ROOT}"
 		fi
-		go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@main
+		go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@v${CONTROLLER_GEN_VERSION}
 		cp "$GOPATH/bin/controller-gen" "${BIN_ROOT}/controller-gen"
 	else
 		set +x

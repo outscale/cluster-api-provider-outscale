@@ -8,6 +8,7 @@ package compute
 import (
 	"context"
 	b64 "encoding/base64"
+	"errors"
 	"fmt"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
@@ -53,6 +54,13 @@ func (s *Service) CreateVm(ctx context.Context,
 	volumes []infrastructurev1beta2.OscVolume,
 ) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
+	switch {
+	case keypairName != "":
+	case machineScope.OscCluster.Spec.Keypair != nil:
+		keypairName = machineScope.OscCluster.Spec.Keypair.Name
+	default:
+		return nil, errors.New("no keypair is configured")
+	}
 	vmType := spec.VmType
 	rootDiskIops := spec.RootDisk.RootDiskIops
 	rootDiskSize := spec.RootDisk.RootDiskSize
