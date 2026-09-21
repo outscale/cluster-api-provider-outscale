@@ -115,7 +115,12 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	osccluster := clusterScope.OscCluster
-	controllerutil.AddFinalizer(osccluster, OscClusterFinalizer)
+	if controllerutil.AddFinalizer(osccluster, OscClusterFinalizer) {
+		// Register the finalizer immediately to avoid orphaning IaaS resources on delete
+		if err := clusterScope.PatchObject(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	clusterScope.EnsureExplicitUID()
 
 	// FIXME
