@@ -3807,6 +3807,11 @@ spec:
                 type: object
               providerID:
                 type: string
+              providerIDScheme:
+                default: osc
+                description: The scheme to use to set providerID (aws for v1 clusters,
+                  defaults to osc for new clusters)
+                type: string
               reconciliationRule:
                 description: 'Reconciliation rules (default: {*, onChange})'
                 properties:
@@ -4668,6 +4673,11 @@ spec:
                             type: boolean
                         type: object
                       providerID:
+                        type: string
+                      providerIDScheme:
+                        default: osc
+                        description: The scheme to use to set providerID (aws for
+                          v1 clusters, defaults to osc for new clusters)
                         type: string
                       reconciliationRule:
                         description: 'Reconciliation rules (default: {*, onChange})'

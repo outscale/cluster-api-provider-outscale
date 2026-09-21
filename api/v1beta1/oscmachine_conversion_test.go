@@ -28,6 +28,7 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 
 		hubSkipOscMachineUnused,
 		hubSingleRootVolume,
+		hubProviderIDScheme,
 	}
 }
 
@@ -72,8 +73,24 @@ func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Contin
 			if i == 0 {
 				in.Volumes[i].Device = ""
 				in.Volumes[i].Name = ""
+				in.Volumes[i].FromSnapshot = ""
 			}
 		}
+	} else {
+		in.Volumes = []infrastructurev1beta2.OscVolume{{
+			Root: true,
+			Size: 10,
+			Type: infrastructurev1beta2.DefaultRootDiskType,
+		}}
+	}
+}
+
+func hubProviderIDScheme(in *infrastructurev1beta2.ProviderIDScheme, c fuzz.Continue) {
+	switch c.Intn(2) {
+	case 0:
+		*in = infrastructurev1beta2.SchemeAWS
+	default:
+		*in = infrastructurev1beta2.SchemeOutscale
 	}
 }
 
