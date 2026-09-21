@@ -766,15 +766,15 @@ func (s *ClusterScope) SetReconciliationGeneration(reconciler infrastructurev1be
 
 // PatchObject keep the cluster configuration and status
 func (s *ClusterScope) PatchObject(ctx context.Context) error {
+	// TODO: check for missing conditions
 	setConditions := []clusterv1.ConditionType{
 		infrastructurev1beta2.NetReadyCondition,
 		infrastructurev1beta2.SubnetsReadyCondition,
 		infrastructurev1beta2.LoadBalancerReadyCondition,
-	}
-	setConditions = append(setConditions,
 		infrastructurev1beta2.InternetServicesReadyCondition,
 		infrastructurev1beta2.NatServicesReadyCondition,
-		infrastructurev1beta2.RouteTablesReadyCondition)
+		infrastructurev1beta2.RouteTablesReadyCondition,
+	}
 	conditions.SetSummary(
 		s.OscCluster,
 		conditions.WithConditions(setConditions...),
