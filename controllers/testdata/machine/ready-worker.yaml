@@ -38,7 +38,7 @@ spec:
     namespace: cluster-api-test
     uid: 9c50b5d4-767d-44f1-847b-854100147366
   nodeDeletionTimeout: 10s
-  providerID: aws:///eu-west-2a/i-046f4bd0
+  providerID: osc:///eu-west-2a/i-046f4bd0
   version: v1.30.7
 status:
   addresses:

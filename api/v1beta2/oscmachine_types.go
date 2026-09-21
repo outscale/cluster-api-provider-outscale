@@ -16,9 +16,20 @@ import (
 	"sigs.k8s.io/cluster-api/errors" //nolint
 )
 
+type ProviderIDScheme string
+
+const (
+	SchemeOutscale ProviderIDScheme = "osc"
+	SchemeAWS      ProviderIDScheme = "aws"
+)
+
 // OscMachineSpec defines the desired state of OscMachine
 type OscMachineSpec struct {
 	ProviderID *string `json:"providerID,omitempty"`
+	// The scheme to use to set providerID (aws for v1 clusters, defaults to osc for new clusters)
+	// +optional
+	// +default:value="osc"
+	ProviderIDScheme ProviderIDScheme `json:"providerIDScheme,omitempty"`
 
 	// The configuration of the VM to deploy
 	Vm OscVm `json:"vm,omitempty"`
