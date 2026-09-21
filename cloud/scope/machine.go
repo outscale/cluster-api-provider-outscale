@@ -310,6 +310,7 @@ func (s *MachineScope) SetReconciliationGeneration(reconciler infrastructurev1be
 
 // PatchObject keep the machine configuration and status
 func (m *MachineScope) PatchObject(ctx context.Context) error {
+	// TODO: check conditions
 	applicableConditions := []clusterv1.ConditionType{
 		infrastructurev1beta1.VmReadyCondition,
 	}
