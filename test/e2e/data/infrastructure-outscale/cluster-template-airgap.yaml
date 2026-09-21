@@ -116,7 +116,7 @@ spec:
           name: "{{ ds.meta_data.local_hostname }}"
           kubeletExtraArgs:
             cloud-provider: external
-            provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+            provider-id: osc:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
       mounts:
         - - xvdb
           - /preload
@@ -144,13 +144,13 @@ spec:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+          provider-id: osc:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         name: "{{ ds.meta_data.local_hostname }}"
     joinConfiguration:
       nodeRegistration:
         kubeletExtraArgs:
           cloud-provider: external
-          provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+          provider-id: osc:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
     mounts:
       - - xvdb
         - /preload

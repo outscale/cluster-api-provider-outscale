@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -10,7 +11,18 @@ func (src *OscMachineTemplate) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Status = infrastructurev1beta2.OscMachineTemplateStatus(src.Status)
 	dst.Spec.Template.ObjectMeta = src.Spec.Template.ObjectMeta
-	return src.Spec.Template.Spec.ConvertTo(&dst.Spec.Template.Spec)
+	if err := src.Spec.Template.Spec.ConvertTo(&dst.Spec.Template.Spec); err != nil {
+		return err
+	}
+	restored := &infrastructurev1beta2.OscMachineTemplate{}
+	if ok, err := utilconversion.UnmarshalData(src, restored); err != nil || !ok {
+		return err
+	}
+	// restore new fields
+	if restored.Spec.Template.Spec.ProviderIDScheme != "" {
+		dst.Spec.Template.Spec.ProviderIDScheme = restored.Spec.Template.Spec.ProviderIDScheme
+	}
+	return nil
 }
 
 func (dst *OscMachineTemplate) ConvertFrom(srcRaw conversion.Hub) error {
@@ -18,7 +30,10 @@ func (dst *OscMachineTemplate) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Status = OscMachineTemplateStatus(src.Status)
 	dst.Spec.Template.ObjectMeta = src.Spec.Template.ObjectMeta
-	return dst.Spec.Template.Spec.ConvertFrom(&src.Spec.Template.Spec)
+	if err := dst.Spec.Template.Spec.ConvertFrom(&src.Spec.Template.Spec); err != nil {
+		return err
+	}
+	return utilconversion.MarshalData(src, dst)
 }
 
 var _ conversion.Convertible = (*OscMachineTemplate)(nil)
