@@ -156,7 +156,12 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 		return reconcile.Result{}, nil
 	}
 
-	controllerutil.AddFinalizer(oscmachine, OscMachineFinalizer)
+	if controllerutil.AddFinalizer(oscmachine, OscMachineFinalizer) {
+		// Register the finalizer immediately to avoid orphaning IaaS resources on delete
+		if err := machineScope.PatchObject(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 
 	if !machineScope.Cluster.Status.InfrastructureReady {
 		log.V(3).Info("Cluster infrastructure is not ready yet")
