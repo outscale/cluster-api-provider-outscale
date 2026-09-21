@@ -3,6 +3,7 @@ package v1beta1
 import (
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/samber/lo"
+	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -18,6 +19,7 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 			VmType:         srcNode.Vm.VmType,
 			SubnetName:     srcNode.Vm.SubnetName,
 			PublicIp:       srcNode.Vm.PublicIp,
+			PublicIpPool:   srcNode.Vm.PublicIpPool,
 			RootDisk:       infrastructurev1beta2.OscRootDisk(srcNode.Vm.RootDisk),
 			SubregionName:  srcNode.Vm.SubregionName,
 			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
@@ -71,6 +73,7 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 				VmType:         src.Vm.VmType,
 				SubnetName:     src.Vm.SubnetName,
 				PublicIp:       src.Vm.PublicIp,
+				PublicIpPool:   src.Vm.PublicIpPool,
 				RootDisk:       OscRootDisk(src.Vm.RootDisk),
 				SubregionName:  src.Vm.SubregionName,
 				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
@@ -130,7 +133,15 @@ func (src *OscMachine) ConvertTo(dstRaw conversion.Hub) error {
 		}),
 		Conditions: src.Status.Conditions,
 	}
-	return src.Spec.ConvertTo(&dst.Spec)
+	if err := src.Spec.ConvertTo(&dst.Spec); err != nil {
+		return err
+	}
+	restored := &infrastructurev1beta2.OscMachine{}
+	if ok, err := utilconversion.UnmarshalData(src, restored); err != nil || !ok {
+		return err
+	}
+	// restore new fields
+	return nil
 }
 
 func (dst *OscMachine) ConvertFrom(srcRaw conversion.Hub) error {
@@ -149,7 +160,10 @@ func (dst *OscMachine) ConvertFrom(srcRaw conversion.Hub) error {
 		}),
 		Conditions: src.Status.Conditions,
 	}
-	return dst.Spec.ConvertFrom(&src.Spec)
+	if err := dst.Spec.ConvertFrom(&src.Spec); err != nil {
+		return err
+	}
+	return utilconversion.MarshalData(src, dst)
 }
 
 var _ conversion.Convertible = (*OscMachine)(nil)
