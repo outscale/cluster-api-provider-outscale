@@ -55,7 +55,6 @@ func (OscMachineTemplateWebhook) Default(ctx context.Context, obj runtime.Object
 	}
 	oscmachinetemplatelog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
 	return nil
 }
 

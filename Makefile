@@ -260,7 +260,7 @@ push-dev:
 	docker push ${KIND_IMG}
 
 .PHONY: deploy-dev
-deploy-dev: build-dev push-dev deploy
+deploy-dev: build push-dev deploy
 
 KUSTOMIZE := $(shell command -v kustomize 2> /dev/null)
 
@@ -279,10 +279,6 @@ cleanup-dev: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 ##@ Build
-
-.PHONY: build
-build: generate ## Build manager binary.
-	go build -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate ## Run a controller from your host.

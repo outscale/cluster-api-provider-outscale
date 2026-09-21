@@ -186,8 +186,7 @@ func (m *MachineScope) GetInstanceID() string {
 
 // SetProviderID set the instanceID
 func (m *MachineScope) SetProviderID(subregionName string, vmId string) {
-	pid := fmt.Sprintf("aws:///%s/%s", subregionName, vmId)
-	m.OscMachine.Spec.ProviderID = new(pid)
+	m.OscMachine.Spec.ProviderID = new(GenerateProviderID(m.OscMachine.Spec.ProviderIDScheme, subregionName, vmId))
 }
 
 // GetVmState return the vmState
@@ -271,7 +270,8 @@ func (m *MachineScope) PatchObject(ctx context.Context) error {
 	applicableConditions := []clusterv1.ConditionType{
 		infrastructurev1beta2.VmReadyCondition,
 	}
-	conditions.SetSummary(m.OscMachine,
+	conditions.SetSummary(
+		m.OscMachine,
 		conditions.WithConditions(applicableConditions...),
 		conditions.WithStepCounterIf(m.OscMachine.ObjectMeta.DeletionTimestamp.IsZero()),
 		conditions.WithStepCounter(),
@@ -282,7 +282,8 @@ func (m *MachineScope) PatchObject(ctx context.Context) error {
 		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
 			clusterv1.ReadyCondition,
 			infrastructurev1beta2.VmReadyCondition,
-		}})
+		}},
+	)
 }
 
 // GetBootstrapData return bootstrapData
