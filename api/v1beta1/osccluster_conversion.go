@@ -1,6 +1,8 @@
 package v1beta1
 
 import (
+	"errors"
+	"slices"
 	"strings"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
@@ -53,6 +55,11 @@ func ConvertFlowFrom(src infrastructurev1beta2.Flow) string {
 }
 
 func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) error {
+	if len(src.Network.NatServices) > lo.CountBy(src.Network.Subnets, func(sn OscSubnet) bool {
+		return slices.Contains(sn.Roles, RoleNat)
+	}) {
+		return errors.New(`there are fewer subnets with a "nat" role than NAT services`)
+	}
 	srcNet := src.Network
 	*dst = infrastructurev1beta2.OscClusterSpec{
 		ControlPlaneEndpoint: src.ControlPlaneEndpoint,
@@ -101,18 +108,6 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 		InternetService: infrastructurev1beta2.OscInternetService{
 			Name: srcNet.InternetService.Name,
 		},
-		NatService: infrastructurev1beta2.OscNatService{
-			Name:          srcNet.NatService.Name,
-			SubnetName:    srcNet.NatService.SubnetName,
-			SubregionName: srcNet.NatService.SubregionName,
-		},
-		NatServices: lo.Map(srcNet.NatServices, func(src OscNatService, _ int) infrastructurev1beta2.OscNatService {
-			return infrastructurev1beta2.OscNatService{
-				Name:          src.Name,
-				SubnetName:    src.SubnetName,
-				SubregionName: src.SubregionName,
-			}
-		}),
 		NatPublicIpPool: srcNet.NatPublicIpPool,
 		RouteTables: lo.Map(srcNet.RouteTables, func(src OscRouteTable, _ int) infrastructurev1beta2.OscRouteTable {
 			return infrastructurev1beta2.OscRouteTable{
@@ -220,17 +215,14 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 		InternetService: OscInternetService{
 			Name: src.InternetService.Name,
 		},
-		NatService: OscNatService{
-			Name:          src.NatService.Name,
-			SubnetName:    src.NatService.SubnetName,
-			SubregionName: src.NatService.SubregionName,
-		},
-		NatServices: lo.Map(src.NatServices, func(src infrastructurev1beta2.OscNatService, _ int) OscNatService {
-			return OscNatService{
-				Name:          src.Name,
-				SubnetName:    src.SubnetName,
-				SubregionName: src.SubregionName,
+		NatServices: lo.FilterMap(src.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) (OscNatService, bool) {
+			if !slices.Contains(src.Roles, infrastructurev1beta2.RoleNat) {
+				return OscNatService{}, false
 			}
+			return OscNatService{
+				SubnetName:    src.Name,
+				SubregionName: src.SubregionName,
+			}, true
 		}),
 		NatPublicIpPool: src.NatPublicIpPool,
 		RouteTables: lo.Map(src.RouteTables, func(src infrastructurev1beta2.OscRouteTable, _ int) OscRouteTable {

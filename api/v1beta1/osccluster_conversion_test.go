@@ -1,6 +1,7 @@
 package v1beta1_test
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -26,7 +27,6 @@ func OscClusterFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 		spokeSkipOscClusterStatus,
 		spokeSkipOscClusterUnused,
 		hubSkipOscClusterUnused,
-		spokeSkipOscNatServiceUnused,
 		spokeSkipOscBastionUnused,
 		hubSkipOscBastionUnused,
 		spokeSkipOscRouteTableUnused,
@@ -35,6 +35,8 @@ func OscClusterFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 		hubSetPort,
 		hubSetFlow,
 		spokeSetDisable,
+		spokeSetRole,
+		hubSetRole,
 	}
 }
 
@@ -51,18 +53,22 @@ func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.
 	in.Network.ExtraSecurityGroupRule = false
 	in.Network.PublicIps = nil
 	in.Network.Image = infrastructurev1beta1.OscImage{}
+
+	in.Network.NatServices = in.Network.NatServices[:0]
+	for _, subnet := range in.Network.Subnets {
+		if !slices.Contains(subnet.Roles, infrastructurev1beta1.RoleNat) {
+			continue
+		}
+		in.Network.NatServices = append(in.Network.NatServices, infrastructurev1beta1.OscNatService{
+			SubnetName:    subnet.Name,
+			SubregionName: subnet.SubregionName,
+		})
+	}
+	in.Network.NatService = infrastructurev1beta1.OscNatService{}
 }
 
 func hubSkipOscClusterUnused(in *infrastructurev1beta2.OscClusterSpec, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
-}
-
-func spokeSkipOscNatServiceUnused(in *infrastructurev1beta1.OscNatService, c fuzz.Continue) {
-	c.FuzzNoCustom(in)
-
-	in.ClusterName = ""
-	in.PublicIpName = ""
-	in.ResourceId = ""
 }
 
 func spokeSkipOscBastionUnused(in *infrastructurev1beta1.OscBastion, c fuzz.Continue) {
@@ -159,5 +165,31 @@ func spokeSetDisable(in *infrastructurev1beta1.OscDisable, c fuzz.Continue) {
 		*in = infrastructurev1beta1.DisableInternet
 	default:
 		*in = infrastructurev1beta1.DisableLB
+	}
+}
+
+func spokeSetRole(in *infrastructurev1beta1.OscRole, c fuzz.Continue) {
+	switch c.Intn(4) {
+	case 0:
+		*in = infrastructurev1beta1.RoleNat
+	case 1:
+		*in = infrastructurev1beta1.RoleLoadBalancer
+	case 2:
+		*in = infrastructurev1beta1.RoleControlPlane
+	default:
+		*in = infrastructurev1beta1.RoleWorker
+	}
+}
+
+func hubSetRole(in *infrastructurev1beta2.OscRole, c fuzz.Continue) {
+	switch c.Intn(4) {
+	case 0:
+		*in = infrastructurev1beta2.RoleNat
+	case 1:
+		*in = infrastructurev1beta2.RoleLoadBalancer
+	case 2:
+		*in = infrastructurev1beta2.RoleControlPlane
+	default:
+		*in = infrastructurev1beta2.RoleWorker
 	}
 }

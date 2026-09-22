@@ -1227,38 +1227,6 @@ spec:
               natPublicIpPool:
                 description: The IP Pool storing the Nat Services public IPs
                 type: string
-              natService:
-                description: The Nat Service configuration
-                properties:
-                  name:
-                    description: The name of the Nat Service
-                    type: string
-                  subnetname:
-                    description: The name of the Subnet to which the Nat Service will
-                      be attached (deprecated, add nat role to subnets)
-                    type: string
-                  subregionName:
-                    description: The name of the Subregion to which the Nat Service
-                      will be attached, unless a subnet has been defined
-                    type: string
-                type: object
-              natServices:
-                description: The Nat Services configuration
-                items:
-                  properties:
-                    name:
-                      description: The name of the Nat Service
-                      type: string
-                    subnetname:
-                      description: The name of the Subnet to which the Nat Service
-                        will be attached (deprecated, add nat role to subnets)
-                      type: string
-                    subregionName:
-                      description: The name of the Subregion to which the Nat Service
-                        will be attached, unless a subnet has been defined
-                      type: string
-                  type: object
-                type: array
               net:
                 description: The Net configuration
                 properties:
@@ -2770,40 +2738,6 @@ spec:
                       natPublicIpPool:
                         description: The IP Pool storing the Nat Services public IPs
                         type: string
-                      natService:
-                        description: The Nat Service configuration
-                        properties:
-                          name:
-                            description: The name of the Nat Service
-                            type: string
-                          subnetname:
-                            description: The name of the Subnet to which the Nat Service
-                              will be attached (deprecated, add nat role to subnets)
-                            type: string
-                          subregionName:
-                            description: The name of the Subregion to which the Nat
-                              Service will be attached, unless a subnet has been defined
-                            type: string
-                        type: object
-                      natServices:
-                        description: The Nat Services configuration
-                        items:
-                          properties:
-                            name:
-                              description: The name of the Nat Service
-                              type: string
-                            subnetname:
-                              description: The name of the Subnet to which the Nat
-                                Service will be attached (deprecated, add nat role
-                                to subnets)
-                              type: string
-                            subregionName:
-                              description: The name of the Subregion to which the
-                                Nat Service will be attached, unless a subnet has
-                                been defined
-                              type: string
-                          type: object
-                        type: array
                       net:
                         description: The Net configuration
                         properties:
@@ -4831,6 +4765,8 @@ rules:
   resources:
   - secrets
   verbs:
+  - create
+  - delete
   - get
   - list
   - watch
