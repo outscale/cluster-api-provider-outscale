@@ -51,12 +51,6 @@ type OscClusterSpec struct {
 	// The Internet Service configuration
 	// +optional
 	InternetService OscInternetService `json:"internetService,omitempty,omitzero"`
-	// The Nat Service configuration
-	// +optional
-	NatService OscNatService `json:"natService,omitempty,omitzero"`
-	// The Nat Services configuration
-	// +optional
-	NatServices []OscNatService `json:"natServices,omitempty"`
 	// The IP Pool storing the Nat Services public IPs
 	// +optional
 	NatPublicIpPool string `json:"natPublicIpPool,omitempty"`

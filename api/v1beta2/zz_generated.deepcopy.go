@@ -245,12 +245,6 @@ func (in *OscClusterSpec) DeepCopyInto(out *OscClusterSpec) {
 		}
 	}
 	out.InternetService = in.InternetService
-	out.NatService = in.NatService
-	if in.NatServices != nil {
-		in, out := &in.NatServices, &out.NatServices
-		*out = make([]OscNatService, len(*in))
-		copy(*out, *in)
-	}
 	if in.RouteTables != nil {
 		in, out := &in.RouteTables, &out.RouteTables
 		*out = make([]OscRouteTable, len(*in))

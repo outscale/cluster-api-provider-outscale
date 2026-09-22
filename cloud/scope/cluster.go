@@ -244,29 +244,20 @@ var ErrNoNatFound = errors.New("natService not found")
 
 // GetNatServices return the natServices of the cluster
 func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
-	if s.GetSpec().Disable.Internet {
+	if s.GetSpec().Disable.Internet || s.OscCluster.Spec.UseExisting.Net {
 		return nil
 	}
-	switch {
-	case s.OscCluster.Spec.UseExisting.Net:
-		return nil
-	case len(s.OscCluster.Spec.NatServices) > 0:
-		return s.OscCluster.Spec.NatServices
-	case s.OscCluster.Spec.NatService != infrastructurev1beta2.OscNatService{}:
-		return []infrastructurev1beta2.OscNatService{s.OscCluster.Spec.NatService}
-	default:
-		var nss []infrastructurev1beta2.OscNatService
-		for _, subnet := range s.GetSubnets() {
-			if !s.SubnetHasRole(subnet, infrastructurev1beta2.RoleNat) {
-				continue
-			}
-			nss = append(nss, infrastructurev1beta2.OscNatService{
-				SubregionName: s.GetSubnetSubregion(subnet),
-				SubnetName:    subnet.Name,
-			})
+	var nss []infrastructurev1beta2.OscNatService
+	for _, subnet := range s.GetSubnets() {
+		if !s.SubnetHasRole(subnet, infrastructurev1beta2.RoleNat) {
+			continue
 		}
-		return nss
+		nss = append(nss, infrastructurev1beta2.OscNatService{
+			SubregionName: s.GetSubnetSubregion(subnet),
+			SubnetName:    subnet.Name,
+		})
 	}
+	return nss
 }
 
 // GetNatService return the natService of the cluster

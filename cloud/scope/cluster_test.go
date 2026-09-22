@@ -281,7 +281,7 @@ func TestGetNatService(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: infrastructurev1beta2.OscClusterSpec{
-					NatServices: []infrastructurev1beta2.OscNatService{
+					Subnets: []infrastructurev1beta2.OscSubnet{
 						{Name: "foo", SubregionName: "eu-west-2a"},
 						{Name: "bar", SubregionName: "eu-west-2a"},
 					},
@@ -293,12 +293,6 @@ func TestGetNatService(t *testing.T) {
 		s := newScope()
 		ns, err := s.GetNatService("", "eu-west-2a")
 		require.NoError(t, err)
-		assert.Equal(t, "foo", ns.Name)
-	})
-	t.Run("when searching by name, the right one is returned", func(t *testing.T) {
-		s := newScope()
-		ns, err := s.GetNatService("bar", "eu-west-2a")
-		require.NoError(t, err)
-		assert.Equal(t, "bar", ns.Name)
+		assert.Equal(t, "foo", ns.SubnetName)
 	})
 }

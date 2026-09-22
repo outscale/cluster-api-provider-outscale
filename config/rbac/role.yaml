@@ -20,11 +20,11 @@ rules:
   resources:
   - secrets
   verbs:
+  - create
+  - delete
   - get
   - list
   - watch
-  - create
-  - delete
 - apiGroups:
   - cluster.x-k8s.io
   resources:
