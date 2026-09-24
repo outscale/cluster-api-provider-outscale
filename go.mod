@@ -6,7 +6,8 @@ toolchain go1.27.1
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8
-	github.com/onsi/ginkgo/v2 v2.32.1
+	github.com/google/gofuzz v1.2.0
+	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.40.0
 	github.com/outscale/goutils/k8s v0.0.5
 	github.com/outscale/goutils/sdk v0.0.9
@@ -79,7 +80,6 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-github/v53 v53.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/google/safetext v0.0.0-20230106111101-7156a760e523 // indirect
 	github.com/google/uuid v1.6.0 // indirect
