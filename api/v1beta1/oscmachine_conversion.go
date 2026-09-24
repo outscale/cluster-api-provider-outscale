@@ -12,6 +12,8 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 	*dst = infrastructurev1beta2.OscMachineSpec{
 		ProviderID: src.ProviderID,
 
+		ProviderIDScheme: infrastructurev1beta2.SchemeAWS,
+
 		Vm: infrastructurev1beta2.OscVm{
 			Name:           srcNode.Vm.Name,
 			ImageId:        srcNode.Vm.ImageId,
@@ -141,6 +143,9 @@ func (src *OscMachine) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 	// restore new fields
+	if restored.Spec.ProviderIDScheme != "" {
+		dst.Spec.ProviderIDScheme = restored.Spec.ProviderIDScheme
+	}
 	return nil
 }
 

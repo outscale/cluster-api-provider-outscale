@@ -26,6 +26,7 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 		hubSkipOscMachineUnused,
 		spokeSkipVolumeUnused,
 		spokeSkipKeypair,
+		hubProviderIDScheme,
 	}
 }
 
@@ -52,6 +53,15 @@ func hubSkipOscMachineUnused(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Co
 
 	in.Vm.PrivateIps = nil
 	in.Vm.ResourceId = ""
+}
+
+func hubProviderIDScheme(in *infrastructurev1beta2.ProviderIDScheme, c fuzz.Continue) {
+	switch c.Intn(2) {
+	case 0:
+		*in = infrastructurev1beta2.SchemeAWS
+	default:
+		*in = infrastructurev1beta2.SchemeOutscale
+	}
 }
 
 func spokeSkipVolumeUnused(in *infrastructurev1beta1.OscVolume, c fuzz.Continue) {

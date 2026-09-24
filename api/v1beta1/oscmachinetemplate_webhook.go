@@ -75,7 +75,8 @@ func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, oldObj, new
 		return nil, nil
 	}
 	if !reflect.DeepEqual(newM.Spec.Template.Spec, oldM.Spec.Template.Spec) {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("template", "spec"), newM, "spec is immutable"),
 		)
 	}
