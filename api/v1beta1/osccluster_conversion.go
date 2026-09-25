@@ -77,7 +77,7 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			SecurityGroupName: srcNet.LoadBalancer.SecurityGroupName,
 			Listener: infrastructurev1beta2.OscLoadBalancerListener{
 				BackendPort:          srcNet.LoadBalancer.Listener.BackendPort,
-				BackendProtocol:      infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.Listener.LoadBalancerProtocol),
+				BackendProtocol:      infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.Listener.BackendProtocol),
 				LoadBalancerPort:     srcNet.LoadBalancer.Listener.LoadBalancerPort,
 				LoadBalancerProtocol: infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.Listener.LoadBalancerProtocol),
 			},
@@ -196,7 +196,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			SecurityGroupName: src.LoadBalancer.SecurityGroupName,
 			Listener: OscLoadBalancerListener{
 				BackendPort:          src.LoadBalancer.Listener.BackendPort,
-				BackendProtocol:      string(src.LoadBalancer.Listener.LoadBalancerProtocol),
+				BackendProtocol:      string(src.LoadBalancer.Listener.BackendProtocol),
 				LoadBalancerPort:     src.LoadBalancer.Listener.LoadBalancerPort,
 				LoadBalancerProtocol: string(src.LoadBalancer.Listener.LoadBalancerProtocol),
 			},
