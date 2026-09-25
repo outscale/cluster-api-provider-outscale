@@ -23,7 +23,7 @@ func load(file string) (*unstructured.Unstructured, error) {
 
 var _ = ginkgo.Describe("[e2e][validation][fast] Testing CRD validation", func() {
 	ginkgo.BeforeEach(func() {
-		gomega.Expect(bootstrapClusterProxy).ToNot(gomega.BeNil(), "Invalid argument. bootstrapClusterProxy can't be nil when calling %s spec", specName)
+		gomega.Expect(bootstrapClusterProxy).ToNot(gomega.BeNil(), "Invalid argument. bootstrapClusterProxy can't be nil when validating schemas")
 	})
 
 	ginkgo.It("should properly validate OscClusters", func() {
