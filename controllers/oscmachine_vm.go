@@ -49,14 +49,14 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	default:
 		// Check if a machine needs to be placed in a subregion.
 		subnetName := vmSpec.SubnetName
-		var subregionName string
+		var subregionName infrastructurev1beta2.OscSubRegion
 		switch {
 		case fgpu != nil:
-			subregionName = fgpu.SubregionName
+			subregionName = infrastructurev1beta2.OscSubRegion(fgpu.SubregionName)
 		case machineScope.Machine.Spec.FailureDomain != nil:
 			// failure domain may either be a subnet name (CAPOSC up to v0.4.0) or a subregion (v0.5.0 or later).
 			subnetName = *machineScope.Machine.Spec.FailureDomain
-			subregionName = *machineScope.Machine.Spec.FailureDomain
+			subregionName = infrastructurev1beta2.OscSubRegion(*machineScope.Machine.Spec.FailureDomain)
 		default:
 			azs := vmSpec.GetSubregions()
 			if len(azs) == 0 {
@@ -79,7 +79,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			log.V(2).Info("Control-plane nodes are not allowed to have fGPUs")
 		case fgpu == nil:
 			log.V(3).Info("Allocating fGPU", "model", vmSpec.FGPU.Model)
-			fgpu, err = r.Cloud.Compute(clusterScope.Tenant).AllocateFGPU(ctx, vmSpec.FGPU.Model, subregionName, machineScope)
+			fgpu, err = r.Cloud.Compute(clusterScope.Tenant).AllocateFGPU(ctx, vmSpec.FGPU.Model, string(subregionName), machineScope)
 			if err != nil {
 				return reconcile.Result{}, err
 			}

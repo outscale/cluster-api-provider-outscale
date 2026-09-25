@@ -17,5 +17,5 @@ metadata:
   uid: 4973cd7c-439b-4108-b61f-39805379aa0e
 spec:
   loadBalancer:
-    loadbalancername: test-cluster-api-k8s
+    name: test-cluster-api-k8s
   subregionName: eu-west-2a

@@ -25,7 +25,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta2.O
 	req := osc.CreateSubnetRequest{
 		IpRange:       spec.IpRange,
 		NetId:         netId,
-		SubregionName: &spec.SubregionName,
+		SubregionName: new(string(spec.SubregionName)),
 	}
 
 	resp, err := s.tenant.Client().CreateSubnet(ctx, req)

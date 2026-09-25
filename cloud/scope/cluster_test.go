@@ -45,7 +45,7 @@ func TestClusterScope_GetSubnet(t *testing.T) {
 		subnets         []infrastructurev1beta2.OscSubnet
 		searchName      string
 		searchRole      infrastructurev1beta2.OscRole
-		searchSubregion string
+		searchSubregion infrastructurev1beta2.OscSubRegion
 		expectName      string
 	}{
 		{

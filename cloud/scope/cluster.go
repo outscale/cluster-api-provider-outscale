@@ -127,7 +127,7 @@ func (s *ClusterScope) GetNetName() string {
 }
 
 // GetDefaultSubregion returns the default subregion.
-func (s *ClusterScope) GetDefaultSubregion() string {
+func (s *ClusterScope) GetDefaultSubregion() infrastructurev1beta2.OscSubRegion {
 	if len(s.GetSpec().Subregions) > 0 {
 		return s.GetSpec().Subregions[0]
 	}
@@ -135,11 +135,11 @@ func (s *ClusterScope) GetDefaultSubregion() string {
 }
 
 // GetSubregions returns the subregions where to deploy the cluster.
-func (s *ClusterScope) GetSubregions() []string {
+func (s *ClusterScope) GetSubregions() []infrastructurev1beta2.OscSubRegion {
 	if len(s.GetSpec().Subregions) > 0 {
 		return s.GetSpec().Subregions
 	}
-	return []string{s.GetSpec().SubregionName}
+	return []infrastructurev1beta2.OscSubRegion{s.GetSpec().SubregionName}
 }
 
 // GetSubnets returns the subnets of the cluster.
@@ -163,7 +163,7 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
 		} {
 			net.IP[2]++
 			subnet := infrastructurev1beta2.OscSubnet{
-				IpRange: net.String(),
+				IpRange:       net.String(),
 				Roles:         roles,
 				SubregionName: fd,
 			}
@@ -175,7 +175,7 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
 
 var ErrNoSubnetFound = errors.New("subnet not found")
 
-func (s *ClusterScope) GetSubnet(name string, role infrastructurev1beta2.OscRole, subregion string) (infrastructurev1beta2.OscSubnet, error) {
+func (s *ClusterScope) GetSubnet(name string, role infrastructurev1beta2.OscRole, subregion infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubnet, error) {
 	if subregion == "" {
 		subregion = s.GetDefaultSubregion()
 	}
@@ -208,7 +208,7 @@ func (s *ClusterScope) SubnetIsPublic(spec infrastructurev1beta2.OscSubnet) bool
 	return s.SubnetHasRole(spec, infrastructurev1beta2.RoleBastion) || s.SubnetHasRole(spec, infrastructurev1beta2.RoleLoadBalancer) || s.SubnetHasRole(spec, infrastructurev1beta2.RoleNat)
 }
 
-func (s *ClusterScope) GetSubnetSubregion(spec infrastructurev1beta2.OscSubnet) string {
+func (s *ClusterScope) GetSubnetSubregion(spec infrastructurev1beta2.OscSubnet) infrastructurev1beta2.OscSubRegion {
 	if spec.SubregionName != "" {
 		return spec.SubregionName
 	}
@@ -219,16 +219,16 @@ func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta2.OscSubnet) strin
 	if spec.Name != "" {
 		return spec.Name
 	}
-	fd := s.GetSubnetSubregion(spec)
+	sr := string(s.GetSubnetSubregion(spec))
 	switch {
 	case s.SubnetIsPublic(spec):
-		return "Public subnet for " + s.OscCluster.Name + "/" + fd
+		return "Public subnet for " + s.OscCluster.Name + "/" + sr
 	case s.SubnetHasRole(spec, infrastructurev1beta2.RoleControlPlane):
-		return "Controlplane subnet for " + s.OscCluster.Name + "/" + fd
+		return "Controlplane subnet for " + s.OscCluster.Name + "/" + sr
 	case s.SubnetHasRole(spec, infrastructurev1beta2.RoleWorker):
-		return "Worker subnet for " + s.OscCluster.Name + "/" + fd
+		return "Worker subnet for " + s.OscCluster.Name + "/" + sr
 	default:
-		return "Subnet for " + s.OscCluster.Name + "/" + fd
+		return "Subnet for " + s.OscCluster.Name + "/" + sr
 	}
 }
 
@@ -261,7 +261,7 @@ func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
 }
 
 // GetNatService return the natService of the cluster
-func (s *ClusterScope) GetNatService(name string, subregion string) (infrastructurev1beta2.OscNatService, error) {
+func (s *ClusterScope) GetNatService(name string, subregion infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscNatService, error) {
 	nats := s.GetNatServices()
 	if name != "" {
 		for _, spec := range nats {
@@ -292,7 +292,7 @@ func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta2.OscNatService
 	}
 	name := "Nat service for " + s.OscCluster.Name
 	if nat.SubregionName != "" {
-		name += "/" + nat.SubregionName
+		name += "/" + string(nat.SubregionName)
 	}
 	return name
 }
@@ -306,7 +306,7 @@ func (s *ClusterScope) GetNatServiceClientToken(nat infrastructurev1beta2.OscNat
 		}
 		return ct
 	}
-	return nat.SubregionName + "-" + s.GetUID()
+	return string(nat.SubregionName) + "-" + s.GetUID()
 }
 
 // GetRouteTables return the routeTables of the cluster

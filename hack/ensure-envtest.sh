@@ -29,17 +29,17 @@ verify_envtest_version() {
 
 	local envtest_version
 	envtest_version="$(${BIN_ROOT}/envtest list | grep -Eo "([0-9]{1,}\.)+[0-9]{1,}" | head -1)"
-	if [[ "${MINIMUM_ENVTEST_VERSION}" != "${envtest_version}" ]]; then
+	if [[ "${ENVTEST_VERSION}" != "${envtest_version}" ]]; then
 		cat <<EOF
 Detected envtest install kubernetes version: v${envtest_version}
-Install envtest with kubernetes version v${MINIMUM_ENVTEST_VERSION}
+Install envtest with kubernetes version ${ENVTEST_VERSION}
 EOF
 
 		echo 'Installing envtest' && install_envtest
 	else
 		cat <<EOF
 Detected envtest install kubernetes version: v${envtest_version}.
-envtest with kubernetes version v${MINIMUM_ENVTEST_VERSION} is already installed.
+envtest with kubernetes version ${ENVTEST_VERSION} is already installed.
 EOF
 	fi
 }
@@ -50,7 +50,7 @@ install_envtest() {
 			mkdir -p "${BIN_ROOT}"
 		fi
 		go install -v sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-		cp "$GOPATH/bin/setup-envtest" "${BIN_ROOT}/envtest"
+		cp "$GOPATH/bin/setup-envtest" "${BIN_ROOT}"
 	else
 		set +x
 		echo "The installer does not work for your platform: $OSTYPE"

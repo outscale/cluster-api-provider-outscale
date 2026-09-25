@@ -47,6 +47,7 @@ type OscClusterSpec struct {
 	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
 	// The Subnets configuration
 	// +optional
+	// +kubebuilder:validation:MaxItems=20
 	Subnets []OscSubnet `json:"subnets,omitempty"`
 	// The Internet Service configuration
 	// +optional
@@ -59,24 +60,30 @@ type OscClusterSpec struct {
 	RouteTables []OscRouteTable `json:"routeTables,omitempty"`
 	// The Security Groups configuration.
 	// +optional
+	// +kubebuilder:validation:MaxItems=50
 	SecurityGroups []OscSecurityGroup `json:"securityGroups,omitempty"`
 	// Additional rules to add to the automatic security groups
 	// +optional
+	// +kubebuilder:validation:MaxItems=50
 	AdditionalSecurityRules []OscAdditionalSecurityRules `json:"additionalSecurityRules,omitempty"`
 	// The bastion configuration
 	// + optional
 	Bastion OscBastion `json:"bastion,omitempty,omitzero"`
 	// The default subregion name (deprecated, use subregions)
-	SubregionName string `json:"subregionName,omitempty"`
+	SubregionName OscSubRegion `json:"subregionName,omitempty"`
 	// The list of subregions where to deploy this cluster
-	Subregions []string `json:"subregions,omitempty"`
+	Subregions []OscSubRegion `json:"subregions,omitempty"`
 	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
 	// + optional
+	// +kubebuilder:validation:items:MaxLength=25
 	// +kubebuilder:validation:items:XValidation:rule="isCIDR(self)"
+	// +kubebuilder:validation:MaxItems=50
 	AllowFromIPRanges []string `json:"allowFromIPRanges,omitempty"`
 	// The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 	// + optional
+	// +kubebuilder:validation:items:MaxLength=25
 	// +kubebuilder:validation:items:XValidation:rule="isCIDR(self)"
+	// +kubebuilder:validation:MaxItems=50
 	AllowToIPRanges []string `json:"allowToIPRanges,omitempty"`
 	// A keypair that needs to be created.
 	// + optional
@@ -108,8 +115,8 @@ type OscCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:validation:XValidation:rule="!self.disable.loadbalancer || has(self.loadBalancer) != ''",message="loadBalancer is required unless loadbalancer is disabled"
-	// +kubebuilder:validation:XValidation:rule="!self.useExisting.net || has(self.net.resourceId) != ''",message="net.resourceId is required if useExisting.net is set"
+	// +kubebuilder:validation:XValidation:rule="!self.disable.loadbalancer || has(self.loadBalancer)",message="loadBalancer is required unless loadbalancer is disabled"
+	// +kubebuilder:validation:XValidation:rule="!self.useExisting.net || has(self.net.resourceId)",message="net.resourceId is required if useExisting.net is set"
 	Spec   OscClusterSpec   `json:"spec,omitempty"`
 	Status OscClusterStatus `json:"status,omitempty"`
 }

@@ -269,7 +269,7 @@ func (in *OscClusterSpec) DeepCopyInto(out *OscClusterSpec) {
 	in.Bastion.DeepCopyInto(&out.Bastion)
 	if in.Subregions != nil {
 		in, out := &in.Subregions, &out.Subregions
-		*out = make([]string, len(*in))
+		*out = make([]OscSubRegion, len(*in))
 		copy(*out, *in)
 	}
 	if in.AllowFromIPRanges != nil {

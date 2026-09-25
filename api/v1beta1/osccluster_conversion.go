@@ -166,8 +166,8 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			}),
 			Enable: srcNet.Bastion.Enable,
 		},
-		SubregionName:     srcNet.SubregionName,
-		Subregions:        srcNet.Subregions,
+		SubregionName:     infrastructurev1beta2.OscSubRegion(srcNet.SubregionName),
+		Subregions:        lo.Map(srcNet.Subregions, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
 		AllowFromIPRanges: srcNet.AllowFromIPRanges, // The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 		AllowToIPRanges:   srcNet.AllowToIPRanges,
 		ReconciliationRules: lo.Map(srcNet.ReconciliationRules, func(src OscReconciliationRule, _ int) infrastructurev1beta2.OscReconciliationRule {
@@ -302,8 +302,8 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			}),
 			Enable: src.Bastion.Enable,
 		},
-		SubregionName:     src.SubregionName,
-		Subregions:        src.Subregions,
+		SubregionName:     string(src.SubregionName),
+		Subregions:        lo.Map(src.Subregions, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) }),
 		AllowFromIPRanges: src.AllowFromIPRanges, // The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 		AllowToIPRanges:   src.AllowToIPRanges,
 		ReconciliationRules: lo.Map(src.ReconciliationRules, func(src infrastructurev1beta2.OscReconciliationRule, _ int) OscReconciliationRule {

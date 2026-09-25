@@ -860,9 +860,11 @@ spec:
                                     description: The list of ip ranges of the security
                                       group rule
                                     items:
+                                      maxLength: 25
                                       type: string
                                       x-kubernetes-validations:
                                       - rule: isCIDR(self)
+                                    maxItems: 5
                                     type: array
                                   name:
                                     description: The tag name associate with the security
@@ -872,31 +874,39 @@ spec:
                                     description: The list of ports to open (protocol,
                                       protocol/port or protocol/fromPort-toPort)
                                     items:
+                                      maxLength: 20
                                       pattern: ^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?(
                                         ?#.*)?
                                       type: string
+                                    maxItems: 5
                                     type: array
                                 required:
                                 - ports
                                 type: object
+                              maxItems: 50
                               type: array
                           type: object
+                        maxItems: 50
                         type: array
                       allowFromIPRanges:
                         description: The list of IP ranges (in CIDR notation) to restrict
                           bastion/Kubernetes API access to.
                         items:
+                          maxLength: 25
                           type: string
                           x-kubernetes-validations:
                           - rule: isCIDR(self)
+                        maxItems: 50
                         type: array
                       allowToIPRanges:
                         description: The list of IP ranges (in CIDR notation) the
                           nodes can talk to ("0.0.0.0/0" if not set).
                         items:
+                          maxLength: 25
                           type: string
                           x-kubernetes-validations:
                           - rule: isCIDR(self)
+                        maxItems: 50
                         type: array
                       bastion:
                         description: The bastion configuration
@@ -1123,8 +1133,12 @@ spec:
                             type: object
                           name:
                             description: The Load Balancer unique name
+                            maxLength: 32
                             pattern: ^[0-9A-Za-z][0-9A-Za-z-]{0,31}$
                             type: string
+                            x-kubernetes-validations:
+                            - message: field is immutable
+                              rule: self == oldSelf
                           securitygroupname:
                             description: The security group name for the load-balancer
                               (deprecated, add loadbalancer role to a security group)
@@ -1140,6 +1154,9 @@ spec:
                             - internet-facing
                             - internal
                             type: string
+                            x-kubernetes-validations:
+                            - message: field is immutable
+                              rule: self == oldSelf
                         required:
                         - name
                         type: object
@@ -1151,6 +1168,7 @@ spec:
                         properties:
                           ipRange:
                             description: the ip range in CIDR notation of the Net
+                            maxLength: 25
                             type: string
                             x-kubernetes-validations:
                             - rule: isCIDR(self)
@@ -1303,6 +1321,7 @@ spec:
                               type: array
                             subregionName:
                               description: The subregion for this route table
+                              maxLength: 25
                               pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                               type: string
                           type: object
@@ -1346,9 +1365,11 @@ spec:
                                     description: The list of ip ranges of the security
                                       group rule
                                     items:
+                                      maxLength: 25
                                       type: string
                                       x-kubernetes-validations:
                                       - rule: isCIDR(self)
+                                    maxItems: 5
                                     type: array
                                   name:
                                     description: The tag name associate with the security
@@ -1358,17 +1379,21 @@ spec:
                                     description: The list of ports to open (protocol,
                                       protocol/port or protocol/fromPort-toPort)
                                     items:
+                                      maxLength: 20
                                       pattern: ^[a-z0-9-]+(/[0-9]{1,5}(-[0-9]{1,5})?)?(
                                         ?#.*)?
                                       type: string
+                                    maxItems: 5
                                     type: array
                                 required:
                                 - ports
                                 type: object
+                              maxItems: 50
                               type: array
                             tag:
                               type: string
                           type: object
+                        maxItems: 50
                         type: array
                       subnets:
                         description: The Subnets configuration
@@ -1376,6 +1401,7 @@ spec:
                           properties:
                             ipRange:
                               description: the Ip range in CIDR notation of the Subnet
+                              maxLength: 25
                               type: string
                               x-kubernetes-validations:
                               - rule: isCIDR(self)
@@ -1394,16 +1420,22 @@ spec:
                               type: array
                             subregionName:
                               description: The subregion name of the Subnet
+                              maxLength: 25
                               pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                               type: string
                           type: object
+                        maxItems: 20
                         type: array
                       subregionName:
                         description: The default subregion name (deprecated, use subregions)
+                        maxLength: 25
+                        pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                         type: string
                       subregions:
                         description: The list of subregions where to deploy this cluster
                         items:
+                          maxLength: 25
+                          pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                           type: string
                         type: array
                       useExisting:
@@ -1418,6 +1450,9 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: field is immutable
+                      rule: self == oldSelf
                 required:
                 - spec
                 type: object

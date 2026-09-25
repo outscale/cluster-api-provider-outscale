@@ -688,12 +688,14 @@ spec:
                   subregionName:
                     description: The subregion where the machine needs to be placed
                       (deprecated, use subregionNames).
+                    maxLength: 25
                     pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                     type: string
                   subregionNames:
                     description: The subregions where the machines needs to be placed.
                       If empty, the subregions defined at cluster level will be used.
                     items:
+                      maxLength: 25
                       pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                       type: string
                     type: array

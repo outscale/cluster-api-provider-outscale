@@ -92,7 +92,7 @@ func patchIncrementGeneration() patchOSCClusterFunc {
 	}
 }
 
-func patchSubregions(subregions ...string) patchOSCClusterFunc {
+func patchSubregions(subregions ...infrastructurev1beta2.OscSubRegion) patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Subregions = subregions
 	}
@@ -439,7 +439,7 @@ func mockLoadBalancerFound(name, nameTag string) mockFunc {
 	}
 }
 
-func mockCreateLoadBalancer(loadBalancerName, loadBalancerType, subnetId, securityGroupId string) mockFunc {
+func mockCreateLoadBalancer(loadBalancerName string, loadBalancerType infrastructurev1beta2.OscLoadBalancerType, subnetId, securityGroupId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
