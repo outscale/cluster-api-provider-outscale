@@ -73,7 +73,7 @@ func (s *Service) CreateVm(ctx context.Context,
 	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
 		Bsu: &osc.BsuToCreate{
-			VolumeType: &rootDiskType,
+			VolumeType: new(osc.VolumeType(rootDiskType)),
 			VolumeSize: new(int(rootDiskSize)),
 		},
 		DeviceName: new("/dev/sda1"),
@@ -87,7 +87,7 @@ func (s *Service) CreateVm(ctx context.Context,
 	for _, vol := range volumes {
 		bsuVol := osc.BlockDeviceMappingVmCreation{
 			Bsu: &osc.BsuToCreate{
-				VolumeType: &vol.VolumeType,
+				VolumeType: new(osc.VolumeType(vol.VolumeType)),
 			},
 			DeviceName: &vol.Device,
 		}
@@ -158,7 +158,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 	userDataEnc := b64.StdEncoding.EncodeToString([]byte(utils.ConvertsTagsToUserDataOutscaleSection(tags)))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
 		Bsu: &osc.BsuToCreate{
-			VolumeType: &rootDiskType,
+			VolumeType: new(osc.VolumeType(rootDiskType)),
 			VolumeSize: new(int(rootDiskSize)),
 		},
 		DeviceName: new("/dev/sda1"),

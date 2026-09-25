@@ -1,0 +1,9 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscCluster
+metadata:
+  name: test-cluster-api
+  namespace: cluster-api-test
+spec:
+  loadBalancer:
+    name: "0123456789012345678901234567890123456789012345678901234567890123456789"
+  subregionName: eu-west-2a

@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/samber/lo"
 	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -13,17 +14,21 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 		ProviderID: src.ProviderID,
 
 		Vm: infrastructurev1beta2.OscVm{
-			Name:           srcNode.Vm.Name,
-			ImageId:        srcNode.Vm.ImageId,
-			KeypairName:    srcNode.Vm.KeypairName,
-			VmType:         srcNode.Vm.VmType,
-			SubnetName:     srcNode.Vm.SubnetName,
-			PublicIp:       srcNode.Vm.PublicIp,
-			PublicIpPool:   srcNode.Vm.PublicIpPool,
-			RootDisk:       infrastructurev1beta2.OscRootDisk(srcNode.Vm.RootDisk),
-			SubregionName:  srcNode.Vm.SubregionName,
+			Name:         srcNode.Vm.Name,
+			ImageId:      srcNode.Vm.ImageId,
+			KeypairName:  srcNode.Vm.KeypairName,
+			VmType:       srcNode.Vm.VmType,
+			SubnetName:   srcNode.Vm.SubnetName,
+			PublicIp:     srcNode.Vm.PublicIp,
+			PublicIpPool: srcNode.Vm.PublicIpPool,
+			RootDisk: infrastructurev1beta2.OscRootDisk{
+				RootDiskIops: srcNode.Vm.RootDisk.RootDiskIops,
+				RootDiskSize: srcNode.Vm.RootDisk.RootDiskSize,
+				RootDiskType: infrastructurev1beta2.OscVolumeType(srcNode.Vm.RootDisk.RootDiskType),
+			},
+			SubregionName:  infrastructurev1beta2.OscSubRegion(srcNode.Vm.SubregionName),
 			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
-			SubregionNames: srcNode.Vm.SubregionNames,
+			SubregionNames: lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
 			SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
 				return infrastructurev1beta2.OscSecurityGroupElement(src)
 			}),
@@ -37,7 +42,7 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 				Device:       src.Device,
 				Iops:         src.Iops,
 				Size:         src.Size,
-				VolumeType:   src.VolumeType,
+				VolumeType:   infrastructurev1beta2.OscVolumeType(src.VolumeType),
 				FromSnapshot: src.FromSnapshot,
 			}
 		}),
@@ -67,17 +72,21 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 		ProviderID: src.ProviderID,
 		Node: OscNode{
 			Vm: OscVm{
-				Name:           src.Vm.Name,
-				ImageId:        src.Vm.ImageId,
-				KeypairName:    src.Vm.KeypairName,
-				VmType:         src.Vm.VmType,
-				SubnetName:     src.Vm.SubnetName,
-				PublicIp:       src.Vm.PublicIp,
-				PublicIpPool:   src.Vm.PublicIpPool,
-				RootDisk:       OscRootDisk(src.Vm.RootDisk),
-				SubregionName:  src.Vm.SubregionName,
+				Name:         src.Vm.Name,
+				ImageId:      src.Vm.ImageId,
+				KeypairName:  src.Vm.KeypairName,
+				VmType:       src.Vm.VmType,
+				SubnetName:   src.Vm.SubnetName,
+				PublicIp:     src.Vm.PublicIp,
+				PublicIpPool: src.Vm.PublicIpPool,
+				RootDisk: OscRootDisk{
+					RootDiskIops: src.Vm.RootDisk.RootDiskIops,
+					RootDiskSize: src.Vm.RootDisk.RootDiskSize,
+					RootDiskType: osc.VolumeType(src.Vm.RootDisk.RootDiskType),
+				},
+				SubregionName:  string(src.Vm.SubregionName),
 				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
-				SubregionNames: src.Vm.SubregionNames,
+				SubregionNames: lo.Map(src.Vm.SubregionNames, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) }),
 				SecurityGroupNames: lo.Map(src.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
 					return OscSecurityGroupElement(src)
 				}),
@@ -91,7 +100,7 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 					Device:       src.Device,
 					Iops:         src.Iops,
 					Size:         src.Size,
-					VolumeType:   src.VolumeType,
+					VolumeType:   osc.VolumeType(src.VolumeType),
 					FromSnapshot: src.FromSnapshot,
 				}
 			}),

@@ -65,7 +65,7 @@ spec:
               valueFrom:
                 variable: subregionName
             - op: replace
-              path: /spec/template/spec/loadBalancer/loadbalancername
+              path: /spec/template/spec/loadBalancer/name
               valueFrom:
                 variable: builtin.cluster.name
     - name: OscMachineTemplateControlPlane
@@ -112,9 +112,7 @@ spec:
     spec:
       subregionName: "eu-west-2b"
       loadBalancer:
-        loadbalancername: "REPLACEME"
-      bastion:
-        enable: false
+        name: "REPLACEME"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate

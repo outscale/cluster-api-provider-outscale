@@ -36,7 +36,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	log.V(4).Info("Reconciling loadBalancer")
 
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerName := loadBalancerSpec.LoadBalancerName
+	loadBalancerName := loadBalancerSpec.Name
 	svc := r.Cloud.Net(clusterScope.Tenant)
 	loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 	if err != nil {
@@ -117,7 +117,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 func (r *OscClusterReconciler) reconcileDeleteLoadBalancer(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	loadBalancerSpec := clusterScope.GetLoadBalancer()
-	loadBalancerName := loadBalancerSpec.LoadBalancerName
+	loadBalancerName := loadBalancerSpec.Name
 
 	svc := r.Cloud.Net(clusterScope.Tenant)
 	loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)

@@ -30,17 +30,12 @@ func (r *OscClusterTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // OscClusterTemplateWebhook is the validation/mutation webhook.
 type OscClusterTemplateWebhook struct{}
 
-//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclustertemplates,verbs=create;update,versions=v1beta1,name=moscclustertemplate.kb.io,admissionReviewVersions=v1
-
 var _ webhook.CustomDefaulter = OscClusterTemplateWebhook{}
 
 // Default implements webhook.CustomDefaulter.
 func (OscClusterTemplateWebhook) Default(_ context.Context, _ runtime.Object) error {
 	return nil
 }
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-oscclustertemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclustertemplates,verbs=create;update,versions=v1beta1,name=voscclustertemplate.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomValidator = OscClusterTemplateWebhook{}
 
@@ -65,7 +60,8 @@ func (OscClusterTemplateWebhook) ValidateUpdate(_ context.Context, oldObj, newOb
 	var allErrs field.ErrorList
 	newC := newObj.(*OscClusterTemplate)
 	if !reflect.DeepEqual(newC.Spec.Template.Spec, oldC.Spec.Template.Spec) {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("template", "spec"), newC, "spec is immutable."),
 		)
 	}

@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2022 The Kubernetes Authors
 SPDX-License-Identifier: Apache-2.0
 */
 
-package e2e
+package e2e //nolint:testpackage
 
 import (
 	"context"
@@ -34,7 +34,7 @@ var _ = Describe("[e2e][all] Scaling a cluster", func() {
 		Expect(e2eConfig).ToNot(BeNil(), "Invalid argument. e2eConfig can't be nil when calling %s spec", specName)
 		Expect(clusterctlConfigPath).To(BeAnExistingFile(), "Invalid argument. clusterctlConfigPath must be an existing file when calling %s spec", specName)
 		Expect(bootstrapClusterProxy).ToNot(BeNil(), "Invalid argument. bootstrapClusterProxy can't be nil when calling %s spec", specName)
-		Expect(os.MkdirAll(artifactFolder, 0750)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
+		Expect(os.MkdirAll(artifactFolder, 0o750)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
 
 		Expect(e2eConfig.Variables).To(HaveKey(KubernetesVersion))
 

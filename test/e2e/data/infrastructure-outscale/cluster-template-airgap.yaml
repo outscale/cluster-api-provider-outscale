@@ -27,8 +27,8 @@ spec:
   disable:
     internet: true
   loadBalancer:
-    loadbalancername: "${CLUSTER_NAME}-k8s"
-    loadbalancertype: "internal"
+    name: "${CLUSTER_NAME}-k8s"
+    type: "internal"
   net:
     ipRange: 10.1.0.0/16
   netPeering:

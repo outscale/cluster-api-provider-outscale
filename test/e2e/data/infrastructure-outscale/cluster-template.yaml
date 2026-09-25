@@ -25,7 +25,7 @@ metadata:
 spec:
   subregionName: ${OSC_REGION}a
   loadBalancer:
-    loadbalancername: "${CLUSTER_NAME}-k8s"
+    name: "${CLUSTER_NAME}-k8s"
   keypair:
     name: "${CLUSTER_NAME}-keypair"
 ---
