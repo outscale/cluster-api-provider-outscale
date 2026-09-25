@@ -87,14 +87,14 @@ func TestMultiAZAllocator(t *testing.T) {
 		a := controllers.NewMultiAZAllocator(testClient())
 		az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
-		assert.Equal(t, *m.Status.FailureDomain, az)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion(*m.Status.FailureDomain), az)
 	})
 	t.Run("A non allocated machines is allocated to new azs (LeastNodes)", func(t *testing.T) {
 		m := nonallocated1
 		a := controllers.NewMultiAZAllocator(testClient())
 		az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b"})
 		require.NoError(t, err)
-		assert.Equal(t, "eu-west-2b", az)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az)
 	})
 	t.Run("Non allocated machiness are allocated to all new azs (LeastNodes)", func(t *testing.T) {
 		a := controllers.NewMultiAZAllocator(testClient())
@@ -105,8 +105,8 @@ func TestMultiAZAllocator(t *testing.T) {
 		az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
 		assert.NotEqual(t, az1, az2)
-		assert.Contains(t, []string{"eu-west-2b", "eu-west-2c"}, az1)
-		assert.Contains(t, []string{"eu-west-2b", "eu-west-2c"}, az2)
+		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az1)
+		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az2)
 	})
 	t.Run("Non allocated machines are randomly allocated (Random)", func(t *testing.T) {
 		rnd := 0
@@ -125,8 +125,8 @@ func TestMultiAZAllocator(t *testing.T) {
 		m2 := nonallocated2
 		az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.SubregionModeRandom, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
-		assert.Equal(t, "eu-west-2a", az1)
-		assert.Equal(t, "eu-west-2b", az2)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2a"), az1)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az2)
 	})
 	t.Run("By default, leastNodes is used", func(t *testing.T) {
 		controllers.RandIntN = func(n int) (ret int) {
