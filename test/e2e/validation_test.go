@@ -1,3 +1,4 @@
+//nolint:testpackage
 package e2e
 
 import (
