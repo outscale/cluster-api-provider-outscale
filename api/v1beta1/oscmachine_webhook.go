@@ -30,16 +30,12 @@ func (r *OscMachine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // OscMachineWebhook is the validation/mutation webhook.
 type OscMachineWebhook struct{}
 
-//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta1,name=moscmachine.kb.io,admissionReviewVersions=v1
-
 var _ webhook.CustomDefaulter = OscMachineWebhook{}
 
 // Default implements webhook.CustomDefaulter.
 func (OscMachineWebhook) Default(_ context.Context, _ runtime.Object) error {
 	return nil
 }
-
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachine,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachines,verbs=create;update,versions=v1beta1,name=voscmachine.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomValidator = OscMachineWebhook{}
 
@@ -65,55 +61,63 @@ func (OscMachineWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtim
 	newM := newObj.(*OscMachine)
 
 	if newM.Spec.Node.Vm.VmType != oldM.Spec.Node.Vm.VmType {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "vmType"),
 				newM.Spec.Node.Vm.VmType, "field is immutable"),
 		)
 	}
 
 	if newM.Spec.Node.Vm.KeypairName != oldM.Spec.Node.Vm.KeypairName {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "keyPairName"),
 				newM.Spec.Node.Vm.KeypairName, "field is immutable"),
 		)
 	}
 
 	if oldM.Spec.Node.Vm.SubregionName != "" && newM.Spec.Node.Vm.SubregionName != oldM.Spec.Node.Vm.SubregionName {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "subregionName"),
 				newM.Spec.Node.Vm.SubregionName, "field is immutable"),
 		)
 	}
 
 	if len(oldM.Spec.Node.Vm.Tags) > 0 && !maps.Equal(newM.Spec.Node.Vm.Tags, oldM.Spec.Node.Vm.Tags) {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "tags"),
 				newM.Spec.Node.Vm.Tags, "field is immutable"),
 		)
 	}
 
 	if oldM.Spec.Node.Vm.SubnetName != "" && newM.Spec.Node.Vm.SubnetName != oldM.Spec.Node.Vm.SubnetName {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "subnetName"),
 				newM.Spec.Node.Vm.SubnetName, "field is immutable"),
 		)
 	}
 	if newM.Spec.Node.Vm.RootDisk.RootDiskSize != oldM.Spec.Node.Vm.RootDisk.RootDiskSize {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskSize"),
 				newM.Spec.Node.Vm.RootDisk.RootDiskSize, "field is immutable"),
 		)
 	}
 
 	if newM.Spec.Node.Vm.RootDisk.RootDiskIops != oldM.Spec.Node.Vm.RootDisk.RootDiskIops {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskIops"),
 				newM.Spec.Node.Vm.RootDisk.RootDiskIops, "field is immutable"),
 		)
 	}
 
 	if newM.Spec.Node.Vm.RootDisk.RootDiskType != oldM.Spec.Node.Vm.RootDisk.RootDiskType {
-		allErrs = append(allErrs,
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("node", "vm", "rootDisk", "rootDiskType"),
 				newM.Spec.Node.Vm.RootDisk.RootDiskType, "field is immutable"),
 		)

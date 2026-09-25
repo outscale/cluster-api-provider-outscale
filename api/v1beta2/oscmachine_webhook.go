@@ -63,8 +63,8 @@ func (OscMachineWebhook) ValidateCreate(ctx context.Context, obj runtime.Object)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (OscMachineWebhook) ValidateUpdate(ctx context.Context, obj runtime.Object, old runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*OscMachine)
+func (OscMachineWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	r, ok := oldObj.(*OscMachine)
 	if !ok {
 		return nil, fmt.Errorf("expected an OscMachine object but got %T", r)
 	}

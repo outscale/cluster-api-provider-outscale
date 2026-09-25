@@ -163,7 +163,7 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
 		} {
 			net.IP[2]++
 			subnet := infrastructurev1beta2.OscSubnet{
-				IpSubnetRange: net.String(),
+				IpRange: net.String(),
 				Roles:         roles,
 				SubregionName: fd,
 			}
@@ -406,15 +406,15 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 	var allSN, allSNCP, allSNBastion []string
 	for _, sn := range s.GetSubnets() {
 		if s.SubnetHasRole(sn, infrastructurev1beta2.RoleBastion) {
-			allSNBastion = append(allSNBastion, sn.IpSubnetRange)
+			allSNBastion = append(allSNBastion, sn.IpRange)
 		}
 		if s.SubnetIsPublic(sn) {
 			continue
 		}
 		if s.SubnetHasRole(sn, infrastructurev1beta2.RoleControlPlane) {
-			allSNCP = append(allSNCP, sn.IpSubnetRange)
+			allSNCP = append(allSNCP, sn.IpRange)
 		}
-		allSN = append(allSN, sn.IpSubnetRange)
+		allSN = append(allSN, sn.IpRange)
 	}
 	allowedIn := s.OscCluster.Spec.AllowFromIPRanges
 	if len(allowedIn) == 0 {
@@ -587,8 +587,8 @@ func (s *ClusterScope) SetFailureDomain(id string, spec clusterv1.FailureDomainS
 // GetLoadBalancer return the loadbalanacer of the cluster
 func (s *ClusterScope) GetLoadBalancer() infrastructurev1beta2.OscLoadBalancer {
 	lb := s.OscCluster.Spec.LoadBalancer
-	if lb.LoadBalancerName == "" {
-		lb.LoadBalancerName = s.GetName() + "-k8s"
+	if lb.Name == "" {
+		lb.Name = s.GetName() + "-k8s"
 	}
 	lb.SetDefaultValue()
 	return lb
@@ -599,7 +599,7 @@ func (s *ClusterScope) GetIpSubnetRange(name string) string {
 	subnets := s.OscCluster.Spec.Subnets
 	for _, subnet := range subnets {
 		if subnet.Name == name {
-			return subnet.IpSubnetRange
+			return subnet.IpRange
 		}
 	}
 	return ""

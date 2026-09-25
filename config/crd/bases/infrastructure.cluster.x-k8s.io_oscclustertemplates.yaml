@@ -861,6 +861,8 @@ spec:
                                       group rule
                                     items:
                                       type: string
+                                      x-kubernetes-validations:
+                                      - rule: isCIDR(self)
                                     type: array
                                   name:
                                     description: The tag name associate with the security
@@ -885,12 +887,16 @@ spec:
                           bastion/Kubernetes API access to.
                         items:
                           type: string
+                          x-kubernetes-validations:
+                          - rule: isCIDR(self)
                         type: array
                       allowToIPRanges:
                         description: The list of IP ranges (in CIDR notation) the
                           nodes can talk to ("0.0.0.0/0" if not set).
                         items:
                           type: string
+                          x-kubernetes-validations:
+                          - rule: isCIDR(self)
                         type: array
                       bastion:
                         description: The bastion configuration
@@ -1040,29 +1046,44 @@ spec:
                               Balancer
                             properties:
                               checkinterval:
-                                description: the time in second between two pings
+                                description: the interval in second between two pings
                                 format: int32
+                                maximum: 600
+                                minimum: 5
                                 type: integer
                               healthythreshold:
-                                description: the consecutive number of pings which
-                                  are successful to consider the vm healthy
+                                description: the number of consecutive successful
+                                  checks required for a VM to be considered healthy
                                 format: int32
+                                maximum: 10
+                                minimum: 2
                                 type: integer
                               port:
-                                description: the HealthCheck port number
+                                description: the destination port for checks
                                 format: int32
+                                maximum: 600
+                                minimum: 5
                                 type: integer
                               protocol:
-                                description: The HealthCheck protocol ('HTTP'|'TCP')
+                                description: The check protocol ('HTTP'|'TCP')
+                                enum:
+                                - HTTP
+                                - HTTPS
+                                - TCP
+                                - SSL
                                 type: string
                               timeout:
-                                description: the Timeout to consider VM unhealthy
+                                description: the timeout for a check
                                 format: int32
+                                maximum: 60
+                                minimum: 2
                                 type: integer
                               unhealthythreshold:
-                                description: the consecutive number of pings which
-                                  are failed to consider the vm unhealthy
+                                description: the number of consecutive successful
+                                  checks required for a VM to be considered unhealthy
                                 format: int32
+                                maximum: 10
+                                minimum: 2
                                 type: integer
                             type: object
                           listener:
@@ -1072,26 +1093,37 @@ spec:
                                 description: The port on which the backend VMs will
                                   listen
                                 format: int32
+                                maximum: 65535
+                                minimum: 1
                                 type: integer
                               backendprotocol:
                                 description: The protocol ('HTTP'|'TCP') to route
                                   the traffic to the backend vm
+                                enum:
+                                - HTTP
+                                - HTTPS
+                                - TCP
+                                - SSL
                                 type: string
                               loadbalancerport:
                                 description: The port on which the loadbalancer will
                                   listen
                                 format: int32
+                                maximum: 65535
+                                minimum: 1
                                 type: integer
                               loadbalancerprotocol:
                                 description: the routing protocol ('HTTP'|'TCP')
+                                enum:
+                                - HTTP
+                                - HTTPS
+                                - TCP
+                                - SSL
                                 type: string
                             type: object
-                          loadbalancername:
+                          name:
                             description: The Load Balancer unique name
-                            type: string
-                          loadbalancertype:
-                            description: The Load Balancer type (internet-facing or
-                              internal)
+                            pattern: ^[0-9A-Za-z][0-9A-Za-z-]{0,31}$
                             type: string
                           securitygroupname:
                             description: The security group name for the load-balancer
@@ -1101,6 +1133,15 @@ spec:
                             description: The subnet name where to add the load balancer
                               (deprecated, add loadbalancer role to a subnet)
                             type: string
+                          type:
+                            description: The Load Balancer type (internet-facing or
+                              internal)
+                            enum:
+                            - internet-facing
+                            - internal
+                            type: string
+                        required:
+                        - name
                         type: object
                       natPublicIpPool:
                         description: The IP Pool storing the Nat Services public IPs
@@ -1111,6 +1152,8 @@ spec:
                           ipRange:
                             description: the ip range in CIDR notation of the Net
                             type: string
+                            x-kubernetes-validations:
+                            - rule: isCIDR(self)
                           name:
                             description: the network name
                             type: string
@@ -1260,6 +1303,7 @@ spec:
                               type: array
                             subregionName:
                               description: The subregion for this route table
+                              pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                               type: string
                           type: object
                         type: array
@@ -1303,6 +1347,8 @@ spec:
                                       group rule
                                     items:
                                       type: string
+                                      x-kubernetes-validations:
+                                      - rule: isCIDR(self)
                                     type: array
                                   name:
                                     description: The tag name associate with the security
@@ -1328,9 +1374,11 @@ spec:
                         description: The Subnets configuration
                         items:
                           properties:
-                            ipSubnetRange:
+                            ipRange:
                               description: the Ip range in CIDR notation of the Subnet
                               type: string
+                              x-kubernetes-validations:
+                              - rule: isCIDR(self)
                             name:
                               description: The name of the Subnet
                               type: string
@@ -1346,6 +1394,7 @@ spec:
                               type: array
                             subregionName:
                               description: The subregion name of the Subnet
+                              pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                               type: string
                           type: object
                         type: array

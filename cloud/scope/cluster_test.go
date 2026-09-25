@@ -22,9 +22,9 @@ func TestClusterScope_GetSubnets(t *testing.T) {
 		clusterScope.OscCluster.Spec.SubregionName = "eu-west2a"
 		subnets := clusterScope.GetSubnets()
 		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
-			{IpSubnetRange: "10.0.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.0.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.0.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, SubregionName: "eu-west2a"},
+			{IpRange: "10.0.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
+			{IpRange: "10.0.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
+			{IpRange: "10.0.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, SubregionName: "eu-west2a"},
 		}, subnets)
 	})
 	t.Run("Default subnets are computed on a custom net if not set", func(t *testing.T) {
@@ -33,9 +33,9 @@ func TestClusterScope_GetSubnets(t *testing.T) {
 		clusterScope.OscCluster.Spec.SubregionName = "eu-west2a"
 		subnets := clusterScope.GetSubnets()
 		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
-			{IpSubnetRange: "10.1.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.1.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
-			{IpSubnetRange: "10.1.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, SubregionName: "eu-west2a"},
+			{IpRange: "10.1.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, SubregionName: "eu-west2a"},
+			{IpRange: "10.1.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, SubregionName: "eu-west2a"},
+			{IpRange: "10.1.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, SubregionName: "eu-west2a"},
 		}, subnets)
 	})
 }

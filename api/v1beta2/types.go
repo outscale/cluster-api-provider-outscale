@@ -13,7 +13,11 @@ import (
 	"strings"
 
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/samber/lo"
 )
+
+// +kubebuilder:validation:Pattern:="(cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]"
+type OscSubRegion string
 
 type OscRole string
 
@@ -41,24 +45,39 @@ type OscCredentials struct {
 
 type OscReuse struct {
 	// If set, net, subnets, internet service, nat services and route tables are externally managed
+	// +optional
 	Net bool `json:"net,omitempty"`
 	// If set, security groups are externally managed.
+	// +optional
 	SecurityGroups bool `json:"securityGroups,omitempty"`
 }
 
 type OscDisable struct {
 	// If set, net, subnets, internet service, nat services and route tables are externally managed
-	Internet     bool `json:"internet,omitempty"`
+	// +optional
+	Internet bool `json:"internet,omitempty"`
+	// +optional
 	Loadbalancer bool `json:"loadbalancer,omitempty"`
 }
 
+// +kubebuilder:validation:Enum:=internet-facing;internal
+type OscLoadBalancerType string
+
+const (
+	LoadBalancerTypeInternetFacing OscLoadBalancerType = "internet-facing"
+	LoadBalancerTypeInternal       OscLoadBalancerType = "internal"
+)
+
 type OscLoadBalancer struct {
 	// The Load Balancer unique name
-	// +optional
-	LoadBalancerName string `json:"loadbalancername,omitempty"`
+	// +required
+	// +kubebuilder:validation:Pattern:="^[0-9A-Za-z][0-9A-Za-z-]{0,31}$"
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
+	Name string `json:"name,omitempty"`
 	// The Load Balancer type (internet-facing or internal)
 	// +optional
-	LoadBalancerType string `json:"loadbalancertype,omitempty"`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
+	Type OscLoadBalancerType `json:"type,omitempty"`
 	// The subnet name where to add the load balancer (deprecated, add loadbalancer role to a subnet)
 	// +optional
 	SubnetName string `json:"subnetname,omitempty"`
@@ -73,39 +92,63 @@ type OscLoadBalancer struct {
 	HealthCheck OscLoadBalancerHealthCheck `json:"healthCheck,omitempty,omitzero"`
 }
 
+// +kubebuilder:validation:Enum:=HTTP;HTTPS;TCP;SSL
+type OscLoadBalancerProtocol string
+
+const (
+	OscLoadBalancerProtocolHTTP  OscLoadBalancerProtocol = "HTTP"
+	OscLoadBalancerProtocolHTTPS OscLoadBalancerProtocol = "HTTPS"
+	OscLoadBalancerProtocolTCP   OscLoadBalancerProtocol = "TCP"
+	OscLoadBalancerProtocolSSL   OscLoadBalancerProtocol = "SSL"
+)
+
 type OscLoadBalancerListener struct {
 	// The port on which the backend VMs will listen
 	// +optional
+	// +kubebuilder:validation:Minimum:=1
+	// +kubebuilder:validation:Maximum:=65535
 	BackendPort int32 `json:"backendport,omitempty"`
 	// The protocol ('HTTP'|'TCP') to route the traffic to the backend vm
 	// +optional
-	BackendProtocol string `json:"backendprotocol,omitempty"`
+	BackendProtocol OscLoadBalancerProtocol `json:"backendprotocol,omitempty"`
 	// The port on which the loadbalancer will listen
 	// +optional
+	// +kubebuilder:validation:Minimum:=1
+	// +kubebuilder:validation:Maximum:=65535
 	LoadBalancerPort int32 `json:"loadbalancerport,omitempty"`
 	// the routing protocol ('HTTP'|'TCP')
 	// +optional
-	LoadBalancerProtocol string `json:"loadbalancerprotocol,omitempty"`
+	LoadBalancerProtocol OscLoadBalancerProtocol `json:"loadbalancerprotocol,omitempty"`
 }
 
 type OscLoadBalancerHealthCheck struct {
-	// the time in second between two pings
+	// the interval in second between two pings
 	// +optional
+	// +kubebuilder:validation:Minimum:=5
+	// +kubebuilder:validation:Maximum:=600
 	CheckInterval int32 `json:"checkinterval,omitempty"`
-	// the consecutive number of pings which are successful to consider the vm healthy
+	// the number of consecutive successful checks required for a VM to be considered healthy
 	// +optional
+	// +kubebuilder:validation:Minimum:=2
+	// +kubebuilder:validation:Maximum:=10
 	HealthyThreshold int32 `json:"healthythreshold,omitempty"`
-	// the HealthCheck port number
+	// the destination port for checks
 	// +optional
+	// +kubebuilder:validation:Minimum:=5
+	// +kubebuilder:validation:Maximum:=600
 	Port int32 `json:"port,omitempty"`
-	// The HealthCheck protocol ('HTTP'|'TCP')
+	// The check protocol ('HTTP'|'TCP')
 	// +optional
-	Protocol string `json:"protocol,omitempty"`
-	// the Timeout to consider VM unhealthy
+	Protocol OscLoadBalancerProtocol `json:"protocol,omitempty"`
+	// the timeout for a check
 	// +optional
+	// +kubebuilder:validation:Minimum:=2
+	// +kubebuilder:validation:Maximum:=60
 	Timeout int32 `json:"timeout,omitempty"`
-	// the consecutive number of pings which are failed to consider the vm unhealthy
+	// the number of consecutive successful checks required for a VM to be considered unhealthy
 	// +optional
+	// +kubebuilder:validation:Minimum:=2
+	// +kubebuilder:validation:Maximum:=10
 	UnhealthyThreshold int32 `json:"unhealthythreshold,omitempty"`
 }
 
@@ -115,6 +158,7 @@ type OscNet struct {
 	Name string `json:"name,omitempty"`
 	// the ip range in CIDR notation of the Net
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self)"
 	IpRange string `json:"ipRange,omitempty"`
 	// The Id of the Net to reuse (if useExisting.net is set)
 	// +optional
@@ -178,10 +222,11 @@ type OscSubnet struct {
 	Roles []OscRole `json:"roles,omitempty"`
 	// the Ip range in CIDR notation of the Subnet
 	// +optional
-	IpSubnetRange string `json:"ipSubnetRange,omitempty"`
+	// +kubebuilder:validation:XValidation:rule="isCIDR(self)"
+	IpRange string `json:"ipRange,omitempty"`
 	// The subregion name of the Subnet
 	// +optional
-	SubregionName string `json:"subregionName,omitempty"`
+	SubregionName OscSubRegion `json:"subregionName,omitempty"`
 	// The id of the Subnet to reuse (if useExisting.net is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
@@ -196,7 +241,7 @@ type OscNatService struct {
 	SubnetName string `json:"subnetname,omitempty"`
 	// The name of the Subregion to which the Nat Service will be attached, unless a subnet has been defined
 	// +optional
-	SubregionName string `json:"subregionName,omitempty"`
+	SubregionName OscSubRegion `json:"subregionName,omitempty"`
 }
 
 type OscRouteTable struct {
@@ -211,7 +256,7 @@ type OscRouteTable struct {
 	Role OscRole `json:"role,omitempty"`
 	// The subregion for this route table
 	// +optional
-	SubregionName string `json:"subregionName,omitempty"`
+	SubregionName OscSubRegion `json:"subregionName,omitempty"`
 	// The Route configuration
 	// +optional
 	Routes []OscRoute `json:"routes,omitempty"`
@@ -347,6 +392,7 @@ type OscSecurityGroupRule struct {
 	Ports []Port `json:"ports"`
 	// The list of ip ranges of the security group rule
 	// +optional
+	// +kubebuilder:validation:items:XValidation:rule="isCIDR(self)"
 	IpRanges []string `json:"ipRanges"`
 }
 
@@ -422,19 +468,28 @@ type OscImage struct {
 	OutscaleOpenSource bool `json:"outscaleOpenSource,omitempty"`
 }
 
+// +kubebuilder:validation:Enum:=io1;gp2;standard
+type OscVolumeType = osc.VolumeType
+
 type OscVolume struct {
 	// The volume name.
+	// +optional
 	Name string `json:"name,omitempty"`
 	// The volume device (/dev/xvdX)
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern:="^(/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$"
 	Device string `json:"device"`
 	// The volume iops (io1 volumes only)
+	// +optional
 	Iops int32 `json:"iops,omitempty"`
 	// The volume size in gibibytes (GiB)
+	// +optional
 	Size int32 `json:"size,omitempty"`
 	// The volume type (io1, gp2 or standard)
+	// +optional
 	VolumeType osc.VolumeType `json:"volumeType,omitempty"`
 	// The id of a snapshot to use as a volume source.
+	// +optional
 	FromSnapshot string `json:"fromSnapshot,omitempty"`
 }
 
@@ -473,6 +528,7 @@ type OscVm struct {
 	KeypairName string `json:"keypairName,omitempty"`
 	// The type of vm (tinav7.c4r8p1 by default)
 	// +optional
+	// +kubebuilder:validation:Pattern:=`^(tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]|inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA)))$`
 	VmType string `json:"vmType,omitempty"`
 	// The subnet of the node (deprecated, use controlplane and/or worker roles on subnets)
 	// +optional
@@ -489,13 +545,13 @@ type OscVm struct {
 	FGPU *OscFGPU `json:"fGPU,omitempty"`
 	// The subregion where the machine needs to be placed (deprecated, use subregionNames).
 	// +optional
-	SubregionName string `json:"subregionName,omitempty"`
+	SubregionName OscSubRegion `json:"subregionName,omitempty"`
 	// The way nodes will be allocated in subregions (leastNodes or random; by default, leastNodes).
 	// +optional
 	SubregionMode SubregionMode `json:"subregionMode,omitempty"`
 	// The subregions where the machines needs to be placed. If empty, the subregions defined at cluster level will be used.
 	// +optional
-	SubregionNames []string              `json:"subregionNames,omitempty"`
+	SubregionNames []OscSubRegion        `json:"subregionNames,omitempty"`
 	PrivateIps     []OscPrivateIpElement `json:"privateIps,omitempty"`
 	// The list of security groups to use (deprecated, use controlplane and/or worker roles on security groups)
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
@@ -521,9 +577,9 @@ func (vm *OscVm) GetRole() OscRole {
 
 func (vm *OscVm) GetSubregions() []string {
 	if len(vm.SubregionNames) > 0 {
-		return vm.SubregionNames
+		return lo.Map(vm.SubregionNames, func(s OscSubRegion, _ int) string { return string(s) })
 	}
-	return []string{vm.SubregionName}
+	return []string{string(vm.SubregionName)}
 }
 
 type OscPlacement struct {
@@ -596,12 +652,12 @@ const (
 	DefaultRootDiskBastionType osc.VolumeType = "gp2"
 	DefaultRootDiskBastionSize int32          = 15
 
-	DefaultLoadBalancerType     string = "internet-facing"
-	DefaultLoadBalancerProtocol string = "TCP"
-	DefaultCheckInterval        int32  = 10
-	DefaultHealthyThreshold     int32  = 2
-	DefaultUnhealthyThreshold   int32  = 3
-	DefaultTimeout              int32  = 10
+	DefaultLoadBalancerType     OscLoadBalancerType     = "internet-facing"
+	DefaultLoadBalancerProtocol OscLoadBalancerProtocol = "TCP"
+	DefaultCheckInterval        int32                   = 10
+	DefaultHealthyThreshold     int32                   = 2
+	DefaultUnhealthyThreshold   int32                   = 3
+	DefaultTimeout              int32                   = 10
 
 	APIPort    int32 = 6443
 	APIPortStr       = "tcp/6443"
@@ -640,8 +696,8 @@ func (bastion *OscBastion) SetDefaultValue() {
 
 // SetDefaultValue set the LoadBalancer Service default values
 func (lb *OscLoadBalancer) SetDefaultValue() {
-	if lb.LoadBalancerType == "" {
-		lb.LoadBalancerType = DefaultLoadBalancerType
+	if lb.Type == "" {
+		lb.Type = DefaultLoadBalancerType
 	}
 	if lb.Listener.BackendPort == 0 {
 		lb.Listener.BackendPort = APIPort

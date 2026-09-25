@@ -72,9 +72,11 @@ type OscClusterSpec struct {
 	Subregions []string `json:"subregions,omitempty"`
 	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
 	// + optional
+	// +kubebuilder:validation:items:XValidation:rule="isCIDR(self)"
 	AllowFromIPRanges []string `json:"allowFromIPRanges,omitempty"`
 	// The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 	// + optional
+	// +kubebuilder:validation:items:XValidation:rule="isCIDR(self)"
 	AllowToIPRanges []string `json:"allowToIPRanges,omitempty"`
 	// A keypair that needs to be created.
 	// + optional
@@ -106,6 +108,8 @@ type OscCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// +kubebuilder:validation:XValidation:rule="!self.disable.loadbalancer || has(self.loadBalancer) != ''",message="loadBalancer is required unless loadbalancer is disabled"
+	// +kubebuilder:validation:XValidation:rule="!self.useExisting.net || has(self.net.resourceId) != ''",message="net.resourceId is required if useExisting.net is set"
 	Spec   OscClusterSpec   `json:"spec,omitempty"`
 	Status OscClusterStatus `json:"status,omitempty"`
 }

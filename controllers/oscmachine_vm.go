@@ -222,7 +222,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
 		svc := r.Cloud.Net(clusterScope.Tenant)
-		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
+		loadBalancerName := clusterScope.GetLoadBalancer().Name
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
@@ -290,7 +290,7 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 	vmSpec := machineScope.GetVm()
 	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
 		svc := r.Cloud.Net(clusterScope.Tenant)
-		loadBalancerName := clusterScope.GetLoadBalancer().LoadBalancerName
+		loadBalancerName := clusterScope.GetLoadBalancer().Name
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)

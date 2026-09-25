@@ -71,12 +71,24 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			Loadbalancer: lo.Contains(srcNet.Disable, DisableLB),
 		},
 		LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
-			LoadBalancerName:  srcNet.LoadBalancer.LoadBalancerName,
-			LoadBalancerType:  srcNet.LoadBalancer.LoadBalancerType,
+			Name:              srcNet.LoadBalancer.LoadBalancerName,
+			Type:              infrastructurev1beta2.OscLoadBalancerType(srcNet.LoadBalancer.LoadBalancerType),
 			SubnetName:        srcNet.LoadBalancer.SubnetName,
 			SecurityGroupName: srcNet.LoadBalancer.SecurityGroupName,
-			Listener:          infrastructurev1beta2.OscLoadBalancerListener(srcNet.LoadBalancer.Listener),
-			HealthCheck:       infrastructurev1beta2.OscLoadBalancerHealthCheck(srcNet.LoadBalancer.HealthCheck),
+			Listener: infrastructurev1beta2.OscLoadBalancerListener{
+				BackendPort:          srcNet.LoadBalancer.Listener.BackendPort,
+				BackendProtocol:      infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.Listener.LoadBalancerProtocol),
+				LoadBalancerPort:     srcNet.LoadBalancer.Listener.LoadBalancerPort,
+				LoadBalancerProtocol: infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.Listener.LoadBalancerProtocol),
+			},
+			HealthCheck: infrastructurev1beta2.OscLoadBalancerHealthCheck{
+				CheckInterval:      srcNet.LoadBalancer.HealthCheck.CheckInterval,
+				HealthyThreshold:   srcNet.LoadBalancer.HealthCheck.HealthyThreshold,
+				Port:               srcNet.LoadBalancer.HealthCheck.Port,
+				Protocol:           infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.HealthCheck.Protocol),
+				Timeout:            srcNet.LoadBalancer.HealthCheck.Timeout,
+				UnhealthyThreshold: srcNet.LoadBalancer.HealthCheck.UnhealthyThreshold,
+			},
 		},
 		Net: infrastructurev1beta2.OscNet{
 			Name:       srcNet.Net.Name,
@@ -100,8 +112,8 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 				Roles: lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole {
 					return infrastructurev1beta2.OscRole(src)
 				}),
-				IpSubnetRange: src.IpSubnetRange,
-				SubregionName: src.SubregionName,
+				IpRange:       src.IpSubnetRange,
+				SubregionName: infrastructurev1beta2.OscSubRegion(src.SubregionName),
 				ResourceId:    src.ResourceId,
 			}
 		}),
@@ -114,7 +126,7 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 				Name:          src.Name,
 				Subnets:       src.Subnets,
 				Role:          infrastructurev1beta2.OscRole(src.Role),
-				SubregionName: src.SubregionName,
+				SubregionName: infrastructurev1beta2.OscSubRegion(src.SubregionName),
 				Routes: lo.Map(src.Routes, func(src OscRoute, _ int) infrastructurev1beta2.OscRoute {
 					return infrastructurev1beta2.OscRoute(src)
 				}),
@@ -178,12 +190,24 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 	dst.Network = OscNetwork{
 		UseExisting: OscReuse(src.UseExisting),
 		LoadBalancer: OscLoadBalancer{
-			LoadBalancerName:  src.LoadBalancer.LoadBalancerName,
-			LoadBalancerType:  src.LoadBalancer.LoadBalancerType,
+			LoadBalancerName:  src.LoadBalancer.Name,
+			LoadBalancerType:  string(src.LoadBalancer.Type),
 			SubnetName:        src.LoadBalancer.SubnetName,
 			SecurityGroupName: src.LoadBalancer.SecurityGroupName,
-			Listener:          OscLoadBalancerListener(src.LoadBalancer.Listener),
-			HealthCheck:       OscLoadBalancerHealthCheck(src.LoadBalancer.HealthCheck),
+			Listener: OscLoadBalancerListener{
+				BackendPort:          src.LoadBalancer.Listener.BackendPort,
+				BackendProtocol:      string(src.LoadBalancer.Listener.LoadBalancerProtocol),
+				LoadBalancerPort:     src.LoadBalancer.Listener.LoadBalancerPort,
+				LoadBalancerProtocol: string(src.LoadBalancer.Listener.LoadBalancerProtocol),
+			},
+			HealthCheck: OscLoadBalancerHealthCheck{
+				CheckInterval:      src.LoadBalancer.HealthCheck.CheckInterval,
+				HealthyThreshold:   src.LoadBalancer.HealthCheck.HealthyThreshold,
+				Port:               src.LoadBalancer.HealthCheck.Port,
+				Protocol:           string(src.LoadBalancer.HealthCheck.Protocol),
+				Timeout:            src.LoadBalancer.HealthCheck.Timeout,
+				UnhealthyThreshold: src.LoadBalancer.HealthCheck.UnhealthyThreshold,
+			},
 		},
 		Net: OscNet{
 			Name:       src.Net.Name,
@@ -207,8 +231,8 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 				Roles: lo.Map(src.Roles, func(src infrastructurev1beta2.OscRole, _ int) OscRole {
 					return OscRole(src)
 				}),
-				IpSubnetRange: src.IpSubnetRange,
-				SubregionName: src.SubregionName,
+				IpSubnetRange: src.IpRange,
+				SubregionName: string(src.SubregionName),
 				ResourceId:    src.ResourceId,
 			}
 		}),
@@ -221,7 +245,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			}
 			return OscNatService{
 				SubnetName:    src.Name,
-				SubregionName: src.SubregionName,
+				SubregionName: string(src.SubregionName),
 			}, true
 		}),
 		NatPublicIpPool: src.NatPublicIpPool,
@@ -230,7 +254,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 				Name:          src.Name,
 				Subnets:       src.Subnets,
 				Role:          OscRole(src.Role),
-				SubregionName: src.SubregionName,
+				SubregionName: string(src.SubregionName),
 				Routes: lo.Map(src.Routes, func(src infrastructurev1beta2.OscRoute, _ int) OscRoute {
 					return OscRoute(src)
 				}),

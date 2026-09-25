@@ -23,7 +23,7 @@ type SubnetInterface interface {
 // CreateSubnet create the subnet associate to the net
 func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta2.OscSubnet, netId, clusterID, subnetName string) (*osc.Subnet, error) {
 	req := osc.CreateSubnetRequest{
-		IpRange:       spec.IpSubnetRange,
+		IpRange:       spec.IpRange,
 		NetId:         netId,
 		SubregionName: &spec.SubregionName,
 	}

@@ -19,8 +19,12 @@ package v1beta2
 import (
 	"context"
 	"fmt"
+	"reflect"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/cluster-api/util/topology"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -73,15 +77,32 @@ func (OscMachineTemplateWebhook) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, obj runtime.Object, old runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*OscMachineTemplate)
+func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	oldM, ok := oldObj.(*OscMachineTemplate)
 	if !ok {
-		return nil, fmt.Errorf("expected an OscMachineTemplate object but got %T", r)
+		return nil, fmt.Errorf("expected an OscMachineTemplate object but got %T", oldM)
 	}
-	oscmachinetemplatelog.Info("validate update", "name", r.Name)
+	var allErrs field.ErrorList
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil, nil
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, apierrors.NewBadRequest(fmt.Sprintf("expected a admission.Request inside context: %v", err))
+	}
+
+	newM := newObj.(*OscMachineTemplate)
+	if topology.ShouldSkipImmutabilityChecks(req, newM) {
+		return nil, nil
+	}
+	if !reflect.DeepEqual(newM.Spec.Template.Spec, oldM.Spec.Template.Spec) {
+		allErrs = append(
+			allErrs,
+			field.Invalid(field.NewPath("template", "spec"), newM, "spec is immutable"),
+		)
+	}
+	if len(allErrs) == 0 {
+		return nil, nil
+	}
+	return nil, apierrors.NewInvalid(GroupVersion.WithKind("OscMachineTemplate").GroupKind(), newM.Name, allErrs)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

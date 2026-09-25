@@ -21,9 +21,9 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 			PublicIp:       srcNode.Vm.PublicIp,
 			PublicIpPool:   srcNode.Vm.PublicIpPool,
 			RootDisk:       infrastructurev1beta2.OscRootDisk(srcNode.Vm.RootDisk),
-			SubregionName:  srcNode.Vm.SubregionName,
+			SubregionName:  infrastructurev1beta2.OscSubRegion(srcNode.Vm.SubregionName),
 			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
-			SubregionNames: srcNode.Vm.SubregionNames,
+			SubregionNames: lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
 			SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
 				return infrastructurev1beta2.OscSecurityGroupElement(src)
 			}),
@@ -75,9 +75,9 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 				PublicIp:       src.Vm.PublicIp,
 				PublicIpPool:   src.Vm.PublicIpPool,
 				RootDisk:       OscRootDisk(src.Vm.RootDisk),
-				SubregionName:  src.Vm.SubregionName,
+				SubregionName:  string(src.Vm.SubregionName),
 				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
-				SubregionNames: src.Vm.SubregionNames,
+				SubregionNames: lo.Map(src.Vm.SubregionNames, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) }),
 				SecurityGroupNames: lo.Map(src.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
 					return OscSecurityGroupElement(src)
 				}),

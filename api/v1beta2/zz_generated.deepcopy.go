@@ -1244,7 +1244,7 @@ func (in *OscVm) DeepCopyInto(out *OscVm) {
 	}
 	if in.SubregionNames != nil {
 		in, out := &in.SubregionNames, &out.SubregionNames
-		*out = make([]string, len(*in))
+		*out = make([]OscSubRegion, len(*in))
 		copy(*out, *in)
 	}
 	if in.PrivateIps != nil {

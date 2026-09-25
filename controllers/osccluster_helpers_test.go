@@ -187,7 +187,7 @@ func mockCreateSubnet(spec infrastructurev1beta2.OscSubnet, netId, clusterID, na
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateSubnet(gomock.Any(), gomock.Eq(spec), gomock.Eq(netId), gomock.Eq(clusterID), gomock.Eq(name)).
-			Return(&osc.Subnet{SubnetId: subnetId, NetId: netId, IpRange: spec.IpSubnetRange}, nil)
+			Return(&osc.Subnet{SubnetId: subnetId, NetId: netId, IpRange: spec.IpRange}, nil)
 	}
 }
 
@@ -443,7 +443,7 @@ func mockCreateLoadBalancer(loadBalancerName, loadBalancerType, subnetId, securi
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == loadBalancerName && spec.LoadBalancerType == loadBalancerType
+				return spec.Name == loadBalancerName && spec.Type == loadBalancerType
 			}), gomock.Eq(subnetId), gomock.Eq(securityGroupId)).
 			Return(&osc.LoadBalancer{
 				LoadBalancerName: loadBalancerName,
@@ -457,7 +457,7 @@ func mockConfigureHealthCheck(loadBalancerName string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			ConfigureHealthCheck(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == loadBalancerName
+				return spec.Name == loadBalancerName
 			})).
 			Return(&osc.LoadBalancer{
 				LoadBalancerName: loadBalancerName,
@@ -471,7 +471,7 @@ func mockCreateLoadBalancerTag(loadBalancerName, nameTag string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			CreateLoadBalancerTag(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == loadBalancerName
+				return spec.Name == loadBalancerName
 			}), gomock.Eq(&osc.ResourceTag{Key: tag.NameKey, Value: nameTag})).
 			Return(nil)
 	}
@@ -481,7 +481,7 @@ func mockDeleteLoadBalancer(name string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
 			DeleteLoadBalancer(gomock.Any(), gomock.Cond(func(spec *infrastructurev1beta2.OscLoadBalancer) bool {
-				return spec.LoadBalancerName == name
+				return spec.Name == name
 			})).
 			Return(nil)
 	}
