@@ -25,9 +25,7 @@ metadata:
 spec:
   subregionName: ${OSC_REGION}a
   loadBalancer:
-    loadbalancername: "upgrade-k8s-again"
-  bastion:
-    enable: false
+    name: "upgrade-k8s-again"
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment

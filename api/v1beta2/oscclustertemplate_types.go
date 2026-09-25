@@ -38,7 +38,8 @@ type OscClusterTemplateList struct {
 
 type OscClusterTemplateResource struct {
 	ObjectMeta clusterv1.ObjectMeta `json:"metadata,omitempty"`
-	Spec       OscClusterSpec       `json:"spec"`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
+	Spec OscClusterSpec `json:"spec"`
 }
 
 func init() {

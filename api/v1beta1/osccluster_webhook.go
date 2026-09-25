@@ -30,15 +30,12 @@ func (r *OscCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // OscClusterWebhook is the validation/mutation webhook.
 type OscClusterWebhook struct{}
 
-// +kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta1,name=mosccluster.kb.io,admissionReviewVersions=v1
 var _ webhook.CustomDefaulter = OscClusterWebhook{}
 
 // Default implements webhook.CustomDefaulter.
 func (OscClusterWebhook) Default(_ context.Context, _ runtime.Object) error {
 	return nil
 }
-
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-osccluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscclusters,verbs=create;update,versions=v1beta1,name=vosccluster.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomValidator = OscClusterWebhook{}
 
@@ -64,13 +61,15 @@ func (OscClusterWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtim
 	newC := newObj.(*OscCluster)
 	if !slices.Contains(oldC.Spec.Network.Disable, DisableLB) {
 		if newC.Spec.Network.LoadBalancer.LoadBalancerName != oldC.Spec.Network.LoadBalancer.LoadBalancerName {
-			allErrs = append(allErrs,
+			allErrs = append(
+				allErrs,
 				field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancername"),
 					newC.Spec.Network.LoadBalancer.LoadBalancerName, "field is immutable"),
 			)
 		}
 		if newC.Spec.Network.LoadBalancer.LoadBalancerType != oldC.Spec.Network.LoadBalancer.LoadBalancerType {
-			allErrs = append(allErrs,
+			allErrs = append(
+				allErrs,
 				field.Invalid(field.NewPath("network", "loadBalancer", "loadbalancertype"),
 					newC.Spec.Network.LoadBalancer.LoadBalancerType, "field is immutable"),
 			)

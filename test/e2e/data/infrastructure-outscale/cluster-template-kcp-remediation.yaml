@@ -25,7 +25,7 @@ metadata:
 spec:
   subregionName: ${OSC_REGION}a
   loadBalancer:
-    loadbalancername: "remediation-again"
+    name: "remediation-again"
   bastion:
     enable: false
 ---

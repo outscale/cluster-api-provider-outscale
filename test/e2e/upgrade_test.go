@@ -1,4 +1,4 @@
-package e2e
+package e2e //nolint:testpackage
 
 import (
 	"context"

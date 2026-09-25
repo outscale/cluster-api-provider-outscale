@@ -35,7 +35,7 @@ type providerConfig struct {
 func (c *clusterctlConfig) write() {
 	data, err := yaml.Marshal(c.Values)
 	Expect(err).ToNot(HaveOccurred(), "Failed to convert to yaml the clusterctl config file")
-	Expect(os.WriteFile(c.Path, data, 0600)).To(Succeed(), "Failed to write the clusterctl config file")
+	Expect(os.WriteFile(c.Path, data, 0o600)).To(Succeed(), "Failed to write the clusterctl config file")
 }
 
 type CreateRepositoryInput struct {
@@ -46,7 +46,7 @@ type CreateRepositoryInput struct {
 
 func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 	Expect(input.E2EConfig).ToNot(BeNil(), "Invalid argument. input.E2EConfig can't be nil when calling CreateRepository")
-	Expect(os.MkdirAll(input.RepositoryFolder, 0750)).To(Succeed(), "Failed to create the clusterctl local repository folder %s", input.RepositoryFolder)
+	Expect(os.MkdirAll(input.RepositoryFolder, 0o750)).To(Succeed(), "Failed to create the clusterctl local repository folder %s", input.RepositoryFolder)
 
 	providers := []providerConfig{}
 	for _, provider := range input.E2EConfig.Providers {
@@ -57,10 +57,10 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 			Expect(err).ToNot(HaveOccurred(), "Failed to generate the manifest for %q / %q", providerLabel, version.Name)
 
 			sourcePath := filepath.Join(input.RepositoryFolder, providerLabel, version.Name)
-			Expect(os.MkdirAll(sourcePath, 0750)).To(Succeed(), "Failed to create the clusterctl local repository folder for %q / %q", providerLabel, version.Name)
+			Expect(os.MkdirAll(sourcePath, 0o750)).To(Succeed(), "Failed to create the clusterctl local repository folder for %q / %q", providerLabel, version.Name)
 
 			filePath := filepath.Join(sourcePath, "components.yaml")
-			Expect(os.WriteFile(filePath, manifest, 0600)).To(Succeed(), "Failed to write manifest in the clusterctl local repository for %q / %q", providerLabel, version.Name)
+			Expect(os.WriteFile(filePath, manifest, 0o600)).To(Succeed(), "Failed to write manifest in the clusterctl local repository for %q / %q", providerLabel, version.Name)
 
 			destinationPath := filepath.Join(input.RepositoryFolder, providerLabel, version.Name, "components.yaml")
 			allFiles := append(provider.Files, version.Files...)
@@ -74,7 +74,7 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 				}
 
 				destinationFile := filepath.Join(filepath.Dir(destinationPath), file.TargetName)
-				Expect(os.WriteFile(destinationFile, data, 0600)).To(Succeed(), "Failed to write clusterctl local repository file %q / %q", provider.Name, file.TargetName)
+				Expect(os.WriteFile(destinationFile, data, 0o600)).To(Succeed(), "Failed to write clusterctl local repository file %q / %q", provider.Name, file.TargetName) //nolint: gosec
 			}
 			providers = append(providers, providerConfig{
 				Name: provider.Name,
@@ -85,7 +85,7 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) string {
 	}
 
 	overridePath := filepath.Join(input.RepositoryFolder, "overrides")
-	Expect(os.MkdirAll(overridePath, 0750)).To(Succeed(), "Failed to create the clusterctl overrides folder %q", overridePath)
+	Expect(os.MkdirAll(overridePath, 0o750)).To(Succeed(), "Failed to create the clusterctl overrides folder %q", overridePath)
 
 	clusterctlConfigFile := &clusterctlConfig{
 		Path: filepath.Join(input.RepositoryFolder, "clusterctl-config.yaml"),

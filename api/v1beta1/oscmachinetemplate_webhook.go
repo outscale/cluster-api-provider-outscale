@@ -9,8 +9,8 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-	"reflect"
 
+	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -31,8 +31,6 @@ func (m *OscMachineTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // OscMachineTemplateWebhook is the validation/mutation webhook.
 type OscMachineTemplateWebhook struct{}
 
-//+kubebuilder:webhook:path=/mutate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachinetemplates,verbs=create;update,versions=v1beta1,name=moscmachinetemplate.kb.io,admissionReviewVersions=v1
-
 var _ webhook.CustomDefaulter = OscMachineTemplateWebhook{}
 
 // Default implements webhook.CustomDefaulter.
@@ -41,7 +39,6 @@ func (OscMachineTemplateWebhook) Default(_ context.Context, _ runtime.Object) er
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-oscmachinetemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=oscmachinetemplates,verbs=create;update,versions=v1beta1,name=voscmachinetemplate.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomValidator = OscMachineTemplateWebhook{}
 
@@ -74,8 +71,9 @@ func (OscMachineTemplateWebhook) ValidateUpdate(ctx context.Context, oldObj, new
 	if topology.ShouldSkipImmutabilityChecks(req, newM) {
 		return nil, nil
 	}
-	if !reflect.DeepEqual(newM.Spec.Template.Spec, oldM.Spec.Template.Spec) {
-		allErrs = append(allErrs,
+	if !cmp.Equal(newM.Spec.Template.Spec, oldM.Spec.Template.Spec) {
+		allErrs = append(
+			allErrs,
 			field.Invalid(field.NewPath("template", "spec"), newM, "spec is immutable"),
 		)
 	}

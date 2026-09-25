@@ -27,13 +27,13 @@ OSC_CLUSTER ?= cluster-api
 CLUSTER ?= cluster-api
 GIT_USERNAME ?= Outscale Bot
 GIT_USEREMAIL ?= opensource+bot@outscale.com
-K8S_VERSION ?= v1.30.3
+K8S_VERSION ?= v1.34.11
 LOG_TAIL ?= -1
 CAPI_VERSION ?= v1.8.1
 CAPI_NAMESPACE ?= capi-kubeadm-bootstrap-system
 CAPO_NAMESPACE ?= cluster-api-provider-outscale-system
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.30.3
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 GOFLAGS=-mod=readonly
 export GOFLAGS
 MINIMUM_KUBEBUILDERTOOL_VERSION=1.30.3
@@ -44,7 +44,7 @@ MINIMUM_TILT_VERSION=0.25.3
 MINIMUM_PACKER_VERSION=1.8.1
 CONTROLLER_GEN_VERSION=0.21.0
 MINIMUM_KIND_USE_VERSION=v0.20.0
-MINIMUM_ENVTEST_VERSION=1.30.3
+ENVTEST_VERSION ?= v0.22.0
 MINIMUM_HELM_VERSION=v3.11.3
 MINIMUM_KUSTOMIZE_VERSION=5.5.0
 MINIMUM_MOCKGEN_VERSION=0.5.0
@@ -178,6 +178,10 @@ e2e-conf-class-file: envsubst
 .PHONY: e2etest
 e2etest: envsubst e2e-conf-class-file ccm-file
 	USE_EXISTING_CLUSTER=true IMG=${IMG} OSC_SUBREGION_NAME=${OSC_SUBREGION_NAME} IMG_UPGRADE_FROM=${IMG_UPGRADE_FROM} IMG_UPGRADE_TO=${IMG_UPGRADE_TO} go test -v -coverprofile=covers.out  ./test/e2e -test.timeout 180m -ginkgo.timeout 180m -e2e.use-existing-cluster=true -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v -e2e.artifacts-folder=${PWD}/artifact -e2e.config=$(E2E_CONF_CLASS_FILE)
+
+.PHONY: apitest
+apitest: setup-envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -i --bin-dir $(LOCALBIN) -p path)" go test ./api/...
 
 .PHONY: ccm-file
 ccm-file: envsubst
@@ -486,22 +490,29 @@ undeploy-clusterapi:  ## undeploy clusterapi
 install-kubebuildertool: ## Download kubebuildertool
 	GOPATH=${GET_GOPATH} MINIMUM_KUBEBUILDERTOOL_VERSION=$(MINIMUM_KUBEBUILDERTOOL_VERSION) ./hack/ensure-kubebuildertool.sh
 
-LOCAL_KUSTOMIZE ?= $(shell pwd)/bin/kustomize
+LOCALBIN ?= $(shell pwd)/bin
+
+LOCAL_KUSTOMIZE ?= $(LOCALBIN)/kustomize
 .PHONY: kustomize
 kustomize: ## Download Kustomize
 	GOPATH=${GET_GOPATH} MINIMUM_KUSTOMIZE_VERSION=$(MINIMUM_KUSTOMIZE_VERSION) hack/ensure-kustomize.sh
 
-ENVTEST = $(shell pwd)/bin/setup-envtest
-.PHONY: envtest
-envtest: ## Download envtest-setup locally if necessary.
-	GOPATH=${GET_GOPATH} MINIMUM_ENVTEST_VERSION=$(MINIMUM_ENVTEST_VERSION) ./hack/ensure-envtest.sh
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+.PHONY: setup-envtest
+setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
+	@$(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path
 
-MOCKGEN = $(shell pwd)/bin/mockgen
+.PHONY: envtest
+envtest: $(ENVTEST)
+$(ENVTEST):
+	GOPATH=${GET_GOPATH} ENVTEST_VERSION=$(ENVTEST_VERSION) ./hack/ensure-envtest.sh
+
+MOCKGEN = $(LOCALBIN)/mockgen
 .PHONY: mockgen
 mockgen: ## Download mockgen locally if necessary.
 	GOPATH=${GET_GOPATH} MINIMUM_MOCKGEN_VERSION=$(MINIMUM_MOCKGEN_VERSION) ./hack/ensure-mockgen.sh
 
-ENVSUBST = $(shell pwd)/bin/envsubst
+ENVSUBST = $(LOCALBIN)/envsubst
 .PHONY: envsubst
 envsubst: ## Download envsubst
 	GOPATH=${GET_GOPATH} ./hack/ensure-envsubst.sh

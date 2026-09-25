@@ -1,0 +1,35 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscCluster
+metadata:
+  name: test-cluster-api
+  namespace: cluster-api-test
+spec:
+  loadBalancer:
+    name: test-cluster-api
+    type: internet-facing
+  net:
+    ipRange: 10.0.0.0/16
+  subnets:
+    - roles:
+        - worker
+      ipRange: 10.0.0.0/24
+    - roles:
+        - controlplane
+      ipRange: 10.0.1.0/24
+  subregions:
+   - eu-west-2a
+   - eu-west-2b
+  allowFromIPRanges:
+    - 0.0.0.0/0
+  allowToIPRanges:
+    - 10.0.0.0/8
+  additionalSecurityRules:
+    - roles:
+        - worker
+      rules:
+        - flow: Inbound
+          ports:
+            - icmp
+            - tcp/80
+          ipRanges:
+            - 0.0.0.0/0

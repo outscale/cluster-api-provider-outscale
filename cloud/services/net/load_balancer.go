@@ -36,12 +36,12 @@ func (s *Service) ConfigureHealthCheck(ctx context.Context, spec *infrastructure
 		CheckInterval:      int(checkInterval),
 		HealthyThreshold:   int(healthyThreshold),
 		Port:               int(port),
-		Protocol:           protocol,
+		Protocol:           string(protocol),
 		Timeout:            int(timeout),
 		UnhealthyThreshold: int(unhealthyThreshold),
 	}
 	req := osc.UpdateLoadBalancerRequest{
-		LoadBalancerName: spec.LoadBalancerName,
+		LoadBalancerName: spec.Name,
 		HealthCheck:      &healthCheck,
 	}
 
@@ -93,7 +93,7 @@ func (s *Service) GetLoadBalancer(ctx context.Context, loadBalancerName string) 
 // Keep backoff for now, secondary call to CreateLoadBalancer.
 func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, loadBalancerTag *osc.ResourceTag) error {
 	req := osc.CreateLoadBalancerTagsRequest{
-		LoadBalancerNames: []string{spec.LoadBalancerName},
+		LoadBalancerNames: []string{spec.Name},
 		Tags:              []osc.ResourceTag{*loadBalancerTag},
 	}
 	_, err := s.tenant.Client().CreateLoadBalancerTags(ctx, req)
@@ -102,7 +102,7 @@ func (s *Service) CreateLoadBalancerTag(ctx context.Context, spec *infrastructur
 
 // CreateLoadBalancer create the load balancer
 func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, subnetId string, securityGroupId string) (*osc.LoadBalancer, error) {
-	loadBalancerType := spec.LoadBalancerType
+	loadBalancerType := spec.Type
 	backendPort := spec.Listener.BackendPort
 	loadBalancerPort := spec.Listener.LoadBalancerPort
 	backendProtocol := spec.Listener.BackendProtocol
@@ -110,14 +110,14 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 
 	first_listener := osc.ListenerForCreation{
 		BackendPort:          int(backendPort),
-		BackendProtocol:      &backendProtocol,
+		BackendProtocol:      new(string(backendProtocol)),
 		LoadBalancerPort:     int(loadBalancerPort),
-		LoadBalancerProtocol: loadBalancerProtocol,
+		LoadBalancerProtocol: string(loadBalancerProtocol),
 	}
 
 	req := osc.CreateLoadBalancerRequest{
-		LoadBalancerName: spec.LoadBalancerName,
-		LoadBalancerType: &loadBalancerType,
+		LoadBalancerName: spec.Name,
+		LoadBalancerType: new(string(loadBalancerType)),
 		Listeners:        []osc.ListenerForCreation{first_listener},
 		SecurityGroups:   &[]string{securityGroupId},
 		Subnets:          &[]string{subnetId},
@@ -133,7 +133,7 @@ func (s *Service) CreateLoadBalancer(ctx context.Context, spec *infrastructurev1
 // DeleteLoadBalancer delete the loadbalancer
 func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer) error {
 	req := osc.DeleteLoadBalancerRequest{
-		LoadBalancerName: spec.LoadBalancerName,
+		LoadBalancerName: spec.Name,
 	}
 	_, err := s.tenant.Client().DeleteLoadBalancer(ctx, req)
 	return err
@@ -142,7 +142,7 @@ func (s *Service) DeleteLoadBalancer(ctx context.Context, spec *infrastructurev1
 // DeleteLoadBalancerTag delete the loadbalancerTag
 func (s *Service) DeleteLoadBalancerTag(ctx context.Context, spec *infrastructurev1beta2.OscLoadBalancer, loadBalancerTag osc.ResourceLoadBalancerTag) error {
 	req := osc.DeleteLoadBalancerTagsRequest{
-		LoadBalancerNames: []string{spec.LoadBalancerName},
+		LoadBalancerNames: []string{spec.Name},
 		Tags:              []osc.ResourceLoadBalancerTag{loadBalancerTag},
 	}
 	_, err := s.tenant.Client().DeleteLoadBalancerTags(ctx, req)

@@ -1,0 +1,24 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscMachineTemplate
+metadata:
+  name: test-cluster-api
+  namespace: cluster-api-test
+spec:
+  template:
+    spec:
+      image:
+        name: test-cluster-api
+        outscaleOpenSource: true
+      vm:
+        keypairName: test-cluster-api
+        rootDisk:
+          rootDiskIops: 1000
+          rootDiskSize: 10
+          rootDiskType: gp2
+        subregionName: eu-west-2a
+        vmType: invalid
+      volumes:
+        - device: /dev/xvdb
+          iops: 1000
+          size: 10
+          volumeType: io1

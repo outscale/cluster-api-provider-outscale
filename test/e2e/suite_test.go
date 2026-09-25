@@ -3,8 +3,7 @@ SPDX-FileCopyrightText: 2022 The Kubernetes Authors
 
 SPDX-License-Identifier: Apache-2.0
 */
-
-package e2e
+package e2e //nolint:testpackage
 
 import (
 	"context"

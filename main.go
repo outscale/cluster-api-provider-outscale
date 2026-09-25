@@ -193,22 +193,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&infrastructurev1beta1.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscMachine", "version", "v1beta1")
-		os.Exit(1)
-	}
-	if err = (&infrastructurev1beta1.OscMachineTemplate{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscMachineTemplate", "version", "v1beta1")
-		os.Exit(1)
-	}
-	if err = (&infrastructurev1beta1.OscClusterTemplate{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscClusterTemplate", "version", "v1beta1")
-		os.Exit(1)
-	}
-	if err = (&infrastructurev1beta1.OscCluster{}).SetupWebhookWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create webhook", "webhook", "OscCluster", "version", "v1beta1")
-		os.Exit(1)
-	}
 	if err = (&infrastructurev1beta2.OscMachine{}).SetupWebhookWithManager(mgr); err != nil {
 		logger.Error(err, "unable to create webhook", "webhook", "OscMachine", "version", "v1beta2")
 		os.Exit(1)
