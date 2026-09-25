@@ -13,7 +13,7 @@ import (
 func load(file string) (*unstructured.Unstructured, error) {
 	rawCrd, err := os.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("error reading %v CRD: %v", file, err)
+		return nil, fmt.Errorf("error reading %v: %w", file, err)
 	}
 
 	doc := &unstructured.Unstructured{}
