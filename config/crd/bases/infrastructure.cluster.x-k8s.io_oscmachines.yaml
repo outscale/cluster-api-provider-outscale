@@ -688,11 +688,15 @@ spec:
                   subregionName:
                     description: The subregion where the machine needs to be placed
                       (deprecated, use subregionNames).
+                    maxLength: 25
+                    pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                     type: string
                   subregionNames:
                     description: The subregions where the machines needs to be placed.
                       If empty, the subregions defined at cluster level will be used.
                     items:
+                      maxLength: 25
+                      pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                       type: string
                     type: array
                   tags:
@@ -702,6 +706,7 @@ spec:
                     type: object
                   vmType:
                     description: The type of vm (tinav7.c4r8p1 by default)
+                    pattern: ^(tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]|inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA)))$
                     type: string
                 required:
                 - keypairName
@@ -711,6 +716,7 @@ spec:
                   properties:
                     device:
                       description: The volume device (/dev/xvdX)
+                      pattern: ^(/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$
                       type: string
                     fromSnapshot:
                       description: The id of a snapshot to use as a volume source.

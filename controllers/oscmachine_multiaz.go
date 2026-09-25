@@ -29,14 +29,14 @@ type MultiAZAllocator struct {
 
 	mu          sync.Mutex
 	deployments map[types.NamespacedName][]types.NamespacedName
-	azs         map[types.NamespacedName]string
+	azs         map[types.NamespacedName]infrastructurev1beta2.OscSubRegion
 }
 
 func NewMultiAZAllocator(c client.Client) *MultiAZAllocator {
 	return &MultiAZAllocator{
 		client:      c,
 		deployments: map[types.NamespacedName][]types.NamespacedName{},
-		azs:         map[types.NamespacedName]string{},
+		azs:         map[types.NamespacedName]infrastructurev1beta2.OscSubRegion{},
 	}
 }
 
@@ -59,7 +59,7 @@ func (a *MultiAZAllocator) name(m *infrastructurev1beta2.OscMachine) types.Names
 	}
 }
 
-func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, mode infrastructurev1beta2.SubregionMode, azs []string) (string, error) {
+func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, mode infrastructurev1beta2.SubregionMode, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, error) {
 	switch {
 	case len(azs) == 0:
 		return "", errors.New("no subregions configured")
@@ -72,13 +72,13 @@ func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1be
 	}
 }
 
-func (a *MultiAZAllocator) allocateRandomAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []string) (string, error) {
+func (a *MultiAZAllocator) allocateRandomAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, error) {
 	az := azs[RandIntN(len(azs))]
 	log.FromContext(ctx).V(3).Info("Assigning machine to subregion", "machine", m.Name, "subregion", az)
 	return az, nil
 }
 
-func (a *MultiAZAllocator) allocateLeastNodeAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []string) (string, error) {
+func (a *MultiAZAllocator) allocateLeastNodeAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	name := a.name(m)
@@ -129,18 +129,18 @@ func (a *MultiAZAllocator) refreshWorkers(ctx context.Context, ns string) error 
 		}
 		name := a.name(&m)
 		a.deployments[deploy] = append(a.deployments[deploy], name)
-		a.azs[name] = ptr.From(m.Status.FailureDomain)
+		a.azs[name] = infrastructurev1beta2.OscSubRegion(ptr.From(m.Status.FailureDomain))
 	}
 	return nil
 }
 
-func (a *MultiAZAllocator) allocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []string) (string, error) {
+func (a *MultiAZAllocator) allocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, error) {
 	logger := log.FromContext(ctx)
 	deploy, err := a.deployment(m)
 	if err != nil {
 		return "", fmt.Errorf("allocate AZ: %w", err)
 	}
-	perAZ := lo.Associate(azs, func(az string) (string, int) { return az, 0 })
+	perAZ := lo.Associate(azs, func(az infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, int) { return az, 0 })
 	for _, name := range a.deployments[deploy] {
 		if a.azs[name] != "" {
 			perAZ[a.azs[name]]++
@@ -151,7 +151,7 @@ func (a *MultiAZAllocator) allocateAZ(ctx context.Context, m *infrastructurev1be
 			logger.V(5).Info(fmt.Sprintf("Subregion counts: %v", perAZ), "MachineDeployment", deploy)
 
 			min := math.MaxInt
-			var az string
+			var az infrastructurev1beta2.OscSubRegion
 			for k, v := range perAZ {
 				if v < min {
 					az = k

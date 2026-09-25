@@ -236,7 +236,7 @@ func (t *ClusterResourceTracker) _getSubnetOrId(ctx context.Context, subnet infr
 	}
 
 	rsrc := clusterScope.GetResources()
-	id = getResource(subnet.IpSubnetRange, rsrc.Subnet)
+	id = getResource(subnet.IpRange, rsrc.Subnet)
 	if id != "" {
 		return nil, id, nil
 	}
@@ -244,7 +244,7 @@ func (t *ClusterResourceTracker) _getSubnetOrId(ctx context.Context, subnet infr
 	if err != nil {
 		return nil, "", fmt.Errorf("get net for subnet: %w", err)
 	}
-	sn, err := t.Cloud.Net(clusterScope.Tenant).GetSubnetFromNet(ctx, netId, subnet.IpSubnetRange)
+	sn, err := t.Cloud.Net(clusterScope.Tenant).GetSubnetFromNet(ctx, netId, subnet.IpRange)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get subnet from net: %w", err)
@@ -286,7 +286,7 @@ func (t *ClusterResourceTracker) setSubnetId(clusterScope *scope.ClusterScope, s
 	if rsrc.Subnet == nil {
 		rsrc.Subnet = map[string]string{}
 	}
-	rsrc.Subnet[subnet.IpSubnetRange] = id
+	rsrc.Subnet[subnet.IpRange] = id
 }
 
 func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat infrastructurev1beta2.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, string, error) {

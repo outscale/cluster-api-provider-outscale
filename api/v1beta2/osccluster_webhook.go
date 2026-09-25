@@ -75,8 +75,8 @@ func (OscClusterWebhook) ValidateCreate(ctx context.Context, obj runtime.Object)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (OscClusterWebhook) ValidateUpdate(ctx context.Context, obj runtime.Object, old runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*OscCluster)
+func (OscClusterWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	r, ok := oldObj.(*OscCluster)
 	if !ok {
 		return nil, fmt.Errorf("expected an OscCluster object but got %T", r)
 	}

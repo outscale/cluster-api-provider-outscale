@@ -55,7 +55,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 	// add failureDomains
 	for _, subnetSpec := range clusterScope.GetSubnets() {
 		if clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleControlPlane) {
-			clusterScope.SetFailureDomain(clusterScope.GetSubnetSubregion(subnetSpec), clusterv1.FailureDomainSpec{
+			clusterScope.SetFailureDomain(string(clusterScope.GetSubnetSubregion(subnetSpec)), clusterv1.FailureDomainSpec{
 				ControlPlane: true,
 			})
 		}
