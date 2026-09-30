@@ -165,15 +165,13 @@ func mockCreateVmNoVolumes(vmId, imageId, subnetId string, securityGroupIds, pri
 }
 
 func mockCreateVmWithVolumes(vmId string, volumes []infrastructurev1beta2.OscVolume, volumedevices ...string) mockFunc {
-	created := []osc.BlockDeviceMappingCreated{{
-		DeviceName: "/dev/sda1",
-		Bsu: osc.BsuCreated{
-			VolumeId: defaultRootVolumeId,
-		},
-	}}
-	for i, volume := range volumes {
+	created := make([]osc.BlockDeviceMappingCreated, 0, len(volumes))
+	for i, vol := range volumes {
+		if vol.Root {
+			vol.Device = "/dev/sda1"
+		}
 		created = append(created, osc.BlockDeviceMappingCreated{
-			DeviceName: volume.Device,
+			DeviceName: vol.Device,
 			Bsu: osc.BsuCreated{
 				VolumeId: volumedevices[i],
 			},

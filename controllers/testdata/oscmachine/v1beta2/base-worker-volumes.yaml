@@ -1,0 +1,31 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscMachine
+metadata:
+  name: cluster-api-test-worker
+  namespace: cluster-api-test
+spec:
+  image:
+    name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
+    accountId: "01234"
+  keypair:
+    name: cluster-api
+  vm:
+    clusterName: test-cluster-api
+    keypairName: cluster-api
+    subregionName: eu-west-2a
+    vmType: tinav6.c4r8p2
+  volumes:
+    - name: root
+      root: true
+      size: 15
+      type: gp2
+    - name: data
+      device: /dev/sdb
+      iops: 500
+      size: 15
+      type: io1
+    - name: images
+      device: /dev/sdc
+      size: 15
+      type: gp2
+      fromSnapshot: snap-foo

@@ -527,6 +527,7 @@ spec:
             description: OscMachineSpec defines the desired state of OscMachine
             properties:
               image:
+                description: The image to use
                 properties:
                   accountId:
                     description: The image account owner ID.
@@ -580,6 +581,7 @@ spec:
                     type: integer
                 type: object
               vm:
+                description: The configuration of the VM to deploy
                 properties:
                   fGPU:
                     description: The fGPU configuration for this VM.
@@ -649,26 +651,6 @@ spec:
                     description: The node role (controlplane or worker), defaults
                       to worker.
                     type: string
-                  rootDisk:
-                    properties:
-                      rootDiskIops:
-                        description: The root disk iops (io1 volumes only) (1500 by
-                          default)
-                        format: int32
-                        type: integer
-                      rootDiskSize:
-                        description: The volume size in gibibytes (GiB) (60 by default)
-                        format: int32
-                        type: integer
-                      rootDiskType:
-                        description: The volume type (io1, gp2 or standard) (io1 by
-                          default)
-                        enum:
-                        - io1
-                        - gp2
-                        - standard
-                        type: string
-                    type: object
                   securityGroupNames:
                     description: The list of security groups to use (deprecated, use
                       controlplane and/or worker roles on security groups)
@@ -716,11 +698,13 @@ spec:
                 - keypairName
                 type: object
               volumes:
+                description: The list of volumes to attach to the VM (including the
+                  root volume)
                 items:
                   properties:
                     device:
                       description: The volume device (/dev/xvdX)
-                      pattern: ^(/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$
+                      pattern: ^(|/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$
                       type: string
                     fromSnapshot:
                       description: The id of a snapshot to use as a volume source.
@@ -732,21 +716,33 @@ spec:
                     name:
                       description: The volume name.
                       type: string
+                    root:
+                      description: Is it the root volume ?
+                      type: boolean
                     size:
                       description: The volume size in gibibytes (GiB)
                       format: int32
                       type: integer
-                    volumeType:
+                    type:
                       description: The volume type (io1, gp2 or standard)
                       enum:
                       - io1
                       - gp2
                       - standard
                       type: string
-                  required:
-                  - device
                   type: object
+                  x-kubernetes-validations:
+                  - message: /dev/sda1 is reserved for the root volume
+                    rule: (has(self.root) && self.root) || !(has(self.device) && self.device
+                      == '/dev/sda1')
+                  - message: non root volumes must have a device
+                    rule: (has(self.root) && self.root) || (has(self.device) && self.device
+                      != '')
+                maxItems: 40
                 type: array
+                x-kubernetes-validations:
+                - message: there must not be more than one root volume
+                  rule: self.exists_one(vol, has(vol.root) && vol.root)
             type: object
           status:
             description: OscMachineStatus defines the observed state of OscMachine

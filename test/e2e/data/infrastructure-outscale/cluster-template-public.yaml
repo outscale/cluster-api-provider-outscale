@@ -62,13 +62,14 @@ spec:
         outscaleOpenSource: true
       vm:
         publicIp: true
-        rootDisk:
-          rootDiskSize: ${OSC_VOLUME_SIZE}
-          rootDiskIops: ${OSC_IOPS}
-          rootDiskType: "${OSC_VOLUME_TYPE}"
         keypairName: "${OSC_KEYPAIR_NAME}"
         subregionName: ${OSC_SUBREGION_NAME}
         vmType: "${OSC_VM_TYPE}"
+      volumes:
+        - root: true
+          size: ${OSC_VOLUME_SIZE}
+          iops: ${OSC_IOPS}
+          type: "${OSC_VOLUME_TYPE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscMachineTemplate
@@ -81,14 +82,15 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        rootDisk:
-          rootDiskSize: ${OSC_VOLUME_SIZE}
-          rootDiskIops: ${OSC_IOPS}
-          rootDiskType: "${OSC_VOLUME_TYPE}"
         subregionName: ${OSC_SUBREGION_NAME}
         keypairName: "${OSC_KEYPAIR_NAME}"
         role: controlplane
         vmType: "${OSC_VM_TYPE}"
+      volumes:
+        - root: true
+          size: ${OSC_VOLUME_SIZE}
+          iops: ${OSC_IOPS}
+          type: "${OSC_VOLUME_TYPE}"
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate

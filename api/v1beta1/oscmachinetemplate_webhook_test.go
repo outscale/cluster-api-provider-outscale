@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,7 +109,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 							Device:     "/dev/sdb",
 							Iops:       20,
 							Size:       -30,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},
@@ -129,7 +130,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 							Device:     "/dev/sdb",
 							Iops:       -15,
 							Size:       30,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},
@@ -149,7 +150,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 							Name:       "test-webhook",
 							Iops:       20,
 							Size:       30,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},
@@ -170,7 +171,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 							Device:     "foo",
 							Iops:       20,
 							Size:       30,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},
@@ -212,7 +213,7 @@ func TestOscMachineTemplate_ValidateCreate(t *testing.T) {
 							Device:     "/dev/sdb",
 							Iops:       20,
 							Size:       20,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},
@@ -299,7 +300,7 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 							Name:       "update-webhook",
 							Iops:       15,
 							Size:       30,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},
@@ -316,7 +317,7 @@ func TestOscMachineTemplate_ValidateUpdate(t *testing.T) {
 							Name:       "update-webhook",
 							Iops:       15,
 							Size:       30,
-							VolumeType: "io1",
+							VolumeType: osc.VolumeTypeIo1,
 						},
 					},
 				},

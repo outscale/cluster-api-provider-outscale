@@ -11,14 +11,13 @@ spec:
         outscaleOpenSource: true
       vm:
         keypairName: test-cluster-api
-        rootDisk:
-          rootDiskIops: 1000
-          rootDiskSize: 10
-          rootDiskType: gp2
         subregionName: eu-west-2a
         vmType: invalid
       volumes:
+        - root: true
+          size: 10
+          type: gp2
         - device: /dev/xvdb
           iops: 1000
           size: 10
-          volumeType: io1
+          type: io1
