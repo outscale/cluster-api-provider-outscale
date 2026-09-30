@@ -9,6 +9,7 @@ import (
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kubeyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,7 +38,7 @@ func doTests(tts []ttc) {
 		ginkgo.By("create " + tt.file)
 		doc, err := load(tt.file)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		err = bootstrapClusterProxy.GetClient().Create(ctx, doc)
+		err = bootstrapClusterProxy.GetClient().Create(ctx, doc, client.FieldValidation(metav1.FieldValidationStrict))
 		if tt.update != nil {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -130,12 +131,14 @@ var _ = ginkgo.Describe("[e2e][validation][fast] Testing CRD validation", func()
 
 	ginkgo.It("should properly validate OscMachineTemplate", func() {
 		tts := []ttc{
-			{file: "testdata/oscmachinetemplate/vm-root-invalid.yaml"},
 			{file: "testdata/oscmachinetemplate/vm-subregion-invalid.yaml"},
 			{file: "testdata/oscmachinetemplate/vm-type-invalid.yaml"},
 
 			{file: "testdata/oscmachinetemplate/vol-device-invalid.yaml"},
 			{file: "testdata/oscmachinetemplate/vol-type-invalid.yaml"},
+			{file: "testdata/oscmachinetemplate/vol-multipleroot-invalid.yaml"},
+			{file: "testdata/oscmachinetemplate/vol-nodevice-invalid.yaml"},
+			{file: "testdata/oscmachinetemplate/vol-nonrootsda1-invalid.yaml"},
 
 			{file: "testdata/oscmachinetemplate/base-valid.yaml", update: func(doc *unstructured.Unstructured) error {
 				return unstructured.SetNestedField(doc.Object, "updated", "spec", "template", "spec", "image", "name")

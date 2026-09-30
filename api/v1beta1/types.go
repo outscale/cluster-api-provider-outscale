@@ -772,7 +772,7 @@ type VmState string
 
 const (
 	DefaultVmType       string         = "tinav7.c4r8p1"
-	DefaultRootDiskType osc.VolumeType = "io1"
+	DefaultRootDiskType osc.VolumeType = osc.VolumeTypeIo1
 	DefaultRootDiskSize int32          = 60
 	DefaultRootDiskIops int32          = 1500
 
@@ -798,7 +798,7 @@ func (vm *OscVm) SetDefaultValue() {
 	if vm.RootDisk.RootDiskType == "" {
 		vm.RootDisk.RootDiskType = DefaultRootDiskType
 	}
-	if vm.RootDisk.RootDiskIops == 0 && vm.RootDisk.RootDiskType == "io1" {
+	if vm.RootDisk.RootDiskIops == 0 && vm.RootDisk.RootDiskType == osc.VolumeTypeIo1 {
 		vm.RootDisk.RootDiskIops = DefaultRootDiskIops
 	}
 	if vm.RootDisk.RootDiskSize == 0 {

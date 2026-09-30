@@ -16,6 +16,7 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/utils"
 	"github.com/outscale/goutils/k8s/tags"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/samber/lo"
 )
 
 const (
@@ -62,39 +63,32 @@ func (s *Service) CreateVm(ctx context.Context,
 		return nil, errors.New("no keypair is configured")
 	}
 	vmType := spec.VmType
-	rootDiskIops := spec.RootDisk.RootDiskIops
-	rootDiskSize := spec.RootDisk.RootDiskSize
-	rootDiskType := spec.RootDisk.RootDiskType
 	bootstrapData, err := machineScope.GetBootstrapData(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)
 	}
 	mergedUserData := utils.ConvertsTagsToUserDataOutscaleSection(tags) + bootstrapData
 	mergedUserDataEnc := b64.StdEncoding.EncodeToString([]byte(mergedUserData))
-	rootDisk := osc.BlockDeviceMappingVmCreation{
-		Bsu: &osc.BsuToCreate{
-			VolumeType: new(osc.VolumeType(rootDiskType)),
-			VolumeSize: new(int(rootDiskSize)),
-		},
-		DeviceName: new("/dev/sda1"),
-	}
-	if rootDiskType == "io1" {
-		rootDisk.Bsu.Iops = new(int(rootDiskIops))
-	}
-	volMappings := []osc.BlockDeviceMappingVmCreation{
-		rootDisk,
+	volMappings := make([]osc.BlockDeviceMappingVmCreation, 0, len(volumes))
+	_, found := lo.Find(volumes, infrastructurev1beta2.IsRootVolume)
+	if !found {
+		volumes = append(volumes, infrastructurev1beta2.DefaultRootDisk)
 	}
 	for _, vol := range volumes {
 		bsuVol := osc.BlockDeviceMappingVmCreation{
 			Bsu: &osc.BsuToCreate{
-				VolumeType: new(osc.VolumeType(vol.VolumeType)),
+				VolumeType: new(osc.VolumeType(vol.Type)),
 			},
-			DeviceName: &vol.Device,
+		}
+		if vol.Root {
+			bsuVol.DeviceName = new("/dev/sda1")
+		} else {
+			bsuVol.DeviceName = &vol.Device
 		}
 		if vol.Size > 0 {
 			bsuVol.Bsu.VolumeSize = new(int(vol.Size))
 		}
-		if vol.VolumeType == "io1" {
+		if vol.Type == infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1) {
 			bsuVol.Bsu.Iops = new(int(vol.Iops))
 		}
 		if vol.FromSnapshot != "" {
@@ -151,9 +145,9 @@ func (s *Service) CreateVm(ctx context.Context,
 func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1beta2.OscBastion, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken, imageId string, tags map[string]string) (*osc.Vm, error) {
 	keypairName := spec.KeypairName
 	vmType := spec.VmType
-	rootDiskIops := spec.RootDisk.RootDiskIops
-	rootDiskSize := spec.RootDisk.RootDiskSize
-	rootDiskType := spec.RootDisk.RootDiskType
+	rootDiskIops := spec.RootDisk.Iops
+	rootDiskSize := spec.RootDisk.Size
+	rootDiskType := spec.RootDisk.Type
 
 	userDataEnc := b64.StdEncoding.EncodeToString([]byte(utils.ConvertsTagsToUserDataOutscaleSection(tags)))
 	rootDisk := osc.BlockDeviceMappingVmCreation{
@@ -163,7 +157,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 		},
 		DeviceName: new("/dev/sda1"),
 	}
-	if rootDiskType == "io1" {
+	if rootDiskType == infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1) {
 		rootDisk.Bsu.Iops = new(int(rootDiskIops))
 	}
 

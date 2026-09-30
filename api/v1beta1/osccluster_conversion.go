@@ -160,10 +160,10 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			KeypairName:    srcNet.Bastion.KeypairName,
 			VmType:         srcNet.Bastion.VmType,
 			SubnetName:     srcNet.Bastion.SubnetName,
-			RootDisk: infrastructurev1beta2.OscRootDisk{
-				RootDiskIops: srcNet.Bastion.RootDisk.RootDiskIops,
-				RootDiskSize: srcNet.Bastion.RootDisk.RootDiskSize,
-				RootDiskType: infrastructurev1beta2.OscVolumeType(srcNet.Bastion.RootDisk.RootDiskType),
+			RootDisk: infrastructurev1beta2.OscVolume{
+				Iops: srcNet.Bastion.RootDisk.RootDiskIops,
+				Size: srcNet.Bastion.RootDisk.RootDiskSize,
+				Type: infrastructurev1beta2.OscVolumeType(srcNet.Bastion.RootDisk.RootDiskType),
 			},
 			PublicIpId: srcNet.Bastion.PublicIpId,
 			SecurityGroupNames: lo.Map(srcNet.Bastion.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
@@ -301,9 +301,9 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			VmType:         src.Bastion.VmType,
 			SubnetName:     src.Bastion.SubnetName,
 			RootDisk: OscRootDisk{
-				RootDiskIops: src.Bastion.RootDisk.RootDiskIops,
-				RootDiskSize: src.Bastion.RootDisk.RootDiskSize,
-				RootDiskType: osc.VolumeType(src.Bastion.RootDisk.RootDiskType),
+				RootDiskIops: src.Bastion.RootDisk.Iops,
+				RootDiskSize: src.Bastion.RootDisk.Size,
+				RootDiskType: osc.VolumeType(src.Bastion.RootDisk.Type),
 			},
 			PublicIpId: src.Bastion.PublicIpId,
 			SecurityGroupNames: lo.Map(src.Bastion.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {

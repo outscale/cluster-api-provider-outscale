@@ -1058,18 +1058,29 @@ spec:
                     type: string
                   rootDisk:
                     properties:
-                      rootDiskIops:
-                        description: The root disk iops (io1 volumes only) (1500 by
-                          default)
+                      device:
+                        description: The volume device (/dev/xvdX)
+                        pattern: ^(|/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$
+                        type: string
+                      fromSnapshot:
+                        description: The id of a snapshot to use as a volume source.
+                        type: string
+                      iops:
+                        description: The volume iops (io1 volumes only)
                         format: int32
                         type: integer
-                      rootDiskSize:
-                        description: The volume size in gibibytes (GiB) (60 by default)
+                      name:
+                        description: The volume name.
+                        type: string
+                      root:
+                        description: Is it the root volume ?
+                        type: boolean
+                      size:
+                        description: The volume size in gibibytes (GiB)
                         format: int32
                         type: integer
-                      rootDiskType:
-                        description: The volume type (io1, gp2 or standard) (io1 by
-                          default)
+                      type:
+                        description: The volume type (io1, gp2 or standard)
                         enum:
                         - io1
                         - gp2

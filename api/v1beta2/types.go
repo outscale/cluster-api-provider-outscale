@@ -489,9 +489,12 @@ type OscVolume struct {
 	// The volume name.
 	// +optional
 	Name string `json:"name,omitempty"`
+	// Is it the root volume ?
+	// +optional
+	Root bool `json:"root,omitempty"`
 	// The volume device (/dev/xvdX)
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern="^(/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$"
+	// +optional
+	// +kubebuilder:validation:Pattern="^(|/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$"
 	Device string `json:"device"`
 	// The volume iops (io1 volumes only)
 	// +optional
@@ -501,10 +504,14 @@ type OscVolume struct {
 	Size int32 `json:"size,omitempty"`
 	// The volume type (io1, gp2 or standard)
 	// +optional
-	VolumeType OscVolumeType `json:"volumeType,omitempty"`
+	Type OscVolumeType `json:"type,omitempty"`
 	// The id of a snapshot to use as a volume source.
 	// +optional
 	FromSnapshot string `json:"fromSnapshot,omitempty"`
+}
+
+func IsRootVolume(v OscVolume) bool {
+	return v.Root || v.Device == "/dev/sda1"
 }
 
 type OscKeypair struct {
@@ -546,8 +553,7 @@ type OscVm struct {
 	VmType string `json:"vmType,omitempty"`
 	// The subnet of the node (deprecated, use controlplane and/or worker roles on subnets)
 	// +optional
-	SubnetName string      `json:"subnetName,omitempty"`
-	RootDisk   OscRootDisk `json:"rootDisk,omitempty"`
+	SubnetName string `json:"subnetName,omitempty"`
 	// If set, a public IP will be configured.
 	// +optional
 	PublicIp bool `json:"publicIp,omitempty"`
@@ -628,8 +634,8 @@ type OscBastion struct {
 	// +optional
 	VmType string `json:"vmType,omitempty"`
 	// The subnet of the vm (deprecated use bastion role in subnets)
-	SubnetName string      `json:"subnetName,omitempty"`
-	RootDisk   OscRootDisk `json:"rootDisk,omitempty,omitzero"`
+	SubnetName string    `json:"subnetName,omitempty"`
+	RootDisk   OscVolume `json:"rootDisk,omitempty,omitzero"`
 	// The ID of an existing public IP to use for this VM.
 	// +optional
 	PublicIpId string                `json:"PublicIpId,omitempty"`
@@ -640,18 +646,6 @@ type OscBastion struct {
 	// the vm id (deprecated, not set anymore)
 	ResourceId string `json:"resourceId,omitempty"`
 	Enable     bool   `json:"enable,omitempty"`
-}
-
-type OscRootDisk struct {
-	// The root disk iops (io1 volumes only) (1500 by default)
-	// +optional
-	RootDiskIops int32 `json:"rootDiskIops,omitempty"`
-	// The volume size in gibibytes (GiB) (60 by default)
-	// +optional
-	RootDiskSize int32 `json:"rootDiskSize,omitempty"`
-	// The volume type (io1, gp2 or standard) (io1 by default)
-	// +optional
-	RootDiskType OscVolumeType `json:"rootDiskType,omitempty"`
 }
 
 type VmState string
@@ -677,19 +671,17 @@ const (
 	APIPortStr       = "tcp/6443"
 )
 
+var DefaultRootDisk = OscVolume{
+	Root: true,
+	Type: DefaultRootDiskType,
+	Iops: DefaultRootDiskIops,
+	Size: DefaultRootDiskSize,
+}
+
 // SetDefaultValue set the vm default values
 func (vm *OscVm) SetDefaultValue() {
 	if vm.VmType == "" {
 		vm.VmType = DefaultVmType
-	}
-	if vm.RootDisk.RootDiskType == "" {
-		vm.RootDisk.RootDiskType = DefaultRootDiskType
-	}
-	if vm.RootDisk.RootDiskIops == 0 && vm.RootDisk.RootDiskType == "io1" {
-		vm.RootDisk.RootDiskIops = DefaultRootDiskIops
-	}
-	if vm.RootDisk.RootDiskSize == 0 {
-		vm.RootDisk.RootDiskSize = DefaultRootDiskSize
 	}
 }
 
@@ -699,11 +691,11 @@ func (bastion *OscBastion) SetDefaultValue() {
 		if bastion.VmType == "" {
 			bastion.VmType = DefaultVmBastionType
 		}
-		if bastion.RootDisk.RootDiskType == "" {
-			bastion.RootDisk.RootDiskType = DefaultRootDiskBastionType
+		if bastion.RootDisk.Type == "" {
+			bastion.RootDisk.Type = DefaultRootDiskBastionType
 		}
-		if bastion.RootDisk.RootDiskSize == 0 {
-			bastion.RootDisk.RootDiskSize = DefaultRootDiskBastionSize
+		if bastion.RootDisk.Size == 0 {
+			bastion.RootDisk.Size = DefaultRootDiskBastionSize
 		}
 	}
 }

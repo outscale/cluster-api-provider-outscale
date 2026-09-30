@@ -11,6 +11,7 @@ import (
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -24,21 +25,22 @@ var (
 			Spec: infrastructurev1beta2.OscMachineSpec{
 				Volumes: []infrastructurev1beta2.OscVolume{
 					{
-						Name:       "test-volume",
-						Iops:       1000,
-						Size:       50,
-						VolumeType: "io1",
+						Root: true,
+						Iops: 1500,
+						Size: 30,
+						Type: infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
+					},
+					{
+						Name: "test-volume",
+						Iops: 1000,
+						Size: 50,
+						Type: infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
 					},
 				},
 				Vm: infrastructurev1beta2.OscVm{
-					Name:    "test-vm",
-					ImageId: "ami-00000000",
-					Role:    "controlplane",
-					RootDisk: infrastructurev1beta2.OscRootDisk{
-						RootDiskSize: 30,
-						RootDiskIops: 1500,
-						RootDiskType: "io1",
-					},
+					Name:          "test-vm",
+					ImageId:       "ami-00000000",
+					Role:          "controlplane",
 					KeypairName:   "rke",
 					SubregionName: "eu-west-2a",
 					SubnetName:    "test-subnet",

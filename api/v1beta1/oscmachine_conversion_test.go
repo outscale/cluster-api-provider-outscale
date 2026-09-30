@@ -23,9 +23,11 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 	return []any{
 		spokeSkipOscMachineStatus,
 		spokeSkipOscMachineUnused,
-		hubSkipOscMachineUnused,
 		spokeSkipVolumeUnused,
 		spokeSkipKeypair,
+
+		hubSkipOscMachineUnused,
+		hubSingleRootVolume,
 	}
 }
 
@@ -52,6 +54,18 @@ func hubSkipOscMachineUnused(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Co
 
 	in.Vm.PrivateIps = nil
 	in.Vm.ResourceId = ""
+}
+
+func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {
+	if len(in.Volumes) > 0 {
+		for i := range in.Volumes {
+			in.Volumes[i].Root = i == 0
+			if i == 0 {
+				in.Volumes[i].Device = ""
+				in.Volumes[i].Name = ""
+			}
+		}
+	}
 }
 
 func spokeSkipVolumeUnused(in *infrastructurev1beta1.OscVolume, c fuzz.Continue) {

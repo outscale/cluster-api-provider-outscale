@@ -29,6 +29,7 @@ func OscClusterFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 		hubSkipOscClusterUnused,
 		spokeSkipOscBastionUnused,
 		hubSkipOscBastionUnused,
+		hubSkipOscVolumeUnused,
 		spokeSkipOscRouteTableUnused,
 		spokeSetRule,
 		hubSetRule,
@@ -87,6 +88,15 @@ func hubSkipOscBastionUnused(in *infrastructurev1beta2.OscBastion, c fuzz.Contin
 
 	in.PrivateIps = nil
 	in.ResourceId = ""
+}
+
+func hubSkipOscVolumeUnused(in *infrastructurev1beta2.OscVolume, c fuzz.Continue) {
+	c.FuzzNoCustom(in)
+
+	in.Root = false
+	in.Device = ""
+	in.Name = ""
+	in.FromSnapshot = ""
 }
 
 func spokeSkipOscRouteTableUnused(in *infrastructurev1beta1.OscRouteTable, c fuzz.Continue) {

@@ -20,8 +20,15 @@ import (
 type OscMachineSpec struct {
 	ProviderID *string `json:"providerID,omitempty"`
 
-	Vm      OscVm       `json:"vm,omitempty"`
-	Image   OscImage    `json:"image,omitempty"`
+	// The configuration of the VM to deploy
+	Vm OscVm `json:"vm,omitempty"`
+	// The image to use
+	Image OscImage `json:"image,omitempty"`
+	// The list of volumes to attach to the VM (including the root volume)
+	// +kubebuilder:validation:MaxItems=40
+	// +kubebuilder:validation:items:XValidation:rule="(has(self.root) && self.root) || !(has(self.device) && self.device == '/dev/sda1')",message="/dev/sda1 is reserved for the root volume"
+	// +kubebuilder:validation:items:XValidation:rule="(has(self.root) && self.root) || (has(self.device) && self.device != '')",message="non root volumes must have a device"
+	// +kubebuilder:validation:XValidation:rule="self.exists_one(vol, has(vol.root) && vol.root)",message="there must not be more than one root volume"
 	Volumes []OscVolume `json:"volumes,omitempty"`
 	// Reconciliation rules (default: {*, onChange})
 	// +optional

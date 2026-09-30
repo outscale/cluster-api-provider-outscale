@@ -70,14 +70,14 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
       vm:
-        rootDisk:
-          rootDiskSize: ${OSC_VOLUME_SIZE}
-          rootDiskIops: ${OSC_IOPS}
-          rootDiskType: "${OSC_VOLUME_TYPE}"
         keypairName: "${OSC_KEYPAIR_NAME}"
         subregionName: ${OSC_REGION}a
         vmType: "${OSC_VM_TYPE}"
       volumes:
+        - root: true
+          size: ${OSC_VOLUME_SIZE}
+          iops: ${OSC_IOPS}
+          type: "${OSC_VOLUME_TYPE}"
         - device: /dev/xvdb
           fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---
@@ -92,15 +92,15 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
       vm:
-        rootDisk:
-          rootDiskSize: ${OSC_VOLUME_SIZE}
-          rootDiskIops: ${OSC_IOPS}
-          rootDiskType: "${OSC_VOLUME_TYPE}"
         subregionName: ${OSC_REGION}a
         keypairName: "${OSC_KEYPAIR_NAME}"
         role: controlplane
         vmType: "${OSC_VM_TYPE}"
       volumes:
+        - root: true
+          size: ${OSC_VOLUME_SIZE}
+          iops: ${OSC_IOPS}
+          type: "${OSC_VOLUME_TYPE}"
         - device: /dev/xvdb
           fromSnapshot: ${PRELOAD_SNAPSHOT_ID}
 ---

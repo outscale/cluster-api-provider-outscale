@@ -242,25 +242,30 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 
 		// Volumes
 		{
-			name:        "[v1beta1] Creating a vm with additional volumes",
-			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/base-worker-volumes",
+			name:        "[v1beta2] Creating a vm with additional volumes",
+			clusterSpec: "v1beta1/ready", machineSpec: "v1beta2/base-worker-volumes",
 			mockFuncs: []mockFunc{
 				mockImageFoundByName("ubuntu-2204-kubernetes-v1.32.13-2026-03-06", "01234", "ami-foo"),
 				mockGetVmFromClientToken("cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
 				mockReadTagByNameNoneFound(tag.VmResourceType, "cluster-api-test-worker-9e1db9c4-bf0a-4583-8999-203ec002c520"),
 				mockCreateVmWithVolumes("i-foo", []infrastructurev1beta2.OscVolume{{
-					Name:       "data",
-					Size:       15,
-					VolumeType: "io1",
-					Iops:       500,
-					Device:     "/dev/sdb",
+					Name: "root",
+					Root: true,
+					Size: 15,
+					Type: infrastructurev1beta2.OscVolumeType(osc.VolumeTypeGp2),
+				}, {
+					Name:   "data",
+					Size:   15,
+					Type:   infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
+					Iops:   500,
+					Device: "/dev/sdb",
 				}, {
 					Name:         "images",
 					Size:         15,
-					VolumeType:   "gp2",
+					Type:         infrastructurev1beta2.OscVolumeType(osc.VolumeTypeGp2),
 					Device:       "/dev/sdc",
 					FromSnapshot: "snap-foo",
-				}}, "vol-bar", "vol-baz"),
+				}}, "vo-foo", "vol-bar", "vol-baz"),
 			},
 			requeue: true,
 			machineAsserts: []assertOSCMachineFunc{

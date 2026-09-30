@@ -17,8 +17,6 @@ spec:
         - root: true
           size: 10
           type: gp2
-        - device: /dev/xvdb
-          root: false
-          iops: 1000
+        - iops: 1000
           size: 10
           type: io1

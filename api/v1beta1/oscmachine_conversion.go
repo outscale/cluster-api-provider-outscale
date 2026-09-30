@@ -1,6 +1,7 @@
 package v1beta1
 
 import (
+	"github.com/google/go-cmp/cmp"
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/samber/lo"
@@ -14,18 +15,13 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 		ProviderID: src.ProviderID,
 
 		Vm: infrastructurev1beta2.OscVm{
-			Name:         srcNode.Vm.Name,
-			ImageId:      srcNode.Vm.ImageId,
-			KeypairName:  srcNode.Vm.KeypairName,
-			VmType:       srcNode.Vm.VmType,
-			SubnetName:   srcNode.Vm.SubnetName,
-			PublicIp:     srcNode.Vm.PublicIp,
-			PublicIpPool: srcNode.Vm.PublicIpPool,
-			RootDisk: infrastructurev1beta2.OscRootDisk{
-				RootDiskIops: srcNode.Vm.RootDisk.RootDiskIops,
-				RootDiskSize: srcNode.Vm.RootDisk.RootDiskSize,
-				RootDiskType: infrastructurev1beta2.OscVolumeType(srcNode.Vm.RootDisk.RootDiskType),
-			},
+			Name:           srcNode.Vm.Name,
+			ImageId:        srcNode.Vm.ImageId,
+			KeypairName:    srcNode.Vm.KeypairName,
+			VmType:         srcNode.Vm.VmType,
+			SubnetName:     srcNode.Vm.SubnetName,
+			PublicIp:       srcNode.Vm.PublicIp,
+			PublicIpPool:   srcNode.Vm.PublicIpPool,
 			SubregionName:  infrastructurev1beta2.OscSubRegion(srcNode.Vm.SubregionName),
 			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
 			SubregionNames: lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
@@ -36,22 +32,32 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 			Tags:      srcNode.Vm.Tags,
 			Placement: infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
 		},
-		Volumes: lo.Map(srcNode.Volumes, func(src OscVolume, _ int) infrastructurev1beta2.OscVolume {
-			return infrastructurev1beta2.OscVolume{
-				Name:         src.Name,
-				Device:       src.Device,
-				Iops:         src.Iops,
-				Size:         src.Size,
-				VolumeType:   infrastructurev1beta2.OscVolumeType(src.VolumeType),
-				FromSnapshot: src.FromSnapshot,
-			}
-		}),
 		Image: infrastructurev1beta2.OscImage{
 			Name:               srcNode.Image.Name,
 			AccountId:          srcNode.Image.AccountId,
 			OutscaleOpenSource: srcNode.Image.OutscaleOpenSource,
 		},
 	}
+	vols := make([]infrastructurev1beta2.OscVolume, 0, len(srcNode.Volumes)+1)
+	if !cmp.Equal(srcNode.Vm.RootDisk, OscRootDisk{}) {
+		vols = append(vols, infrastructurev1beta2.OscVolume{
+			Root: true,
+			Iops: srcNode.Vm.RootDisk.RootDiskIops,
+			Size: srcNode.Vm.RootDisk.RootDiskSize,
+			Type: infrastructurev1beta2.OscVolumeType(srcNode.Vm.RootDisk.RootDiskType),
+		})
+	}
+	vols = append(vols, lo.Map(src.Node.Volumes, func(src OscVolume, _ int) infrastructurev1beta2.OscVolume {
+		return infrastructurev1beta2.OscVolume{
+			Name:         src.Name,
+			Device:       src.Device,
+			Iops:         src.Iops,
+			Size:         src.Size,
+			Type:         infrastructurev1beta2.OscVolumeType(src.VolumeType),
+			FromSnapshot: src.FromSnapshot,
+		}
+	})...)
+	dst.Volumes = vols
 	if src.Node.Vm.FGPU != nil {
 		dst.Vm.FGPU = new(infrastructurev1beta2.OscFGPU(*src.Node.Vm.FGPU))
 	}
@@ -72,18 +78,13 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 		ProviderID: src.ProviderID,
 		Node: OscNode{
 			Vm: OscVm{
-				Name:         src.Vm.Name,
-				ImageId:      src.Vm.ImageId,
-				KeypairName:  src.Vm.KeypairName,
-				VmType:       src.Vm.VmType,
-				SubnetName:   src.Vm.SubnetName,
-				PublicIp:     src.Vm.PublicIp,
-				PublicIpPool: src.Vm.PublicIpPool,
-				RootDisk: OscRootDisk{
-					RootDiskIops: src.Vm.RootDisk.RootDiskIops,
-					RootDiskSize: src.Vm.RootDisk.RootDiskSize,
-					RootDiskType: osc.VolumeType(src.Vm.RootDisk.RootDiskType),
-				},
+				Name:           src.Vm.Name,
+				ImageId:        src.Vm.ImageId,
+				KeypairName:    src.Vm.KeypairName,
+				VmType:         src.Vm.VmType,
+				SubnetName:     src.Vm.SubnetName,
+				PublicIp:       src.Vm.PublicIp,
+				PublicIpPool:   src.Vm.PublicIpPool,
 				SubregionName:  string(src.Vm.SubregionName),
 				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
 				SubregionNames: lo.Map(src.Vm.SubregionNames, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) }),
@@ -94,15 +95,18 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 				Tags:      src.Vm.Tags,
 				Placement: OscPlacement(src.Vm.Placement),
 			},
-			Volumes: lo.Map(src.Volumes, func(src infrastructurev1beta2.OscVolume, _ int) OscVolume {
+			Volumes: lo.FilterMap(src.Volumes, func(src infrastructurev1beta2.OscVolume, _ int) (OscVolume, bool) {
+				if infrastructurev1beta2.IsRootVolume(src) {
+					return OscVolume{}, false
+				}
 				return OscVolume{
 					Name:         src.Name,
 					Device:       src.Device,
 					Iops:         src.Iops,
 					Size:         src.Size,
-					VolumeType:   osc.VolumeType(src.VolumeType),
+					VolumeType:   osc.VolumeType(src.Type),
 					FromSnapshot: src.FromSnapshot,
-				}
+				}, true
 			}),
 			Image: OscImage{
 				Name:               src.Image.Name,
@@ -110,6 +114,13 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 				OutscaleOpenSource: src.Image.OutscaleOpenSource,
 			},
 		},
+	}
+	if root, found := lo.Find(src.Volumes, infrastructurev1beta2.IsRootVolume); found {
+		dst.Node.Vm.RootDisk = OscRootDisk{
+			RootDiskIops: root.Iops,
+			RootDiskSize: root.Size,
+			RootDiskType: osc.VolumeType(root.Type),
+		}
 	}
 	if src.Vm.FGPU != nil {
 		dst.Node.Vm.FGPU = new(OscFGPU(*src.Vm.FGPU))
