@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/gofuzz v1.2.0
 	github.com/onsi/ginkgo/v2 v2.32.1
-	github.com/onsi/gomega v1.40.0
+	github.com/onsi/gomega v1.44.0
 	github.com/outscale/goutils/k8s v0.0.5
 	github.com/outscale/goutils/sdk v0.0.9
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5
