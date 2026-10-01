@@ -120,16 +120,6 @@ func (m *MachineScope) GetImage() *infrastructurev1beta2.OscImage {
 	return &m.OscMachine.Spec.Image
 }
 
-// SetImageId sets ImageId
-func (m *MachineScope) SetImageId(imageId string) {
-	m.OscMachine.Spec.Vm.ImageId = imageId
-}
-
-// GetImageId returns ImageId
-func (m *MachineScope) GetImageId() string {
-	return m.GetVm().ImageId
-}
-
 // GetVmPrivateIps returns the VM privateIps
 func (m *MachineScope) GetVmPrivateIps() []infrastructurev1beta2.OscPrivateIpElement {
 	return m.GetVm().PrivateIps

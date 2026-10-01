@@ -126,14 +126,14 @@ func (t *MachineResourceTracker) getImageId(ctx context.Context, machineScope *s
 		switch {
 		case imageSpec.OutscaleOpenSource:
 			accountId = OutscaleOpenSourceAccounts[clusterScope.GetRegion()]
-		case imageSpec.AccountId == "":
+		case imageSpec.AccountID == "":
 			ctrl.LoggerFrom(ctx).V(2).Info("[security] It is recommended to set the image account to control the origin of the image.")
 		default:
-			accountId = imageSpec.AccountId
+			accountId = imageSpec.AccountID
 		}
 		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImageByName(ctx, imageSpec.Name, accountId)
 	} else {
-		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImage(ctx, machineScope.GetImageId())
+		image, err = t.Cloud.Compute(clusterScope.Tenant).GetImage(ctx, imageSpec.ID)
 	}
 	if err != nil {
 		return "", fmt.Errorf("cannot get image: %w", err)

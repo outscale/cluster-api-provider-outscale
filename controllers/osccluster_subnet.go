@@ -38,18 +38,18 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		case err != nil:
 			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
 		default:
-			log.V(4).Info("Found existing subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.SubregionName, "subnetId", subnet.SubnetId)
+			log.V(4).Info("Found existing subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.Subregion, "subnetId", subnet.SubnetId)
 			continue
 		}
-		subnetSpec.SubregionName = clusterScope.GetSubnetSubregion(subnetSpec)
-		log.V(3).Info("Creating subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.SubregionName)
+		subnetSpec.Subregion = clusterScope.GetSubnetSubregion(subnetSpec)
+		log.V(3).Info("Creating subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.Subregion)
 		subnet, err = svc.CreateSubnet(ctx, subnetSpec, netId, clusterScope.GetUID(), clusterScope.GetSubnetName(subnetSpec))
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
 		}
 		log.V(2).Info("Created subnet", "subnetId", subnet.SubnetId)
 		r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.SubnetId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
 	}
 
 	// add failureDomains

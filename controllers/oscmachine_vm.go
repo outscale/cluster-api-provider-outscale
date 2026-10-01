@@ -162,8 +162,8 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			vmTags[compute.AttractServerTag] = repulse.AttractServer
 		}
 
-		keypairName := vmSpec.KeypairName
-		vmType := vmSpec.VmType
+		keypairName := vmSpec.Keypair
+		vmType := vmSpec.Type
 		volumes := machineScope.GetVolumes()
 		clientToken := machineScope.GetClientToken(clusterScope)
 		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)

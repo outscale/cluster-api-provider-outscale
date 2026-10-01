@@ -51,7 +51,7 @@ type OscMachineStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=oscmachines,scope=Namespaced,categories=cluster-api
-// +kubebuilder:printcolumn:name="VM Type",type=string,JSONPath=".spec.node.vm.vmType"
+// +kubebuilder:printcolumn:name="VM Type",type=string,JSONPath=".spec.vm.type"
 // +kubebuilder:printcolumn:name="ProviderID",type=string,JSONPath=".spec.providerID"
 // +kubebuilder:printcolumn:name="State",type=string,JSONPath=".status.vmState"
 // +kubebuilder:storageversion

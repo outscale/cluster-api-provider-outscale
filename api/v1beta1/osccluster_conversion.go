@@ -113,9 +113,9 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 				Roles: lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole {
 					return infrastructurev1beta2.OscRole(src)
 				}),
-				IpRange:       src.IpSubnetRange,
-				SubregionName: infrastructurev1beta2.OscSubRegion(src.SubregionName),
-				ResourceId:    src.ResourceId,
+				IpRange:    src.IpSubnetRange,
+				Subregion:  infrastructurev1beta2.OscSubRegion(src.SubregionName),
+				ResourceId: src.ResourceId,
 			}
 		}),
 		InternetService: infrastructurev1beta2.OscInternetService{
@@ -124,10 +124,10 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 		NatPublicIpPool: srcNet.NatPublicIpPool,
 		RouteTables: lo.Map(srcNet.RouteTables, func(src OscRouteTable, _ int) infrastructurev1beta2.OscRouteTable {
 			return infrastructurev1beta2.OscRouteTable{
-				Name:          src.Name,
-				Subnets:       src.Subnets,
-				Role:          infrastructurev1beta2.OscRole(src.Role),
-				SubregionName: infrastructurev1beta2.OscSubRegion(src.SubregionName),
+				Name:      src.Name,
+				Subnets:   src.Subnets,
+				Role:      infrastructurev1beta2.OscRole(src.Role),
+				Subregion: infrastructurev1beta2.OscSubRegion(src.SubregionName),
 				Routes: lo.Map(src.Routes, func(src OscRoute, _ int) infrastructurev1beta2.OscRoute {
 					return infrastructurev1beta2.OscRoute(src)
 				}),
@@ -171,7 +171,6 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			}),
 			Enable: srcNet.Bastion.Enable,
 		},
-		SubregionName:     infrastructurev1beta2.OscSubRegion(srcNet.SubregionName),
 		Subregions:        lo.Map(srcNet.Subregions, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
 		AllowFromIPRanges: srcNet.AllowFromIPRanges, // The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 		AllowToIPRanges:   srcNet.AllowToIPRanges,
@@ -184,6 +183,9 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 				ReconciliationChance: src.ReconciliationChance,
 			}
 		}),
+	}
+	if len(srcNet.Subregions) == 0 && srcNet.SubregionName != "" {
+		dst.Subregions = []infrastructurev1beta2.OscSubRegion{infrastructurev1beta2.OscSubRegion(srcNet.SubregionName)}
 	}
 	return nil
 }
@@ -237,7 +239,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 					return OscRole(src)
 				}),
 				IpSubnetRange: src.IpRange,
-				SubregionName: string(src.SubregionName),
+				SubregionName: string(src.Subregion),
 				ResourceId:    src.ResourceId,
 			}
 		}),
@@ -250,7 +252,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			}
 			return OscNatService{
 				SubnetName:    src.Name,
-				SubregionName: string(src.SubregionName),
+				SubregionName: string(src.Subregion),
 			}, true
 		}),
 		NatPublicIpPool: src.NatPublicIpPool,
@@ -259,7 +261,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 				Name:          src.Name,
 				Subnets:       src.Subnets,
 				Role:          OscRole(src.Role),
-				SubregionName: string(src.SubregionName),
+				SubregionName: string(src.Subregion),
 				Routes: lo.Map(src.Routes, func(src infrastructurev1beta2.OscRoute, _ int) OscRoute {
 					return OscRoute(src)
 				}),
@@ -311,7 +313,6 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			}),
 			Enable: src.Bastion.Enable,
 		},
-		SubregionName:     string(src.SubregionName),
 		Subregions:        lo.Map(src.Subregions, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) }),
 		AllowFromIPRanges: src.AllowFromIPRanges, // The list of IP ranges (in CIDR notation) the nodes can talk to ("0.0.0.0/0" if not set).
 		AllowToIPRanges:   src.AllowToIPRanges,

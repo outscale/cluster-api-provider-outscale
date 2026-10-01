@@ -10,10 +10,10 @@ spec:
   keypair:
     name: cluster-api
   vm:
-    clusterName: test-cluster-api
-    keypairName: cluster-api
-    subregionName: eu-west-2a
-    vmType: tinav6.c4r8p2
+    keypair: cluster-api
+    subregions:
+     - eu-west-2a
+    type: tinav6.c4r8p2
   volumes:
     - name: root
       root: true

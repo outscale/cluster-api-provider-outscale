@@ -12,4 +12,5 @@ spec:
   loadBalancer:
     name: test-cluster-api
     type: internet-facing
-  subregionName: eu-west-2a
+  subregions:
+   - eu-west-2a

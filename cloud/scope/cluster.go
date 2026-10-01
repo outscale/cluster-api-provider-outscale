@@ -131,15 +131,12 @@ func (s *ClusterScope) GetDefaultSubregion() infrastructurev1beta2.OscSubRegion 
 	if len(s.GetSpec().Subregions) > 0 {
 		return s.GetSpec().Subregions[0]
 	}
-	return s.GetSpec().SubregionName
+	return ""
 }
 
 // GetSubregions returns the subregions where to deploy the cluster.
 func (s *ClusterScope) GetSubregions() []infrastructurev1beta2.OscSubRegion {
-	if len(s.GetSpec().Subregions) > 0 {
-		return s.GetSpec().Subregions
-	}
-	return []infrastructurev1beta2.OscSubRegion{s.GetSpec().SubregionName}
+	return s.GetSpec().Subregions
 }
 
 // GetSubnets returns the subnets of the cluster.
@@ -163,9 +160,9 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
 		} {
 			net.IP[2]++
 			subnet := infrastructurev1beta2.OscSubnet{
-				IpRange:       net.String(),
-				Roles:         roles,
-				SubregionName: fd,
+				IpRange:   net.String(),
+				Roles:     roles,
+				Subregion: fd,
 			}
 			subnets = append(subnets, subnet)
 		}
@@ -209,8 +206,8 @@ func (s *ClusterScope) SubnetIsPublic(spec infrastructurev1beta2.OscSubnet) bool
 }
 
 func (s *ClusterScope) GetSubnetSubregion(spec infrastructurev1beta2.OscSubnet) infrastructurev1beta2.OscSubRegion {
-	if spec.SubregionName != "" {
-		return spec.SubregionName
+	if spec.Subregion != "" {
+		return spec.Subregion
 	}
 	return s.GetDefaultSubregion()
 }
@@ -253,8 +250,8 @@ func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
 			continue
 		}
 		nss = append(nss, infrastructurev1beta2.OscNatService{
-			SubregionName: s.GetSubnetSubregion(subnet),
-			SubnetName:    subnet.Name,
+			Subregion:  s.GetSubnetSubregion(subnet),
+			SubnetName: subnet.Name,
 		})
 	}
 	return nss
@@ -275,10 +272,10 @@ func (s *ClusterScope) GetNatService(name string, subregion infrastructurev1beta
 		return nats[0], nil
 	}
 	for _, spec := range nats {
-		if spec.SubregionName == "" {
-			spec.SubregionName = s.GetDefaultSubregion()
+		if spec.Subregion == "" {
+			spec.Subregion = s.GetDefaultSubregion()
 		}
-		if spec.SubregionName == subregion || subregion == "" {
+		if spec.Subregion == subregion || subregion == "" {
 			return spec, nil
 		}
 	}
@@ -291,8 +288,8 @@ func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta2.OscNatService
 		return nat.Name
 	}
 	name := "Nat service for " + s.OscCluster.Name
-	if nat.SubregionName != "" {
-		name += "/" + string(nat.SubregionName)
+	if nat.Subregion != "" {
+		name += "/" + string(nat.Subregion)
 	}
 	return name
 }
@@ -306,7 +303,7 @@ func (s *ClusterScope) GetNatServiceClientToken(nat infrastructurev1beta2.OscNat
 		}
 		return ct
 	}
-	return string(nat.SubregionName) + "-" + s.GetUID()
+	return string(nat.Subregion) + "-" + s.GetUID()
 }
 
 // GetRouteTables return the routeTables of the cluster
@@ -318,8 +315,8 @@ func (s *ClusterScope) GetRouteTables() []infrastructurev1beta2.OscRouteTable {
 	rtbls := make([]infrastructurev1beta2.OscRouteTable, 0, len(subnets))
 	for _, subnet := range subnets {
 		rtbl := infrastructurev1beta2.OscRouteTable{
-			Name:          s.GetSubnetName(subnet),
-			SubregionName: s.GetSubnetSubregion(subnet),
+			Name:      s.GetSubnetName(subnet),
+			Subregion: s.GetSubnetSubregion(subnet),
 		}
 		if subnet.Name != "" {
 			rtbl.Subnets = []string{subnet.Name}

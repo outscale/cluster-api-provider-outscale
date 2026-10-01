@@ -36,7 +36,7 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
 	case "nat":
-		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.SubregionName)
+		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.Subregion)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
@@ -94,7 +94,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 			names = []string{""}
 		}
 		for _, name := range names {
-			subnetSpec, err := clusterScope.GetSubnet(name, routeTableSpec.Role, routeTableSpec.SubregionName)
+			subnetSpec, err := clusterScope.GetSubnet(name, routeTableSpec.Role, routeTableSpec.Subregion)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("cannot find subnet with name %q role %q: %w", name, routeTableSpec.Role, err)
 			}
@@ -117,7 +117,7 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 				}
 				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
-				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.SubregionName)
+				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
 				fallthrough
 			case rtbl != nil && rtblForSubnet[subnetId] == nil:
 				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)

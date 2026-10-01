@@ -38,13 +38,12 @@ var (
 					},
 				},
 				Vm: infrastructurev1beta2.OscVm{
-					Name:          "test-vm",
-					ImageId:       "ami-00000000",
-					Role:          "controlplane",
-					KeypairName:   "rke",
-					SubregionName: "eu-west-2a",
-					SubnetName:    "test-subnet",
-					VmType:        "tinav3.c2r4p2",
+					Name:       "test-vm",
+					Role:       "controlplane",
+					Keypair:    "rke",
+					Subregions: []infrastructurev1beta2.OscSubRegion{"eu-west-2a"},
+					SubnetName: "test-subnet",
+					Type:       "tinav3.c2r4p2",
 					SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 						{
 							Name: "test-securitygroup",
@@ -64,7 +63,7 @@ var (
 		Template: infrastructurev1beta2.OscMachineTemplateResource{
 			Spec: infrastructurev1beta2.OscMachineSpec{
 				Vm: infrastructurev1beta2.OscVm{
-					VmType: "m4.2xlarge",
+					Type: "m4.2xlarge",
 				},
 			},
 		},

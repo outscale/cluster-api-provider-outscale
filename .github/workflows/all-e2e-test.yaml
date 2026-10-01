@@ -53,6 +53,7 @@ jobs:
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
         exclude_resource_types: access_key
+        clean_timeout: 10m
     - name: 👷 Deploy management cluster
       id: management
       uses: ./.github/actions/deploy_cluster
