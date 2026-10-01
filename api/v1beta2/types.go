@@ -474,10 +474,12 @@ type OscMachineResources struct {
 }
 
 type OscImage struct {
+	// The image ID.
+	ID string `json:"id,omitempty"`
 	// The image name.
 	Name string `json:"name,omitempty"`
 	// The image account owner ID.
-	AccountId string `json:"accountId,omitempty"`
+	AccountID string `json:"accountId,omitempty"`
 	// Use an "Outscale Opensource" image
 	OutscaleOpenSource bool `json:"outscaleOpenSource,omitempty"`
 }
@@ -542,15 +544,14 @@ type OscFGPU struct {
 }
 
 type OscVm struct {
-	Name    string `json:"name,omitempty"`
-	ImageId string `json:"imageId,omitempty"`
+	Name string `json:"name,omitempty"`
 	// The keypair name.
 	// +required
-	KeypairName string `json:"keypairName,omitempty"`
+	Keypair string `json:"keypair,omitempty"`
 	// The type of vm (tinav7.c4r8p1 by default)
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]|inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA)))$`
-	VmType string `json:"vmType,omitempty"`
+	Type string `json:"type,omitempty"`
 	// The subnet of the node (deprecated, use controlplane and/or worker roles on subnets)
 	// +optional
 	SubnetName string `json:"subnetName,omitempty"`
@@ -563,16 +564,13 @@ type OscVm struct {
 	// The fGPU configuration for this VM.
 	// +optional
 	FGPU *OscFGPU `json:"fGPU,omitempty"`
-	// The subregion where the machine needs to be placed (deprecated, use subregionNames).
-	// +optional
-	SubregionName OscSubRegion `json:"subregionName,omitempty"`
-	// The way nodes will be allocated in subregions (leastNodes or random; by default, leastNodes).
-	// +optional
-	SubregionMode SubregionMode `json:"subregionMode,omitempty"`
 	// The subregions where the machines needs to be placed. If empty, the subregions defined at cluster level will be used.
 	// +optional
-	SubregionNames []OscSubRegion        `json:"subregionNames,omitempty"`
-	PrivateIps     []OscPrivateIpElement `json:"privateIps,omitempty"`
+	Subregions []OscSubRegion `json:"subregions,omitempty"`
+	// The way nodes will be allocated in subregions (leastNodes or random; by default, leastNodes).
+	// +optional
+	SubregionMode SubregionMode         `json:"subregionMode,omitempty"`
+	PrivateIps    []OscPrivateIpElement `json:"privateIps,omitempty"`
 	// The list of security groups to use (deprecated, use controlplane and/or worker roles on security groups)
 	SecurityGroupNames []OscSecurityGroupElement `json:"securityGroupNames,omitempty"`
 	// The resource id of the vm (not set anymore)
@@ -596,10 +594,7 @@ func (vm *OscVm) GetRole() OscRole {
 }
 
 func (vm *OscVm) GetSubregions() []OscSubRegion {
-	if len(vm.SubregionNames) > 0 {
-		return vm.SubregionNames
-	}
-	return []OscSubRegion{vm.SubregionName}
+	return vm.Subregions
 }
 
 type OscPlacement struct {
@@ -680,8 +675,8 @@ var DefaultRootDisk = OscVolume{
 
 // SetDefaultValue set the vm default values
 func (vm *OscVm) SetDefaultValue() {
-	if vm.VmType == "" {
-		vm.VmType = DefaultVmType
+	if vm.Type == "" {
+		vm.Type = DefaultVmType
 	}
 }
 

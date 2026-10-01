@@ -47,6 +47,15 @@ func spokeSkipOscMachineUnused(in *infrastructurev1beta1.OscNode, c fuzz.Continu
 	in.Vm.ResourceId = ""
 	in.Vm.ClusterName = ""
 	in.Vm.Replica = 0
+
+	switch {
+	case len(in.Vm.SubregionNames) == 0:
+	case len(in.Vm.SubregionNames) == 1:
+		in.Vm.SubregionName = in.Vm.SubregionNames[0]
+		in.Vm.SubregionNames = nil
+	default:
+		in.Vm.SubregionName = ""
+	}
 }
 
 func hubSkipOscMachineUnused(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {

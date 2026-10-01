@@ -10,9 +10,10 @@ spec:
         name: test-cluster-api
         outscaleOpenSource: true
       vm:
-        keypairName: test-cluster-api
-        subregionName: eu-west-2a
-        vmType: invalid
+        keypair: test-cluster-api
+        subregions:
+         - eu-west-2a
+        type: invalid
       volumes:
         - root: true
           size: 10

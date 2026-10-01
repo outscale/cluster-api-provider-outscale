@@ -61,9 +61,10 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
-        vmType: "${OSC_VM_TYPE}"
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -81,9 +82,10 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
-        vmType: "${OSC_VM_TYPE}"
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -101,10 +103,11 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
         role: controlplane
-        vmType: "${OSC_VM_TYPE}"
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -122,11 +125,12 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
         role: controlplane
         loadBalancerName: "upgrade-k8s-again"
-        vmType: "${OSC_VM_TYPE}"
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}

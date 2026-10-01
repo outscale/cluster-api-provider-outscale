@@ -77,11 +77,11 @@ spec:
               controlPlane: true
           jsonPatches:
             - op: replace
-              path: /spec/template/spec/vm/vmType
+              path: /spec/template/spec/vm/type
               valueFrom:
                 variable: controlPlaneVmType
-            - op: replace
-              path: /spec/template/spec/vm/subregionName
+            - op: add
+              path: /spec/template/spec/vm/subregions
               valueFrom:
                 variable: subregionName
     - name: OscMachineTemplateControlWorker
@@ -95,11 +95,11 @@ spec:
                   - cluster-class-worker
           jsonPatches:
             - op: replace
-              path: /spec/template/spec/vm/vmType
+              path: /spec/template/spec/vm/type
               valueFrom:
                 variable: workerVmType
-            - op: replace
-              path: /spec/template/spec/vm/subregionName
+            - op: add
+              path: /spec/template/spec/vm/subregions
               valueFrom:
                 variable: subregionName
 ---
@@ -125,9 +125,9 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: "eu-west-2b"
-        vmType: "tinav9.c1r1p1"
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+        type: "tinav9.c1r1p1"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -145,10 +145,10 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        subregionName: "eu-west-2b"
-        keypairName: "${OSC_KEYPAIR_NAME}"
+        subregions:
+        keypair: "${OSC_KEYPAIR_NAME}"
         role: controlplane
-        vmType: "tinav9.c1r1p1"
+        type: "tinav9.c1r1p1"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}

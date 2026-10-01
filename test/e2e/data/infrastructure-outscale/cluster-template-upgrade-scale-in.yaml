@@ -64,9 +64,10 @@ spec:
         privateIps:
           - name: ${CLUSTER_NAME}-privateip-kw
             privateIp: "10.0.0.138"
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
-        vmType: "${OSC_VM_TYPE}"
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -84,12 +85,13 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
+        keypair: "${OSC_KEYPAIR_NAME}"
         privateIps:
           - name: ${CLUSTER_NAME}-privateip-kw-upgrade
             privateIp: "10.0.0.136"
-        subregionName: ${OSC_REGION}a
-        vmType: "${OSC_VM_TYPE}"
+        subregions:
+         - ${OSC_REGION}a
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -107,13 +109,14 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
         privateIps:
           - name: ${CLUSTER_NAME}-privateip-kcp
             privateIp: "10.0.0.38"
         role: controlplane
-        vmType: "${OSC_VM_TYPE}"
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -131,14 +134,15 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
       vm:
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_REGION}a
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
         privateIps:
           - name: ${CLUSTER_NAME}-privateip-kcp-upgrade
             privateIp: "10.0.0.36"
         role: controlplane
         loadBalancerName: "upgrade-k8s-again"
-        vmType: "${OSC_VM_TYPE}"
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
