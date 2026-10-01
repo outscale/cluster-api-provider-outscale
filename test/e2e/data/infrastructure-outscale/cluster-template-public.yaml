@@ -23,7 +23,8 @@ kind: OscCluster
 metadata:
   name: "${CLUSTER_NAME}"
 spec:
-  subregionName: ${OSC_SUBREGION_NAME}
+  subregions:
+   - ${OSC_SUBREGION_NAME}
   loadBalancer:
     name: "${CLUSTER_NAME}-k8s"
 ---
@@ -62,9 +63,10 @@ spec:
         outscaleOpenSource: true
       vm:
         publicIp: true
-        keypairName: "${OSC_KEYPAIR_NAME}"
-        subregionName: ${OSC_SUBREGION_NAME}
-        vmType: "${OSC_VM_TYPE}"
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}
@@ -82,10 +84,11 @@ spec:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
       vm:
-        subregionName: ${OSC_SUBREGION_NAME}
-        keypairName: "${OSC_KEYPAIR_NAME}"
+        keypair: "${OSC_KEYPAIR_NAME}"
+        subregions:
+         - ${OSC_REGION}a
         role: controlplane
-        vmType: "${OSC_VM_TYPE}"
+        type: "${OSC_VM_TYPE}"
       volumes:
         - root: true
           size: ${OSC_VOLUME_SIZE}

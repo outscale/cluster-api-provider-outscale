@@ -38,7 +38,7 @@ GOFLAGS=-mod=readonly
 export GOFLAGS
 MINIMUM_KUBEBUILDERTOOL_VERSION=1.30.3
 MINIMUM_ENVTEST_VERSION=1.30.3
-MINIMUM_CLUSTERCTL_VERSION=1.8.1
+CLUSTERCTL_VERSION ?= 1.10.10
 MIN_GO_VERSION=1.27
 MINIMUM_TILT_VERSION=0.25.3
 MINIMUM_PACKER_VERSION=1.8.1
@@ -250,8 +250,8 @@ KIND_IMG_TAG ?= $(shell date '+%Y%m%d%H%M')
 KIND_IMG ?= localhost:$(KIND_REGISTRY_PORT)/$(IMAGE_NAME):$(KIND_IMG_TAG)
 DEV_REF ?= $(shell git rev-parse HEAD)
 
-.PHONY: build-dev
-build-dev:
+.PHONY: build
+build:
 	goreleaser release --clean --snapshot
 
 .PHONY: push-dev
@@ -429,7 +429,7 @@ controller-gen: ## Download controller-gen
 LOCAL_CLUSTERCTL ?= $(shell pwd)/bin/clusterctl
 .PHONY: install-clusterctl
 install-clusterctl: ## Download clusterctl
-	GOPATH=$(GET_GOPATH) MINIMUM_CLUSTERCTL_VERSION=$(MINIMUM_CLUSTERCTL_VERSION) ./hack/ensure-clusterctl.sh
+	GOPATH=$(GET_GOPATH) CLUSTERCTL_VERSION=$(CLUSTERCTL_VERSION) ./hack/ensure-clusterctl.sh
 
 .PHONY: install-mdbook
 install-mdbook: ## Download mdbook

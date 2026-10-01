@@ -8,4 +8,5 @@ spec:
     loadbalancer: true
   loadBalancer:
     name: "name"
-  subregionName: eu-west-2a
+  subregions:
+   - eu-west-2a

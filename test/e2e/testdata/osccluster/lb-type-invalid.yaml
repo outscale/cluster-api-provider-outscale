@@ -7,4 +7,5 @@ spec:
   loadBalancer:
     name: test-cluster-api
     type: invalid
-  subregionName: eu-west-2a
+  subregions:
+   - eu-west-2a

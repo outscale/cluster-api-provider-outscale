@@ -54,7 +54,7 @@ func (s *Service) CreateVm(ctx context.Context,
 	machineScope *scope.MachineScope, spec *infrastructurev1beta2.OscVm, imageId, subnetId string, securityGroupIds []string, privateIps []string, vmName, vmClientToken string, tags map[string]string,
 	volumes []infrastructurev1beta2.OscVolume,
 ) (*osc.Vm, error) {
-	keypairName := spec.KeypairName
+	keypairName := spec.Keypair
 	switch {
 	case keypairName != "":
 	case machineScope.OscCluster.Spec.Keypair != nil:
@@ -62,7 +62,7 @@ func (s *Service) CreateVm(ctx context.Context,
 	default:
 		return nil, errors.New("no keypair is configured")
 	}
-	vmType := spec.VmType
+	vmType := spec.Type
 	bootstrapData, err := machineScope.GetBootstrapData(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode bootstrap data: %w", err)

@@ -6,4 +6,5 @@ metadata:
 spec:
   loadBalancer:
     name: "invalid@&name!"
-  subregionName: eu-west-2a
+  subregions:
+   - eu-west-2a

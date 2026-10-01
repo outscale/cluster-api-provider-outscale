@@ -1,6 +1,7 @@
 package e2e //nolint:testpackage
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -42,15 +43,29 @@ func doTests(tts []ttc) {
 		if tt.update != nil {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-			ginkgo.By("** reload")
-			// reloading, it might have been modified
-			err = bootstrapClusterProxy.GetClient().Get(ctx, client.ObjectKey{Namespace: doc.GetNamespace(), Name: doc.GetName()}, doc)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			ginkgo.By("** update")
-			err = tt.update(doc)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			err = bootstrapClusterProxy.GetClient().Update(ctx, doc, tt.updateOptions...)
+			var cerr error
+			// reload and update
+			// retry if the api server returns a conflict
+			gomega.Eventually(func() bool {
+				ginkgo.By("** reload")
+				// reloading, it might have been modified
+				cerr = bootstrapClusterProxy.GetClient().Get(ctx, client.ObjectKey{Namespace: doc.GetNamespace(), Name: doc.GetName()}, doc)
+				if cerr != nil {
+					return false
+				}
+				ginkgo.By("** update")
+				cerr = tt.update(doc)
+				if cerr != nil {
+					return true
+				}
+				err = bootstrapClusterProxy.GetClient().Update(ctx, doc, tt.updateOptions...)
+				if err, ok := errors.AsType[*apierrors.StatusError](err); ok {
+					ginkgo.By("  -> " + string(err.ErrStatus.Reason) + "/" + err.ErrStatus.Message)
+					return err.ErrStatus.Reason != metav1.StatusReasonConflict
+				}
+				return true
+			}, "5m", "10s").To(gomega.BeTrue())
+			gomega.Expect(cerr).NotTo(gomega.HaveOccurred())
 		}
 		if tt.valid {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())

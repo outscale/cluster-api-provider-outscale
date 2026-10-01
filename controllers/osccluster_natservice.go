@@ -53,7 +53,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(natServiceSpec.SubnetName, infrastructurev1beta2.RoleNat, natServiceSpec.SubregionName)
+		subnetSpec, err := clusterScope.GetSubnet(natServiceSpec.SubnetName, infrastructurev1beta2.RoleNat, natServiceSpec.Subregion)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}
@@ -70,7 +70,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 		}
 		log.V(2).Info("Created natService", "natServiceId", natService.NatServiceId)
 		r.Tracker.setNatServiceId(clusterScope, natServiceSpec, natService.NatServiceId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created %s", natServiceSpec.SubregionName)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created %s", natServiceSpec.Subregion)
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNatService)
 	return reconcile.Result{}, nil

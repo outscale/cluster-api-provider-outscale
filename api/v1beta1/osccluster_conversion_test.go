@@ -54,6 +54,7 @@ func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.
 	in.Network.ExtraSecurityGroupRule = false
 	in.Network.PublicIps = nil
 	in.Network.Image = infrastructurev1beta1.OscImage{}
+	in.Network.SubregionName = ""
 
 	in.Network.NatServices = in.Network.NatServices[:0]
 	for _, subnet := range in.Network.Subnets {

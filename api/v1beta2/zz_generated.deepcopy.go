@@ -1226,8 +1226,8 @@ func (in *OscVm) DeepCopyInto(out *OscVm) {
 		*out = new(OscFGPU)
 		**out = **in
 	}
-	if in.SubregionNames != nil {
-		in, out := &in.SubregionNames, &out.SubregionNames
+	if in.Subregions != nil {
+		in, out := &in.Subregions, &out.Subregions
 		*out = make([]OscSubRegion, len(*in))
 		copy(*out, *in)
 	}

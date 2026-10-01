@@ -13,7 +13,7 @@ import (
 )
 
 func TestValidateSubregion(t *testing.T) {
-	var tcs = []struct {
+	tcs := []struct {
 		subregion string
 		valid     bool
 	}{
@@ -44,7 +44,7 @@ func TestValidateSubregion(t *testing.T) {
 }
 
 func TestValidateVmType(t *testing.T) {
-	var tcs = []struct {
+	tcs := []struct {
 		vmType string
 		valid  bool
 	}{

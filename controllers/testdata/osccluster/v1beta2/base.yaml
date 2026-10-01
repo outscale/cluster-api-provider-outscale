@@ -18,4 +18,5 @@ metadata:
 spec:
   loadBalancer:
     name: test-cluster-api-k8s
-  subregionName: eu-west-2a
+  subregions:
+   - eu-west-2a

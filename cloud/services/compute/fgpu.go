@@ -27,7 +27,7 @@ func (s *Service) AllocateFGPU(ctx context.Context, model, az string, machineSco
 		SubregionName:      az,
 		DeleteOnVmDeletion: new(true),
 	}
-	if after, ok := strings.CutPrefix(machineScope.GetVm().VmType, "tina"); ok {
+	if after, ok := strings.CutPrefix(machineScope.GetVm().Type, "tina"); ok {
 		gen, _, _ := strings.Cut(after, ".")
 		req.Generation = &gen
 	}

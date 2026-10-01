@@ -29,24 +29,24 @@ verify_clusterctl_version() {
 
   local clusterctl_version
   clusterctl_version="$(${BIN_ROOT}/clusterctl version -o short | sed 's/v//')"
-  if [[ "${MINIMUM_CLUSTERCTL_VERSION}" != $(echo -e "${MINIMUM_CLUSTERCTL_VERSION}\n${clusterctl_version}" | sort -s -t. -k 1,1n -k 2,2n -k 3,3n | head -n1) ]]; then
+  if [[ "${CLUSTERCTL_VERSION}" != $(echo -e "${CLUSTERCTL_VERSION}\n${clusterctl_version}" | sort -s -t. -k 1,1n -k 2,2n -k 3,3n | head -n1) ]]; then
     cat <<EOF
 Detected clusterctl version: v${clusterctl_version}.
-Install v${MINIMUM_CLUSTERCTL_VERSION} of clusterctl.
+Install v${CLUSTERCTL_VERSION} of clusterctl.
 EOF
 
     echo 'Installing Clusterctl' && install_clusterctl
   else
     cat <<EOF
 Detected clusterctl version: v${clusterctl_version}.
-Clusterctl v${MINIMUM_CLUSTERCTL_VERSION} is already installed.
+Clusterctl v${CLUSTERCTL_VERSION} is already installed.
 EOF
   fi
 }
 
 install_clusterctl() {
     if [[ "${OSTYPE}" == "linux"* || "${OSTYPE}" == "darwin"* ]]; then
-      curl -sLo "clusterctl" "https://github.com/kubernetes-sigs/cluster-api/releases/download/v${MINIMUM_CLUSTERCTL_VERSION}/clusterctl-linux-amd64"
+      curl -sLo "clusterctl" "https://github.com/kubernetes-sigs/cluster-api/releases/download/v${CLUSTERCTL_VERSION}/clusterctl-linux-amd64"
       copy_binary
     else
       set +x

@@ -1339,7 +1339,7 @@ spec:
                               items:
                                 type: string
                               type: array
-                            subregionName:
+                            subregion:
                               description: The subregion for this route table
                               maxLength: 25
                               pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
@@ -1446,7 +1446,7 @@ spec:
                                 type: string
                               minItems: 1
                               type: array
-                            subregionName:
+                            subregion:
                               description: The subregion name of the Subnet
                               maxLength: 25
                               pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
@@ -1456,17 +1456,13 @@ spec:
                           type: object
                         maxItems: 20
                         type: array
-                      subregionName:
-                        description: The default subregion name (deprecated, use subregions)
-                        maxLength: 25
-                        pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
-                        type: string
                       subregions:
                         description: The list of subregions where to deploy this cluster
                         items:
                           maxLength: 25
                           pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
                           type: string
+                        maxItems: 5
                         type: array
                       useExisting:
                         description: Reuse externally managed resources ?

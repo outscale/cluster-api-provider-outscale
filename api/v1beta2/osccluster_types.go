@@ -69,9 +69,8 @@ type OscClusterSpec struct {
 	// The bastion configuration
 	// + optional
 	Bastion OscBastion `json:"bastion,omitempty,omitzero"`
-	// The default subregion name (deprecated, use subregions)
-	SubregionName OscSubRegion `json:"subregionName,omitempty"`
 	// The list of subregions where to deploy this cluster
+	// +kubebuilder:validation:MaxItems=5
 	Subregions []OscSubRegion `json:"subregions,omitempty"`
 	// The list of IP ranges (in CIDR notation) to restrict bastion/Kubernetes API access to.
 	// + optional

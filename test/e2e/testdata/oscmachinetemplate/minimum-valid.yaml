@@ -9,4 +9,4 @@ spec:
       image:
         name: test-cluster-api
       vm:
-        keypairName: test-cluster-api
+        keypair: test-cluster-api
