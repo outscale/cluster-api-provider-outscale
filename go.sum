@@ -231,6 +231,8 @@ github.com/outscale/goutils/k8s v0.0.5 h1:8VLTygaiFFB7tF28VgLEbOgesHUySPZbVRzSon
 github.com/outscale/goutils/k8s v0.0.5/go.mod h1:HJKrhGgm1B7nrlUkkLAEzbRBEiE4DGoBFiADsw26uy8=
 github.com/outscale/goutils/sdk v0.0.9 h1:WIkd4ysSNol7EuLWhrimzK1GdKexLjyMCGjGeS4Yk7w=
 github.com/outscale/goutils/sdk v0.0.9/go.mod h1:bvrdXcIR9M+cjNaBLBDd3nUFToHJ2Vsh9ped8u1Ch3s=
+github.com/outscale/goutils/sdk v0.0.10 h1:ArjTK5Vd7iVCWTi3hwhsf4ZmZDt6fPqZh5fJjzlj6jA=
+github.com/outscale/goutils/sdk v0.0.10/go.mod h1:uyfyUiH7egPoczxPkGQZyH7xSakGBMo9qjSviifxhpk=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5 h1:XP6smAeoacHJT/mTeNBMc9Y2Dqvw0fSgLOyazQN6gIY=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5/go.mod h1:wtvvgi27yvHluLy4X575C1wQQORNpi8FTYcxxvCPi7M=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
