@@ -67,7 +67,7 @@ func (m *MachineTemplateScope) PatchObject(ctx context.Context) error {
 }
 
 func (m *MachineTemplateScope) GetVmType() string {
-	return m.OscMachineTemplate.Spec.Template.Spec.Vm.VmType
+	return m.OscMachineTemplate.Spec.Template.Spec.Vm.Type
 }
 
 func (m *MachineTemplateScope) GetRole() infrastructurev1beta2.OscRole {

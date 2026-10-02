@@ -10,9 +10,11 @@ spec:
         name: test-cluster-api
         outscaleOpenSource: true
       vm:
-        keypairName: test-cluster-api
-        subregionName: invalid
-        vmType: tinav7.c2r4p2
+        keypair: test-cluster-api
+        subregions:
+         - eu-west-2a
+         - invalid
+        type: tinav7.c2r4p2
       volumes:
         - root: true
           size: 10

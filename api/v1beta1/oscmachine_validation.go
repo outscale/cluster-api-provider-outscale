@@ -45,7 +45,8 @@ func ValidateOscMachineSpec(spec OscMachineSpec) field.ErrorList {
 
 func ValidateVolume(path *field.Path, spec OscVolume) field.ErrorList {
 	var allErrs field.ErrorList
-	return AppendValidation(allErrs,
+	return AppendValidation(
+		allErrs,
 		ValidateDeviceName(path.Child("device"), spec.Device),
 		ValidateIops(path.Child("iops"), spec.Iops, spec.Size),
 		ValidateSize(path.Child("size"), spec.Size),

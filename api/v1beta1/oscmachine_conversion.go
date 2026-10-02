@@ -15,16 +15,14 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 		ProviderID: src.ProviderID,
 
 		Vm: infrastructurev1beta2.OscVm{
-			Name:           srcNode.Vm.Name,
-			ImageId:        srcNode.Vm.ImageId,
-			KeypairName:    srcNode.Vm.KeypairName,
-			VmType:         srcNode.Vm.VmType,
-			SubnetName:     srcNode.Vm.SubnetName,
-			PublicIp:       srcNode.Vm.PublicIp,
-			PublicIpPool:   srcNode.Vm.PublicIpPool,
-			SubregionName:  infrastructurev1beta2.OscSubRegion(srcNode.Vm.SubregionName),
-			SubregionMode:  infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
-			SubregionNames: lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
+			Name:          srcNode.Vm.Name,
+			Keypair:       srcNode.Vm.KeypairName,
+			Type:          srcNode.Vm.VmType,
+			SubnetName:    srcNode.Vm.SubnetName,
+			PublicIp:      srcNode.Vm.PublicIp,
+			PublicIpPool:  srcNode.Vm.PublicIpPool,
+			Subregions:    lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
+			SubregionMode: infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
 			SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
 				return infrastructurev1beta2.OscSecurityGroupElement(src)
 			}),
@@ -33,10 +31,14 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 			Placement: infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
 		},
 		Image: infrastructurev1beta2.OscImage{
+			ID:                 srcNode.Vm.ImageId,
 			Name:               srcNode.Image.Name,
-			AccountId:          srcNode.Image.AccountId,
+			AccountID:          srcNode.Image.AccountId,
 			OutscaleOpenSource: srcNode.Image.OutscaleOpenSource,
 		},
+	}
+	if len(srcNode.Vm.SubregionNames) == 0 && srcNode.Vm.SubregionName != "" {
+		dst.Vm.Subregions = []infrastructurev1beta2.OscSubRegion{infrastructurev1beta2.OscSubRegion(srcNode.Vm.SubregionName)}
 	}
 	vols := make([]infrastructurev1beta2.OscVolume, 0, len(srcNode.Volumes)+1)
 	if !cmp.Equal(srcNode.Vm.RootDisk, OscRootDisk{}) {
@@ -78,16 +80,14 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 		ProviderID: src.ProviderID,
 		Node: OscNode{
 			Vm: OscVm{
-				Name:           src.Vm.Name,
-				ImageId:        src.Vm.ImageId,
-				KeypairName:    src.Vm.KeypairName,
-				VmType:         src.Vm.VmType,
-				SubnetName:     src.Vm.SubnetName,
-				PublicIp:       src.Vm.PublicIp,
-				PublicIpPool:   src.Vm.PublicIpPool,
-				SubregionName:  string(src.Vm.SubregionName),
-				SubregionMode:  SubregionMode(src.Vm.SubregionMode),
-				SubregionNames: lo.Map(src.Vm.SubregionNames, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) }),
+				Name:          src.Vm.Name,
+				ImageId:       src.Image.ID,
+				KeypairName:   src.Vm.Keypair,
+				VmType:        src.Vm.Type,
+				SubnetName:    src.Vm.SubnetName,
+				PublicIp:      src.Vm.PublicIp,
+				PublicIpPool:  src.Vm.PublicIpPool,
+				SubregionMode: SubregionMode(src.Vm.SubregionMode),
 				SecurityGroupNames: lo.Map(src.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
 					return OscSecurityGroupElement(src)
 				}),
@@ -110,10 +110,15 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 			}),
 			Image: OscImage{
 				Name:               src.Image.Name,
-				AccountId:          src.Image.AccountId,
+				AccountId:          src.Image.AccountID,
 				OutscaleOpenSource: src.Image.OutscaleOpenSource,
 			},
 		},
+	}
+	if len(src.Vm.Subregions) == 1 {
+		dst.Node.Vm.SubregionName = string(src.Vm.Subregions[0])
+	} else {
+		dst.Node.Vm.SubregionNames = lo.Map(src.Vm.Subregions, func(s infrastructurev1beta2.OscSubRegion, _ int) string { return string(s) })
 	}
 	if root, found := lo.Find(src.Volumes, infrastructurev1beta2.IsRootVolume); found {
 		dst.Node.Vm.RootDisk = OscRootDisk{

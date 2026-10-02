@@ -13,7 +13,7 @@ spec:
     clusterName: test-cluster-api
     keypairName: cluster-api
     subregionName: eu-west-2a
-    vmType: tinav6.c4r8p2
+    type: tinav6.c4r8p2
   volumes:
     - name: root
       root: true
