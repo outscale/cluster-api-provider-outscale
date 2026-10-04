@@ -170,7 +170,7 @@ spec:
           name: "{{ ds.meta_data.local_hostname }}"
           kubeletExtraArgs:
             cloud-provider: external
-            provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+            provider-id: osc:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlaneTemplate
@@ -188,10 +188,10 @@ spec:
             name: "{{ ds.meta_data.local_hostname }}"
             kubeletExtraArgs:
               cloud-provider: external
-              provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+              provider-id: osc:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
         joinConfiguration:
           nodeRegistration:
             name: "{{ ds.meta_data.local_hostname }}"
             kubeletExtraArgs:
               cloud-provider: external
-              provider-id: aws:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'
+              provider-id: osc:///'{{ ds.meta_data.placement.availability_zone }}'/'{{ ds.meta_data.instance_id }}'

@@ -8,9 +8,10 @@ package scope
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
+
+	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 )
 
 // Copied from https://github.com/kubernetes-sigs/cluster-api/blob/bda002f52575eeaff68da1ba33c8ef27d5b1014c/controllers/noderefutil/providerid.go
@@ -115,13 +116,16 @@ func (p *ProviderID) IndexKey() string {
 	return p.String()
 }
 
-// ProviderIDPrefix is the prefix of AWS resource IDs to form the Kubernetes Provider ID.
-// NOTE: this format matches the 2 slashes format used in cloud-provider and cluster-autoscaler.
-const ProviderIDPrefix = "aws://"
-
 // GenerateProviderID generates a valid AWS Node/Machine ProviderID field.
 //
 // By default, the last id provided is used as identifier (last part).
-func GenerateProviderID(ids ...string) string {
-	return fmt.Sprintf("%s/%s", ProviderIDPrefix, strings.Join(ids, "/"))
+func GenerateProviderID(scheme infrastructurev1beta2.ProviderIDScheme, ids ...string) string {
+	if scheme == "" {
+		scheme = infrastructurev1beta2.SchemeOutscale
+	}
+	sb := strings.Builder{}
+	sb.WriteString(string(scheme))
+	sb.WriteString(":///")
+	sb.WriteString(strings.Join(ids, "/"))
+	return sb.String()
 }
