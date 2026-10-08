@@ -28,6 +28,7 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 
 		hubSkipOscMachineUnused,
 		hubSingleRootVolume,
+		hubProviderIDScheme,
 	}
 }
 
@@ -74,6 +75,15 @@ func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Contin
 				in.Volumes[i].Name = ""
 			}
 		}
+	}
+}
+
+func hubProviderIDScheme(in *infrastructurev1beta2.ProviderIDScheme, c fuzz.Continue) {
+	switch c.Intn(2) {
+	case 0:
+		*in = infrastructurev1beta2.SchemeAWS
+	default:
+		*in = infrastructurev1beta2.SchemeOutscale
 	}
 }
 
