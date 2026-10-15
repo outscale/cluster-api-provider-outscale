@@ -147,6 +147,7 @@ type OscLoadBalancerHealthCheck struct {
 	UnhealthyThreshold int32 `json:"unhealthythreshold,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="!has(self.subnets) || !has(self.ipRange) || self.subnets.all(s, !has(s.ipRange) || cidr(self.ipRange).containsCIDR(cidr(s.ipRange)))",message="subnets.ipRange must belong to ipRange"
 type OscNet struct {
 	// the network name
 	// +optional
@@ -159,6 +160,10 @@ type OscNet struct {
 	// The Id of the Net to reuse (if useExisting.net is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+	// The Subnets configuration for this net
+	// +optional
+	// +kubebuilder:validation:MaxItems=20
+	Subnets []OscSubnet `json:"subnets,omitempty"`
 }
 
 func (n OscNet) IsZero() bool {
@@ -228,6 +233,13 @@ type OscSubnet struct {
 	// The id of the Subnet to reuse (if useExisting.net is set)
 	// +optional
 	ResourceId string `json:"resourceId,omitempty"`
+}
+
+func (sn *OscSubnet) HasRole(role OscRole) bool {
+	if len(sn.Roles) > 0 {
+		return slices.Contains(sn.Roles, role)
+	}
+	return role == RoleWorker
 }
 
 type OscRouteTable struct {

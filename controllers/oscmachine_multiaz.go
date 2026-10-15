@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"slices"
 	"sync"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
@@ -59,17 +60,46 @@ func (a *MultiAZAllocator) name(m *infrastructurev1beta2.OscMachine) types.Names
 	}
 }
 
-func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, mode infrastructurev1beta2.SubregionMode, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, error) {
+func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, mode infrastructurev1beta2.SubregionMode, role infrastructurev1beta2.OscRole, nets []infrastructurev1beta2.OscNet, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscNet, infrastructurev1beta2.OscSubnet, infrastructurev1beta2.OscSubRegion, error) {
+	var az infrastructurev1beta2.OscSubRegion
+	var err error
 	switch {
 	case len(azs) == 0:
-		return "", errors.New("no subregions configured")
+		err = errors.New("no subregions configured")
 	case len(azs) == 1:
-		return azs[0], nil
+		az = azs[0]
 	case mode == infrastructurev1beta2.SubregionModeRandom:
-		return a.allocateRandomAZ(ctx, m, azs)
+		az, err = a.allocateRandomAZ(ctx, m, azs)
 	default:
-		return a.allocateLeastNodeAZ(ctx, m, azs)
+		az, err = a.allocateLeastNodeAZ(ctx, m, azs)
 	}
+	if err != nil {
+		return infrastructurev1beta2.OscNet{}, infrastructurev1beta2.OscSubnet{}, "", err
+	}
+	possibles := lo.FilterMap(nets, func(n infrastructurev1beta2.OscNet, i int) (int, bool) {
+		if slices.ContainsFunc(n.Subnets, func(sn infrastructurev1beta2.OscSubnet) bool {
+			return sn.Subregion == az && sn.HasRole(role)
+		}) {
+			return i, true
+		}
+		return -1, false
+	})
+	var n infrastructurev1beta2.OscNet
+	switch len(possibles) {
+	case 0:
+		return infrastructurev1beta2.OscNet{}, infrastructurev1beta2.OscSubnet{}, "", errors.New("no net found")
+	case 1:
+		n = nets[possibles[0]]
+	default:
+		n = nets[possibles[RandIntN(len(possibles))]]
+	}
+	sn, found := lo.Find(n.Subnets, func(sn infrastructurev1beta2.OscSubnet) bool {
+		return sn.Subregion == az && sn.HasRole(role)
+	})
+	if !found {
+		return infrastructurev1beta2.OscNet{}, infrastructurev1beta2.OscSubnet{}, "", errors.New("no subnet found")
+	}
+	return n, sn, az, nil
 }
 
 func (a *MultiAZAllocator) allocateRandomAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubRegion, error) {

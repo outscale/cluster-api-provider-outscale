@@ -2,7 +2,6 @@ package v1beta1
 
 import (
 	"errors"
-	"slices"
 	"strings"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
@@ -57,7 +56,7 @@ func ConvertFlowFrom(src infrastructurev1beta2.Flow) string {
 
 func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) error {
 	if len(src.Network.NatServices) > lo.CountBy(src.Network.Subnets, func(sn OscSubnet) bool {
-		return slices.Contains(sn.Roles, RoleNat)
+		return sn.HasRole(RoleNat)
 	}) {
 		return errors.New(`there are fewer subnets with a "nat" role than NAT services`)
 	}
@@ -89,11 +88,6 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 				UnhealthyThreshold: srcNet.LoadBalancer.HealthCheck.UnhealthyThreshold,
 			},
 		},
-		Net: infrastructurev1beta2.OscNet{
-			Description: srcNet.Net.Name,
-			IpRange:     srcNet.Net.IpRange,
-			ResourceId:  srcNet.Net.ResourceId,
-		},
 		NetPeering: infrastructurev1beta2.OscNetPeering{
 			Enable:                srcNet.NetPeering.Enable,
 			ManagementCredentials: infrastructurev1beta2.OscCredentials(srcNet.NetPeering.ManagementCredentials),
@@ -103,18 +97,6 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 		},
 		NetAccessPoints: lo.Map(srcNet.NetAccessPoints, func(src OscNetAccessPointService, _ int) infrastructurev1beta2.OscNetAccessPointService {
 			return infrastructurev1beta2.OscNetAccessPointService(src)
-		}),
-		ControlPlaneSubnets: srcNet.ControlPlaneSubnets,
-		Subnets: lo.Map(srcNet.Subnets, func(src OscSubnet, _ int) infrastructurev1beta2.OscSubnet {
-			return infrastructurev1beta2.OscSubnet{
-				Description: src.Name,
-				Roles: lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole {
-					return infrastructurev1beta2.OscRole(src)
-				}),
-				IpRange:    src.IpSubnetRange,
-				Subregion:  infrastructurev1beta2.OscSubRegion(src.SubregionName),
-				ResourceId: src.ResourceId,
-			}
 		}),
 		InternetService: infrastructurev1beta2.OscInternetService{
 			Description: srcNet.InternetService.Name,
@@ -185,6 +167,24 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			}
 		}),
 	}
+	if !srcNet.Net.IsZero() || len(srcNet.Subnets) > 0 {
+		dst.Nets = []infrastructurev1beta2.OscNet{{
+			Description: srcNet.Net.Name,
+			IpRange:     srcNet.Net.IpRange,
+			ResourceId:  srcNet.Net.ResourceId,
+			Subnets: lo.Map(srcNet.Subnets, func(src OscSubnet, _ int) infrastructurev1beta2.OscSubnet {
+				return infrastructurev1beta2.OscSubnet{
+					Description: src.Name,
+					Roles: lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole {
+						return infrastructurev1beta2.OscRole(src)
+					}),
+					IpRange:    src.IpSubnetRange,
+					Subregion:  infrastructurev1beta2.OscSubRegion(src.SubregionName),
+					ResourceId: src.ResourceId,
+				}
+			}),
+		}}
+	}
 	if len(srcNet.Subregions) == 0 && srcNet.SubregionName != "" {
 		dst.Subregions = []infrastructurev1beta2.OscSubRegion{infrastructurev1beta2.OscSubRegion(srcNet.SubregionName)}
 	}
@@ -192,7 +192,14 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 }
 
 func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec) error {
+	if len(src.Nets) > 1 {
+		return errors.New("clusters with 2+ nets cannot be converted to v1beta1")
+	}
 	var err error
+	var srcNet infrastructurev1beta2.OscNet
+	if len(src.Nets) > 0 {
+		srcNet = src.Nets[0]
+	}
 	dst.ControlPlaneEndpoint = src.ControlPlaneEndpoint
 	dst.Credentials = OscCredentials(src.Credentials)
 	dst.Network = OscNetwork{
@@ -216,9 +223,9 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			},
 		},
 		Net: OscNet{
-			Name:       src.Net.Description,
-			IpRange:    src.Net.IpRange,
-			ResourceId: src.Net.ResourceId,
+			Name:       srcNet.Description,
+			IpRange:    srcNet.IpRange,
+			ResourceId: srcNet.ResourceId,
 		},
 		NetPeering: OscNetPeering{
 			Enable:                src.NetPeering.Enable,
@@ -230,8 +237,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 		NetAccessPoints: lo.Map(src.NetAccessPoints, func(src infrastructurev1beta2.OscNetAccessPointService, _ int) OscNetAccessPointService {
 			return OscNetAccessPointService(src)
 		}),
-		ControlPlaneSubnets: src.ControlPlaneSubnets,
-		Subnets: lo.Map(src.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) OscSubnet {
+		Subnets: lo.Map(srcNet.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) OscSubnet {
 			return OscSubnet{
 				Name: src.Description,
 				Roles: lo.Map(src.Roles, func(src infrastructurev1beta2.OscRole, _ int) OscRole {
@@ -245,8 +251,8 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 		InternetService: OscInternetService{
 			Name: src.InternetService.Description,
 		},
-		NatServices: lo.FilterMap(src.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) (OscNatService, bool) {
-			if !slices.Contains(src.Roles, infrastructurev1beta2.RoleNat) {
+		NatServices: lo.FilterMap(srcNet.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) (OscNatService, bool) {
+			if !src.HasRole(infrastructurev1beta2.RoleNat) {
 				return OscNatService{}, false
 			}
 			return OscNatService{
@@ -336,18 +342,89 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 	return err
 }
 
-func (src *OscCluster) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*infrastructurev1beta2.OscCluster)
-	dst.ObjectMeta = src.ObjectMeta
+func (src *OscCluster) ConvertStatusTo(dst *infrastructurev1beta2.OscCluster) error {
 	dst.Status = infrastructurev1beta2.OscClusterStatus{
-		Ready:     src.Status.Ready,
-		Resources: infrastructurev1beta2.OscClusterResources(src.Status.Resources),
+		Ready: src.Status.Ready,
 		ReconcilerGeneration: lo.MapEntries(src.Status.ReconcilerGeneration, func(k Reconciler, v int64) (infrastructurev1beta2.Reconciler, int64) {
 			return infrastructurev1beta2.Reconciler(k), v
 		}),
 		FailureDomains: src.Status.FailureDomains,
 		Conditions:     src.Status.Conditions,
 		VmState:        src.Status.VmState,
+	}
+	ipRange := src.Spec.Network.Net.IpRange
+	if ipRange == "" {
+		ipRange = DefaultNet.IpRange
+	}
+	srcRsrcs := src.Status.Resources
+	dst.Status.LegacyResources = new(infrastructurev1beta2.OscClusterResources(srcRsrcs))
+	dstRsrcs := &dst.Status.Resources
+	dstRsrcs.Bastion = srcRsrcs.Bastion
+	dstRsrcs.NetPeering = srcRsrcs.NetPeering
+	dstRsrcs.Subnet = srcRsrcs.Subnet
+	dstRsrcs.NetAccessPoint = srcRsrcs.NetAccessPoint
+	dstRsrcs.SecurityGroup = srcRsrcs.SecurityGroup
+
+	if srcRsrcs.Net != nil && srcRsrcs.Net[DefaultResourceKey] != "" {
+		dstRsrcs.Net = map[string]string{
+			ipRange: srcRsrcs.Net[DefaultResourceKey],
+		}
+	}
+	if srcRsrcs.InternetService != nil && srcRsrcs.InternetService[DefaultResourceKey] != "" {
+		dstRsrcs.InternetService = map[string]string{
+			ipRange: srcRsrcs.InternetService[DefaultResourceKey],
+		}
+	}
+	mapNATServiceKey := map[string]string{}
+	if srcRsrcs.NatService != nil {
+		dstRsrcs.NatService = make(map[string]string, len(srcRsrcs.NatService))
+		// Note: natservices are retracked only if the subnet are defined in the spec and not autogenerated
+		for k, v := range srcRsrcs.NatService {
+			// src have a <subregion>-<cluster ID> key
+			// dst have a <subnet id> key
+			sn, found := lo.Find(src.Spec.Network.Subnets, func(sn OscSubnet) bool {
+				return sn.HasRole(RoleNat) && strings.HasPrefix(k, string(sn.SubregionName))
+			})
+			if found {
+				nv := srcRsrcs.Subnet[sn.IpSubnetRange]
+				mapNATServiceKey[k] = nv
+				dstRsrcs.NatService[nv] = v
+			}
+		}
+	}
+	if srcRsrcs.PublicIPs != nil {
+		dstRsrcs.PublicIPs = make(map[string]string, len(srcRsrcs.PublicIPs))
+		for k, v := range srcRsrcs.PublicIPs {
+			if nk, found := mapNATServiceKey[k]; found {
+				dstRsrcs.PublicIPs[nk+"/nat"] = v
+			}
+		}
+	}
+	return nil
+}
+
+func (dst *OscCluster) ConvertStatusFrom(src *infrastructurev1beta2.OscCluster) error {
+	dst.Status = OscClusterStatus{
+		Ready: src.Status.Ready,
+		ReconcilerGeneration: lo.MapEntries(src.Status.ReconcilerGeneration, func(k infrastructurev1beta2.Reconciler, v int64) (Reconciler, int64) {
+			return Reconciler(k), v
+		}),
+		FailureDomains: src.Status.FailureDomains,
+		Conditions:     src.Status.Conditions,
+		VmState:        src.Status.VmState,
+	}
+
+	if src.Status.LegacyResources != nil {
+		dst.Status.Resources = OscClusterResources(*src.Status.LegacyResources)
+	}
+	return nil
+}
+
+func (src *OscCluster) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*infrastructurev1beta2.OscCluster)
+	dst.ObjectMeta = src.ObjectMeta
+	if err := src.ConvertStatusTo(dst); err != nil {
+		return err
 	}
 	if err := src.Spec.ConvertTo(&dst.Spec); err != nil {
 		return err
@@ -357,21 +434,15 @@ func (src *OscCluster) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 	dst.Spec.Keypair = restored.Spec.Keypair
+	dst.Status.Resources = restored.Status.Resources
 	return nil
 }
 
 func (dst *OscCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*infrastructurev1beta2.OscCluster)
 	dst.ObjectMeta = src.ObjectMeta
-	dst.Status = OscClusterStatus{
-		Ready:     src.Status.Ready,
-		Resources: OscClusterResources(src.Status.Resources),
-		ReconcilerGeneration: lo.MapEntries(src.Status.ReconcilerGeneration, func(k infrastructurev1beta2.Reconciler, v int64) (Reconciler, int64) {
-			return Reconciler(k), v
-		}),
-		FailureDomains: src.Status.FailureDomains,
-		Conditions:     src.Status.Conditions,
-		VmState:        src.Status.VmState,
+	if err := dst.ConvertStatusFrom(src); err != nil {
+		return err
 	}
 	if err := dst.Spec.ConvertFrom(&src.Spec); err != nil {
 		return err

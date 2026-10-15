@@ -53,19 +53,18 @@ status:
       type: VmReady
   resources:
     net:
-      default: "vpc-foo"
+      "10.0.0.0/16": "vpc-foo"
     subnet:
       "10.0.2.0/24": "subnet-public"
       "10.0.3.0/24": "subnet-kw"
       "10.0.4.0/24": "subnet-kcp"
     internetService:
-      default: "igw-foo"
+      "10.0.0.0/16": "igw-foo"
     securityGroup:
       "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kcp"
       "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kw"
       "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-lb"
       "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-node"
-      "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-bastion"
     natService:
       "subnet-public": "nat-foo"
     publicIps:

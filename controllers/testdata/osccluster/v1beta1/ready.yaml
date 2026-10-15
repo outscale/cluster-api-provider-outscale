@@ -72,7 +72,6 @@ status:
       "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kw"
       "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-lb"
       "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-node"
-      "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-bastion"
     natService:
       "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo"
     publicIps:
