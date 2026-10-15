@@ -27,10 +27,12 @@ func OscClusterFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 		spokeSkipOscClusterStatus,
 		spokeSkipOscClusterUnused,
 		hubSkipOscClusterUnused,
+		spokeSkipOscLoadBalancerUnused,
 		spokeSkipOscBastionUnused,
 		hubSkipOscBastionUnused,
 		hubSkipOscVolumeUnused,
 		spokeSkipOscRouteTableUnused,
+		spokeSkipOscRouteUnused,
 		spokeSetRule,
 		hubSetRule,
 		hubSetPort,
@@ -62,7 +64,6 @@ func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.
 			continue
 		}
 		in.Network.NatServices = append(in.Network.NatServices, infrastructurev1beta1.OscNatService{
-			SubnetName:    subnet.Name,
 			SubregionName: subnet.SubregionName,
 		})
 	}
@@ -71,6 +72,13 @@ func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.
 
 func hubSkipOscClusterUnused(in *infrastructurev1beta2.OscClusterSpec, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
+}
+
+func spokeSkipOscLoadBalancerUnused(in *infrastructurev1beta1.OscLoadBalancer, c fuzz.Continue) {
+	c.FuzzNoCustom(in)
+
+	in.SubnetName = ""
+	in.SecurityGroupName = ""
 }
 
 func spokeSkipOscBastionUnused(in *infrastructurev1beta1.OscBastion, c fuzz.Continue) {
@@ -82,6 +90,7 @@ func spokeSkipOscBastionUnused(in *infrastructurev1beta1.OscBastion, c fuzz.Cont
 	in.PrivateIps = nil
 	in.SubregionName = ""
 	in.ResourceId = ""
+	in.SubnetName = ""
 }
 
 func hubSkipOscBastionUnused(in *infrastructurev1beta2.OscBastion, c fuzz.Continue) {
@@ -96,11 +105,18 @@ func hubSkipOscVolumeUnused(in *infrastructurev1beta2.OscVolume, c fuzz.Continue
 
 	in.Root = false
 	in.Device = ""
-	in.Name = ""
+	in.Description = ""
 	in.FromSnapshot = ""
 }
 
 func spokeSkipOscRouteTableUnused(in *infrastructurev1beta1.OscRouteTable, c fuzz.Continue) {
+	c.FuzzNoCustom(in)
+
+	in.ResourceId = ""
+	in.Subnets = nil
+}
+
+func spokeSkipOscRouteUnused(in *infrastructurev1beta1.OscRoute, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
 
 	in.ResourceId = ""

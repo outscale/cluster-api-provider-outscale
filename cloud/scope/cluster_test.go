@@ -41,76 +41,76 @@ func TestClusterScope_GetSubnets(t *testing.T) {
 
 func TestClusterScope_GetSubnet(t *testing.T) {
 	tts := []struct {
-		subnets         []infrastructurev1beta2.OscSubnet
-		searchName      string
-		searchRole      infrastructurev1beta2.OscRole
-		searchSubregion infrastructurev1beta2.OscSubRegion
-		expectName      string
+		subnets           []infrastructurev1beta2.OscSubnet
+		searchName        string
+		searchRole        infrastructurev1beta2.OscRole
+		searchSubregion   infrastructurev1beta2.OscSubRegion
+		expectDescription string
 	}{
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta2.RoleLoadBalancer,
-			expectName: "1",
+			searchRole:        infrastructurev1beta2.RoleLoadBalancer,
+			expectDescription: "1",
 		},
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta2.RoleBastion,
-			expectName: "1",
+			searchRole:        infrastructurev1beta2.RoleBastion,
+			expectDescription: "1",
 		},
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta2.RoleControlPlane,
-			expectName: "2",
+			searchRole:        infrastructurev1beta2.RoleControlPlane,
+			expectDescription: "2",
 		},
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole: infrastructurev1beta2.RoleWorker,
-			expectName: "3",
+			searchRole:        infrastructurev1beta2.RoleWorker,
+			expectDescription: "3",
 		},
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole:      infrastructurev1beta2.RoleWorker,
-			searchSubregion: "eu-west2a",
-			expectName:      "3",
+			searchRole:        infrastructurev1beta2.RoleWorker,
+			searchSubregion:   "eu-west2a",
+			expectDescription: "3",
 		},
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, Subregion: "eu-west2a"},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, Subregion: "eu-west2a"},
 			},
-			searchRole: infrastructurev1beta2.RoleWorker,
-			expectName: "3",
+			searchRole:        infrastructurev1beta2.RoleWorker,
+			expectDescription: "3",
 		},
 		{
 			subnets: []infrastructurev1beta2.OscSubnet{
-				{Name: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
-				{Name: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
-				{Name: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+				{Description: "1", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}},
+				{Description: "2", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}},
+				{Description: "3", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			},
-			searchRole:      infrastructurev1beta2.RoleWorker,
-			searchSubregion: "eu-west2b",
-			expectName:      "3",
+			searchRole:        infrastructurev1beta2.RoleWorker,
+			searchSubregion:   "eu-west2b",
+			expectDescription: "3",
 		},
 	}
 
@@ -124,12 +124,12 @@ func TestClusterScope_GetSubnet(t *testing.T) {
 			},
 		}
 
-		found, err := clusterScope.GetSubnet(tt.searchName, tt.searchRole, tt.searchSubregion)
-		if found.Name == "" {
+		found, err := clusterScope.GetSubnet(tt.searchRole, tt.searchSubregion)
+		if tt.expectDescription == "" {
 			require.Error(t, err)
 		} else {
 			require.NoError(t, err)
-			assert.Equal(t, tt.expectName, found.Name)
+			assert.Equal(t, tt.expectDescription, found.Description)
 		}
 	}
 }
@@ -265,27 +265,5 @@ func TestNeedReconciliation(t *testing.T) {
 			scope.Rand = func() int { return i }
 			assert.Equal(t, i < 10, s.NeedReconciliation(infrastructurev1beta2.ReconcilerInternetService), i)
 		}
-	})
-}
-
-func TestGetNatService(t *testing.T) {
-	newScope := func() scope.ClusterScope {
-		return scope.ClusterScope{
-			OscCluster: &infrastructurev1beta2.OscCluster{
-				Generation: 1,
-				Spec: infrastructurev1beta2.OscClusterSpec{
-					Subnets: []infrastructurev1beta2.OscSubnet{
-						{Name: "foo", Subregion: "eu-west-2a"},
-						{Name: "bar", Subregion: "eu-west-2a"},
-					},
-				},
-			},
-		}
-	}
-	t.Run("when searching by subregion, the first one is returned", func(t *testing.T) {
-		s := newScope()
-		ns, err := s.GetNatService("", "eu-west-2a")
-		require.NoError(t, err)
-		assert.Equal(t, "foo", ns.SubnetName)
 	})
 }

@@ -36,7 +36,7 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
 	case "nat":
-		natSpec, err := clusterScope.GetNatService(routeSpec.TargetName, routeTableSpec.Subregion)
+		natSpec, err := clusterScope.GetNatService(routeTableSpec.Subregion)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
@@ -88,47 +88,38 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 	}
 	routeTablesSpec := clusterScope.GetRouteTables()
 	for _, routeTableSpec := range routeTablesSpec {
-		var rtbl *osc.RouteTable
-		names := routeTableSpec.Subnets
-		if len(names) == 0 {
-			names = []string{""}
+		subnetSpec, err := clusterScope.GetSubnet(routeTableSpec.Role, routeTableSpec.Subregion)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot find subnet with role %q: %w", routeTableSpec.Role, err)
 		}
-		for _, name := range names {
-			subnetSpec, err := clusterScope.GetSubnet(name, routeTableSpec.Role, routeTableSpec.Subregion)
+		if len(roles) > 0 && !clusterScope.SubnetHasRole(subnetSpec, roles[0]) {
+			continue
+		}
+		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
+		}
+		var rtbl *osc.RouteTable
+		switch {
+		case rtblForSubnet[subnetId] != nil:
+			log.V(5).Info("Subnet has a route table", "subnetId", subnetId)
+			rtbl = rtblForSubnet[subnetId]
+		case rtblForSubnet[subnetId] == nil:
+			log.V(2).Info("Creating routetable", "subnetId", subnetId)
+			rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), clusterScope.GetSubnetName(subnetSpec))
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot find subnet with name %q role %q: %w", name, routeTableSpec.Role, err)
+				return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
 			}
-			if len(roles) > 0 && !clusterScope.SubnetHasRole(subnetSpec, roles[0]) {
-				continue
-			}
-			subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+			log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
+			log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
+			_, err := svc.LinkRouteTable(ctx, rtbl.RouteTableId, subnetId)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
-			}
-			switch {
-			case rtbl == nil && rtblForSubnet[subnetId] != nil:
-				log.V(5).Info("Subnet has a route table", "subnetId", subnetId)
-				rtbl = rtblForSubnet[subnetId]
-				continue
-			case rtbl == nil && rtblForSubnet[subnetId] == nil:
-				log.V(2).Info("Creating routetable", "subnetId", subnetId)
-				rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), routeTableSpec.Name)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
-				}
-				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
-				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
-				fallthrough
-			case rtbl != nil && rtblForSubnet[subnetId] == nil:
-				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
-				_, err := svc.LinkRouteTable(ctx, rtbl.RouteTableId, subnetId)
-				if err != nil {
-					return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
-				}
+				return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
 			}
 		}
 		if rtbl == nil {
-			continue
+			return reconcile.Result{}, fmt.Errorf("no subnet found for route table %q", routeTableSpec.Description)
 		}
 		for _, routeSpec := range routeTableSpec.Routes {
 			_, err = r.reconcileRoute(ctx, clusterScope, routeTableSpec, routeSpec, rtbl)

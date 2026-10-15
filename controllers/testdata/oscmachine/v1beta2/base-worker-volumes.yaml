@@ -15,16 +15,16 @@ spec:
      - eu-west-2a
     type: tinav6.c4r8p2
   volumes:
-    - name: root
+    - description: root
       root: true
       size: 15
       type: gp2
-    - name: data
+    - description: data
       device: /dev/sdb
       iops: 500
       size: 15
       type: io1
-    - name: images
+    - description: images
       device: /dev/sdc
       size: 15
       type: gp2
