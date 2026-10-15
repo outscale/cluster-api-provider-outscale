@@ -82,28 +82,53 @@ func TestMultiAZAllocator(t *testing.T) {
 		_ = infrastructurev1beta2.AddToScheme(fakeScheme)
 		return fake.NewClientBuilder().WithScheme(fakeScheme).WithLists(oms).Build()
 	}
+	singleNet := []infrastructurev1beta2.OscNet{{
+		IpRange: "10.0.0.0/8",
+		Subnets: []infrastructurev1beta2.OscSubnet{
+			{Subregion: "eu-west-2a", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+			{Subregion: "eu-west-2b", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+			{Subregion: "eu-west-2c", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+		},
+	}}
+	multiNet := []infrastructurev1beta2.OscNet{{
+		IpRange: "10.0.0.0/8",
+		Subnets: []infrastructurev1beta2.OscSubnet{
+			{Subregion: "eu-west-2b", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+			{Subregion: "eu-west-2c", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+		},
+	}, {
+		IpRange: "10.1.0.0/8",
+		Subnets: []infrastructurev1beta2.OscSubnet{
+			{Subregion: "eu-west-2a", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+			{Subregion: "eu-west-2b", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+		},
+	}}
 	t.Run("If already configured, the allocated az is returned (LeastNodes)", func(t *testing.T) {
 		m := allocated
 		a := controllers.NewMultiAZAllocator(testClient())
-		az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		_, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
 		assert.Equal(t, infrastructurev1beta2.OscSubRegion(*m.Status.FailureDomain), az)
+		assert.Equal(t, az, sn.Subregion)
 	})
 	t.Run("A non allocated machines is allocated to new azs (LeastNodes)", func(t *testing.T) {
 		m := nonallocated1
 		a := controllers.NewMultiAZAllocator(testClient())
-		az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b"})
+		_, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b"})
 		require.NoError(t, err)
 		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az)
+		assert.Equal(t, az, sn.Subregion)
 	})
 	t.Run("Non allocated machiness are allocated to all new azs (LeastNodes)", func(t *testing.T) {
 		a := controllers.NewMultiAZAllocator(testClient())
 		m1 := nonallocated1
-		az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		_, sn1, az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
+		assert.Equal(t, az1, sn1.Subregion)
 		m2 := nonallocated2
-		az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.SubregionModeLeastNodes, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		_, sn2, az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
+		assert.Equal(t, az2, sn2.Subregion)
 		assert.NotEqual(t, az1, az2)
 		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az1)
 		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az2)
@@ -120,11 +145,13 @@ func TestMultiAZAllocator(t *testing.T) {
 		}()
 		a := controllers.NewMultiAZAllocator(testClient())
 		m1 := nonallocated1
-		az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta2.SubregionModeRandom, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		_, sn1, az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta2.SubregionModeRandom, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
+		assert.Equal(t, az1, sn1.Subregion)
 		m2 := nonallocated2
-		az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.SubregionModeRandom, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		_, sn2, az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.SubregionModeRandom, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
+		assert.Equal(t, az2, sn2.Subregion)
 		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2a"), az1)
 		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az2)
 	})
@@ -138,7 +165,34 @@ func TestMultiAZAllocator(t *testing.T) {
 		}()
 		a := controllers.NewMultiAZAllocator(testClient())
 		m1 := nonallocated1
-		_, err := a.AllocateAZ(t.Context(), &m1, "", []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		_, _, _, err := a.AllocateAZ(t.Context(), &m1, "", infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
 		require.NoError(t, err)
+	})
+	t.Run("Multiple nets can be allocated", func(t *testing.T) {
+		{
+			m := nonallocated1
+			a := controllers.NewMultiAZAllocator(testClient())
+			n, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a"})
+			require.NoError(t, err)
+			assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2a"), az)
+			assert.Equal(t, multiNet[1], n)
+			assert.Equal(t, az, sn.Subregion)
+		}
+		{
+			m := nonallocated1
+			a := controllers.NewMultiAZAllocator(testClient())
+			_, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2b"})
+			require.NoError(t, err)
+			assert.Equal(t, az, sn.Subregion)
+		}
+		{
+			m := nonallocated1
+			a := controllers.NewMultiAZAllocator(testClient())
+			n, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.SubregionModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2c"})
+			require.NoError(t, err)
+			assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2c"), az)
+			assert.Equal(t, multiNet[0], n)
+			assert.Equal(t, az, sn.Subregion)
+		}
 	})
 }

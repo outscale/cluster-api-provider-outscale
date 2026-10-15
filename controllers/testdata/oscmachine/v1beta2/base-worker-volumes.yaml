@@ -7,8 +7,6 @@ spec:
   image:
     name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
     accountId: "01234"
-  keypair:
-    name: cluster-api
   vm:
     keypair: cluster-api
     subregions:

@@ -31,6 +31,11 @@ type OscMachineSpec struct {
 	// +default:value="osc"
 	ProviderIDScheme ProviderIDScheme `json:"providerIDScheme,omitempty"`
 
+	// The node role (controlplane or worker), defaults to worker.
+	// +default:value="worker"
+	// +optional
+	Role OscRole `json:"role,omitempty"`
+
 	// The configuration of the VM to deploy
 	Vm OscVm `json:"vm,omitempty"`
 	// The image to use

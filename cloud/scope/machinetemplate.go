@@ -70,13 +70,6 @@ func (m *MachineTemplateScope) GetVmType() string {
 	return m.OscMachineTemplate.Spec.Template.Spec.Vm.Type
 }
 
-func (m *MachineTemplateScope) GetRole() infrastructurev1beta2.OscRole {
-	if m.OscMachineTemplate.Spec.Template.Spec.Vm.Role != "" {
-		return m.OscMachineTemplate.Spec.Template.Spec.Vm.Role
-	}
-	return infrastructurev1beta2.RoleWorker
-}
-
 func (m *MachineTemplateScope) GetCapacity() corev1.ResourceList {
 	return m.OscMachineTemplate.Status.Capacity
 }
