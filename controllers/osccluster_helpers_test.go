@@ -143,10 +143,25 @@ func mockGetNet(id string, net *osc.Net) mockFunc {
 	}
 }
 
-func mockCreateNet(spec infrastructurev1beta2.OscNet, clusterID, netName, netId string) mockFunc {
+func mockListNets(cluster string, nets []osc.Net) mockFunc {
+	if nets == nil {
+		return func(s *MockCloudServices) {
+			s.NetMock.EXPECT().
+				ListNets(gomock.Any(), gomock.Eq(cluster)).
+				Return(nets, nil).MinTimes(1)
+		}
+	}
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			CreateNet(gomock.Any(), gomock.Eq(spec), gomock.Eq(clusterID), gomock.Eq(netName)).
+			ListNets(gomock.Any(), gomock.Eq(cluster)).
+			Return(nets, nil)
+	}
+}
+
+func mockCreateNet(ipRange, clusterID, netName, netId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetMock.EXPECT().
+			CreateNet(gomock.Any(), gomock.Eq(ipRange), gomock.Eq(clusterID), gomock.Eq(netName)).
 			Return(&osc.Net{NetId: netId}, nil)
 	}
 }
@@ -517,7 +532,7 @@ func mockCreateVmBastion(vmId, subnetId string, securityGroupIds, privateIps []s
 	}
 }
 
-func mockCreateNetPeering(netID, mgmtNetID, mgmtAccountID, clusterID string) mockFunc {
+func mockCreateNetPeering(netID, mgmtNetID string, mgmtAccountID *string, clusterID string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().CreateNetPeering(gomock.Any(), gomock.Eq(netID), gomock.Eq(mgmtNetID), gomock.Eq(mgmtAccountID), gomock.Eq(clusterID)).
 			Return(&osc.NetPeering{
@@ -545,6 +560,13 @@ func mockGetNetPeering(state osc.NetPeeringStateName) mockFunc {
 					Name: state,
 				},
 			}, nil)
+	}
+}
+
+func mockListNetPeerings(netId, cluster string, nps []osc.NetPeering) mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetMock.EXPECT().ListNetPeerings(gomock.Any(), gomock.Eq(netId), gomock.Eq(cluster)).
+			Return(nps, nil)
 	}
 }
 

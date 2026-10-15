@@ -30,8 +30,8 @@ spec:
   loadBalancer:
     name: "${CLUSTER_NAME}-k8s"
     type: "internal"
-  net:
-    ipRange: 10.1.0.0/16
+  nets:
+    - ipRange: 10.1.0.0/16
   netPeering:
     enable: true
   netAccessPoints:
@@ -90,6 +90,7 @@ metadata:
 spec:
   template:
     spec:
+      role: controlplane
       image:
         name: "${KUBERNETES_IMAGE_UPGRADE_TO}"
         outscaleOpenSource: true
@@ -97,7 +98,6 @@ spec:
         keypair: "${OSC_KEYPAIR_NAME}"
         subregions:
          - ${OSC_REGION}a
-        role: controlplane
         type: "${OSC_VM_TYPE}"
       volumes:
         - root: true

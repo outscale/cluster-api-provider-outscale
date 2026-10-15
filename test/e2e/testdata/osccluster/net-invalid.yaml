@@ -4,8 +4,8 @@ metadata:
   name: test-cluster-api
   namespace: cluster-api-test
 spec:
-  net:
-    ipRange: 0.0/0
+  nets:
+    - ipRange: 0.0/0
   loadBalancer:
     name: test-cluster-api
     type: internet-facing

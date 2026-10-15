@@ -8,24 +8,26 @@ package net
 import (
 	"context"
 
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/samber/lo"
 )
 
 type NetPeeringInterface interface {
-	CreateNetPeering(ctx context.Context, netID, mgmtNetID, mgmtAccountID, clusterID string) (*osc.NetPeering, error)
+	CreateNetPeering(ctx context.Context, netID, mgmtNetID string, mgmtAccountID *string, clusterID string) (*osc.NetPeering, error)
 	AcceptNetPeering(ctx context.Context, netPeeringID string) error
 	DeleteNetPeering(ctx context.Context, netPeeringID string) error
 	GetNetPeering(ctx context.Context, netPeeringID string) (*osc.NetPeering, error)
 	GetNetPeeringFromNet(ctx context.Context, netID, mgmtNetID, mgmtAccountID string) (*osc.NetPeering, error)
-	ListNetPeerings(ctx context.Context, netId string) ([]osc.NetPeering, error)
+	ListNetPeerings(ctx context.Context, netId, clusterID string) ([]osc.NetPeering, error)
 }
 
 // CreateNetPeering creates a net peering
-func (s *Service) CreateNetPeering(ctx context.Context, netID, mgmtNetID, mgmtAccountID, clusterID string) (*osc.NetPeering, error) {
+func (s *Service) CreateNetPeering(ctx context.Context, hubNetID, spokeNetID string, spokeAccountID *string, clusterID string) (*osc.NetPeering, error) {
 	req := osc.CreateNetPeeringRequest{
-		SourceNetId:     netID,
-		AccepterNetId:   mgmtNetID,
-		AccepterOwnerId: &mgmtAccountID,
+		SourceNetId:     hubNetID,
+		AccepterNetId:   spokeNetID,
+		AccepterOwnerId: spokeAccountID,
 	}
 
 	resp, err := s.tenant.Client().CreateNetPeering(ctx, req)
@@ -102,11 +104,11 @@ func (s *Service) GetNetPeeringFromNet(ctx context.Context, netID, mgmtNetID, mg
 	}
 }
 
-// ListNetPeerings lists all net peerings in a net.
-func (s *Service) ListNetPeerings(ctx context.Context, netId string) ([]osc.NetPeering, error) {
+// ListNetPeerings lists all net peerings in a net, owned by a cluster.
+func (s *Service) ListNetPeerings(ctx context.Context, netId, clusterID string) ([]osc.NetPeering, error) {
 	req := osc.ReadNetPeeringsRequest{
 		Filters: &osc.FiltersNetPeering{
-			SourceNetNetIds: &[]string{netId},
+			Tags: &[]string{"OscK8sClusterID/" + clusterID + "=owned"},
 		},
 	}
 
@@ -114,19 +116,7 @@ func (s *Service) ListNetPeerings(ctx context.Context, netId string) ([]osc.NetP
 	if err != nil {
 		return nil, err
 	}
-	netPeerings := *resp.NetPeerings
-
-	req = osc.ReadNetPeeringsRequest{
-		Filters: &osc.FiltersNetPeering{
-			AccepterNetNetIds: &[]string{netId},
-		},
-	}
-
-	resp, err = s.tenant.Client().ReadNetPeerings(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	netPeerings = append(netPeerings, *resp.NetPeerings...)
-
-	return netPeerings, nil
+	return lo.Filter(ptr.From(resp.NetPeerings), func(np osc.NetPeering, _ int) bool {
+		return ptr.From(np.SourceNet.NetId) == netId || ptr.From(np.AccepterNet.NetId) == netId
+	}), nil
 }

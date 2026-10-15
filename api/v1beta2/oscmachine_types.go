@@ -16,6 +16,15 @@ import (
 	"sigs.k8s.io/cluster-api/errors" //nolint
 )
 
+// Annotations
+const (
+	annotationNamespace = "topology.outscale.com/"
+	NetAnnotation       = annotationNamespace + "net"
+	SubnetAnnotation    = annotationNamespace + "subnet"
+	SubregionAnnotation = annotationNamespace + "subregion"
+	NetRangeAnnotation  = annotationNamespace + "netrange"
+)
+
 type ProviderIDScheme string
 
 const (
@@ -30,6 +39,11 @@ type OscMachineSpec struct {
 	// +optional
 	// +default:value="osc"
 	ProviderIDScheme ProviderIDScheme `json:"providerIDScheme,omitempty"`
+
+	// The node role (controlplane or worker), defaults to worker.
+	// +optional
+	// +default:value="worker"
+	Role OscRole `json:"role,omitempty"`
 
 	// The configuration of the VM to deploy
 	Vm OscVm `json:"vm,omitempty"`

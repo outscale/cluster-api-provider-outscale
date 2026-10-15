@@ -229,6 +229,14 @@ func (m *MachineScope) SetFailureDomain(subregion string) {
 	m.OscMachine.Status.FailureDomain = &subregion
 }
 
+// SetNet set the net ipRange.
+func (m *MachineScope) SetNet(ipRange string) {
+	if m.OscMachine.Annotations == nil {
+		m.OscMachine.Annotations = map[string]string{}
+	}
+	m.OscMachine.Annotations[infrastructurev1beta2.NetRangeAnnotation] = ipRange
+}
+
 // GetResources returns the resource list from the OscCluster status.
 func (s *MachineScope) GetResources() *infrastructurev1beta2.OscMachineResources {
 	return &s.OscMachine.Status.Resources

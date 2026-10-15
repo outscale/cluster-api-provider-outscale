@@ -15,10 +15,10 @@ import (
 func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) error {
 	srcNode := src.Node
 	*dst = infrastructurev1beta2.OscMachineSpec{
-		ProviderID: src.ProviderID,
-
+		ProviderID:       src.ProviderID,
 		ProviderIDScheme: infrastructurev1beta2.SchemeAWS,
 
+		Role: infrastructurev1beta2.OscRole(srcNode.Vm.Role),
 		Vm: infrastructurev1beta2.OscVm{
 			Description:   srcNode.Vm.Name,
 			Keypair:       srcNode.Vm.KeypairName,
@@ -26,11 +26,10 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 			PublicIp:      srcNode.Vm.PublicIp,
 			PublicIpPool:  srcNode.Vm.PublicIpPool,
 			Subregions:    lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
-			SubregionMode: infrastructurev1beta2.SubregionMode(srcNode.Vm.SubregionMode),
+			AllocationMode: infrastructurev1beta2.AllocationMode(srcNode.Vm.SubregionMode),
 			SecurityGroupNames: lo.Map(srcNode.Vm.SecurityGroupNames, func(src OscSecurityGroupElement, _ int) infrastructurev1beta2.OscSecurityGroupElement {
 				return infrastructurev1beta2.OscSecurityGroupElement(src)
 			}),
-			Role:      infrastructurev1beta2.OscRole(srcNode.Vm.Role),
 			Tags:      srcNode.Vm.Tags,
 			Placement: infrastructurev1beta2.OscPlacement(srcNode.Vm.Placement),
 		},
@@ -40,6 +39,9 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 			AccountID:          srcNode.Image.AccountId,
 			OutscaleOpenSource: srcNode.Image.OutscaleOpenSource,
 		},
+	}
+	if srcNode.Vm.Role == "" {
+		dst.Role = infrastructurev1beta2.RoleWorker
 	}
 	if len(srcNode.Vm.SubregionNames) == 0 && srcNode.Vm.SubregionName != "" {
 		dst.Vm.Subregions = []infrastructurev1beta2.OscSubRegion{infrastructurev1beta2.OscSubRegion(srcNode.Vm.SubregionName)}
@@ -90,11 +92,11 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 				VmType:        src.Vm.Type,
 				PublicIp:      src.Vm.PublicIp,
 				PublicIpPool:  src.Vm.PublicIpPool,
-				SubregionMode: SubregionMode(src.Vm.SubregionMode),
+				SubregionMode: SubregionMode(src.Vm.AllocationMode),
 				SecurityGroupNames: lo.Map(src.Vm.SecurityGroupNames, func(src infrastructurev1beta2.OscSecurityGroupElement, _ int) OscSecurityGroupElement {
 					return OscSecurityGroupElement(src)
 				}),
-				Role:      OscRole(src.Vm.Role),
+				Role:      OscRole(src.Role),
 				Tags:      src.Vm.Tags,
 				Placement: OscPlacement(src.Vm.Placement),
 			},

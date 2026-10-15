@@ -257,3 +257,10 @@ func assertVolumesAreConfigured(deviceAndVolume ...string) assertOSCMachineFunc 
 		assert.Equal(t, expect, m.Status.Resources.Volumes)
 	}
 }
+
+func assertAnnotations(a map[string]string) assertOSCMachineFunc {
+	return func(t *testing.T, m *infrastructurev1beta2.OscMachine) {
+		t.Helper()
+		assert.Equal(t, a, m.Annotations)
+	}
+}

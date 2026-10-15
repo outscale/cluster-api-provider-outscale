@@ -145,6 +145,7 @@ metadata:
 spec:
   template:
     spec:
+      role: controlplane
       image:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
@@ -152,7 +153,6 @@ spec:
         subregions:
           - "eu-north-1a"
         keypair: "${OSC_KEYPAIR_NAME}"
-        role: controlplane
         type: "tinav9.c1r1p1"
       volumes:
         - root: true

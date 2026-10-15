@@ -21,10 +21,13 @@ func TestOscMachineTemplateConversion(t *testing.T) {
 func OscMachineTemplateFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 	return []any{
 		spokeSkipOscMachineUnused,
-		hubSkipOscMachineUnused,
 		spokeSkipVolumeUnused,
-		hubSingleRootVolume,
 		spokeSkipKeypair,
+		spokeMachineRole,
+
+		hubOscMachine,
 		hubProviderIDScheme,
+		hubMachineRole,
+		hubSubregion,
 	}
 }

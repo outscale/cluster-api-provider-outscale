@@ -18,6 +18,7 @@ import (
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/samber/lo"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -111,11 +112,20 @@ func (s *ClusterScope) GetSpec() *infrastructurev1beta2.OscClusterSpec {
 }
 
 // GetNet return the net of the cluster
-func (s *ClusterScope) GetNet() infrastructurev1beta2.OscNet {
-	if s.OscCluster.Spec.Net.IsZero() {
-		return infrastructurev1beta2.DefaultNet
+func (s *ClusterScope) GetNets() []infrastructurev1beta2.OscNet {
+	ns := s.OscCluster.Spec.Nets
+	if len(ns) == 0 {
+		n := infrastructurev1beta2.DefaultNet
+		ns = []infrastructurev1beta2.OscNet{n}
 	}
-	return s.OscCluster.Spec.Net
+	for i, n := range ns {
+		// we work on a copy, to avoid injecting data in the source model
+		if len(n.Subnets) == 0 {
+			n.Subnets = s.generateSubnets(n)
+			ns[i] = n
+		}
+	}
+	return ns
 }
 
 // GetNetName return the name of the net
@@ -137,11 +147,11 @@ func (s *ClusterScope) GetSubregions() []infrastructurev1beta2.OscSubRegion {
 }
 
 // GetSubnets returns the subnets of the cluster.
-func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
-	if len(s.OscCluster.Spec.Subnets) > 0 {
-		return s.OscCluster.Spec.Subnets
+func (s *ClusterScope) generateSubnets(n infrastructurev1beta2.OscNet) []infrastructurev1beta2.OscSubnet {
+	if len(n.Subnets) > 0 {
+		return n.Subnets
 	}
-	_, net, err := net.ParseCIDR(s.GetNet().IpRange)
+	_, net, err := net.ParseCIDR(n.IpRange)
 	if err != nil {
 		return nil
 	}
@@ -169,13 +179,13 @@ func (s *ClusterScope) GetSubnets() []infrastructurev1beta2.OscSubnet {
 
 var ErrNoSubnetFound = errors.New("subnet not found")
 
-func (s *ClusterScope) GetSubnet(role infrastructurev1beta2.OscRole, subregion infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubnet, error) {
+func (s *ClusterScope) GetSubnet(n infrastructurev1beta2.OscNet, role infrastructurev1beta2.OscRole, subregion infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscSubnet, error) {
 	if subregion == "" {
 		subregion = s.GetDefaultSubregion()
 	}
-	for _, spec := range s.GetSubnets() {
+	for _, spec := range n.Subnets {
 		switch {
-		case !s.SubnetHasRole(spec, role):
+		case !spec.HasRole(role):
 		case s.GetSubnetSubregion(spec) == subregion:
 			return spec, nil
 		}
@@ -183,15 +193,51 @@ func (s *ClusterScope) GetSubnet(role infrastructurev1beta2.OscRole, subregion i
 	return infrastructurev1beta2.OscSubnet{}, ErrNoSubnetFound
 }
 
-func (s *ClusterScope) SubnetHasRole(spec infrastructurev1beta2.OscSubnet, role infrastructurev1beta2.OscRole) bool {
-	if len(spec.Roles) > 0 {
-		return slices.Contains(spec.Roles, role)
+func (s *ClusterScope) GetSubnetsByRole(role infrastructurev1beta2.OscRole, subregion infrastructurev1beta2.OscSubRegion) ([]infrastructurev1beta2.OscSubnet, error) {
+	if subregion == "" {
+		subregion = s.GetDefaultSubregion()
 	}
-	return role == infrastructurev1beta2.RoleWorker
+	nets := s.GetNets()
+	sns := make([]infrastructurev1beta2.OscSubnet, 0, len(nets))
+	for _, n := range nets {
+		for _, spec := range n.Subnets {
+			switch {
+			case !spec.HasRole(role):
+			case s.GetSubnetSubregion(spec) == subregion:
+				sns = append(sns, spec)
+			}
+		}
+	}
+	if len(sns) == 0 {
+		return nil, ErrNoSubnetFound
+	}
+	return sns, nil
+}
+
+func (s *ClusterScope) GetSingleSubnet(role infrastructurev1beta2.OscRole) (infrastructurev1beta2.OscNet, infrastructurev1beta2.OscSubnet, error) {
+	for _, n := range s.GetNets() {
+		for _, spec := range n.Subnets {
+			if spec.HasRole(role) {
+				return n, spec, nil
+			}
+		}
+	}
+	return infrastructurev1beta2.OscNet{}, infrastructurev1beta2.OscSubnet{}, ErrNoSubnetFound
+}
+
+func (s *ClusterScope) GetNetContaining(subnet infrastructurev1beta2.OscSubnet) (infrastructurev1beta2.OscNet, error) {
+	for _, n := range s.GetNets() {
+		if slices.ContainsFunc(n.Subnets, func(sn infrastructurev1beta2.OscSubnet) bool {
+			return sn.IpRange == subnet.IpRange
+		}) {
+			return n, nil
+		}
+	}
+	return infrastructurev1beta2.OscNet{}, ErrNoSubnetFound
 }
 
 func (s *ClusterScope) SubnetIsPublic(spec infrastructurev1beta2.OscSubnet) bool {
-	return s.SubnetHasRole(spec, infrastructurev1beta2.RoleBastion) || s.SubnetHasRole(spec, infrastructurev1beta2.RoleLoadBalancer) || s.SubnetHasRole(spec, infrastructurev1beta2.RoleNat)
+	return spec.HasRole(infrastructurev1beta2.RoleBastion) || spec.HasRole(infrastructurev1beta2.RoleLoadBalancer) || spec.HasRole(infrastructurev1beta2.RoleNat)
 }
 
 func (s *ClusterScope) GetSubnetSubregion(spec infrastructurev1beta2.OscSubnet) infrastructurev1beta2.OscSubRegion {
@@ -206,9 +252,9 @@ func (s *ClusterScope) GetSubnetName(spec infrastructurev1beta2.OscSubnet) strin
 	switch {
 	case s.SubnetIsPublic(spec):
 		return "Public subnet for " + s.OscCluster.Name + "/" + sr
-	case s.SubnetHasRole(spec, infrastructurev1beta2.RoleControlPlane):
+	case spec.HasRole(infrastructurev1beta2.RoleControlPlane):
 		return "Controlplane subnet for " + s.OscCluster.Name + "/" + sr
-	case s.SubnetHasRole(spec, infrastructurev1beta2.RoleWorker):
+	case spec.HasRole(infrastructurev1beta2.RoleWorker):
 		return "Worker subnet for " + s.OscCluster.Name + "/" + sr
 	default:
 		return "Subnet for " + s.OscCluster.Name + "/" + sr
@@ -234,29 +280,27 @@ func (s *ClusterScope) GetNatServiceName(subnet infrastructurev1beta2.OscSubnet)
 }
 
 // GetRouteTables return the routeTables of the cluster
-func (s *ClusterScope) GetRouteTables() []infrastructurev1beta2.OscRouteTable {
+func (s *ClusterScope) GetRouteTable(subnet infrastructurev1beta2.OscSubnet) (infrastructurev1beta2.OscRouteTable, error) {
 	if len(s.OscCluster.Spec.RouteTables) > 0 {
-		return s.OscCluster.Spec.RouteTables
+		rt, found := lo.Find(s.OscCluster.Spec.RouteTables, func(rt infrastructurev1beta2.OscRouteTable) bool {
+			return subnet.Subregion == rt.Subregion && subnet.HasRole(rt.Role)
+		})
+		if !found {
+			return infrastructurev1beta2.OscRouteTable{}, errors.New("no route table found in spec")
+		}
+		return rt, nil
 	}
-	subnets := s.GetSubnets()
-	rtbls := make([]infrastructurev1beta2.OscRouteTable, 0, len(subnets))
-	for _, subnet := range subnets {
-		rtbl := infrastructurev1beta2.OscRouteTable{
-			Subregion: s.GetSubnetSubregion(subnet),
-		}
-		if len(subnet.Roles) > 0 {
-			rtbl.Role = subnet.Roles[0]
-		}
-		switch {
-		case s.GetSpec().Disable.Internet:
-		case s.SubnetIsPublic(subnet):
-			rtbl.Routes = []infrastructurev1beta2.OscRoute{{Destination: "0.0.0.0/0", TargetType: "gateway"}}
-		default:
-			rtbl.Routes = []infrastructurev1beta2.OscRoute{{Destination: "0.0.0.0/0", TargetType: "nat"}}
-		}
-		rtbls = append(rtbls, rtbl)
+	rtbl := infrastructurev1beta2.OscRouteTable{
+		Subregion: s.GetSubnetSubregion(subnet),
 	}
-	return rtbls
+	switch {
+	case s.GetSpec().Disable.Internet:
+	case s.SubnetIsPublic(subnet):
+		rtbl.Routes = []infrastructurev1beta2.OscRoute{{Destination: "0.0.0.0/0", TargetType: "gateway"}}
+	default:
+		rtbl.Routes = []infrastructurev1beta2.OscRoute{{Destination: "0.0.0.0/0", TargetType: "nat"}}
+	}
+	return rtbl, nil
 }
 
 // HasIPRestriction returns true if AllowFromIps is set.
@@ -293,13 +337,13 @@ func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta2.OscSecu
 	}
 	if len(allowedIn) > 0 {
 		for i := range sgs {
-			if slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleLoadBalancer) {
+			if sgs[i].HasRole(infrastructurev1beta2.RoleLoadBalancer) {
 				sgs[i].SecurityGroupRules = append(
 					sgs[i].SecurityGroupRules,
 					infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: allowedIn},
 				)
 			}
-			if slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleBastion) {
+			if sgs[i].HasRole(infrastructurev1beta2.RoleBastion) {
 				sgs[i].SecurityGroupRules = append(
 					sgs[i].SecurityGroupRules,
 					infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: allowedIn},
@@ -309,9 +353,9 @@ func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta2.OscSecu
 	}
 	if len(allowedOut) > 0 {
 		for i := range sgs {
-			if (slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleWorker) &&
-				slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleControlPlane)) ||
-				slices.Contains(sgs[i].Roles, infrastructurev1beta2.RoleBastion) {
+			if (sgs[i].HasRole(infrastructurev1beta2.RoleWorker) &&
+				sgs[i].HasRole(infrastructurev1beta2.RoleControlPlane)) ||
+				sgs[i].HasRole(infrastructurev1beta2.RoleBastion) {
 				sgs[i].SecurityGroupRules = append(
 					sgs[i].SecurityGroupRules,
 					infrastructurev1beta2.OscSecurityGroupRule{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: allowedOut},
@@ -324,17 +368,22 @@ func (s *ClusterScope) getManualSecurityGroups() []infrastructurev1beta2.OscSecu
 
 func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscSecurityGroup {
 	var allSN, allSNCP, allSNBastion []string
-	for _, sn := range s.GetSubnets() {
-		if s.SubnetHasRole(sn, infrastructurev1beta2.RoleBastion) {
-			allSNBastion = append(allSNBastion, sn.IpRange)
+	nets := s.GetNets()
+	allN := make([]string, 0, len(nets))
+	for _, n := range nets {
+		allN = append(allN, n.IpRange)
+		for _, sn := range n.Subnets {
+			if sn.HasRole(infrastructurev1beta2.RoleBastion) {
+				allSNBastion = append(allSNBastion, sn.IpRange)
+			}
+			if s.SubnetIsPublic(sn) {
+				continue
+			}
+			if sn.HasRole(infrastructurev1beta2.RoleControlPlane) {
+				allSNCP = append(allSNCP, sn.IpRange)
+			}
+			allSN = append(allSN, sn.IpRange)
 		}
-		if s.SubnetIsPublic(sn) {
-			continue
-		}
-		if s.SubnetHasRole(sn, infrastructurev1beta2.RoleControlPlane) {
-			allSNCP = append(allSNCP, sn.IpRange)
-		}
-		allSN = append(allSN, sn.IpRange)
 	}
 	allowedIn := s.OscCluster.Spec.AllowFromIPRanges
 	if len(allowedIn) == 0 {
@@ -369,7 +418,7 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		Description: "Controlplane securityGroup for " + s.GetName(),
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
-			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: s.GetNet().GetIpRanges()}, // API
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/6443"}, IpRanges: allN}, // API
 			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/2378-2380 # etcd", "tcp/10250-10252 # Kubelet"}, IpRanges: allSNCP},
 		},
 		Authoritative: true,
@@ -397,7 +446,7 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 				"udp/8285 # Calico (Flannel)",
 				"udp/51820-51821 # Calico (Wiregard)",
 				"4 # Calico (IP-in-IP)",
-			}, IpRanges: s.GetNet().GetIpRanges()},
+			}, IpRanges: allN},
 
 			// Cillium - see https://docs.cilium.io/en/stable/operations/system_requirements/#firewall-rules
 			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{
@@ -406,10 +455,10 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 				"tcp/4244 # Cillium (Hubble)",
 				"udp/8472 # Cillium (VXLAN)",
 				"udp/51871 # Cillium (Wiregard)",
-			}, IpRanges: s.GetNet().GetIpRanges()},
+			}, IpRanges: allN},
 
-			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/30000-32767"}, IpRanges: s.GetNet().GetIpRanges()}, // NodePort
-			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: s.GetNet().GetIpRanges()},             // internal traffic
+			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/30000-32767"}, IpRanges: allN}, // NodePort
+			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"-1"}, IpRanges: allN},             // internal traffic
 		},
 		Tag:           "OscK8sMainSG",
 		Authoritative: true,
@@ -435,7 +484,7 @@ func (s *ClusterScope) getAutomaticSecurityGroups() []infrastructurev1beta2.OscS
 		Roles:       []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleBastion},
 		SecurityGroupRules: []infrastructurev1beta2.OscSecurityGroupRule{
 			{Flow: infrastructurev1beta2.FlowInbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: allowedIn},
-			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: s.GetNet().GetIpRanges()},
+			{Flow: infrastructurev1beta2.FlowOutbound, Ports: []infrastructurev1beta2.Port{"tcp/22"}, IpRanges: allN},
 		},
 		Authoritative: true,
 	}
@@ -484,16 +533,35 @@ func (s *ClusterScope) GetSecurityGroupsFor(names []infrastructurev1beta2.OscSec
 }
 
 // GetSecurityGroupName returns the SecurityGroupName attribute value for a security group.
-func (s *ClusterScope) GetSecurityGroupName(sg infrastructurev1beta2.OscSecurityGroup) string {
-	if sg.Name != "" {
-		return sg.Name + "-" + s.GetUID()
+func (s *ClusterScope) GetSecurityGroupName(ipRange string, sg infrastructurev1beta2.OscSecurityGroup) string {
+	var (
+		prefix  string
+		noRoles bool
+	)
+	_, idx, found := lo.FindIndexOf(s.GetSpec().Nets, func(n infrastructurev1beta2.OscNet) bool {
+		return n.IpRange == ipRange
+	})
+	switch {
+	case found && idx > 0:
+		prefix = ipRange
+	case sg.Name != "":
+		prefix = sg.Name
+		noRoles = true
+	default:
+		prefix = s.GetName()
 	}
+
 	var name strings.Builder
-	name.WriteString(s.GetName() + "-")
-	for _, role := range sg.Roles {
-		name.WriteString(string(role) + "-")
+	name.WriteString(prefix)
+	name.WriteString("-")
+	if !noRoles {
+		for _, role := range sg.Roles {
+			name.WriteString(string(role))
+			name.WriteString("-")
+		}
 	}
-	return name.String() + s.GetUID()
+	name.WriteString(s.GetUID())
+	return name.String()
 }
 
 // SetFailureDomain sets the infrastructure provider failure domain key to the spec given as input.

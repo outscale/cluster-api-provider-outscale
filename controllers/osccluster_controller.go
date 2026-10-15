@@ -122,12 +122,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	clusterScope.EnsureExplicitUID()
 
-	// FIXME
-	// errs := infrastructurev1beta2.ValidateOscClusterSpec(osccluster.Spec)
-	// if len(errs) > 0 {
-	// 	return reconcile.Result{}, errs.ToAggregate()
-	// }
-
 	// Reconcile each element of the cluster
 	_, err := r.reconcileNet(ctx, clusterScope)
 	if err != nil {
@@ -174,7 +168,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.RouteTablesReadyCondition)
 
-	if clusterScope.GetSpec().NetPeering.Enable {
+	if clusterScope.GetSpec().NetPeering.Enable || len(clusterScope.GetSpec().Nets) > 1 {
 		_, err = r.reconcileNetPeering(ctx, clusterScope)
 		if err != nil {
 			MarkErrorCondition(osccluster, infrastructurev1beta2.NetPeeringReadyCondition, infrastructurev1beta2.NetPeeringReconciliationFailedReason, err)
@@ -296,7 +290,7 @@ func (r *OscClusterReconciler) reconcileDelete(ctx context.Context, clusterScope
 		return reconcile.Result{}, fmt.Errorf("reconcile delete netAccessPoints: %w", err)
 	}
 
-	if clusterScope.GetSpec().NetPeering.Enable {
+	if clusterScope.GetSpec().NetPeering.Enable || len(clusterScope.GetSpec().Nets) > 1 {
 		_, err = r.reconcileDeleteNetPeeringRoutes(ctx, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile delete netPeering routes: %w", err)
