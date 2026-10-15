@@ -850,6 +850,10 @@ spec:
                               description: The rules to add.
                               items:
                                 properties:
+                                  description:
+                                    description: The tag name associate with the security
+                                      group
+                                    type: string
                                   flow:
                                     description: The flow of the security group (Inbound
                                       or Outbound), default Inbound
@@ -868,10 +872,6 @@ spec:
                                         rule: isCIDR(self)
                                     maxItems: 5
                                     type: array
-                                  name:
-                                    description: The tag name associate with the security
-                                      group
-                                    type: string
                                   ports:
                                     description: The list of ports to open (protocol,
                                       protocol/port or protocol/fromPort-toPort)
@@ -947,6 +947,9 @@ spec:
                             type: string
                           rootDisk:
                             properties:
+                              description:
+                                description: The volume name.
+                                type: string
                               device:
                                 description: The volume device (/dev/xvdX)
                                 pattern: ^(|/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$
@@ -959,9 +962,6 @@ spec:
                                 description: The volume iops (io1 volumes only)
                                 format: int32
                                 type: integer
-                              name:
-                                description: The volume name.
-                                type: string
                               root:
                                 description: Is it the root volume ?
                                 type: boolean
@@ -986,10 +986,6 @@ spec:
                                   type: string
                               type: object
                             type: array
-                          subnetName:
-                            description: The subnet of the vm (deprecated use bastion
-                              role in subnets)
-                            type: string
                           vmType:
                             description: The type of VM (tinav7.c1r1p2 by default)
                             type: string
@@ -1048,7 +1044,7 @@ spec:
                       internetService:
                         description: The Internet Service configuration
                         properties:
-                          name:
+                          description:
                             description: The name of the Internet service
                             type: string
                         type: object
@@ -1160,14 +1156,6 @@ spec:
                             x-kubernetes-validations:
                             - message: field is immutable
                               rule: self == oldSelf
-                          securitygroupname:
-                            description: The security group name for the load-balancer
-                              (deprecated, add loadbalancer role to a security group)
-                            type: string
-                          subnetname:
-                            description: The subnet name where to add the load balancer
-                              (deprecated, add loadbalancer role to a subnet)
-                            type: string
                           type:
                             description: The Load Balancer type (internet-facing or
                               internal)
@@ -1185,6 +1173,9 @@ spec:
                       net:
                         description: The Net configuration
                         properties:
+                          description:
+                            description: the network name
+                            type: string
                           ipRange:
                             description: the ip range in CIDR notation of the Net
                             maxLength: 25
@@ -1192,9 +1183,6 @@ spec:
                             x-kubernetes-validations:
                             - message: net.ipRange is not a CIDR
                               rule: isCIDR(self)
-                          name:
-                            description: the network name
-                            type: string
                           resourceId:
                             description: The Id of the Net to reuse (if useExisting.net
                               is set)
@@ -1302,7 +1290,7 @@ spec:
                         description: The Route Table configuration
                         items:
                           properties:
-                            name:
+                            description:
                               description: The tag name associate with the Route Table
                               type: string
                             role:
@@ -1312,15 +1300,12 @@ spec:
                               description: The Route configuration
                               items:
                                 properties:
+                                  description:
+                                    description: The tag name associate with the Route
+                                    type: string
                                   destination:
                                     description: the destination match Ip range with
                                       CIDR notation
-                                    type: string
-                                  name:
-                                    description: The tag name associate with the Route
-                                    type: string
-                                  resourceId:
-                                    description: The Route Id response
                                     type: string
                                   targetName:
                                     description: The tag name associate with the target
@@ -1332,12 +1317,6 @@ spec:
                                       (nat-service)
                                     type: string
                                 type: object
-                              type: array
-                            subnets:
-                              description: The subnet tag name associate with a Subnet
-                                (deprecated, use roles)
-                              items:
-                                type: string
                               type: array
                             subregion:
                               description: The subregion for this route table
@@ -1377,6 +1356,10 @@ spec:
                               description: The list of rules for this securityGroup.
                               items:
                                 properties:
+                                  description:
+                                    description: The tag name associate with the security
+                                      group
+                                    type: string
                                   flow:
                                     description: The flow of the security group (Inbound
                                       or Outbound), default Inbound
@@ -1395,10 +1378,6 @@ spec:
                                         rule: isCIDR(self)
                                     maxItems: 5
                                     type: array
-                                  name:
-                                    description: The tag name associate with the security
-                                      group
-                                    type: string
                                   ports:
                                     description: The list of ports to open (protocol,
                                       protocol/port or protocol/fromPort-toPort)
@@ -1425,6 +1404,9 @@ spec:
                         description: The Subnets configuration
                         items:
                           properties:
+                            description:
+                              description: The name of the Subnet
+                              type: string
                             ipRange:
                               description: the Ip range in CIDR notation of the Subnet
                               maxLength: 25
@@ -1432,9 +1414,6 @@ spec:
                               x-kubernetes-validations:
                               - message: subnet.ipRange is not a CIDR
                                 rule: isCIDR(self)
-                            name:
-                              description: The name of the Subnet
-                              type: string
                             resourceId:
                               description: The id of the Subnet to reuse (if useExisting.net
                                 is set)
