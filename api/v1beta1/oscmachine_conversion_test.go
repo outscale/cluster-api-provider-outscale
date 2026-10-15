@@ -23,20 +23,22 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 	return []any{
 		spokeSkipOscMachineStatus,
 		spokeSkipOscMachineUnused,
-		spokeHardCodeResources,
-		hubHardCodeResources,
+		spokeHardCodeMachineResources,
 		spokeSkipVolumeUnused,
 		spokeSkipKeypair,
+		spokeMachineRole,
 
-		hubSkipOscMachineUnused,
-		hubSingleRootVolume,
+		hubOscMachine,
+		hubHardCodeMachineResources,
 		hubProviderIDScheme,
+		hubMachineRole,
+		hubSubregion,
 	}
 }
 
 func spokeSkipOscMachineStatus(in *infrastructurev1beta1.OscNodeResource, c fuzz.Continue) {}
 
-func spokeHardCodeResources(in *infrastructurev1beta1.OscMachineResources, c fuzz.Continue) {
+func spokeHardCodeMachineResources(in *infrastructurev1beta1.OscMachineResources, c fuzz.Continue) {
 	*in = infrastructurev1beta1.OscMachineResources{
 		Vm: map[string]string{
 			"default": "i-foo",
@@ -56,7 +58,7 @@ func spokeHardCodeResources(in *infrastructurev1beta1.OscMachineResources, c fuz
 	}
 }
 
-func hubHardCodeResources(in *infrastructurev1beta2.OscMachineResources, c fuzz.Continue) {
+func hubHardCodeMachineResources(in *infrastructurev1beta2.OscMachineResources, c fuzz.Continue) {
 	*in = infrastructurev1beta2.OscMachineResources{
 		FGPU: map[string]string{
 			"default": "fgpu-foo",
@@ -101,16 +103,14 @@ func spokeSkipOscMachineUnused(in *infrastructurev1beta1.OscMachineSpec, c fuzz.
 	in.ProviderID = new("osc:///eu-west-2/i-foo")
 }
 
-func hubSkipOscMachineUnused(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {
+func hubOscMachine(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
 
 	in.Vm.PrivateIps = nil
 	in.Vm.ResourceId = ""
 
 	in.ProviderID = new("aws:///eu-west-2/i-foo")
-}
 
-func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {
 	if len(in.Volumes) > 0 {
 		for i := range in.Volumes {
 			in.Volumes[i].Root = i == 0
@@ -126,6 +126,28 @@ func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Contin
 			Size: 10,
 			Type: infrastructurev1beta2.DefaultRootDiskType,
 		}}
+	}
+}
+
+func hubSubregion(in *infrastructurev1beta2.OscSubRegion, _ fuzz.Continue) {
+	*in = "eu-west-2a"
+}
+
+func spokeMachineRole(in *infrastructurev1beta1.OscRole, c fuzz.Continue) {
+	switch c.Intn(2) {
+	case 0:
+		*in = infrastructurev1beta1.RoleControlPlane
+	default:
+		*in = infrastructurev1beta1.RoleWorker
+	}
+}
+
+func hubMachineRole(in *infrastructurev1beta2.OscRole, c fuzz.Continue) {
+	switch c.Intn(2) {
+	case 0:
+		*in = infrastructurev1beta2.RoleControlPlane
+	default:
+		*in = infrastructurev1beta2.RoleWorker
 	}
 }
 

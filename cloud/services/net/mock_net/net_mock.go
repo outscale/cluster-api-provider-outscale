@@ -131,18 +131,18 @@ func (mr *MockServicerMockRecorder) CreateNatService(ctx, publicIpId, subnetId, 
 }
 
 // CreateNet mocks base method.
-func (m *MockServicer) CreateNet(ctx context.Context, spec v1beta2.OscNet, clusterID, netName string) (*osc.Net, error) {
+func (m *MockServicer) CreateNet(ctx context.Context, ipRange, clusterID, netName string) (*osc.Net, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNet", ctx, spec, clusterID, netName)
+	ret := m.ctrl.Call(m, "CreateNet", ctx, ipRange, clusterID, netName)
 	ret0, _ := ret[0].(*osc.Net)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateNet indicates an expected call of CreateNet.
-func (mr *MockServicerMockRecorder) CreateNet(ctx, spec, clusterID, netName any) *gomock.Call {
+func (mr *MockServicerMockRecorder) CreateNet(ctx, ipRange, clusterID, netName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNet", reflect.TypeOf((*MockServicer)(nil).CreateNet), ctx, spec, clusterID, netName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNet", reflect.TypeOf((*MockServicer)(nil).CreateNet), ctx, ipRange, clusterID, netName)
 }
 
 // CreateNetAccessPoint mocks base method.
@@ -161,7 +161,7 @@ func (mr *MockServicerMockRecorder) CreateNetAccessPoint(ctx, netId, region, ser
 }
 
 // CreateNetPeering mocks base method.
-func (m *MockServicer) CreateNetPeering(ctx context.Context, netID, mgmtNetID, mgmtAccountID, clusterID string) (*osc.NetPeering, error) {
+func (m *MockServicer) CreateNetPeering(ctx context.Context, netID, mgmtNetID string, mgmtAccountID *string, clusterID string) (*osc.NetPeering, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNetPeering", ctx, netID, mgmtNetID, mgmtAccountID, clusterID)
 	ret0, _ := ret[0].(*osc.NetPeering)
@@ -718,18 +718,33 @@ func (mr *MockServicerMockRecorder) ListNetAccessPoints(ctx, netId any) *gomock.
 }
 
 // ListNetPeerings mocks base method.
-func (m *MockServicer) ListNetPeerings(ctx context.Context, netId string) ([]osc.NetPeering, error) {
+func (m *MockServicer) ListNetPeerings(ctx context.Context, netId, clusterID string) ([]osc.NetPeering, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListNetPeerings", ctx, netId)
+	ret := m.ctrl.Call(m, "ListNetPeerings", ctx, netId, clusterID)
 	ret0, _ := ret[0].([]osc.NetPeering)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListNetPeerings indicates an expected call of ListNetPeerings.
-func (mr *MockServicerMockRecorder) ListNetPeerings(ctx, netId any) *gomock.Call {
+func (mr *MockServicerMockRecorder) ListNetPeerings(ctx, netId, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNetPeerings", reflect.TypeOf((*MockServicer)(nil).ListNetPeerings), ctx, netId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNetPeerings", reflect.TypeOf((*MockServicer)(nil).ListNetPeerings), ctx, netId, clusterID)
+}
+
+// ListNets mocks base method.
+func (m *MockServicer) ListNets(ctx context.Context, clusterID string) ([]osc.Net, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListNets", ctx, clusterID)
+	ret0, _ := ret[0].([]osc.Net)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListNets indicates an expected call of ListNets.
+func (mr *MockServicerMockRecorder) ListNets(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNets", reflect.TypeOf((*MockServicer)(nil).ListNets), ctx, clusterID)
 }
 
 // ListPublicIpsFromPool mocks base method.

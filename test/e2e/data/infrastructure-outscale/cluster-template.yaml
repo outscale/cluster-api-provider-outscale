@@ -81,6 +81,7 @@ metadata:
 spec:
   template:
     spec:
+      role: controlplane
       image:
         name: "${KUBERNETES_IMAGE_UPGRADE_FROM}"
         outscaleOpenSource: true
@@ -88,7 +89,6 @@ spec:
         keypair: "${CLUSTER_NAME}-keypair"
         subregions:
          - ${OSC_REGION}a
-        role: controlplane
         type: "${OSC_VM_TYPE}"
       volumes:
         - root: true

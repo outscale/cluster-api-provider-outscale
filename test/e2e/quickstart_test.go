@@ -72,19 +72,31 @@ var _ = Describe("[quickstart][fast] Running the Cluster API quick start tests",
 					Expect(err).To(Succeed())
 					Expect(ms.Items).To(HaveLen(7))
 					workers := map[string]int{}
+					workernet := map[string]int{}
 					cps := map[string]int{}
 					for _, m := range ms.Items {
 						Expect(m.Status.FailureDomain).To(Not(BeNil()))
+						Expect(m.Annotations).To(Not(BeNil()))
+						Expect(m.Annotations[infrastructurev1beta2.NetAnnotation]).To(Not(BeEmpty()))
 						if _, found := m.GetLabels()["cluster.x-k8s.io/control-plane"]; found {
 							cps[*m.Status.FailureDomain]++
 						} else {
 							workers[*m.Status.FailureDomain]++
+							workernet[m.Annotations[infrastructurev1beta2.NetAnnotation]]++
 						}
 					}
-					Expect(lo.Keys(workers)).To(HaveLen(2))
-					Expect(lo.Max(lo.Values(workers)) - lo.Min(lo.Values(workers))).To(BeNumerically("<=", 1))
-					Expect(lo.Keys(cps)).To(HaveLen(2))
-					Expect(lo.Max(lo.Values(cps)) - lo.Min(lo.Values(cps))).To(BeNumerically("<=", 1))
+					// subregions
+					Expect(lo.Keys(workers)).To(HaveLen(2), "Workers should be present in 2 subregions")
+					Expect(lo.Max(lo.Values(workers))-lo.Min(lo.Values(workers))).To(BeNumerically("<=", 1),
+						"Worker subregions should be evenly distributed")
+					// nets
+					Expect(lo.Keys(workernet)).To(HaveLen(2), "Workers should be present in 2 nets")
+					Expect(lo.Max(lo.Values(workernet))-lo.Min(lo.Values(workernet))).To(BeNumerically("<=", 1),
+						"Worker nets should be evenly distributed")
+					// controlplane subregions
+					Expect(lo.Keys(cps)).To(HaveLen(2), "Control planes should be present in 2 subregions")
+					Expect(lo.Max(lo.Values(cps))-lo.Min(lo.Values(cps))).To(BeNumerically("<=", 1),
+						"Control plane subregions should be evenly distributed")
 				},
 			}
 		})

@@ -1,0 +1,77 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscCluster
+metadata:
+  generation: 1
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+  name: test-cluster-api
+  namespace: cluster-api-test
+  ownerReferences:
+    - apiVersion: cluster.x-k8s.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Cluster
+      name: test-cluster-api
+      uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+  resourceVersion: "20214284"
+  uid: 4973cd7c-439b-4108-b61f-39805379aa0e
+spec:
+  loadBalancer:
+    name: test-cluster-api-k8s
+  subregions:
+   - eu-west-2a
+   - eu-west-2b
+  nets:
+    - ipRange: 10.0.0.0/16
+      subnets:
+        - ipRange: 10.0.2.0/24
+          roles:
+            - loadbalancer
+            - nat
+          subregion: eu-west-2a
+        - ipRange: 10.0.3.0/24
+          roles:
+            - worker
+          subregion: eu-west-2a
+        - ipRange: 10.0.4.0/24
+          roles:
+            - controlplane
+          subregion: eu-west-2a
+        - ipRange: 10.0.5.0/24
+          roles:
+            - nat
+          subregion: eu-west-2b
+        - ipRange: 10.0.6.0/24
+          roles:
+            - worker
+          subregion: eu-west-2b
+        - ipRange: 10.0.7.0/24
+          roles:
+            - controlplane
+          subregion: eu-west-2b
+    - ipRange: 10.1.0.0/16
+      subnets:
+        - ipRange: 10.1.2.0/24
+          roles:
+            - nat
+          subregion: eu-west-2a
+        - ipRange: 10.1.3.0/24
+          roles:
+            - worker
+          subregion: eu-west-2a
+        - ipRange: 10.1.4.0/24
+          roles:
+            - controlplane
+          subregion: eu-west-2a
+        - ipRange: 10.1.5.0/24
+          roles:
+            - nat
+          subregion: eu-west-2b
+        - ipRange: 10.1.6.0/24
+          roles:
+            - worker
+          subregion: eu-west-2b
+        - ipRange: 10.1.7.0/24
+          roles:
+            - controlplane
+          subregion: eu-west-2b

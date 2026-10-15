@@ -37,9 +37,9 @@ var (
 						Type:        infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
 					},
 				},
+				Role: "controlplane",
 				Vm: infrastructurev1beta2.OscVm{
 					Description: "test-vm",
-					Role:        "controlplane",
 					Keypair:     "rke",
 					Subregions:  []infrastructurev1beta2.OscSubRegion{"eu-west-2a"},
 					Type:        "tinav3.c2r4p2",

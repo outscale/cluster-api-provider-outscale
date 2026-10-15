@@ -11,6 +11,7 @@ import (
 	"errors"
 	"regexp"
 
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
@@ -72,6 +73,22 @@ func (s *Service) ReadTag(ctx context.Context, rsrcType ResourceType, key, value
 
 func (s *Service) ReadOwnedByTag(ctx context.Context, rsrcType ResourceType, cluster string) (*osc.Tag, error) {
 	return s.ReadTag(ctx, rsrcType, ClusterKeyPrefix+cluster, OwnedValue)
+}
+
+func (s *Service) ListOwnedByTag(ctx context.Context, rsrcType ResourceType, cluster string) ([]osc.Tag, error) {
+	req := osc.ReadTagsRequest{
+		Filters: &osc.FiltersTag{
+			ResourceTypes: &[]string{string(rsrcType)},
+			Keys:          &[]string{ClusterKeyPrefix + cluster},
+			Values:        &[]string{cluster},
+		},
+	}
+
+	resp, err := s.tenant.Client().ReadTags(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return ptr.From(resp.Tags), nil
 }
 
 // ValidateTagNameValue check that tag name value is a valid name

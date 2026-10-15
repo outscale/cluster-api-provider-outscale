@@ -35,63 +35,67 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 	}
 	log.V(4).Info("Reconciling natServices")
 
-	for _, subnetSpec := range clusterScope.GetSubnets() {
-		if !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleNat) {
-			continue
-		}
-		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("get subnet: %w", err)
-		}
+	for _, n := range clusterScope.GetNets() {
+		for _, subnetSpec := range n.Subnets {
+			if !subnetSpec.HasRole(infrastructurev1beta2.RoleNat) {
+				continue
+			}
+			subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("get subnet: %w", err)
+			}
 
-		natService, err := r.Tracker.getNatService(ctx, subnetId, clusterScope)
-		switch {
-		case IsNotFound(err):
-		case err != nil:
-			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
-		default:
-			log.V(4).Info("Found existing natService", "subnetId", subnetId, "natServiceId", natService.NatServiceId)
-			continue
-		}
+			natService, err := r.Tracker.getNatService(ctx, subnetId, clusterScope)
+			switch {
+			case IsNotFound(err):
+			case err != nil:
+				return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
+			default:
+				log.V(4).Info("Found existing natService", "subnetId", subnetId, "natServiceId", natService.NatServiceId)
+				continue
+			}
 
-		publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
-			clusterScope.GetNatServiceIPTrackingID(subnetId), clusterScope.GetNatServiceName(subnetSpec), clusterScope.GetSpec().NatPublicIpPool, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
-		}
+			publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
+				clusterScope.GetNatServiceIPTrackingID(subnetId), clusterScope.GetNatServiceName(subnetSpec), clusterScope.GetSpec().NatPublicIpPool, clusterScope)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
+			}
 
-		log.V(3).Info("Creating natService", "subnetId", subnetId)
-		natService, err = r.Cloud.Net(clusterScope.Tenant).CreateNatService(ctx, publicIpId, subnetId,
-			clusterScope.GetNatServiceName(subnetSpec), clusterScope.GetUID())
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
+			log.V(3).Info("Creating natService", "subnetId", subnetId)
+			natService, err = r.Cloud.Net(clusterScope.Tenant).CreateNatService(ctx, publicIpId, subnetId,
+				clusterScope.GetNatServiceName(subnetSpec), clusterScope.GetUID())
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
+			}
+			log.V(2).Info("Created natService", "subnetId", subnetId, "natServiceId", natService.NatServiceId)
+			r.Tracker.setNatServiceId(clusterScope, subnetId, natService.NatServiceId)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created in %s", subnetId)
 		}
-		log.V(2).Info("Created natService", "subnetId", subnetId, "natServiceId", natService.NatServiceId)
-		r.Tracker.setNatServiceId(clusterScope, subnetId, natService.NatServiceId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created in %s", subnetId)
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNatService)
 	return reconcile.Result{}, nil
 }
 
 func (r *OscClusterReconciler) listNATPublicIPs(ctx context.Context, clusterScope *scope.ClusterScope, cidr bool) ([]string, error) {
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	if err != nil {
-		return nil, fmt.Errorf("cannot find net: %w", err)
-	}
-	natSvc := r.Cloud.Net(clusterScope.Tenant)
-	nats, err := natSvc.ListNatServices(ctx, netId)
-	if err != nil {
-		return nil, fmt.Errorf("list natServices: %w", err)
-	}
-	ips := make([]string, 0, len(nats))
-	for _, nat := range nats {
-		for _, ip := range nat.PublicIps {
-			pip := ip.PublicIp
-			if cidr {
-				pip += "/32"
+	var ips []string
+	for _, n := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, n.IpRange, clusterScope)
+		if err != nil {
+			return nil, fmt.Errorf("cannot find net: %w", err)
+		}
+		natSvc := r.Cloud.Net(clusterScope.Tenant)
+		nats, err := natSvc.ListNatServices(ctx, netId)
+		if err != nil {
+			return nil, fmt.Errorf("list natServices: %w", err)
+		}
+		for _, nat := range nats {
+			for _, ip := range nat.PublicIps {
+				pip := ip.PublicIp
+				if cidr {
+					pip += "/32"
+				}
+				ips = append(ips, pip)
 			}
-			ips = append(ips, pip)
 		}
 	}
 	return ips, nil
@@ -104,28 +108,34 @@ func (r *OscClusterReconciler) reconcileDeleteNatService(ctx context.Context, cl
 		log.V(3).Info("Not deleting existing nat services")
 		return reconcile.Result{}, nil
 	}
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	switch {
-	case IsNotFound(err):
-		log.V(4).Info("The net is already deleted, no nat service expected")
-		return reconcile.Result{}, nil
-	case err != nil:
-		return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
-	}
-	natSvc := r.Cloud.Net(clusterScope.Tenant)
-	nats, err := natSvc.ListNatServices(ctx, netId)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("list natServices: %w", err)
-	}
-
-	for _, nat := range nats {
-		if nat.State == osc.NatServiceStateDeleted {
+	for _, n := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, n.IpRange, clusterScope)
+		switch {
+		case IsNotFound(err):
+			log.V(4).Info("The net is already deleted, no nat service expected")
 			continue
+		case err != nil:
+			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
 		}
-		log.V(2).Info("Deleting natService", "natId", nat.NatServiceId)
-		err = natSvc.DeleteNatService(ctx, nat.NatServiceId)
+		natSvc := r.Cloud.Net(clusterScope.Tenant)
+		nats, err := natSvc.ListNatServices(ctx, netId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot delete natService: %w", err)
+			return reconcile.Result{}, fmt.Errorf("list natServices: %w", err)
+		}
+
+		for _, nat := range nats {
+			if nat.State == osc.NatServiceStateDeleted {
+				continue
+			}
+			log.V(2).Info("Deleting natService", "natId", nat.NatServiceId)
+			err = natSvc.DeleteNatService(ctx, nat.NatServiceId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot delete natService: %w", err)
+			}
+			if len(nat.PublicIps) > 0 {
+				// retrack publick IP in case it is missing from status
+				r.Tracker.trackIP(clusterScope, clusterScope.GetNatServiceIPTrackingID(nat.SubnetId), nat.PublicIps[0].PublicIpId)
+			}
 		}
 	}
 	return reconcile.Result{}, nil

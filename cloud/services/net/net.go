@@ -8,20 +8,21 @@ package net
 import (
 	"context"
 
-	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 type NetInterface interface {
-	CreateNet(ctx context.Context, spec infrastructurev1beta2.OscNet, clusterID, netName string) (*osc.Net, error)
+	CreateNet(ctx context.Context, ipRange, clusterID, netName string) (*osc.Net, error)
 	DeleteNet(ctx context.Context, netId string) error
 	GetNet(ctx context.Context, netId string) (*osc.Net, error)
+	ListNets(ctx context.Context, clusterID string) ([]osc.Net, error)
 }
 
 // CreateNet create the net from spec (in order to retrieve ip range)
-func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta2.OscNet, clusterID, netName string) (*osc.Net, error) {
+func (s *Service) CreateNet(ctx context.Context, ipRange, clusterID, netName string) (*osc.Net, error) {
 	req := osc.CreateNetRequest{
-		IpRange: spec.IpRange,
+		IpRange: ipRange,
 	}
 
 	resp, err := s.tenant.Client().CreateNet(ctx, req)
@@ -73,4 +74,19 @@ func (s *Service) GetNet(ctx context.Context, netId string) (*osc.Net, error) {
 	default:
 		return &(*resp.Nets)[0], nil
 	}
+}
+
+// ListNets lists all nets, owned by a cluster.
+func (s *Service) ListNets(ctx context.Context, clusterID string) ([]osc.Net, error) {
+	req := osc.ReadNetsRequest{
+		Filters: &osc.FiltersNet{
+			Tags: &[]string{"OscK8sClusterID/" + clusterID + "=owned"},
+		},
+	}
+
+	resp, err := s.tenant.Client().ReadNets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return ptr.From(resp.Nets), nil
 }
