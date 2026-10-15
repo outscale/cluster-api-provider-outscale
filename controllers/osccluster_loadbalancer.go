@@ -55,7 +55,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	}
 
 	if loadbalancer == nil {
-		subnetSpec, err := clusterScope.GetSubnet(loadBalancerSpec.SubnetName, infrastructurev1beta2.RoleLoadBalancer, "")
+		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleLoadBalancer, "")
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}
@@ -63,12 +63,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("get subnet: %w", err)
 		}
-		var sgSpecs []infrastructurev1beta2.OscSecurityGroup
-		if loadBalancerSpec.SecurityGroupName != "" {
-			sgSpecs, err = clusterScope.GetSecurityGroupsFor([]infrastructurev1beta2.OscSecurityGroupElement{{Name: loadBalancerSpec.SecurityGroupName}}, infrastructurev1beta2.RoleLoadBalancer)
-		} else {
-			sgSpecs, err = clusterScope.GetSecurityGroupsFor(nil, infrastructurev1beta2.RoleLoadBalancer)
-		}
+		sgSpecs, err := clusterScope.GetSecurityGroupsFor(nil, infrastructurev1beta2.RoleLoadBalancer)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find securityGroup: %w", err)
 		}

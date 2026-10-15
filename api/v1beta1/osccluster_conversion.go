@@ -15,10 +15,10 @@ import (
 func ConvertRulesTo(src []OscSecurityGroupRule) []infrastructurev1beta2.OscSecurityGroupRule {
 	return lo.Map(src, func(src OscSecurityGroupRule, _ int) infrastructurev1beta2.OscSecurityGroupRule {
 		return infrastructurev1beta2.OscSecurityGroupRule{
-			Name:     src.Name,
-			Flow:     ConvertFlowTo(src.Flow),
-			Ports:    []infrastructurev1beta2.Port{infrastructurev1beta2.BuildPort(src.IpProtocol, src.FromPortRange, src.ToPortRange)},
-			IpRanges: src.GetIpRanges(),
+			Description: src.Name,
+			Flow:        ConvertFlowTo(src.Flow),
+			Ports:       []infrastructurev1beta2.Port{infrastructurev1beta2.BuildPort(src.IpProtocol, src.FromPortRange, src.ToPortRange)},
+			IpRanges:    src.GetIpRanges(),
 		}
 	})
 }
@@ -32,7 +32,7 @@ func ConvertRulesFrom(srcs []infrastructurev1beta2.OscSecurityGroupRule) ([]OscS
 				return nil, err
 			}
 			dst = append(dst, OscSecurityGroupRule{
-				Name:          src.Name,
+				Name:          src.Description,
 				Flow:          ConvertFlowFrom(src.Flow),
 				IpProtocol:    proto,
 				FromPortRange: int32(fromPort), //nolint
@@ -72,10 +72,8 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			Loadbalancer: lo.Contains(srcNet.Disable, DisableLB),
 		},
 		LoadBalancer: infrastructurev1beta2.OscLoadBalancer{
-			Name:              srcNet.LoadBalancer.LoadBalancerName,
-			Type:              infrastructurev1beta2.OscLoadBalancerType(srcNet.LoadBalancer.LoadBalancerType),
-			SubnetName:        srcNet.LoadBalancer.SubnetName,
-			SecurityGroupName: srcNet.LoadBalancer.SecurityGroupName,
+			Name: srcNet.LoadBalancer.LoadBalancerName,
+			Type: infrastructurev1beta2.OscLoadBalancerType(srcNet.LoadBalancer.LoadBalancerType),
 			Listener: infrastructurev1beta2.OscLoadBalancerListener{
 				BackendPort:          srcNet.LoadBalancer.Listener.BackendPort,
 				BackendProtocol:      infrastructurev1beta2.OscLoadBalancerProtocol(srcNet.LoadBalancer.Listener.BackendProtocol),
@@ -92,9 +90,9 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			},
 		},
 		Net: infrastructurev1beta2.OscNet{
-			Name:       srcNet.Net.Name,
-			IpRange:    srcNet.Net.IpRange,
-			ResourceId: srcNet.Net.ResourceId,
+			Description: srcNet.Net.Name,
+			IpRange:     srcNet.Net.IpRange,
+			ResourceId:  srcNet.Net.ResourceId,
 		},
 		NetPeering: infrastructurev1beta2.OscNetPeering{
 			Enable:                srcNet.NetPeering.Enable,
@@ -109,7 +107,7 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 		ControlPlaneSubnets: srcNet.ControlPlaneSubnets,
 		Subnets: lo.Map(srcNet.Subnets, func(src OscSubnet, _ int) infrastructurev1beta2.OscSubnet {
 			return infrastructurev1beta2.OscSubnet{
-				Name: src.Name,
+				Description: src.Name,
 				Roles: lo.Map(src.Roles, func(src OscRole, _ int) infrastructurev1beta2.OscRole {
 					return infrastructurev1beta2.OscRole(src)
 				}),
@@ -119,17 +117,21 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			}
 		}),
 		InternetService: infrastructurev1beta2.OscInternetService{
-			Name: srcNet.InternetService.Name,
+			Description: srcNet.InternetService.Name,
 		},
 		NatPublicIpPool: srcNet.NatPublicIpPool,
 		RouteTables: lo.Map(srcNet.RouteTables, func(src OscRouteTable, _ int) infrastructurev1beta2.OscRouteTable {
 			return infrastructurev1beta2.OscRouteTable{
-				Name:      src.Name,
-				Subnets:   src.Subnets,
-				Role:      infrastructurev1beta2.OscRole(src.Role),
-				Subregion: infrastructurev1beta2.OscSubRegion(src.SubregionName),
+				Description: src.Name,
+				Role:        infrastructurev1beta2.OscRole(src.Role),
+				Subregion:   infrastructurev1beta2.OscSubRegion(src.SubregionName),
 				Routes: lo.Map(src.Routes, func(src OscRoute, _ int) infrastructurev1beta2.OscRoute {
-					return infrastructurev1beta2.OscRoute(src)
+					return infrastructurev1beta2.OscRoute{
+						Description: src.Name,
+						TargetName:  src.TargetName,
+						TargetType:  src.TargetType,
+						Destination: src.Destination,
+					}
 				}),
 			}
 		}),
@@ -159,7 +161,6 @@ func (src *OscClusterSpec) ConvertTo(dst *infrastructurev1beta2.OscClusterSpec) 
 			ImageAccountId: srcNet.Bastion.ImageAccountId,
 			KeypairName:    srcNet.Bastion.KeypairName,
 			VmType:         srcNet.Bastion.VmType,
-			SubnetName:     srcNet.Bastion.SubnetName,
 			RootDisk: infrastructurev1beta2.OscVolume{
 				Iops: srcNet.Bastion.RootDisk.RootDiskIops,
 				Size: srcNet.Bastion.RootDisk.RootDiskSize,
@@ -197,10 +198,8 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 	dst.Network = OscNetwork{
 		UseExisting: OscReuse(src.UseExisting),
 		LoadBalancer: OscLoadBalancer{
-			LoadBalancerName:  src.LoadBalancer.Name,
-			LoadBalancerType:  string(src.LoadBalancer.Type),
-			SubnetName:        src.LoadBalancer.SubnetName,
-			SecurityGroupName: src.LoadBalancer.SecurityGroupName,
+			LoadBalancerName: src.LoadBalancer.Name,
+			LoadBalancerType: string(src.LoadBalancer.Type),
 			Listener: OscLoadBalancerListener{
 				BackendPort:          src.LoadBalancer.Listener.BackendPort,
 				BackendProtocol:      string(src.LoadBalancer.Listener.BackendProtocol),
@@ -217,7 +216,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			},
 		},
 		Net: OscNet{
-			Name:       src.Net.Name,
+			Name:       src.Net.Description,
 			IpRange:    src.Net.IpRange,
 			ResourceId: src.Net.ResourceId,
 		},
@@ -234,7 +233,7 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 		ControlPlaneSubnets: src.ControlPlaneSubnets,
 		Subnets: lo.Map(src.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) OscSubnet {
 			return OscSubnet{
-				Name: src.Name,
+				Name: src.Description,
 				Roles: lo.Map(src.Roles, func(src infrastructurev1beta2.OscRole, _ int) OscRole {
 					return OscRole(src)
 				}),
@@ -244,26 +243,29 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			}
 		}),
 		InternetService: OscInternetService{
-			Name: src.InternetService.Name,
+			Name: src.InternetService.Description,
 		},
 		NatServices: lo.FilterMap(src.Subnets, func(src infrastructurev1beta2.OscSubnet, _ int) (OscNatService, bool) {
 			if !slices.Contains(src.Roles, infrastructurev1beta2.RoleNat) {
 				return OscNatService{}, false
 			}
 			return OscNatService{
-				SubnetName:    src.Name,
 				SubregionName: string(src.Subregion),
 			}, true
 		}),
 		NatPublicIpPool: src.NatPublicIpPool,
 		RouteTables: lo.Map(src.RouteTables, func(src infrastructurev1beta2.OscRouteTable, _ int) OscRouteTable {
 			return OscRouteTable{
-				Name:          src.Name,
-				Subnets:       src.Subnets,
+				Name:          src.Description,
 				Role:          OscRole(src.Role),
 				SubregionName: string(src.Subregion),
 				Routes: lo.Map(src.Routes, func(src infrastructurev1beta2.OscRoute, _ int) OscRoute {
-					return OscRoute(src)
+					return OscRoute{
+						Name:        src.Description,
+						TargetName:  src.TargetName,
+						TargetType:  src.TargetType,
+						Destination: src.Destination,
+					}
 				}),
 			}
 		}),
@@ -301,7 +303,6 @@ func (dst *OscClusterSpec) ConvertFrom(src *infrastructurev1beta2.OscClusterSpec
 			ImageAccountId: src.Bastion.ImageAccountId,
 			KeypairName:    src.Bastion.KeypairName,
 			VmType:         src.Bastion.VmType,
-			SubnetName:     src.Bastion.SubnetName,
 			RootDisk: OscRootDisk{
 				RootDiskIops: src.Bastion.RootDisk.Iops,
 				RootDiskSize: src.Bastion.RootDisk.Size,

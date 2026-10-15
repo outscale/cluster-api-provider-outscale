@@ -34,7 +34,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupAddRules(ctx context.Contex
 		for _, port := range ruleSpec.Ports {
 			protocol, fromPort, toPort, err := port.Parse()
 			if err != nil {
-				log.Error(err, "Error while updating rule", "name", ruleSpec.Name)
+				log.Error(err, "Error while updating rule", "description", ruleSpec.Description)
 				continue
 			}
 			var existingRanges []string
@@ -76,7 +76,7 @@ func (r *OscClusterReconciler) reconcileSecurityGroupDeleteRules(ctx context.Con
 				for _, port := range ruleSpec.Ports {
 					protocol, fromPort, toPort, err := port.Parse()
 					if err != nil {
-						log.Error(err, "Error while updating rule", "name", ruleSpec.Name)
+						log.Error(err, "Error while updating rule", "description", ruleSpec.Description)
 						continue
 					}
 					if flow != ruleSpec.Flow ||

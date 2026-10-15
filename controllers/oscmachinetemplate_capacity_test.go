@@ -31,19 +31,18 @@ var (
 						Type: infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
 					},
 					{
-						Name: "test-volume",
-						Iops: 1000,
-						Size: 50,
-						Type: infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
+						Description: "test-volume",
+						Iops:        1000,
+						Size:        50,
+						Type:        infrastructurev1beta2.OscVolumeType(osc.VolumeTypeIo1),
 					},
 				},
 				Vm: infrastructurev1beta2.OscVm{
-					Name:       "test-vm",
-					Role:       "controlplane",
-					Keypair:    "rke",
-					Subregions: []infrastructurev1beta2.OscSubRegion{"eu-west-2a"},
-					SubnetName: "test-subnet",
-					Type:       "tinav3.c2r4p2",
+					Description: "test-vm",
+					Role:        "controlplane",
+					Keypair:     "rke",
+					Subregions:  []infrastructurev1beta2.OscSubRegion{"eu-west-2a"},
+					Type:        "tinav3.c2r4p2",
 					SecurityGroupNames: []infrastructurev1beta2.OscSecurityGroupElement{
 						{
 							Name: "test-securitygroup",
