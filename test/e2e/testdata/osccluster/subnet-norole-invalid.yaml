@@ -4,12 +4,14 @@ metadata:
   name: test-cluster-api
   namespace: cluster-api-test
 spec:
-  subnets:
-  - roles:
-      - worker
-    ipRange: 10.0.0.0/24
-  - roles:
-    ipRange: 10.0.1.0/24
+  nets:
+    - ipRange: 10.0.0.0/8
+      subnets:
+      - roles:
+          - worker
+        ipRange: 10.0.0.0/24
+      - roles:
+        ipRange: 10.0.1.0/24
   loadBalancer:
     name: test-cluster-api
     type: internet-facing

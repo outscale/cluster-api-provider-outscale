@@ -23,8 +23,8 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 	return []any{
 		spokeSkipOscMachineStatus,
 		spokeSkipOscMachineUnused,
-		spokeHardCodeResources,
-		hubHardCodeResources,
+		spokeHardCodeMachineResources,
+		hubHardCodeMachineResources,
 		spokeSkipVolumeUnused,
 		spokeSkipKeypair,
 
@@ -36,7 +36,7 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 
 func spokeSkipOscMachineStatus(in *infrastructurev1beta1.OscNodeResource, c fuzz.Continue) {}
 
-func spokeHardCodeResources(in *infrastructurev1beta1.OscMachineResources, c fuzz.Continue) {
+func spokeHardCodeMachineResources(in *infrastructurev1beta1.OscMachineResources, c fuzz.Continue) {
 	*in = infrastructurev1beta1.OscMachineResources{
 		Vm: map[string]string{
 			"default": "i-foo",
@@ -56,7 +56,7 @@ func spokeHardCodeResources(in *infrastructurev1beta1.OscMachineResources, c fuz
 	}
 }
 
-func hubHardCodeResources(in *infrastructurev1beta2.OscMachineResources, c fuzz.Continue) {
+func hubHardCodeMachineResources(in *infrastructurev1beta2.OscMachineResources, c fuzz.Continue) {
 	*in = infrastructurev1beta2.OscMachineResources{
 		FGPU: map[string]string{
 			"default": "fgpu-foo",

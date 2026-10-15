@@ -134,9 +134,9 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	}
 
 	bastionSpec := clusterScope.GetBastion()
-	subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleBastion, "")
+	netSpec, subnetSpec, err := clusterScope.GetSingleSubnet(infrastructurev1beta2.RoleBastion)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get subnet: %w", err)
+		return reconcile.Result{}, fmt.Errorf("subnet spec: %w", err)
 	}
 	subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
 	if err != nil {
@@ -164,7 +164,7 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	svc := r.Cloud.Compute(clusterScope.Tenant)
 	securityGroupIds := make([]string, 0, len(bastionSecurityGroups))
 	for _, sgSpec := range bastionSecurityGroups {
-		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
+		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, netSpec.IpRange, sgSpec, clusterScope)
 		log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 		if err != nil {
 			return reconcile.Result{}, err

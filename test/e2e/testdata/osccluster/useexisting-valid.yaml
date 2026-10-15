@@ -6,12 +6,13 @@ metadata:
 spec:
   useExisting:
     net: true
-  net:
-    resourceId: vpc-foo
-  subnets:
-    - roles:
-        - worker
-      resourceId: subnet-foo
+  nets:
+    - ipRange: 10.0.0.0/8
+      resourceId: vpc-foo
+      subnets:
+        - roles:
+            - worker
+          resourceId: subnet-foo
   loadBalancer:
     name: test-cluster-api
     type: internet-facing

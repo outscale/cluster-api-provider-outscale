@@ -33,22 +33,16 @@ type OscClusterSpec struct {
 	// The Load Balancer configuration
 	// +optional
 	LoadBalancer OscLoadBalancer `json:"loadBalancer,omitempty,omitzero"`
-	// The Net configuration
+	// The Nets configuration
 	// +optional
-	Net OscNet `json:"net,omitempty,omitzero"`
+	// +kubebuilder:validation:MaxItems=15
+	Nets []OscNet `json:"nets,omitempty,omitzero"`
 	// The NetPeering configuration, required if the load balancer is internal, and management and workload clusters are on separate VPCs.
 	// +optional
 	NetPeering OscNetPeering `json:"netPeering,omitempty,omitzero"`
 	// The NetAccessPoints configuration, required if internet is disabled.
 	// +optional
 	NetAccessPoints []OscNetAccessPointService `json:"netAccessPoints,omitempty"`
-	// List of subnet to spread controlPlane nodes (deprecated, add controlplane role to subnets)
-	// +optional
-	ControlPlaneSubnets []string `json:"controlPlaneSubnets,omitempty"`
-	// The Subnets configuration
-	// +optional
-	// +kubebuilder:validation:MaxItems=20
-	Subnets []OscSubnet `json:"subnets,omitempty"`
 	// The Internet Service configuration
 	// +optional
 	InternetService OscInternetService `json:"internetService,omitempty,omitzero"`
@@ -57,6 +51,7 @@ type OscClusterSpec struct {
 	NatPublicIpPool string `json:"natPublicIpPool,omitempty"`
 	// The Route Table configuration
 	// +optional
+	// +kubebuilder:validation:MaxItems=20
 	RouteTables []OscRouteTable `json:"routeTables,omitempty"`
 	// The Security Groups configuration.
 	// +optional
@@ -98,6 +93,7 @@ type OscClusterSpec struct {
 type OscClusterStatus struct {
 	Ready                bool                     `json:"ready,omitempty"`
 	Resources            OscClusterResources      `json:"resources,omitempty,omitzero"`
+	LegacyResources      *OscClusterResources     `json:"legacyResources,omitempty,omitzero"`
 	ReconcilerGeneration OscReconcilerGeneration  `json:"reconcilerGeneration,omitempty"`
 	FailureDomains       clusterv1.FailureDomains `json:"failureDomains,omitempty"`
 	Conditions           clusterv1.Conditions     `json:"conditions,omitempty"`
@@ -116,10 +112,9 @@ type OscCluster struct {
 
 	// +kubebuilder:validation:XValidation:rule="(has(self.disable) && has(self.disable.loadbalancer) && self.disable.loadbalancer) || (has(self.loadBalancer) && has(self.loadBalancer.name))",message="loadBalancer.name is required unless loadBalancer is disabled"
 	// +kubebuilder:validation:XValidation:rule="!(has(self.disable) && has(self.disable.loadbalancer) && self.disable.loadbalancer) || !(has(self.loadBalancer) && has(self.loadBalancer.name))",message="loadBalancer is forbidden if loadBalancer is disabled"
-	// +kubebuilder:validation:XValidation:rule="!(has(self.useExisting) && has(self.useExisting.net) && self.useExisting.net) || (has(self.net) && has(self.net.resourceId))",message="net.resourceId is required if useExisting.net is set"
-	// +kubebuilder:validation:XValidation:rule="(has(self.useExisting) && has(self.useExisting.net) && self.useExisting.net) || !(has(self.net) && has(self.net.resourceId))",message="net.resourceId is forbidden unless useExisting.net is set"
-	// +kubebuilder:validation:XValidation:rule="!(has(self.useExisting) && has(self.useExisting.net) && self.useExisting.net) || (has(self.subnets) && self.subnets.all(s, has(s.resourceId)))",message="subnets.resourceId is required if useExisting.net is set"
-	// +kubebuilder:validation:XValidation:rule="!has(self.subnets) || !has(self.net) ||!has(self.net.ipRange) || self.subnets.all(s, !has(s.ipRange) || cidr(self.net.ipRange).containsCIDR(cidr(s.ipRange)))",message="subnets.ipRange must belong to net.ipRange"
+	// +kubebuilder:validation:XValidation:rule="(has(self.useExisting) && has(self.useExisting.net) && self.useExisting.net) || !(has(self.nets) && self.nets.exists(s, has(s.resourceId)))",message="nets.resourceId is forbidden unless useExisting.net is set"
+	// +kubebuilder:validation:XValidation:rule="!(has(self.useExisting) && has(self.useExisting.net) && self.useExisting.net) || (has(self.nets) && self.nets.all(s, has(s.resourceId)))",message="nets.resourceId is required if useExisting.net is set"
+	// +kubebuilder:validation:XValidation:rule="!(has(self.useExisting) && has(self.useExisting.net) && self.useExisting.net) || (has(self.nets) && self.nets.all(s, !has(s.subnets) || s.subnets.all(s, has(s.resourceId))))",message="subnets.resourceId is required if useExisting.net is set"
 	Spec   OscClusterSpec   `json:"spec,omitempty"`
 	Status OscClusterStatus `json:"status,omitempty"`
 }
