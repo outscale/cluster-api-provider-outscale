@@ -79,12 +79,6 @@ type OscLoadBalancer struct {
 	// +optional
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
 	Type OscLoadBalancerType `json:"type,omitempty"`
-	// The subnet name where to add the load balancer (deprecated, add loadbalancer role to a subnet)
-	// +optional
-	SubnetName string `json:"subnetname,omitempty"`
-	// The security group name for the load-balancer (deprecated, add loadbalancer role to a security group)
-	// +optional
-	SecurityGroupName string `json:"securitygroupname,omitempty"`
 	// The Listener configuration of the loadBalancer
 	// +optional
 	Listener OscLoadBalancerListener `json:"listener,omitempty,omitzero"`
@@ -156,7 +150,7 @@ type OscLoadBalancerHealthCheck struct {
 type OscNet struct {
 	// the network name
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// the ip range in CIDR notation of the Net
 	// +optional
 	// +kubebuilder:validation:MaxLength=25
@@ -212,13 +206,13 @@ const (
 type OscInternetService struct {
 	// The name of the Internet service
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 type OscSubnet struct {
 	// The name of the Subnet
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The role of the Subnet (controlplane, worker, loadbalancer, bastion or nat)
 	// +required
 	// +kubebuilder:validation:MinItems=1
@@ -237,12 +231,6 @@ type OscSubnet struct {
 }
 
 type OscNatService struct {
-	// The name of the Nat Service
-	// +optional
-	Name string `json:"name,omitempty"`
-	// The name of the Subnet to which the Nat Service will be attached (deprecated, add nat role to subnets)
-	// +optional
-	SubnetName string `json:"subnetname,omitempty"`
 	// The name of the Subregion to which the Nat Service will be attached, unless a subnet has been defined
 	// +optional
 	Subregion OscSubRegion `json:"subregion,omitempty"`
@@ -251,10 +239,7 @@ type OscNatService struct {
 type OscRouteTable struct {
 	// The tag name associate with the Route Table
 	// +optional
-	Name string `json:"name,omitempty"`
-	// The subnet tag name associate with a Subnet (deprecated, use roles)
-	// +optional
-	Subnets []string `json:"subnets,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The role for this route table
 	// +required
 	Role OscRole `json:"role,omitempty"`
@@ -321,7 +306,7 @@ type OscAdditionalSecurityRules struct {
 type OscRoute struct {
 	// The tag name associate with the Route
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The tag name associate with the target resource type
 	// +optional
 	TargetName string `json:"targetName,omitempty"`
@@ -331,9 +316,6 @@ type OscRoute struct {
 	// the destination match Ip range with CIDR notation
 	// +optional
 	Destination string `json:"destination,omitempty"`
-	// The Route Id response
-	// +optional
-	ResourceId string `json:"resourceId,omitempty"`
 }
 
 type OscPrivateIpElement struct {
@@ -395,7 +377,7 @@ func BuildPort(protocol string, fromPort, toPort int32) Port {
 type OscSecurityGroupRule struct {
 	// The tag name associate with the security group
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The flow of the security group (Inbound or Outbound), default Inbound
 	// +optional
 	Flow Flow `json:"flow,omitempty"`
@@ -490,7 +472,7 @@ type OscVolumeType osc.VolumeType
 type OscVolume struct {
 	// The volume name.
 	// +optional
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// Is it the root volume ?
 	// +optional
 	Root bool `json:"root,omitempty"`
@@ -544,7 +526,7 @@ type OscFGPU struct {
 }
 
 type OscVm struct {
-	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 	// The keypair name.
 	// +required
 	Keypair string `json:"keypair,omitempty"`
@@ -552,9 +534,6 @@ type OscVm struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(tinav([3-9]|[1-9][0-9]).c[1-9][0-9]*r[1-9][0-9]*p[1-3]|inference7-(?:l40\.(?:medium|large)|h100\.(?:medium|large|xlarge|2xlarge)|h200\.(?:2xsmall|2xmedium|2xlarge|4xlarge|4xlargeA)))$`
 	Type string `json:"type,omitempty"`
-	// The subnet of the node (deprecated, use controlplane and/or worker roles on subnets)
-	// +optional
-	SubnetName string `json:"subnetName,omitempty"`
 	// If set, a public IP will be configured.
 	// +optional
 	PublicIp bool `json:"publicIp,omitempty"`
@@ -627,10 +606,8 @@ type OscBastion struct {
 	KeypairName    string `json:"keypairName,omitempty"`
 	// The type of VM (tinav7.c1r1p2 by default)
 	// +optional
-	VmType string `json:"vmType,omitempty"`
-	// The subnet of the vm (deprecated use bastion role in subnets)
-	SubnetName string    `json:"subnetName,omitempty"`
-	RootDisk   OscVolume `json:"rootDisk,omitempty,omitzero"`
+	VmType   string    `json:"vmType,omitempty"`
+	RootDisk OscVolume `json:"rootDisk,omitempty,omitzero"`
 	// The ID of an existing public IP to use for this VM.
 	// +optional
 	PublicIpId string                `json:"PublicIpId,omitempty"`

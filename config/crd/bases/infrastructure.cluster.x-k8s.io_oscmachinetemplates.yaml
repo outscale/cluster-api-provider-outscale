@@ -578,6 +578,8 @@ spec:
                       vm:
                         description: The configuration of the VM to deploy
                         properties:
+                          description:
+                            type: string
                           fGPU:
                             description: The fGPU configuration for this VM.
                             properties:
@@ -589,8 +591,6 @@ spec:
                             type: object
                           keypair:
                             description: The keypair name.
-                            type: string
-                          name:
                             type: string
                           placement:
                             description: VM placement constraints.
@@ -655,10 +655,6 @@ spec:
                                   type: string
                               type: object
                             type: array
-                          subnetName:
-                            description: The subnet of the node (deprecated, use controlplane
-                              and/or worker roles on subnets)
-                            type: string
                           subregionMode:
                             description: The way nodes will be allocated in subregions
                               (leastNodes or random; by default, leastNodes).
@@ -692,6 +688,9 @@ spec:
                           the root volume)
                         items:
                           properties:
+                            description:
+                              description: The volume name.
+                              type: string
                             device:
                               description: The volume device (/dev/xvdX)
                               pattern: ^(|/dev/sda1|/dev/sd[a-z]{1}|/dev/xvd[a-z]{1})$
@@ -704,9 +703,6 @@ spec:
                               description: The volume iops (io1 volumes only)
                               format: int32
                               type: integer
-                            name:
-                              description: The volume name.
-                              type: string
                             root:
                               description: Is it the root volume ?
                               type: boolean

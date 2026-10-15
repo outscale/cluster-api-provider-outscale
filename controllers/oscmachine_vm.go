@@ -48,14 +48,11 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
 		// Check if a machine needs to be placed in a subregion.
-		subnetName := vmSpec.SubnetName
 		var subregionName infrastructurev1beta2.OscSubRegion
 		switch {
 		case fgpu != nil:
 			subregionName = infrastructurev1beta2.OscSubRegion(fgpu.SubregionName)
 		case machineScope.Machine.Spec.FailureDomain != nil:
-			// failure domain may either be a subnet name (CAPOSC up to v0.4.0) or a subregion (v0.5.0 or later).
-			subnetName = *machineScope.Machine.Spec.FailureDomain
 			subregionName = infrastructurev1beta2.OscSubRegion(*machineScope.Machine.Spec.FailureDomain)
 		default:
 			azs := vmSpec.GetSubregions()
@@ -88,7 +85,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				infrastructurev1beta2.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(subnetName, vmSpec.GetRole(), subregionName)
+		subnetSpec, err := clusterScope.GetSubnet(vmSpec.GetRole(), subregionName)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
 		}

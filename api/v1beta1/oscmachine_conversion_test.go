@@ -48,6 +48,7 @@ func spokeSkipOscMachineUnused(in *infrastructurev1beta1.OscNode, c fuzz.Continu
 	in.Vm.ResourceId = ""
 	in.Vm.ClusterName = ""
 	in.Vm.Replica = 0
+	in.Vm.SubnetName = ""
 
 	switch {
 	case len(in.Vm.SubregionNames) == 0:
@@ -72,7 +73,7 @@ func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Contin
 			in.Volumes[i].Root = i == 0
 			if i == 0 {
 				in.Volumes[i].Device = ""
-				in.Volumes[i].Name = ""
+				in.Volumes[i].Description = ""
 				in.Volumes[i].FromSnapshot = ""
 			}
 		}

@@ -17,10 +17,9 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 		ProviderIDScheme: infrastructurev1beta2.SchemeAWS,
 
 		Vm: infrastructurev1beta2.OscVm{
-			Name:          srcNode.Vm.Name,
+			Description:   srcNode.Vm.Name,
 			Keypair:       srcNode.Vm.KeypairName,
 			Type:          srcNode.Vm.VmType,
-			SubnetName:    srcNode.Vm.SubnetName,
 			PublicIp:      srcNode.Vm.PublicIp,
 			PublicIpPool:  srcNode.Vm.PublicIpPool,
 			Subregions:    lo.Map(srcNode.Vm.SubregionNames, func(s string, _ int) infrastructurev1beta2.OscSubRegion { return infrastructurev1beta2.OscSubRegion(s) }),
@@ -53,7 +52,7 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 	}
 	vols = append(vols, lo.Map(src.Node.Volumes, func(src OscVolume, _ int) infrastructurev1beta2.OscVolume {
 		return infrastructurev1beta2.OscVolume{
-			Name:         src.Name,
+			Description:  src.Name,
 			Device:       src.Device,
 			Iops:         src.Iops,
 			Size:         src.Size,
@@ -82,11 +81,10 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 		ProviderID: src.ProviderID,
 		Node: OscNode{
 			Vm: OscVm{
-				Name:          src.Vm.Name,
+				Name:          src.Vm.Description,
 				ImageId:       src.Image.ID,
 				KeypairName:   src.Vm.Keypair,
 				VmType:        src.Vm.Type,
-				SubnetName:    src.Vm.SubnetName,
 				PublicIp:      src.Vm.PublicIp,
 				PublicIpPool:  src.Vm.PublicIpPool,
 				SubregionMode: SubregionMode(src.Vm.SubregionMode),
@@ -102,7 +100,7 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 					return OscVolume{}, false
 				}
 				return OscVolume{
-					Name:         src.Name,
+					Name:         src.Description,
 					Device:       src.Device,
 					Iops:         src.Iops,
 					Size:         src.Size,
