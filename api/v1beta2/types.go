@@ -230,12 +230,6 @@ type OscSubnet struct {
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
-type OscNatService struct {
-	// The name of the Subregion to which the Nat Service will be attached, unless a subnet has been defined
-	// +optional
-	Subregion OscSubRegion `json:"subregion,omitempty"`
-}
-
 type OscRouteTable struct {
 	// The tag name associate with the Route Table
 	// +optional

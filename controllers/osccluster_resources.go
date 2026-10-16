@@ -277,34 +277,33 @@ func (t *ClusterResourceTracker) setSubnetId(clusterScope *scope.ClusterScope, s
 	rsrc.Subnet[subnet.IpRange] = id
 }
 
-func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, nat infrastructurev1beta2.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, string, error) {
+func (t *ClusterResourceTracker) _getNatServiceOrId(ctx context.Context, subnetId string, clusterScope *scope.ClusterScope) (*osc.NatService, string, error) {
 	rsrc := clusterScope.GetResources()
 
-	clientToken := clusterScope.GetNatServiceClientToken(nat)
-	id := getResource(clientToken, rsrc.NatService)
+	id := getResource(subnetId, rsrc.NatService)
 	if id != "" {
 		return nil, id, nil
 	}
-	ns, err := t.Cloud.Net(clusterScope.Tenant).GetNatServiceFromClientToken(ctx, clientToken)
+	ns, err := t.Cloud.Net(clusterScope.Tenant).GetNatServiceForSubnet(ctx, subnetId)
 	switch {
 	case err != nil:
 		return nil, "", fmt.Errorf("get nat service from client token: %w", err)
 	case ns != nil:
-		t.setNatServiceId(clusterScope, nat, ns.NatServiceId)
+		t.setNatServiceId(clusterScope, subnetId, ns.NatServiceId)
 		return ns, ns.NatServiceId, nil
 	}
 	return nil, "", fmt.Errorf("get nat service: %w", ErrNoResourceFound)
 }
 
-func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastructurev1beta2.OscNatService, clusterScope *scope.ClusterScope) (*osc.NatService, error) {
-	ns, id, err := t._getNatServiceOrId(ctx, nat, clusterScope)
+func (t *ClusterResourceTracker) getNatService(ctx context.Context, subnetId string, clusterScope *scope.ClusterScope) (*osc.NatService, error) {
+	ns, id, err := t._getNatServiceOrId(ctx, subnetId, clusterScope)
 	switch {
 	case err != nil:
 		return nil, err
 	case ns != nil:
 		// update IP tracking, in case status was reset
 		if len(ns.PublicIps) > 0 {
-			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.PublicIps[0].PublicIpId)
+			t.trackIP(clusterScope, clusterScope.GetNatServiceIPTrackingID(subnetId), ns.PublicIps[0].PublicIpId)
 		}
 		return ns, nil
 	}
@@ -317,14 +316,14 @@ func (t *ClusterResourceTracker) getNatService(ctx context.Context, nat infrastr
 	default:
 		// update IP tracking, in case status was reset
 		if len(ns.PublicIps) > 0 {
-			t.trackIP(clusterScope, clusterScope.GetNatServiceClientToken(nat), ns.PublicIps[0].PublicIpId)
+			t.trackIP(clusterScope, clusterScope.GetNatServiceIPTrackingID(subnetId), ns.PublicIps[0].PublicIpId)
 		}
 		return ns, nil
 	}
 }
 
-func (t *ClusterResourceTracker) getNatServiceId(ctx context.Context, nat infrastructurev1beta2.OscNatService, clusterScope *scope.ClusterScope) (string, error) {
-	ns, id, err := t._getNatServiceOrId(ctx, nat, clusterScope)
+func (t *ClusterResourceTracker) getNatServiceId(ctx context.Context, subnetId string, clusterScope *scope.ClusterScope) (string, error) {
+	ns, id, err := t._getNatServiceOrId(ctx, subnetId, clusterScope)
 	switch {
 	case err != nil:
 		return "", err
@@ -335,12 +334,12 @@ func (t *ClusterResourceTracker) getNatServiceId(ctx context.Context, nat infras
 	}
 }
 
-func (t *ClusterResourceTracker) setNatServiceId(clusterScope *scope.ClusterScope, nat infrastructurev1beta2.OscNatService, id string) {
+func (t *ClusterResourceTracker) setNatServiceId(clusterScope *scope.ClusterScope, subnetId, id string) {
 	rsrc := clusterScope.GetResources()
 	if rsrc.NatService == nil {
 		rsrc.NatService = map[string]string{}
 	}
-	rsrc.NatService[clusterScope.GetNatServiceClientToken(nat)] = id
+	rsrc.NatService[subnetId] = id
 }
 
 func (t *ClusterResourceTracker) getPublicIps(clusterScope *scope.ClusterScope) map[string]string {

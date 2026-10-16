@@ -1,0 +1,81 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: OscCluster
+metadata:
+  finalizers:
+    - oscclusters.infrastructure.cluster.x-k8s.io
+  labels:
+    cluster.x-k8s.io/cluster-name: test-cluster-api
+    outscale.com/clusterUID: 9e1db9c4-bf0a-4583-8999-203ec002c520
+  name: test-cluster-api
+  namespace: cluster-api-test
+  generation: 3
+  ownerReferences:
+    - apiVersion: cluster.x-k8s.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Cluster
+      name: test-cluster-api
+      uid: 9e1db9c4-bf0a-4583-8999-203ec002c520
+  uid: 4973cd7c-439b-4108-b61f-39805379aa0e
+spec:
+  loadBalancer:
+    name: test-cluster-api-k8s
+  subregions:
+    - eu-west-2a
+status:
+  conditions:
+    - lastTransitionTime: "2025-02-17T09:48:06Z"
+      status: "True"
+      type: Ready
+    - lastTransitionTime: "2025-02-17T09:47:46Z"
+      status: "True"
+      type: InternetServiceReady
+    - lastTransitionTime: "2025-02-17T09:48:00Z"
+      status: "True"
+      type: NatServicesReady
+    - lastTransitionTime: "2025-02-17T09:47:41Z"
+      status: "True"
+      type: NetReady
+    - lastTransitionTime: "2025-02-17T09:47:47Z"
+      status: "True"
+      type: PublicIpsReady
+    - lastTransitionTime: "2025-02-17T09:47:59Z"
+      status: "True"
+      type: RouteTablesReady
+    - lastTransitionTime: "2025-02-17T09:47:57Z"
+      status: "True"
+      type: SecurityGroupsReady
+    - lastTransitionTime: "2025-02-17T09:47:45Z"
+      status: "True"
+      type: SubnetsReady
+    - lastTransitionTime: "2025-02-17T09:48:06Z"
+      status: "True"
+      type: VmReady
+  resources:
+    net:
+      default: "vpc-foo"
+    subnet:
+      "10.0.2.0/24": "subnet-public"
+      "10.0.3.0/24": "subnet-kw"
+      "10.0.4.0/24": "subnet-kcp"
+    internetService:
+      default: "igw-foo"
+    securityGroup:
+      "test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kcp"
+      "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kw"
+      "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-lb"
+      "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-node"
+      "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-bastion"
+    natService:
+      "subnet-public": "nat-foo"
+    publicIps:
+      "subnet-public/nat": "ipalloc-nat"
+  reconcilerGeneration:
+    net: 3
+    subnet: 3
+    internetService: 3
+    securityGroup: 3
+    routeTable: 3
+    natService: 3
+    loadbalancer: 3
+  ready: true

@@ -368,10 +368,10 @@ func mockListNatServices(netId string, nats []osc.NatService) mockFunc {
 	}
 }
 
-func mockGetNatServiceFromClientToken(token string, ns *osc.NatService) mockFunc {
+func mockGetNatServiceFromSubnet(subnetId string, ns *osc.NatService) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			GetNatServiceFromClientToken(gomock.Any(), gomock.Eq(token)).
+			GetNatServiceForSubnet(gomock.Any(), gomock.Eq(subnetId)).
 			Return(ns, nil)
 	}
 }
@@ -394,10 +394,10 @@ func mockNatServiceFound(id string) mockFunc {
 	}
 }
 
-func mockCreateNatService(publicIpId, subnetId, clientToken, name, clusterID, natServiceId string) mockFunc {
+func mockCreateNatService(publicIpId, subnetId, name, clusterID, natServiceId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			CreateNatService(gomock.Any(), gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(clientToken), gomock.Eq(name), gomock.Eq(clusterID)).
+			CreateNatService(gomock.Any(), gomock.Eq(publicIpId), gomock.Eq(subnetId), gomock.Eq(name), gomock.Eq(clusterID)).
 			Return(&osc.NatService{NatServiceId: natServiceId}, nil)
 	}
 }

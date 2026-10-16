@@ -220,54 +220,17 @@ func (s *ClusterScope) GetInternetServiceName() string {
 	return "Internet Service for " + s.OscCluster.Name
 }
 
-var ErrNoNatFound = errors.New("natService not found")
-
-// GetNatServices return the natServices of the cluster
-func (s *ClusterScope) GetNatServices() []infrastructurev1beta2.OscNatService {
-	if s.GetSpec().Disable.Internet || s.OscCluster.Spec.UseExisting.Net {
-		return nil
-	}
-	var nss []infrastructurev1beta2.OscNatService
-	for _, subnet := range s.GetSubnets() {
-		if !s.SubnetHasRole(subnet, infrastructurev1beta2.RoleNat) {
-			continue
-		}
-		nss = append(nss, infrastructurev1beta2.OscNatService{
-			Subregion: s.GetSubnetSubregion(subnet),
-		})
-	}
-	return nss
-}
-
-// GetNatService return the natService of the cluster
-func (s *ClusterScope) GetNatService(subregion infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscNatService, error) {
-	nats := s.GetNatServices()
-	if len(nats) == 1 {
-		return nats[0], nil
-	}
-	for _, spec := range nats {
-		if spec.Subregion == "" {
-			spec.Subregion = s.GetDefaultSubregion()
-		}
-		if spec.Subregion == subregion || subregion == "" {
-			return spec, nil
-		}
-	}
-	return infrastructurev1beta2.OscNatService{}, ErrNoNatFound
+func (s *ClusterScope) GetNatServiceIPTrackingID(subnetId string) string {
+	return subnetId + "/nat"
 }
 
 // GetNatServiceName return the name of a nat service
-func (s *ClusterScope) GetNatServiceName(nat infrastructurev1beta2.OscNatService) string {
+func (s *ClusterScope) GetNatServiceName(subnet infrastructurev1beta2.OscSubnet) string {
 	name := "Nat service for " + s.OscCluster.Name
-	if nat.Subregion != "" {
-		name += "/" + string(nat.Subregion)
+	if subnet.Subregion != "" {
+		name += "/" + string(subnet.Subregion)
 	}
 	return name
-}
-
-// GetNatServiceClientToken return the client token for a nat service
-func (s *ClusterScope) GetNatServiceClientToken(nat infrastructurev1beta2.OscNatService) string {
-	return string(nat.Subregion) + "-" + s.GetUID()
 }
 
 // GetRouteTables return the routeTables of the cluster
