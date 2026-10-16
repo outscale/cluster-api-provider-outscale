@@ -12,19 +12,18 @@ import (
 )
 
 type NatServiceInterface interface {
-	CreateNatService(ctx context.Context, publicIpId, subnetId, clientToken, natServiceName, clusterID string) (*osc.NatService, error)
+	CreateNatService(ctx context.Context, publicIpId, subnetId, natServiceName, clusterID string) (*osc.NatService, error)
 	DeleteNatService(ctx context.Context, natServiceId string) error
 	GetNatService(ctx context.Context, natServiceId string) (*osc.NatService, error)
-	GetNatServiceFromClientToken(ctx context.Context, clientToken string) (*osc.NatService, error)
+	GetNatServiceForSubnet(ctx context.Context, subnetId string) (*osc.NatService, error)
 	ListNatServices(tx context.Context, netId string) ([]osc.NatService, error)
 }
 
 // CreateNatService create the nat in the public subnet of the net
-func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, clientToken, natServiceName, clusterID string) (*osc.NatService, error) {
+func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, natServiceName, clusterID string) (*osc.NatService, error) {
 	req := osc.CreateNatServiceRequest{
-		PublicIpId:  publicIpId,
-		ClientToken: &clientToken,
-		SubnetId:    subnetId,
+		PublicIpId: publicIpId,
+		SubnetId:   subnetId,
 	}
 
 	resp, err := s.tenant.Client().CreateNatService(ctx, req)
@@ -51,14 +50,14 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, cl
 	return resp.NatService, nil
 }
 
-// DeleteNatService  delete the nat
+// DeleteNatService deletes a nat service
 func (s *Service) DeleteNatService(ctx context.Context, natServiceId string) error {
 	req := osc.DeleteNatServiceRequest{NatServiceId: natServiceId}
 	_, err := s.tenant.Client().DeleteNatService(ctx, req)
 	return err
 }
 
-// GetNatService retrieve nat service object using nat service id
+// GetNatService finds a nat service by id
 func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.NatService, error) {
 	readNatServicesRequest := osc.ReadNatServicesRequest{
 		Filters: &osc.FiltersNatService{
@@ -76,11 +75,11 @@ func (s *Service) GetNatService(ctx context.Context, natServiceId string) (*osc.
 	}
 }
 
-// GetNatService retrieve nat service object using nat service id
-func (s *Service) GetNatServiceFromClientToken(ctx context.Context, clientToken string) (*osc.NatService, error) {
+// GetNatServiceForSubnet finds a nat service object in a subnet
+func (s *Service) GetNatServiceForSubnet(ctx context.Context, subnetId string) (*osc.NatService, error) {
 	readNatServicesRequest := osc.ReadNatServicesRequest{
 		Filters: &osc.FiltersNatService{
-			ClientTokens: &[]string{clientToken},
+			SubnetIds: &[]string{subnetId},
 		},
 	}
 

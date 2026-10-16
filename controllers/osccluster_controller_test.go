@@ -192,9 +192,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -235,10 +235,10 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 						"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
 					},
 					NatService: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+						"subnet-public": "nat-foo",
 					},
 					PublicIPs: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+						"subnet-public/nat": "ipalloc-nat",
 					},
 				}),
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
@@ -323,9 +323,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -366,10 +366,10 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 						"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
 					},
 					NatService: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+						"subnet-public": "nat-foo",
 					},
 					PublicIPs: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+						"subnet-public/nat": "ipalloc-nat",
 					},
 				}),
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
@@ -464,9 +464,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -513,11 +513,11 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 						"test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520":      "sg-bastion",
 					},
 					NatService: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+						"subnet-public": "nat-foo",
 					},
 					PublicIPs: map[string]string{
-						"bastion": "ipalloc-bastion",
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+						"bastion":           "ipalloc-bastion",
+						"subnet-public/nat": "ipalloc-nat",
 					},
 					Bastion: map[string]string{
 						"default": "i-bastion",
@@ -626,9 +626,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "6.7.8.9"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -748,9 +748,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "6.7.8.9"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -872,9 +872,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1009,13 +1009,13 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public-2b", "subnet-public-2b"),
 				mockCreateRoute("rtb-public-2b", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public-2a", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat-2a", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat-2a", "subnet-public-2a", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo-2a"),
+				mockCreateNatService("ipalloc-nat-2a", "subnet-public-2a", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo-2a"),
 
-				mockGetNatServiceFromClientToken("eu-west-2b-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public-2b", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2b", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat-2b", "1.2.3.5"),
-				mockCreateNatService("ipalloc-nat-2b", "subnet-public-2b", "eu-west-2b-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2b", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo-2b"),
+				mockCreateNatService("ipalloc-nat-2b", "subnet-public-2b", "Nat service for test-cluster-api/eu-west-2b", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo-2b"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1235,9 +1235,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockListPublicIpsFromPool("pool-foo", []osc.PublicIp{{PublicIpId: "ipalloc-nat"}}),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1278,10 +1278,10 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 						"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
 					},
 					NatService: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+						"subnet-public": "nat-foo",
 					},
 					PublicIPs: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+						"subnet-public/nat": "ipalloc-nat",
 					},
 				}),
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
@@ -1367,9 +1367,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat-2a", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat-2a", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat-2a", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1406,10 +1406,10 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 						"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
 					},
 					NatService: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+						"subnet-public": "nat-foo",
 					},
 					PublicIPs: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat-2a",
+						"subnet-public/nat": "ipalloc-nat-2a",
 					},
 				}),
 			},
@@ -1498,9 +1498,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1616,9 +1616,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1748,9 +1748,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -1853,9 +1853,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockLinkRouteTable("rtb-public", "subnet-public"),
 				mockCreateRoute("rtb-public", "0.0.0.0/0", "igw-foo", "gateway"),
 
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockGetNatServiceFromSubnet("subnet-public", nil),
 				mockCreatePublicIp("Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-nat", "1.2.3.4"),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-foo"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
@@ -2271,13 +2271,13 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 
 	tcs := []testcase{
 		{
-			name:            "[v1beta1] reconciliation on a reconciled cluster does nothing",
-			clusterSpec:     "v1beta1/ready",
+			name:            "[v1beta2] reconciliation on a reconciled cluster does nothing",
+			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 		},
 		{
-			name:            "[v1beta1] A rule may be added to a cluster (automatic config)",
-			clusterSpec:     "v1beta1/ready",
+			name:            "[v1beta2] A rule may be added to a cluster (automatic config)",
+			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchAdditionalSGRule(infrastructurev1beta2.OscAdditionalSecurityRules{
@@ -2379,8 +2379,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:            "[v1beta1] A rule may be removed from a cluster (automatic config)",
-			clusterSpec:     "v1beta1/ready",
+			name:            "[v1beta2] A rule may be removed from a cluster (automatic config)",
+			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchIncrementGeneration(),
@@ -2476,8 +2476,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:            "[v1beta1] A rule with an associated SG (likely CCM created) is not removed from a cluster (automatic config)",
-			clusterSpec:     "v1beta1/ready",
+			name:            "[v1beta2] A rule with an associated SG (likely CCM created) is not removed from a cluster (automatic config)",
+			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchIncrementGeneration(),
@@ -2656,7 +2656,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						Routes: []osc.Route{{DestinationIpRange: "0.0.0.0/0", GatewayId: new("nat-foo")}},
 					},
 				}),
-				mockGetNatServiceFromClientToken("eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.NatService{
+				mockGetNatServiceFromSubnet("subnet-public", &osc.NatService{
 					NatServiceId: "nat-foo",
 					PublicIps:    []osc.PublicIpLight{{PublicIpId: "ipalloc-nat"}},
 				}),
@@ -2705,11 +2705,11 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 						"test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520":      "sg-bastion",
 					},
 					NatService: map[string]string{
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+						"subnet-public": "nat-foo",
 					},
 					PublicIPs: map[string]string{
-						"bastion": "ipalloc-bastion",
-						"eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+						"bastion":           "ipalloc-bastion",
+						"subnet-public/nat": "ipalloc-nat",
 					},
 					Bastion: map[string]string{
 						"default": "i-bastion",
@@ -2718,8 +2718,8 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			},
 		},
 		{
-			name:            "[v1beta1] A NAT service has been deleted, it is recreated with the associated routes",
-			clusterSpec:     "v1beta1/ready",
+			name:            "[v1beta2] A NAT service has been deleted, it is recreated with the associated routes",
+			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
 				patchIncrementGeneration(),
@@ -2795,7 +2795,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 				}),
 				mockNatServiceNotFound("nat-foo"),
 				mockPublicIpFound("ipalloc-nat", &osc.PublicIp{PublicIp: "1.2.3.4"}),
-				mockCreateNatService("ipalloc-nat", "subnet-public", "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-bar"),
+				mockCreateNatService("ipalloc-nat", "subnet-public", "Nat service for test-cluster-api/eu-west-2a", "9e1db9c4-bf0a-4583-8999-203ec002c520", "nat-bar"),
 
 				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
 					{
