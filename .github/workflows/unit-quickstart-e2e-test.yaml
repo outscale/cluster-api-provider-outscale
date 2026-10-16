@@ -66,7 +66,7 @@ jobs:
     - name: 🔎 Check IP
       id: ip
       run: |
-        echo "ip=`curl -s https://api.ipify.org`" | tee $GITHUB_OUTPUT
+        echo "ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`" | tee $GITHUB_OUTPUT
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install octl
@@ -76,13 +76,12 @@ jobs:
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@a037772936a22b185c92caaba14f54304cc31487 # v0.17.1+hotfix.0
+      uses: outscale/frieza-github-actions/frieza-clean@d361dd8cc864cfb9575429ee54fde4a0e8e7b124 # v0.17.2
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
         exclude_resource_types: access_key
-        clean_timeout: 10m
     - name: 👷 Deploy management cluster
       id: management
       uses: ./.github/actions/deploy_cluster
