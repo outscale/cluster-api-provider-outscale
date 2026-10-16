@@ -35,42 +35,40 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 	}
 	log.V(4).Info("Reconciling natServices")
 
-	natServiceSpecs := clusterScope.GetNatServices()
-	for _, natServiceSpec := range natServiceSpecs {
-		natService, err := r.Tracker.getNatService(ctx, natServiceSpec, clusterScope)
-		switch {
-		case IsNotFound(err):
-		case err != nil:
-			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
-		default:
-			log.V(4).Info("Found existing natService", "natServiceId", natService.NatServiceId)
+	for _, subnetSpec := range clusterScope.GetSubnets() {
+		if !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleNat) {
 			continue
-		}
-
-		publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
-			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope.GetSpec().NatPublicIpPool, clusterScope)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
-		}
-
-		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleNat, natServiceSpec.Subregion)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}
 		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("get subnet: %w", err)
 		}
 
-		log.V(3).Info("Creating natService")
+		natService, err := r.Tracker.getNatService(ctx, subnetId, clusterScope)
+		switch {
+		case IsNotFound(err):
+		case err != nil:
+			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
+		default:
+			log.V(4).Info("Found existing natService", "subnetId", subnetId, "natServiceId", natService.NatServiceId)
+			continue
+		}
+
+		publicIpId, _, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx,
+			clusterScope.GetNatServiceIPTrackingID(subnetId), clusterScope.GetNatServiceName(subnetSpec), clusterScope.GetSpec().NatPublicIpPool, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
+		}
+
+		log.V(3).Info("Creating natService", "subnetId", subnetId)
 		natService, err = r.Cloud.Net(clusterScope.Tenant).CreateNatService(ctx, publicIpId, subnetId,
-			clusterScope.GetNatServiceClientToken(natServiceSpec), clusterScope.GetNatServiceName(natServiceSpec), clusterScope.GetUID())
+			clusterScope.GetNatServiceName(subnetSpec), clusterScope.GetUID())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create natService: %w", err)
 		}
-		log.V(2).Info("Created natService", "natServiceId", natService.NatServiceId)
-		r.Tracker.setNatServiceId(clusterScope, natServiceSpec, natService.NatServiceId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created %s", natServiceSpec.Subregion)
+		log.V(2).Info("Created natService", "subnetId", subnetId, "natServiceId", natService.NatServiceId)
+		r.Tracker.setNatServiceId(clusterScope, subnetId, natService.NatServiceId)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NatServicesCreatedReason, "NAT created in %s", subnetId)
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNatService)
 	return reconcile.Result{}, nil

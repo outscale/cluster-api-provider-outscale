@@ -49,7 +49,7 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 		}
 		log.V(2).Info("Created subnet", "subnetId", subnet.SubnetId)
 		r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.SubnetId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
+		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet %s created for %v in %s", subnet.SubnetId, subnetSpec.Roles, subnetSpec.Subregion)
 	}
 
 	// add failureDomains

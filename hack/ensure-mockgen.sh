@@ -28,17 +28,17 @@ verify_mockgen_version() {
 
 	local mockgen_version
 	mockgen_version="$(${BIN_ROOT}/mockgen --version | grep -Eo "([0-9]{1,}\.)+[0-9]{1,}" | head -1)"
-	if [[ "${MINIMUM_MOCKGEN_VERSION}" != "${mockgen_version}" ]]; then
+	if [[ "${MOCKGEN_VERSION}" != "${mockgen_version}" ]]; then
 		cat <<EOF
 Detected mockgen version: ${mockgen_version}
-Install ${MINIMUM_MOCKGEN_VERSION} of mockgen
+Install ${MOCKGEN_VERSION} of mockgen
 EOF
 
 		echo 'Installing mockgen' && install_mockgen
 	else
 		cat <<EOF
 Detected mockgen version: ${mockgen_version}.
-mockgen ${MINIMUM_MOCKGEN_VERSION} is already installed.
+mockgen ${MOCKGEN_VERSION} is already installed.
 EOF
 	fi
 }
@@ -48,7 +48,7 @@ install_mockgen() {
 		if ! [ -d "${BIN_ROOT}" ]; then
 			mkdir -p "${BIN_ROOT}"
 		fi
-		go install -v "go.uber.org/mock/mockgen@v${MINIMUM_MOCKGEN_VERSION}"
+		go install -v "go.uber.org/mock/mockgen@v${MOCKGEN_VERSION}"
 		cp "$GOPATH/bin/mockgen" "${BIN_ROOT}/mockgen"
 	else
 		set +x

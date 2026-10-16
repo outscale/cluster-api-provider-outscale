@@ -36,11 +36,15 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
 	case "nat":
-		natSpec, err := clusterScope.GetNatService(routeTableSpec.Subregion)
+		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleNat, routeTableSpec.Subregion)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
+			return reconcile.Result{}, fmt.Errorf("find natService subnet for route: %w", err)
 		}
-		resourceId, err = r.Tracker.getNatServiceId(ctx, natSpec, clusterScope)
+		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("find natService subnet for route: %w", err)
+		}
+		resourceId, err = r.Tracker.getNatServiceId(ctx, subnetId, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService for route: %w", err)
 		}
