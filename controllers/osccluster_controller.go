@@ -18,7 +18,6 @@ import (
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services"
 	"github.com/outscale/cluster-api-provider-outscale/util/reconciler"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -106,9 +105,9 @@ func (r *OscClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}()
 	osccluster := clusterScope.OscCluster
 	if !osccluster.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, clusterScope)
+		return HandleFatalError(r.reconcileDelete(ctx, clusterScope))
 	}
-	return r.reconcile(ctx, clusterScope)
+	return HandleFatalError(r.reconcile(ctx, clusterScope))
 }
 
 // reconcile reconcile the creation of the cluster
@@ -132,14 +131,14 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	// Reconcile each element of the cluster
 	_, err := r.reconcileNet(ctx, clusterScope)
 	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta2.NetReadyCondition, infrastructurev1beta2.NetReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+		MarkErrorCondition(osccluster, infrastructurev1beta2.NetReadyCondition, infrastructurev1beta2.NetReconciliationFailedReason, err)
 		return reconcile.Result{}, fmt.Errorf("reconcile net: %w", err)
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.NetReadyCondition)
 
 	_, err = r.reconcileSubnets(ctx, clusterScope)
 	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta2.SubnetsReadyCondition, infrastructurev1beta2.SubnetsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+		MarkErrorCondition(osccluster, infrastructurev1beta2.SubnetsReadyCondition, infrastructurev1beta2.SubnetsReconciliationFailedReason, err)
 		return reconcile.Result{}, fmt.Errorf("reconcile subnets: %w", err)
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.SubnetsReadyCondition)
@@ -147,7 +146,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if !clusterScope.GetSpec().Disable.Internet {
 		_, err = r.reconcileInternetService(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.InternetServicesReadyCondition, infrastructurev1beta2.InternetServicesFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.InternetServicesReadyCondition, infrastructurev1beta2.InternetServicesFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile internetService: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.InternetServicesReadyCondition)
@@ -155,13 +154,13 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 		// Add public route table to mark public subnet as public & enable NAT creation
 		_, err = r.reconcileRouteTable(ctx, clusterScope, infrastructurev1beta2.RoleNat)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.RouteTablesReadyCondition, infrastructurev1beta2.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.RouteTablesReadyCondition, infrastructurev1beta2.RouteTableReconciliationFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile public routeTables: %w", err)
 		}
 
 		_, err = r.reconcileNatService(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.NatServicesReadyCondition, infrastructurev1beta2.NatServicesReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.NatServicesReadyCondition, infrastructurev1beta2.NatServicesReconciliationFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile natServices: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.NatServicesReadyCondition)
@@ -170,7 +169,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	// Add all other route tables, whose destinations are the NAT services previously created.
 	_, err = r.reconcileRouteTable(ctx, clusterScope)
 	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta2.RouteTablesReadyCondition, infrastructurev1beta2.RouteTableReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+		MarkErrorCondition(osccluster, infrastructurev1beta2.RouteTablesReadyCondition, infrastructurev1beta2.RouteTableReconciliationFailedReason, err)
 		return reconcile.Result{}, fmt.Errorf("reconcile routeTables: %w", err)
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.RouteTablesReadyCondition)
@@ -178,12 +177,12 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if clusterScope.GetSpec().NetPeering.Enable {
 		_, err = r.reconcileNetPeering(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.NetPeeringReadyCondition, infrastructurev1beta2.NetPeeringReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.NetPeeringReadyCondition, infrastructurev1beta2.NetPeeringReconciliationFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile netPeering: %w", err)
 		}
 		_, err = r.reconcileNetPeeringRoutes(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.NetPeeringReadyCondition, infrastructurev1beta2.NetPeeringReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.NetPeeringReadyCondition, infrastructurev1beta2.NetPeeringReconciliationFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile netPeering: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.NetPeeringReadyCondition)
@@ -192,7 +191,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if len(clusterScope.GetSpec().NetAccessPoints) > 0 {
 		_, err = r.reconcileNetAccessPoints(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.NetAccessPointsReadyCondition, infrastructurev1beta2.NetAccessPointsReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.NetAccessPointsReadyCondition, infrastructurev1beta2.NetAccessPointsReconciliationFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile netAccessPoints: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.NetAccessPointsReadyCondition)
@@ -201,7 +200,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	// Security groups need NAT services to allow NAT to connect to LB.
 	_, err = r.reconcileSecurityGroup(ctx, clusterScope)
 	if err != nil {
-		conditions.MarkFalse(osccluster, infrastructurev1beta2.SecurityGroupReadyCondition, infrastructurev1beta2.SecurityGroupReconciliationFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+		MarkErrorCondition(osccluster, infrastructurev1beta2.SecurityGroupReadyCondition, infrastructurev1beta2.SecurityGroupReconciliationFailedReason, err)
 		return reconcile.Result{}, fmt.Errorf("reconcile securityGroups: %w", err)
 	}
 	conditions.MarkTrue(osccluster, infrastructurev1beta2.SecurityGroupReadyCondition)
@@ -209,7 +208,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if !clusterScope.GetSpec().Disable.Loadbalancer {
 		_, err = r.reconcileLoadBalancer(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.LoadBalancerReadyCondition, infrastructurev1beta2.LoadBalancerFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.LoadBalancerReadyCondition, infrastructurev1beta2.LoadBalancerFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile loadBalancer: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.LoadBalancerReadyCondition)
@@ -218,7 +217,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if clusterScope.GetSpec().Keypair != nil {
 		_, err := r.reconcileKeypair(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.KeypairReadyCondition, infrastructurev1beta2.KeypairFailedReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.KeypairReadyCondition, infrastructurev1beta2.KeypairFailedReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile keypair: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.KeypairReadyCondition)
@@ -227,7 +226,7 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	if clusterScope.GetSpec().Bastion.Enable {
 		_, err := r.reconcileBastion(ctx, clusterScope)
 		if err != nil {
-			conditions.MarkFalse(osccluster, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+			MarkErrorCondition(osccluster, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, err)
 			return reconcile.Result{}, fmt.Errorf("reconcile bastion: %w", err)
 		}
 		conditions.MarkTrue(osccluster, infrastructurev1beta2.VmReadyCondition)

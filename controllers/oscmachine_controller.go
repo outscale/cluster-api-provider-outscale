@@ -142,9 +142,9 @@ func (r *OscMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}()
 	if !oscMachine.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, machineScope, clusterScope)
+		return HandleFatalError(r.reconcileDelete(ctx, machineScope, clusterScope))
 	}
-	return r.reconcile(ctx, machineScope, clusterScope)
+	return HandleFatalError(r.reconcile(ctx, machineScope, clusterScope))
 }
 
 // reconcile reconcile the creation of the machine
@@ -182,10 +182,10 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope)
 	switch {
 	case err != nil:
-		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "%s", err.Error())
+		MarkErrorCondition(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, err)
 		return reconcile.Result{}, err
 	case !reconcileVm.IsZero():
-		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityWarning, "VM is not running yet")
+		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityInfo, "VM is not running yet")
 		return reconcileVm, nil
 	default:
 		conditions.MarkTrue(oscmachine, infrastructurev1beta2.VmReadyCondition)
