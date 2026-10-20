@@ -9,13 +9,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"slices"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
+	cloudnet "github.com/outscale/cluster-api-provider-outscale/cloud/services/net"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/tenant"
 	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -73,6 +76,29 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
 	}
 
+	checkRoute := func(cluster string, rtbl osc.RouteTable, destRange string, svc cloudnet.Servicer) error {
+		// check if route to netpeering already exists
+		if slices.ContainsFunc(rtbl.Routes, func(r osc.Route) bool {
+			return ptr.From(r.NetPeeringId) == np.NetPeeringId
+		}) {
+			return nil
+		}
+		// check that no route overlaps
+		if r, found := lo.Find(rtbl.Routes, func(r osc.Route) bool {
+			return r.DestinationIpRange != "0.0.0.0/0" && overlappingCIDR(r.DestinationIpRange, destRange)
+		}); found {
+			return FatalErrorf("%s overlaps an existing route to %s in %s route table %s", destRange, destination(r), cluster, rtbl.RouteTableId)
+		}
+		// create route
+		log.V(3).Info("Creating "+cluster+" route to netPeering", "routeTableId", rtbl.RouteTableId, "IPRange", destRange)
+		_, err := svc.CreateRoute(ctx, destRange, rtbl.RouteTableId, np.NetPeeringId, "netPeering")
+		if err != nil {
+			return fmt.Errorf("create %s route: %w", cluster, err)
+		}
+		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering "+cluster+" route created")
+		return nil
+	}
+
 	// Add routes to management route tables
 	mgmt, err := getMgmtTenant(ctx, r.Client, r.Cloud, clusterScope.OscCluster)
 	if err != nil {
@@ -83,17 +109,10 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("list mgmt route tables: %w", err)
 	}
+	wrkIPRange := clusterScope.GetNet().IpRange
 	for _, mgmtRtbl := range mgmtRtbls {
-		if !slices.ContainsFunc(mgmtRtbl.Routes, func(r osc.Route) bool {
-			return ptr.From(r.NetPeeringId) == np.NetPeeringId
-		}) {
-			wrkIPRange := clusterScope.GetNet().IpRange
-			log.V(3).Info("Creating management route to netPeering", "routeTableId", mgmtRtbl.RouteTableId, "IPRange", wrkIPRange)
-			_, err := mgmtSvc.CreateRoute(ctx, wrkIPRange, mgmtRtbl.RouteTableId, np.NetPeeringId, "netPeering")
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("create mgmt route: %w", err)
-			}
-			r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering management route created")
+		if err := checkRoute("management", mgmtRtbl, wrkIPRange, mgmtSvc); err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
@@ -104,18 +123,9 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 		return reconcile.Result{}, fmt.Errorf("list workload route tables: %w", err)
 	}
 	for _, rtbl := range rtbls {
-		if slices.ContainsFunc(rtbl.Routes, func(r osc.Route) bool {
-			return ptr.From(r.NetPeeringId) == np.NetPeeringId
-		}) {
-			log.V(5).Info(fmt.Sprintf("Found route from %q to %q", rtbl.RouteTableId, np.NetPeeringId))
-			continue
+		if err := checkRoute("workload", rtbl, mgmtIPRange, svc); err != nil {
+			return reconcile.Result{}, err
 		}
-		log.V(3).Info("Creating workload route to netPeering", "routeTableId", rtbl.RouteTableId, "IPRange", mgmtIPRange)
-		_, err := svc.CreateRoute(ctx, mgmtIPRange, rtbl.RouteTableId, np.NetPeeringId, "netPeering")
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("create workload route: %w", err)
-		}
-		r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetPeeringCreatedReason, "NetPeering workload route created")
 	}
 
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeeringRoutes)
@@ -189,4 +199,35 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Conte
 		}
 	}
 	return reconcile.Result{}, nil
+}
+
+func overlappingCIDR(r1, r2 string) bool {
+	if r1 == r2 {
+		return true
+	}
+	_, c1, err1 := net.ParseCIDR(r1)
+	_, c2, err2 := net.ParseCIDR(r2)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	return c2.Contains(c1.IP) || c1.Contains(c2.IP)
+}
+
+func destination(r osc.Route) string {
+	switch {
+	case r.DestinationServiceId != nil:
+		return *r.DestinationServiceId
+	case r.GatewayId != nil:
+		return *r.GatewayId
+	case r.NatServiceId != nil:
+		return *r.NatServiceId
+	case r.NetAccessPointId != nil:
+		return *r.NetAccessPointId
+	case r.NetPeeringId != nil:
+		return *r.NetPeeringId
+	case r.NicId != nil:
+		return *r.NicId
+	default:
+		return "???"
+	}
 }

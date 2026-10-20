@@ -1,4 +1,4 @@
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: OscCluster
 metadata:
   generation: 1
@@ -16,15 +16,15 @@ metadata:
   resourceVersion: "20214284"
   uid: 4973cd7c-439b-4108-b61f-39805379aa0e
 spec:
-  network:
-    loadBalancer:
-      loadbalancername: test-cluster-api-k8s
-    disable:
-      - internet
-    netPeering:
-      enable: true
-      managementAccountId: "mgmt"
-      managementNetId: "vpc-mgmt"
-    netAccessPoints:
-      - api
-    subregionName: eu-west-2a
+  loadBalancer:
+    name: test-cluster-api-k8s
+  disable:
+    internet: true
+  netPeering:
+    enable: true
+    managementAccountId: "mgmt"
+    managementNetId: "vpc-mgmt"
+  netAccessPoints:
+    - api
+  subregions:
+   - eu-west-2a

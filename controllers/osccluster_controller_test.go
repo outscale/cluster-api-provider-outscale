@@ -2054,8 +2054,8 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 	require.NoError(t, err)
 	tcs := []testcase{
 		{
-			name:            "[v1beta1] creating an airgapped cluster",
-			clusterSpec:     "v1beta1/airgap",
+			name:            "[v1beta2] creating an airgapped cluster",
+			clusterSpec:     "v1beta2/airgap",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
@@ -2163,8 +2163,8 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 			},
 		},
 		{
-			name:            "[v1beta1] when retrying on a non accepted netpeering, the netpeering is accepted and routed and creation continues",
-			clusterSpec:     "v1beta1/airgap",
+			name:            "[v1beta2] when retrying on a non accepted netpeering, the netpeering is accepted and routed and creation continues",
+			clusterSpec:     "v1beta2/airgap",
 			clusterBaseSpec: "base",
 			mockFuncs: []mockFunc{
 				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
@@ -2255,6 +2255,157 @@ func TestReconcileOSCCluster_Airgap(t *testing.T) {
 				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
 				mockConfigureHealthCheck("test-cluster-api-k8s"),
 				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+		},
+		{
+			name:            "[v1beta2] routes are not recreated if they already exist",
+			clusterSpec:     "v1beta2/airgap",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
+				mockNetFound("vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: "subnet-kcp"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: "subnet-kw"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: "subnet-public"}),
+
+				mockGetSecurityGroupFromName("test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+					SecurityGroupId: "sg-kw",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10250, IpRanges: []string{"10.0.3.0/24", "10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 443, ToPortRange: 443, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 1024, ToPortRange: 65535, IpRanges: []string{"10.0.4.0/24"}},
+					},
+				}),
+				mockGetSecurityGroupFromName("test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+					SecurityGroupId: "sg-kcp",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 10250, ToPortRange: 10252, IpRanges: []string{"10.0.4.0/24"}},
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 2378, ToPortRange: 2380, IpRanges: []string{"10.0.4.0/24"}},
+					},
+				}),
+				mockGetSecurityGroupFromName("test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+					SecurityGroupId: "sg-lb",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"0.0.0.0/0"}},
+					},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "tcp", FromPortRange: 6443, ToPortRange: 6443, IpRanges: []string{"10.0.4.0/24"}},
+					},
+				}),
+				mockGetSecurityGroupFromName("test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.SecurityGroup{
+					SecurityGroupId: "sg-node",
+					InboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "icmp", FromPortRange: 8, ToPortRange: 8, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 179, ToPortRange: 179, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 4789, ToPortRange: 4789, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 5473, ToPortRange: 5473, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51820, ToPortRange: 51821, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "4", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8285, ToPortRange: 8285, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 8472, ToPortRange: 8472, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4240, ToPortRange: 4240, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "udp", FromPortRange: 51871, ToPortRange: 51871, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 30000, ToPortRange: 32767, IpRanges: []string{"10.0.0.0/16"}},
+						{IpProtocol: "tcp", FromPortRange: 4244, ToPortRange: 4244, IpRanges: []string{"10.0.0.0/16"}},
+					},
+					OutboundRules: []osc.SecurityGroupRule{
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"0.0.0.0/0"}},
+						{IpProtocol: "-1", FromPortRange: -1, ToPortRange: -1, IpRanges: []string{"10.0.0.0/16"}},
+					},
+				}),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
+				}),
+
+				mockReadOwnedByTag(tag.NetPeeringResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "np-foo"}),
+				mockGetNetPeering(osc.NetPeeringStateNamePendingAcceptance),
+				mockAcceptNetPeering(),
+				mockGetNetPeering("active"),
+				mockGetRouteTablesFromNet("vpc-mgmt", []osc.RouteTable{
+					{RouteTableId: "rtb-mgmt", Routes: []osc.Route{{NetPeeringId: new("np-foo")}}},
+				}),
+				mockGetNet("vpc-mgmt", &osc.Net{IpRange: "10.1.0.0/16"}),
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-public", Routes: []osc.Route{{NetPeeringId: new("np-foo")}}},
+					{RouteTableId: "rtb-kcp", Routes: []osc.Route{{NetPeeringId: new("np-foo")}}},
+					{RouteTableId: "rtb-kw", Routes: []osc.Route{{NetPeeringId: new("np-foo")}}},
+				}),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
+				}),
+				mockGetNetAccessPoint("vpc-foo", "api", &osc.NetAccessPoint{}),
+
+				mockGetLoadBalancer("test-cluster-api-k8s", nil),
+				mockCreateLoadBalancer("test-cluster-api-k8s", "internet-facing", "subnet-public", "sg-lb"),
+				mockConfigureHealthCheck("test-cluster-api-k8s"),
+				mockCreateLoadBalancerTag("test-cluster-api-k8s", "test-cluster-api-k8s-9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+		},
+		{
+			name:            "[v1beta2] reconciliation stops when a route overlaps in the mangement cluster",
+			clusterSpec:     "v1beta2/airgap",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
+				mockNetFound("vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: "subnet-kcp"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: "subnet-kw"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: "subnet-public"}),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
+				}),
+
+				mockReadOwnedByTag(tag.NetPeeringResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "np-foo"}),
+				mockGetNetPeering(osc.NetPeeringStateNamePendingAcceptance),
+				mockAcceptNetPeering(),
+				mockGetNetPeering("active"),
+				mockGetRouteTablesFromNet("vpc-mgmt", []osc.RouteTable{
+					{RouteTableId: "rtb-mgmt", Routes: []osc.Route{{DestinationIpRange: "10.0.0.0/16"}}},
+				}),
+				mockGetNet("vpc-mgmt", &osc.Net{IpRange: "10.1.0.0/16"}),
+			},
+		},
+		{
+			name:            "[v1beta2] reconciliation stops when a route overlaps in the workload cluster",
+			clusterSpec:     "v1beta2/airgap",
+			clusterBaseSpec: "base",
+			mockFuncs: []mockFunc{
+				mockReadOwnedByTag(tag.NetResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "vpc-foo"}),
+				mockNetFound("vpc-foo"),
+				mockGetSubnetFromNet("vpc-foo", "10.0.4.0/24", &osc.Subnet{SubnetId: "subnet-kcp"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.3.0/24", &osc.Subnet{SubnetId: "subnet-kw"}),
+				mockGetSubnetFromNet("vpc-foo", "10.0.2.0/24", &osc.Subnet{SubnetId: "subnet-public"}),
+
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-public", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-public"}}},
+					{RouteTableId: "rtb-kcp", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kcp"}}},
+					{RouteTableId: "rtb-kw", LinkRouteTables: []osc.LinkRouteTable{{SubnetId: "subnet-kw"}}},
+				}),
+
+				mockReadOwnedByTag(tag.NetPeeringResourceType, "9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Tag{ResourceId: "np-foo"}),
+				mockGetNetPeering(osc.NetPeeringStateNamePendingAcceptance),
+				mockAcceptNetPeering(),
+				mockGetNetPeering("active"),
+				mockGetRouteTablesFromNet("vpc-mgmt", []osc.RouteTable{
+					{RouteTableId: "rtb-mgmt"},
+				}),
+				mockGetNet("vpc-mgmt", &osc.Net{IpRange: "10.1.0.0/16"}),
+				mockCreateRoute("rtb-mgmt", "10.0.0.0/16", "np-foo", "netPeering"),
+				mockGetRouteTablesFromNet("vpc-foo", []osc.RouteTable{
+					{RouteTableId: "rtb-public", Routes: []osc.Route{{DestinationIpRange: "10.1.0.0/16"}}},
+					{RouteTableId: "rtb-kcp"},
+					{RouteTableId: "rtb-kw"},
+				}),
 			},
 		},
 	}
@@ -3179,7 +3330,7 @@ func TestReconcileOSCCluster_Delete(t *testing.T) {
 		},
 		{
 			name:            "[v1beta1] An airgapped cluster is deleted even if no resource have been created",
-			clusterSpec:     "v1beta1/airgap",
+			clusterSpec:     "v1beta2/airgap",
 			clusterBaseSpec: "base",
 			clusterPatches:  []patchOSCClusterFunc{patchDeleteCluster()},
 			mockFuncs: []mockFunc{
