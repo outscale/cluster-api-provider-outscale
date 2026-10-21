@@ -2,6 +2,10 @@
 
 Before upgrading, ensure that the Kubernetes/etcd/CoreDNS versions you want to upgrade to are [supported by your installed providers][version support].
 
+## Upgrading the Outscale provider
+
+> **Warning — leader-election lease rename:** When upgrading from a version using `controller-leader-election-capo` to one using `controller-leader-election-caposc`, stop all old Outscale provider controller instances before starting the new version. Old and new versions use different locks and could both become leaders during a rolling upgrade, causing concurrent reconciliation. Do not run both versions at the same time.
+
 ## Upgrading CCM
 
 Before upgrading a cluster, the CCM needs to be upgraded to the target Kubernetes version.
