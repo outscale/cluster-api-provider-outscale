@@ -119,7 +119,7 @@ func main() {
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "controller-leader-election-capo",
+		LeaderElectionID:       "controller-leader-election-caposc",
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
