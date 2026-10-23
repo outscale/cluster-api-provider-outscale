@@ -1008,12 +1008,6 @@ spec:
                         - host
                         - port
                         type: object
-                      controlPlaneSubnets:
-                        description: List of subnet to spread controlPlane nodes (deprecated,
-                          add controlplane role to subnets)
-                        items:
-                          type: string
-                        type: array
                       credentials:
                         description: Credentials to use to build this cluster
                         properties:
@@ -1171,23 +1165,65 @@ spec:
                         description: The IP Pool storing the Nat Services public IPs
                         type: string
                       net:
-                        description: The Net configuration
-                        properties:
-                          description:
-                            description: the network name
-                            type: string
-                          ipRange:
-                            description: the ip range in CIDR notation of the Net
-                            maxLength: 25
-                            type: string
-                            x-kubernetes-validations:
-                            - message: net.ipRange is not a CIDR
-                              rule: isCIDR(self)
-                          resourceId:
-                            description: The Id of the Net to reuse (if useExisting.net
-                              is set)
-                            type: string
-                        type: object
+                        description: The Nets configuration
+                        items:
+                          properties:
+                            description:
+                              description: the network name
+                              type: string
+                            ipRange:
+                              description: the ip range in CIDR notation of the Net
+                              maxLength: 25
+                              type: string
+                              x-kubernetes-validations:
+                              - message: net.ipRange is not a CIDR
+                                rule: isCIDR(self)
+                            resourceId:
+                              description: The Id of the Net to reuse (if useExisting.net
+                                is set)
+                              type: string
+                            subnets:
+                              description: The Subnets configuration for this net
+                              items:
+                                properties:
+                                  description:
+                                    description: The name of the Subnet
+                                    type: string
+                                  ipRange:
+                                    description: the Ip range in CIDR notation of
+                                      the Subnet
+                                    maxLength: 25
+                                    type: string
+                                    x-kubernetes-validations:
+                                    - message: subnet.ipRange is not a CIDR
+                                      rule: isCIDR(self)
+                                  resourceId:
+                                    description: The id of the Subnet to reuse (if
+                                      useExisting.net is set)
+                                    type: string
+                                  roles:
+                                    description: The role of the Subnet (controlplane,
+                                      worker, loadbalancer, bastion or nat)
+                                    items:
+                                      type: string
+                                    minItems: 1
+                                    type: array
+                                  subregion:
+                                    description: The subregion name of the Subnet
+                                    maxLength: 25
+                                    pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
+                                    type: string
+                                required:
+                                - roles
+                                type: object
+                              maxItems: 20
+                              type: array
+                          type: object
+                          x-kubernetes-validations:
+                          - message: subnets.ipRange must belong to ipRange
+                            rule: '!has(self.subnets) || !has(self.ipRange) || self.subnets.all(s,
+                              !has(s.ipRange) || cidr(self.ipRange).containsCIDR(cidr(s.ipRange)))'
+                        type: array
                       netAccessPoints:
                         description: The NetAccessPoints configuration, required if
                           internet is disabled.
@@ -1399,41 +1435,6 @@ spec:
                           - roles
                           type: object
                         maxItems: 50
-                        type: array
-                      subnets:
-                        description: The Subnets configuration
-                        items:
-                          properties:
-                            description:
-                              description: The name of the Subnet
-                              type: string
-                            ipRange:
-                              description: the Ip range in CIDR notation of the Subnet
-                              maxLength: 25
-                              type: string
-                              x-kubernetes-validations:
-                              - message: subnet.ipRange is not a CIDR
-                                rule: isCIDR(self)
-                            resourceId:
-                              description: The id of the Subnet to reuse (if useExisting.net
-                                is set)
-                              type: string
-                            roles:
-                              description: The role of the Subnet (controlplane, worker,
-                                loadbalancer, bastion or nat)
-                              items:
-                                type: string
-                              minItems: 1
-                              type: array
-                            subregion:
-                              description: The subregion name of the Subnet
-                              maxLength: 25
-                              pattern: (cloudgouv-)?(eu|us|ap)-(north|east|south|west|northeast|northwest|southeast|southwest)-[1-2][a-c]
-                              type: string
-                          required:
-                          - roles
-                          type: object
-                        maxItems: 20
                         type: array
                       subregions:
                         description: The list of subregions where to deploy this cluster
