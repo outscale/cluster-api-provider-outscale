@@ -37,7 +37,7 @@ func (r *OscClusterReconciler) reconcileNatService(ctx context.Context, clusterS
 
 	for _, n := range clusterScope.GetNets() {
 		for _, subnetSpec := range clusterScope.GetSubnets(n) {
-			if !subnetSpec.HasRole( infrastructurev1beta2.RoleNat) {
+			if !subnetSpec.HasRole(infrastructurev1beta2.RoleNat) {
 				continue
 			}
 			subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
