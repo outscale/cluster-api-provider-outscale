@@ -34,7 +34,7 @@ var defaultVolumes = []osc.BlockDeviceMappingCreated{{
 
 func patchVmExists(vmId string, state osc.VmState, ready bool) patchOSCMachineFunc {
 	return func(m *infrastructurev1beta2.OscMachine) {
-		m.Status.Resources.Vm = map[string]string{"default": vmId}
+		m.Spec.ProviderID = new("osc:///eu-west-2/" + vmId)
 		m.Status.VmState = &state
 		m.Status.Ready = ready
 	}
@@ -211,8 +211,8 @@ func mockVmSetCCMTag(vmId, clusterID string) mockFunc {
 func assertVmExists(vmId string, state osc.VmState, ready bool) assertOSCMachineFunc {
 	return func(t *testing.T, m *infrastructurev1beta2.OscMachine) {
 		t.Helper()
-		require.NotNil(t, m.Status.Resources.Vm)
-		assert.Equal(t, vmId, m.Status.Resources.Vm["default"])
+		require.NotNil(t, m.Spec.ProviderID)
+		assert.Contains(t, *m.Spec.ProviderID, vmId)
 		require.NotNil(t, m.Status.VmState)
 		assert.Equal(t, state, *m.Status.VmState)
 		assert.Equal(t, ready, m.Status.Ready)

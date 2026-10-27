@@ -841,10 +841,6 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
-                  vm:
-                    additionalProperties:
-                      type: string
-                    type: object
                   volumes:
                     additionalProperties:
                       type: string

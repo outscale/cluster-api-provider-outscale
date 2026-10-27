@@ -442,7 +442,6 @@ type OscReconciliationRule struct {
 }
 
 type OscMachineResources struct {
-	Vm        map[string]string `json:"vm,omitempty"`
 	FGPU      map[string]string `json:"fGPU,omitempty"`
 	Image     map[string]string `json:"image,omitempty"`
 	Volumes   map[string]string `json:"volumes,omitempty"`

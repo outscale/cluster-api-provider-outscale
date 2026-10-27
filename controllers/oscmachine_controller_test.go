@@ -319,9 +319,6 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 						Image: map[string]string{
 							"default": "ami-foo",
 						},
-						Vm: map[string]string{
-							"default": "i-foo",
-						},
 						PublicIPs: map[string]string{
 							"default": "ipalloc-worker",
 						},
@@ -364,9 +361,6 @@ func TestReconcileOSCMachine_Create(t *testing.T) {
 					assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
 						Image: map[string]string{
 							"default": "ami-foo",
-						},
-						Vm: map[string]string{
-							"default": "i-foo",
 						},
 						PublicIPs: map[string]string{
 							"default": "ipalloc-foo",
@@ -537,54 +531,10 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			machineBaseSpec: "ready-worker",
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
-				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
-					VmId:  "i-worker",
-					State: osc.VmStateRunning,
-					Tags: []osc.ResourceTag{
-						{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
-						{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
-					},
-				}),
+				mockGetVm("i-046f4bd0", osc.VmStateRunning, true),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
-					Vm: map[string]string{
-						"default": "i-worker",
-					},
-					Volumes: map[string]string{
-						"/dev/sda1": "vol-foo",
-					},
-				}),
-			},
-		},
-		{
-			name:        "[v1beta1] worker has been moved by clusterctl move, status is updated",
-			clusterSpec: "v1beta1/ready", machineSpec: "v1beta1/ready-worker",
-			machineBaseSpec: "ready-worker",
-			machinePatches: []patchOSCMachineFunc{
-				patchMoveMachine(),
-				patchUsePublicIP(),
-			},
-			mockFuncs: []mockFunc{
-				mockGetVmFromClientToken("luster-api-md-0-6p8qk-qgvhr-9e1db9c4-bf0a-4583-8999-203ec002c520", &osc.Vm{
-					VmId:     "i-worker",
-					PublicIp: new("1.2.3.4"),
-					State:    osc.VmStateRunning,
-					Tags: []osc.ResourceTag{
-						{Key: compute.TagKeyNodeName, Value: defaultPrivateDnsName},
-						{Key: compute.TagKeyClusterIDPrefix + "foo", Value: "owned"},
-					},
-				}),
-				mockGetPublicIpByIp("1.2.3.4", "ipalloc-worker"),
-			},
-			machineAsserts: []assertOSCMachineFunc{
-				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{
-					Vm: map[string]string{
-						"default": "i-worker",
-					},
-					PublicIPs: map[string]string{
-						"default": "ipalloc-worker",
-					},
 					Volumes: map[string]string{
 						"/dev/sda1": "vol-foo",
 					},
