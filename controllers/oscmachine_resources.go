@@ -59,16 +59,11 @@ func (t *MachineResourceTracker) getVm(ctx context.Context, machineScope *scope.
 
 // _getVmOrId returns the id for the vm, a wrapped ErrNoResourceFound error otherwise.
 func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *scope.MachineScope, clusterScope *scope.ClusterScope) (*osc.Vm, string, error) {
-	id := machineScope.GetVm().ResourceId
+	id := machineScope.GetInstanceID()
 	if id != "" {
 		return nil, id, nil
 	}
 
-	rsrc := machineScope.GetResources()
-	id = getResource(defaultResource, rsrc.Vm)
-	if id != "" {
-		return nil, id, nil
-	}
 	clientToken := machineScope.GetClientToken(clusterScope)
 	vm, err := t.Cloud.Compute(clusterScope.Tenant).GetVmFromClientToken(ctx, clientToken)
 	switch {
@@ -90,16 +85,7 @@ func (t *MachineResourceTracker) _getVmOrId(ctx context.Context, machineScope *s
 }
 
 func (t *MachineResourceTracker) trackVm(machineScope *scope.MachineScope, vm *osc.Vm) {
-	t.setVmId(machineScope, vm.VmId)
 	t.setVolumeIds(machineScope, vm.BlockDeviceMappings)
-}
-
-func (t *MachineResourceTracker) setVmId(machineScope *scope.MachineScope, id string) {
-	rsrc := machineScope.GetResources()
-	if rsrc.Vm == nil {
-		rsrc.Vm = map[string]string{}
-	}
-	rsrc.Vm[defaultResource] = id
 }
 
 func (t *MachineResourceTracker) setVolumeIds(machineScope *scope.MachineScope, devices []osc.BlockDeviceMappingCreated) {

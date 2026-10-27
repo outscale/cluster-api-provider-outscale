@@ -23,6 +23,8 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 	return []any{
 		spokeSkipOscMachineStatus,
 		spokeSkipOscMachineUnused,
+		spokeHardCodeResources,
+		hubHardCodeResources,
 		spokeSkipVolumeUnused,
 		spokeSkipKeypair,
 
@@ -34,30 +36,69 @@ func OscMachineFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 
 func spokeSkipOscMachineStatus(in *infrastructurev1beta1.OscNodeResource, c fuzz.Continue) {}
 
-func spokeSkipOscMachineUnused(in *infrastructurev1beta1.OscNode, c fuzz.Continue) {
+func spokeHardCodeResources(in *infrastructurev1beta1.OscMachineResources, c fuzz.Continue) {
+	*in = infrastructurev1beta1.OscMachineResources{
+		Vm: map[string]string{
+			"default": "i-foo",
+		},
+		FGPU: map[string]string{
+			"default": "fgpu-foo",
+		},
+		Image: map[string]string{
+			"default": "ami-foo",
+		},
+		Volumes: map[string]string{
+			"/dev/xvdb": "vol-foo",
+		},
+		PublicIPs: map[string]string{
+			"default": "ipalloc-foo",
+		},
+	}
+}
+
+func hubHardCodeResources(in *infrastructurev1beta2.OscMachineResources, c fuzz.Continue) {
+	*in = infrastructurev1beta2.OscMachineResources{
+		FGPU: map[string]string{
+			"default": "fgpu-foo",
+		},
+		Image: map[string]string{
+			"default": "ami-foo",
+		},
+		Volumes: map[string]string{
+			"/dev/xvdb": "vol-foo",
+		},
+		PublicIPs: map[string]string{
+			"default": "ipalloc-foo",
+		},
+	}
+}
+
+func spokeSkipOscMachineUnused(in *infrastructurev1beta1.OscMachineSpec, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
 
-	in.ClusterName = ""
-	in.Image.ResourceId = ""
-	in.Vm.VolumeName = ""
-	in.Vm.VolumeDeviceName = ""
-	in.Vm.DeviceName = ""
-	in.Vm.LoadBalancerName = ""
-	in.Vm.PublicIpName = ""
-	in.Vm.PrivateIps = nil
-	in.Vm.ResourceId = ""
-	in.Vm.ClusterName = ""
-	in.Vm.Replica = 0
-	in.Vm.SubnetName = ""
+	in.Node.ClusterName = ""
+	in.Node.Image.ResourceId = ""
+	in.Node.Vm.VolumeName = ""
+	in.Node.Vm.VolumeDeviceName = ""
+	in.Node.Vm.DeviceName = ""
+	in.Node.Vm.LoadBalancerName = ""
+	in.Node.Vm.PublicIpName = ""
+	in.Node.Vm.PrivateIps = nil
+	in.Node.Vm.ResourceId = ""
+	in.Node.Vm.ClusterName = ""
+	in.Node.Vm.Replica = 0
+	in.Node.Vm.SubnetName = ""
 
 	switch {
-	case len(in.Vm.SubregionNames) == 0:
-	case len(in.Vm.SubregionNames) == 1:
-		in.Vm.SubregionName = in.Vm.SubregionNames[0]
-		in.Vm.SubregionNames = nil
+	case len(in.Node.Vm.SubregionNames) == 0:
+	case len(in.Node.Vm.SubregionNames) == 1:
+		in.Node.Vm.SubregionName = in.Node.Vm.SubregionNames[0]
+		in.Node.Vm.SubregionNames = nil
 	default:
-		in.Vm.SubregionName = ""
+		in.Node.Vm.SubregionName = ""
 	}
+
+	in.ProviderID = new("osc:///eu-west-2/i-foo")
 }
 
 func hubSkipOscMachineUnused(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {
@@ -65,6 +106,8 @@ func hubSkipOscMachineUnused(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Co
 
 	in.Vm.PrivateIps = nil
 	in.Vm.ResourceId = ""
+
+	in.ProviderID = new("aws:///eu-west-2/i-foo")
 }
 
 func hubSingleRootVolume(in *infrastructurev1beta2.OscMachineSpec, c fuzz.Continue) {

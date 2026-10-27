@@ -1,8 +1,11 @@
 package v1beta1
 
 import (
+	"strings"
+
 	"github.com/google/go-cmp/cmp"
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/samber/lo"
 	utilconversion "sigs.k8s.io/cluster-api/util/conversion"
@@ -152,7 +155,12 @@ func (src *OscMachine) ConvertTo(dstRaw conversion.Hub) error {
 		FailureReason:  src.Status.FailureReason,
 		FailureMessage: src.Status.FailureMessage,
 		VmState:        src.Status.VmState,
-		Resources:      infrastructurev1beta2.OscMachineResources(src.Status.Resources),
+		Resources: infrastructurev1beta2.OscMachineResources{
+			FGPU:      src.Status.Resources.FGPU,
+			Image:     src.Status.Resources.Image,
+			Volumes:   src.Status.Resources.Volumes,
+			PublicIPs: src.Status.Resources.PublicIPs,
+		},
 		ReconcilerGeneration: lo.MapEntries(src.Status.ReconcilerGeneration, func(k Reconciler, v int64) (infrastructurev1beta2.Reconciler, int64) {
 			return infrastructurev1beta2.Reconciler(k), v
 		}),
@@ -180,11 +188,19 @@ func (dst *OscMachine) ConvertFrom(srcRaw conversion.Hub) error {
 		FailureReason:  src.Status.FailureReason,
 		FailureMessage: src.Status.FailureMessage,
 		VmState:        src.Status.VmState,
-		Resources:      OscMachineResources(src.Status.Resources),
+		Resources: OscMachineResources{
+			FGPU:      src.Status.Resources.FGPU,
+			Image:     src.Status.Resources.Image,
+			Volumes:   src.Status.Resources.Volumes,
+			PublicIPs: src.Status.Resources.PublicIPs,
+		},
 		ReconcilerGeneration: lo.MapEntries(src.Status.ReconcilerGeneration, func(k infrastructurev1beta2.Reconciler, v int64) (Reconciler, int64) {
 			return Reconciler(k), v
 		}),
 		Conditions: src.Status.Conditions,
+	}
+	if _, vmid, found := strings.CutLast(ptr.From(src.Spec.ProviderID), "/"); found {
+		dst.Status.Resources.Vm = map[string]string{"default": vmid}
 	}
 	if err := dst.Spec.ConvertFrom(&src.Spec); err != nil {
 		return err
