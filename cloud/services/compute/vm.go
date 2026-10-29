@@ -116,6 +116,17 @@ func (s *Service) CreateVm(ctx context.Context,
 		req.PrivateIps = privateIps
 	}
 
+	if spec.ShutdownBehaviorConfiguration != nil {
+		shutdownBehavior := osc.ShutdownBehaviorConfiguration{}
+		if spec.ShutdownBehaviorConfiguration.GuestAction != "" {
+			shutdownBehavior.GuestAction = new(osc.ShutdownBehaviorConfigurationGuestAction(spec.ShutdownBehaviorConfiguration.GuestAction))
+		}
+		if spec.ShutdownBehaviorConfiguration.HostAction != "" {
+			shutdownBehavior.HostAction = new(osc.ShutdownBehaviorConfigurationHostAction(spec.ShutdownBehaviorConfiguration.HostAction))
+		}
+		req.ShutdownBehaviorConfiguration = &shutdownBehavior
+	}
+
 	resp, err := s.tenant.Client().CreateVms(ctx, req)
 	if err != nil {
 		return nil, err

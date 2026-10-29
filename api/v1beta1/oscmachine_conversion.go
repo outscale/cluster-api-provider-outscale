@@ -67,6 +67,12 @@ func (src *OscMachineSpec) ConvertTo(dst *infrastructurev1beta2.OscMachineSpec) 
 	if src.Node.Vm.FGPU != nil {
 		dst.Vm.FGPU = new(infrastructurev1beta2.OscFGPU(*src.Node.Vm.FGPU))
 	}
+	if src.Node.Vm.ShutdownBehaviorConfiguration != nil {
+		dst.Vm.ShutdownBehaviorConfiguration = &infrastructurev1beta2.OscShutdownBehaviorConfiguration{
+			GuestAction: infrastructurev1beta2.ShutdownBehaviorGuestAction(src.Node.Vm.ShutdownBehaviorConfiguration.GuestAction),
+			HostAction:  infrastructurev1beta2.ShutdownBehaviorHostAction(src.Node.Vm.ShutdownBehaviorConfiguration.HostAction),
+		}
+	}
 	if src.Node.ReconciliationRule != nil {
 		dst.ReconciliationRule = &infrastructurev1beta2.OscReconciliationRule{
 			AppliesTo: lo.Map(src.Node.ReconciliationRule.AppliesTo, func(src Reconciler, _ int) infrastructurev1beta2.Reconciler {
@@ -132,6 +138,12 @@ func (dst *OscMachineSpec) ConvertFrom(src *infrastructurev1beta2.OscMachineSpec
 	}
 	if src.Vm.FGPU != nil {
 		dst.Node.Vm.FGPU = new(OscFGPU(*src.Vm.FGPU))
+	}
+	if src.Vm.ShutdownBehaviorConfiguration != nil {
+		dst.Node.Vm.ShutdownBehaviorConfiguration = &OscShutdownBehaviorConfiguration{
+			GuestAction: ShutdownBehaviorGuestAction(src.Vm.ShutdownBehaviorConfiguration.GuestAction),
+			HostAction:  ShutdownBehaviorHostAction(src.Vm.ShutdownBehaviorConfiguration.HostAction),
+		}
 	}
 	if src.ReconciliationRule != nil {
 		dst.Node.ReconciliationRule = &OscReconciliationRule{
