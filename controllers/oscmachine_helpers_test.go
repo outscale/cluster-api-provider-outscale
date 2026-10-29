@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -89,6 +91,22 @@ func patchRepulse(rep infrastructurev1beta2.OscPlacement) patchOSCMachineFunc {
 func patchTags(tags map[string]string) patchOSCMachineFunc {
 	return func(m *infrastructurev1beta2.OscMachine) {
 		m.Spec.Vm.Tags = tags
+	}
+}
+
+func patchIncrementMachineGeneration() patchOSCMachineFunc {
+	return func(m *infrastructurev1beta2.OscMachine) {
+		m.Generation++
+	}
+}
+
+func patchMachineStatus(state osc.VmState, ready bool) patchOSCMachineFunc {
+	return func(m *infrastructurev1beta2.OscMachine) {
+		m.Status.VmState = &state
+		m.Status.Ready = ready
+		if !m.Status.Ready {
+			conditions.MarkFalse(m, clusterv1.ReadyCondition, "no reason", clusterv1.ConditionSeverityError, "message")
+		}
 	}
 }
 
@@ -192,6 +210,15 @@ func mockCreateVmWithVolumes(vmId string, volumes []infrastructurev1beta2.OscVol
 	}
 }
 
+func mockStartVm(vmId string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.ComputeMock.
+			EXPECT().
+			StartVm(gomock.Any(), gomock.Eq(vmId)).
+			Return(nil)
+	}
+}
+
 func mockLinkLoadBalancer(vmId, lb string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
@@ -212,10 +239,11 @@ func assertVmExists(vmId string, state osc.VmState, ready bool) assertOSCMachine
 	return func(t *testing.T, m *infrastructurev1beta2.OscMachine) {
 		t.Helper()
 		require.NotNil(t, m.Spec.ProviderID)
-		assert.Contains(t, *m.Spec.ProviderID, vmId)
+		assert.Contains(t, *m.Spec.ProviderID, vmId, "providerID is set")
 		require.NotNil(t, m.Status.VmState)
-		assert.Equal(t, state, *m.Status.VmState)
-		assert.Equal(t, ready, m.Status.Ready)
+		assert.Equal(t, state, *m.Status.VmState, "vmState is set")
+		assert.Equal(t, ready, m.Status.Ready, "status is set")
+		assert.Equal(t, ready, conditions.IsTrue(m, clusterv1.ReadyCondition), "condition is set")
 	}
 }
 

@@ -2408,7 +2408,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta1/ready-net",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -2530,7 +2530,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -2760,7 +2760,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -2857,7 +2857,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -3099,7 +3099,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
