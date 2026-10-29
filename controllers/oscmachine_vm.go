@@ -25,7 +25,7 @@ import (
 // reconcileVm reconcile the vm of the machine
 func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	if !machineScope.NeedReconciliation(infrastructurev1beta2.ReconcilerVm) {
+	if !machineScope.NeedReconciliation(infrastructurev1beta2.ReconcilerVm) && machineScope.IsReady() {
 		log.V(4).Info("No need for vm reconciliation")
 		return reconcile.Result{}, nil
 	}
@@ -206,11 +206,13 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("start vm: %w", err)
 		}
+		machineScope.SetNotReady()
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	case osc.VmStateRunning:
 		log.V(4).Info("VM is running", "vmId", vm.VmId)
 	default:
 		log.V(4).Info("VM is not yet running", "vmId", vm.VmId, "state", vm.State)
+		machineScope.SetNotReady()
 		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 

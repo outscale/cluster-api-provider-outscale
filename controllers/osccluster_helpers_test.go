@@ -86,7 +86,7 @@ func patchAdditionalSGRule(add infrastructurev1beta2.OscAdditionalSecurityRules)
 	}
 }
 
-func patchIncrementGeneration() patchOSCClusterFunc {
+func patchIncrementClusterGeneration() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
 	}
