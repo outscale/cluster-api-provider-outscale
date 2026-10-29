@@ -24,8 +24,6 @@ metadata:
   uid: 4973cd7c-439b-4108-b61f-39805379aa0e
 spec:
   network:
-    bastion:
-      enable: false
     loadBalancer:
       loadbalancername: test-cluster-api-k8s
     subregionName: eu-west-2a
@@ -72,7 +70,6 @@ status:
       "test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kw"
       "test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-lb"
       "test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-node"
-      "test-cluster-api-bastion-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-bastion"
     natService:
       "eu-west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo"
     publicIps:

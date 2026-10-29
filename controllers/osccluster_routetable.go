@@ -18,7 +18,7 @@ import (
 )
 
 // reconcileRoute reconcile the RouteTable and the Route of the cluster.
-func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, routeTableSpec infrastructurev1beta2.OscRouteTable, routeSpec infrastructurev1beta2.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope *scope.ClusterScope, netSpec infrastructurev1beta2.OscNet, routeTableSpec infrastructurev1beta2.OscRouteTable, routeSpec infrastructurev1beta2.OscRoute, routeTable *osc.RouteTable) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	destinationIpRange := routeSpec.Destination
@@ -31,12 +31,12 @@ func (r *OscClusterReconciler) reconcileRoute(ctx context.Context, clusterScope 
 	var err error
 	switch routeSpec.TargetType {
 	case "gateway":
-		resourceId, err = r.Tracker.getInternetServiceId(ctx, clusterScope)
+		resourceId, err = r.Tracker.getInternetServiceId(ctx, netSpec.IpRange, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find internetService for route: %w", err)
 		}
 	case "nat":
-		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleNat, routeTableSpec.Subregion)
+		subnetSpec, err := clusterScope.GetSubnet(netSpec, infrastructurev1beta2.RoleNat, routeTableSpec.Subregion)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("find natService subnet for route: %w", err)
 		}
@@ -75,60 +75,63 @@ func (r *OscClusterReconciler) reconcileRouteTable(ctx context.Context, clusterS
 	}
 	log.V(4).Info("Reconciling routeTables")
 
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	svc := r.Cloud.Net(clusterScope.Tenant)
-	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	rtblForSubnet := map[string]*osc.RouteTable{}
-	for _, rtbl := range rtbls {
-		for _, link := range rtbl.LinkRouteTables {
-			rtblForSubnet[link.SubnetId] = &rtbl
-		}
-	}
-	routeTablesSpec := clusterScope.GetRouteTables()
-	for _, routeTableSpec := range routeTablesSpec {
-		subnetSpec, err := clusterScope.GetSubnet(routeTableSpec.Role, routeTableSpec.Subregion)
+
+	for _, netSpec := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot find subnet with role %q: %w", routeTableSpec.Role, err)
+			return reconcile.Result{}, err
 		}
-		if len(roles) > 0 && !clusterScope.SubnetHasRole(subnetSpec, roles[0]) {
-			continue
-		}
-		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+		rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
+			return reconcile.Result{}, err
 		}
-		var rtbl *osc.RouteTable
-		switch {
-		case rtblForSubnet[subnetId] != nil:
-			log.V(5).Info("Subnet has a route table", "subnetId", subnetId)
-			rtbl = rtblForSubnet[subnetId]
-		case rtblForSubnet[subnetId] == nil:
-			log.V(2).Info("Creating routetable", "subnetId", subnetId)
-			rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), clusterScope.GetSubnetName(subnetSpec))
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
-			}
-			log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
-			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
-			log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
-			_, err := svc.LinkRouteTable(ctx, rtbl.RouteTableId, subnetId)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
+		rtblForSubnet := map[string]*osc.RouteTable{}
+		for _, rtbl := range rtbls {
+			for _, link := range rtbl.LinkRouteTables {
+				rtblForSubnet[link.SubnetId] = &rtbl
 			}
 		}
-		if rtbl == nil {
-			return reconcile.Result{}, fmt.Errorf("no subnet found for route table %q", routeTableSpec.Description)
-		}
-		for _, routeSpec := range routeTableSpec.Routes {
-			_, err = r.reconcileRoute(ctx, clusterScope, routeTableSpec, routeSpec, rtbl)
+		routeTablesSpec := clusterScope.GetRouteTables(netSpec)
+		for _, routeTableSpec := range routeTablesSpec {
+			subnetSpec, err := clusterScope.GetSubnet(netSpec, routeTableSpec.Role, routeTableSpec.Subregion)
 			if err != nil {
-				return reconcile.Result{}, err
+				return reconcile.Result{}, fmt.Errorf("cannot find subnet with role %q: %w", routeTableSpec.Role, err)
+			}
+			if len(roles) > 0 && !subnetSpec.HasRole(roles[0]) {
+				continue
+			}
+			subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
+			}
+			var rtbl *osc.RouteTable
+			switch {
+			case rtblForSubnet[subnetId] != nil:
+				log.V(5).Info("Subnet has a route table", "subnetId", subnetId)
+				rtbl = rtblForSubnet[subnetId]
+			case rtblForSubnet[subnetId] == nil:
+				log.V(2).Info("Creating routetable", "subnetId", subnetId)
+				rtbl, err = svc.CreateRouteTable(ctx, netId, clusterScope.GetUID(), clusterScope.GetSubnetName(subnetSpec))
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("cannot create routetable: %w", err)
+				}
+				log.V(2).Info("Created routetable", "routetableId", rtbl.RouteTableId)
+				r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.RouteTableCreatedReason, "Route table created %v %s", subnetSpec.Roles, subnetSpec.Subregion)
+				log.V(2).Info("Link routetable to subnet", "routeTableId", rtbl.RouteTableId, "subnetId", subnetId)
+				_, err := svc.LinkRouteTable(ctx, rtbl.RouteTableId, subnetId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("cannot link routetable to subnet: %w", err)
+				}
+			}
+			if rtbl == nil {
+				return reconcile.Result{}, fmt.Errorf("no subnet found for route table %q", routeTableSpec.Description)
+			}
+			for _, routeSpec := range routeTableSpec.Routes {
+				_, err = r.reconcileRoute(ctx, clusterScope, netSpec, routeTableSpec, routeSpec, rtbl)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
 			}
 		}
 	}
@@ -146,32 +149,34 @@ func (r *OscClusterReconciler) reconcileDeleteRouteTable(ctx context.Context, cl
 		return reconcile.Result{}, nil
 	}
 
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	switch {
-	case IsNotFound(err):
-		log.V(4).Info("The net is already deleted, no route table expected")
-		return reconcile.Result{}, nil
-	case err != nil:
-		return reconcile.Result{}, err
-	}
-	svc := r.Cloud.Net(clusterScope.Tenant)
-	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	for _, rtbl := range rtbls {
-		for _, link := range rtbl.LinkRouteTables {
-			log.V(2).Info("Unlinking route table", "routeTableId", rtbl.RouteTableId, "linkId", link.LinkRouteTableId)
-			err := svc.UnlinkRouteTable(ctx, link.LinkRouteTableId)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot unlink routeTable: %w", err)
-			}
+	for _, netSpec := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
+		switch {
+		case IsNotFound(err):
+			log.V(4).Info("The net is already deleted, no route table expected")
+			continue
+		case err != nil:
+			return reconcile.Result{}, err
 		}
-		log.V(2).Info("Deleting routeTable", "routeTableId", rtbl.RouteTableId)
-		err = svc.DeleteRouteTable(ctx, rtbl.RouteTableId)
+		svc := r.Cloud.Net(clusterScope.Tenant)
+		rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot delete routeTable: %w", err)
+			return reconcile.Result{}, err
+		}
+
+		for _, rtbl := range rtbls {
+			for _, link := range rtbl.LinkRouteTables {
+				log.V(2).Info("Unlinking route table", "routeTableId", rtbl.RouteTableId, "linkId", link.LinkRouteTableId)
+				err := svc.UnlinkRouteTable(ctx, link.LinkRouteTableId)
+				if err != nil {
+					return reconcile.Result{}, fmt.Errorf("cannot unlink routeTable: %w", err)
+				}
+			}
+			log.V(2).Info("Deleting routeTable", "routeTableId", rtbl.RouteTableId)
+			err = svc.DeleteRouteTable(ctx, rtbl.RouteTableId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot delete routeTable: %w", err)
+			}
 		}
 	}
 	return reconcile.Result{}, nil

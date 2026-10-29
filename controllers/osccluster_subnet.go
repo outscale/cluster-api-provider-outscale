@@ -26,41 +26,43 @@ func (r *OscClusterReconciler) reconcileSubnets(ctx context.Context, clusterScop
 	}
 	log.V(4).Info("Reconciling subnets")
 
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	svc := r.Cloud.Net(clusterScope.Tenant)
-	for _, subnetSpec := range clusterScope.GetSubnets() {
-		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
-		switch {
-		case IsNotFound(err) && !clusterScope.GetSpec().UseExisting.Net:
-		case err != nil:
-			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
-		default:
-			log.V(4).Info("Found existing subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.Subregion, "subnetId", subnet.SubnetId)
-			continue
-		}
-		subnetSpec.Subregion = clusterScope.GetSubnetSubregion(subnetSpec)
-		log.V(3).Info("Creating subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.Subregion)
-		subnet, err = svc.CreateSubnet(ctx, subnetSpec, netId, clusterScope.GetUID(), clusterScope.GetSubnetName(subnetSpec))
+	for _, n := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, n.IpRange, clusterScope)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
+			return reconcile.Result{}, err
 		}
-		log.V(2).Info("Created subnet", "subnetId", subnet.SubnetId)
-		r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.SubnetId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet %s created for %v in %s", subnet.SubnetId, subnetSpec.Roles, subnetSpec.Subregion)
-	}
 
-	// add failureDomains
-	for _, subnetSpec := range clusterScope.GetSubnets() {
-		if clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleControlPlane) {
-			clusterScope.SetFailureDomain(string(clusterScope.GetSubnetSubregion(subnetSpec)), clusterv1.FailureDomainSpec{
-				ControlPlane: true,
-			})
+		for _, subnetSpec := range n.Subnets {
+			subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
+			switch {
+			case IsNotFound(err) && !clusterScope.GetSpec().UseExisting.Net:
+			case err != nil:
+				return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
+			default:
+				log.V(4).Info("Found existing subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.Subregion, "subnetId", subnet.SubnetId)
+				continue
+			}
+			subnetSpec.Subregion = clusterScope.GetSubnetSubregion(subnetSpec)
+			log.V(3).Info("Creating subnet", "roles", subnetSpec.Roles, "subregion", subnetSpec.Subregion)
+			subnet, err = svc.CreateSubnet(ctx, subnetSpec, netId, clusterScope.GetUID(), clusterScope.GetSubnetName(subnetSpec))
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot create subnet: %w", err)
+			}
+			log.V(2).Info("Created subnet", "subnetId", subnet.SubnetId)
+			r.Tracker.setSubnetId(clusterScope, subnetSpec, subnet.SubnetId)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.SubnetCreatedReason, "Subnet %s created for %v in %s", subnet.SubnetId, subnetSpec.Roles, subnetSpec.Subregion)
+		}
+
+		// add failureDomains
+		for _, subnetSpec := range n.Subnets {
+			if subnetSpec.HasRole(infrastructurev1beta2.RoleControlPlane) {
+				clusterScope.SetFailureDomain(string(clusterScope.GetSubnetSubregion(subnetSpec)), clusterv1.FailureDomainSpec{
+					ControlPlane: true,
+				})
+			}
 		}
 	}
-
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerSubnet)
 	return reconcile.Result{}, nil
 }
@@ -73,20 +75,21 @@ func (r *OscClusterReconciler) reconcileDeleteSubnets(ctx context.Context, clust
 		return reconcile.Result{}, nil
 	}
 	svc := r.Cloud.Net(clusterScope.Tenant)
-	subnetsSpec := clusterScope.GetSubnets()
-	for _, subnetSpec := range subnetsSpec {
-		subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
-		switch {
-		case IsNotFound(err):
-			continue
-		case err != nil:
-			return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
-		}
-		subnetId := subnet.SubnetId
-		log.V(2).Info("Deleting subnet", "subnetId", subnetId)
-		err = svc.DeleteSubnet(ctx, subnetId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot delete subnet: %w", err)
+	for _, n := range clusterScope.GetNets() {
+		for _, subnetSpec := range n.Subnets {
+			subnet, err := r.Tracker.getSubnet(ctx, subnetSpec, clusterScope)
+			switch {
+			case IsNotFound(err):
+				continue
+			case err != nil:
+				return reconcile.Result{}, fmt.Errorf("find existing: %w", err)
+			}
+			subnetId := subnet.SubnetId
+			log.V(2).Info("Deleting subnet", "subnetId", subnetId)
+			err = svc.DeleteSubnet(ctx, subnetId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot delete subnet: %w", err)
+			}
 		}
 	}
 	return reconcile.Result{}, nil

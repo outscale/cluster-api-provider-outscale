@@ -122,12 +122,6 @@ func (r *OscClusterReconciler) reconcile(ctx context.Context, clusterScope *scop
 	}
 	clusterScope.EnsureExplicitUID()
 
-	// FIXME
-	// errs := infrastructurev1beta2.ValidateOscClusterSpec(osccluster.Spec)
-	// if len(errs) > 0 {
-	// 	return reconcile.Result{}, errs.ToAggregate()
-	// }
-
 	// Reconcile each element of the cluster
 	_, err := r.reconcileNet(ctx, clusterScope)
 	if err != nil {
