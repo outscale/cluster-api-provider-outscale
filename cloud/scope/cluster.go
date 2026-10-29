@@ -70,7 +70,7 @@ type ClusterScope struct {
 
 // Close closes the scope of the cluster configuration and status
 func (s *ClusterScope) Close(ctx context.Context) error {
-	return s.patchHelper.Patch(ctx, s.OscCluster)
+	return s.PatchObject(ctx)
 }
 
 // GetName return the name of the cluster
@@ -623,19 +623,14 @@ func (s *ClusterScope) GetControlPlaneEndpointPort() int32 {
 	return s.OscCluster.Spec.ControlPlaneEndpoint.Port
 }
 
-// GetReady get ready status
-func (s *ClusterScope) GetReady() bool {
-	return s.OscCluster.Status.Ready
-}
-
-// SetNotReady set not ready status
-func (s *ClusterScope) SetNotReady() {
-	s.OscCluster.Status.Ready = false
-}
-
 // SetReady set the ready status of the cluster
 func (s *ClusterScope) SetReady() {
 	s.OscCluster.Status.Ready = true
+}
+
+// IsReady checks if a cluster was reported as ready
+func (m *ClusterScope) IsReady() bool {
+	return m.OscCluster.Status.Ready && conditions.IsTrue(m.OscCluster, clusterv1.ReadyCondition)
 }
 
 // GetBastion return the vm bastion
@@ -748,10 +743,13 @@ func (s *ClusterScope) PatchObject(ctx context.Context) error {
 	setConditions := []clusterv1.ConditionType{
 		infrastructurev1beta2.NetReadyCondition,
 		infrastructurev1beta2.SubnetsReadyCondition,
-		infrastructurev1beta2.LoadBalancerReadyCondition,
 		infrastructurev1beta2.InternetServicesReadyCondition,
 		infrastructurev1beta2.NatServicesReadyCondition,
 		infrastructurev1beta2.RouteTablesReadyCondition,
+		infrastructurev1beta2.SecurityGroupReadyCondition,
+		infrastructurev1beta2.NetAccessPointsReadyCondition,
+		infrastructurev1beta2.NetPeeringReadyCondition,
+		infrastructurev1beta2.LoadBalancerReadyCondition,
 	}
 	conditions.SetSummary(
 		s.OscCluster,

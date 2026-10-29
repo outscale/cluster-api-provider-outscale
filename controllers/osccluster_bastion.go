@@ -17,7 +17,6 @@ import (
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // checkBastionFormatParameters check Bastion parameters format.
@@ -105,16 +104,16 @@ import (
 // }
 
 // reconcileBastion reconcile the bastion of cluster.
-func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScope *scope.ClusterScope) Result {
 	log := ctrl.LoggerFrom(ctx)
 
 	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerBastion) {
 		log.V(4).Info("No need for bastion reconciliation")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(3).Info("Reusing existing bastion")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 	log.V(4).Info("Reconciling bastion")
 
@@ -122,30 +121,30 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	switch {
 	case IsNotFound(err):
 	case err != nil:
-		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
+		return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get existing: %w", err)}
 	default:
 		log.V(4).Info("Found bastion", "vmId", vm.VmId, "vmState", vm.State)
 		clusterScope.SetVmState(vm.State)
 		if vm.State != osc.VmStateRunning {
-			return reconcile.Result{}, errors.New("bastion is not yet running")
+			return Result{Status: ResultStatusNotOK}
 		}
 		clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerBastion)
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 
 	bastionSpec := clusterScope.GetBastion()
 	netSpec, subnetSpec, err := clusterScope.GetSingleSubnet(infrastructurev1beta2.RoleBastion)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("subnet spec: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("subnet spec: %w", err)}
 	}
 	subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("load subnet: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("load subnet: %w", err)}
 	}
 
 	_, publicIp, err := r.Tracker.IPAllocator(clusterScope).AllocateIP(ctx, bastionIPResourceKey, clusterScope.GetBastionName(), "", clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("allocate IP: %w", err)}
 	}
 	bastionPrivateIps := clusterScope.GetBastionPrivateIps()
 	privateIps := make([]string, 0, len(bastionPrivateIps))
@@ -156,29 +155,29 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 
 	bastionSecurityGroups, err := clusterScope.GetSecurityGroupsFor(bastionSpec.SecurityGroupNames, infrastructurev1beta2.RoleBastion)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot find securityGroup: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("no securityGroup found: %w", err)}
 	}
 	if len(bastionSecurityGroups) == 0 {
-		return reconcile.Result{}, errors.New("no securityGroup found")
+		return Result{Status: ResultStatusNotOK, Error: errors.New("no securityGroup found")}
 	}
 	svc := r.Cloud.Compute(clusterScope.Tenant)
 	securityGroupIds := make([]string, 0, len(bastionSecurityGroups))
 	for _, sgSpec := range bastionSecurityGroups {
 		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, netSpec.IpRange, sgSpec, clusterScope)
-		log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 		if err != nil {
-			return reconcile.Result{}, err
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot find securityGroup: %w", err)}
 		}
+		log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 		securityGroupIds = append(securityGroupIds, securityGroupId)
 	}
 	imageId := bastionSpec.ImageId
 	if imageId == "" && bastionSpec.ImageName != "" {
 		image, err := svc.GetImageByName(ctx, bastionSpec.ImageName, bastionSpec.ImageAccountId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot find image %s: %w", bastionSpec.ImageName, err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot find image %s: %w", bastionSpec.ImageName, err)}
 		}
 		if image == nil {
-			return reconcile.Result{}, fmt.Errorf("cannot find image %s", bastionSpec.ImageName)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot find image %s", bastionSpec.ImageName)}
 		}
 		imageId = image.ImageId
 	}
@@ -191,39 +190,39 @@ func (r *OscClusterReconciler) reconcileBastion(ctx context.Context, clusterScop
 	clientToken := clusterScope.GetBastionClientToken()
 	vm, err = svc.CreateVmBastion(ctx, &bastionSpec, subnetId, securityGroupIds, privateIps, bastionName, clientToken, imageId, tags)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot create bastion: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot create bastion: %w", err)}
 	}
 	log.V(2).Info("Bastion created", "vmId", vm.VmId)
 	r.Tracker.setBastionId(clusterScope, vm.VmId)
 	clusterScope.SetVmState(osc.VmStatePending)
 	r.Recorder.Event(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.VmCreatedReason, "Bastion created")
-	return reconcile.Result{}, errors.New("VM is not running yet")
+	return Result{Status: ResultStatusNotOK}
 }
 
 // reconcileDeleteBastion reconcile the destruction of the machine bastion.
-func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteBastion(ctx context.Context, clusterScope *scope.ClusterScope) Result {
 	log := ctrl.LoggerFrom(ctx)
 	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing bastion")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 	vm, err := r.Tracker.getBastion(ctx, clusterScope)
 	switch {
 	case IsNotFound(err):
 		log.V(4).Info("The bastion is already deleted")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	case err != nil:
-		return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
+		return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get existing: %w", err)}
 	case vm.State == "terminated":
 		log.V(4).Info("The bastion is already deleted")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 
 	log.V(3).Info("Deleting bastion")
 	err = r.Cloud.Compute(clusterScope.Tenant).DeleteVm(ctx, vm.VmId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot delete bastion: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot delete bastion: %w", err)}
 	}
 	log.V(2).Info("Bastion deleted", "vmId", vm.VmId)
-	return reconcile.Result{}, nil
+	return Result{Status: ResultStatusOK}
 }

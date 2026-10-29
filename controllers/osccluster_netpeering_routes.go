@@ -20,7 +20,6 @@ import (
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *OscClusterReconciler) getManagementRouteTablesAndIPRange(ctx context.Context, mgmtSvc cloudnet.Servicer, clusterScope *scope.ClusterScope) ([]osc.RouteTable, string, error) {
@@ -55,33 +54,33 @@ func (r *OscClusterReconciler) getManagementRouteTablesAndIPRange(ctx context.Co
 }
 
 // reconcileNetPeeringRoutes reconcile the NetPeering routes.
-func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) Result {
 	log := ctrl.LoggerFrom(ctx)
 	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not reconciling netPeering routes for existing net")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 	if !clusterScope.NeedReconciliation(infrastructurev1beta2.ReconcilerNetPeeringRoutes) {
 		log.V(4).Info("No need for netPeering routes reconciliation")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 	log.V(4).Info("Reconciling netPeering routes")
 
 	netSpec := clusterScope.GetNets()[0]
 	hubNetId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("get net: %w", err)}
 	}
 
 	svc := r.Cloud.Net(clusterScope.Tenant)
 	mgmt, err := getMgmtTenant(ctx, r.Client, r.Cloud, clusterScope.OscCluster)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("get mgmt credentials: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("get mgmt credentials: %w", err)}
 	}
 	mgmtSvc := r.Cloud.Net(mgmt)
 	mgmtRtbls, mgmtIPRange, err := r.getManagementRouteTablesAndIPRange(ctx, mgmtSvc, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("list mgmt route tables: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("list mgmt route tables: %w", err)}
 	}
 	spokeIpRange := func(spec netPeering) string {
 		if spec.management {
@@ -95,7 +94,7 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 	for _, spec := range netPeerings {
 		np, err := r.Tracker.getNetPeering(ctx, clusterScope, spec.management, spec.ipRange)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("get netpeering: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("get netpeering: %w", err)}
 		}
 
 		checkRoute := func(hubSpoke string, rtbl osc.RouteTable, destRange string, svc cloudnet.Servicer) error {
@@ -130,17 +129,17 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 		if !spec.management {
 			spokeNetID, err := r.Tracker.getNetId(ctx, spec.ipRange, clusterScope)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("get spoke net: %w", err)
+				return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get spoke net: %w", err)}
 			}
 			spokeRtbls, err = svc.GetRouteTablesFromNet(ctx, spokeNetID)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("list spoke route tables: %w", err)
+				return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("list spoke route tables: %w", err)}
 			}
 		}
 		// Add route to hub in spoke route table
 		for _, mgmtRtbl := range spokeRtbls {
 			if err := checkRoute("spoke", mgmtRtbl, hubIpRange, spokeSvc); err != nil {
-				return reconcile.Result{}, err
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("spoke to hub route: %w", err)}
 			}
 		}
 		// Add routes to other spokes in spoke route table
@@ -152,50 +151,50 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 			}
 			for _, mgmtRtbl := range spokeRtbls {
 				if err := checkRoute("spoke", mgmtRtbl, destRange, spokeSvc); err != nil {
-					return reconcile.Result{}, err
+					return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("spoke to spoke route: %w", err)}
 				}
 			}
 		}
 		// Add routes to spoke in hub route tables
 		rtbls, err := svc.GetRouteTablesFromNet(ctx, hubNetId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("list hub route tables: %w", err)
+			return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("list hub route tables: %w", err)}
 		}
 		for _, rtbl := range rtbls {
 			if err := checkRoute("hub", rtbl, spokeRange, svc); err != nil {
-				return reconcile.Result{}, err
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("hub to spoke route: %w", err)}
 			}
 		}
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeeringRoutes)
-	return reconcile.Result{}, nil
+	return Result{Status: ResultStatusOK}
 }
 
 // reconcileDeleteNetPeeringRoutes deletes routes to netpeering on the mgmt cluster. No need to delete workload routes, they will be deleted with the route tables.
-func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
+func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Context, clusterScope *scope.ClusterScope) Result {
 	log := ctrl.LoggerFrom(ctx)
 	if clusterScope.GetSpec().UseExisting.Net {
 		log.V(4).Info("Not deleting existing netPeering routes")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 
 	npId, err := r.Tracker.getNetPeeringId(ctx, clusterScope, true, "")
 	switch {
 	case IsNotFound(err):
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	case err != nil:
-		return reconcile.Result{}, err
+		return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get existing: %w", err)}
 	}
 
 	mgmt, err := getMgmtTenant(ctx, r.Client, r.Cloud, clusterScope.OscCluster)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot get mgmt credentials: %w", err)
+		return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("cannot get mgmt credentials: %w", err)}
 	}
 	mgmtSvc := r.Cloud.Net(mgmt)
 	// remove routes from management route tables
 	mgmtRtbls, _, err := r.getManagementRouteTablesAndIPRange(ctx, mgmtSvc, clusterScope)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("list mgmt route tables: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("list mgmt route tables: %w", err)}
 	}
 	for _, mgmtRtbl := range mgmtRtbls {
 		for _, r := range mgmtRtbl.Routes {
@@ -205,12 +204,12 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Conte
 			log.V(3).Info("Deleting management route to netPeering", "routeTableId", mgmtRtbl.RouteTableId, "IPRange", r.DestinationIpRange)
 			err = mgmtSvc.DeleteRoute(ctx, r.DestinationIpRange, mgmtRtbl.RouteTableId)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("delete mgmt route: %w", err)
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("delete mgmt route: %w", err)}
 			}
 		}
 	}
 
-	return reconcile.Result{}, nil
+	return Result{Status: ResultStatusOK}
 }
 
 func overlappingCIDR(r1, r2 string) bool {

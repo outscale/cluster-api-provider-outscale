@@ -6,7 +6,6 @@ SPDX-License-Identifier: BSD-3-Clause
 package controllers
 
 import (
-	"context"
 	"testing"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
@@ -119,9 +118,8 @@ func TestReconcileCapacity(t *testing.T) {
 				capacity[corev1.ResourceMemory] = memory
 				capacity[corev1.ResourceCPU] = cpu
 			}
-			reconcileCapacity, err := reconcileCapacity(context.TODO(), machineTemplateScope)
-			require.NoError(t, err)
-			assert.Zero(t, reconcileCapacity)
+			res := reconcileCapacity(t.Context(), machineTemplateScope)
+			require.NoError(t, res.Error)
 			assert.Equal(t, capacity, machineTemplateScope.GetCapacity())
 		})
 	}

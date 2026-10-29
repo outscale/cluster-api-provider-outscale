@@ -243,10 +243,24 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 					},
 				}),
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
+				assertClusterReady(true),
 			},
 			next: &testcase{
 				name: "[v1beta1] A second run has all references in cache",
 			},
+		},
+		{
+			name:        "[v1beta1] an error occurs, cluster is not ready",
+			clusterSpec: "v1beta1/base",
+			mockFuncs: []mockFunc{
+				mockListNets("9e1db9c4-bf0a-4583-8999-203ec002c520", nil),
+				mockCantCreateNet(),
+			},
+			clusterAsserts: []assertOSCClusterFunc{
+				assertHasClusterFinalizer(),
+				assertClusterReady(false),
+			},
+			hasError: true,
 		},
 		{
 			name:        "[v1beta2] creating a cluster with an automatic config",
@@ -487,7 +501,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "1.2.3.4"),
 				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "1.2.3.4"}),
 			},
-			hasError: true,
+			requeue: true,
 			clusterAsserts: []assertOSCClusterFunc{
 				assertHasClusterFinalizer(),
 				assertStatusClusterResources(infrastructurev1beta2.OscClusterResources{
@@ -647,7 +661,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "7.8.9.10"),
 				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "7.8.9.10"}),
 			},
-			hasError: true,
+			requeue: true,
 		},
 		{
 			name:            "[v1beta1] creating a config with manual SGs, a bastion and IP restriction",
@@ -767,7 +781,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "7.8.9.10"),
 				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "7.8.9.10"}),
 			},
-			hasError: true,
+			requeue: true,
 		},
 		{
 			name:            "[v1beta1] the default outbound rule can be disabled",
@@ -889,7 +903,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				mockCreatePublicIp("Bastion for test-cluster-api", "9e1db9c4-bf0a-4583-8999-203ec002c520", "ipalloc-bastion", "1.2.3.4"),
 				mockCreateVmBastion("i-bastion", "subnet-public", []string{"sg-bastion"}, []string{}, "Bastion for test-cluster-api", "bastion-9e1db9c4-bf0a-4583-8999-203ec002c520", "ami-bastion", map[string]string{"osc.fcu.eip.auto-attach": "1.2.3.4"}),
 			},
-			hasError: true,
+			requeue: true,
 		},
 		{
 			name:        "[v1beta1] creating a multiaz cluster with a automatic config",
@@ -1113,6 +1127,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockGetNet("vpc-foo", nil),
 			},
+			clusterAsserts: []assertOSCClusterFunc{
+				assertClusterReady(false),
+			},
 			hasError: true,
 		},
 		{
@@ -1122,6 +1139,9 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
 				mockGetSubnet("subnet-public", nil),
+			},
+			clusterAsserts: []assertOSCClusterFunc{
+				assertClusterReady(false),
 			},
 			hasError: true,
 		},
@@ -1145,6 +1165,7 @@ func TestReconcileOSCCluster_Create(t *testing.T) {
 				assertHasClusterFinalizer(),
 				assertStatusClusterResources(infrastructurev1beta2.OscClusterResources{}),
 				assertControlPlaneEndpoint("test-cluster-api-k8s.outscale.dev", 6443),
+				assertClusterReady(true),
 			},
 		},
 		{
@@ -2776,7 +2797,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta1/ready-net",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -2898,7 +2919,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta1/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -3128,7 +3149,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -3225,7 +3246,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),
@@ -3466,7 +3487,7 @@ func TestReconcileOSCCluster_Update(t *testing.T) {
 			clusterSpec:     "v1beta2/ready",
 			clusterBaseSpec: "base",
 			clusterPatches: []patchOSCClusterFunc{
-				patchIncrementGeneration(),
+				patchIncrementClusterGeneration(),
 			},
 			mockFuncs: []mockFunc{
 				mockNetFound("vpc-foo"),

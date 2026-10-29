@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 package controllers_test
 
 import (
+	"errors"
 	"testing"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
@@ -15,7 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -86,7 +88,7 @@ func patchAdditionalSGRule(add infrastructurev1beta2.OscAdditionalSecurityRules)
 	}
 }
 
-func patchIncrementGeneration() patchOSCClusterFunc {
+func patchIncrementClusterGeneration() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Generation++
 	}
@@ -114,7 +116,7 @@ func patchDisableLB() patchOSCClusterFunc {
 	return func(m *infrastructurev1beta2.OscCluster) {
 		m.Spec.Disable.Loadbalancer = true
 		m.Spec.LoadBalancer = infrastructurev1beta2.OscLoadBalancer{}
-		m.Spec.ControlPlaneEndpoint = v1beta1.APIEndpoint{
+		m.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
 			Host: "api.example.com",
 			Port: 443,
 		}
@@ -163,6 +165,14 @@ func mockCreateNet(ipRange, clusterID, netName, netId string) mockFunc {
 		s.NetMock.EXPECT().
 			CreateNet(gomock.Any(), gomock.Eq(ipRange), gomock.Eq(clusterID), gomock.Eq(netName)).
 			Return(&osc.Net{NetId: netId}, nil)
+	}
+}
+
+func mockCantCreateNet() mockFunc {
+	return func(s *MockCloudServices) {
+		s.NetMock.EXPECT().
+			CreateNet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(nil, errors.New("can't create"))
 	}
 }
 
@@ -629,8 +639,16 @@ func assertControlPlaneEndpoint(endpoint string, port int32) assertOSCClusterFun
 }
 
 func assertHasClusterFinalizer() assertOSCClusterFunc {
-	return func(t *testing.T, m *infrastructurev1beta2.OscCluster) {
+	return func(t *testing.T, c *infrastructurev1beta2.OscCluster) {
 		t.Helper()
-		assert.True(t, controllerutil.ContainsFinalizer(m, controllers.OscClusterFinalizer))
+		assert.True(t, controllerutil.ContainsFinalizer(c, controllers.OscClusterFinalizer))
+	}
+}
+
+func assertClusterReady(ready bool) assertOSCClusterFunc {
+	return func(t *testing.T, c *infrastructurev1beta2.OscCluster) {
+		t.Helper()
+		assert.Equal(t, ready, c.Status.Ready)
+		assert.Equal(t, ready, conditions.IsTrue(c, clusterv1.ReadyCondition))
 	}
 }

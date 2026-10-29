@@ -179,18 +179,16 @@ func (r *OscMachineReconciler) reconcile(ctx context.Context, machineScope *scop
 	// 	return reconcile.Result{}, errs.ToAggregate()
 	// }
 
-	reconcileVm, err := r.reconcileVm(ctx, clusterScope, machineScope)
-	switch {
-	case err != nil:
-		MarkErrorCondition(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, err)
-		return reconcile.Result{}, err
-	case !reconcileVm.IsZero():
-		conditions.MarkFalse(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, clusterv1.ConditionSeverityInfo, "VM is not running yet")
-		return reconcileVm, nil
-	default:
+	res := r.reconcileVm(ctx, clusterScope, machineScope)
+	if stop, res, err := res.CheckResultAndConditions(oscmachine, func(err error) {
+		MarkFalseCondition(oscmachine, infrastructurev1beta2.VmReadyCondition, infrastructurev1beta2.VmNotReadyReason, err)
+	}, func() {
 		conditions.MarkTrue(oscmachine, infrastructurev1beta2.VmReadyCondition)
-		return reconcile.Result{}, nil
+	}, "vm"); stop {
+		return res, err
 	}
+
+	return reconcile.Result{}, nil
 }
 
 // reconcileDelete reconcile the deletion of the machine
@@ -198,13 +196,13 @@ func (r *OscMachineReconciler) reconcileDelete(ctx context.Context, machineScope
 	log := ctrl.LoggerFrom(ctx)
 	log.V(3).Info("Reconciling delete OscMachine")
 	oscmachine := machineScope.OscMachine
-	_, err := r.reconcileDeleteVm(ctx, clusterScope, machineScope)
-	if err != nil {
-		return reconcile.Result{}, err
+	res := r.reconcileDeleteVm(ctx, clusterScope, machineScope)
+	if stop, res, err := res.CheckResultAndConditions(oscmachine, nil, nil, "vm"); stop {
+		return res, err
 	}
-	_, err = r.reconcileDeletePublicIp(ctx, clusterScope, machineScope)
-	if err != nil {
-		return reconcile.Result{}, err
+	res = r.reconcileDeletePublicIp(ctx, clusterScope, machineScope)
+	if stop, res, err := res.CheckResultAndConditions(oscmachine, nil, nil, "publicIP"); stop {
+		return res, err
 	}
 	controllerutil.RemoveFinalizer(oscmachine, OscMachineFinalizer)
 	return reconcile.Result{}, nil

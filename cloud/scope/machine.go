@@ -79,7 +79,7 @@ type MachineScope struct {
 
 // Close closes the scope of the machine configuration and status
 func (m *MachineScope) Close(ctx context.Context) error {
-	return m.patchHelper.Patch(ctx, m.OscMachine)
+	return m.PatchObject(ctx)
 }
 
 // GetName returns the name of the machine
@@ -207,6 +207,11 @@ func (m *MachineScope) SetReady() {
 // SetReady set machine status not ready
 func (m *MachineScope) SetNotReady() {
 	m.OscMachine.Status.Ready = false
+}
+
+// IsReady checks if a machine was reported as ready
+func (m *MachineScope) IsReady() bool {
+	return m.OscMachine.Status.Ready && conditions.IsTrue(m.OscMachine, clusterv1.ReadyCondition)
 }
 
 // SetFailureMessage set failure message

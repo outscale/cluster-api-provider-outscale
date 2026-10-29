@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"time"
 
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
@@ -21,15 +20,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // reconcileVm reconcile the vm of the machine
-func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
+func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) Result {
 	log := ctrl.LoggerFrom(ctx)
-	if !machineScope.NeedReconciliation(infrastructurev1beta2.ReconcilerVm) {
+	if !machineScope.NeedReconciliation(infrastructurev1beta2.ReconcilerVm) && machineScope.IsReady() {
 		log.V(4).Info("No need for vm reconciliation")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 
 	vmSpec := machineScope.GetVm()
@@ -40,7 +38,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		var err error
 		fgpu, err = r.Tracker.getFGPU(ctx, machineScope, clusterScope)
 		if err != nil && !IsNotFound(err) {
-			return reconcile.Result{}, err
+			return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get fgpu: %w", err)}
 		}
 	}
 	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
@@ -48,7 +46,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	case err == nil:
 		machineScope.SetVmState(vm.State)
 	case !IsNotFound(err):
-		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
+		return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get existing: %w", err)}
 	default:
 		// Check if a machine needs to be placed in a subregion.
 		var azs []infrastructurev1beta2.OscSubRegion
@@ -66,7 +64,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		}
 		netSpec, subnetSpec, subregionName, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.AllocationMode, role, clusterScope.GetNets(), azs)
 		if err != nil {
-			return reconcile.Result{}, err
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("allocate az: %w", err)}
 		}
 
 		// Allocate a FGPU
@@ -80,7 +78,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			log.V(3).Info("Allocating fGPU", "model", vmSpec.FGPU.Model)
 			fgpu, err = r.Cloud.Compute(clusterScope.Tenant).AllocateFGPU(ctx, vmSpec.FGPU.Model, string(subregionName), machineScope)
 			if err != nil {
-				return reconcile.Result{}, err
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("fgpu: %w", err)}
 			}
 			log.V(2).Info("fGPU allocated", "fGPUId", fgpu.FlexibleGpuId, "model", vmSpec.FGPU.Model)
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
@@ -89,7 +87,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 		subnet, err := r.ClusterTracker.getSubnet(ctx, subnetSpec, clusterScope)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("find subnet: %w", err)}
 		}
 		subnetId := subnet.SubnetId
 		annotations.AddAnnotations(machineScope.OscMachine, map[string]string{
@@ -100,14 +98,14 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		})
 		securityGroups, err := clusterScope.GetSecurityGroupsFor(machineScope.GetVmSecurityGroups(), role)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot find securityGroup: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot find securityGroup: %w", err)}
 		}
 		securityGroupIds := make([]string, 0, len(securityGroups))
 		for _, sgSpec := range securityGroups {
 			securityGroupId, err := r.ClusterTracker.getSecurityGroupId(ctx, netSpec.IpRange, sgSpec, clusterScope)
 			log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 			if err != nil {
-				return reconcile.Result{}, err
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("get sg: %w", err)}
 			}
 			securityGroupIds = append(securityGroupIds, securityGroupId)
 		}
@@ -119,7 +117,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		}
 		imageId, err := r.Tracker.getImageId(ctx, machineScope, clusterScope)
 		if err != nil {
-			return reconcile.Result{}, err
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("get image: %w", err)}
 		}
 		vmName := machineScope.GetName()
 		vmTags := vmSpec.Tags
@@ -133,7 +131,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		if vmSpec.PublicIp {
 			_, publicIp, err := r.Tracker.IPAllocator(machineScope).AllocateIP(ctx, defaultResource, vmName, vmSpec.PublicIpPool, clusterScope)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("allocate IP: %w", err)
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("allocate IP: %w", err)}
 			}
 			vmTags[compute.AutoAttachExternalIPTag] = publicIp
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
@@ -171,7 +169,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		log.V(3).Info("Creating VM", "vmName", vmName, "imageId", imageId, "keypairName", keypairName, "vmType", vmType, "tags", vmTags)
 		vm, err = r.Cloud.Compute(clusterScope.Tenant).CreateVm(ctx, machineScope, &vmSpec, imageId, subnetId, securityGroupIds, privateIps, vmName, clientToken, vmTags, volumes)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create vm: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot create vm: %w", err)}
 		}
 		vmId := vm.VmId
 		log.V(2).Info("VM created", "vmId", vmId)
@@ -190,19 +188,19 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 			log.V(3).Info("Attaching fGPU", "vmId", vm.VmId, "fGPUId", fgpu.FlexibleGpuId)
 			err := r.Cloud.Compute(clusterScope.Tenant).LinkFGPU(ctx, fgpu.FlexibleGpuId, vm.VmId)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("link fgpu: %w", err)
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("link fgpu: %w", err)}
 			}
 			r.Recorder.Eventf(machineScope.OscMachine, corev1.EventTypeNormal,
 				infrastructurev1beta2.FGPUAttachedReason, "%s attached", fgpu.FlexibleGpuId)
 		default:
 			log.V(4).Info("Waiting for VM state", "vmId", vm.VmId, "state", vm.State)
 		}
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+		return Result{Status: ResultStatusNotOK}
 	case fgpu.State == osc.FlexibleGpuStateAttached:
 		log.V(4).Info("fGPU is attached", "vmId", vm.VmId, "fGPUId", fgpu.FlexibleGpuId)
 	default:
 		log.V(4).Info("Waiting for fGPU state", "vmId", vm.VmId, "fGPUId", fgpu.FlexibleGpuId, "state", fgpu.State)
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+		return Result{Status: ResultStatusNotOK}
 	}
 
 	switch vm.State {
@@ -210,14 +208,16 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		log.V(3).Info("Starting VM", "vmId", vm.VmId)
 		err := r.Cloud.Compute(clusterScope.Tenant).StartVm(ctx, vm.VmId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("start vm: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("start vm: %w", err)}
 		}
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+		machineScope.SetNotReady()
+		return Result{Status: ResultStatusNotOK}
 	case osc.VmStateRunning:
 		log.V(4).Info("VM is running", "vmId", vm.VmId)
 	default:
 		log.V(4).Info("VM is not yet running", "vmId", vm.VmId, "state", vm.State)
-		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+		machineScope.SetNotReady()
+		return Result{Status: ResultStatusNotOK}
 	}
 
 	machineScope.SetReady()
@@ -227,22 +227,22 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		loadBalancerName := clusterScope.GetLoadBalancer().Name
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot get loadbalancer: %w", err)}
 		}
 		if loadbalancer == nil {
-			return reconcile.Result{}, errors.New("no loadbalancer found")
+			return Result{Status: ResultStatusNotOK, Error: errors.New("no loadbalancer found")}
 		}
 		if !slices.Contains(loadbalancer.BackendVmIds, vm.VmId) {
 			log.V(2).Info("Linking loadbalancer", "loadBalancerName", loadBalancerName)
 			err := svc.LinkLoadBalancerBackendMachines(ctx, []string{vm.VmId}, loadBalancerName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot link vm %s to loadBalancerName %s: %w", vm.VmId, loadBalancerName, err)
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot link vm to loadBalancer %s: %w", loadBalancerName, err)}
 			}
 		}
 	}
 
 	if vm.PrivateDnsName == nil {
-		return reconcile.Result{}, errors.New("cannot find privateDnsName")
+		return Result{Status: ResultStatusNotOK, Error: errors.New("cannot find privateDnsName")}
 	}
 	addresses := []corev1.NodeAddress{}
 	addresses = append(
@@ -264,26 +264,26 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	err = r.Cloud.Compute(clusterScope.Tenant).CheckVM(ctx, vm, clusterScope.GetUID(), ptr.From(vm.PrivateDnsName))
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot update vm: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot update vm: %w", err)}
 	}
 	machineScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerVm)
-	return reconcile.Result{}, nil
+	return Result{Status: ResultStatusOK}
 }
 
 // reconcileDeleteVm reconcile the destruction of the vm of the machine
-func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) (reconcile.Result, error) {
+func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterScope *scope.ClusterScope, machineScope *scope.MachineScope) Result {
 	log := ctrl.LoggerFrom(ctx)
 
 	vm, err := r.Tracker.getVm(ctx, machineScope, clusterScope)
 	switch {
 	case IsNotFound(err):
 		log.V(2).Info("VM is already deleted")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	case err != nil:
-		return reconcile.Result{}, fmt.Errorf("cannot get vm: %w", err)
+		return Result{Status: ResultStatusUnknown, Error: fmt.Errorf("get existing: %w", err)}
 	case vm.State == "terminated":
 		log.V(4).Info("VM is already deleted")
-		return reconcile.Result{}, nil
+		return Result{Status: ResultStatusOK}
 	}
 
 	if machineScope.GetSpec().Role == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
@@ -291,13 +291,13 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 		loadBalancerName := clusterScope.GetLoadBalancer().Name
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get loadbalancer: %w", err)
+			return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot get loadbalancer: %w", err)}
 		}
 		if loadbalancer != nil && slices.Contains(loadbalancer.BackendVmIds, vm.VmId) {
 			log.V(2).Info("Unlinking loadbalancer", "loadBalancerName", loadBalancerName)
 			err := svc.UnlinkLoadBalancerBackendMachines(ctx, []string{vm.VmId}, loadBalancerName)
 			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("cannot unlink vm %s to loadBalancerName %s: %w", vm.VmId, loadBalancerName, err)
+				return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot unlink vm from loadBalancer %s: %w", loadBalancerName, err)}
 			}
 		}
 	}
@@ -305,9 +305,9 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 	log.V(2).Info("Deleting VM", "vmId", vm.VmId)
 	err = r.Cloud.Compute(clusterScope.Tenant).DeleteVm(ctx, vm.VmId)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("cannot delete vm: %w", err)
+		return Result{Status: ResultStatusNotOK, Error: fmt.Errorf("cannot delete vm: %w", err)}
 	}
-	return reconcile.Result{}, nil
+	return Result{Status: ResultStatusOK}
 }
 
 /*
