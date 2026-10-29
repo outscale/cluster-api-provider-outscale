@@ -556,7 +556,31 @@ type OscVm struct {
 	// VM placement constraints.
 	// +optional
 	Placement OscPlacement `json:"placement,omitempty"`
+	// The shutdown behavior configuration for this VM.
+	// If not set, the API defaults apply (GuestAction: stop, HostAction: restart).
+	// +optional
+	ShutdownBehaviorConfiguration *OscShutdownBehaviorConfiguration `json:"shutdownBehaviorConfiguration,omitempty"`
 }
+
+// OscShutdownBehaviorConfiguration defines the actions performed by the orchestrator when the VM shuts down.
+type OscShutdownBehaviorConfiguration struct {
+	// The action performed by the orchestrator when the VM is shut down from the guest operating system
+	// (stop or terminate, stop by default).
+	// +kubebuilder:validation:Enum:=stop;terminate
+	// +optional
+	GuestAction ShutdownBehaviorGuestAction `json:"guestAction,omitempty"`
+	// The action performed by the orchestrator when the VM is shut down due to a host infrastructure failure
+	// (restart or stop, restart by default).
+	// +kubebuilder:validation:Enum:=restart;stop
+	// +optional
+	HostAction ShutdownBehaviorHostAction `json:"hostAction,omitempty"`
+}
+
+// +kubebuilder:validation:Enum:=stop;terminate
+type ShutdownBehaviorGuestAction string
+
+// +kubebuilder:validation:Enum:=restart;stop
+type ShutdownBehaviorHostAction string
 
 func (vm *OscVm) GetRole() OscRole {
 	if vm.Role != "" {

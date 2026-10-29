@@ -655,6 +655,28 @@ spec:
                                   type: string
                               type: object
                             type: array
+                          shutdownBehaviorConfiguration:
+                            description: |-
+                              The shutdown behavior configuration for this VM.
+                              If not set, the API defaults apply (GuestAction: stop, HostAction: restart).
+                            properties:
+                              guestAction:
+                                description: |-
+                                  The action performed by the orchestrator when the VM is shut down from the guest operating system
+                                  (stop or terminate, stop by default).
+                                enum:
+                                - stop
+                                - terminate
+                                type: string
+                              hostAction:
+                                description: |-
+                                  The action performed by the orchestrator when the VM is shut down due to a host infrastructure failure
+                                  (restart or stop, restart by default).
+                                enum:
+                                - restart
+                                - stop
+                                type: string
+                            type: object
                           subregionMode:
                             description: The way nodes will be allocated in subregions
                               (leastNodes or random; by default, leastNodes).
