@@ -118,7 +118,7 @@ jobs:
       id: preloader
       uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@91094d173e5a06bfc9c2d7c7792e7128b6a1a7c2 # v0.3.0
       with:
-        KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
+        KUBECONFIG: workload.kubeconfig
         OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
         OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
         OSC_REGION: ${{ steps.secrets.outputs.region }}
@@ -127,7 +127,7 @@ jobs:
       run: make credentials
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
     - name: 🧪 Launch quickstart e2e tests
       run: |
         from=`echo ${{ vars.IMG_UPGRADE_FROM }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
