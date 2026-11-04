@@ -84,6 +84,7 @@ jobs:
       id: management
       uses: outscale/.github/kube-setup@fix_kubeconfig
       with:
+        KUBECONFIG_PATH: ${{ github.workspace }}
         OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
         OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
         OSC_REGION: ${{ steps.secrets.outputs.region }}
@@ -130,8 +131,6 @@ jobs:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
     - name: 🧪 Launch quickstart e2e tests
       run: |
-        pwd
-        ls -al ${{ github.workspace }}
         from=`echo ${{ vars.IMG_UPGRADE_FROM }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
         to=`echo ${{ vars.IMG_UPGRADE_TO }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
         export KUBERNETES_VERSION=$from
@@ -141,7 +140,7 @@ jobs:
       shell: bash
       id: e2etest
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
         CCM_OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
         CCM_OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
         CCM_OSC_REGION: ${{ steps.secrets.outputs.region }}
@@ -158,16 +157,16 @@ jobs:
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
     - name: 📝 Get cluster api logs
       run: make logs-capi
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
         CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
-    - name: 👷 Deploy management cluster
+    - name: 👷 Teardown management cluster
       if: ${{ always() }}
       uses: outscale/.github/kube-teardown@fix_kubeconfig
       with:
