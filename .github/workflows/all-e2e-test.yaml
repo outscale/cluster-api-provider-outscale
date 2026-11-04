@@ -62,6 +62,7 @@ jobs:
         IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
         CERT_MANAGER: "true"
         vault_token: ${{ steps.secrets.outputs.vault_token }}
+        PRELOADER_SNAPSHOT: "true"
     - name: ⬇️ Install Go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
@@ -85,15 +86,6 @@ jobs:
         IMAGE_TAG: "${{ github.sha }}-amd64"
         REGISTRY_IMAGE: "${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers"
         REGISTRY_TAG: ${{ github.sha }}
-    - name: 🔎 Preloader snapshot
-      id: preloader
-      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@91094d173e5a06bfc9c2d7c7792e7128b6a1a7c2 # v0.3.0
-      with:
-        KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
-        CSI: true
     - name: 🔐 Create CAPOSC ns and credentials
       run: make credentials
       shell: bash
@@ -119,7 +111,7 @@ jobs:
         IMG_UPGRADE_TO: ${{ vars.IMG_UPGRADE_TO }}
         COREDNS_VERSION_UPGRADE_TO: ${{ vars.COREDNS_VERSION_UPGRADE_TO }}
         ETCD_VERSION_UPGRADE_TO: ${{ vars.ETCD_VERSION_UPGRADE_TO }}
-        PRELOAD_SNAPSHOT_ID: ${{ steps.preloader.outputs.SNAPSHOT_ID }}
+        PRELOAD_SNAPSHOT_ID: ${{ steps.management.outputs.SNAPSHOT_ID }}
     - name: 📝 Get CAPOSC state/logs
       run: |
         echo "**** pod state"
