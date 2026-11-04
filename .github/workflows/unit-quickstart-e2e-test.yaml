@@ -84,7 +84,6 @@ jobs:
       id: management
       uses: outscale/.github/kube-setup@fix_kubeconfig
       with:
-        KUBECONFIG_PATH: ${{ github.workspace }}
         OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
         OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
         OSC_REGION: ${{ steps.secrets.outputs.region }}
