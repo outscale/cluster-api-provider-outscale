@@ -233,6 +233,8 @@ github.com/outscale/goutils/sdk v0.0.10 h1:ArjTK5Vd7iVCWTi3hwhsf4ZmZDt6fPqZh5fJj
 github.com/outscale/goutils/sdk v0.0.10/go.mod h1:uyfyUiH7egPoczxPkGQZyH7xSakGBMo9qjSviifxhpk=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5 h1:XP6smAeoacHJT/mTeNBMc9Y2Dqvw0fSgLOyazQN6gIY=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5/go.mod h1:wtvvgi27yvHluLy4X575C1wQQORNpi8FTYcxxvCPi7M=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.6 h1:JK9OB5OonPbHCQD+S9O6MMOO1JqXzMKgqScRt2XEkwA=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.6/go.mod h1:7JsbCkpWIa7+MlvxyAv2HZf+CaJcZDyKekBuiDF4BIY=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
