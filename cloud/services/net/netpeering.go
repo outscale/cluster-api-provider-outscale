@@ -41,7 +41,7 @@ func (s *Service) CreateNetPeering(ctx context.Context, netID, mgmtNetID, mgmtAc
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err = s.tags.AddTag(ctx, netPeeringTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, netPeeringTagRequest)
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,7 @@ func (s *Service) AllocateFGPU(ctx context.Context, model, az string, machineSco
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{nodeTag},
 	}
-	err = s.tags.AddTag(ctx, tagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, tagRequest)
 	if err != nil {
 		return nil, fmt.Errorf("tag fgpu: %w", err)
 	}

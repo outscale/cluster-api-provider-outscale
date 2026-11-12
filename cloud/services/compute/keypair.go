@@ -36,7 +36,7 @@ func (s *Service) CreateKeypair(ctx context.Context, name, clusterID string) (*o
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err = s.tags.AddTag(ctx, KeypairTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, KeypairTagRequest)
 	if err != nil {
 		return nil, err
 	}

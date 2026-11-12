@@ -43,7 +43,7 @@ func (s *Service) CreateNatService(ctx context.Context, publicIpId, subnetId, na
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{natServiceTag, clusterTag},
 	}
-	err = s.tags.AddTag(ctx, natServiceTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, natServiceTagRequest)
 	if err != nil {
 		return nil, err
 	}

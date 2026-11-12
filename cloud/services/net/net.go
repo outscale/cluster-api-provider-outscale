@@ -42,7 +42,7 @@ func (s *Service) CreateNet(ctx context.Context, spec infrastructurev1beta2.OscN
 		Tags:        []osc.ResourceTag{netTag, clusterTag},
 	}
 
-	err = s.tags.AddTag(ctx, netTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, netTagRequest)
 	if err != nil {
 		return nil, err
 	}
