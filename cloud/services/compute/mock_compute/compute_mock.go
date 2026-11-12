@@ -43,20 +43,6 @@ func (m *MockServicer) EXPECT() *MockServicerMockRecorder {
 	return m.recorder
 }
 
-// AddCCMTags mocks base method.
-func (m *MockServicer) AddCCMTags(ctx context.Context, clusterName, hostname, vmId string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCCMTags", ctx, clusterName, hostname, vmId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddCCMTags indicates an expected call of AddCCMTags.
-func (mr *MockServicerMockRecorder) AddCCMTags(ctx, clusterName, hostname, vmId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCCMTags", reflect.TypeOf((*MockServicer)(nil).AddCCMTags), ctx, clusterName, hostname, vmId)
-}
-
 // AllocateFGPU mocks base method.
 func (m *MockServicer) AllocateFGPU(ctx context.Context, model, az string, machineScope *scope.MachineScope) (*osc.FlexibleGpu, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +56,20 @@ func (m *MockServicer) AllocateFGPU(ctx context.Context, model, az string, machi
 func (mr *MockServicerMockRecorder) AllocateFGPU(ctx, model, az, machineScope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllocateFGPU", reflect.TypeOf((*MockServicer)(nil).AllocateFGPU), ctx, model, az, machineScope)
+}
+
+// CheckVM mocks base method.
+func (m *MockServicer) CheckVM(ctx context.Context, vm *osc.Vm, clusterName, hostname string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckVM", ctx, vm, clusterName, hostname)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckVM indicates an expected call of CheckVM.
+func (mr *MockServicerMockRecorder) CheckVM(ctx, vm, clusterName, hostname any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckVM", reflect.TypeOf((*MockServicer)(nil).CheckVM), ctx, vm, clusterName, hostname)
 }
 
 // CreateKeypair mocks base method.

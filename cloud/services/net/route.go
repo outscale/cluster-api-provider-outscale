@@ -50,7 +50,7 @@ func (s *Service) CreateRouteTable(ctx context.Context, netId string, clusterID 
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{routeTableTag, clusterTag},
 	}
-	err = s.tags.AddTag(ctx, routeTableTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, routeTableTagRequest)
 	if err != nil {
 		return nil, err
 	}

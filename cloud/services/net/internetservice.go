@@ -41,7 +41,7 @@ func (s *Service) CreateInternetService(ctx context.Context, internetServiceName
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{internetServiceTag, clusterTag},
 	}
-	err = s.tags.AddTag(ctx, internetServiceTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, internetServiceTagRequest)
 	if err != nil {
 		return nil, err
 	}

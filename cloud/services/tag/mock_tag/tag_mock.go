@@ -43,17 +43,17 @@ func (m *MockServicer) EXPECT() *MockServicerMockRecorder {
 }
 
 // AddTag mocks base method.
-func (m *MockServicer) AddTag(ctx context.Context, req osc.CreateTagsRequest, resourceIds []string) error {
+func (m *MockServicer) AddTag(ctx context.Context, req osc.CreateTagsRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddTag", ctx, req, resourceIds)
+	ret := m.ctrl.Call(m, "AddTag", ctx, req)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddTag indicates an expected call of AddTag.
-func (mr *MockServicerMockRecorder) AddTag(ctx, req, resourceIds any) *gomock.Call {
+func (mr *MockServicerMockRecorder) AddTag(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTag", reflect.TypeOf((*MockServicer)(nil).AddTag), ctx, req, resourceIds)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTag", reflect.TypeOf((*MockServicer)(nil).AddTag), ctx, req)
 }
 
 // ReadOwnedByTag mocks base method.

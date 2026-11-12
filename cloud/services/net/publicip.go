@@ -47,7 +47,7 @@ func (s *Service) CreatePublicIp(ctx context.Context, publicIpName string, clust
 		Tags:        []osc.ResourceTag{publicIpTag, clusterTag},
 	}
 
-	err = s.tags.AddTag(ctx, req, resourceIds)
+	err = s.tags.AddTag(ctx, req)
 	if err != nil {
 		return nil, err
 	}

@@ -45,7 +45,7 @@ func (s *Service) CreateNetAccessPoint(ctx context.Context, netId, region, servi
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{clusterTag},
 	}
-	err = s.tags.AddTag(ctx, netAccessPointTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, netAccessPointTagRequest)
 	if err != nil {
 		return nil, err
 	}

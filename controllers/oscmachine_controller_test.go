@@ -532,6 +532,7 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 			machinePatches:  []patchOSCMachineFunc{patchMoveMachine()},
 			mockFuncs: []mockFunc{
 				mockGetVm("i-046f4bd0", osc.VmStateRunning, true),
+				mockCheckVmOK("i-046f4bd0", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
 			},
 			machineAsserts: []assertOSCMachineFunc{
 				assertStatusMachineResources(infrastructurev1beta2.OscMachineResources{

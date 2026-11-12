@@ -11,6 +11,13 @@ import (
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
+// OutscaleOpenSourceAccounts lists the accounts used to publish open source image accounts.
+var OutscaleOpenSourceAccounts = map[string]string{
+	"eu-west-2":           "671899555720",
+	"us-east-2":           "852047997530",
+	"cloudgouv-eu-west-1": "545146734248",
+}
+
 type ImageInterface interface {
 	GetImage(ctx context.Context, id string) (*osc.Image, error)
 	GetImageByName(ctx context.Context, name, accountId string) (*osc.Image, error)

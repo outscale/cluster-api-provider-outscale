@@ -105,7 +105,7 @@ func mockOpenSourceImageFound(name, region, imageId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ComputeMock.
 			EXPECT().
-			GetImageByName(gomock.Any(), gomock.Eq(name), gomock.Eq(controllers.OutscaleOpenSourceAccounts[region])).
+			GetImageByName(gomock.Any(), gomock.Eq(name), gomock.Eq(compute.OutscaleOpenSourceAccounts[region])).
 			Return(&osc.Image{ImageId: imageId}, nil)
 	}
 }
@@ -203,7 +203,19 @@ func mockLinkLoadBalancer(vmId, lb string) mockFunc {
 func mockVmSetCCMTag(vmId, clusterID string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.ComputeMock.EXPECT().
-			AddCCMTags(gomock.Any(), gomock.Eq(clusterID), gomock.Eq(defaultPrivateDnsName), gomock.Eq(vmId)).
+			CheckVM(gomock.Any(), gomock.Cond(func(vm *osc.Vm) bool {
+				return vm.VmId == vmId && len(vm.Tags) == 0
+			}), gomock.Eq(clusterID), gomock.Eq(defaultPrivateDnsName)).
+			Return(nil)
+	}
+}
+
+func mockCheckVmOK(vmId, clusterID string) mockFunc {
+	return func(s *MockCloudServices) {
+		s.ComputeMock.EXPECT().
+			CheckVM(gomock.Any(), gomock.Cond(func(vm *osc.Vm) bool {
+				return vm.VmId == vmId && len(vm.Tags) > 0
+			}), gomock.Eq(clusterID), gomock.Eq(defaultPrivateDnsName)).
 			Return(nil)
 	}
 }

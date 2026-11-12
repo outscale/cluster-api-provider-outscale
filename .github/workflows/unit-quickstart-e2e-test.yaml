@@ -38,9 +38,36 @@ jobs:
         make unit-test
         cat covers.txt
       shell: bash
+  integration:
+    runs-on: [self-hosted, linux, local]
+    needs: [unit]
+    permissions:
+      id-token: write
+    steps:
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: ⬇️ Install Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: 'go.mod'
+    - name: 🔒🧹 Setup Vault & Frieza
+      id: secrets
+      uses: outscale/.github/vault-frieza-clean@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      with:
+        vault_role: outscale-cluster-api-provider-outscale
+        exclude_resource_types: access_key
+    - name: 🧪 integration tests
+      run: |
+        make integration-test
+      shell: bash
+      env:
+        IMG_NAME: ${{ vars.IMG_UPGRADE_FROM }}
+        VM_TYPE: "tinav7.c1r1p3"
   e2e-quickstart:
     runs-on: [self-hosted, linux, kube]
-    needs: [unit]
+    needs: [integration]
     permissions:
       id-token: write
     steps:
