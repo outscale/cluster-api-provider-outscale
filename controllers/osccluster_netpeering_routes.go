@@ -71,7 +71,8 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("get netpeering: %w", err)
 	}
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
+	netSpec := clusterScope.GetNets()[0]
+	netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("get net: %w", err)
 	}
@@ -109,13 +110,14 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("list mgmt route tables: %w", err)
 	}
-	wrkIPRange := clusterScope.GetNet().IpRange
-	for _, mgmtRtbl := range mgmtRtbls {
-		if err := checkRoute("management", mgmtRtbl, wrkIPRange, mgmtSvc); err != nil {
-			return reconcile.Result{}, err
+	for _, n := range clusterScope.GetNets() {
+		wrkIPRange := n.IpRange
+		for _, mgmtRtbl := range mgmtRtbls {
+			if err := checkRoute("management", mgmtRtbl, wrkIPRange, mgmtSvc); err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 	}
-
 	// Add routes to workload route tables
 	svc := r.Cloud.Net(clusterScope.Tenant)
 	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
@@ -127,6 +129,7 @@ func (r *OscClusterReconciler) reconcileNetPeeringRoutes(ctx context.Context, cl
 			return reconcile.Result{}, err
 		}
 	}
+	// TODO: nets 1+ should route to net0
 
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetPeeringRoutes)
 	return reconcile.Result{}, nil
@@ -139,7 +142,8 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeeringRoutes(ctx context.Conte
 		log.V(4).Info("Not deleting existing netPeering routes")
 		return reconcile.Result{}, nil
 	}
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
+	netSpec := clusterScope.GetNets()[0]
+	netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 	switch {
 	case IsNotFound(err):
 		log.V(4).Info("The net is already deleted, no net peerings expected")

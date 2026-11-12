@@ -125,6 +125,8 @@ var _ = ginkgo.Describe("[e2e][validation][fast] Testing CRD validation", func()
 			{file: "testdata/osccluster/subregion-invalid.yaml"},
 
 			{file: "testdata/osccluster/useexisting-noid-invalid.yaml"},
+			{file: "testdata/osccluster/useexisting-noidalt-invalid.yaml"},
+			{file: "testdata/osccluster/nouseexisting-id-invalid.yaml"},
 
 			{file: "testdata/osccluster/base-valid.yaml", update: func(doc *unstructured.Unstructured) error {
 				return unstructured.SetNestedField(doc.Object, "updated", "spec", "loadBalancer", "name")

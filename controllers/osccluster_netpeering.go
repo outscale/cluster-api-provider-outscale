@@ -54,12 +54,13 @@ func (r *OscClusterReconciler) reconcileNetPeering(ctx context.Context, clusterS
 		log.V(4).Info("Found active netPeering", "mgmtNetID", np.AccepterNet.NetId, "mgmtAccount", np.AccepterNet.AccountId)
 		return reconcile.Result{}, nil
 	}
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
+	netSpec := clusterScope.GetNets()[0]
+	netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if np == nil || np.State.Name != osc.NetPeeringStateNamePendingAcceptance {
-		log.V(3).Info("Creating netPeering")
+		log.V(3).Info("Creating netPeering", "netId", netId)
 		np, err = svc.CreateNetPeering(ctx, netId, r.getMgmtNetID(clusterScope), r.getMgmtAccountID(clusterScope), clusterScope.GetUID())
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot create netPeering: %w", err)
@@ -92,7 +93,8 @@ func (r *OscClusterReconciler) reconcileDeleteNetPeering(ctx context.Context, cl
 		log.V(4).Info("Not deleting existing netPeerings")
 		return reconcile.Result{}, nil
 	}
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
+	netSpec := clusterScope.GetNets()[0]
+	netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 	switch {
 	case IsNotFound(err):
 		log.V(4).Info("The net is already deleted, no net peerings expected")

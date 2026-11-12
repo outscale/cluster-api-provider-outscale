@@ -30,8 +30,8 @@ spec:
   loadBalancer:
     name: "${CLUSTER_NAME}-k8s"
     type: "internal"
-  net:
-    ipRange: 10.1.0.0/16
+  nets:
+    - ipRange: 10.1.0.0/16
   netPeering:
     enable: true
   netAccessPoints:

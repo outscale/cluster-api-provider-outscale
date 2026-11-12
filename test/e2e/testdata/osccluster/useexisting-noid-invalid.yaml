@@ -6,7 +6,7 @@ metadata:
 spec:
   useExisting:
     net: true
-  net:
+  nets:
   loadBalancer:
     name: test-cluster-api
     type: internet-facing

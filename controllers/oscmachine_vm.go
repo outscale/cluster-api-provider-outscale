@@ -48,7 +48,11 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
 		// Check if a machine needs to be placed in a subregion.
-		var subregionName infrastructurev1beta2.OscSubRegion
+		var (
+			subregionName infrastructurev1beta2.OscSubRegion
+			netSpec       infrastructurev1beta2.OscNet
+			subnetSpec    infrastructurev1beta2.OscSubnet
+		)
 		switch {
 		case fgpu != nil:
 			subregionName = infrastructurev1beta2.OscSubRegion(fgpu.SubregionName)
@@ -60,11 +64,10 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				azs = clusterScope.GetSubregions()
 				log.V(4).Info("Using cluster subregions")
 			}
-			az, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.SubregionMode, azs)
+			netSpec, subnetSpec, subregionName, err = r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.SubregionMode, vmSpec.GetRole(), clusterScope.GetNets(), azs)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			subregionName = az
 		}
 
 		// Allocate a FGPU
@@ -85,10 +88,6 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				infrastructurev1beta2.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(vmSpec.GetRole(), subregionName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
-		}
 		subnetId, err := r.ClusterTracker.getSubnetId(ctx, subnetSpec, clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
@@ -99,7 +98,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		}
 		securityGroupIds := make([]string, 0, len(securityGroups))
 		for _, sgSpec := range securityGroups {
-			securityGroupId, err := r.ClusterTracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
+			securityGroupId, err := r.ClusterTracker.getSecurityGroupId(ctx, netSpec.IpRange, sgSpec, clusterScope)
 			log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 			if err != nil {
 				return reconcile.Result{}, err

@@ -28,54 +28,56 @@ func (r *OscClusterReconciler) reconcileNetAccessPoints(ctx context.Context, clu
 		return reconcile.Result{}, nil
 	}
 	log.V(4).Info("Reconciling netAccessPoints")
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	region := clusterScope.Tenant.Region()
-
-	// Find routetables to link to
-	svc := r.Cloud.Net(clusterScope.Tenant)
-	rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	rtblForSubnet := map[string]string{}
-	for _, rtbl := range rtbls {
-		for _, link := range rtbl.LinkRouteTables {
-			rtblForSubnet[link.SubnetId] = rtbl.RouteTableId
-		}
-	}
-	rtblIds := make([]string, 0, len(rtbls))
-	for _, subnetSpec := range clusterScope.GetSubnets() {
-		if !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleWorker) && !clusterScope.SubnetHasRole(subnetSpec, infrastructurev1beta2.RoleControlPlane) {
-			continue
-		}
-		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+	for _, netSpec := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
+			return reconcile.Result{}, err
 		}
-		rtblIds = append(rtblIds, rtblForSubnet[subnetId])
-	}
+		region := clusterScope.Tenant.Region()
 
-	for _, service := range clusterScope.GetSpec().NetAccessPoints {
-		netAccessPoint, err := r.Tracker.getNetAccessPoint(ctx, service, clusterScope)
-		switch {
-		case IsNotFound(err):
-		case err != nil:
-			return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
-		default:
-			log.V(4).Info("Found existing netAccessPoint", "netAccessPointId", netAccessPoint.NetAccessPointId)
-			continue
-		}
-		log.V(3).Info("Creating net access point", "service", service)
-		netAccessPoint, err = svc.CreateNetAccessPoint(ctx, netId, region, string(service), rtblIds, clusterScope.GetUID())
+		// Find routetables to link to
+		svc := r.Cloud.Net(clusterScope.Tenant)
+		rtbls, err := svc.GetRouteTablesFromNet(ctx, netId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot create netAccessPoint: %w", err)
+			return reconcile.Result{}, err
 		}
-		log.V(2).Info("Created net access point", "netAccessPointId", netAccessPoint.NetAccessPointId)
-		r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetAccessPointCreatedReason, "Net Access Point created %s", service)
-		r.Tracker.setNetAccessPointId(clusterScope, service, netAccessPoint.NetAccessPointId)
+		rtblForSubnet := map[string]string{}
+		for _, rtbl := range rtbls {
+			for _, link := range rtbl.LinkRouteTables {
+				rtblForSubnet[link.SubnetId] = rtbl.RouteTableId
+			}
+		}
+		rtblIds := make([]string, 0, len(rtbls))
+		for _, subnetSpec := range netSpec.Subnets {
+			if !subnetSpec.HasRole(infrastructurev1beta2.RoleWorker) && !subnetSpec.HasRole(infrastructurev1beta2.RoleControlPlane) {
+				continue
+			}
+			subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot get subnet: %w", err)
+			}
+			rtblIds = append(rtblIds, rtblForSubnet[subnetId])
+		}
+
+		for _, service := range clusterScope.GetSpec().NetAccessPoints {
+			netAccessPoint, err := r.Tracker.getNetAccessPoint(ctx, netSpec.IpRange, service, clusterScope)
+			switch {
+			case IsNotFound(err):
+			case err != nil:
+				return reconcile.Result{}, fmt.Errorf("get existing: %w", err)
+			default:
+				log.V(4).Info("Found existing netAccessPoint", "netAccessPointId", netAccessPoint.NetAccessPointId)
+				continue
+			}
+			log.V(3).Info("Creating net access point", "service", service)
+			netAccessPoint, err = svc.CreateNetAccessPoint(ctx, netId, region, string(service), rtblIds, clusterScope.GetUID())
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("cannot create netAccessPoint: %w", err)
+			}
+			log.V(2).Info("Created net access point", "netAccessPointId", netAccessPoint.NetAccessPointId)
+			r.Recorder.Eventf(clusterScope.OscCluster, corev1.EventTypeNormal, infrastructurev1beta2.NetAccessPointCreatedReason, "Net Access Point created %s", service)
+			r.Tracker.setNetAccessPointId(clusterScope, netSpec.IpRange, service, netAccessPoint.NetAccessPointId)
+		}
 	}
 	clusterScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerNetAccessPoint)
 	return reconcile.Result{}, nil
@@ -88,24 +90,26 @@ func (r *OscClusterReconciler) reconcileDeleteNetAccessPoints(ctx context.Contex
 		log.V(4).Info("Not deleting existing netAccessPoints")
 		return reconcile.Result{}, nil
 	}
-	netId, err := r.Tracker.getNetId(ctx, clusterScope)
-	switch {
-	case IsNotFound(err):
-		log.V(4).Info("The net is already deleted, no net access point expected")
-		return reconcile.Result{}, nil
-	case err != nil:
-		return reconcile.Result{}, err
-	}
-	svc := r.Cloud.Net(clusterScope.Tenant)
-	naps, err := svc.ListNetAccessPoints(ctx, netId)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("list net access points: %w", err)
-	}
-	for _, nap := range naps {
-		log.V(2).Info("Deleting netAccessPoint", "netAccessPointId", nap.NetAccessPointId)
-		err = svc.DeleteNetAccessPoint(ctx, nap.NetAccessPointId)
+	for _, netSpec := range clusterScope.GetNets() {
+		netId, err := r.Tracker.getNetId(ctx, netSpec.IpRange, clusterScope)
+		switch {
+		case IsNotFound(err):
+			log.V(4).Info("The net is already deleted, no net access point expected")
+			continue
+		case err != nil:
+			return reconcile.Result{}, err
+		}
+		svc := r.Cloud.Net(clusterScope.Tenant)
+		naps, err := svc.ListNetAccessPoints(ctx, netId)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("delete netAccessPoint: %w", err)
+			return reconcile.Result{}, fmt.Errorf("list net access points: %w", err)
+		}
+		for _, nap := range naps {
+			log.V(2).Info("Deleting netAccessPoint", "netAccessPointId", nap.NetAccessPointId)
+			err = svc.DeleteNetAccessPoint(ctx, nap.NetAccessPointId)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("delete netAccessPoint: %w", err)
+			}
 		}
 	}
 	return reconcile.Result{}, nil

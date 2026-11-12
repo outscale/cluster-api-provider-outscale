@@ -55,9 +55,9 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 	}
 
 	if loadbalancer == nil {
-		subnetSpec, err := clusterScope.GetSubnet(infrastructurev1beta2.RoleLoadBalancer, "")
+		netSpec, subnetSpec, err := clusterScope.GetSingleSubnet(infrastructurev1beta2.RoleLoadBalancer)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
+			return reconcile.Result{}, fmt.Errorf("subnet spec: %w", err)
 		}
 		subnetId, err := r.Tracker.getSubnetId(ctx, subnetSpec, clusterScope)
 		if err != nil {
@@ -70,7 +70,7 @@ func (r *OscClusterReconciler) reconcileLoadBalancer(ctx context.Context, cluste
 		if len(sgSpecs) == 0 {
 			return reconcile.Result{}, errors.New("no security group found")
 		}
-		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, sgSpecs[0], clusterScope)
+		securityGroupId, err := r.Tracker.getSecurityGroupId(ctx, netSpec.IpRange, sgSpecs[0], clusterScope)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot get security group: %w", err)
 		}

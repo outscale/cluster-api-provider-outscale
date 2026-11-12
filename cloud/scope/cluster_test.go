@@ -19,20 +19,23 @@ func TestClusterScope_GetSubnets(t *testing.T) {
 	t.Run("Default subnets are computed on a default net if none set", func(t *testing.T) {
 		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta2.OscCluster{}}
 		clusterScope.OscCluster.Spec.Subregions = []infrastructurev1beta2.OscSubRegion{"eu-west2a"}
-		subnets := clusterScope.GetSubnets()
+		nets := clusterScope.GetNets()
+		require.Len(t, nets, 1)
+		subnets := nets[0].Subnets
 		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
-			{IpRange: "10.0.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, Subregion: "eu-west2a"},
+			{IpRange: "10.0.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat}, Subregion: "eu-west2a"},
 			{IpRange: "10.0.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, Subregion: "eu-west2a"},
 			{IpRange: "10.0.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, Subregion: "eu-west2a"},
 		}, subnets)
 	})
 	t.Run("Default subnets are computed on a custom net if not set", func(t *testing.T) {
 		clusterScope := scope.ClusterScope{OscCluster: &infrastructurev1beta2.OscCluster{}}
-		clusterScope.OscCluster.Spec.Net.IpRange = "10.1.0.0/16"
+		clusterScope.OscCluster.Spec.Nets = []infrastructurev1beta2.OscNet{{IpRange: "10.1.0.0/16"}}
 		clusterScope.OscCluster.Spec.Subregions = []infrastructurev1beta2.OscSubRegion{"eu-west2a"}
-		subnets := clusterScope.GetSubnets()
+		nets := clusterScope.GetNets()
+		subnets := nets[0].Subnets
 		assert.Equal(t, []infrastructurev1beta2.OscSubnet{
-			{IpRange: "10.1.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion}, Subregion: "eu-west2a"},
+			{IpRange: "10.1.2.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleLoadBalancer, infrastructurev1beta2.RoleBastion, infrastructurev1beta2.RoleNat}, Subregion: "eu-west2a"},
 			{IpRange: "10.1.3.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}, Subregion: "eu-west2a"},
 			{IpRange: "10.1.4.0/24", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleControlPlane}, Subregion: "eu-west2a"},
 		}, subnets)
@@ -119,12 +122,14 @@ func TestClusterScope_GetSubnet(t *testing.T) {
 			OscCluster: &infrastructurev1beta2.OscCluster{
 				Spec: infrastructurev1beta2.OscClusterSpec{
 					Subregions: []infrastructurev1beta2.OscSubRegion{"eu-west2a"},
-					Subnets:    tt.subnets,
+					Nets: []infrastructurev1beta2.OscNet{{
+						Subnets: tt.subnets,
+					}},
 				},
 			},
 		}
 
-		found, err := clusterScope.GetSubnet(tt.searchRole, tt.searchSubregion)
+		found, err := clusterScope.GetSubnet(clusterScope.OscCluster.Spec.Nets[0], tt.searchRole, tt.searchSubregion)
 		if tt.expectDescription == "" {
 			require.Error(t, err)
 		} else {

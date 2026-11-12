@@ -1,7 +1,6 @@
 package v1beta1_test
 
 import (
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -9,6 +8,7 @@ import (
 	fuzz "github.com/google/gofuzz"
 	infrastructurev1beta1 "github.com/outscale/cluster-api-provider-outscale/api/v1beta1"
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
+	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	conversionutil "sigs.k8s.io/cluster-api/util/conversion"
@@ -25,6 +25,8 @@ func TestOscClusterConversion(t *testing.T) {
 func OscClusterFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 	return []any{
 		spokeSkipOscClusterStatus,
+		spokeHardCodeClusterResources,
+		hubHardCodeClusterResources,
 		spokeSkipOscClusterUnused,
 		hubSkipOscClusterUnused,
 		spokeSkipOscLoadBalancerUnused,
@@ -45,6 +47,62 @@ func OscClusterFuzzFunc(_ runtimeserializer.CodecFactory) []any {
 
 func spokeSkipOscClusterStatus(in *infrastructurev1beta1.OscNetworkResource, c fuzz.Continue) {}
 
+func spokeHardCodeClusterResources(in *infrastructurev1beta1.OscClusterResources, c fuzz.Continue) {
+	*in = infrastructurev1beta1.OscClusterResources{
+		Net: map[string]string{
+			"default": "vpc-foo",
+		},
+		Subnet: map[string]string{
+			"10.0.2.0/24": "subnet-public",
+			"10.0.3.0/24": "subnet-kw",
+			"10.0.4.0/24": "subnet-kcp",
+		},
+		InternetService: map[string]string{
+			"default": "igw-foo",
+		},
+		SecurityGroup: map[string]string{
+			"test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kcp",
+			"test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520":       "sg-kw",
+			"test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520":           "sg-lb",
+			"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
+		},
+		NatService: map[string]string{
+			"west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "nat-foo",
+		},
+		PublicIPs: map[string]string{
+			"west-2a-9e1db9c4-bf0a-4583-8999-203ec002c520": "ipalloc-nat",
+		},
+	}
+}
+
+func hubHardCodeClusterResources(in *infrastructurev1beta2.OscClusterResources, c fuzz.Continue) {
+	*in = infrastructurev1beta2.OscClusterResources{
+		Net: map[string]string{
+			"10.0.0.0/16": "vpc-foo",
+		},
+		Subnet: map[string]string{
+			"10.0.2.0/24": "subnet-public",
+			"10.0.3.0/24": "subnet-kw",
+			"10.0.4.0/24": "subnet-kcp",
+		},
+		InternetService: map[string]string{
+			"10.0.0.0/16": "igw-foo",
+		},
+		SecurityGroup: map[string]string{
+			"test-cluster-api-controlplane-9e1db9c4-bf0a-4583-8999-203ec002c520": "sg-kcp",
+			"test-cluster-api-worker-9e1db9c4-bf0a-4583-8999-203ec002c520":       "sg-kw",
+			"test-cluster-api-lb-9e1db9c4-bf0a-4583-8999-203ec002c520":           "sg-lb",
+			"test-cluster-api-node-9e1db9c4-bf0a-4583-8999-203ec002c520":         "sg-node",
+		},
+		NatService: map[string]string{
+			"subnet-public": "nat-foo",
+		},
+		PublicIPs: map[string]string{
+			"subnet-public/nat": "ipalloc-nat",
+		},
+	}
+}
+
 func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
 
@@ -57,10 +115,15 @@ func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.
 	in.Network.PublicIps = nil
 	in.Network.Image = infrastructurev1beta1.OscImage{}
 	in.Network.SubregionName = ""
+	in.Network.ControlPlaneSubnets = nil
+
+	if in.Network.Net.IsZero() {
+		in.Network.Net.Name = ""
+	}
 
 	in.Network.NatServices = in.Network.NatServices[:0]
 	for _, subnet := range in.Network.Subnets {
-		if !slices.Contains(subnet.Roles, infrastructurev1beta1.RoleNat) {
+		if !subnet.HasRole(infrastructurev1beta1.RoleNat) {
 			continue
 		}
 		in.Network.NatServices = append(in.Network.NatServices, infrastructurev1beta1.OscNatService{
@@ -72,6 +135,16 @@ func spokeSkipOscClusterUnused(in *infrastructurev1beta1.OscClusterSpec, c fuzz.
 
 func hubSkipOscClusterUnused(in *infrastructurev1beta2.OscClusterSpec, c fuzz.Continue) {
 	c.FuzzNoCustom(in)
+
+	for i := range in.Nets {
+		if in.Nets[i].IsZero() {
+			in.Nets[i].Description = ""
+		}
+	}
+	// drop empty nets from list
+	in.Nets = lo.Filter(in.Nets, func(n infrastructurev1beta2.OscNet, _ int) bool {
+		return !n.IsZero() || len(n.Subnets) > 0
+	})
 }
 
 func spokeSkipOscLoadBalancerUnused(in *infrastructurev1beta1.OscLoadBalancer, c fuzz.Continue) {
