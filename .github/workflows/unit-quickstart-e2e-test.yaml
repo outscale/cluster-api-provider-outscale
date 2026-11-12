@@ -39,13 +39,11 @@ jobs:
         cat covers.txt
       shell: bash
   e2e-quickstart:
-    runs-on: [self-hosted, linux]
+    runs-on: [self-hosted, linux, kube]
     needs: [unit]
+    permissions:
+      id-token: write
     steps:
-    - name: 🩹 Safe config for 💩 DNS
-      run: |
-        sed 's/options /options use-vc single-request attempts:5 /' < /etc/resolv.conf > /etc/resolv.conf.new
-        cat /etc/resolv.conf.new > /etc/resolv.conf
     - name: ⬇️ Checkout repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -66,36 +64,31 @@ jobs:
       id: ip
       run: |
         echo "ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`" | tee $GITHUB_OUTPUT
-    - name: 🔐 Set ak/sk name based on runner region
-      run: .github/scripts/runneraksk.sh
+    - name: 🔒🧹 Setup Vault & Frieza
+      id: secrets
+      uses: outscale/.github/vault-frieza-clean@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      with:
+        vault_role: outscale-cluster-api-provider-outscale
+        exclude_resource_types: access_key
     - name: ⬇️ Install octl
       uses: outscale/octl/.github/actions/setup_octl@b5e8714f317ca1625a4a4a8705c649d90bac4f72 # v0.0.34
       with:
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
-    - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@d361dd8cc864cfb9575429ee54fde4a0e8e7b124 # v0.17.2
-      with:
-        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        region: ${{ env.OSC_REGION }}
-        exclude_resource_types: access_key
+        OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
+        OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
+        OSC_REGION: ${{ steps.secrets.outputs.region }}
     - name: 👷 Deploy management cluster
       id: management
-      uses: ./.github/actions/deploy_cluster
+      timeout-minutes: 40
+      uses: outscale/.github/kube-setup@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       with:
-        RUNNER_NAME: ${{ runner.name }}
-        OKS_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY_OKS }}
-        OKS_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY_OKS }}
-        OKS_REGION: ${{ vars.OKS_REGION }}
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
-        CLUSTER_NAME: "caposc"
+        OSC_REGION: ${{ steps.secrets.outputs.region }}
+        CLUSTER_NAME: ${{ steps.secrets.outputs.osc_account }}
         IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
-        IMAGE_ACCOUNT_ID: ${{ secrets[env.OSC_ACCOUNT_ID_NAME] }}
         CERT_MANAGER: "true"
+        PRELOADER_SNAPSHOT: "true"
+        ALLOW_FROM: ${{ vars.ALLOW_FROM }}
+        vault_role: outscale-cluster-api-provider-outscale
+        vault_token: ${{ steps.secrets.outputs.vault_token }}
     - name: ⬇️ Install Go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
@@ -109,8 +102,8 @@ jobs:
       uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
       with:
         registry: ${{ vars.REGISTRY }}
-        username: admin
-        password: ${{ secrets.HARBOR_ADMIN_PASSWORD }}
+        username: ${{ secrets.HARBOR_USER }}
+        password: ${{ secrets.HARBOR_PASSWORD }}
     - name: 📦 Push Docker image
       run: |
         make image-tag image-push
@@ -119,21 +112,13 @@ jobs:
         IMAGE_TAG: "${{ github.sha }}-amd64"
         REGISTRY_IMAGE: "${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers"
         REGISTRY_TAG: ${{ github.sha }}
-    - name: 🔎 Preloader snapshot
-      id: preloader
-      uses: outscale/k8s-image-preloader/github_actions/preloader_snapshot@91094d173e5a06bfc9c2d7c7792e7128b6a1a7c2 # v0.3.0
-      with:
-        KUBECONFIG: ${{ steps.management.outputs.KUBECONFIG }}
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
-        CSI: true
     - name: 🔐 Create CAPOSC ns and credentials
       run: make credentials
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
     - name: 🧪 Launch quickstart e2e tests
+      timeout-minutes: 180
       run: |
         from=`echo ${{ vars.IMG_UPGRADE_FROM }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
         to=`echo ${{ vars.IMG_UPGRADE_TO }} | sed 's/.*kubernetes-\(v[^-]*\)-.*/\1/'`
@@ -144,14 +129,14 @@ jobs:
       shell: bash
       id: e2etest
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
-        CCM_OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        CCM_OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        CCM_OSC_REGION: ${{ env.OSC_REGION }}
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
+        CCM_OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
+        CCM_OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
+        CCM_OSC_REGION: ${{ steps.secrets.outputs.region }}
         IMG: ${{ vars.REGISTRY }}/outscale/cluster-api-outscale-controllers:${{ github.sha }}
         IMG_UPGRADE_FROM: ${{ vars.IMG_UPGRADE_FROM }}
         IMG_UPGRADE_TO: ${{ vars.IMG_UPGRADE_TO }}
-        PRELOAD_SNAPSHOT_ID: ${{ steps.preloader.outputs.SNAPSHOT_ID }}
+        PRELOAD_SNAPSHOT_ID: ${{ steps.management.outputs.SNAPSHOT_ID }}
     - name: 📝 Get CAPOSC state/logs
       run: |
         echo "**** pod state"
@@ -161,12 +146,17 @@ jobs:
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
         CAPO_NAMESPACE: cluster-api-provider-outscale-system
     - name: 📝 Get cluster api logs
       run: make logs-capi
       if: ${{ failure() && steps.e2etest.conclusion == 'failure' }}
       shell: bash
       env:
-        KUBECONFIG: "${{ github.workspace }}/${{ steps.management.outputs.KUBECONFIG }}"
+        KUBECONFIG: "${{ github.workspace }}/workload.kubeconfig"
         CAPI_NAMESPACE: capi-kubeadm-bootstrap-system
+    - name: 👷 Teardown management cluster
+      if: ${{ always() }}
+      uses: outscale/.github/kube-teardown@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
+      with:
+        CLUSTER_NAME: ${{ steps.secrets.outputs.osc_account }}
