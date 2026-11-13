@@ -40,11 +40,11 @@ const (
 type TagInterface interface {
 	ReadTag(ctx context.Context, rsrcType ResourceType, key, value string) (*osc.Tag, error)
 	ReadOwnedByTag(ctx context.Context, rsrcType ResourceType, cluster string) (*osc.Tag, error)
-	AddTag(ctx context.Context, req osc.CreateTagsRequest, resourceIds []string) error
+	AddTag(ctx context.Context, req osc.CreateTagsRequest) error
 }
 
 // AddTag add a tag to a resource
-func (s *Service) AddTag(ctx context.Context, req osc.CreateTagsRequest, resourceIds []string) error {
+func (s *Service) AddTag(ctx context.Context, req osc.CreateTagsRequest) error {
 	_, err := s.tenant.Client().CreateTags(ctx, req)
 	return err
 }

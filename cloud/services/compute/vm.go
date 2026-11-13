@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: 2025 Outscale SAS <opensource@outscale.com>
+SPDX-FileCopyrightText: 2026 Outscale SAS <opensource@outscale.com>
 
 SPDX-License-Identifier: BSD-3-Clause
 */
@@ -45,7 +45,7 @@ type VmInterface interface {
 	DeleteVm(ctx context.Context, vmId string) error
 	GetVm(ctx context.Context, vmId string) (*osc.Vm, error)
 	GetVmFromClientToken(ctx context.Context, clientToken string) (*osc.Vm, error)
-	AddCCMTags(ctx context.Context, clusterName string, hostname string, vmId string) error
+	CheckVM(ctx context.Context, vm *osc.Vm, clusterName, hostname string) error
 	StartVm(ctx context.Context, vmId string) error
 	StopVm(ctx context.Context, vmId string) error
 }
@@ -106,6 +106,9 @@ func (s *Service) CreateVm(ctx context.Context,
 		UserData:            &mergedUserDataEnc,
 		BlockDeviceMappings: volMappings,
 		ClientToken:         &vmClientToken,
+		ShutdownBehaviorConfiguration: &osc.ShutdownBehaviorConfiguration{
+			HostAction: new(osc.ShutdownBehaviorConfigurationHostActionRestart),
+		},
 	}
 
 	if spec.FGPU != nil {
@@ -130,7 +133,7 @@ func (s *Service) CreateVm(ctx context.Context,
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err = s.tags.AddTag(ctx, vmTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, vmTagRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +195,7 @@ func (s *Service) CreateVmBastion(ctx context.Context, spec *infrastructurev1bet
 		ResourceIds: resourceIds,
 		Tags:        []osc.ResourceTag{vmTag},
 	}
-	err = s.tags.AddTag(ctx, vmTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, vmTagRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -266,26 +269,42 @@ func (s *Service) StopVm(ctx context.Context, vmId string) error {
 	return err
 }
 
-// HasCCMTags checks if a Vm has both CCM tags.
-func HasCCMTags(vm *osc.Vm) bool {
-	return tags.Has(vm.Tags, tags.VmNodeName)
-}
+func (s *Service) CheckVM(ctx context.Context, vm *osc.Vm, clusterName, hostname string) error {
+	// check tags
+	tagRequest := osc.CreateTagsRequest{
+		ResourceIds: []string{vm.VmId},
+	}
+	if v, found := tags.GetValue(vm.Tags, tags.VmNodeName); v == "" || !found {
+		tagRequest.Tags = append(tagRequest.Tags, osc.ResourceTag{
+			Key:   tags.VmNodeName,
+			Value: hostname,
+		})
+	}
+	if tags.GetClusterID(vm.Tags) == "" {
+		tagRequest.Tags = append(tagRequest.Tags, osc.ResourceTag{
+			Key:   tags.ClusterIDKey(clusterName),
+			Value: string(tags.ResourceLifecycleOwned),
+		})
+	}
+	if len(tagRequest.Tags) > 0 {
+		err := s.tags.AddTag(ctx, tagRequest)
+		if err != nil {
+			return fmt.Errorf("add tags: %w", err)
+		}
+	}
 
-// AddCCMTags add ccm tag
-func (s *Service) AddCCMTags(ctx context.Context, clusterName string, hostname string, vmId string) error {
-	resourceIds := []string{vmId}
-
-	nodeTag := osc.ResourceTag{
-		Key:   tags.VmNodeName,
-		Value: hostname,
+	// check shutdown behavior
+	if vm.ShutdownBehaviorConfiguration == nil || vm.ShutdownBehaviorConfiguration.HostAction == nil || *vm.ShutdownBehaviorConfiguration.HostAction != osc.ShutdownBehaviorConfigurationHostActionRestart {
+		updateReq := osc.UpdateVmRequest{
+			VmId: vm.VmId,
+			ShutdownBehaviorConfiguration: &osc.ShutdownBehaviorConfiguration{
+				HostAction: new(osc.ShutdownBehaviorConfigurationHostActionRestart),
+			},
+		}
+		_, err := s.tenant.Client().UpdateVm(ctx, updateReq)
+		if err != nil {
+			return fmt.Errorf("update ShutdownBehavior: %w", err)
+		}
 	}
-	clusterTag := osc.ResourceTag{
-		Key:   tags.ClusterIDKey(clusterName),
-		Value: string(tags.ResourceLifecycleOwned),
-	}
-	nodeTagRequest := osc.CreateTagsRequest{
-		ResourceIds: resourceIds,
-		Tags:        []osc.ResourceTag{nodeTag, clusterTag},
-	}
-	return s.tags.AddTag(ctx, nodeTagRequest, resourceIds)
+	return nil
 }

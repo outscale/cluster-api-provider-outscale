@@ -50,7 +50,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 		ResourceIds: resourceIds,
 		Tags:        append(utils.RoleTags(roles), clusterTag),
 	}
-	err = s.tags.AddTag(ctx, clusterSecurityGroupRequest, resourceIds)
+	err = s.tags.AddTag(ctx, clusterSecurityGroupRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *Service) CreateSecurityGroup(ctx context.Context, netId string, cluster
 			ResourceIds: resourceIds,
 			Tags:        []osc.ResourceTag{mainTag},
 		}
-		err := s.tags.AddTag(ctx, mainSecurityGroupTagRequest, resourceIds)
+		err := s.tags.AddTag(ctx, mainSecurityGroupTagRequest)
 		if err != nil {
 			return nil, err
 		}

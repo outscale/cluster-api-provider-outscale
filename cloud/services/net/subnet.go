@@ -46,7 +46,7 @@ func (s *Service) CreateSubnet(ctx context.Context, spec infrastructurev1beta2.O
 		ResourceIds: resourceIds,
 		Tags:        append(utils.RoleTags(spec.Roles), subnetTag, clusterTag),
 	}
-	err = s.tags.AddTag(ctx, subnetTagRequest, resourceIds)
+	err = s.tags.AddTag(ctx, subnetTagRequest)
 	if err != nil {
 		return nil, err
 	}

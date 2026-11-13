@@ -16,6 +16,7 @@ import (
 	infrastructurev1beta2 "github.com/outscale/cluster-api-provider-outscale/api/v1beta2"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/scope"
 	"github.com/outscale/cluster-api-provider-outscale/cloud/services/compute"
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -257,12 +258,9 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	machineScope.SetAddresses(addresses)
 	machineScope.SetFailureDomain(vm.Placement.SubregionName)
 
-	if !compute.HasCCMTags(vm) {
-		log.V(2).Info("Adding CCM tags")
-		err = r.Cloud.Compute(clusterScope.Tenant).AddCCMTags(ctx, clusterScope.GetUID(), *vm.PrivateDnsName, vm.VmId)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("cannot add ccm tag: %w", err)
-		}
+	err = r.Cloud.Compute(clusterScope.Tenant).CheckVM(ctx, vm, clusterScope.GetUID(), ptr.From(vm.PrivateDnsName))
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("cannot update vm: %w", err)
 	}
 	machineScope.SetReconciliationGeneration(infrastructurev1beta2.ReconcilerVm)
 	return reconcile.Result{}, nil

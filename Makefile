@@ -152,12 +152,17 @@ yamlfmt: install-yamlfmt
 
 .PHONY: unit-test
 unit-test:
-	go test -v -coverprofile=covers.out  ./controllers
+	go test -v -coverprofile=covers.out ./controllers/...
 	go tool cover -func=covers.out -o covers.txt
 	go tool cover -html=covers.out -o covers.html
-	go test -v -coverprofile=apicovers.out  ./api/v1beta1
+	go test -v -coverprofile=apicovers.out ./api/...
 	go tool cover -func=apicovers.out -o apicovers.txt
 	go tool cover -html=apicovers.out -o apicovers.html
+	go test -v ./cloud/scope ./cloud/utils
+
+.PHONY: integration-test
+integration-test:
+	go test -v ./cloud/services/...
 
 .PHONY: cloud-init-secret
 cloud-init-secret:
