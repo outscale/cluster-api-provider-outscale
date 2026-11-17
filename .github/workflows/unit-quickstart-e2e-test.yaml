@@ -54,7 +54,7 @@ jobs:
         go-version-file: 'go.mod'
     - name: 🔒🧹 Setup Vault & Frieza
       id: secrets
-      uses: outscale/.github/vault-frieza-clean@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      uses: outscale/.github/vault-frieza-clean@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       with:
         vault_role: outscale-cluster-api-provider-outscale
         exclude_resource_types: access_key
@@ -93,7 +93,7 @@ jobs:
         echo "ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`" | tee $GITHUB_OUTPUT
     - name: 🔒🧹 Setup Vault & Frieza
       id: secrets
-      uses: outscale/.github/vault-frieza-clean@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      uses: outscale/.github/vault-frieza-clean@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       with:
         vault_role: outscale-cluster-api-provider-outscale
         exclude_resource_types: access_key
