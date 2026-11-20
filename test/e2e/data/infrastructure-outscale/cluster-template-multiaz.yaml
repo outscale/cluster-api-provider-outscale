@@ -53,6 +53,33 @@ spec:
           roles:
             - controlplane
           subregion: ${OSC_REGION}b
+    - ipRange: 10.1.0.0/16
+      subnets:
+        - ipRange: 10.1.2.0/24
+          roles:
+            - loadbalancer
+            - nat
+          subregion: ${OSC_REGION}a
+        - ipRange: 10.1.3.0/24
+          roles:
+            - worker
+          subregion: ${OSC_REGION}a
+        - ipRange: 10.1.4.0/24
+          roles:
+            - controlplane
+          subregion: ${OSC_REGION}a
+        - ipRange: 10.1.5.0/24
+          roles:
+            - nat
+          subregion: ${OSC_REGION}b
+        - ipRange: 10.1.6.0/24
+          roles:
+            - worker
+          subregion: ${OSC_REGION}b
+        - ipRange: 10.1.7.0/24
+          roles:
+            - controlplane
+          subregion: ${OSC_REGION}b
   loadBalancer:
     name: "${CLUSTER_NAME}-k8s"
 ---
