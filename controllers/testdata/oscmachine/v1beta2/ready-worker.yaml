@@ -25,10 +25,10 @@ metadata:
   resourceVersion: "20216450"
   uid: 9c50b5d4-767d-44f1-847b-854100147366
 spec:
+  role: worker
   image:
     name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
     accountId: "01234"
-  role: worker
   vm:
     keypair: cluster-api
     subregions:

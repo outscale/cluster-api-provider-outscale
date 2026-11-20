@@ -4,6 +4,7 @@ metadata:
   name: cluster-api-test-worker
   namespace: cluster-api-test
 spec:
+  role: worker
   image:
     name: ubuntu-2204-kubernetes-v1.32.13-2026-03-06
     accountId: "01234"
