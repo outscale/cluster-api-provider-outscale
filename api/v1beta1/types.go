@@ -281,6 +281,13 @@ type OscSubnet struct {
 	ResourceId string `json:"resourceId,omitempty"`
 }
 
+func (sn *OscSubnet) HasRole(role OscRole) bool {
+	if len(sn.Roles) > 0 {
+		return slices.Contains(sn.Roles, role)
+	}
+	return role == RoleWorker
+}
+
 type OscNatService struct {
 	// The name of the Nat Service
 	// +optional
@@ -560,6 +567,8 @@ type OscNodeResource struct {
 	// PublicIp references (not set anymore)
 	PublicIpIdRef OscResourceReference `json:"publicIpIdRef,omitempty"`
 }
+
+const DefaultResourceKey = "default"
 
 type OscMachineResources struct {
 	Vm        map[string]string `json:"vm,omitempty"`

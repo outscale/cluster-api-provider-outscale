@@ -25,32 +25,34 @@ metadata:
 spec:
   subregions:
    - ${OSC_REGION}a
-  subnets:
-    - ipRange: 10.0.2.0/24
-      roles:
-        - loadbalancer
-        - nat
-      subregion: ${OSC_REGION}a
-    - ipRange: 10.0.3.0/24
-      roles:
-        - worker
-      subregion: ${OSC_REGION}a
-    - ipRange: 10.0.4.0/24
-      roles:
-        - controlplane
-      subregion: ${OSC_REGION}a
-    - ipRange: 10.0.5.0/24
-      roles:
-        - nat
-      subregion: ${OSC_REGION}b
-    - ipRange: 10.0.6.0/24
-      roles:
-        - worker
-      subregion: ${OSC_REGION}b
-    - ipRange: 10.0.7.0/24
-      roles:
-        - controlplane
-      subregion: ${OSC_REGION}b
+  nets:
+    - ipRange: 10.0.0.0/16
+      subnets:
+        - ipRange: 10.0.2.0/24
+          roles:
+            - loadbalancer
+            - nat
+          subregion: ${OSC_REGION}a
+        - ipRange: 10.0.3.0/24
+          roles:
+            - worker
+          subregion: ${OSC_REGION}a
+        - ipRange: 10.0.4.0/24
+          roles:
+            - controlplane
+          subregion: ${OSC_REGION}a
+        - ipRange: 10.0.5.0/24
+          roles:
+            - nat
+          subregion: ${OSC_REGION}b
+        - ipRange: 10.0.6.0/24
+          roles:
+            - worker
+          subregion: ${OSC_REGION}b
+        - ipRange: 10.0.7.0/24
+          roles:
+            - controlplane
+          subregion: ${OSC_REGION}b
   loadBalancer:
     name: "${CLUSTER_NAME}-k8s"
 ---

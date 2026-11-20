@@ -143,10 +143,10 @@ func mockGetNet(id string, net *osc.Net) mockFunc {
 	}
 }
 
-func mockCreateNet(spec infrastructurev1beta2.OscNet, clusterID, netName, netId string) mockFunc {
+func mockCreateNet(ipRange, clusterID, netName, netId string) mockFunc {
 	return func(s *MockCloudServices) {
 		s.NetMock.EXPECT().
-			CreateNet(gomock.Any(), gomock.Eq(spec), gomock.Eq(clusterID), gomock.Eq(netName)).
+			CreateNet(gomock.Any(), gomock.Eq(ipRange), gomock.Eq(clusterID), gomock.Eq(netName)).
 			Return(&osc.Net{NetId: netId}, nil)
 	}
 }

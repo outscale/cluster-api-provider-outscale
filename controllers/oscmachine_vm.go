@@ -32,6 +32,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 	}
 
 	vmSpec := machineScope.GetVm()
+	role := machineScope.GetSpec().Role
 
 	var fgpu *osc.FlexibleGpu
 	if vmSpec.FGPU != nil {
@@ -49,23 +50,22 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 		return reconcile.Result{}, fmt.Errorf("cannot get VM: %w", err)
 	default:
 		// Check if a machine needs to be placed in a subregion.
-		var subregionName infrastructurev1beta2.OscSubRegion
+		var azs []infrastructurev1beta2.OscSubRegion
 		switch {
 		case fgpu != nil:
-			subregionName = infrastructurev1beta2.OscSubRegion(fgpu.SubregionName)
+			azs = []infrastructurev1beta2.OscSubRegion{infrastructurev1beta2.OscSubRegion(fgpu.SubregionName)}
 		case machineScope.Machine.Spec.FailureDomain != nil:
-			subregionName = infrastructurev1beta2.OscSubRegion(*machineScope.Machine.Spec.FailureDomain)
+			azs = []infrastructurev1beta2.OscSubRegion{infrastructurev1beta2.OscSubRegion(*machineScope.Machine.Spec.FailureDomain)}
 		default:
-			azs := vmSpec.GetSubregions()
+			azs = vmSpec.GetSubregions()
 			if len(azs) == 0 {
 				azs = clusterScope.GetSubregions()
 				log.V(4).Info("Using cluster subregions")
 			}
-			az, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.SubregionMode, azs)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			subregionName = az
+		}
+		netSpec, subnetSpec, subregionName, err := r.AZAllocator.AllocateAZ(ctx, machineScope.OscMachine, vmSpec.SubregionMode, role, clusterScope.GetNets(), azs)
+		if err != nil {
+			return reconcile.Result{}, err
 		}
 
 		// Allocate a FGPU
@@ -86,21 +86,17 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 				infrastructurev1beta2.FGPUAllocatedReason, "%s (%s) allocated", fgpu.FlexibleGpuId, vmSpec.FGPU.Model)
 		}
 
-		subnetSpec, err := clusterScope.GetSubnet(vmSpec.GetRole(), subregionName)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
-		}
 		subnetId, err := r.ClusterTracker.getSubnetId(ctx, subnetSpec, clusterScope)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("reconcile vm: %w", err)
+			return reconcile.Result{}, fmt.Errorf("find subnet: %w", err)
 		}
-		securityGroups, err := clusterScope.GetSecurityGroupsFor(machineScope.GetVmSecurityGroups(), vmSpec.GetRole())
+		securityGroups, err := clusterScope.GetSecurityGroupsFor(machineScope.GetVmSecurityGroups(), role)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot find securityGroup: %w", err)
 		}
 		securityGroupIds := make([]string, 0, len(securityGroups))
 		for _, sgSpec := range securityGroups {
-			securityGroupId, err := r.ClusterTracker.getSecurityGroupId(ctx, sgSpec, clusterScope)
+			securityGroupId, err := r.ClusterTracker.getSecurityGroupId(ctx, netSpec.IpRange, sgSpec, clusterScope)
 			log.V(4).Info("Found securityGroup", "securityGroupId", securityGroupId)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -218,7 +214,7 @@ func (r *OscMachineReconciler) reconcileVm(ctx context.Context, clusterScope *sc
 
 	machineScope.SetReady()
 
-	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
+	if role == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
 		svc := r.Cloud.Net(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().Name
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)
@@ -282,8 +278,7 @@ func (r *OscMachineReconciler) reconcileDeleteVm(ctx context.Context, clusterSco
 		return reconcile.Result{}, nil
 	}
 
-	vmSpec := machineScope.GetVm()
-	if vmSpec.GetRole() == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
+	if machineScope.GetSpec().Role == infrastructurev1beta2.RoleControlPlane && !clusterScope.GetSpec().Disable.Loadbalancer {
 		svc := r.Cloud.Net(clusterScope.Tenant)
 		loadBalancerName := clusterScope.GetLoadBalancer().Name
 		loadbalancer, err := svc.GetLoadBalancer(ctx, loadBalancerName)

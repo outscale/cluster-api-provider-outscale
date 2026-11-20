@@ -575,6 +575,11 @@ spec:
                               happening when no change have been detected (when mode=random)
                             type: integer
                         type: object
+                      role:
+                        default: worker
+                        description: The node role (controlplane or worker), defaults
+                          to worker.
+                        type: string
                       vm:
                         description: The configuration of the VM to deploy
                         properties:
@@ -641,10 +646,6 @@ spec:
                             type: string
                           resourceId:
                             description: The resource id of the vm (not set anymore)
-                            type: string
-                          role:
-                            description: The node role (controlplane or worker), defaults
-                              to worker.
                             type: string
                           securityGroupNames:
                             description: The list of security groups to use (deprecated,
