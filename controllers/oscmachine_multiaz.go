@@ -62,6 +62,9 @@ func (a *MultiAZAllocator) name(m *infrastructurev1beta2.OscMachine) types.Names
 	}
 }
 
+// AllocateAZ allocates machines in subregions/nets.
+// - A subregion is picked first, and a net is selected amongst the nets present in the selected subregion.
+// - When using leastNodes, and if multiple choices are possible, the first one in the list is picked.
 func (a *MultiAZAllocator) AllocateAZ(ctx context.Context, m *infrastructurev1beta2.OscMachine, mode infrastructurev1beta2.AllocationMode, role infrastructurev1beta2.OscRole, nets []infrastructurev1beta2.OscNet, azs []infrastructurev1beta2.OscSubRegion) (infrastructurev1beta2.OscNet, infrastructurev1beta2.OscSubnet, infrastructurev1beta2.OscSubRegion, error) {
 	az, net, err := a.checkExisting(ctx, m)
 	if err != nil {
@@ -237,7 +240,8 @@ func (a *MultiAZAllocator) allocatLeast[T comparable](ctx context.Context, m *in
 
 			min := math.MaxInt
 			var az T
-			for k, v := range perChoice {
+			for _, k := range choices {
+				v := perChoice[k]
 				if v < min {
 					az = k
 					min = v
