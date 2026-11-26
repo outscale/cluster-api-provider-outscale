@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -24,34 +23,40 @@ import (
 
 func TestMultiAZAllocator(t *testing.T) {
 	allocated := infrastructurev1beta2.OscMachine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo1",
-			Namespace: "foo",
-			Labels: map[string]string{
-				clusterv1.MachineDeploymentNameLabel: "foo",
-			},
+		Name:      "foo1",
+		Namespace: "foo",
+		Labels: map[string]string{
+			clusterv1.MachineDeploymentNameLabel: "foo",
+		},
+		Annotations: map[string]string{
+			infrastructurev1beta2.NetRangeAnnotation: "10.0.0.0/8",
+		},
+		Spec: infrastructurev1beta2.OscMachineSpec{
+			Role: infrastructurev1beta2.RoleWorker,
 		},
 		Status: infrastructurev1beta2.OscMachineStatus{
 			FailureDomain: new("eu-west-2a"),
 		},
 	}
 	nonallocated1 := infrastructurev1beta2.OscMachine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo2",
-			Namespace: "foo",
-			Labels: map[string]string{
-				clusterv1.MachineDeploymentNameLabel: "foo",
-			},
+		Name:      "foo2",
+		Namespace: "foo",
+		Labels: map[string]string{
+			clusterv1.MachineDeploymentNameLabel: "foo",
+		},
+		Spec: infrastructurev1beta2.OscMachineSpec{
+			Role: infrastructurev1beta2.RoleWorker,
 		},
 		Status: infrastructurev1beta2.OscMachineStatus{},
 	}
 	nonallocated2 := infrastructurev1beta2.OscMachine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo3",
-			Namespace: "foo",
-			Labels: map[string]string{
-				clusterv1.MachineDeploymentNameLabel: "foo",
-			},
+		Name:      "foo3",
+		Namespace: "foo",
+		Labels: map[string]string{
+			clusterv1.MachineDeploymentNameLabel: "foo",
+		},
+		Spec: infrastructurev1beta2.OscMachineSpec{
+			Role: infrastructurev1beta2.RoleWorker,
 		},
 		Status: infrastructurev1beta2.OscMachineStatus{},
 	}
@@ -61,18 +66,6 @@ func TestMultiAZAllocator(t *testing.T) {
 				allocated,
 				nonallocated1,
 				nonallocated2,
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "bar1",
-						Namespace: "foo",
-						Labels: map[string]string{
-							clusterv1.MachineDeploymentNameLabel: "bar",
-						},
-					},
-					Status: infrastructurev1beta2.OscMachineStatus{
-						FailureDomain: new("eu-west-2b"),
-					},
-				},
 			},
 		}
 		fakeScheme := runtime.NewScheme()
@@ -93,14 +86,14 @@ func TestMultiAZAllocator(t *testing.T) {
 	multiNet := []infrastructurev1beta2.OscNet{{
 		IpRange: "10.0.0.0/8",
 		Subnets: []infrastructurev1beta2.OscSubnet{
+			{Subregion: "eu-west-2a", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			{Subregion: "eu-west-2b", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
-			{Subregion: "eu-west-2c", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 		},
 	}, {
 		IpRange: "10.1.0.0/8",
 		Subnets: []infrastructurev1beta2.OscSubnet{
-			{Subregion: "eu-west-2a", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 			{Subregion: "eu-west-2b", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
+			{Subregion: "eu-west-2c", Roles: []infrastructurev1beta2.OscRole{infrastructurev1beta2.RoleWorker}},
 		},
 	}}
 	t.Run("If already configured, the allocated az is returned (LeastNodes)", func(t *testing.T) {
@@ -116,10 +109,10 @@ func TestMultiAZAllocator(t *testing.T) {
 		a := controllers.NewMultiAZAllocator(testClient())
 		_, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b"})
 		require.NoError(t, err)
-		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az)
+		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az)
 		assert.Equal(t, az, sn.Subregion)
 	})
-	t.Run("Non allocated machiness are allocated to all new azs (LeastNodes)", func(t *testing.T) {
+	t.Run("Non allocated machiness are allocated to all new azs in order (LeastNodes)", func(t *testing.T) {
 		a := controllers.NewMultiAZAllocator(testClient())
 		m1 := nonallocated1
 		_, sn1, az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, singleNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
@@ -130,8 +123,8 @@ func TestMultiAZAllocator(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, az2, sn2.Subregion)
 		assert.NotEqual(t, az1, az2)
-		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az1)
-		assert.Contains(t, []infrastructurev1beta2.OscSubRegion{"eu-west-2b", "eu-west-2c"}, az2)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az1)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2c"), az2)
 	})
 	t.Run("Non allocated machines are randomly allocated (Random)", func(t *testing.T) {
 		rnd := 0
@@ -156,6 +149,7 @@ func TestMultiAZAllocator(t *testing.T) {
 		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az2)
 	})
 	t.Run("By default, leastNodes is used", func(t *testing.T) {
+		// make the random allocator fail...
 		controllers.RandIntN = func(n int) (ret int) {
 			t.FailNow()
 			return 0
@@ -169,30 +163,18 @@ func TestMultiAZAllocator(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Multiple nets can be allocated", func(t *testing.T) {
-		{
-			m := nonallocated1
-			a := controllers.NewMultiAZAllocator(testClient())
-			n, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a"})
-			require.NoError(t, err)
-			assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2a"), az)
-			assert.Equal(t, multiNet[1], n)
-			assert.Equal(t, az, sn.Subregion)
-		}
-		{
-			m := nonallocated1
-			a := controllers.NewMultiAZAllocator(testClient())
-			_, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2b"})
-			require.NoError(t, err)
-			assert.Equal(t, az, sn.Subregion)
-		}
-		{
-			m := nonallocated1
-			a := controllers.NewMultiAZAllocator(testClient())
-			n, sn, az, err := a.AllocateAZ(t.Context(), &m, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2c"})
-			require.NoError(t, err)
-			assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2c"), az)
-			assert.Equal(t, multiNet[0], n)
-			assert.Equal(t, az, sn.Subregion)
-		}
+		m1 := nonallocated1
+		m2 := nonallocated2
+		a := controllers.NewMultiAZAllocator(testClient())
+		n1, sn1, az1, err := a.AllocateAZ(t.Context(), &m1, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		require.NoError(t, err)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2b"), az1)
+		assert.Equal(t, az1, sn1.Subregion)
+		assert.Equal(t, multiNet[1], n1) // can be in two nets, but the second one has less nodes
+		n2, sn2, az2, err := a.AllocateAZ(t.Context(), &m2, infrastructurev1beta2.AllocationModeLeastNodes, infrastructurev1beta2.RoleWorker, multiNet, []infrastructurev1beta2.OscSubRegion{"eu-west-2a", "eu-west-2b", "eu-west-2c"})
+		require.NoError(t, err)
+		assert.Equal(t, az2, sn2.Subregion)
+		assert.Equal(t, infrastructurev1beta2.OscSubRegion("eu-west-2c"), az2)
+		assert.Equal(t, multiNet[1], n2) // subregion is only present in the second net
 	})
 }
