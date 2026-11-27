@@ -61,11 +61,15 @@ func (r *OscMachineTemplateReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return r.reconcileDelete(ctx, machineTemplateScope)
 	}
 
-	return r.reconcile(ctx, machineTemplateScope)
+	res := r.reconcile(ctx, machineTemplateScope)
+	if stop, res, err := res.CheckResultAndConditions(machineTemplate, nil, nil, "machine template"); stop {
+		return res, err
+	}
+	return reconcile.Result{}, nil
 }
 
 // reconcile reconcile the creation of the machine
-func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope) (reconcile.Result, error) {
+func (r *OscMachineTemplateReconciler) reconcile(ctx context.Context, machineTemplateScope *scope.MachineTemplateScope) Result {
 	return reconcileCapacity(ctx, machineTemplateScope)
 }
 

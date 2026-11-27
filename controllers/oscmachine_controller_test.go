@@ -78,7 +78,7 @@ func runMachineTest(t *testing.T, tc testcase) {
 			assert.Zero(t, res)
 		} else {
 			require.NoError(t, err)
-			assert.Equal(t, step.requeue, res.RequeueAfter > 0 || res.Requeue)
+			assert.Equal(t, step.requeue, res.RequeueAfter > 0 || res.Requeue, "requeued")
 		}
 		var out infrastructurev1beta2.OscMachine
 		err = client.Get(context.TODO(), nsn, &out)
@@ -565,6 +565,33 @@ func TestReconcileOSCMachine_Update(t *testing.T) {
 						"/dev/sda1": "vol-foo",
 					},
 				}),
+			},
+		},
+		{
+			name:        "[v1beta2] worker is configured but VM is stopped, machine is started and status is set to not ready",
+			clusterSpec: "v1beta2/ready", machineSpec: "v1beta2/ready-worker",
+			machineBaseSpec: "ready-worker",
+			machinePatches:  []patchOSCMachineFunc{patchIncrementMachineGeneration()},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", osc.VmStateStopped, true),
+				mockStartVm("i-046f4bd0"),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertVmExists("i-046f4bd0", osc.VmStateStopped, false),
+			},
+			requeue: true,
+		},
+		{
+			name:        "[v1beta2] worker is not ready, VM has started, reconciliation is run and status is set to ready",
+			clusterSpec: "v1beta2/ready", machineSpec: "v1beta2/ready-worker",
+			machineBaseSpec: "ready-worker",
+			machinePatches:  []patchOSCMachineFunc{patchMachineStatus(osc.VmStateStopped, false)},
+			mockFuncs: []mockFunc{
+				mockGetVm("i-046f4bd0", osc.VmStateRunning, true),
+				mockCheckVmOK("i-046f4bd0", "9e1db9c4-bf0a-4583-8999-203ec002c520"),
+			},
+			machineAsserts: []assertOSCMachineFunc{
+				assertVmExists("i-046f4bd0", osc.VmStateRunning, true),
 			},
 		},
 	}

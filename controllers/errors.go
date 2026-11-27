@@ -42,11 +42,18 @@ func HandleFatalError(r reconcile.Result, err error) (reconcile.Result, error) {
 	return r, err
 }
 
-func MarkErrorCondition(to conditions.Setter, t clusterv1.ConditionType, reason string, err error) {
+func MarkFalseCondition(to conditions.Setter, t clusterv1.ConditionType, reason string, err error) {
 	severity := clusterv1.ConditionSeverityWarning
-	_, fatal := errors.AsType[*fatalError](err)
-	if fatal {
-		severity = clusterv1.ConditionSeverityError
+	var msg string
+	if err == nil {
+		msg = "Resource is not ready"
+		severity = clusterv1.ConditionSeverityInfo
+	} else {
+		msg = err.Error()
+		_, fatal := errors.AsType[*fatalError](err)
+		if fatal {
+			severity = clusterv1.ConditionSeverityError
+		}
 	}
-	conditions.MarkFalse(to, t, reason, severity, "%s", err.Error())
+	conditions.MarkFalse(to, t, reason, severity, "%s", msg)
 }
